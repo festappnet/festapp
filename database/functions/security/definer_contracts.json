@@ -3250,6 +3250,62 @@
     "d80c4acfef3c01af67cf18a3e6b38e341efd2d3e105c889b3d15d7ea338a12d4": {
       "signature": "public.save_notification_center_email_settings(bigint,bigint,boolean,text,jsonb)",
       "source": "database/functions/notification_center/email_preferences.sql"
+    },
+    "2d91c0a01b37304c99faf8958d9ee9a6119a795a6a55995bed61cf8336b2f5cc": {
+      "signature": "public.refresh_apple_ticket_wallet_internal(bigint)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "24a8d408f7e27cf98adae27475a4cbf4bc4cd63d3304ce6f3bead6b275d0c0de": {
+      "signature": "public.register_apple_ticket_wallet(text,text,text,text,text,jsonb)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "d0d8575c5ad77949657e3af01805eeb4761a2306dcc6375ba75e6b3310c5f6b6": {
+      "signature": "public.get_apple_ticket_wallet(text,text,text)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "c23b8a5b54c3611ecac81a819798970bbc32b8ee8be21f4f3f5c5a84b517d707": {
+      "signature": "public.register_apple_wallet_device(text,text,text,text,text,boolean)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "1daf36a4fddc3374746b7184b872892184048ee16a949c13269c2239dd00ce91": {
+      "signature": "public.list_apple_wallet_updates(text,text,text)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "23aa823017d062972fd108eee5bc5d91cd23499b577932ff34a5f620ada6da5a": {
+      "signature": "public.claim_apple_ticket_wallet()",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "a692b77fcc0493f9e5720a0f3ae1dfa54948e9e3f35ec6155d2cbf00bebfc85c": {
+      "signature": "public.apple_wallet_push_targets(bigint,uuid)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "c86cf23e0ed2d97aece9327de10f00586b777fae392099e3ebe65d7f367e3e5e": {
+      "signature": "public.finish_apple_wallet_push(bigint,uuid,text,bigint,boolean)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "a9ae45ade519eb125b985ae5414dea154fe9005c69edc94100d0a271e22499d0": {
+      "signature": "public.finish_apple_ticket_wallet(bigint,uuid,boolean)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "b681cce63da692b393364b2db052cb2a53aee954db528849f09ac2e480240c4d": {
+      "signature": "public.allow_apple_wallet_request(text)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "7f4b6db4bd05800c89e0499517cda64ddbc5b9b5e9abeccdd6f4daecc4ffb66f": {
+      "signature": "public.ticket_wallet_state_internal(bigint)",
+      "source": "database/functions/ticket_wallet/projection.sql"
+    },
+    "e358ce9ffb2e345cc3b98f7665d0750172722570e8e9d3ddcd01650c02283b02": {
+      "signature": "public.prepare_ticket_wallet_collection(uuid,bigint[],text,jsonb)",
+      "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "cd9beb33730b977bf6cca4334a84446b20cb94645f389781c2235b5149ec6b99": {
+      "signature": "public.ticket_wallet_scope_internal(text)",
+      "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "2195659f1b09d11a0378ac0570b916d2e6426fa695b4d521f6168708d619a6dc": {
+      "signature": "public.get_ticket_wallet_projections(text,bigint[],text)",
+      "source": "database/functions/ticket_wallet/collections.sql"
     }
   }
 }

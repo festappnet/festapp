@@ -524,6 +524,7 @@ Deno.test('payment-webhook rejects unsafe methods and uninstalled providers with
 for (const [name, method, expectedStatus] of [
   ["payment-operation", "POST", 401],
   ["ticket-wallet", "GET", 405],
+  ["apple-wallet", "GET", 404],
   ["sync-ticket-wallet", "POST", 401],
 ] as const) {
   Deno.test(`${name} registers a guarded handler before privileged I/O`, async () => {
@@ -548,3 +549,11 @@ for (const [name, method, expectedStatus] of [
     }
   });
 }
+
+Deno.test("notification maintenance rejects unsupported and oversized requests before SQL", async () => {
+  const handler = await loadHandler("notification-center-maintain");
+  assertEquals((await handler(new Request("https://edge-test.invalid"))).status, 405);
+  assertEquals((await handler(new Request("https://edge-test.invalid", {
+    method: "POST", body: "x".repeat(4097),
+  }))).status, 413);
+});

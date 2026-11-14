@@ -4,6 +4,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseProjectVersion } from './project_version.mjs';
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, { encoding: 'utf8', ...options }).trim();
@@ -50,8 +51,15 @@ function main() {
   const xml = run('java', ['-jar', bundletool, 'dump', 'manifest', `--bundle=${aab}`]);
   const packageName = xml.match(/\bpackage="([^"]+)"/)?.[1];
   const versionCode = Number(xml.match(/\bandroid:versionCode="(\d+)"/)?.[1]);
+  const versionName = xml.match(/\bandroid:versionName="([^"]+)"/)?.[1];
   if (packageName !== manifest.androidPackage) throw new Error('AAB package differs from release manifest');
   if (!Number.isSafeInteger(versionCode) || versionCode < 1) throw new Error('AAB has no valid Android version code');
+  const softwareVersion = parseProjectVersion(run('git', [
+    'show', `${sourceSha}:automation/release/software-version.conf`,
+  ]));
+  if (versionCode !== Number(softwareVersion.build) || versionName !== softwareVersion.version) {
+    throw new Error('AAB version differs from the canonical software version in its source');
+  }
 
   const hardMarkerPatterns = [/bujnmi/i, /bujnovsky/i, /\/Users\//, /[A-Za-z]:\\Users\\/i];
   const textMarkerPatterns = [...hardMarkerPatterns, /miakh/i];

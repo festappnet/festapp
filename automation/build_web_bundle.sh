@@ -126,7 +126,7 @@ if [ "$TARGET" = cloudflare ]; then
 fi
 
 rm -f build/web/flutter_service_worker.js build/web/.last_build_id
-VERSION="$(grep -m1 '^VERSION=' automation/project.conf | cut -d= -f2 | tr -d '[:space:]')"
+VERSION="$(node automation/release/project_version.mjs --full)"
 FORCED_OCCASION="$(grep -m1 '^FORCE_OCCASION_LINK=' automation/project.conf | cut -d= -f2- | tr -d '\"' | tr -d "'" | tr -d '[:space:]')"
 APP_SUPPORTED="$(sed -n 's/^IS_APP_SUPPORTED=//p' automation/project.conf | tr -d '[:space:]')"
 node automation/generate_pwa_service_worker.mjs build/web "$VERSION" "$FORCED_OCCASION" "$APP_SUPPORTED"

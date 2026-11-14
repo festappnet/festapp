@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, cpSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, cpSync, rmSync, symlinkSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -60,4 +60,13 @@ test('dynamic imports, missing modules and symlinks fail closed', t => {
     }
     const link = fixture(t); symlinkSync(join(link.base, 'main'), join(link.base, 'unexpected'));
     assert.notEqual(link.run('inventory', []).status, 0);
+});
+
+test('every canonical source Function is explicitly classified by the production bundle policy',()=>{
+ const policy=JSON.parse(readFileSync(resolve('automation/hetzner-supabase/merge/runtime-writer-policy.json'),'utf8'));
+ const excluded=new Set(Object.keys(policy.canonical_function_security.excluded));
+ const source=readdirSync(resolve('supabase/functions'),{withFileTypes:true}).filter(entry=>entry.isDirectory()&&entry.name!=='_shared');
+ assert.deepEqual(source.filter(entry=>!Object.hasOwn(policy.edge_functions,entry.name)&&!excluded.has(entry.name)).map(entry=>entry.name),[]);
+ assert.equal(Object.hasOwn(policy.edge_functions,'apple-wallet'),true);
+ assert.equal(Object.hasOwn(policy.canonical_function_security.resolved,'apple-wallet'),true);
 });

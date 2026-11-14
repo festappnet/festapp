@@ -5,6 +5,8 @@ export function emailWorkerEnvironment(
 ): Array<[string, string]> {
   const control = ['bank-sync-manage', 'bank-sync-reconcile'].includes(service);
   return Object.entries(environment).filter(([name]) => {
+    if (['APPLE_WALLET_CREDENTIALS','APPLE_WALLET_WEB_SERVICE_URL'].includes(name)) return ['ticket-wallet','sync-ticket-wallet','apple-wallet'].includes(service);
+    if (name === 'TICKET_WALLET_ALLOWED_ORIGINS') return service === 'ticket-wallet';
     if (name === 'GOOGLE_WALLET_SERVICE_ACCOUNT') return ['ticket-wallet','sync-ticket-wallet'].includes(service);
     if (name === 'GOOGLE_WALLET_ALLOWED_ORIGINS') return service === 'ticket-wallet';
     if (name.startsWith('SALE_OPENING_TURNSTILE_')) return service === 'sale-opening-notifications';

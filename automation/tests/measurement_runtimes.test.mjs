@@ -377,7 +377,9 @@ test('web deployment verifies selected receivers before build and again before u
     fi
     echo gate >> calls\n`);
     await executable('pnpm','echo upload >> calls\n');
-    await executable('node',`if [ "$1" = automation/verify_measurement_runtimes.mjs ]; then
+    await executable('node',`if [ "$1" = automation/release/project_version.mjs ]; then
+      echo '1.2.3+4'
+    elif [ "$1" = automation/verify_measurement_runtimes.mjs ]; then
       [[ "$*" = 'automation/verify_measurement_runtimes.mjs --organization 3 --require-probe' ]]
       echo receiver >> calls
       count=$(grep -c '^receiver$' calls)

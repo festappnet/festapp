@@ -2,15 +2,12 @@
 import { googleWalletAppearance, walletPublicImage } from './googleWalletAppearance.ts';
 import { parseOrganizationBranding } from './organizationBranding.ts';
 import { normalizeTicketData } from './ticketRenderData.ts';
-export type WalletState = 'ACTIVE' | 'COMPLETED' | 'INACTIVE' | 'EXPIRED';
-export type WalletProjection = { state: WalletState; ticket: any; occasion: any; branding?: any };
+import type {WalletProjection} from './wallet/contracts.ts';
+import {walletHash} from './wallet/identity.ts';
 export type WalletIdentity = { issuer: string; environment: string; organization: number; occasion: number; ticketId: number };
 const encoder = new TextEncoder();
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 function b64(bytes: Uint8Array) { return btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=',''); }
-export async function walletHash(value: string) {
- return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(value))), b=>b.toString(16).padStart(2,'0')).join('');
-}
 export async function walletIds(identity: WalletIdentity) {
  const { issuer, environment, organization, occasion, ticketId }=identity;
  if(!/^\d+$/.test(issuer)||!environment||![organization,occasion,ticketId].every(n=>Number.isSafeInteger(n)&&n>0)) throw new Error('wallet_identity');
@@ -134,9 +131,9 @@ export class GoogleWallet {
   const {objectBody}=walletDocuments(ids,projection);
   await this.upsert('eventTicketObject',objectBody,before);
  }
- async saveUrl(objectId:string,origin:string) {
+ async saveUrl(objectId:string|string[],origin:string) {
   const iat=Math.floor(this.now()/1000);
-  const jwt=await this.sign({iss:this.email,aud:'google',typ:'savetowallet',iat,exp:iat+300,origins:[origin],payload:{eventTicketObjects:[{id:objectId}]}});
+  const jwt=await this.sign({iss:this.email,aud:'google',typ:'savetowallet',iat,exp:iat+300,origins:[origin],payload:{eventTicketObjects:(Array.isArray(objectId)?objectId:[objectId]).map(id=>({id}))}});
   const url='https://pay.google.com/gp/v/save/'+jwt;
   if(url.length>1800)throw new Error('wallet_link_length');return url;
  }

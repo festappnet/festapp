@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "sourceSha": "f961bacff3d201f0311267a0687b652e1a5ed8b4",
-  "sourceDigest": "c1e037420561e2a543c77081e206d07c88dd2d47270246fbebb45223032181b0",
+  "sourceSha": "95d23ab19ba60e488f317e65eab66c8a5ddee272",
+  "sourceDigest": "2dffdb424f82d5578ef992c06d02f7d44c88fa1e5a1eb93dba134da8cfecee2f",
   "apiMajor": 1,
   "contractVersion": "0.1.0",
   "generator": "festapp-api-v1",
@@ -13,6 +13,6 @@
   "dataProfile": "operator",
   "proofProfile": "bearer",
   "schemaDigest": "25a70563719e630b8f77603494a9105bc76c944608a4346b9424df4c831dbf60",
-  "projectionDigest": "43be9254c27a126d35855d74a2e460f75cdeff81494c0b5318f15fd7ce18f2b9",
+  "projectionDigest": "d4cd1f664d02ae0aee30fd9c381a22b9ac7436cf538e96b9ce2e7d91fc3a7433",
   "reference": "docs/index.html"
 }

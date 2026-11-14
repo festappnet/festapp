@@ -435,8 +435,11 @@
     "eshop_bank_accounts/link_bank_account_to_unit.sql",
     "eshop_bank_sync/bank_sync_manage.sql",
     "ticket_wallet/schema.sql",
+    "ticket_wallet/apple_schema.sql",
     "ticket_wallet/settings.sql",
+    "ticket_wallet/collections_schema.sql",
     "ticket_wallet/projection.sql",
+    "ticket_wallet/collections.sql",
     "ticket_wallet/capabilities.sql",
     "ticket_wallet/sync.sql",
     "ticket_wallet/worker.sql",
@@ -476,6 +479,8 @@
     "notification_center/provider_connections.sql",
     "ticket_wallet/enqueue.sql",
     "ticket_wallet/maintenance.sql",
-    "ticket_wallet/control.sql"
+    "ticket_wallet/control.sql",
+    "ticket_wallet/apple_updates_schema.sql",
+    "ticket_wallet/apple_updates.sql"
   ]
 }

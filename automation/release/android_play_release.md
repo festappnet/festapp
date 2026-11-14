@@ -10,13 +10,17 @@ all apps, but this repository wrapper remains locked to the manifest package.
 $env:FESTAPP_RELEASE_MANIFEST = 'C:\path\to\private-release-listing\config.json'
 $env:FESTAPP_CANONICAL_CUTOVER_RELEASE = '1' # required for the self-hosted cutover build
 .\automation\release\android_release.ps1 -Preflight
-.\automation\release\android_release.ps1 -Build
 ```
 
 The original upload keystore is configured only through ignored
-`android/key.properties`. Local tooling can prepare or build a candidate, but it
+`android/key.properties`. Local tooling can run preflight, but it
 cannot inspect or mutate Google Play. Every Play API call and production upload
 runs exclusively through the repository's GitHub-hosted Linux gateway.
+
+The version name and code come from main-owned
+`automation/release/software-version.conf`, shared with web and iOS. Upgrade a
+tenant to that main generation before dispatch; package-specific version bumps
+are forbidden. The local `-Build` operation is rejected.
 
 The read-only check creates a temporary Google Play edit because track reads are
 edit-scoped, then always deletes/discards it. It never commits a release.
@@ -29,8 +33,10 @@ listing mutations.
 
 `Android candidate batch` is the canonical remote build entry point. Dispatch it
 from `main` with a JSON array of one to thirty tenant IDs. A cache-warming Linux
-job writes the shared Gradle dependency cache once; up to five isolated tenant
-jobs then read it concurrently. Flutter's SDK and Pub package caches are also
+job writes the main Gradle dependency cache once; up to five isolated tenant
+jobs then restore and update their dependency-specific caches. Tenant-generated
+Gradle files can have different cache keys from main, so tenant jobs must save
+their own cache after a miss. Flutter's SDK and Pub package caches are also
 enabled. No Android build job runs on macOS or a personal workstation.
 
 Each tenant uses GitHub environments named `android-build-<tenant>` and

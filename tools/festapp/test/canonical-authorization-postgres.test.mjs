@@ -698,6 +698,8 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
       "scanning/credential_revocations.sql":["public.scanner_revoked_credentials"],
       "ticket_wallet/schema.sql":["eshop.ticket_wallet_integrations", "eshop.ticket_wallet_capabilities", "eshop.ticket_wallet_objects", "eshop.ticket_wallet_audit", "eshop.ticket_wallet_limits"],
       "ticket_wallet/work_schema.sql":["eshop.ticket_wallet_work"],
+      "ticket_wallet/collections_schema.sql":["eshop.ticket_wallet_collections"],
+      "ticket_wallet/apple_updates_schema.sql":["eshop.apple_ticket_wallet_passes", "eshop.apple_ticket_wallet_devices"],
       "ticket_wallet/worker.sql":["eshop.ticket_wallet_worker"],
       "payment_providers/operations_schema.sql":["eshop.refund_requests", "eshop.refund_settlements", "eshop.payment_operation_events", "eshop.order_deletion_fences"],
       "payment_providers/template_policy.sql":["eshop.payment_template_reviews", "eshop.payment_template_epochs"],

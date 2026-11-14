@@ -276,7 +276,6 @@
       "behaviorTests": [
         "supabase/functions/_shared/orderEmailOverview_test.ts",
         "supabase/functions/_shared/canonicalEmail_test.ts",
-        "supabase/functions/_shared/bankSyncWarningEmail_test.ts",
         "supabase/functions/_shared/unitVerificationEmail_test.ts"
       ],
       "abusePolicy": [
@@ -501,7 +500,7 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/_shared/notificationCenterHealth_test.ts"
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "abusePolicy": []
     },
@@ -645,6 +644,15 @@
       "abusePolicy": [
         "email.auth",
         "email.ordinary"
+      ]
+    },
+    "apple-wallet": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/apple-wallet/handler_test.ts",
+        "supabase/functions/_shared/appleWallet_test.ts"
       ]
     }
   },

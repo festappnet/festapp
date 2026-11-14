@@ -118,6 +118,7 @@ export class RouterService {
     // History Management
     static pushState(path) {
         RouterService.disposeMcpPage();
+        RouterService.disposeWalletPage();
         window.history.pushState({}, '', path);
     }
 
@@ -153,16 +154,17 @@ export class RouterService {
     // Initial Load Check
     static async handleInitialLoad() {
         RouterService.disposeMcpPage();
+        RouterService.disposeWalletPage();
         if (window.location.pathname === '/wallet') {
             const {TicketWalletPage} = await import('../components/ticket_wallet_page.js');
             const {SupabaseService} = await import('./supabase_service.js');
             await SupabaseService.initialize();
             document.getElementById('app')?.style.setProperty('display','none');
-            RouterService._walletPage?.clear();
             RouterService._walletPage = new TicketWalletPage(document.getElementById('form-page-container'), {
                 locale: document.documentElement.lang,
-                invoke: async body => {
-                    const {data,error} = await SupabaseService.getClient().functions.invoke('ticket-wallet',{body});
+                walletEndpoint: SupabaseService.endpoint + '/functions/v1/ticket-wallet',
+                invoke: async (body,{signal}) => {
+                    const {data,error} = await SupabaseService.getClient().functions.invoke('ticket-wallet',{body,signal});
                     if(error) {
                         try {return await error.context.json();} catch {throw new Error('wallet_retry');}
                     }
@@ -521,6 +523,11 @@ export class RouterService {
     static _mcpPage = null;
     static _mcpGeneration = 0;
 
+    static disposeWalletPage() {
+        RouterService._walletPage?.clear();
+        RouterService._walletPage = null;
+    }
+
     static disposeMcpPage() {
         RouterService._mcpGeneration++;
         RouterService._mcpPage?.dispose();
@@ -546,6 +553,7 @@ export class RouterService {
             }
             RouterService._lastPath = path;
             RouterService.disposeMcpPage();
+            RouterService.disposeWalletPage();
 
             const scannerRoute = resolveScannerRoute(path);
             if (scannerRoute) {

@@ -1,0 +1,8 @@
+{
+  "header": "-- Apple Wallet device updates and certificate-authenticated APNs scheduling.",
+  "sources": [
+    "ticket_wallet/apple_updates_schema.sql",
+    "ticket_wallet/apple_updates.sql",
+    "ticket_wallet/worker.sql"
+  ]
+}

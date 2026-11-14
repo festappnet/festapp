@@ -79,18 +79,18 @@
     "id": "integrations",
     "cs": {
       "slug": "integrace",
-      "title": "Integrace a vložení prodeje vstupenek na web",
-      "seoTitle": "Prodej vstupenek na vlastním webu: HTML, Joomla, WordPress a Webnode",
-      "description": "Vložte prodej na vlastní web nebo připojte AI asistenta přes MCP. Návody pro HTML, Wix, Joomlu, WordPress, Webnode a agentní přístup.",
-      "intro": "Máte už uložený prodejní formulář? Pokračujte podle systému, ve kterém upravujete svůj web. Pokud jej teprve připravujete, začněte založením akce a formuláře.",
+      "title": "Integrace: web, AI a API",
+      "seoTitle": "Integrace prodeje vstupenek na web, AI asistenti a API",
+      "description": "Vložte prodej na vlastní web, připojte AI asistenta přes MCP nebo napojte vlastní aplikaci přes API.",
+      "intro": "Vyberte návod pro svůj web, připojení AI asistenta nebo automaticky generovanou referenci API.",
       "preview": "cs/embed/01-generated-code"
     },
     "en": {
       "slug": "integrations",
-      "title": "Integrate ticket sales with your website",
-      "seoTitle": "Website ticket integration: HTML and Webnode",
-      "description": "Embed your ticket sales with an HTML snippet or follow the Webnode guide. Set up your public form and connect website measurement.",
-      "intro": "If you already have a saved public form, choose your website platform below. Otherwise start by creating the event and preparing its form.",
+      "title": "Website integrations and API",
+      "seoTitle": "Ticket sales integrations: websites and API",
+      "description": "Embed ticket sales with an HTML snippet or Webnode, or connect your own application using the API.",
+      "intro": "Choose a website guide or open the automatically generated API reference for your own integration.",
       "preview": "en/embed/01-generated-code"
     }
   },

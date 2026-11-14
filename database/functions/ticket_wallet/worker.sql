@@ -13,7 +13,7 @@ BEGIN
  PERFORM public.require_service_role();
  PERFORM public.maintain_ticket_wallet(100);
  SELECT worker_url INTO target FROM eshop.ticket_wallet_worker WHERE singleton;
- IF target IS NULL OR NOT EXISTS(SELECT 1 FROM eshop.ticket_wallet_work w JOIN eshop.ticket_wallet_integrations i ON i.organization=w.organization WHERE NOT i.paused AND w.kind IN ('class','object') AND w.requested>w.applied AND w.due_at<=now() AND (w.lease_until IS NULL OR w.lease_until<=now())) THEN RETURN; END IF;
+ IF target IS NULL OR (NOT EXISTS(SELECT 1 FROM eshop.ticket_wallet_work w JOIN eshop.ticket_wallet_integrations i ON i.organization=w.organization WHERE NOT i.paused AND w.kind IN ('class','object') AND w.requested>w.applied AND w.due_at<=now() AND (w.lease_until IS NULL OR w.lease_until<=now())) AND NOT EXISTS(SELECT 1 FROM eshop.apple_ticket_wallet_passes a JOIN eshop.ticket_wallet_integrations i ON i.organization=a.organization WHERE NOT i.paused AND a.next_check<=now() AND (a.lease_until IS NULL OR a.lease_until<=clock_timestamp()))) THEN RETURN; END IF;
  PERFORM net.http_post(url:=target,body:=jsonb_build_object('requestSecret',public.generate_request_secret(120)),timeout_milliseconds:=5000);
 END $$;
 REVOKE ALL ON FUNCTION public.wake_ticket_wallet_worker() FROM PUBLIC,anon,authenticated;

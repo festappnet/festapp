@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseProjectVersion, readProjectVersion } from './project_version.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const tenantPattern = /^[a-z0-9][a-z0-9-]{1,62}$/;
@@ -85,6 +86,19 @@ function main() {
   const targets = mode === 'candidate'
     ? normalizeCandidateTargets(input).map((target) => ({ ...target, sourceSha: remoteHead(target.branch) }))
     : normalizeProductionTargets(input);
+  const canonical = readProjectVersion();
+  for (const target of targets) {
+    execFileSync('git', ['fetch', '--no-tags', '--depth=1', 'origin', target.sourceSha], {
+      cwd: root, stdio: ['ignore', 'ignore', 'pipe'],
+    });
+    const sourceVersion = parseProjectVersion(execFileSync('git', [
+      'show', `${target.sourceSha}:automation/release/software-version.conf`,
+    ], { cwd: root, encoding: 'utf8' }));
+    if (sourceVersion.full !== canonical.full ||
+        (mode === 'production' && target.versionCode !== Number(canonical.build))) {
+      throw new Error(`${target.tenant} must inherit canonical software ${canonical.full}; upgrade its main base first`);
+    }
+  }
   if (mode === 'production') {
     for (const target of targets) {
       if (remoteHead(target.branch) !== target.sourceSha) {
@@ -95,7 +109,7 @@ function main() {
   process.stdout.write(JSON.stringify({ include: targets }));
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try { main(); } catch (error) {
     console.error(`ERROR: ${error.message}`);
     process.exit(1);
