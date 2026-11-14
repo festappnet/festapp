@@ -1,18 +1,20 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {TicketWalletPage,takeWalletToken} from '../../src/components/ticket_wallet_page.js';
+import {TicketWalletPage} from '../../src/components/ticket_wallet_page.js';
+import {readWalletLink,WalletLinkSession} from '../../src/components/wallet_link.js';
+import {spawnSync} from 'node:child_process';
 import {googleWalletSaveUrl} from '../../src/components/wallet_connectors.js';
 import {readFileSync} from 'node:fs';
 function fixture(hash='a'.repeat(64),invoke=async()=>({error:'wallet_unavailable'})) {
  const dom=new JSDOM('<meta name="referrer" content="origin"><div id="host"></div>',{url:'https://tenant.invalid/wallet#'+hash});
  const navigations=[];
- const win={document:dom.window.document,history:dom.window.history,location:{get hash(){return dom.window.location.hash;},get pathname(){return dom.window.location.pathname;},assign(url){navigations.push(url);}}};
+ const win={addEventListener:dom.window.addEventListener.bind(dom.window),removeEventListener:dom.window.removeEventListener.bind(dom.window),document:dom.window.document,history:dom.window.history,location:{get hash(){return dom.window.location.hash;},get pathname(){return dom.window.location.pathname;},get search(){return dom.window.location.search;},assign(url){navigations.push(url);}}};
  const page=new TicketWalletPage(dom.window.document.getElementById('host'),{win,invoke,walletEndpoint:'https://backend.invalid/functions/v1/ticket-wallet'});return {dom,page,navigations};
 }
 test('fragment is removed before external scripts and the captured token is consumed only in memory',()=>{
  const html=readFileSync(new URL('../../index.html',import.meta.url),'utf8');assert(html.indexOf('__festappWalletToken')<html.indexOf('<script src='));
- const {dom}=fixture();assert.equal(takeWalletToken(dom.window),'a'.repeat(64));assert.equal(dom.window.location.hash,'');assert.equal(takeWalletToken(dom.window),null);dom.window.close();
+ const {dom}=fixture();assert.equal(readWalletLink(dom.window).token,'a'.repeat(64));assert.equal(dom.window.location.hash,'');assert.equal(readWalletLink(dom.window).token,null);dom.window.close();
 });
 test('shared page offers both connectors without issuing either before the user chooses',async()=>{
  let calls=0;const url='https://pay.google.com/gp/v/save/a.b.c';const {dom,page,navigations}=fixture('a'.repeat(64),async body=>{calls++;assert.equal(body.provider,'google');return {state:'ACTIVE',url};});
@@ -42,8 +44,8 @@ test('file-delivery connectors submit capability only in a native POST body to t
  const {dom,page}=fixture();let submitted=null;
  dom.window.HTMLFormElement.prototype.submit=function(){submitted={url:this.action,method:this.method,values:Object.fromEntries(new dom.window.FormData(this))};};
  await page.init();const apple=page.actions.get('apple');assert.match(apple.button.textContent,/Přidat do Apple Peněženky/);assert.equal(submitted,null);
- page.saveFile(apple.connector);assert.deepEqual(submitted,{url:page.walletEndpoint,method:'post',values:{token:'a'.repeat(64),provider:'apple'}});assert.equal(dom.window.location.hash,'');assert.equal(dom.window.document.querySelector('form'),null);assert.equal(dom.window.localStorage.length,0);
- submitted=null;page.walletEndpoint='javascript:alert(1)';page.saveFile(apple.connector);assert.equal(submitted,null);assert.match(page.status.textContent,/dočasně/);page.clear();page.saveFile(apple.connector);assert.equal(submitted,null);dom.window.close();
+ page.save(apple.connector);assert.deepEqual(submitted,{url:page.walletEndpoint,method:'post',values:{token:'a'.repeat(64),provider:'apple'}});assert.equal(dom.window.location.hash,'');assert.equal(dom.window.document.querySelector('form'),null);assert.equal(dom.window.localStorage.length,0);
+ submitted=null;page.walletEndpoint='javascript:alert(1)';page.save(apple.connector);assert.equal(submitted,null);assert.match(page.status.textContent,/dočasně/);page.clear();page.save(apple.connector);assert.equal(submitted,null);dom.window.close();
 });
 
 test('native delivery preserves the trusted Origin while withholding private URL paths',async()=>{
@@ -79,11 +81,72 @@ test('early email bootstrap retains only provider and language in memory while r
  dom.window.eval(script);
  assert.equal(dom.window.location.href,'https://tenant.invalid/wallet');
  assert.equal(dom.window.__festappWalletOptions.provider,'apple');assert.equal(dom.window.__festappWalletOptions.lang,'en');
- assert.equal(takeWalletToken(dom.window),'a'.repeat(64));assert.equal(takeWalletToken(dom.window),null);dom.window.close();
+ assert.equal(readWalletLink(dom.window).token,'a'.repeat(64));assert.equal(readWalletLink(dom.window).token,null);dom.window.close();
 });
 test('invalid provider and missing capability never trigger automatic issuance',async()=>{
  for(const [token,provider] of [['a'.repeat(64),'unregistered'],['','apple']]){
   let calls=0;const {dom,page}=fixture(token,async()=>{calls++;});page.win.__festappWalletOptions={provider,lang:'invalid'};
   dom.window.HTMLFormElement.prototype.submit=function(){calls++;};await page.init();assert.equal(calls,0);assert.equal(page.locale,'cs');dom.window.close();
  }
+});
+
+test('reused Safari tabs accept successive legacy links once per navigation and release listeners on clear',async()=>{
+ const {dom,page}=fixture();page.win.navigator={userAgent:'iPhone'};const submitted=[];
+ dom.window.HTMLFormElement.prototype.submit=function(){submitted.push(new dom.window.FormData(this).get('token'));};
+ await page.init();
+ for(const token of ['b'.repeat(64),'b'.repeat(64)]){
+  dom.window.history.replaceState(null,'','/wallet#'+token);
+  dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate'));
+  dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
+  assert.equal(dom.window.location.hash,'');
+ }
+ assert.deepEqual(submitted,['a'.repeat(64),'b'.repeat(64),'b'.repeat(64)]);
+ page.clear();dom.window.history.replaceState(null,'','/wallet#'+'c'.repeat(64));dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
+ assert.equal(submitted.length,3);assert.equal(page.host.childElementCount,0);dom.window.close();
+});
+test('a late Google response cannot redirect or replace the status of a subsequently opened Apple ticket',async()=>{
+ let finish;const {dom,page,navigations}=fixture('a'.repeat(64),()=>new Promise(resolve=>{finish=resolve;}));
+ page.win.__festappWalletOptions={provider:'google',lang:'cs'};const pending=page.init();
+ let submitted=null;dom.window.HTMLFormElement.prototype.submit=function(){submitted=new dom.window.FormData(this).get('token');};
+ page.win.__festappWalletOptions={provider:'apple',lang:'en'};dom.window.history.replaceState(null,'','/wallet#'+'b'.repeat(64));dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));
+ finish({state:'ACTIVE',url:'https://pay.google.com/gp/v/save/a.b.c'});await pending;
+ assert.equal(submitted,'b'.repeat(64));assert.deepEqual(navigations,[]);assert.equal(page.status.textContent,'Preparing your ticket…');assert.equal(page.locale,'en');dom.window.close();
+});
+
+test('leaving the Wallet route cancels pending work without consuming another route fragment',async()=>{
+ let finish,signal;const {dom,page,navigations}=fixture('a'.repeat(64),(_body,options)=>{signal=options.signal;return new Promise(resolve=>{finish=resolve;});});
+ page.win.__festappWalletOptions={provider:'google'};const pending=page.init();
+ dom.window.history.replaceState(null,'','/order?keep=true#'+'b'.repeat(64));dom.window.dispatchEvent(new dom.window.PopStateEvent('popstate'));
+ assert.equal(signal.aborted,true);assert.equal(dom.window.location.search,'?keep=true');assert.equal(dom.window.location.hash,'#'+'b'.repeat(64));
+ finish({state:'ACTIVE',url:'https://pay.google.com/gp/v/save/a.b.c'});await pending;assert.deepEqual(navigations,[]);page.clear();dom.window.close();
+});
+
+test('the shared page dispatches an installed file connector without provider-specific branches',async()=>{
+ const {dom,page}=fixture();page.connectors=[{id:'third',delivery:'file',label:()=> 'Uložit vstupenku',badge:()=>undefined,matchesDevice:()=>true}];
+ let submitted;dom.window.HTMLFormElement.prototype.submit=function(){submitted=Object.fromEntries(new dom.window.FormData(this));};
+ await page.init();assert.deepEqual(submitted,{token:'a'.repeat(64),provider:'third'});page.clear();dom.window.close();
+});
+test('restored-page input is consumed once and invalid replacement cannot reuse the previous capability',async()=>{
+ const {dom,page}=fixture();page.win.navigator={userAgent:'iPhone'};let calls=0;
+ dom.window.HTMLFormElement.prototype.submit=function(){calls++;};await page.init();
+ dom.window.dispatchEvent(new dom.window.PageTransitionEvent('pageshow',{persisted:true}));assert.equal(calls,1);
+ dom.window.history.replaceState(null,'','/wallet#'+'b'.repeat(64));dom.window.dispatchEvent(new dom.window.PageTransitionEvent('pageshow',{persisted:true}));assert.equal(calls,2);
+ dom.window.history.replaceState(null,'','/wallet#invalid');dom.window.dispatchEvent(new dom.window.HashChangeEvent('hashchange'));assert.equal(calls,2);assert.equal(page.token,null);assert.equal(dom.window.location.hash,'');
+ for(const action of page.actions.values())assert.equal(action.button.hidden,true);page.clear();dom.window.close();
+});
+
+test('link completion preserves awaited errors and ignored browser-event work cannot reject unhandled',async()=>{
+ const {dom,page}=fixture();const session=new WalletLinkSession(dom.window);const warn=console.warn;
+ console.warn=()=>{};
+ try{await assert.rejects(session.start(async()=>{throw new Error('receiver failed');}),/receiver failed/);}finally{session.dispose();console.warn=warn;dom.window.close();}
+ const moduleUrl=new URL('../../src/components/wallet_link.js',import.meta.url).href;
+ const script=`import {WalletLinkSession} from ${JSON.stringify(moduleUrl)};
+  const target=new EventTarget();const location={pathname:'/wallet',search:'',hash:'#'+'a'.repeat(64)};
+  const win={location,history:{replaceState(){location.hash='';}},addEventListener:target.addEventListener.bind(target),removeEventListener:target.removeEventListener.bind(target)};
+  console.warn=()=>{};let unhandled=0;process.on('unhandledRejection',()=>{unhandled++;});
+  const session=new WalletLinkSession(win);session.start(async()=>{throw new Error('ignored initial failure');});
+  location.hash='#'+'b'.repeat(64);target.dispatchEvent(new Event('hashchange'));
+  setImmediate(()=>{session.dispose();if(unhandled)process.exitCode=1;else process.stdout.write('no-unhandled-rejection');});`;
+ const child=spawnSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8'});
+ assert.equal(child.status,0,child.stderr);assert.equal(child.stdout,'no-unhandled-rejection');
 });
