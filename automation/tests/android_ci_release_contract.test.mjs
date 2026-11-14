@@ -43,7 +43,9 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.match(candidate, /fail-fast: false/);
   assert.match(candidate, /gradle\/actions\/setup-gradle@v6/);
   assert.match(candidate, /cache-provider: basic/);
-  assert.match(candidate, /cache-read-only: true/);
+  const tenantBuild = candidate.slice(candidate.indexOf('\n  build:'));
+  assert.match(tenantBuild, /cache-read-only: false/);
+  assert.doesNotMatch(tenantBuild, /cache-read-only: true/);
   assert.match(candidate, /actions\/upload-artifact@v7/);
   assert.match(candidate, /android-raw-/);
   assert.match(candidate, /retention-days: 3/);
