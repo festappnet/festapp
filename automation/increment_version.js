@@ -3,13 +3,18 @@ const path = require('path');
 const { execFileSync, execSync } = require('child_process');
 
 const projectRoot = path.resolve(__dirname, '../');
-const projectConfPath = path.resolve(projectRoot, 'automation/project.conf');
+const softwareVersionPath = path.resolve(projectRoot, 'automation/release/software-version.conf');
 
-// 1. Check if project.conf is already staged
+if (fs.existsSync(path.join(projectRoot, 'automation/tenant-overlay.json'))) {
+    console.log('Tenant releases inherit the canonical software version; skipping increment.');
+    process.exit(0);
+}
+
+// Increment the one software generation, never a tenant counter.
 try {
-    const stagedFiles = execSync('git diff --cached --name-only', { encoding: 'utf8' });
-    if (stagedFiles.includes('automation/project.conf')) {
-        console.log('Version manually updated in this commit. Skipping auto-increment.');
+    const stagedFiles = execSync('git diff --cached --name-only', { cwd: projectRoot, encoding: 'utf8' });
+    if (stagedFiles.split('\n').includes('automation/release/software-version.conf')) {
+        console.log('Canonical software version is already staged. Skipping auto-increment.');
         process.exit(0);
     }
 } catch (e) {
@@ -18,16 +23,16 @@ try {
 }
 
 // 2. Read current version
-if (!fs.existsSync(projectConfPath)) {
-    console.error('Error: automation/project.conf not found');
+if (!fs.existsSync(softwareVersionPath)) {
+    console.error('Error: automation/release/software-version.conf not found');
     process.exit(1);
 }
 
-const projectConfContent = fs.readFileSync(projectConfPath, 'utf8');
-const versionMatch = projectConfContent.match(/^VERSION=(.+)$/m);
+const softwareVersionContent = fs.readFileSync(softwareVersionPath, 'utf8');
+const versionMatch = softwareVersionContent.match(/^VERSION=(.+)$/m);
 
 if (!versionMatch) {
-    console.error('Error: Could not find VERSION in automation/project.conf');
+    console.error('Error: Could not find the canonical software VERSION');
     process.exit(1);
 }
 
@@ -53,9 +58,9 @@ const newVersion = `${semVer}+${newBuildNum}`;
 
 console.log(`Auto-incrementing version: ${currentVersion} -> ${newVersion}`);
 
-// 3. Update project.conf
-const newProjectConfContent = projectConfContent.replace(/^VERSION=.+$/m, `VERSION=${newVersion}`);
-fs.writeFileSync(projectConfPath, newProjectConfContent);
+// 3. Update the main-owned software generation.
+const newSoftwareVersionContent = softwareVersionContent.replace(/^VERSION=.+$/m, `VERSION=${newVersion}`);
+fs.writeFileSync(softwareVersionPath, newSoftwareVersionContent);
 
 // 4. Run the canonical generator to propagate changes to every version leaf.
 try {
@@ -70,11 +75,13 @@ try {
 
 // 5. Stage the modified files
 const filesToStage = [
+    'automation/release/software-version.conf',
     'automation/project.conf',
     'pubspec.yaml',
     'web_client/package.json',
     'web_client/src/version.js',
-    'web/index.html'
+    'web/index.html',
+    'web_client/index.html'
 ];
 
 try {

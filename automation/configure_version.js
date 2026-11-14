@@ -7,22 +7,32 @@ const { execFileSync } = require('child_process');
 const projectRoot = path.resolve(__dirname, '../');
 const projectVersionScript = path.resolve(__dirname, 'release/project_version.mjs');
 
-// 1. Get Version from Args or Env, otherwise read the canonical project config.
-let version = process.argv[2] || process.env.VERSION;
-
-if (!version) {
-    try {
-        version = execFileSync(process.execPath, [projectVersionScript, '--full'], {
-            cwd: projectRoot,
-            encoding: 'utf8',
-        }).trim();
-    } catch (error) {
-        console.error('Error: Could not read VERSION from automation/project.conf', error.message);
-        process.exit(1);
+// Tenant config, environment variables and CLI arguments cannot own versions.
+let version;
+try {
+    version = execFileSync(process.execPath, [projectVersionScript, '--full'], {
+        cwd: projectRoot,
+        encoding: 'utf8',
+    }).trim();
+    if (process.argv[2] && process.argv[2] !== version) {
+        throw new Error('Version override differs from automation/release/software-version.conf');
     }
+} catch (error) {
+    console.error('Error: Could not resolve canonical software version:', error.message);
+    process.exit(1);
 }
 
 console.log(`Configuring Version: ${version}`);
+
+// Retain VERSION in project.conf only as a generated projection for old readers.
+const projectConfPath = path.resolve(projectRoot, 'automation/project.conf');
+if (fs.existsSync(projectConfPath)) {
+    const config = fs.readFileSync(projectConfPath, 'utf8');
+    const updated = /^VERSION=/m.test(config)
+        ? config.replace(/^VERSION=.*$/m, `VERSION=${version}`)
+        : `${config.trimEnd()}\nVERSION=${version}\n`;
+    writeFileSync(projectConfPath, updated);
+}
 
 const webClientRoot = path.resolve(projectRoot, 'web_client');
 

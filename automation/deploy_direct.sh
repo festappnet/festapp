@@ -71,7 +71,7 @@ if [ -z "$PROJECT_NAME" ]; then
   exit 1
 fi
 DOMAIN="$(grep -E '^DOMAIN=' automation/project.conf | head -1 | sed 's/^DOMAIN=//' | tr -d '"'"'"'\r ')"
-VERSION="$(grep -E '^VERSION=' automation/project.conf | head -1 | sed 's/^VERSION=//' | tr -d '"'"'"'\r ')"
+VERSION="$(node automation/release/project_version.mjs --full)"
 if [ -z "$DOMAIN" ] || [ -z "$VERSION" ]; then
   echo "ERROR: DOMAIN and VERSION are required in automation/project.conf." >&2
   exit 1
