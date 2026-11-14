@@ -69,7 +69,8 @@ with the `ours` strategy. Its regression uses real independent Git histories.
   including current source parity and authorized payment-detail projection.
 - 19 source/security contracts; 9 operational-retention tests; 18 CI contracts;
   the Git artifact guard and its forced-add/ancestry regression.
-- 12 Make tests, 4 Help tests and 7 localized digest-rendering tests.
+- 12 Make tests, 4 Help tests, 7 localized digest-rendering tests and the
+  runtime-import test over the exact final Docker COPY tree.
 - Frozen pnpm 11.24.0 installs; eight generated projections, examples, lint,
   deterministic HTML and released-baseline compatibility passed.
 - Targeted Dart analysis of the preserved catalogue preview and settings host:
@@ -77,6 +78,11 @@ with the `ours` strategy. Its regression uses real independent Git histories.
 
 Detailed receipts and the verified recovery bundle are protected under
 `~/Library/Application Support/Festapp/maintenance/20261114-history-cleanup/`.
+The clean Docker build initially exposed two additional generator source inputs
+that the runtime-only image had never needed. Its builder now includes those
+exact shared modules. Source-generation resource claims serialize API/Make
+writers in the local mirror; PostgreSQL preparation avoids rendering unused HTML.
+
 The normal 14-day backup review begins only after all owners are restored; do
 not prune the recovery bundle while history migration remains unfinished.
 

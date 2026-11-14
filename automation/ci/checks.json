@@ -319,7 +319,8 @@
         "wix-install"
       ],
       "resources": {
-        "ramMiB": 256
+        "ramMiB": 256,
+        "sourceGeneration": 1
       }
     },
     "navigation-install": {
@@ -528,7 +529,8 @@
         "mcp-auth-install"
       ],
       "resources": {
-        "ramMiB": 256
+        "ramMiB": 768,
+        "sourceGeneration": 1
       }
     },
     "seat-upgrade": {
