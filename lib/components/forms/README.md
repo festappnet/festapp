@@ -115,6 +115,10 @@ application-only forms with ticket issuance disabled. It and its parent cannot
 be removed, hidden or demoted to an ordinary group. At least one visible variant
 must remain; names and prices stay editable. The editor protects these controls
 locally, and SQL rechecks the invariant atomically for form and catalog saves.
+Form creation and both copy commands validate this invariant before returning.
+Copies canonicalize hidden primary child selectors to visible and omit empty
+hidden primary selectors. Seat-selection mode already suppresses these selectors
+in both clients; persisted visibility must not encode that presentation choice.
 Catalog mutations lock the affected forms before products so concurrent variant
 deletions cannot each remove the other's last remaining option.
 

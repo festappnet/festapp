@@ -83,7 +83,11 @@ BEGIN
 
     -- Step 7: Loop through each field of the source form and perform a deep copy.
     FOR form_field_record IN
-        SELECT * FROM public.form_fields WHERE form = source_form_id
+        SELECT ff.* FROM public.form_fields ff WHERE ff.form = source_form_id
+          -- Empty hidden primary selectors are obsolete presentation fields.
+          AND NOT (ff.type='product_type' AND ff.is_ticket_field AND ff.is_hidden AND EXISTS(SELECT 1 FROM eshop.product_types pt
+            WHERE pt.id=ff.product_type AND pt.type='spot')
+            AND NOT EXISTS(SELECT 1 FROM eshop.products p WHERE p.product_type=ff.product_type))
     LOOP
         -- Check if the field is linked to a product type.
         IF form_field_record.product_type IS NOT NULL THEN
@@ -108,7 +112,9 @@ BEGIN
             INSERT INTO public.form_fields (title, description, data, type, is_required, form, is_hidden, "order", product_type, is_ticket_field)
             VALUES (
                 form_field_record.title, form_field_record.description, form_field_record.data, form_field_record.type,
-                form_field_record.is_required, new_form_id, form_field_record.is_hidden, form_field_record.order,
+                form_field_record.is_required, new_form_id,
+                CASE WHEN form_field_record.type='product_type' AND form_field_record.is_ticket_field AND EXISTS(SELECT 1 FROM eshop.product_types pt WHERE pt.id=form_field_record.product_type AND pt.type='spot')
+                  THEN false ELSE form_field_record.is_hidden END, form_field_record.order,
                 new_product_type_id, form_field_record.is_ticket_field
             );
         ELSE
@@ -125,6 +131,7 @@ BEGIN
     -- Step 8: Return the ID of the newly created form.
     PERFORM public.notification_center_form_created_internal(new_form_id);
     PERFORM public.assert_form_seating_source_internal(new_form_id);
+    PERFORM public.assert_form_primary_products_internal(new_form_id);
     RETURN new_form_id;
 END;
 $$;

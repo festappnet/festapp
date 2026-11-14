@@ -367,10 +367,14 @@ BEGIN
   END LOOP;
 
   -- 7b. Form Fields – update the "form" foreign key and product_type via mapping tables.
-  FOR rec IN SELECT * FROM public.form_fields WHERE form IN (SELECT old_id FROM tmp_forms) LOOP
+  FOR rec IN SELECT ff.* FROM public.form_fields ff WHERE ff.form IN (SELECT old_id FROM tmp_forms)
+    AND NOT (ff.type='product_type' AND ff.is_ticket_field AND ff.is_hidden AND EXISTS(SELECT 1 FROM eshop.product_types pt WHERE pt.id=ff.product_type AND pt.type='spot')
+      AND NOT EXISTS(SELECT 1 FROM eshop.products p WHERE p.product_type=ff.product_type)) LOOP
     INSERT INTO public.form_fields(created_at,title,description,data,type,is_required,form,is_hidden,"order",product_type,is_ticket_field)
     VALUES(now(),rec.title,rec.description,rec.data,rec.type,rec.is_required,
-      (SELECT new_id FROM tmp_forms WHERE old_id=rec.form),rec.is_hidden,rec."order",
+      (SELECT new_id FROM tmp_forms WHERE old_id=rec.form),
+      CASE WHEN rec.type='product_type' AND rec.is_ticket_field AND EXISTS(SELECT 1 FROM eshop.product_types pt WHERE pt.id=rec.product_type AND pt.type='spot')
+        THEN false ELSE rec.is_hidden END,rec."order",
       (SELECT new_id FROM tmp_product_types WHERE old_id=rec.product_type),rec.is_ticket_field) RETURNING id INTO v_new_id;
     INSERT INTO tmp_scanner_fields VALUES(rec.id,v_new_id);
   END LOOP;
@@ -400,6 +404,7 @@ BEGIN
   DROP TABLE tmp_places, tmp_events, tmp_exclusive_groups, tmp_blueprints,tmp_blueprint_layout_ids,
     tmp_product_types, tmp_products, tmp_spots, tmp_forms, tmp_information_hidden,
     tmp_inventory_pools,tmp_inventory_contexts,tmp_resources,tmp_resource_slots,tmp_scanner_fields;
+  PERFORM public.assert_form_primary_products_internal(id) FROM public.forms WHERE occasion=new_occ;
   PERFORM public.notification_center_form_created_internal(id) FROM public.forms WHERE occasion=new_occ;
   RETURN new_occ;
 END;

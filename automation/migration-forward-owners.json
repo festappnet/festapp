@@ -301,6 +301,16 @@
         "notification_center/email_context.sql"
       ],
       "active": true
+    },
+    {
+      "migration": "20261114160000_canonical_seated_form_writers.sql",
+      "active": true,
+      "header": "-- Canonical primary selectors and validation at every form construction boundary.",
+      "sources": [
+        "eshop_forms/duplicate_form_to_occasion.sql",
+        "others/duplicate_occasion.sql",
+        "eshop_forms/form_creation_domain.sql"
+      ]
     }
   ]
 }

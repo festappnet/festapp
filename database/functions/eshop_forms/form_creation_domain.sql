@@ -83,6 +83,8 @@ BEGIN
       SELECT to_jsonb(f) INTO new_form FROM public.forms f WHERE id=new_form_id;
     END IF;
 
+    PERFORM public.assert_form_primary_products_internal(new_form_id);
+
     -- Return the raw data of the newly created form
     PERFORM public.notification_center_form_created_internal(new_form_id);
     RETURN new_form;

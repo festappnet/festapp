@@ -117,7 +117,10 @@ BEGIN
  WHERE id=source;
  SELECT product_type INTO source_primary FROM eshop.products WHERE id=(fixture->>'product')::bigint;
  UPDATE eshop.products SET title='Místo u stolu',price=200 WHERE id=(fixture->>'product')::bigint;
- UPDATE public.form_fields SET type='ticket',title='Vstupenky',is_ticket_field=false WHERE form=source_form;
+ UPDATE public.form_fields SET title='Místo',is_hidden=true WHERE form=source_form;
+ INSERT INTO public.form_fields(form,type,title,is_ticket_field,is_hidden) VALUES(source_form,'ticket','Vstupenky',false,false);
+ INSERT INTO eshop.product_types(occasion,title,type) VALUES(source,'Retired seat category','spot') RETURNING id INTO addon;
+ INSERT INTO public.form_fields(form,type,product_type,is_ticket_field,is_hidden) VALUES(source_form,'product_type',addon,true,true);
  INSERT INTO public.form_fields(form,type,title,is_ticket_field) VALUES(source_form,'spot','Místo',true),
  (source_form,'email','E-mail',false),(source_form,'name','Jméno',false),(source_form,'surname','Příjmení',false);
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(source,'Večeře','food') RETURNING id INTO addon;
@@ -150,7 +153,14 @@ BEGIN
  RESET ROLE;
  PERFORM assert_true(target IS NOT NULL AND target<>source,'Copied occasion has a fresh identity');
  SELECT id,blueprint INTO target_form,target_plan FROM public.forms WHERE occasion=target;
- SELECT product_type INTO copied_primary FROM public.form_fields WHERE form=target_form AND type='ticket';
+ SELECT ff.product_type INTO copied_primary FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type
+ WHERE ff.form=target_form AND ff.type='product_type' AND pt.type='spot';
+ PERFORM assert_eq((SELECT count(*)::integer FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type
+   WHERE ff.form=target_form AND pt.type='spot'),1,'Copy omits obsolete empty primary selectors');
+ PERFORM assert_true(NOT (SELECT is_hidden FROM public.form_fields WHERE form=target_form AND product_type=copied_primary),
+   'Copy canonicalizes legacy hidden primary selector');
+ PERFORM assert_true((SELECT is_hidden FROM public.form_fields WHERE form=source_form AND product_type=source_primary),
+   'Copy does not rewrite the source');
  PERFORM assert_true(copied_primary<>source_primary,'Primary group belongs to copied occasion');
  PERFORM assert_true(target_plan<>(fixture->>'blueprint')::bigint,'Copied plan has an independent identity');
  PERFORM assert_eq((SELECT count(*)::integer FROM eshop.spots WHERE blueprint=target_plan),4,'All source seats copied');

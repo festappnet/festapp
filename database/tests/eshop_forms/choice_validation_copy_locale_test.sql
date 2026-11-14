@@ -1,6 +1,7 @@
 DO $$
 DECLARE actor uuid; org bigint; unit_id bigint; occ bigint; f bigint; result jsonb;
   field_type text; choices jsonb; payload jsonb; cmd uuid:=gen_random_uuid(); copied bigint;
+  primary_type bigint; empty_type bigint;
   link text:='choices-'||gen_random_uuid();
 BEGIN
   PERFORM create_user_for_test('choice-editor','choice-editor@example.invalid');
@@ -35,8 +36,18 @@ BEGIN
   PERFORM assert_eq(result->>'code','200','valid choice saves');
   -- Copying must not let an editor publish another administrator's code.
   UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"gtm_container":"GTM-AB12","scripts":"<script>window.test=1</script>"}}'::jsonb WHERE id=f;
+  -- Legacy price fields must be canonicalized at the standalone form-copy
+  -- boundary too, without hiding sale products or carrying empty selectors.
+  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Admission','spot') RETURNING id INTO primary_type;
+  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code,is_hidden) VALUES(occ,primary_type,'Standard',100,'CZK',false);
+  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Unused','spot') RETURNING id INTO empty_type;
+  INSERT INTO public.form_fields(form,type,product_type,is_ticket_field,is_hidden) VALUES(f,'product_type',primary_type,true,true),(f,'product_type',empty_type,true,true);
   result:=public.duplicate_form_to_occasion_client_sync_v1(f,link,cmd,'cs');
   copied:=(result#>>'{data,formId}')::bigint;
+  PERFORM assert_eq((SELECT count(*)::integer FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type WHERE ff.form=copied AND pt.type='spot'),1,'Standalone copy drops obsolete empty selector');
+  PERFORM assert_false(EXISTS(SELECT 1 FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type WHERE ff.form=copied AND pt.type='spot' AND ff.is_hidden),'Standalone copy has canonical primary visibility');
+  PERFORM public.assert_form_primary_products_internal(copied);
+
   PERFORM assert_false((SELECT data ? 'analytics' FROM public.forms WHERE id=copied),'form copy omits measurement code');
   PERFORM assert_eq((SELECT title FROM public.forms WHERE id=copied),'Přihláška (kopie)','Czech copy title');
   PERFORM assert_eq(public.duplicate_form_to_occasion_client_sync_v1(f,link,cmd,'cs')#>>'{data,formId}',copied::text,'copy replay keeps identity');
