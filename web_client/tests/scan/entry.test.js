@@ -112,7 +112,7 @@ test('selecting a cached offline session never waits for a network probe',async(
     Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:false}});
     try {
         const page=new ScanPage(document.getElementById('scanner'),{client:{},store:null});
-        page.route={page:'scan'};page.returnNavigation={location:{href:dom.window.location.href}};page.render=()=>{};
+        page.route={page:'scan'};page.api={};page.returnNavigation={location:{href:dom.window.location.href}};page.render=()=>{};
         let probes=0;page.recover=()=>{probes++;return new Promise(()=>{});};
         const selected=page.select({session:{title:'Cached event',capabilities:{},settings:{}}});
         assert.equal(await Promise.race([selected.then(()=>true),new Promise(resolve=>setTimeout(()=>resolve(false),50))]),true);

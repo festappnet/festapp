@@ -40,7 +40,7 @@ export class ScanPage extends Component {
         } catch { this.storageAvailable = false; this.store = null; }
         this.api = new ScannerApi(this.client);
         this.input = new ScannerInput(code => this.loadCodes([code]),{accepts:ticketPayload,onError:reason=>{this.cameraUnavailable=true;this.error=reason;this.render();}});
-        this.onNetwork = async () => { if (!navigator.onLine) this.online=false; this.summaryAt=0; this.render(); if (this.online) await this.recover(); };
+        this.onNetwork = async () => { if (!navigator.onLine) this.online=false; this.summaryAt=0; this.render(); await this.recover(); };
         this.onVisible = () => { if (document.visibilityState === 'visible') this.recover(); };
         window.festappScannerCanReload=()=>!['persisting','awaiting_server'].includes(this.controller?.state);
         this.onUnload = event => { if (this.controller?.state==='persisting' || this.history.some(r => !isTerminal(r.state))) { event.preventDefault(); event.returnValue = ''; } };
