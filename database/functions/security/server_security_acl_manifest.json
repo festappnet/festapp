@@ -3454,6 +3454,26 @@
       "anon": false,
       "authenticated": false,
       "service_role": true
+    },
+    "public.ticket_wallet_state_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.prepare_ticket_wallet_collection(uuid,bigint[],text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ticket_wallet_scope_internal(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_ticket_wallet_projections(text,bigint[],text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
     }
   },
   "extension_client_execute": {
@@ -3501,7 +3521,8 @@
     "database/functions/notification_center/email_delivery.sql",
     "database/functions/ticket_wallet/maintenance.sql",
     "database/functions/ticket_wallet/control.sql",
-    "database/functions/ticket_wallet/apple_updates.sql"
+    "database/functions/ticket_wallet/apple_updates.sql",
+    "database/functions/ticket_wallet/collections.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

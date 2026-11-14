@@ -150,3 +150,29 @@ test('link completion preserves awaited errors and ignored browser-event work ca
  const child=spawnSync(process.execPath,['--input-type=module','-e',script],{encoding:'utf8'});
  assert.equal(child.status,0,child.stderr);assert.equal(child.stdout,'no-unhandled-rejection');
 });
+
+test('collection Apple action plans once and submits all scoped tickets natively without another click',async()=>{
+ const plan={kind:'collection',revision:'b'.repeat(64),ticketCount:3,originalCount:3,parts:[3],state:'ACTIVE'};
+ const calls=[];const {dom,page}=fixture('a'.repeat(64),async body=>{calls.push(body);return plan;});
+ page.win.__festappWalletOptions={provider:'apple',scope:'collection',lang:'cs'};
+ let submitted;dom.window.HTMLFormElement.prototype.submit=function(){submitted=Object.fromEntries(new dom.window.FormData(this));};
+ await page.init();assert.equal(calls.length,1);assert.equal(calls[0].action,'plan');
+ assert.deepEqual(submitted,{token:'a'.repeat(64),provider:'apple',revision:plan.revision,part:'0'});
+ assert.match(page.host.textContent,/Uložení vstupenek/);assert.match(page.host.textContent,/Dostupných vstupenek: 3/);assert(!page.host.textContent.includes('uloženy'));
+ dom.window.close();
+});
+test('a partial collection warns before delivery; multiple parts remain individually available',async()=>{
+ const plan={kind:'collection',revision:'b'.repeat(64),ticketCount:11,originalCount:12,parts:[10,1],state:'ACTIVE'};
+ const {dom,page}=fixture('a'.repeat(64),async()=>plan);page.win.__festappWalletOptions={provider:'apple',scope:'collection'};
+ const submitted=[];dom.window.HTMLFormElement.prototype.submit=function(){submitted.push(Object.fromEntries(new dom.window.FormData(this)));};
+ await page.init();assert.equal(submitted.length,0);assert.match(page.status.textContent,/Některé vstupenky/);
+ const action=page.actions.get('apple');assert.equal(action.parts.querySelectorAll('button').length,2);
+ await page.save(action.connector,1);assert.equal(submitted.length,1);assert.equal(submitted[0].part,'1');dom.window.close();
+});
+test('collection Google action issues a reference-only planned part; a stale plan can be retried',async()=>{
+ const plan={kind:'collection',revision:'b'.repeat(64),ticketCount:3,originalCount:3,parts:[3],state:'ACTIVE'};
+ const calls=[];const url='https://pay.google.com/gp/v/save/a.b.c';
+ const {dom,page,navigations}=fixture('a'.repeat(64),async body=>{calls.push(body);return body.action==='plan'?plan:{state:'ACTIVE',url};});
+ page.win.__festappWalletOptions={provider:'google',scope:'collection'};await page.init();
+ assert.deepEqual(calls.map(call=>call.action??'issue'),['plan','issue']);assert.equal(calls[1].revision,plan.revision);assert.equal(calls[1].part,0);assert.deepEqual(navigations,[url]);dom.window.close();
+});

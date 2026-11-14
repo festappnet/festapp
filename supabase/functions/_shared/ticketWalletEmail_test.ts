@@ -133,3 +133,29 @@ Deno.test('compact official email artwork preserves aspect ratio at 48px across 
   assertEquals(walletEmailProviders.google.artwork('https://untrusted.invalid/button.png',lang),undefined);
  }
 });
+
+Deno.test('collection email has two order actions, private individual links and stable separate capability on resend',async()=>{
+ Deno.env.set('EMAIL_PAYLOAD_KEY',btoa('a'.repeat(32)));
+ try{
+  for(const lang of ['cs','en']){
+   const sources=new Map<string,any>();let creates=0;
+   const rpc=async(name:string,p:any)=>{
+    const collection=name==='prepare_ticket_wallet_collection';const key=collection?'collection':String(p.p_ticket);
+    if(p.p_hash){creates++;sources.set(key,{sealed:p.p_sealed,tokenHash:p.p_hash});}
+    return {organization:3,occasion:7,orderId:8,ticketIds:collection?p.p_tickets:undefined,fingerprint:'f'.repeat(64),collectionEnabled:true,webOrigin:'https://tenant.invalid',providers:{google:true,apple:true},badgeUrls:{[lang]:googleWalletBadgeUrl(lang)},source:sources.get(key)};
+   };
+   const row={message_id:'message',data:{lang}};
+   const html=await prepareWalletEmail(row,[{id:3},{id:1},{id:2}],{is_enabled:true},rpc);
+   assertEquals(creates,4);assertEquals((html.match(/provider=google/g)??[]).length,1);assertEquals((html.match(/provider=apple/g)??[]).length,1);
+   assertEquals((html.match(/scope=collection/g)??[]).length,2);
+   assertEquals((html.match(/href=/g)??[]).length,5);
+   assertEquals(await prepareWalletEmail(row,[{id:3},{id:1},{id:2}],{is_enabled:true},rpc),html);assertEquals(creates,4);
+   const urls=Array.from(html.matchAll(/href="([^"]+)"/g),m=>new URL(m[1].replaceAll('&amp;','&')));
+   assertEquals(new Set(urls.slice(0,2).map(url=>url.hash)).size,1);
+   assertEquals(new Set(urls.map(url=>url.hash)).size,4);
+   const single=await prepareWalletEmail(row,[{id:1}],{is_enabled:true},rpc);
+   assert(!single.includes('scope=collection'));assert(!single.includes('1 z 1'));assert(!single.includes('1 of 1'));
+   assert(single.includes(lang==='cs'?'Vstupenka v telefonu':'Ticket on your phone'));
+  }
+ }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
+});

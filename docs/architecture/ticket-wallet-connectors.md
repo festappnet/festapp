@@ -5,7 +5,7 @@ Wallet follows the explicit capability binding and lazy registry pattern used by
 settlement and ticket admission are not simulated as Wallet operations.
 
 `_shared/wallet/contracts.ts` owns the canonical projection and connector port:
-identity, delivery capability, `issue` and `reconcile`. `wallet/runtime.ts` is the
+identity, delivery capability, `plan`, `issue` and `reconcile`. `wallet/runtime.ts` is the
 only backend composition root. It installs Google and Apple factories in the
 strict `WalletRegistry`. Unknown, duplicate and mismatched IDs fail closed.
 Factories acquire credentials only when their operation executes. One provider
@@ -54,7 +54,7 @@ exercises the actual common HTTP path to prove this seam.
 
 ## Email link lifetime
 
-The inline HTML bootstrap captures the capability plus public provider/language
+The inline HTML bootstrap captures the capability plus public provider/language/collection
 hints before removing them from the address bar. `components/wallet_link.js`
 consumes that input in memory and owns subsequent `popstate`, `hashchange`, and
 restored-page input. It handles Safari reusing the same tab, including opening
@@ -75,33 +75,42 @@ the email action automatically; legacy links select the installed device's
 provider. Used-ticket warnings still require explicit continuation.
 
 
-## Multi-ticket proposal (not implemented)
+## Multiple delivered tickets
 
-Keep each ticket's identity, QR, admission state and native updates independent.
-Offer one Apple and one Google action for all eligible tickets delivered in the
-order email, with individual actions retained for people arriving separately.
-Use a nearby heading such as “Přidat všechny 3 vstupenky”; do not modify official
-Wallet badge artwork. A single-ticket order keeps the existing direct action.
+`prepare_ticket_wallet_collection` mints a separate encrypted capability for the
+immutable delivered set (2-1000 members), bound to organization, occasion, order,
+recipient and each individual capability hash/generation. Replays reuse its
+source. A single-ticket capability never expands to the order; later purchases
+and replaced generations never join the set. `collection_enabled` defaults false
+per integration. Its rollout is limited to the explicitly selected tenant.
 
-Apple supports a `.pkpasses` bundle (`application/vnd.apple.pkpasses`) containing
-independently signed passes. Google supports a single Save JWT referencing
-multiple pre-created EventTicketObjects. Adding together and grouping inside the
-Wallet are distinct: native grouping should keep the tickets together while
-retaining one QR per person. Large orders need bounded batches and link-size
-handling; do not assume unlimited platform capacity.
+The SQL scope owner checks canonical paid-ticket eligibility, revocation and
+current event term. Collections include active members only. `plan` exposes
+counts, a scope revision and provider part sizes without IDs or QR data. A partial
+set requires explicit continuation. `get_ticket_wallet_projections` loads only
+the planned portion (at most ten). Issuance requires its revision and rechecks
+both authorization and every selected projection after signing/synchronization.
+HTTP input selects a part index, never ticket IDs.
 
-A future bundle link needs its own explicitly authorized, frozen set of delivered
-ticket IDs. A forwarded single-ticket capability must never grant access to the
-rest of its order. Recheck tenant, event, eligibility and revocation for every
-member before delivery; preserve the original per-ticket IDs and update sources.
-The common issuance contract should accept an authorized ticket collection and
-leave `.pkpasses` packaging / multi-object JWT creation to provider adapters.
-There should remain one HTTP entrypoint and one link lifetime, not separate
-single-ticket and bundle implementations.
+Apple packages unchanged independently signed passes as `.pkpasses` with MIME
+`application/vnd.apple.pkpasses` (at most ten, at most 150 MB per bundle). Each
+member keeps its original serial and update authentication. Google synchronizes
+only the selected pre-existing identities and signs one multi-object Save JWT;
+the adapter partitions against the actual 1800-character signed URL limit and
+the shared ten-member work bound. Individual requests retain their original
+native `.pkpass` / single-object behavior.
+
+New multi-ticket email has one Apple/Google pair for the frozen set and secondary
+individual links. One-ticket email uses singular copy and direct provider
+buttons. Public `scope=collection` is a presentation hint captured before URL
+scrubbing, never an authorization input. Without it a group cannot issue because
+its mandatory plan revision is absent. Both kinds use the same HTTP entrypoint,
+connector contract and link lifetime. Large-order controls state that each group
+needs confirmation, and say "offered" rather than claiming a native save.
+Adding together does not itself configure grouping inside either wallet.
 
 Sources: [Apple distribution](https://developer.apple.com/documentation/walletpasses/distributing-and-updating-a-pass),
-[Google save multiple event tickets](https://developers.google.com/wallet/tickets/events/use-cases/save-multiple-passes),
-[Google grouping](https://developers.google.com/wallet/tickets/events/use-cases/group-multiple).
+[Google save multiple event tickets](https://developers.google.com/wallet/tickets/events/use-cases/save-multiple-passes).
 
 
 ## Email action layout

@@ -16,15 +16,24 @@ export const walletEmailCopy:Record<string,{title:string;help:string;ticket:stri
  pl:{title:'Bilety w telefonie',help:'Zapisz bilety w portfelu w telefonie. Przy wejściu wystarczy pokazać ich kod QR.',ticket:'Bilet {n} z {count}',fallback:'Zapisz bilet w telefonie'},
  uk:{title:'Квитки в телефоні',help:'Збережіть квитки в гаманці на телефоні. На вході достатньо показати їхній QR-код.',ticket:'Квиток {n} із {count}',fallback:'Зберегти квиток у телефоні'},
 };
+const walletEmailSingular:Record<string,{title:string;help:string}>={
+ cs:{title:'Vstupenka v telefonu',help:'Uložte si vstupenku do peněženky v telefonu. U vstupu pak stačí ukázat její QR kód.'},
+ sk:{title:'Vstupenka v telefóne',help:'Uložte si vstupenku do peňaženky v telefóne. Pri vstupe potom stačí ukázať jej QR kód.'},
+ en:{title:'Ticket on your phone',help:'Save your ticket to your phone’s wallet. Show its QR code at the entrance.'},
+ de:{title:'Ticket auf Ihrem Smartphone',help:'Speichern Sie Ihr Ticket in der Wallet auf Ihrem Smartphone. Zeigen Sie am Eingang den QR-Code vor.'},
+ pl:{title:'Bilet w telefonie',help:'Zapisz bilet w portfelu w telefonie. Przy wejściu wystarczy pokazać jego kod QR.'},
+ uk:{title:'Квиток у телефоні',help:'Збережіть квиток у гаманці на телефоні. На вході достатньо показати його QR-код.'},
+};
 export function walletTicketLabel(index:number,count:number,lang:string) {
+ if(count===1)return ({cs:'Vstupenka',sk:'Vstupenka',en:'Ticket',de:'Ticket',pl:'Bilet',uk:'Квиток'} as Record<string,string>)[lang]??'Ticket';
  return (walletEmailCopy[lang]??walletEmailCopy.en).ticket.replace('{n}',String(index)).replace('{count}',String(count));
 }
 export function googleWalletBadgeUrl(lang:string) {
  return `https://img.festapp.net/assets/google-wallet/v1/${Object.hasOwn(walletEmailProviders.google.labels,lang)?lang:'en'}.png`;
 }
-export function walletEmailSection(rows:string[],lang:string) {
+export function walletEmailSection(rows:string[],lang:string,count=2) {
  if(!rows.length)return '';
- const copy=walletEmailCopy[lang]??walletEmailCopy.en;
+ const copy=count===1?(walletEmailSingular[lang]??walletEmailSingular.en):(walletEmailCopy[lang]??walletEmailCopy.en);
  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;table-layout:fixed;margin-top:24px;border-top:1px solid #e2e8f0"><tr><td style="padding-top:20px"><h2 style="margin:0 0 8px;font-size:20px;line-height:1.35;color:#19243b">${escapeTicketText(copy.title)}</h2><p style="margin:0 0 8px;font-size:14px;line-height:1.6;color:#334155">${escapeTicketText(copy.help)}</p>${rows.join('')}</td></tr></table>`;
 }
 export type WalletEmailAction={provider:string;url?:string;badge?:string};
@@ -34,7 +43,7 @@ export function walletEmailTicket(label:string,actions:WalletEmailAction[],lang:
  const buttons=actions.map(({provider,url,badge})=>{
   const descriptor=walletEmailProviders[provider];if(!descriptor)throw new Error('wallet_connector_unavailable');
   if(url){
-   const target=new URL(url);target.searchParams.set('provider',provider);target.searchParams.set('lang',Object.hasOwn(walletEmailCopy,lang)?lang:'en');url=target.href;
+   const target=new URL(url);target.searchParams.delete('lang');target.searchParams.set('provider',provider);target.searchParams.set('lang',Object.hasOwn(walletEmailCopy,lang)?lang:'en');url=target.href;
   }
   const text=descriptor.labels[lang]??descriptor.labels.en;
   const artwork=descriptor.artwork(badge,lang);
@@ -47,38 +56,74 @@ export function walletEmailTicket(label:string,actions:WalletEmailAction[],lang:
  }).join('');
  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;table-layout:fixed;border-bottom:1px solid #e2e8f0"><tr><td style="padding:14px 0 12px"><p style="margin:0 0 4px;font:600 15px/22px Arial,sans-serif;color:#19243b;overflow-wrap:anywhere">${escapeTicketText(label)}</p><div style="font-size:0;line-height:0;text-align:left">${buttons}</div></td></tr></table>`;
 }
+const collectionCopy:Record<string,{all:string;individual:string}>={
+ cs:{all:'Všechny vstupenky ({count})',individual:'Uložit jen tuto vstupenku'},
+ sk:{all:'Všetky vstupenky ({count})',individual:'Uložiť len túto vstupenku'},
+ en:{all:'All tickets ({count})',individual:'Save this ticket only'},
+ de:{all:'Alle Tickets ({count})',individual:'Nur dieses Ticket speichern'},
+ pl:{all:'Wszystkie bilety ({count})',individual:'Zapisz tylko ten bilet'},
+ uk:{all:'Усі квитки ({count})',individual:'Зберегти лише цей квиток'},
+};
+/** Secondary individual links keep the email compact and can be forwarded independently. */
+export function walletEmailIndividual(label:string,url:string|undefined,lang:string){
+ const text=(collectionCopy[lang]??collectionCopy.en).individual;
+ return `<p style="margin:12px 0;font:14px/22px Arial,sans-serif;color:#19243b">${escapeTicketText(label)}<br>${url?`<a href="${escapeTicketText(url)}"`:`<span`} style="color:#2259ad;text-decoration:underline">${escapeTicketText(text)}</${url?'a':'span'}></p>`;
+}
+export function walletCollectionLabel(count:number,lang:string){return (collectionCopy[lang]??collectionCopy.en).all.replace('{count}',String(count));}
+function walletActions(context:any,url:string,lang:string,ready?:boolean|{google:boolean;apple:boolean}):WalletEmailAction[]{
+ const actions:WalletEmailAction[]=[];
+ for(const [provider,descriptor] of Object.entries(walletEmailProviders)){
+  const available=typeof ready==='object'?ready[provider as keyof typeof ready]:context.providers?.[provider];
+  if(available!==true||context.providers?.[provider]!==true)continue;
+  const badge=descriptor.badge(context.badgeUrls,lang);
+  if(!badge&&!descriptor.labelFallback)continue;
+  actions.push({url,badge,provider});
+ }
+ return actions;
+}
+function walletEmailUrl(context:any,token:string,lang:string){
+ const base=new URL(context.webOrigin);
+ if(base.protocol!=='https:'||base.username||base.password||base.search||base.hash||base.pathname!=='/')throw new Error('wallet_origin');
+ const url=new URL('/wallet',base);url.hash=token;if(context.ticketIds)url.searchParams.set('scope','collection');url.searchParams.set('lang',Object.hasOwn(walletEmailCopy,lang)?lang:'en');return url.href;
+}
+function walletToken(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');}
 export async function prepareWalletEmail(row:any,tickets:any[],feature:any,rpc:WalletRpc,ready?:boolean|{google:boolean;apple:boolean}) {
  if(!feature?.is_enabled||!ticketWalletEnabled(feature)||ready===false)return '';
- // SQL checks publishing readiness. Email only creates an encrypted capability;
- // the isolated Wallet workers own signing credentials and Google API calls.
- const rows:string[]=[];
+ const lang=row.data?.lang??'cs';
+ const prepared:{ticketId:number;context:any;url:string;description:string;actions:WalletEmailAction[]}[]=[];
  for(const [index,ticket] of tickets.entries()) {
   let context=await rpc('prepare_ticket_wallet',{p_message:row.message_id,p_ticket:ticket.id});
   if(!context)continue;
   if(!context.source) {
-   const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
+   const token=walletToken();
    const sealed=await sealEmail({purpose:'ticket_wallet',token,ticketId:ticket.id,organization:context.organization,occasion:context.occasion});
    context=await rpc('prepare_ticket_wallet',{p_message:row.message_id,p_ticket:ticket.id,p_hash:await walletHash(token),p_sealed:sealed});
   }
   if(!context?.source)continue;
   const source=await openEmail<any>(context.source.sealed);
   if(source.purpose!=='ticket_wallet'||source.ticketId!==ticket.id||source.organization!==context.organization||source.occasion!==context.occasion||await walletHash(source.token)!==context.source.tokenHash)throw new Error('wallet_source');
-  const base=new URL(context.webOrigin);
-  if(base.protocol!=='https:'||base.username||base.password||base.search||base.hash||base.pathname!=='/')throw new Error('wallet_origin');
-  const url=new URL('/wallet',base);url.hash=source.token;
-  const lang=row.data?.lang??'cs';
+  const url=walletEmailUrl(context,source.token,lang);
   const spot=ticket.order_product_ticket?.find((p:any)=>p.spot_title);
   const description=[walletTicketLabel(index+1,tickets.length,lang),spot?.spot_title,spot?.spot_group_title].filter(Boolean).join(' - ');
-  const actions:WalletEmailAction[]=[];
-  // Only explicitly installed and ready providers can offer this shared capability.
-  for(const [provider,descriptor] of Object.entries(walletEmailProviders)){
-   const available=typeof ready==='object'?ready[provider as keyof typeof ready]:context.providers?.[provider];
-   if(available!==true||context.providers?.[provider]!==true)continue;
-   const badge=descriptor.badge(context.badgeUrls,lang);
-   if(!badge&&!descriptor.labelFallback)continue;
-   actions.push({url:url.href,badge,provider});
-  }
-  rows.push(walletEmailTicket(description,actions,lang));
+  const actions=walletActions(context,url,lang,ready);
+  if(actions.length)prepared.push({ticketId:ticket.id,context,url,description,actions});
  }
- return walletEmailSection(rows,row.data?.lang??'cs');
+ // A separate, frozen capability grants this delivered set. An individual link never expands to an order.
+ if(prepared.length>=2&&prepared.length===tickets.length&&prepared.every(item=>item.context.collectionEnabled===true)){
+  const ids=prepared.map(item=>item.ticketId).sort((a,b)=>a-b);
+  const params={p_message:row.message_id,p_tickets:ids};
+  let context=await rpc('prepare_ticket_wallet_collection',params);
+  if(context&&!context.source){
+   const token=walletToken();
+   const sealed=await sealEmail({purpose:'ticket_wallet_collection',token,ticketIds:ids,organization:context.organization,occasion:context.occasion,orderId:context.orderId,fingerprint:context.fingerprint});
+   context=await rpc('prepare_ticket_wallet_collection',{...params,p_hash:await walletHash(token),p_sealed:sealed});
+  }
+  if(context?.source){
+   const source=await openEmail<any>(context.source.sealed);
+   if(source.purpose!=='ticket_wallet_collection'||source.organization!==context.organization||source.occasion!==context.occasion||source.orderId!==context.orderId||source.fingerprint!==context.fingerprint||JSON.stringify(source.ticketIds)!==JSON.stringify(ids)||JSON.stringify(context.ticketIds)!==JSON.stringify(ids)||await walletHash(source.token)!==context.source.tokenHash)throw new Error('wallet_source');
+   const actions=walletActions(context,walletEmailUrl(context,source.token,lang),lang,ready);
+   if(actions.length)return walletEmailSection([walletEmailTicket(walletCollectionLabel(ids.length,lang),actions,lang),...prepared.map(item=>walletEmailIndividual(item.description,item.url,lang))],lang);
+  }
+ }
+ return walletEmailSection(prepared.map(item=>walletEmailTicket(item.description,item.actions,lang)),lang,prepared.length);
 }

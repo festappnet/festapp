@@ -5,7 +5,7 @@
     // Remove a Wallet capability before any external resource or analytics executes.
     if (/^\/wallet\/?$/.test(window.location.pathname)) {
       const walletOptions = new URLSearchParams(window.location.search);
-      window.__festappWalletOptions = {provider: walletOptions.get('provider'), lang: walletOptions.get('lang')};
+      window.__festappWalletOptions = {provider: walletOptions.get('provider'), lang: walletOptions.get('lang'), scope: walletOptions.get('scope')};
       window.__festappWalletToken = /^[a-f0-9]{64}$/.test(window.location.hash.slice(1)) ? window.location.hash.slice(1) : '';
       window.history.replaceState(window.history.state, '', '/wallet');
     }
