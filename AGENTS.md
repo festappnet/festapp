@@ -33,6 +33,23 @@ repository.
 - Read-only inventory and drift checks across branches are allowed when needed
   to assess impact; they do not authorize writes, builds, or deployments.
 
+## Canonical software version
+
+- `automation/release/software-version.conf` on `main` owns the single Festapp
+  software version and numeric build for every tenant, web, iOS and Android.
+- Every new release inherits that version from its verified main base. Upgrade
+  an old tenant base before releasing; never retain or allocate a tenant-specific
+  version just because its previous store release used a lower number.
+- Advance the shared version once for a new software generation, above every
+  previously released build. Reuse that generation across its selected releases.
+  A store collision requires a new shared generation, not a package-only bump.
+- `project.conf`, pubspec, package metadata and HTML version stamps are generated
+  projections. Tenant inputs, environment variables and CLI arguments cannot
+  override the canonical version. Previously published artifacts retain their
+  historical version; this rule does not authorize releases of other tenants.
+- Android builds and Google Play operations run exclusively through the
+  canonical GitHub-hosted release workflows, never on local workstations.
+
 ## Production web release execution
 
 - Build Flutter and the web client locally, then deploy directly with

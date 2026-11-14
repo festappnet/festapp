@@ -59,13 +59,21 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
       - name: Preserve trusted verifier outside the source checkout
-        run: cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+        run: |
+          cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+          cp automation/release/project_version.mjs "$RUNNER_TEMP/project_version.mjs"
       - name: Check out immutable tenant source
         uses: actions/checkout@v7
         with:
           ref: ${{ matrix.sourceSha }}
           fetch-depth: 0
           clean: true
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.23.4'
       - name: Prove source is still the current production branch head
         env:
           BRANCH: ${{ matrix.branch }}

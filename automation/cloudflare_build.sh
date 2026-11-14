@@ -759,7 +759,7 @@ pathlib.Path(worker_path).write_text(source, encoding="utf-8")
 PY
 
 python3 automation/ci/telemetry.py release.artifact-checks node automation/verify_web_build.mjs build/web \
-  "$(grep -m1 '^VERSION=' automation/project.conf | cut -d= -f2 | tr -d '[:space:]')" \
+  "$(node automation/release/project_version.mjs --full)" \
   automation/project.conf cloudflare
 
 python3 automation/release/build_receipt.py seal cloudflare

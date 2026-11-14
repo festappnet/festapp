@@ -39,7 +39,8 @@ The key path must be absolute, outside this checkout and readable only by its
 owner (`chmod 600`). Keep signing keys, provisioning inputs, reviewer credentials
 and API secrets in their designated private sources. The manifest supplies the
 exact listing identity, metadata and screenshot paths; `project.conf` supplies
-the version and build number.
+the tenant configuration. `automation/release/software-version.conf` on main
+supplies the shared software version and build number for every platform.
 
 ## Build and upload
 

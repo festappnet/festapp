@@ -6,6 +6,27 @@ forward-only deployment overlays over one recorded main SHA; shared features
 must never be implemented by deleting source files or checking a Git branch at
 runtime.
 
+## One software version
+
+`automation/release/software-version.conf` is owned by main and supplies one
+version/build pair for every tenant and platform. `project_version.mjs` reads
+that file; configuration generation, web builds, iOS and Android release tooling
+all consume it. `VERSION` in `project.conf` is only a generated projection.
+Older tenant input values and inherited environment values do not select versions.
+
+Advance the shared generation above the highest existing released build once,
+then reuse that same generation for each selected tenant/platform release.
+Never bump a package separately. If a store has already consumed that build,
+advance the shared generation on main. Historical installations retain their
+published versions until their next authorized release; no automatic rollout
+to other tenants is implied.
+
+A release must upgrade an older tenant to the verified main generation before
+building it. Android planning rejects a source whose software version differs
+from the release tooling's canonical version, and AAB verification checks the
+actual version name and code against the immutable source. Android builds and
+Play access run only in the GitHub-hosted release workflows.
+
 Each production branch owns `automation/project.conf`, explicitly listed brand
 assets and namespaced legal/store/offline-map/recovery data. It also records:
 

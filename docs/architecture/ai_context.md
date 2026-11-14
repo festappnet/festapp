@@ -129,7 +129,10 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
 - **Routing**: `auto_route`, `app_router.gr.dart` is generated — don't edit
 - **Permissions**: Check `RightsService` before showing admin/editor UI
 - **No `dart:io`** in shared UI code (breaks web). Exception: `map/` uses it for platform-specific offline maps
-- **Config**: `automation/project.conf` → `apply_config.sh` propagates to all targets
+- **Config**: `automation/project.conf` → `apply_config.sh` propagates tenant settings.
+  `automation/release/software-version.conf` on main owns the shared software
+  version/build for web, iOS, Android and every tenant. `VERSION` in tenant
+  configurations is a generated projection, never a separate release counter.
 - **Offline runtime ownership**: The root worker atomically installs only `webCoreResources`. Flutter entry/handoff explicitly requests `FESTAPP_QUERY_BUILD_VERSION` with `runtime: flutter`, preparing `flutterCoreResources` atomically before startup/cutover. Public queries and repair use `runtime: web` and never fetch Flutter. One versioned cache and existing client pinning/pruning remain authoritative; known resources stay lazy. See `automation/lib/pwa_shell_manifest.mjs` and `runtime/worker_shell.js`.
 - **Public embed runtime**: Production `/form/:slug` and `/order` embeds are webclient-only. `web_client/src/runtime/page_context.js` owns classification; the generated inline bootstrap and `runtime_state.js` own starting/ready/failed and navigation deduplication. `update_policy.js` gates every recovery effect; `update_controller.js` is bundled into the existing `web/festapp_update_prompt.js`. `embed/protocol.js` and `channel.js` own shared protocol 1 and peer validation; layout, measurement, theme and host price projection remain separate. Run both `scripts/build_embed.mjs --check` and `scripts/build_runtime.mjs --check` from web_client. See [embed contract](../integrations/embedded-checkout.md).
 - **Web client**: Page components extend `base/component.js` with `init()`/`render()`/`clear()` lifecycle; smaller widgets (dialogs, fabs) don't
