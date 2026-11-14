@@ -131,11 +131,11 @@ jobs:
           flutter-version: ${{ steps.flutter-version.outputs.version }}
           channel: stable
           cache: true
-      - name: Restore the shared Gradle dependency cache
+      - name: Restore and update the tenant Gradle cache
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: basic
-          cache-read-only: true
+          cache-read-only: false
       - name: Materialize private tenant and signing inputs
         env:
           RELEASE_MANIFEST_JSON: ${{ secrets.RELEASE_MANIFEST_JSON }}
