@@ -1,0 +1,56 @@
+{
+  "source_guidelines": "https://developer.apple.com/wallet/add-to-apple-wallet-guidelines/",
+  "license": "Apple Wallet Marketing Artwork License Agreement",
+  "date": "2026-11-14",
+  "zip_sha256": "f6f41f02baa888ce09b2d1653e10daa04fd881f0a50a655313fd7eedf5a752fa",
+  "files": {
+    "cs": {
+      "filename": "CZ_Add_to_Apple_Wallet_RGB_101421.svg",
+      "sha256": "87c0d0b81e0cc8948d2c2571e72f750348a1ed795040d4f9035377e8df8d7bb1",
+      "size_bytes": 23194,
+      "width": "134.227px",
+      "height": "34.989px",
+      "viewBox": "0 0 134.227 34.989"
+    },
+    "sk": {
+      "filename": "SK_Add_to_Apple_Wallet_RGB_102121.svg",
+      "sha256": "0428e648a3aee1f4aee7c0057d6b704784676f7a4e2b6d16bc9ff0fc9b79a3cf",
+      "size_bytes": 23178,
+      "width": "134.36px",
+      "height": "35.022px",
+      "viewBox": "0 0 134.36 35.022"
+    },
+    "en": {
+      "filename": "US-UK_Add_to_Apple_Wallet_RGB_101421.svg",
+      "sha256": "052b3b446860fd2f9b49c2f0336038947623a5a9433ee3583585b8552ff6f506",
+      "size_bytes": 20339,
+      "width": "110.739px",
+      "height": "35.016px",
+      "viewBox": "0 0 110.739 35.016"
+    },
+    "de": {
+      "filename": "DE_Add_to_Apple_Wallet_RGB_101421.svg",
+      "sha256": "cbb0a4cd86a5785b78057d5a82975d67eac15253fb705a829a85b1d512ddce52",
+      "size_bytes": 22430,
+      "width": "110.278px",
+      "height": "34.499px",
+      "viewBox": "0 0 110.278 34.499"
+    },
+    "pl": {
+      "filename": "PL_Add_to_Apple_Wallet_RGB_102121.svg",
+      "sha256": "0a45fdee23ddd460fe0b7922f71e39a30889d558576baddd4788543d10aab6bc",
+      "size_bytes": 22489,
+      "width": "118.301px",
+      "height": "35.265px",
+      "viewBox": "0 0 118.301 35.265"
+    },
+    "uk": {
+      "filename": "UA_Add_to_Apple_Wallet_RGB_102121.svg",
+      "sha256": "d8fe983aef5dcd297d0192d7bdb74d0be6b663d03d40131fc26fff7050f0dc46",
+      "size_bytes": 21722,
+      "width": "124.005px",
+      "height": "35.209px",
+      "viewBox": "0 0 124.005 35.209"
+    }
+  }
+}

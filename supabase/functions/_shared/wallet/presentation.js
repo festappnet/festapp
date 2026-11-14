@@ -8,7 +8,7 @@ export const walletPresentation = {
   badges: Object.fromEntries(['cs','sk','en','de','pl','uk'].map(locale=>[locale,`https://img.festapp.net/assets/google-wallet/v1/${locale}.png`])),
  },
  apple: {
-  labels: {cs:'Přidat do Apple Peněženky',sk:'Pridať do Apple Wallet',en:'Add to Apple Wallet',de:'Zu Apple Wallet hinzufügen',pl:'Dodaj do Apple Wallet',uk:'Додати в Apple Wallet'},
+  labels: {cs:'Přidat do Peněženky Apple',sk:'Pridať do Peňaženky Apple',en:'Add to Apple Wallet',de:'Hinzufügen zu Apple Wallet',pl:'Dodaj do Portfela Apple',uk:'Додати до Гаманця Apple'},
   handoff: {
    cs:'Pokud se otevřela Peněženka, potvrďte přidání. Pokud se soubor pouze stáhl, otevřete jej ve Stažených souborech. Pro přímé přidání můžete odkaz z e-mailu otevřít v Safari na iPhonu.',
    sk:'Ak sa otvorila Peňaženka, potvrďte pridanie. Ak sa súbor iba stiahol, otvorte ho v Stiahnutých súboroch. Na priame pridanie môžete odkaz z e-mailu otvoriť v Safari na iPhone.',
@@ -17,7 +17,7 @@ export const walletPresentation = {
    pl:'Jeśli otworzył się Portfel, potwierdź dodanie. Jeśli pobrał się plik, otwórz go w Pobranych. Aby dodać bezpośrednio, otwórz link z wiadomości w Safari na iPhonie.',
    uk:'Якщо відкрився Гаманець, підтвердьте додавання. Якщо натомість завантажився файл, відкрийте його в Завантаженнях. Для прямого додавання відкрийте посилання з листа в Safari на iPhone.',
   },
-  widths: {en:151.80},
-  badges: {en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg'},
+  widths: {"cs":184.14,"sk":184.15,"en":151.8,"de":153.43,"pl":161.02,"uk":169.05},
+  badges: Object.fromEntries(['cs','sk','en','de','pl','uk'].map(locale=>[locale,`https://img.festapp.net/assets/apple-wallet/v1/${locale}.svg`])),
  },
 };

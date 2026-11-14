@@ -17,12 +17,13 @@ export const walletEmailProviders:Record<string,{labels:Record<string,string>;ar
   return badge===google.badges[locale]&&url&&width?{url,width}:undefined;
  }},
  apple:{labels:apple.labels,labelFallback:true,badge:(urls,locale)=>{
-  const installed=Object.hasOwn(apple.badges,locale)?locale:'en';
-  const badge=urls?.apple?.[installed];
-  return typeof badge==='string'&&badge===apple.badges[installed]?badge:undefined;
+  const localized=urls?.apple?.[locale];
+  if(typeof localized==='string'&&localized===apple.badges[locale])return localized;
+  const english=urls?.apple?.en;
+  return typeof english==='string'&&english===apple.badges.en?english:undefined;
  },artwork:(badge,locale)=>{
-  const installed=Object.hasOwn(apple.badges,locale)?locale:'en';
-  const width=apple.widths[installed];
-  return badge&&badge===apple.badges[installed]&&width?{url:badge,width}:undefined;
+  const installed=badge===apple.badges[locale]?locale:badge===apple.badges.en?'en':undefined;
+  const width=installed?apple.widths[installed]:undefined;
+  return badge&&width?{url:badge,width}:undefined;
  }},
 };
