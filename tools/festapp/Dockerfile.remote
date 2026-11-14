@@ -11,6 +11,8 @@ COPY packages/festapp_contracts ./packages/festapp_contracts
 COPY assets/translations/cs.json ./assets/translations/cs.json
 COPY supabase/functions/_shared/ticket-assets/font-catalog.json ./supabase/functions/_shared/ticket-assets/font-catalog.json
 COPY automation/lib/backend_activation_manifest.mjs ./automation/lib/backend_activation_manifest.mjs
+COPY automation/lib/supabase_client_config.mjs ./automation/lib/supabase_client_config.mjs
+COPY automation/release/help/mcp_reference.mjs ./automation/release/help/mcp_reference.mjs
 RUN test -n "$FESTAPP_SOURCE_SHA" && pnpm --dir tools/festapp run api:prepare
 
 FROM node:24.22.1-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c
