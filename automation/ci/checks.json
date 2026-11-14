@@ -378,7 +378,7 @@
       }
     },
     "image-client-browser": {
-      "script": "fvm flutter test --no-pub --concurrency=1 --platform chrome test/browser/browser_preference_store_test.dart test/components/html/html_image_preview_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 --platform chrome test/components/navigation/platform_route_parser_cases.dart test/browser/browser_preference_store_test.dart test/components/html/html_image_preview_cases.dart\n",
       "after": [
         "image-client-widgets"
       ],
