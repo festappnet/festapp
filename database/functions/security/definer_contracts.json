@@ -3290,6 +3290,22 @@
     "b681cce63da692b393364b2db052cb2a53aee954db528849f09ac2e480240c4d": {
       "signature": "public.allow_apple_wallet_request(text)",
       "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "7f4b6db4bd05800c89e0499517cda64ddbc5b9b5e9abeccdd6f4daecc4ffb66f": {
+      "signature": "public.ticket_wallet_state_internal(bigint)",
+      "source": "database/functions/ticket_wallet/projection.sql"
+    },
+    "e358ce9ffb2e345cc3b98f7665d0750172722570e8e9d3ddcd01650c02283b02": {
+      "signature": "public.prepare_ticket_wallet_collection(uuid,bigint[],text,jsonb)",
+      "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "cd9beb33730b977bf6cca4334a84446b20cb94645f389781c2235b5149ec6b99": {
+      "signature": "public.ticket_wallet_scope_internal(text)",
+      "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "2195659f1b09d11a0378ac0570b916d2e6426fa695b4d521f6168708d619a6dc": {
+      "signature": "public.get_ticket_wallet_projections(text,bigint[],text)",
+      "source": "database/functions/ticket_wallet/collections.sql"
     }
   }
 }

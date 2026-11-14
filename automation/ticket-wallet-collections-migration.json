@@ -1,0 +1,11 @@
+{
+  "header": "-- Scoped Wallet collections: frozen delivered membership, canonical eligibility and per-provider bounded delivery.",
+  "sources": [
+    "ticket_wallet/collections_schema.sql",
+    "ticket_wallet/projection.sql",
+    "ticket_wallet/collections.sql",
+    "ticket_wallet/capabilities.sql",
+    "ticket_wallet/settings.sql",
+    "occasion_setup/email_preview.sql"
+  ]
+}

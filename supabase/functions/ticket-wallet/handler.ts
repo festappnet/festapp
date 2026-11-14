@@ -32,14 +32,22 @@ export function walletHandler(registry:WalletRegistry,origins:string[]) {
    const text=new TextDecoder().decode(bytes);
    const form=isForm?new URLSearchParams(text):null;
    const body=form?Object.fromEntries(form):JSON.parse(text);
-   if(!body||typeof body.token!=='string'||! /^[a-f0-9]{64}$/.test(body.token)||Object.keys(body).some(k=>!['token','provider'].includes(k))||
+   if(!body||typeof body.token!=='string'||! /^[a-f0-9]{64}$/.test(body.token)||Object.keys(body).some(k=>!['token','provider','action','part','revision'].includes(k))||
     (body.provider!==undefined&&!registry.has(body.provider))||
-    (form&&(form.getAll('token').length!==1||form.getAll('provider').length!==1)))return failure(400);
+    (body.action!==undefined&&!['plan','issue'].includes(body.action))||
+    (body.revision!==undefined&&(typeof body.revision!=='string'||! /^[a-f0-9]{64}$/.test(body.revision)))||
+    (body.part!==undefined&&(form?! /^(0|[1-9][0-9]{0,2})$/.test(body.part):!Number.isInteger(body.part)||body.part<0||body.part>999))||
+    (form&&(form.getAll('token').length!==1||form.getAll('provider').length!==1||['action','part','revision'].some(key=>form.getAll(key).length>1))))return failure(400);
    // The trusted gateway must replace, rather than append arbitrary client IP headers.
    const source=req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown';
    const connector=registry.resolve(body.provider??registry.defaultId);
-   if(form&&connector.delivery!=='file')return failure(400);
-   const result=await connector.issue({token:body.token,source,origin});
+   if(form&&(connector.delivery!=='file'||body.action==='plan'))return failure(400);
+   const input={token:body.token,source,origin,...(body.part!==undefined?{part:Number(body.part)}:{}),...(body.revision!==undefined?{revision:body.revision}:{})};
+   if(body.action==='plan'){
+    const plan=await connector.plan?.(input);
+    return plan?Response.json(plan,{headers}):failure(404);
+   }
+   const result=await connector.issue(input);
    if(!result)return failure(404);
    if(result.kind==='file'){
     if(!/^[a-zA-Z0-9_.-]+$/.test(result.filename))throw new Error('wallet_filename');

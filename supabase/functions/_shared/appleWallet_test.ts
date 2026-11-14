@@ -36,7 +36,7 @@ Deno.test('Apple issuance rejects invalid scope/payment/readiness, changed ident
  let calls=0;
  assertEquals(await issueAppleTicketWallet('a'.repeat(64),'ip',resolved.webOrigin,async name=>{if(name==='register_apple_ticket_wallet')return context;assertEquals(name,'resolve_ticket_wallet');return ++calls===1?resolved:{...resolved,projection:{state:'INACTIVE'}};},apple),null);
  assertEquals(signed,1);
- await assertRejects(()=>issueTicketWallet('a'.repeat(64),'ip',resolved.webOrigin,async()=>resolved,{} as GoogleWallet));Deno.env.delete('EMAIL_PAYLOAD_KEY');
+ assertEquals(await issueTicketWallet('a'.repeat(64),'ip',resolved.webOrigin,async()=>resolved,{} as GoogleWallet),null);Deno.env.delete('EMAIL_PAYLOAD_KEY');
 });
 Deno.test('native Apple POST returns pkpass MIME and attachment without Google credentials; malformed inputs never sign',async()=>{
  let signed=0;const bytes=new Uint8Array([80,75,3,4]);
@@ -84,4 +84,31 @@ Deno.test('Apple worker fences notification receipts, removes invalid tokens and
  const rpc=async(name:string,p:any)=>{if(name==='claim_apple_ticket_wallet')return claims[next++]??null;if(name==='apple_wallet_push_targets')return [{pushToken:p.p_ticket===1?'bad':'retry'}];if(name==='finish_apple_wallet_push'){receipts.push(p);return true;}if(name==='finish_apple_ticket_wallet'){finishes.push(p);return true;}};
  const apple={credentials,push:async(token:string)=>{if(token==='retry')throw new Error('timeout');return 'invalid';}} as unknown as AppleWallet;
  assertEquals(await reconcileAppleTicketWallet(rpc,apple),{synced:1,failed:1});assertEquals(receipts[0].p_invalid,true);assertEquals(receipts[0].p_tag,'9');assertEquals(finishes.map(x=>x.p_ok),[true,false]);
+});
+
+Deno.test('Apple collections plan at most ten, preserve each signed pass and reject stale or missing scope revision',async()=>{
+ Deno.env.set('EMAIL_PAYLOAD_KEY',btoa('a'.repeat(32)));
+ try{
+  const {walletHash}=await import('./wallet/identity.ts');
+  const items=Array.from({length:11},(_,index)=>({...resolved,ticketId:index+1,capabilityHash:String(index+1).padStart(64,'0'),projection:{...projection,ticket:{...projection.ticket,ticket_symbol:'QR-'+(index+1)}}}));
+  const scope={...resolved,kind:'collection',state:'ACTIVE',revision:'d'.repeat(64),tickets:items,ticketCount:11,originalCount:11};
+  const registrations=new Map<string,any>();
+  for(const item of items){const serial=await appleWalletSerial(item);const token='c'.repeat(64);registrations.set(serial,{serial,passTypeIdentifier:credentials.passTypeIdentifier,authHash:await walletHash(token),authSealed:await sealEmail({purpose:'apple_wallet_auth',serial,passTypeIdentifier:credentials.passTypeIdentifier,token})});}
+  let signed=0,changed=false;const selected:number[][]=[];
+  const rpc=async(name:string,p:any)=>{
+   if(name==='resolve_ticket_wallet')return scope;
+   if(name==='get_ticket_wallet_projections'){selected.push(p.p_tickets);return items.filter(item=>p.p_tickets.includes(item.ticketId)).map(item=>changed?{...item,projection:{state:'INACTIVE'}}:item);}
+   if(name==='register_apple_ticket_wallet')return registrations.get(p.p_serial);
+   throw new Error('unexpected RPC');
+  };
+  const apple={credentials,issue:async(item:any)=>{signed++;return new TextEncoder().encode(item.projection.ticket.ticket_symbol);}} as unknown as AppleWallet;
+  const connector=appleWalletConnector(rpc,async()=>apple);const input={token:'a'.repeat(64),source:'ip',origin:resolved.webOrigin};
+  const plan=await connector.plan!(input);assertEquals(plan?.parts,[10,1]);assertEquals(signed,0);
+  assertEquals(await connector.issue(input),null);assertEquals(await connector.issue({...input,revision:'e'.repeat(64)}),null);assertEquals(signed,0);
+  const first=await connector.issue({...input,revision:plan!.revision,part:0});assert(first?.kind==='file');assertEquals(first.contentType,'application/vnd.apple.pkpasses');
+  const files=unzipSync(first.bytes);assertEquals(Object.keys(files).length,10);for(let n=1;n<=10;n++)assertEquals(new TextDecoder().decode(files[`ticket-${n}.pkpass`]),'QR-'+n);
+  const last=await connector.issue({...input,revision:plan!.revision,part:1});assert(last?.kind==='file');assertEquals(new TextDecoder().decode(unzipSync(last.bytes)['ticket-1.pkpass']),'QR-11');assert(selected.every(ids=>ids.length<=10));
+  const issue=apple.issue;apple.issue=async(...args:Parameters<AppleWallet['issue']>)=>{const bytes=await issue(...args);changed=true;return bytes;};
+  assertEquals(await connector.issue({...input,revision:plan!.revision,part:1}),null);
+ }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
 });
