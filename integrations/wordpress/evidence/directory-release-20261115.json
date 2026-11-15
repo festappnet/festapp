@@ -1,0 +1,49 @@
+{
+  "state": "PUBLISHED_AND_PUBLICLY_VERIFIED",
+  "date": "2026-11-15",
+  "scope": {
+    "product": "vstupenky.online WordPress plugin",
+    "version": "1.0.9",
+    "global_festapp_tickets_published": false,
+    "new_catalogue_listing": false
+  },
+  "source": {
+    "main_sha": "1c3d9677ceff5e0cc261c912400a0fcc88a1e961",
+    "required_ci_jobs": 8,
+    "ci_status": "PASS"
+  },
+  "candidate": {
+    "sha256": "66ae222ff90938fd920a08c971232e0a76af454d6c0294ac05ce2f861de5b5da",
+    "files": 16,
+    "wpcs": "3.4.1: 0 errors, 0 warnings",
+    "plugin_check": "2.1.0: 0 errors, one documented load_plugin_textdomain warning",
+    "installed_contracts": "47 assertions on WordPress 7.1.3/PHP8.5.12 and WordPress6.6/PHP7.4.33",
+    "consent_interop": "PASS on both supported environments"
+  },
+  "wordpress_org": {
+    "svn_revision": 3802635,
+    "stable_tag": "1.0.9",
+    "new_tag_last_changed_revision": 3802635,
+    "trunk_and_tag_files_match_candidate": true,
+    "file_count": 16,
+    "catalog_assets_unchanged_and_match": 9,
+    "plugin_api_version": "1.0.9",
+    "plugin_page": "https://wordpress.org/plugins/vstupenky-online/",
+    "download_url": "https://downloads.wordpress.org/plugin/vstupenky-online.1.0.9.zip",
+    "public_zip_sha256": "7b6919b75b3aa6ff40ba3db92ac7680f44e3e6022bf87a702fc905457211bc2a",
+    "public_zip_entries": 22,
+    "public_directory_entries": 6,
+    "candidate_files_byte_identical": 16,
+    "missing_or_different_files": 0,
+    "raw_readback_receipt_sha256": "0c43938135c4809fbd0947c28fde69d43bae81a28edaeeb39e4b5de7bda0916a",
+    "installed_public_update": "1.0.8 to 1.0.9 passed on WordPress 7.1.3 and 6.6; all 16 installed files match candidate"
+  },
+  "github_release": {
+    "url": "https://github.com/festappnet/festapp/releases/tag/wordpress-vstupenky-online-v1.0.9",
+    "tag": "wordpress-vstupenky-online-v1.0.9",
+    "target_main_sha": "1c3d9677ceff5e0cc261c912400a0fcc88a1e961",
+    "zip_sha256": "66ae222ff90938fd920a08c971232e0a76af454d6c0294ac05ce2f861de5b5da",
+    "sidecar_sha256": "0f591aeebedef7e258efc83e57e74ec427ba87d08a7e8a8886b2201c80107dd9",
+    "public_asset_readback": "PASS; ZIP and sidecar byte-identical to approved assets"
+  }
+}

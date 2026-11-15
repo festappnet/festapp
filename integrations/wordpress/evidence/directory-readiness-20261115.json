@@ -1,5 +1,5 @@
 {
-  "state": "TECHNICALLY_VALIDATED_PENDING_CANONICAL_SOURCE_PUBLICATION",
+  "state": "READY_TO_SUBMIT",
   "prepared_at_utc": "2026-11-15",
   "scope": {
     "product": "vstupenky-online",
@@ -9,11 +9,25 @@
     "new_catalogue_listing": false
   },
   "source": {
-    "product_source_commit": "ea6f6034b (regional candidates generated from this frozen product source)",
+    "product_candidate_commit": "ea6f6034b",
     "release_gate_fix_commit": "84299040a98a19cc10f980baa5de972b3adfba33",
     "final_prepublication_checkout_commit": "9242e0fa24ebd8453c618c70e7a5a28341f70eec",
-    "canonical_main_publication": "pending",
-    "canonical_source_ci": "pending"
+    "canonical_main_sha": "1c3d9677ceff5e0cc261c912400a0fcc88a1e961",
+    "canonical_main_publication": "PASS",
+    "canonical_source_ci": {
+      "status": "PASS",
+      "required_jobs": 8,
+      "job_names": [
+        "client-contract",
+        "image-contract",
+        "navigation-interactions",
+        "seat-checkout",
+        "server-policy",
+        "ticket-preview-and-delivery",
+        "web-startup",
+        "wix-checkout-compatibility"
+      ]
+    }
   },
   "artifact": {
     "path": "dist/vstupenky-online-1.0.9.zip",
@@ -86,11 +100,13 @@
   },
   "public_svn_preflight": {
     "repository": "https://plugins.svn.wordpress.org/vstupenky-online/",
-    "revision": 3802616,
+    "revision": 3802634,
     "trunk_stable_tag": "1.0.8",
-    "new_tag_1_0_9": "absent",
+    "new_tag_1_0_9": "absent at preflight",
     "working_copy": "~/.cache/festapp-cms-publication-20261115/wp-svn-wc",
-    "working_copy_clean": true
+    "local_stage": "candidate 1.0.9 trunk and copy-from tag prepared locally; no public commit",
+    "candidate_source_files": 16,
+    "catalog_assets_equal_existing_public_assets": 9
   },
   "credential_locator": {
     "account": "festappnet",
@@ -98,7 +114,5 @@
     "protected_keychain_record_present": true,
     "secret_retrieved_or_exposed": false
   },
-  "remaining_external_gates": [
-    "Publish the exact source commit to canonical main and pass its required source CI/release gate; re-run the canonical WordPress submit-ready verifier against the published source."
-  ]
+  "remaining_external_gates": []
 }
