@@ -926,3 +926,11 @@ body.festapp-consent-space :is(input,button,select,textarea,a[href],[tabindex]) 
 .overview-customer-changes fieldset { min-inline-size: 0; padding: .5rem .75rem; border: 1px solid var(--border-color, #64748b); border-radius: .375rem; }
 .overview-customer-changes fieldset label { display: flex; align-items: flex-start; gap: .75rem; min-height: 44px; box-sizing: border-box; padding-block: .5rem; cursor: pointer; overflow-wrap: anywhere; }
 .overview-customer-changes input[type="checkbox"] { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; margin-block-start: .125rem; padding: 0; accent-color: var(--primary-color, #1565c0); }
+
+.discount-code-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+.discount-code-actions > button { margin: 0; }

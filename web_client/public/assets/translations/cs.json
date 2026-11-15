@@ -5792,6 +5792,8 @@
   },
   "DiscountCodes": {
     "title": "Slevové kódy",
+    "empty": "Zatím nemáte žádné slevové kódy.",
+    "refresh": "Obnovit",
     "description": "Umožněte zákazníkům použít slevový kód při nákupu.",
     "prompt": "Máte slevový kód?",
     "code": "Slevový kód",

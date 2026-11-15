@@ -2,6 +2,7 @@ import 'package:festapp_core/formatting.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -19,9 +20,11 @@ class DiscountCodesDialog extends StatefulWidget {
     super.key,
     required this.occasion,
     required this.bundle,
+    this.client,
   });
   final int occasion;
   final ProductsEditBundle bundle;
+  final SupabaseClient? client;
   @override
   State<DiscountCodesDialog> createState() => _DiscountCodesDialogState();
 }
@@ -29,9 +32,13 @@ class DiscountCodesDialog extends StatefulWidget {
 class _DiscountCodesDialogState extends State<DiscountCodesDialog> {
   List<Map<String, dynamic>>? rows;
   String? error;
-  bool busy = false;
+  bool loading = false;
+  int loadGeneration = 0;
+  SupabaseClient get client => widget.client ?? Supabase.instance.client;
   bool get enabled =>
       FeatureService.isFeatureEnabled(FeatureConstants.discountCodes);
+  bool get canEdit => RightsService.canUpdateOrders();
+
   @override
   void initState() {
     super.initState();
@@ -39,87 +46,196 @@ class _DiscountCodesDialogState extends State<DiscountCodesDialog> {
   }
 
   Future<void> load() async {
+    final generation = ++loadGeneration;
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
-      final value = await Supabase.instance.client.rpc(
+      final value = await client.rpc(
         'list_discount_codes',
         params: {'p_occasion': widget.occasion},
       );
-      if (mounted) {
+      if (mounted && generation == loadGeneration) {
         setState(() {
           rows = (value as List)
               .map((r) => Map<String, dynamic>.from(r))
               .toList();
-          error = null;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => error = DiscountStrings.text('invalid'));
+      if (mounted && generation == loadGeneration) {
+        setState(() => error = DiscountStrings.text('invalid'));
+      }
+    } finally {
+      if (mounted && generation == loadGeneration) {
+        setState(() => loading = false);
+      }
     }
   }
 
   Future<void> edit([Map<String, dynamic>? row]) async {
-    await showDialog<bool>(
+    final saved = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (_) => _DiscountEditor(
         occasion: widget.occasion,
         bundle: widget.bundle,
         row: row,
+        client: client,
+        onSaved: load,
       ),
     );
-    if (mounted) await load();
+    // A cancelled conflict must also return to the current server revision.
+    if (mounted && saved != true) await load();
   }
 
+  String total(Map<String, dynamic> row) {
+    final totals = row['discountTotals'] as Map? ?? {};
+    if (totals.isNotEmpty) {
+      return totals.entries
+          .map(
+            (e) => Utilities.formatPrice(
+              context,
+              (e.value as num).toDouble(),
+              currencyCode: e.key.toString(),
+              decimalDigits: 2,
+            ),
+          )
+          .join(', ');
+    }
+    if (row['uses'] == null) return '-';
+    final currencies = widget.bundle.products
+        .map((p) => p.currencyCode)
+        .whereType<String>()
+        .toSet();
+    final currency =
+        row['currency_code'] as String? ??
+        (currencies.length == 1 ? currencies.single : null);
+    return currency == null
+        ? '0'
+        : Utilities.formatPrice(
+            context,
+            0,
+            currencyCode: currency,
+            decimalDigits: 2,
+          );
+  }
+
+  String value(Map<String, dynamic> row) => row['kind'] == 'percent'
+      ? '${formatDisplayNumber((row['value'] as num) / 100, locale: context.locale.toLanguageTag())} %'
+      : Utilities.formatPrice(
+          context,
+          (row['value'] as num).toDouble(),
+          currencyCode: row['currency_code'],
+          decimalDigits: 2,
+        );
+
   @override
-  Widget build(BuildContext context) => AppDialog.fullscreen(
-    dismissible: !busy,
-    child: Scaffold(
-      appBar: AppDialogAppBar(
-        title: Text(DiscountStrings.text('title')),
-        onClose: () => Navigator.pop(context),
-        closeEnabled: !busy,
+  Widget build(BuildContext context) => AppAlertDialog(
+    title: Text(DiscountStrings.text('title')),
+    content: SizedBox(
+      width: 720,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * .65,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!enabled)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(DiscountStrings.text('paused')),
+                ),
+              if (loading) const LinearProgressIndicator(),
+              if (error != null)
+                TextButton(onPressed: load, child: Text(error!)),
+              if (rows?.isEmpty == true && !loading)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(DiscountStrings.text('empty')),
+                ),
+              for (final row in rows ?? <Map<String, dynamic>>[])
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  title: Text(
+                    row['normalized_code'],
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${value(row)} · ${DiscountStrings.text('uses')}: ${row['uses'] == null ? '-' : formatDisplayNumber(row['uses'] as num, locale: context.locale.toLanguageTag())} / ${row['usage_limit'] == null ? '∞' : formatDisplayNumber(row['usage_limit'] as num, locale: context.locale.toLanguageTag())}',
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${DiscountStrings.text('history')}: ${total(row)}',
+                        ),
+                      ],
+                    ),
+                  ),
+                  trailing: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        DiscountStrings.text(
+                          row['is_active'] == true && enabled
+                              ? 'active'
+                              : 'inactive',
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (canEdit) const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: canEdit ? () => edit(row) : null,
+                ),
+            ],
+          ),
+        ),
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
+    ),
+    actions: [
+      AppDialogActions(
+        leading: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            if (!enabled) Text(DiscountStrings.text('paused')),
-            Text(DiscountStrings.text('restriction')),
-            TextButton(
+            IconButton(
+              tooltip: DiscountStrings.text('help'),
               onPressed: () => launchUrl(
                 Uri.parse(
                   '${AppConfig.webLink}${context.locale.languageCode == 'cs' ? '/napoveda/ceny-a-kapacity/#slevove-kody' : '/help/ticket-prices-capacity/#discount-codes'}',
                 ),
               ),
-              child: Text(DiscountStrings.text('help')),
+              icon: const Icon(Icons.help_outline),
             ),
-            if (RightsService.canUpdateOrders() && enabled)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () => edit(),
-                  child: Text(DiscountStrings.text('create')),
-                ),
-              ),
-            if (error != null) TextButton(onPressed: load, child: Text(error!)),
-            if (rows == null && error == null)
-              const Center(child: CircularProgressIndicator()),
-            for (final row in rows ?? <Map<String, dynamic>>[])
-              ListTile(
-                title: Text(row['normalized_code']),
-                subtitle: Text(
-                  '${row['kind'] == 'percent' ? '${formatDisplayNumber((row['value'] as num) / 100, locale: context.locale.toLanguageTag())} %' : Utilities.formatPrice(context, (row['value'] as num).toDouble(), currencyCode: row['currency_code'], decimalDigits: 2)} · ${DiscountStrings.text('uses')}: ${row['uses'] == null ? '-' : formatDisplayNumber(row['uses'] as num, locale: context.locale.toLanguageTag())} / ${row['usage_limit'] == null ? '∞' : formatDisplayNumber(row['usage_limit'] as num, locale: context.locale.toLanguageTag())}\n${DiscountStrings.text('history')}: ${(row['discountTotals'] as Map? ?? {}).entries.map((e) => Utilities.formatPrice(context, (e.value as num).toDouble(), currencyCode: e.key.toString(), decimalDigits: 2)).join(', ')}',
-                ),
-                trailing: Text(
-                  row['is_active'] == true && enabled
-                      ? DiscountStrings.text('active')
-                      : DiscountStrings.text('inactive'),
-                ),
-                onTap: RightsService.canUpdateOrders() ? () => edit(row) : null,
-              ),
+            IconButton(
+              onPressed: loading ? null : load,
+              tooltip: DiscountStrings.text('refresh'),
+              icon: const Icon(Icons.refresh),
+            ),
           ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(CommonStrings.close),
+          ),
+          if (canEdit)
+            FilledButton.icon(
+              onPressed: enabled && !loading ? () => edit() : null,
+              icon: const Icon(Icons.add),
+              label: Text(DiscountStrings.text('create')),
+            ),
+        ],
       ),
-    ),
+    ],
   );
 }
 
@@ -128,10 +244,14 @@ class _DiscountEditor extends StatefulWidget {
     required this.occasion,
     required this.bundle,
     this.row,
+    required this.client,
+    required this.onSaved,
   });
   final int occasion;
   final ProductsEditBundle bundle;
   final Map<String, dynamic>? row;
+  final SupabaseClient client;
+  final Future<void> Function() onSaved;
   @override
   State<_DiscountEditor> createState() => _DiscountEditorState();
 }
@@ -208,7 +328,7 @@ class _DiscountEditorState extends State<_DiscountEditor> {
     setState(() => busy = true);
     try {
       final parsed = num.parse(value.text.replaceAll(',', '.'));
-      await Supabase.instance.client.rpc(
+      await widget.client.rpc(
         'save_discount_code',
         params: {
           'p_occasion': widget.occasion,
@@ -240,6 +360,7 @@ class _DiscountEditorState extends State<_DiscountEditor> {
           },
         },
       );
+      await widget.onSaved();
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       final key = e is PostgrestException && e.code == '23505'
@@ -257,192 +378,189 @@ class _DiscountEditorState extends State<_DiscountEditor> {
   }
 
   @override
-  Widget build(BuildContext context) => AppDialog(
+  Widget build(BuildContext context) => AppAlertDialog(
+    title: Text(DiscountStrings.text(widget.row == null ? 'create' : 'edit')),
     dismissible: !busy,
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 600),
-      child: Scaffold(
-        appBar: AppDialogAppBar(
-          title: Text(
-            DiscountStrings.text(widget.row == null ? 'create' : 'edit'),
-          ),
-          onClose: () => Navigator.pop(context),
-          closeEnabled: !busy,
-        ),
-        body: Form(
-          key: formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              TextFormField(
-                controller: code,
-                enabled: !busy,
-                decoration: InputDecoration(
-                  labelText: DiscountStrings.text('code'),
-                ),
-                maxLength: 32,
-                validator: (v) =>
-                    RegExp(r'^[A-Za-z0-9-]{4,32}$').hasMatch(v?.trim() ?? '')
+    onClose: () => Navigator.pop(context),
+    content: SizedBox(
+      width: 600,
+      child: Form(
+        key: formKey,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            TextFormField(
+              controller: code,
+              enabled: !busy,
+              decoration: InputDecoration(
+                labelText: DiscountStrings.text('code'),
+              ),
+              maxLength: 32,
+              validator: (v) =>
+                  RegExp(r'^[A-Za-z0-9-]{4,32}$').hasMatch(v?.trim() ?? '')
+                  ? null
+                  : DiscountStrings.text('invalid'),
+            ),
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              initialValue: kind,
+              items: ['percent', 'fixed']
+                  .map(
+                    (k) => DropdownMenuItem(
+                      value: k,
+                      child: Text(DiscountStrings.text(k)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: busy ? null : (v) => setState(() => kind = v!),
+            ),
+            TextFormField(
+              controller: value,
+              enabled: !busy,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: DiscountStrings.text('value'),
+              ),
+              validator: (v) {
+                final n = num.tryParse((v ?? '').replaceAll(',', '.'));
+                return n != null &&
+                        n > 0 &&
+                        RegExp(r'^\d+([.,]\d{1,2})?$').hasMatch(v ?? '') &&
+                        (kind != 'percent' || n <= 100)
                     ? null
-                    : DiscountStrings.text('invalid'),
-              ),
-              DropdownButtonFormField<String>(
-                initialValue: kind,
-                items: ['percent', 'fixed']
-                    .map(
-                      (k) => DropdownMenuItem(
-                        value: k,
-                        child: Text(DiscountStrings.text(k)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: busy ? null : (v) => setState(() => kind = v!),
-              ),
+                    : DiscountStrings.text('invalid');
+              },
+            ),
+            if (kind == 'fixed')
               TextFormField(
-                controller: value,
+                controller: currency,
                 enabled: !busy,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                maxLength: 3,
                 decoration: InputDecoration(
-                  labelText: DiscountStrings.text('value'),
+                  labelText: DiscountStrings.text('currency'),
                 ),
-                validator: (v) {
-                  final n = num.tryParse((v ?? '').replaceAll(',', '.'));
-                  return n != null &&
-                          n > 0 &&
-                          RegExp(r'^\d+([.,]\d{1,2})?$').hasMatch(v ?? '') &&
-                          (kind != 'percent' || n <= 100)
+              ),
+            TextFormField(
+              controller: limit,
+              enabled: !busy,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: DiscountStrings.text('limit'),
+              ),
+              validator: (v) =>
+                  v == null || v.isEmpty || (int.tryParse(v) ?? 0) > 0
+                  ? null
+                  : DiscountStrings.text('invalid'),
+            ),
+            SwitchListTile(
+              title: Text(DiscountStrings.text('active')),
+              value: active,
+              onChanged: busy ? null : (v) => setState(() => active = v),
+            ),
+            for (final start in [true, false])
+              ListTile(
+                title: Text(DiscountStrings.text(start ? 'from' : 'until')),
+                subtitle: Text(
+                  (start ? from : until) == null
+                      ? '-'
+                      : DateFormat.yMd().add_jm().format(
+                          (start ? from : until)!,
+                        ),
+                ),
+                onTap: busy ? null : () => date(start),
+                trailing: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: busy
                       ? null
-                      : DiscountStrings.text('invalid');
-                },
-              ),
-              if (kind == 'fixed')
-                TextFormField(
-                  controller: currency,
-                  enabled: !busy,
-                  maxLength: 3,
-                  decoration: InputDecoration(
-                    labelText: DiscountStrings.text('currency'),
-                  ),
+                      : () => setState(() {
+                          if (start) {
+                            from = null;
+                          } else {
+                            until = null;
+                          }
+                        }),
                 ),
-              TextFormField(
-                controller: limit,
-                enabled: !busy,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: DiscountStrings.text('limit'),
-                ),
-                validator: (v) =>
-                    v == null || v.isEmpty || (int.tryParse(v) ?? 0) > 0
-                    ? null
-                    : DiscountStrings.text('invalid'),
               ),
-              SwitchListTile(
-                title: Text(DiscountStrings.text('active')),
-                value: active,
-                onChanged: busy ? null : (v) => setState(() => active = v),
+            ExpansionTile(
+              title: Text(DiscountStrings.text('forms')),
+              subtitle: Text(
+                forms.isEmpty ? DiscountStrings.text('all') : '${forms.length}',
               ),
-              for (final start in [true, false])
-                ListTile(
-                  title: Text(DiscountStrings.text(start ? 'from' : 'until')),
-                  subtitle: Text(
-                    (start ? from : until) == null
-                        ? '-'
-                        : DateFormat.yMd().add_jm().format(
-                            (start ? from : until)!,
-                          ),
-                  ),
-                  onTap: busy ? null : () => date(start),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: busy
+              children: [
+                for (final f in widget.bundle.forms)
+                  CheckboxListTile(
+                    title: Text(f.definition.title ?? ''),
+                    value: forms.contains(f.definition.id),
+                    onChanged: busy
                         ? null
-                        : () => setState(() {
-                            if (start) {
-                              from = null;
+                        : (v) => setState(() {
+                            if (v == true) {
+                              forms.add(f.definition.id!);
                             } else {
-                              until = null;
+                              forms.remove(f.definition.id);
                             }
                           }),
                   ),
-                ),
-              ExpansionTile(
-                title: Text(DiscountStrings.text('forms')),
-                subtitle: Text(
-                  forms.isEmpty
-                      ? DiscountStrings.text('all')
-                      : '${forms.length}',
-                ),
-                children: [
-                  for (final f in widget.bundle.forms)
-                    CheckboxListTile(
-                      title: Text(f.definition.title ?? ''),
-                      value: forms.contains(f.definition.id),
-                      onChanged: busy
-                          ? null
-                          : (v) => setState(() {
-                              if (v == true) {
-                                forms.add(f.definition.id!);
-                              } else {
-                                forms.remove(f.definition.id);
-                              }
-                            }),
-                    ),
-                ],
+              ],
+            ),
+            ExpansionTile(
+              title: Text(DiscountStrings.text('products')),
+              subtitle: Text(
+                products.isEmpty
+                    ? DiscountStrings.text('all')
+                    : '${products.length}',
               ),
-              ExpansionTile(
-                title: Text(DiscountStrings.text('products')),
-                subtitle: Text(
-                  products.isEmpty
-                      ? DiscountStrings.text('all')
-                      : '${products.length}',
+              children: [
+                for (final p in widget.bundle.products)
+                  CheckboxListTile(
+                    title: Text(p.title ?? ''),
+                    value: products.contains(p.id),
+                    onChanged: busy
+                        ? null
+                        : (v) => setState(() {
+                            if (v == true) {
+                              products.add(p.id!);
+                            } else {
+                              products.remove(p.id);
+                            }
+                          }),
+                  ),
+              ],
+            ),
+            Text(DiscountStrings.text('restriction')),
+            if (error != null)
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-                children: [
-                  for (final p in widget.bundle.products)
-                    CheckboxListTile(
-                      title: Text(p.title ?? ''),
-                      value: products.contains(p.id),
-                      onChanged: busy
-                          ? null
-                          : (v) => setState(() {
-                              if (v == true) {
-                                products.add(p.id!);
-                              } else {
-                                products.remove(p.id);
-                              }
-                            }),
-                    ),
-                ],
               ),
-              Text(DiscountStrings.text('restriction')),
-              if (error != null)
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    error!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
-              Wrap(
-                spacing: 12,
-                children: [
-                  TextButton(
-                    onPressed: busy ? null : save,
-                    child: Text(DiscountStrings.text('save')),
-                  ),
-                  TextButton(
-                    onPressed: busy ? null : () => Navigator.pop(context),
-                    child: Text(DiscountStrings.text('cancel')),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     ),
+    actions: [
+      AppDialogActions(
+        actions: [
+          TextButton(
+            onPressed: busy ? null : () => Navigator.pop(context),
+            child: Text(CommonStrings.cancel),
+          ),
+          FilledButton(
+            onPressed: busy ? null : save,
+            child: busy
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(CommonStrings.save),
+          ),
+        ],
+      ),
+    ],
   );
 }

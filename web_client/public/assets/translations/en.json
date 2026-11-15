@@ -5790,6 +5790,8 @@
   },
   "DiscountCodes": {
     "title": "Discount codes",
+    "empty": "No discount codes yet.",
+    "refresh": "Refresh",
     "description": "Let customers apply a discount code at checkout.",
     "prompt": "Have a discount code?",
     "code": "Discount code",

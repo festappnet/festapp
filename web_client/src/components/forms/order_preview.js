@@ -647,10 +647,12 @@ export class OrderPreview {
 
         if (!isWaitlist) html += `
              <div class="preview-total-price">
-                 ${data.discount ? `<div>${htmlText`${LocalizationService.tr('DiscountCodes.code')}`}: ${htmlText`${data.discount.code}`}</div>
-                   <div>${htmlText`${LocalizationService.tr('DiscountCodes.base')}`}: ${formatPrice(data.discount.base,data.currency,2,LocalizationService.currentLocale)}</div>
-                   <div>${htmlText`${LocalizationService.tr('DiscountCodes.discount')}`}: ${formatPrice(data.discount.discount,data.currency,2,LocalizationService.currentLocale)}</div>` : ''}
-                 ${totalPriceString}
+                 ${data.discount ? `<div class="preview-discount-summary">
+                   <div class="preview-discount-code">${htmlText`${LocalizationService.tr('DiscountCodes.code')}`}: <strong>${htmlText`${data.discount.code}`}</strong></div>
+                   <div class="preview-discount-row"><span>${htmlText`${LocalizationService.tr('DiscountCodes.base')}`}</span><span>${formatPrice(data.discount.base,data.currency,2,LocalizationService.currentLocale)}</span></div>
+                   <div class="preview-discount-row"><span>${htmlText`${LocalizationService.tr('DiscountCodes.discount')}`}</span><span>−${formatPrice(data.discount.discount,data.currency,2,LocalizationService.currentLocale)}</span></div>
+                   <div class="preview-discount-row preview-grand-total"><span>${htmlText`${LocalizationService.tr('DiscountCodes.net')}`}</span><span>${formattedPrice}</span></div>
+                 </div>` : totalPriceString}
                  ${metaHtml}
              </div>
         `;
