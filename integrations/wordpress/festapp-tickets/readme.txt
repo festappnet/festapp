@@ -69,7 +69,11 @@ The measurement setting selects a destination; it does not enable tracking or gr
 
 = Documentation and support =
 
-Setup help is available under Settings > Festapp Tickets. Support: https://tickets.festapp.net/support/
+Website integration guide: https://tickets.festapp.net/help/embed/
+WordPress setup: Settings > Festapp Tickets
+Organizer help: https://tickets.festapp.net/help/
+Service and organizer pricing: https://tickets.festapp.net/
+Support: https://tickets.festapp.net/support/
 
 = External service and privacy =
 
@@ -90,7 +94,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In WordPress, open Plugins > Add New, search for Festapp Tickets, click Install Now and activate the plugin. You can also upload the plugin ZIP manually.
+1. In WordPress, open Plugins > Add New > Upload Plugin, select the Festapp Tickets plugin ZIP, click Install Now and activate the plugin.
 2. Click Get started in the plugin list, or open Settings > Festapp Tickets, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
