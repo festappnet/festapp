@@ -55,3 +55,14 @@ test('both native extensions share a Gradle 9 compatible CargoKit process owner'
   assert.match(fs.readFileSync(path.join(root, 'pubspec.yaml'), 'utf8'),
     /irondash_engine_context:\s*\n\s*path: packages\/irondash_engine_context/);
 });
+
+
+test('vendored Android libraries consume the SDK selected by Flutter', () => {
+  for (const name of ['super_native_extensions', 'irondash_engine_context', 'desktop_drop']) {
+    const build = fs.readFileSync(path.join(root, `packages/${name}/android/build.gradle`), 'utf8');
+    assert.match(build, /compileSdk(?:Version)? flutter\.compileSdkVersion/, name);
+    assert.doesNotMatch(build, /compileSdk(?:Version)?\s+[0-9]+/, name);
+  }
+  assert.match(maplibreBuild, /getProperty\("compileSdkVersion"\)/);
+  assert.match(maplibreBuild, /compileSdk = flutterCompileSdk/);
+});

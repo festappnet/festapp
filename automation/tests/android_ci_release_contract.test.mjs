@@ -48,6 +48,9 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.doesNotMatch(tenantBuild, /cache-read-only: true/);
   assert.match(candidate, /actions\/upload-artifact@v7/);
   assert.match(candidate, /android-raw-/);
+  assert.ok(candidate.indexOf('./gradlew checkReleaseAarMetadata') > 0 &&
+    candidate.indexOf('./gradlew checkReleaseAarMetadata') < candidate.indexOf('flutter build appbundle'),
+    'dependency SDK requirements must fail before expensive native compilation');
   assert.match(candidate, /retention-days: 3/);
   assert.match(candidate, /retention-days: 7/);
   assert.match(revalidation, /retention-days: 7/);

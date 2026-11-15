@@ -48,7 +48,7 @@ android {
         namespace 'one.mixin.desktop.drop'
     }
 
-    compileSdk 36
+    compileSdk flutter.compileSdkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
