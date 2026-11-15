@@ -57,11 +57,6 @@ function main() {
     console.log('Writing CS file...');
     writeJson(PATHS.cs, csReordered);
     
-    // Also update the web client version to match
-    const webCsPath = resolvePath('../public/assets/translations/cs.json');
-    console.log(`Updating ${webCsPath}...`);
-    writeJson(webCsPath, csReordered);
-
     console.log('Done.');
 }
 

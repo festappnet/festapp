@@ -48,7 +48,8 @@
         "automation/deploy_measurement_runtimes.sh",
         "automation/verify_measurement_runtimes.mjs",
         "automation/tests/measurement_runtimes.test.mjs",
-        ".github/workflows/measurement-runtime-drift.yml"
+        ".github/workflows/measurement-runtime-drift.yml",
+        "assets/translations/**"
       ]
     },
     "wix-checkout-compatibility": {
@@ -67,7 +68,8 @@
         "database/**",
         "supabase/**",
         "automation/baseline.py",
-        "automation/baselines/**"
+        "automation/baselines/**",
+        "assets/translations/**"
       ]
     },
     "navigation-interactions": {
@@ -124,7 +126,8 @@
         "automation/hetzner-supabase/runtime/update-production-function-environment.py",
         "automation/tests/test_function_environment.py",
         "integrations/make/**",
-        "automation/hetzner-supabase/runtime/Caddyfile.integrations"
+        "automation/hetzner-supabase/runtime/Caddyfile.integrations",
+        "assets/translations/**"
       ]
     },
     "client-contract": {
@@ -199,7 +202,8 @@
         "workers/image-worker/**",
         "packages/festapp_contracts/**",
         "integrations/make/**",
-        "automation/hetzner-supabase/runtime/Caddyfile.integrations"
+        "automation/hetzner-supabase/runtime/Caddyfile.integrations",
+        "assets/translations/**"
       ]
     },
     "ticket-preview-and-delivery": {
