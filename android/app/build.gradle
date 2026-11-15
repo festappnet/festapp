@@ -75,3 +75,10 @@ android {
 flutter {
     source = "../.."
 }
+
+// Shared caches may hold compilation intermediates, never final tenant packages.
+tasks.configureEach { task ->
+    if (['package', 'sign', 'finalize', 'bundle'].any { task.name.startsWith(it) }) {
+        task.outputs.doNotCacheIf('Final application packaging must run for this tenant') { true }
+    }
+}
