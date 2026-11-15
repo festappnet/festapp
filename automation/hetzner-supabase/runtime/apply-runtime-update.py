@@ -98,7 +98,7 @@ def validate_model_change(original, desired, images):
         normalized['services'][service]['image'] = original['services'][service]['image']
     functions = normalized['services']['functions']
     before = original['services']['functions']
-    require(functions.get('mem_limit') == 2147483648, 'Unexpected Functions memory budget.')
+    require(str(functions.get('mem_limit')) == '2147483648', 'Unexpected Functions memory budget.')
     require(functions.get('command') == ['start', '--user-worker-request-idle-timeout', '150000',
         '--main-service', '/home/deno/functions/main'], 'Unexpected Functions command.')
     require(functions['environment'].get('DENO_TLS_CA_STORE') == 'system,mozilla', 'Unexpected TLS trust store.')
@@ -237,7 +237,9 @@ def apply(args):
                         # $$ escaping while Docker receives one literal dollar.
                         expected_command = wanted['command']
                         if expected_command is None:
-                            expected_command = inspect(current['Image'])['Config']['Cmd']
+                            # Explicit entrypoint clears the inherited image CMD.
+                            if wanted.get('entrypoint') is None:
+                                expected_command = inspect(current['Image'])['Config']['Cmd']
                         else:
                             expected_command = [arg.replace('$$', '$') for arg in expected_command]
                         require(expected_command == current['Config']['Cmd'],

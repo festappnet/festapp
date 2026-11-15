@@ -57,13 +57,14 @@ class FakeRuntime:
         self.model['services']['db']['image'] = self.old_db
         self.model['services']['db']['volumes'] = [{'type':'volume','source':'fixture-data','target':'/var/lib/postgresql/data'}]
         self.model['services']['functions'].update({'environment':self.env,'command':['start','--main-service','/home/deno/functions/main']})
+        self.model['services']['api-gw'].update({'command':None,'entrypoint':['/bin/sh','/docker-entrypoint.sh']})
         self.model['services']['auth']['command'] = None
         self.model['services']['supavisor']['command'] = ['/bin/sh','-c','exec pooler eval "$$(cat /etc/pooler/pooler.exs)"']
-        self.actual_commands = {'auth':['auth'], 'supavisor':['/bin/sh','-c','exec pooler eval "$(cat /etc/pooler/pooler.exs)"']}
+        self.actual_commands = {'api-gw':None,'auth':['auth'], 'supavisor':['/bin/sh','-c','exec pooler eval "$(cat /etc/pooler/pooler.exs)"']}
         self.desired = copy.deepcopy(self.model)
         for service,image in self.images.items():
             self.desired['services'][service]['image'] = image
-        self.desired['services']['functions'].update({'mem_limit':2147483648,
+        self.desired['services']['functions'].update({'mem_limit':'2147483648',
             'command':['start','--user-worker-request-idle-timeout','150000','--main-service','/home/deno/functions/main']})
         self.desired['services']['functions']['environment']['DENO_TLS_CA_STORE'] = 'system,mozilla'
         self.mounts = [{'Type':'volume','Name':'fixture-data','Destination':'/var/lib/postgresql/data','RW':True}]
@@ -235,10 +236,11 @@ class RuntimeUpdateTest(unittest.TestCase):
         self.assertIn('JWT_SECRET=fixture-preserved-key',(self.fake.root/'.env').read_text())
 
     def test_mount_and_credential_changes_are_rejected_before_installation(self):
-        for alter in ['mount','secret']:
+        for alter in ['mount','secret','memory']:
             desired=copy.deepcopy(self.fake.desired)
             if alter=='mount':desired['services']['db']['volumes'][0]['source']='replacement-data'
-            else:desired['services']['functions']['environment']['EMAIL_SES_SECRET_ACCESS_KEY']='replacement'
+            elif alter=='secret':desired['services']['functions']['environment']['EMAIL_SES_SECRET_ACCESS_KEY']='replacement'
+            else:desired['services']['functions']['mem_limit']='1073741824'
             with self.assertRaises(RuntimeError):m.validate_model_change(self.fake.model,desired,self.fake.images)
 
     def test_failed_database_start_can_restore_original_images_and_job_states(self):
