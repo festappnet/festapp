@@ -3556,7 +3556,7 @@
     "showRemaining": "Zobrazovat zbývající místa",
     "showCount": "Zobrazovat počet náhradníků",
     "showCountHelp": "Zobrazuje aktuální počet osob mezi náhradníky přímo v přihlašovacím formuláři.",
-    "countSummary": "Aktuálně mezi náhradníky: {count}",
+    "countSummary": "Aktuální počet náhradníků: {count}",
     "durationHours": "Platnost nabídky (hodiny)",
     "positiveNumber": "Zadejte kladné číslo",
     "activeEntries": "Aktivní čekající přihlášky nebo nabídky tuto změnu blokují.",

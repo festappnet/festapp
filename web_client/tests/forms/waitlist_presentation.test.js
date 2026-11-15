@@ -89,10 +89,10 @@ test('public waitlist notice shows the current people count by default and respe
     const d = dom();
     const host = document.querySelector('main');
     for (const [data, registrationMode, offerBundle, capacity, expected] of [
-        [{}, 'waitlist', null, { waitingPeople: 4, offeredPlaces: 2 }, 'Aktuálně mezi náhradníky: 6'],
-        [{}, 'waitlist', null, { waitingPeople: 0, offeredPlaces: 0 }, 'Aktuálně mezi náhradníky: 0'],
+        [{}, 'waitlist', null, { waitingPeople: 4, offeredPlaces: 2 }, 'Aktuální počet náhradníků: 6'],
+        [{}, 'waitlist', null, { waitingPeople: 0, offeredPlaces: 0 }, 'Aktuální počet náhradníků: 0'],
         [{ waitlist: { show_count: false } }, 'waitlist', null, { waitingPeople: 4, offeredPlaces: 2 }, null],
-        [{ waitlist: { show_count: true } }, 'waitlist', null, { waitingPeople: 3, offeredPlaces: 0 }, 'Aktuálně mezi náhradníky: 3'],
+        [{ waitlist: { show_count: true } }, 'waitlist', null, { waitingPeople: 3, offeredPlaces: 0 }, 'Aktuální počet náhradníků: 3'],
         [{}, 'regular', null, { waitingPeople: 4, offeredPlaces: 2 }, null],
         [{}, 'waitlist', null, null, null],
         [{}, 'waitlist', null, {}, null],
