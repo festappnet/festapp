@@ -2619,7 +2619,8 @@
     "organizerCreate": "Organizátor #{id}: súčasné aj budúce akcie a zakladanie nových podľa Vašich práv",
     "occasion": "Jednotlivá akcia #{id}",
     "loginHint": "Na správu prepojení sa prihláste k svojmu účtu.",
-    "revoked": "Prístup aplikácie bol odobratý."
+    "revoked": "Prístup aplikácie bol odobratý.",
+    "appsUnavailable": "Správa prepojení aplikácií tu nie je dostupná."
   },
   "TicketDelivery": {
     "blockDescription": "Zjednodušené QR vstupenky",

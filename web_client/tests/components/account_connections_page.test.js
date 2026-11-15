@@ -127,3 +127,30 @@ test('global issuer selector stays on the protected broker transport', async () 
     assert.equal(calls[0].headers['X-Festapp-Mcp-Issuer'], 'https://mcp.festapp.net');
     assert.equal(calls[0].body.organizationId, undefined);
 });
+
+test('an unavailable broker is explained without failed retries or a false empty connection list', async () => {
+ const {FunctionsHttpError}=await import('@supabase/supabase-js');
+ const f=fixture({googleStatus:async()=>({enabled:false}),invoke:async()=>({data:null,
+  error:new FunctionsHttpError(new Response(JSON.stringify({error:'forbidden'}),{status:403,headers:{'content-type':'application/json'}}))})});
+ await f.page.init();
+ assert.equal(f.page.appsState,'unavailable');
+ assert.match(f.container.textContent,/Správa propojení aplikací zde není dostupná/);
+ assert.match(f.container.textContent,/Přihlášení přes Google nyní není dostupné/);
+ assert.equal(f.container.querySelector('[role="alert"]'),null);
+ assert.equal(f.container.querySelector('[data-refresh-connections]'),null);
+ assert.equal(f.container.querySelector('[data-google-action]'),null);
+ assert(!f.container.textContent.includes('Nemáte žádné aktivní propojení'));
+ f.page.dispose();
+});
+
+test('authentication, transport and malformed failures remain retryable errors', async () => {
+ const {FunctionsHttpError}=await import('@supabase/supabase-js');
+ for(const [status,body] of [[401,{error:'authentication_required'}],[503,{error:'connection_unavailable'}],[403,{error:'connection_unavailable'}],[403,'not-json']]) {
+  const f=fixture({invoke:async()=>({data:null,error:new FunctionsHttpError(new Response(
+   typeof body==='string'?body:JSON.stringify(body),{status}))})});
+  await f.page.init();
+  assert.equal(f.page.appsState,'error');
+  assert(f.container.querySelector('[role="alert"]'));
+  f.page.dispose();
+ }
+});

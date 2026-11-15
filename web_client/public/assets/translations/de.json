@@ -2507,6 +2507,7 @@
         "linkGoogle": "Google verknüpfen",
         "unlinkGoogle": "Google trennen",
         "googleUnavailable": "Die Google-Anmeldung ist derzeit nicht verfügbar.",
+        "appsUnavailable": "Die Verwaltung von App-Verknüpfungen ist hier nicht verfügbar.",
         "apps": "Verbundene Apps",
         "appsHint": "Diese Apps können im ausgewählten Umfang in Ihrem Namen handeln. Das Entfernen des Zugriffs blockiert weitere MCP-Anfragen.",
         "empty": "Sie haben keine aktiven App-Verbindungen.",

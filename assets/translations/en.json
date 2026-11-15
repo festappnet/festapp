@@ -4651,7 +4651,8 @@
     "organizerCreate": "Organizer #{id}: current and future events, including creating new events within your rights",
     "occasion": "Individual event #{id}",
     "loginHint": "Sign in to your account to manage connections.",
-    "revoked": "App access has been removed."
+    "revoked": "App access has been removed.",
+    "appsUnavailable": "App connection management is unavailable here."
   },
   "HelpNavigation": {
     "chooseEvent": "Which event would you like to manage?",

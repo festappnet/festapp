@@ -45,7 +45,14 @@ export class AccountConnectionsPage {
                 ? { 'X-Festapp-Mcp-Issuer': new URL(this.browser.location.href).searchParams.get('issuer') } : {},
             body: { operation, ...(connectionId ? { connectionId } : {}) },
         });
-        if (error || data?.error || !data) throw new Error('Connection management failed');
+        if (error || data?.error || !data) {
+            let code = data?.error;
+            if (!code && error?.context?.json) {
+                try { code = (await error.context.json()).error; } catch { /* Not a public broker response. */ }
+            }
+            throw new Error(error?.context?.status === 403 && code === 'forbidden'
+                ? 'connections_unavailable' : 'Connection management failed');
+        }
         return data;
     }
     async loadApps(generation = this.generation) {
@@ -60,7 +67,11 @@ export class AccountConnectionsPage {
                 c.access.occasionIds.some(id => !Number.isSafeInteger(id) || id <= 0) ||
                 !Array.isArray(c.permissions) || c.permissions.some(p => !Object.hasOwn(MCP_PERMISSIONS, p)))) throw new Error();
             this.connections = data.connections; this.appsState = 'ready';
-        } catch { if (generation !== this.generation) return; this.connections = []; this.appsState = 'error'; }
+        } catch (error) {
+            if (generation !== this.generation) return;
+            this.connections = [];
+            this.appsState = error.message === 'connections_unavailable' ? 'unavailable' : 'error';
+        }
         this.render();
     }
     async loadGoogle(generation = this.generation) {
@@ -112,13 +123,13 @@ export class AccountConnectionsPage {
             add('p', this.text('intro'));
             const methods = add('section'); methods.setAttribute('aria-labelledby', 'account-signin-heading');
             add('h2', this.text('signInMethods'), methods).id = 'account-signin-heading';
-            add('p', this.text('googleHint', { appName: AppConfig.appName }), methods);
             if (this.googleState === 'loading') add('p', CommonStrings.loading, methods).setAttribute('role', 'status');
             else if (this.googleState === 'error') {
                 add('p', this.text('error'), methods).setAttribute('role', 'alert');
                 button(CommonStrings.retry, () => this.loadGoogle(), methods);
             } else if (!this.googleStatus?.enabled) add('p', this.text('googleUnavailable'), methods);
             else {
+                add('p', this.text('googleHint', { appName: AppConfig.appName }), methods);
                 add('h3', 'Google', methods);
                 add('p', this.text(this.googleStatus.linked ? 'googleLinked' : 'googleUnlinked'), methods);
                 if (this.googleActionFailed) add('p', this.text('error'), methods).setAttribute('role', 'alert');
@@ -128,11 +139,14 @@ export class AccountConnectionsPage {
             }
             const apps = add('section'); apps.id = 'apps'; apps.setAttribute('aria-labelledby', 'account-apps-heading');
             const heading = add('h2', this.text('apps'), apps); heading.id = 'account-apps-heading'; heading.tabIndex = -1; heading.dataset.appsHeading = '';
-            add('p', this.text('appsHint'), apps);
-            button(this.text('refresh'), () => this.loadApps(), apps, this.appsState === 'loading' || this.revoking).dataset.refreshConnections = '';
+            if (this.appsState !== 'unavailable') {
+                add('p', this.text('appsHint'), apps);
+                button(this.text('refresh'), () => this.loadApps(), apps, this.appsState === 'loading' || this.revoking).dataset.refreshConnections = '';
+            }
             if (this.notice) add('p', this.notice, apps).setAttribute('role', 'status');
             if (this.actionError) add('p', this.actionError, apps).setAttribute('role', 'alert');
             if (this.appsState === 'loading') add('p', CommonStrings.loading, apps).setAttribute('role', 'status');
+            else if (this.appsState === 'unavailable') add('p', this.text('appsUnavailable'), apps).setAttribute('role', 'status');
             else if (this.appsState === 'error') {
                 add('p', this.text('error'), apps).setAttribute('role', 'alert');
                 button(CommonStrings.retry, () => this.loadApps(), apps);

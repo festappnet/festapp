@@ -4611,6 +4611,7 @@
     "linkGoogle": "Link Google",
     "unlinkGoogle": "Unlink Google",
     "googleUnavailable": "Google sign-in is currently unavailable.",
+    "appsUnavailable": "App connection management is unavailable here.",
     "apps": "Connected apps",
     "appsHint": "Connected apps can access selected events within your current permissions. You can revoke their access at any time.",
     "empty": "You have no active app connections.",

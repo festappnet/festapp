@@ -2592,7 +2592,8 @@
     "organizerCreate": "Veranstalter #{id}: aktuelle und zukünftige Veranstaltungen sowie berechtigtes Erstellen neuer Veranstaltungen",
     "occasion": "Einzelne Veranstaltung #{id}",
     "loginHint": "Melden Sie sich an, um Verbindungen zu verwalten.",
-    "revoked": "Der App-Zugriff wurde entfernt."
+    "revoked": "Der App-Zugriff wurde entfernt.",
+    "appsUnavailable": "Die Verwaltung von App-Verknüpfungen ist hier nicht verfügbar."
   },
   "TicketDelivery": {
     "blockDescription": "Vereinfachte QR-Tickets",

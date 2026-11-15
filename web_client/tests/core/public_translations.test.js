@@ -76,3 +76,12 @@ for (const locale of ['cs','en','sk','de','pl','uk']) {
   assert.ok(published.SaleOpening.subscribe);
  });
 }
+
+for (const locale of ['cs','en','sk','de','pl','uk']) {
+ test(`published ${locale} account availability uses the canonical explanation`, async () => {
+  const canonical=JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`,import.meta.url),'utf8'));
+  const published=JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`,import.meta.url),'utf8'));
+  assert.ok(canonical.AccountConnections.appsUnavailable);
+  assert.equal(published.AccountConnections.appsUnavailable,canonical.AccountConnections.appsUnavailable);
+ });
+}

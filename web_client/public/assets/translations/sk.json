@@ -2534,6 +2534,7 @@
         "linkGoogle": "Prepojiť Google",
         "unlinkGoogle": "Odpojiť Google",
         "googleUnavailable": "Prihlásenie cez Google teraz nie je dostupné.",
+        "appsUnavailable": "Správa prepojení aplikácií tu nie je dostupná.",
         "apps": "Pripojené aplikácie",
         "appsHint": "Tieto aplikácie môžu konať vo Vašom mene vo vybranom rozsahu. Odobratím prístupu zablokujete ich ďalšie MCP požiadavky.",
         "empty": "Nemáte žiadne aktívne prepojenie aplikácií.",

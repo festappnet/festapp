@@ -4653,7 +4653,8 @@
     "organizerCreate": "Pořadatel #{id}: současné i budoucí akce a zakládání nových podle Vašich práv",
     "occasion": "Jednotlivá akce #{id}",
     "loginHint": "Pro správu propojení se přihlaste ke svému účtu.",
-    "revoked": "Přístup aplikace byl odebrán."
+    "revoked": "Přístup aplikace byl odebrán.",
+    "appsUnavailable": "Správa propojení aplikací zde není dostupná."
   },
   "HelpNavigation": {
     "chooseEvent": "Pro kterou akci chcete otevřít administraci?",

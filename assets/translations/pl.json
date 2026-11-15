@@ -2594,7 +2594,8 @@
     "organizerCreate": "Organizator #{id}: obecne i przyszłe wydarzenia oraz tworzenie nowych zgodnie z Twoimi uprawnieniami",
     "occasion": "Pojedyncze wydarzenie #{id}",
     "loginHint": "Zaloguj się na konto, aby zarządzać połączeniami.",
-    "revoked": "Dostęp aplikacji został odebrany."
+    "revoked": "Dostęp aplikacji został odebrany.",
+    "appsUnavailable": "Zarządzanie połączeniami aplikacji nie jest tutaj dostępne."
   },
   "TicketDelivery": {
     "blockDescription": "Uproszczone bilety QR",
