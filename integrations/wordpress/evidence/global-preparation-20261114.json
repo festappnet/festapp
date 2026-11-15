@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-14",
+  "product": "festapp-tickets",
+  "version": "1.0.3",
+  "state": "prepared-local-zip; not submitted or published",
+  "zip": "dist/festapp-tickets-1.0.3.zip",
+  "zip_sha256": "b075fd2c427c24c796c4a96b06ad78f43ebd9d107e2275389031d326db96d2ea",
+  "files": 12,
+  "shared_sources": "shared/ and products.json; generated vstupenky-online files unchanged",
+  "checks": {
+    "cli": {
+      "dual-products": "60 dual-product coexistence/security assertions; WP 7.1.3, PHP 8.5.12",
+      "dual-translations": "Both PHP and editor Czech catalogs actually load; changing language retains product/origin identity",
+      "dual-lifecycle": "Independent activation lifecycle; no plugin-owned account/order options"
+    },
+    "tests-cli": {
+      "dual-products": "60 dual-product coexistence/security assertions; WP 6.6, PHP 7.4.33",
+      "dual-translations": "Both PHP and editor Czech catalogs actually load; changing language retains product/origin identity",
+      "dual-lifecycle": "Independent activation lifecycle; no plugin-owned account/order options"
+    },
+    "production-origin-gate": [
+      "Production rejects local fixture even when development origin constant is present"
+    ]
+  },
+  "other_checks": {
+    "measurement_editor_defaults": "2 Node tests passed, both products",
+    "minimum_wordpress_metadata": "4 Python tests passed",
+    "package_integrity": "ZIP, generated source, shared-input digests, offline trunk/tag and 9 catalog asset digests agree"
+  },
+  "limits": [
+    "No browser visual checks in this preparation.",
+    "No live service checkout, production deployment or payment test.",
+    "Existing catalog screenshots were staged without a new visual review.",
+    "No WordPress.org submission or publication."
+  ]
+}

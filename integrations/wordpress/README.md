@@ -13,6 +13,15 @@ Přesný ZIP, Plugin Check, WPCS, instalace a SVN staging musí projít aktuáln
 branou podle [SUBMISSION.md](SUBMISSION.md). Veřejné vydání se potvrzuje
 porovnáním skutečného katalogového ZIPu s ověřenými soubory.
 
+## Globální podání z 14. 11. 2026
+
+Samostatný Festapp Tickets 1.0.3 byl podán pod účtem `festappnet`; tehdejší
+potvrzení zachycuje automatickou kontrolu Pass a ruční kontrolu Awaiting Review.
+[GLOBAL.md](GLOBAL.md) uchovává přesný artefakt, jeho kontroly a potvrzení podání.
+Další práce vychází z tohoto záznamu; nezakládá se duplicitní žádost. Aktuální
+sdílené šablony mezitím postoupily, takže historické kontroly neověřují nově
+vygenerovaný ZIP.
+
 ## Historické publikační důkazy
 
 Oficiální české vydání **1.0.4** je dostupné v

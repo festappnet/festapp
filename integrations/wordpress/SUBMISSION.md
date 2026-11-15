@@ -23,6 +23,13 @@ ZIP, porovnejte každý soubor s kandidátem a ověřte aktualizaci v čisté
 izolované instalaci. Heslo načítejte soukromě z Klíčenky přes stdin podle
 pravidel níže. Globální produkt se tímto vydáním nepublikuje.
 
+## Samostatné globální podání
+
+Festapp Tickets má vlastní historické podání z 14. 11. 2026 pod vydavatelem
+`festappnet`. Přesný odeslaný ZIP, stav zachycený při podání a související důkazy
+jsou v [GLOBAL.md](GLOBAL.md). České vydání 1.0.9 a jeho ověření tento globální
+artefakt nenahrazují; pro nový kandidát platí aktuální technické brány.
+
 ## Historické podání a vydání
 
 ## Schválený hosting - 2026-11-06
