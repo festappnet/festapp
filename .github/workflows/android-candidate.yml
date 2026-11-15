@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      cache_writer: ${{ steps.plan.outputs.cache_writer }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -41,6 +42,7 @@ jobs:
           printf '%s' "$TARGETS_JSON" > "$input"
           matrix="$(node automation/release/android_ci_plan.mjs candidate "$input")"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "cache_writer=$(jq -r ' .include[0].tenant ' <<<"$matrix")" >> "$GITHUB_OUTPUT"
 
   warm-gradle-cache:
     needs: plan
@@ -78,6 +80,7 @@ jobs:
           FESTAPP_CACHE_RUSTC_VERSION: not-built
         run: node automation/release/android_build_cache.mjs >> "$GITHUB_OUTPUT"
       - name: Restore shared Gradle build state
+        id: warm-cache
         if: ${{ inputs.reuse_build_cache && steps.warm-cache-keys.outcome == 'success' }}
         continue-on-error: true
         uses: actions/cache/restore@v5
@@ -96,7 +99,7 @@ jobs:
           printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > android/local.properties
           (cd android && ./gradlew dependencies --no-daemon --build-cache)
       - name: Save shared Gradle warm state
-        if: ${{ always() && inputs.reuse_build_cache && steps.warm-cache-keys.outcome == 'success' }}
+        if: ${{ always() && inputs.reuse_build_cache && steps.warm-cache-keys.outcome == 'success' && steps.warm-cache.outputs.cache-matched-key == '' }}
         continue-on-error: true
         uses: actions/cache/save@v5
         with:
@@ -260,7 +263,7 @@ jobs:
             echo 'available=true' >> "$GITHUB_OUTPUT"
           fi
       - name: Save shared native compilation artifacts
-        if: ${{ always() && inputs.reuse_build_cache && steps.native-cache-state.outputs.available == 'true' }}
+        if: ${{ success() && inputs.reuse_build_cache && matrix.tenant == needs.plan.outputs.cache_writer && steps.native-cache-state.outputs.available == 'true' && steps.native-cache.outputs.cache-matched-key == '' }}
         continue-on-error: true
         uses: actions/cache/save@v5
         with:
@@ -270,7 +273,7 @@ jobs:
             ~/.cargo/registry
           key: ${{ steps.build-cache-keys.outputs.native }}-${{ github.run_id }}-${{ matrix.tenant }}
       - name: Save shared Gradle compilation state
-        if: ${{ always() && inputs.reuse_build_cache && steps.build-cache-keys.outcome == 'success' }}
+        if: ${{ always() && inputs.reuse_build_cache && matrix.tenant == needs.plan.outputs.cache_writer && steps.build-cache-keys.outcome == 'success' }}
         continue-on-error: true
         uses: actions/cache/save@v5
         with:

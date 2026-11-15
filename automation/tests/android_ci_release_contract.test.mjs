@@ -47,6 +47,10 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   const tenantBuild = candidate.slice(candidate.indexOf('\n  build:'));
   assert.match(tenantBuild, /Save shared Gradle compilation state/);
   assert.match(tenantBuild, /Restore shared native compilation artifacts/);
+  for (const step of tenantBuild.split(/(?=      - )/).filter(value => /uses: actions\/cache\/save@v5/.test(value))) {
+    assert.match(step, /matrix\.tenant == needs\.plan\.outputs\.cache_writer/);
+  }
+  assert.match(candidate, /cache_writer=.*\.include\[0\]\.tenant/);
   assert.match(candidate, /Shared build cache disabled/);
   assert.doesNotMatch(candidate, /warm-gradle-cache:\s*\n\s*needs: plan\s*\n\s*if:/);
   assert.match(tenantBuild, /cp automation\/release\/android_build_cache\.mjs/);
