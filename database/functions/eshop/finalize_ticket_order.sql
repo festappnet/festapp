@@ -237,7 +237,9 @@ BEGIN
           ticket_details:=v_discount->'tickets';
         END IF;
 
-        order_data := public.strip_payment_sources_internal(input_data) - ARRAY['ticket','discount','discount_command_id'] || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
+        -- Persist the same canonical placement snapshot in the order and its creation history.
+        ticket_details := public.order_tickets_with_seating_internal(order_id, ticket_details);
+        order_data := public.strip_payment_sources_internal(input_data) - ARRAY['ticket','discount','discount_command_id'] || JSONB_BUILD_OBJECT('tickets', ticket_details);
 
         IF v_discount IS NOT NULL THEN order_data:=order_data||jsonb_build_object('discount',v_discount->'discount'); END IF;
 

@@ -350,13 +350,28 @@ provedení implementace ani produkční operace neautorizuje.
 ## Oprava podle produkčního ověření 15. 11. 2026
 
 Objednávka s přiznanou slevou mohla ihned zobrazit zastaralé potvrzení, i když
-uložená historie i aktuální cena souhlasily. Důkaz vyvrátil předpoklad, že
-porovnání volitelných názvů míst je již normalizované: historický chybějící
-`spot_group_title` se lišil od obohacené prázdné hodnoty. Etapa projekcí proto
-normalizuje pouze NULL/prázdné názvy místa a skupiny v kanonickém SQL porovnání.
-Skutečné změny názvů a cen stále vyvolají upozornění. Forward
-`20261115180000_discount_confirmation_consistency.sql` nemění objednávky ani
-finanční engine. Regrese ověřuje také skutečný `get_products_for_ticket`.
+uložená historie i aktuální cena souhlasily. Ověření konkrétního případu vyvrátilo
+předpoklad, že jde jen o NULL/prázdný text: historický `spot_group_title` nebyl
+vůbec zachycen, zatímco aktuální objednávka měla nově doplněný neprázdný název
+skupiny. Kanonický finalizer obohacoval `order_data.tickets`, ale do první
+historie ukládal původní neobohacené `ticket_details`.
+
+Etapa vytvoření i čtení snapshotů proto používá tentýž výsledek stávajícího
+`order_tickets_with_seating_internal` pro objednávku i její první historii.
+Nevzniká další výpočet ani dodatečné čtení metadata. U existujících snapshotů
+chybějící historický klíč skupiny nedokládá změnu jejího názvu. Výslovně
+uložený NULL/prázdný název naopak označuje známé nezařazené místo a přidání
+skupiny zůstává změnou. Známé názvy
+skupin, čísla míst, identity produktů, ceny a skutečné přesuny se stále
+porovnávají. Staré historie se nepřepisují a finanční údaje se neopravují.
+
+První forward `20261115180000_discount_confirmation_consistency.sql` sjednotil
+NULL/prázdné názvy, ale produkční ověření doložilo neúplnost této opravy.
+Jeho již instalované bajty i původní discount forward zůstávají neměnné;
+`20261115190000_order_confirmation_seating_snapshot.sql` vlastní následnou
+opravu obou kanonických funkcí. Regrese ověřuje skutečný ticket editor,
+nově finalizovanou smíšenou objednávku se sedadlem i stáním, neměnnou netto
+cenu a varování při doložené změně skupiny nebo čísla místa.
 
 Správa kódů používá kompaktní standardní dialog a standardní patičku editoru.
 Po uložení načte serverový seznam před zavřením editoru; zobrazuje i nulové
@@ -374,3 +389,16 @@ Následné plné CI odhalilo, že lokalizované testy dialogu nesmějí sdílet
 proces s testy očekávajícími nepřeložené výchozí klíče. Dialog má vlastní
 registrovaný testovací root. Společné spuštění tohoto rootu a původní defaultní
 sady prošlo v běžném i opačném pořadí (110 testů v každém běhu).
+
+Ověření následného SQL doplnění: 4 cílené SQL soubory včetně kanonické body
+parity, 3 skutečné testy souběhu/retry a 8 testů forward ownerů prošly.
+Regrese legacy skupiny selhala na předchozím porovnání; regrese sjednocené
+počáteční historie také selhává při použití předchozího finalizeru. Fixture
+blueprint checkoutu nyní explicitně nastavuje současnou bankovní platební
+politiku a bankEnabled, místo předpokladu implicitní dostupnosti platby.
+Generace 0.20.619+1149 zatím nebyla zveřejněna na webu; doplnění používá tutéž
+generaci připravovaného vydání.
+
+Obě existující SQL regrese jsou výslovně zařazené do CI skupiny
+`seat-contract-6`; kontrola `--list` potvrzuje jejich skutečné vybrání.
+Předchozí lokální spuštění samo nezajišťovalo jejich zahrnutí do této CI sady.
