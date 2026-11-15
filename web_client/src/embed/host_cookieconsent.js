@@ -1,3 +1,4 @@
+import {consentValidity} from './host_consent_validity.js';
 // CookieConsent v3 category-level opt-in records. The organizer archives the
 // coverage mapping; CMP state is not a cryptographic coverage attestation.
 const events = ['cc:onConsent', 'cc:onChange', 'cc:onFirstConsent'];
@@ -13,6 +14,8 @@ export function createCookieConsentSource(win, input) {
         const categories = config.categories === undefined ? {analytics:'analytics', marketing:'marketing'} : config.categories;
         if (config.provider !== 'cookieconsent' || ![config.organization, config.unit].every(v => Number.isSafeInteger(v) && v > 0) ||
             typeof config.consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(config.consentRevision) ||
+            (config.revision !== undefined && !revision(config.revision)) ||
+            ((config.revision === undefined || config.consentValidFrom !== undefined || config.maxAgeSeconds !== undefined) && !consentValidity(config)) ||
             !categoryName(categories?.analytics) || !categoryName(categories?.marketing) || categories.analytics === categories.marketing) config = null;
         else config = Object.freeze({...config, categories:Object.freeze({...categories})});
     } catch { config = null; }
@@ -23,7 +26,8 @@ export function createCookieConsentSource(win, input) {
             if (!config || pending || (scope && (scope.organization !== config.organization || scope.unit !== config.unit ||
                 scope.consentRevision !== config.consentRevision))) return null;
             const cmp = win.CookieConsent;
-            if (cmp?.validConsent() !== true || cmp.getConfig('mode') !== 'opt-in' || !revision(cmp.getConfig('revision'))) return null;
+            if (cmp?.validConsent() !== true || cmp.getConfig('mode') !== 'opt-in' || !revision(cmp.getConfig('revision')) ||
+                (config.revision !== undefined && cmp.getConfig('revision') !== config.revision)) return null;
             // validConsent/acceptedCategory are cached by the library. Always read
             // storage too, including expirationTime (upstream v3 utils/cookies.js).
             const cookie = cmp.getCookie(), categories = cmp.getConfig('categories');
@@ -31,6 +35,7 @@ export function createCookieConsentSource(win, input) {
                 typeof cookie.consentId !== 'string' || !cookie.consentId || !timestamp(cookie.consentTimestamp) ||
                 !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() ||
                 !cookie.services || typeof cookie.services !== 'object' || Array.isArray(cookie.services)) return null;
+            if (config.consentValidFrom !== undefined && !consentValidity(config)(Date.parse(cookie.lastConsentTimestamp), win.Date.now())) return null;
             const choice = {};
             for (const purpose of ['analytics', 'marketing']) {
                 const name = config.categories[purpose], category = categories?.[name];

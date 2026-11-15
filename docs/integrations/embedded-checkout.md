@@ -348,16 +348,17 @@ nastaví standardní adaptér Complianzu na skriptu `embed.js`:
 
 ```html
 <script defer src="https://vstupenky.online/embed.js"
-  data-festapp-consent='{"provider":"complianz","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'></script>
+  data-festapp-consent='{"provider":"complianz","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","policyId":"42"}'></script>
 ```
 
 Ukázkové hodnoty nahraďte skutečnými ID organizace a jednotky, hodnotou
-`analytics.consent_revision` z metadat formuláře. Pro instalaci použijte celý serverový export z nastavení pořadatele.
+`analytics.consent_revision` z metadat formuláře a ID přijatých zásad Complianzu.
 Archivované znění těchto zásad musí pokrývat nákup ve formuláři, jeho účely,
 příjemce a oddělenou doménu měření. Konfiguraci neodvozujte z příchozí žádosti.
 Jeden skript obsluhuje jednu organizaci a jednotku; cizí rozsah odmítne.
 
-Adaptér ověří režim opt-in, uložené kategorie, stav lišty a shodu uložené a aktuální verze zásad CMP. Uložené přijetí, částečná volba i odmítnutí
+Adaptér ověří režim opt-in, uložené kategorie, stav lišty a shodu nastavené,
+uložené a aktuální verze zásad CMP. Uložené přijetí, částečná volba i odmítnutí
 se přenesou bez dalšího dotazu. Neznámý či zastaralý stav, chybějící API,
 vynucené statistiky nebo souhlas po jednotlivých službách ponechá místní lištu.
 Při TCF se automaticky neudělí marketing. Pouhé zavření lišty bez uložené volby
@@ -373,11 +374,11 @@ window.CookieConsent = CookieConsent;
 
 ```html
 <script defer src="https://vstupenky.online/embed.js"
-  data-festapp-consent='{"provider":"cookieconsent","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","categories":{"analytics":"analytics","marketing":"marketing"}}'></script>
+  data-festapp-consent='{"provider":"cookieconsent","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","revision":42,"categories":{"analytics":"analytics","marketing":"marketing"}}'></script>
 ```
 
-Adaptér porovnává kladnou celočíselnou revizi v živém nastavení CookieConsent
-s uloženou volbou; pořadatel ji nezadává. Archivujte odpovídající zásady a mapování na revizi Festappu.
+Hodnota `revision` musí být kladné celé číslo shodné s nastavením CookieConsent
+i uloženou volbou. Archivujte odpovídající zásady a mapování na revizi Festappu.
 Použijte režim `opt-in`; nula, opt-out, předvolené nebo povinné mapované kategorie
 a volby po službách vracejí neznámý stav a ponechají místní lištu. Volitelné
 `categories` určuje oba různé názvy kategorií webu; výchozí jsou `analytics` a
@@ -393,11 +394,11 @@ loader z Cookiebot Manageru:
 <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js"
   data-cbid="12345678-1234-1234-1234-123456789abc" data-blockingmode="auto"></script>
 <script defer src="https://vstupenky.online/embed.js" data-cookieconsent="ignore"
-  data-festapp-consent='{"provider":"cookiebot","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","origin":"https://poradatel.example"}'></script>
+  data-festapp-consent='{"provider":"cookiebot","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","cbid":"12345678-1234-1234-1234-123456789abc","origin":"https://poradatel.example","consentValidFrom":"2026-11-11T00:00:00.000Z","maxAgeSeconds":15552000}'></script>
 ```
 
-Použijte serverový export. Loader musí obsahovat platné UUID v data-cbid nebo
-parametru cbid; pokud obsahuje obojí, hodnoty musí být shodné. `origin` odpovídá přesně HTTPS originu webu. Loader `.com/uc.js` ponechte
+Všechny ukázkové hodnoty nahraďte. `cbid` musí odpovídat data-cbid nebo parametru
+cbid loaderu a `origin` přesně HTTPS originu webu. Loader `.com/uc.js` ponechte
 v DOM. Opt-in se čte ze stavu lišty, ne z atributů loaderu: volba musí být
 výslovná (`consent.method`), musí platit GDPR a nesmí CCPA; implied volba, jiný
 než opt-in režim účtu a neznámý stav souhlas nepřevezmou. Uložený záznam
@@ -406,11 +407,13 @@ smazaný záznam převzetí ukončí při následující sekundové kontrole. Pr
 blokování samo nedokládá souhlas. Atribut ignore ponechá helper dostupný i při
 automatickém blokování.
 
-Cookiebot sám řídí platnost uložené volby a obnovuje ji při změně zásad.
-Adaptér vyžaduje shodu uloženého stamp s consentID a odmítne čas consentUTC
-více než minutu v budoucnosti. Pořadatel nezadává CBID, časový předěl ani stáří
-volby do Festappu. Za pokrytí formuláře zásadami odpovídá pořadatel jako správce;
-potvrzení pokrytí se ukládá s uživatelem a časem.
+Cookiebot SDK nenabízí srovnatelnou verzi zásad. Povinné `consentValidFrom` je
+okamžik účinnosti archivovaného znění (UTC ISO s milisekundami a Z), vůči němuž se
+kontroluje `consentUTC`. Povinné `maxAgeSeconds` nastavte nejvýše na skutečnou
+platnost v Cookiebotu, maximálně 365 dní; ukázka používá 180 dní. Při změně
+rozsahu obnovte souhlasy a aktualizujte časový předěl i revizi Festappu.
+CBID, stamp, consentID ani cookie ver nejsou automatickým důkazem verze zásad;
+obsah a správné mapování dokládá správce. Změna CBID nebo domény převzetí odmítne.
 
 Převádějí se statistics → analytics a marketing → marketing, pouze u výslovné
 uložené volby shodné s API a čerstvou cookie. Implied/opt-out, neznámé či rozbité
@@ -448,6 +451,32 @@ může potlačit GTM Just Links trigger s validací; nákup měřte událostmi f
 Přesný kontrakt zdroje a protokolu je v
 [dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).
 
-Starší exporty se stejným `schemaVersion: 1` zůstávají podporované. Adaptéry
-ignorují dřívější `policyId`, `cbid`, `revision`, `consentValidFrom` a
-`maxAgeSeconds`; aktualizace doplňků není pro odstranění těchto polí potřeba.
+
+### Jednodušší nastavení pomocí serverového exportu
+
+Pro běžné nastavení použijte celý export z **Nastavení pořadatele > Měření >
+Moje weby**. Výše uvedené příklady popisují také přímé vývojářské integrace;
+export neupravujte ani z něj neodstraňujte omezení.
+
+Complianz nadále vyžaduje ID zásad, které skutečně pokrývají formulář. Jeho
+podporované API nedokládá čas uložené volby. CookieConsent v3 nabízí jen volitelné
+mapování kategorií, Cookiebot a Wix nevyžadují další technické údaje.
+
+Při potvrzení pokrytí server pro CookieConsent v3, Cookiebot a Wix uloží
+`consentValidFrom` podle času potvrzení a `maxAgeSeconds` nejvýše na 365 dní.
+Převezmou se pouze volby uložené po tomto potvrzení; vlastní expirace CMP platí
+současně. Nejdříve zveřejněte odpovídající zásady, potvrďte pokrytí ve Festappu,
+importujte nový export a poté ve své liště vyžádejte novou volbu návštěvníků.
+Při změně rozsahu zvyšte také `measurement_consent_version` a celý postup
+opakujte. U Complianzu zveřejněte a potvrďte odpovídající nové ID zásad.
+
+Cookiebot při změně textu automaticky neprokazuje obnovení všech souhlasů;
+správce použije [Renew now v Cookiebot Manageru](https://support.cookiebot.com/hc/en-us/articles/26380933353372-Renew-existing-user-consents-in-the-Cookiebot-Manager).
+Do nové volby zůstane dostupná místní lišta formuláře i samotný nákup.
+
+Starší exporty se stejným `schemaVersion: 1` zůstávají podporované se všemi
+svými omezeními: `policyId`, `cbid`, `revision`, `consentValidFrom` i
+`maxAgeSeconds`. Migrace jejich konfiguraci, potvrzení ani verzi nepřepisuje.
+Nové potvrzení verzovanou konfiguraci nahradí; starý export pak není platný.
+Aktualizace CMS doplňků není potřeba, ale SQL a hostovaný helper musí být nasazeny
+společně. Starší helper nový export bez ruční revize odmítne a ponechá místní lištu.

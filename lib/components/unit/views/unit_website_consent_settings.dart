@@ -50,6 +50,7 @@ class _UnitWebsiteConsentSettingsState
   String _platform = 'wordpress', _provider = 'complianz';
   bool _busy = false, _failed = false, _coverage = false, _edited = false;
   String? _export;
+  final _policy = TextEditingController();
   final _analytics = TextEditingController();
   final _marketing = TextEditingController();
 
@@ -86,7 +87,7 @@ class _UnitWebsiteConsentSettingsState
 
   @override
   void dispose() {
-    for (final controller in [_analytics, _marketing]) {
+    for (final controller in [_policy, _analytics, _marketing]) {
       controller.dispose();
     }
     super.dispose();
@@ -99,6 +100,7 @@ class _UnitWebsiteConsentSettingsState
     final c = b?.providerConfig ?? <String, dynamic>{};
     _platform = b?.platform ?? 'wordpress';
     _provider = c['provider'] as String? ?? 'complianz';
+    _policy.text = c['policyId']?.toString() ?? '';
     _analytics.text =
         (c['categories'] as Map?)?['analytics'] as String? ?? 'analytics';
     _marketing.text =
@@ -144,6 +146,7 @@ class _UnitWebsiteConsentSettingsState
   });
   Map<String, dynamic> get _config => {
     'provider': _provider,
+    if (_provider == 'complianz') 'policyId': _policy.text,
     if (_provider == 'cookieconsent') ...{
       'categories': {
         'analytics': _analytics.text,
@@ -291,6 +294,8 @@ class _UnitWebsiteConsentSettingsState
                   }
                 : null,
           ),
+          if (_provider == 'complianz')
+            _field(_policy, FormStrings.cmsPolicyId),
           if (_provider == 'cookieconsent')
             ExpansionTile(
               title: Text(FormStrings.cmsAdvancedCategories),
@@ -299,6 +304,7 @@ class _UnitWebsiteConsentSettingsState
                 _field(_marketing, FormStrings.cmsMarketingCategory),
               ],
             ),
+          if (_provider != 'complianz') Text(FormStrings.cmsFreshChoiceHelp),
           const SizedBox(height: 16),
           Text(
             FormStrings.cmsState(

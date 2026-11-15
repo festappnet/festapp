@@ -1699,7 +1699,7 @@ DO $$ BEGIN
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_ticket_batch_selection_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='a38918671e05799721980f59aba84364'),'current SQL source parity: public.normalize_ticket_batch_selection_internal(bigint,jsonb)');
 -- supabase/migrations/20261115210000_website_consent_live_provider_state.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_website_consent_provider_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='77ecd383a59bac931bcf859b76b8abf7'),'current SQL source parity: public.normalize_website_consent_provider_internal(jsonb)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_website_consent_provider_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='4722f08eb565b57cb69c01759d043ed7'),'current SQL source parity: public.normalize_website_consent_provider_internal(jsonb)');
 -- absent from the effective release
  PERFORM assert_true(to_regprocedure('public.notification_center_active_internal(bigint)') IS NULL,'retired SQL identity remains absent: public.notification_center_active_internal(bigint)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
@@ -2302,8 +2302,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_unit_member_internal_v1(bigint,uuid,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='adcc663fcec64e8c189af9cda8fc01f6'),'current SQL source parity: public.save_unit_member_internal_v1(bigint,uuid,uuid,bigint,jsonb)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='61153c1f5c749e86ff1b7084c1a9ffe0'),'current SQL source parity: public.save_unit_user_client_sync_v1(bigint,uuid,uuid,bigint,jsonb)');
--- supabase/migrations/20261114170000_website_consent_bindings.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='fc436834700dbc8d736bd6a4cfa2ea21'),'current SQL source parity: public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)');
+-- supabase/migrations/20261115210000_website_consent_live_provider_state.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='c109f15aa77abc2027a36c144c81b5c4'),'current SQL source parity: public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='879983ad5ce71c0593f24992498c5d8c'),'current SQL source parity: public.save_user_group_client_sync_v1(bigint,uuid,bigint,jsonb)');
 -- supabase/migrations/20261112235500_scanner_occasion_isolation.sql

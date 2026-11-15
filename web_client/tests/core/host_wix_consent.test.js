@@ -17,7 +17,7 @@ function fixture(t,changes={}) {
  const source=createManagedConsentSource(win,exported,exported.serviceOrigin);
  return {win,source,read:()=>readConsentSource(source,scope),record,setRecord:v=>record=v};
 }
-test('native Wix saved choice and refusal use confirmed scope and managed version',t=>{
+test('native Wix saved choice and refusal use archived scope, cutoff and managed version',t=>{
  const f=fixture(t);assert.deepEqual(f.read(),{analytics:true,marketing:true});
  f.record.policy.analytics=false;f.record.policy.advertising=false;
  assert.deepEqual(f.read(),{analytics:false,marketing:false});
@@ -27,7 +27,8 @@ test('native Wix saved choice and refusal use confirmed scope and managed versio
 });
 for(const [name,changes] of Object.entries({
  default:{defaultPolicy:true},'missing saved flag':{defaultPolicy:undefined},'missing creation date':{createdDate:undefined},
- 'malformed date':{createdDate:'yesterday'},future:{createdDate:new Date(Date.now()+120000)},
+ 'malformed date':{createdDate:'yesterday'},'pre-cutoff':{createdDate:'2025-12-31T23:59:59.999Z'},
+ expired:{createdDate:new Date(Date.now()-86400001)},future:{createdDate:new Date(Date.now()+120000)},
  'missing policy':{policy:null},'nonboolean purposes':{policy:{essential:true,functional:false,analytics:'true',advertising:true,dataToThirdParty:true}},
 })) test('native Wix '+name+' fails closed',t=>{const f=fixture(t,changes);assert.equal(f.read(),null);});
 test('Wix requires third-party permission for marketing and clamps TCF',t=>{
@@ -45,12 +46,6 @@ test('native Wix supports canonical ISO creation timestamp as well as SDK Date',
  const f=fixture(t,{createdDate:new Date().toISOString()});assert.equal(f.read().analytics,true);
 });
 test('invalid native mapping cannot echo requested notice revision',t=>{
- const f=fixture(t);const source=createWixConsentSource(f.win,{...config,consentRevision:'invalid'});
+ const f=fixture(t);const source=createWixConsentSource(f.win,{...config,consentValidFrom:'invalid'});
  assert.equal(source.read(scope),null);
-});
-
-test('Wix accepts provider-only and ignores legacy cutoff/age fields',t=>{
- const f=fixture(t,{createdDate:'2025-01-01T00:00:00.000Z'});
- const {consentValidFrom,maxAgeSeconds,...base}=config;
- for(const extra of [{},{consentValidFrom:'invalid',maxAgeSeconds:0}]) assert.equal(createWixConsentSource(f.win,{...base,...extra}).read().analytics,true);
 });

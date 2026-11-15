@@ -47,7 +47,11 @@ RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
 DECLARE provider text:=p_config->>'provider'; a text; m text;
 BEGIN
  IF jsonb_typeof(p_config) IS DISTINCT FROM 'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid_consent_provider'; END IF;
- IF provider IN ('complianz','cookiebot','wix') THEN
+ IF provider='complianz' THEN
+  IF jsonb_typeof(p_config->'policyId') IS DISTINCT FROM 'string' OR (p_config->>'policyId') !~ '^[1-9][0-9]{0,15}$' THEN
+   RAISE invalid_parameter_value USING MESSAGE='invalid_complianz_policy'; END IF;
+  RETURN jsonb_build_object('provider',provider,'policyId',p_config->>'policyId');
+ ELSIF provider IN ('cookiebot','wix') THEN
   RETURN jsonb_build_object('provider',provider);
  ELSIF provider='cookieconsent' THEN
   IF NOT p_config ? 'categories' THEN RETURN jsonb_build_object('provider',provider); END IF;
@@ -86,7 +90,7 @@ GRANT EXECUTE ON FUNCTION public.get_unit_website_consent_bindings(bigint) TO au
 CREATE OR REPLACE FUNCTION public.save_unit_website_consent_binding(p_unit bigint,p_website_origin text,p_platform text,
  p_provider_config jsonb,p_expected_version bigint,p_expected_consent_revision text,p_confirm boolean)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE u public.units; b analytics.website_consent_bindings; scope jsonb; config jsonb;
+DECLARE u public.units; b analytics.website_consent_bindings; scope jsonb; config jsonb; confirmation_time timestamptz;
 BEGIN
  IF auth.uid() IS NULL OR NOT public.can_manage_unit_configuration(p_unit) THEN RAISE insufficient_privilege; END IF;
  SELECT * INTO STRICT u FROM public.units WHERE id=p_unit FOR UPDATE;
@@ -100,9 +104,16 @@ BEGIN
  IF p_expected_version IS DISTINCT FROM coalesce(b.version,0) OR p_expected_consent_revision IS DISTINCT FROM scope->>'consentRevision' THEN
   RAISE serialization_failure USING MESSAGE='website_consent_conflict'; END IF;
  config:=public.normalize_website_consent_provider_internal(p_provider_config);
+ -- Timestamped CMP records must postdate this explicit coverage confirmation.
+ -- The caller cannot backdate coverage or extend the server's one-year ceiling.
+ confirmation_time:=CASE WHEN p_confirm THEN clock_timestamp() END;
+ IF p_confirm AND config->>'provider' IN ('cookiebot','wix','cookieconsent') THEN
+  config:=config||jsonb_build_object('consentValidFrom',to_char(confirmation_time AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+   'maxAgeSeconds',31536000);
+ END IF;
  INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_by,confirmed_at)
  VALUES(p_unit,p_website_origin,p_platform,config,1,p_confirm,CASE WHEN p_confirm THEN scope->>'consentRevision' END,
-  CASE WHEN p_confirm THEN auth.uid() END,CASE WHEN p_confirm THEN clock_timestamp() END)
+  CASE WHEN p_confirm THEN auth.uid() END,confirmation_time)
  ON CONFLICT(unit,website_origin) DO UPDATE SET platform=excluded.platform,provider_config=excluded.provider_config,
   version=analytics.website_consent_bindings.version+1,enabled=excluded.enabled,confirmed_revision=excluded.confirmed_revision,
   confirmed_by=excluded.confirmed_by,confirmed_at=excluded.confirmed_at;

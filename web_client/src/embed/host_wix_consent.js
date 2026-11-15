@@ -1,3 +1,4 @@
+import {consentValidity} from './host_consent_validity.js';
 // Wix @wix/site consentPolicyManager's synchronous saved-policy boundary.
 // A default policy or missing creation date never imports.
 export function createWixConsentSource(win, input) {
@@ -5,7 +6,7 @@ export function createWixConsentSource(win, input) {
     try {
         config = typeof input === 'string' ? JSON.parse(input) : {...input};
         if (config.provider !== 'wix' || ![config.organization,config.unit].every(v => Number.isSafeInteger(v) && v > 0) ||
-            !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin) config = null;
+            !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin || !consentValidity(config)) config = null;
     } catch { config = null; }
     const listeners = new Set();
     let pending = false, timer, last;
@@ -20,7 +21,7 @@ export function createWixConsentSource(win, input) {
             const now = win.Date.now();
             if (saved?.defaultPolicy !== false || p?.essential !== true ||
                 !['functional','analytics','advertising','dataToThirdParty'].every(k => typeof p[k] === 'boolean') ||
-                !Number.isFinite(timestamp) || timestamp > now+60000) return null;
+                !consentValidity(config)(timestamp, now)) return null;
             return {consentRevision:config.consentRevision, analytics:p.analytics,
                 marketing:p.advertising && p.dataToThirdParty && typeof win.__tcfapi === 'undefined'};
         } catch { return null; }

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Simplify website consent setup: read banner policy state directly, retain coverage confirmation and support existing exports.
+- Simplify website consent setup with server-issued coverage windows, retain explicit Complianz policy mapping and enforce all restrictions in existing exports.
 
 - Standalone consent links support configured Cookiebot explicit opt-in choices with loader/origin consistency and persisted-choice checks and TCF marketing denial.
 

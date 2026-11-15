@@ -1,4 +1,5 @@
-// Cookiebot owns saved-choice expiry; consent IDs are not policy versions.
+import {consentValidity} from './host_consent_validity.js';
+// Cookiebot storage expiry and the confirmed coverage window both apply.
 const events = ['CookiebotOnConsentReady', 'CookiebotOnLoad', 'CookiebotOnAccept',
     'CookiebotOnDecline', 'CookiebotOnDialogDisplay'];
 const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value);
@@ -18,7 +19,7 @@ function persisted(doc, id) {
     return value.startsWith('{') && value.endsWith('}') && (value.match(/[{,]stamp:/g) || []).length === 1 &&
         at > 0 && '{,'.includes(value[at - 1]) && ',}'.includes(value[at + key.length]);
 }
-function loader(win) {
+function loader(win, config) {
     const scripts = [...win.document.querySelectorAll('script[src]')].filter(script => {
         const url = new URL(script.src, win.document.baseURI);
         return url.origin === 'https://consent.cookiebot.com' && url.pathname === '/uc.js';
@@ -31,6 +32,7 @@ function loader(win) {
     if (query.length > 1 || (!attribute && !query.length) ||
         [attribute, ...query].filter(value => value !== null).some(value => !uuid(value))) return null;
     if (attribute && query.length && attribute.toLowerCase() !== query[0].toLowerCase()) return null;
+    if (config.cbid !== undefined && [attribute, ...query].filter(value => value !== null).some(value => value.toLowerCase() !== config.cbid.toLowerCase())) return null;
     return {tcf:!!script.getAttribute('data-framework') || !!url.searchParams.get('data-framework')};
 }
 export function createCookiebotSource(win, input) {
@@ -40,7 +42,8 @@ export function createCookiebotSource(win, input) {
         const origin = new URL(config.origin);
         if (config.provider !== 'cookiebot' || ![config.organization, config.unit].every(value => Number.isSafeInteger(value) && value > 0) ||
             typeof config.consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(config.consentRevision) ||
-            origin.origin !== config.origin || origin.protocol !== 'https:') config = null;
+            origin.origin !== config.origin || origin.protocol !== 'https:' ||
+            (config.cbid !== undefined && !uuid(config.cbid)) || !consentValidity(config)) config = null;
         else config = Object.freeze(config);
     } catch { config = null; }
     const listeners = new Set();
@@ -49,7 +52,7 @@ export function createCookiebotSource(win, input) {
         try {
             if (!config || pending || win.location.origin !== config.origin || (scope && (scope.organization !== config.organization ||
                 scope.unit !== config.unit || scope.consentRevision !== config.consentRevision))) return null;
-            const script = loader(win), cmp = win.Cookiebot, consent = cmp?.consent;
+            const script = loader(win, config), cmp = win.Cookiebot, consent = cmp?.consent;
             // Opt-in comes from the documented runtime state: GDPR applies and the
             // saved choice is explicit. hasResponse is false while the renew dialog
             // is open although the saved choice still applies (measured), so it
@@ -64,8 +67,7 @@ export function createCookiebotSource(win, input) {
             if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
             const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
             // consentUTC can lead Date.now() by a few ms right after a choice (measured).
-            if (!consentId(id) || consent.stamp !== id || !Number.isSafeInteger(utc) ||
-                utc > now + 60000) return null;
+            if (!consentId(id) || consent.stamp !== id || !consentValidity(config)(utc, now)) return null;
             // Cookiebot writes storage and its cached API non-atomically. Until
             // both agree, no reader may reuse the previous grant: the same
             // mismatch also means withdrawal in another tab or cookie removal.

@@ -12,8 +12,8 @@ export function createComplianzSource(win, input) {
     try {
         config = typeof input === 'string' ? JSON.parse(input) : {...input};
         if (config?.provider !== 'complianz' || ![config.organization, config.unit].every(v => Number.isSafeInteger(v) && v > 0) ||
-            typeof config.consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(config.consentRevision)) config = null;
-        else config = Object.freeze(config);
+            typeof config.consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !policyId(config.policyId)) config = null;
+        else config = Object.freeze({...config, policyId:policyId(config.policyId)});
     } catch { config = null; }
     const listeners = new Set();
     let timer, last, pending = false;
@@ -25,7 +25,7 @@ export function createComplianzSource(win, input) {
             if (cmp?.consenttype !== 'optin' || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) ||
                 typeof win.cmplz_get_cookie !== 'function' || typeof win.cmplz_get_banner_status !== 'function' ||
                 typeof win.cmplz_has_consent !== 'function' || win.cmplz_get_banner_status() !== 'dismissed' ||
-                !policyId(cmp.current_policy_id) || policyId(win.cmplz_get_cookie('policy_id')) !== policyId(cmp.current_policy_id)) return null;
+                policyId(cmp.current_policy_id) !== config.policyId || policyId(win.cmplz_get_cookie('policy_id')) !== config.policyId) return null;
             // The public helper owns multisite prefixes. A dismissed banner alone
             // can be just its close button; require persisted category decisions.
             const stats = win.cmplz_get_cookie('statistics'), ads = win.cmplz_get_cookie('marketing');

@@ -85,7 +85,10 @@ void main() {
                       expect(origin, site);
                       expect(expected, version);
                       expect(revision, 'a' * 32);
-                      expect(config, {'provider': 'complianz'});
+                      expect(config, {
+                        'provider': 'complianz',
+                        'policyId': '42',
+                      });
                       if (confirm) confirmations++;
                       version++;
                       state = confirm ? 'ready' : 'draft';
@@ -123,6 +126,10 @@ void main() {
       await pump();
       await tester.pumpAndSettle();
       expect(confirm().onPressed, isNull);
+      await tester.enterText(
+        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+        '42',
+      );
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       expect(confirm().onPressed, isNotNull);

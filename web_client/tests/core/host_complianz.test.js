@@ -38,7 +38,7 @@ const invalid={
 for(const [name,change] of Object.entries(invalid))test(name+' never grants',async()=>{
  const f=fixture();try {change(f);await settle();assert.equal(f.read(),null);assert.equal(f.registry.configured,true);}finally{f.close()}
 });
-for(const config of ['{',{}, {...complianzConfig,provider:'other'}, {...complianzConfig,consentRevision:'x'}])
+for(const config of ['{',{}, {...complianzConfig,provider:'other'}, {...complianzConfig,consentRevision:'x'}, {...complianzConfig,policyId:0}])
  test('invalid configuration stays configured and denied '+JSON.stringify(config),()=>{
   const f=fixture(both,config);try{assert.equal(f.read(),null);assert.equal(f.registry.configured,true)}finally{f.close()}
  });
@@ -89,10 +89,4 @@ for(const value of ['',null,false,0,'0',undefined])test('serialized disabled CMP
   Object.assign(f.win.complianz,{forceEnableStats:value,tcf_active:value,consent_per_service:value});
   assert.deepEqual(f.read(),both);
  }finally{f.close()}
-});
-
-test('provider-only and legacy policy IDs use live consistency',()=>{
- for(const policyId of [undefined,'obsolete',0]) {
-  const f=fixture(both,{...complianzConfig,policyId});try{assert.deepEqual(f.read(),both);f.win.complianz.current_policy_id='43';assert.equal(f.read(),null);f.cmp.cookie('policy_id','43');assert.deepEqual(f.read(),both)}finally{f.close()}
- }
 });
