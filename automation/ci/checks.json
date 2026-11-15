@@ -722,6 +722,7 @@
   "sqlInventory": {
     "knownTests": [
       "database/tests/abuse/admission_test.sql",
+      "database/tests/abuse/checkout_admission_test.sql",
       "database/tests/abuse/cleaning_test.sql",
       "database/tests/abuse/documents_bank_test.sql",
       "database/tests/abuse/email_auth_test.sql",
@@ -1288,6 +1289,7 @@
     "automation/tests/web_profile_contract.test.mjs",
     "automation/tests/web_translation_minification.test.mjs",
     "database/tests/abuse/admission_test.sql",
+    "database/tests/abuse/checkout_admission_test.sql",
     "database/tests/abuse/cleaning_test.sql",
     "database/tests/abuse/concurrency.test.mjs",
     "database/tests/abuse/documents_bank_test.sql",
