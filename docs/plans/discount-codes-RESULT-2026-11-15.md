@@ -131,3 +131,9 @@ Původní pracovní strom byl zachován. Publikační checkout je
 `/Users/miakh/source/festapp-discount-rollout-20261115`; není to dokončené
 produkční nasazení. Připravený společný kontrakt zahrnuje samoobsluhu jako
 migrační a čtecí závislost, s oběma feature ve výchozím stavu vypnutými.
+
+Provozní příprava navíc doplnila chybějící registraci `customer-order-changes`
+do autoritativní production Function bundle policy. Bez ní by endpoint nebyl
+vydán v koordinovaném balíku. Existující úplný inventory/bundle kontrakt tuto
+registraci ověřuje. Produkční backend identity a dnešní off-host backup byly
+read-only ověřeny; migrace 12/13/14 dosud nejsou aplikované.
