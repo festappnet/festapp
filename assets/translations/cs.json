@@ -5751,6 +5751,9 @@
     "resolve": "Označit za vyřešené",
     "staffHelp": "Schválení znovu ověří vstupenky, kapacitu a finanční oprávnění. Ruční refundaci označte za dokončenou až po evidenci skutečného vrácení peněz.",
     "saveRules": "Pravidla samoobsluhy",
+    "setupHelp": "Povolte níže storno nebo změnu termínu, nastavte pravidla a uložte celý formulář. Zákazník pak najde dostupné změny v přehledu objednávky z potvrzovacího e-mailu.",
+    "notConfigured": "Funkce je zapnutá, ale pro tento formulář zatím není povoleno storno ani změna termínu.",
+    "configuredHelp": "Dostupnost změn se řídí níže nastavenými pravidly. Změny pravidel se uloží tlačítkem Uložit spolu s ostatním nastavením formuláře.",
     "enabled": "Povolit operaci",
     "deadline": "Povolit do",
     "automatic": "Automaticky po potvrzení zákazníkem",
@@ -5788,7 +5791,7 @@
   },
   "FeatureCustomerSelfService": {
     "title": "Zákaznická samoobsluha",
-    "description": "Storno, refundace a přesuny termínů podle pravidel pořadatele. Odeslané odpovědi zákazník neupravuje."
+    "description": "Pravidla nastavíte pro každý formulář v jeho záložce Nastavení - Zákaznická samoobsluha. Samotné zapnutí nepovoluje storno ani přesuny. Odeslané odpovědi zákazník neupravuje."
   },
   "DiscountCodes": {
     "title": "Slevové kódy",

@@ -134,6 +134,9 @@ class DbOrders {
     final code = data is Map ? data['code'] : null;
     if (code is int &&
         (code == 200 ||
+            // Admission rejected and rolled back the command. A later explicit
+            // attempt must receive a new identity instead of replaying rejection.
+            (code == 429 && data['errorCode'] == 'ABUSE_LIMIT_EXCEEDED') ||
             (code >= 1000 && code < 2000) ||
             (code >= 400 && code < 500 && code != 408 && code != 429))) {
       await ClientCommandIdentity.completeIntent(

@@ -11,6 +11,7 @@ import '../db_forms.dart';
 import '../customer_order_changes.dart';
 import '../../features/feature_service.dart';
 import '../../features/feature_constants.dart';
+import '../../features/features_strings.dart';
 
 /// An owned editor draft. Only the surrounding form Save persists these rules.
 class CustomerSelfServiceSettings extends StatefulWidget {
@@ -472,7 +473,17 @@ class _CustomerSelfServiceSettingsState
 
   @override
   Widget build(BuildContext context) => ExpansionTile(
-    title: Text(customerChangeText('saveRules')),
+    key: ValueKey(_enabled),
+    initiallyExpanded: _enabled,
+    title: Text(FeaturesStrings.customerSelfServiceTitle),
+    subtitle: Text(
+      !_enabled
+          ? customerChangeText('offHelp')
+          : _rule('cancel')['enabled'] == true ||
+                _rule('move')['enabled'] == true
+          ? customerChangeText('configuredHelp')
+          : customerChangeText('notConfigured'),
+    ),
     children: [
       customerChangesHelp(context),
       Padding(
@@ -484,7 +495,10 @@ class _CustomerSelfServiceSettingsState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!_enabled) Text(customerChangeText('offHelp')),
+            if (_enabled) ...[
+              Text(customerChangeText('setupHelp')),
+              const SizedBox(height: 12),
+            ],
             Text(customerChangeText('termHelp')),
             _date(
               customerChangeText('termStart'),

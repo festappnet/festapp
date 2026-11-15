@@ -59,6 +59,9 @@
     "resolve": "Mark as handled",
     "staffHelp": "Approval checks tickets, capacity and financial permission again. Complete a manual refund only after recording the actual returned money.",
     "saveRules": "Self-service rules",
+    "setupHelp": "Nižšie povoľte storno alebo zmenu termínu, nastavte pravidlá a uložte celý formulár. Zákazník potom nájde dostupné zmeny v prehľade objednávky z potvrdzovacieho e-mailu.",
+    "notConfigured": "Funkcia je zapnutá, ale pre tento formulár zatiaľ nie je povolené storno ani zmena termínu.",
+    "configuredHelp": "Dostupnosť zmien sa riadi pravidlami nižšie. Zmeny pravidiel uložte tlačidlom Uložiť spolu s ostatnými nastaveniami formulára.",
     "enabled": "Enable operation",
     "deadline": "Allow until",
     "automatic": "Automatically after customer confirmation",
@@ -96,7 +99,7 @@
   },
   "FeatureCustomerSelfService": {
     "title": "Zákaznícka samoobsluha",
-    "description": "Storno, refundácie a presuny termínov podľa pravidiel organizátora. Zákazník odoslané odpovede neupravuje."
+    "description": "Pravidlá nastavíte pre každý formulár v záložke Nastavenia - Zákaznícka samoobsluha. Samotné zapnutie nepovoľuje storno ani presuny. Zákazník neupravuje odoslané odpovede."
   },
   "EmailDomainSuffix": {
     "warning": "Koncovku domény .{suffix} nepoznáme. Skontrolujte e-mailovú adresu.",

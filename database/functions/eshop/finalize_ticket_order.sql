@@ -7,6 +7,7 @@ AS $$
 <<checkout>>
 DECLARE
     result JSONB;
+    admission_detail text;
     selected_payment_options jsonb;
     order_id BIGINT;
     assigned_order_symbol TEXT;
@@ -435,7 +436,18 @@ BEGIN
 
         IF v_discount IS NOT NULL THEN result:=result||jsonb_build_object('paymentPreparationPolicy','leased_keep_pending'); END IF;
 
-    EXCEPTION WHEN OTHERS THEN
+    EXCEPTION WHEN SQLSTATE 'PT429' THEN
+        -- Keep admission failures recognizable through checkout and waitlist
+        -- receipts. This block has already rolled back payment and seat writes.
+        GET STACKED DIAGNOSTICS admission_detail = PG_EXCEPTION_DETAIL;
+        RAISE LOG 'checkout_admission_limited %', jsonb_build_object(
+            'ruleKey',admission_detail::jsonb->'ruleKey',
+            'retryAfterSeconds',admission_detail::jsonb->'retryAfterSeconds');
+        result := jsonb_build_object('code',429,'errorCode','ABUSE_LIMIT_EXCEEDED',
+            'message','Capacity is temporarily limited. Try again later.',
+            'retryAfterSeconds',admission_detail::jsonb->'retryAfterSeconds',
+            'needsPolicyChange',admission_detail::jsonb->'needsPolicyChange');
+    WHEN OTHERS THEN
         IF SQLERRM='DISCOUNT_INVALID' THEN RETURN jsonb_build_object('code',400,'errorCode','DISCOUNT_INVALID'); END IF;
         -- In case of any error, the inner block is rolled back and we capture the error message.
         result := CASE
