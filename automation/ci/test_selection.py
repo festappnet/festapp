@@ -18,6 +18,13 @@ BASE = 'b' * 40
 URL = 'https://github.com/fixture/repo/actions/runs/123'
 
 
+class CanonicalTranslationOwnershipTest(unittest.TestCase):
+    def test_every_web_catalog_consumer_is_invalidated_by_the_canonical_source(self):
+        consumers={name for name,job in CONTRACT['jobs'].items() if 'web_client/**' in job['inputs']}
+        for locale in ['cs','en','sk','de','pl','uk']:
+            self.assertTrue(consumers.issubset(selection.owners(f'assets/translations/{locale}.json',CONTRACT)))
+
+
 class InventoryPreflightTest(unittest.TestCase):
     def test_registration_failure_prevents_selection_and_reuse(self):
         with patch.object(sys,'argv',['selection.py','seat-checkout']), \

@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile, rm, readlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { LocalizationService } from '../../src/services/localization_service.js';
 import { CommonStrings } from '../../src/components/shared/common_strings.js';
@@ -85,3 +88,32 @@ for (const locale of ['cs','en','sk','de','pl','uk']) {
   assert.equal(published.AccountConnections.appsUnavailable,canonical.AccountConnections.appsUnavailable);
  });
 }
+
+
+test('development and built public catalogs use the canonical source for every locale', async () => {
+    const {createServer, build} = await import('vite');
+    const webRoot = fileURLToPath(new URL('../../', import.meta.url));
+    const fixture = await mkdtemp(path.join(tmpdir(), 'festapp-canonical-catalogs-'));
+    let server;
+    try {
+        await writeFile(path.join(fixture, 'index.html'), '<!doctype html><title>Catalog fixture</title>');
+        await build({root: fixture, configFile: false, publicDir: path.join(webRoot, 'public'), logLevel: 'silent'});
+        server = await createServer({root: webRoot, configFile: false, logLevel: 'error',
+            server: {host: '127.0.0.1', port: 0}});
+        await server.listen();
+        const origin = server.resolvedUrls.local[0];
+        for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
+            const filename = `${locale}.json`;
+            const canonical = JSON.parse(await readFile(new URL(`../../../assets/translations/${filename}`, import.meta.url), 'utf8'));
+            const alias = path.join(webRoot, 'public/assets/translations', filename);
+            assert.equal(await readlink(alias), `../../../../assets/translations/${filename}`, 'public source is a reference, not an editable second catalog');
+            const response = await fetch(new URL(`/assets/translations/${filename}`, origin));
+            assert.equal(response.status, 200);
+            assert.deepEqual(await response.json(), canonical, `development ${locale} catalog`);
+            assert.deepEqual(JSON.parse(await readFile(path.join(fixture, 'dist/assets/translations', filename), 'utf8')), canonical, `built ${locale} catalog`);
+        }
+    } finally {
+        await server?.close();
+        await rm(fixture, {recursive: true, force: true});
+    }
+});
