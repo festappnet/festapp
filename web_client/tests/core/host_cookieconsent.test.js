@@ -21,13 +21,12 @@ for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false
  });
 for(const input of ['{',null,{}, {...cookieconsentConfig,provider:'unknown'}, {...cookieconsentConfig,organization:0},
  {...cookieconsentConfig,unit:'2'}, {...cookieconsentConfig,consentRevision:'x'},
- ...[0,-1,1.5,'42',null].map(revision=>({...cookieconsentConfig,revision})),
  ...[null,{}, {analytics:'same',marketing:'same'}, {analytics:4,marketing:'marketing'}].map(categories=>({...cookieconsentConfig,categories}))])
  test('invalid configuration remains configured and denied '+JSON.stringify(input),async()=>{
   const f=await fixture(both,input);try{assert.equal(f.registry.configured,true);assert.equal(f.read(),null)}finally{f.close()}
  });
 for(const [name,config] of Object.entries({
- 'opt-out':{mode:'opt-out'},'disabled revisions':{revision:0},'other revision':{revision:43},
+ 'opt-out':{mode:'opt-out'},'disabled revisions':{revision:0},
  'preselected analytics':{categories:{analytics:{enabled:true},marketing:{}}},
  'mandatory marketing':{categories:{analytics:{},marketing:{readOnly:true}}},
  'missing category':{categories:{analytics:{}}},
@@ -103,7 +102,7 @@ test('stored choice survives a page load through the real library',async()=>{
  const b=await fixture(null,cookieconsentConfig,{},jar);try{assert.deepEqual(b.read(),both)}finally{b.close()}
 });
 test('generated helper selects CookieConsent; invalid source never falls back to granted GCM',async()=>{
- for(const input of [cookieconsentConfig,{...cookieconsentConfig,revision:0},'{']){
+ for(const input of [cookieconsentConfig,{...cookieconsentConfig,provider:'unknown'},'{']){
   const win=new JSDOM('',{url:'https://organizer.example',runScripts:'outside-only',pretendToBeVisual:true}).window;
   try{
    await cookieconsentFixture(win,{choice:both});
@@ -122,5 +121,11 @@ test('generated helper selects CookieConsent; invalid source never falls back to
    assert.equal(captured?.type,input===cookieconsentConfig?'response':'end');
    if(input===cookieconsentConfig)assert.equal(captured.choice.analytics,true);
   }finally{win.close()}
+ }
+});
+
+test('live revision changes work with provider-only and legacy exports',async()=>{
+ for(const revision of [undefined,0,999]) {
+  const f=await fixture(both,{...cookieconsentConfig,revision},{revision:43});try{assert.deepEqual(f.read(),both);const c=f.cmp.getCookie();c.revision=42;f.store(c);assert.equal(f.read(),null)}finally{f.close()}
  }
 });

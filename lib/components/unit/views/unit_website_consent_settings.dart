@@ -50,13 +50,8 @@ class _UnitWebsiteConsentSettingsState
   String _platform = 'wordpress', _provider = 'complianz';
   bool _busy = false, _failed = false, _coverage = false, _edited = false;
   String? _export;
-  final _policy = TextEditingController();
-  final _revision = TextEditingController();
   final _analytics = TextEditingController();
   final _marketing = TextEditingController();
-  final _cbid = TextEditingController();
-  final _cutoff = TextEditingController();
-  final _age = TextEditingController();
 
   @override
   void initState() {
@@ -91,15 +86,7 @@ class _UnitWebsiteConsentSettingsState
 
   @override
   void dispose() {
-    for (final controller in [
-      _policy,
-      _revision,
-      _analytics,
-      _marketing,
-      _cbid,
-      _cutoff,
-      _age,
-    ]) {
+    for (final controller in [_analytics, _marketing]) {
       controller.dispose();
     }
     super.dispose();
@@ -112,15 +99,10 @@ class _UnitWebsiteConsentSettingsState
     final c = b?.providerConfig ?? <String, dynamic>{};
     _platform = b?.platform ?? 'wordpress';
     _provider = c['provider'] as String? ?? 'complianz';
-    _policy.text = c['policyId']?.toString() ?? '';
-    _revision.text = c['revision']?.toString() ?? '';
     _analytics.text =
         (c['categories'] as Map?)?['analytics'] as String? ?? 'analytics';
     _marketing.text =
         (c['categories'] as Map?)?['marketing'] as String? ?? 'marketing';
-    _cbid.text = c['cbid'] as String? ?? '';
-    _cutoff.text = c['consentValidFrom'] as String? ?? '';
-    _age.text = c['maxAgeSeconds']?.toString() ?? '31536000';
     _coverage = false;
     _export = null;
     _edited = false;
@@ -162,18 +144,11 @@ class _UnitWebsiteConsentSettingsState
   });
   Map<String, dynamic> get _config => {
     'provider': _provider,
-    if (_provider == 'complianz') 'policyId': _policy.text,
     if (_provider == 'cookieconsent') ...{
-      'revision': int.tryParse(_revision.text),
       'categories': {
         'analytics': _analytics.text,
         'marketing': _marketing.text,
       },
-    },
-    if (_provider == 'cookiebot' || _provider == 'wix') ...{
-      if (_provider == 'cookiebot') 'cbid': _cbid.text,
-      'consentValidFrom': _cutoff.text,
-      'maxAgeSeconds': int.tryParse(_age.text),
     },
   };
   Future<void> _save(bool confirm) => _run(() async {
@@ -316,22 +291,14 @@ class _UnitWebsiteConsentSettingsState
                   }
                 : null,
           ),
-          if (_provider == 'complianz')
-            _field(_policy, FormStrings.cmsPolicyId),
-          if (_provider == 'cookieconsent') ...[
-            _field(_revision, FormStrings.cmsCmpRevision),
-            _field(_analytics, FormStrings.cmsAnalyticsCategory),
-            _field(_marketing, FormStrings.cmsMarketingCategory),
-          ],
-          if (_provider == 'cookiebot') _field(_cbid, 'Cookiebot CBID'),
-          if (_provider == 'cookiebot' || _provider == 'wix') ...[
-            _field(
-              _cutoff,
-              FormStrings.cmsValidFrom,
-              hint: '2026-11-14T00:00:00.000Z',
+          if (_provider == 'cookieconsent')
+            ExpansionTile(
+              title: Text(FormStrings.cmsAdvancedCategories),
+              children: [
+                _field(_analytics, FormStrings.cmsAnalyticsCategory),
+                _field(_marketing, FormStrings.cmsMarketingCategory),
+              ],
             ),
-            _field(_age, FormStrings.cmsMaxAge),
-          ],
           const SizedBox(height: 16),
           Text(
             FormStrings.cmsState(

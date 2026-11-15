@@ -689,11 +689,18 @@ configuration capability and authenticated identity; no direct table access.
 
 Export: `{schemaVersion:1,serviceOrigin,websiteOrigin,binding:{id,version},
 providerConfig:{provider,organization,unit,consentRevision,...}}`.
-`serviceOrigin` comes from the stored organization's `DEFAULT_URL`. Complianz
-adds `policyId`; CookieConsent v3 adds positive `revision` and distinct
+`serviceOrigin` comes from the stored organization's `DEFAULT_URL`. Provider
+configuration requires only the provider. CookieConsent v3 optionally adds distinct
 `categories:{analytics,marketing}` (1-128 UTF-16 units each, Unicode/spaces
-preserved); Cookiebot adds `cbid`, UTC `consentValidFrom` and `maxAgeSeconds`
-(1-31536000). Scope and notice revision are server derived, never CMS inputs.
+preserved), defaulting to `analytics`/`marketing`. Scope and notice revision are
+server derived, never CMS inputs. Complianz compares the live policy ID with the
+visitor cookie; CookieConsent compares its live positive revision with the saved
+cookie and requires `validConsent()`. Cookiebot requires exactly one HTTPS uc.js
+loader with a valid, internally consistent UUID CBID and a matching persisted
+stamp; Cookiebot owns expiry, with consentUTC limited to one minute in the future.
+Old provider fields are ignored in existing schemaVersion 1 exports. CMS parsers
+validate the envelope without requiring provider fields, so no plugin release is
+needed. Cleanup preserves binding versions and confirmation receipts.
 
 The public form policy carries `website_consent_bindings` with only `id`,
 `version`, `websiteOrigin`, `effective`, including disabled tombstones. An origin
@@ -717,10 +724,9 @@ The native `wix` adapter reads the public synchronous
 `@wix/site`'s consentPolicyManager module. It requires `defaultPolicy === false`,
 a valid top-level `createdDate`, `essential === true` and boolean purpose fields.
 Analytics maps to `analytics`; marketing requires both `advertising` and
-`dataToThirdParty`, and is clamped when TCF is present. As Wix has no notice
-revision, the organizer archives `consentValidFrom` and `maxAgeSeconds` against
-the confirmed Festapp revision, as for Cookiebot. Missing timestamps, default
-policy, stale/future/expired records and unavailable APIs never import. No
+`dataToThirdParty`, and is clamped when TCF is present. Wix owns saved-policy
+validity. Missing timestamps, default policy, future records and unavailable APIs
+never import. No
 consent cookie values or visitor identifiers are exported to CMS configuration.
 
 Each read rechecks the current native API; event, polling, focus and visibility

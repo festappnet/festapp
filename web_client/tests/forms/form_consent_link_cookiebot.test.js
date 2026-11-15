@@ -324,11 +324,11 @@ for(const blocking of ['auto','none'])for(const choice of [both,{analytics:true,
   try{await ready(form);assert.deepEqual(form.consent(),choice);assert.equal(form.notice(),false);assert.equal(form.win.document.cookie,'')}
   finally{form.close();site.close()}
  });
-for(const kind of ['implied','old-cutoff','invalid-config','TCF','cookie-removed'])
+for(const kind of ['implied','future-choice','invalid-config','TCF','cookie-removed'])
  test('Cookiebot link: '+kind+' remains conservative in real form/session',async()=>{
-  const site=await website({input:kind==='invalid-config'?{...cookiebotConfig,cbid:'invalid'}:cookiebotConfig});site.choose(both);
+  const site=await website({input:kind==='invalid-config'?{...cookiebotConfig,provider:'invalid'}:cookiebotConfig});site.choose(both);
   if(kind==='implied')site.cmp.consent.method='implied';
-  if(kind==='old-cutoff')site.cmp.consentUTC=new site.win.Date('2025-01-01');
+  if(kind==='future-choice')site.cmp.consentUTC=new site.win.Date(site.win.Date.now()+120000);
   if(kind==='TCF')site.loader.setAttribute('data-framework','TCF');
   const form=linkedForm(site);
   try{

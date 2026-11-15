@@ -85,7 +85,7 @@ void main() {
                       expect(origin, site);
                       expect(expected, version);
                       expect(revision, 'a' * 32);
-                      expect(config['policyId'], '42');
+                      expect(config, {'provider': 'complianz'});
                       if (confirm) confirmations++;
                       version++;
                       state = confirm ? 'ready' : 'draft';
@@ -122,7 +122,6 @@ void main() {
       saved = true;
       await pump();
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, '42');
       expect(confirm().onPressed, isNull);
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
@@ -134,7 +133,9 @@ void main() {
       await tester.tap(find.text(FormStrings.cmsExport));
       await tester.pumpAndSettle();
       expect(find.byType(SelectableText), findsOneWidget);
-      await tester.enterText(find.byType(TextField).first, '43');
+      await tester.tap(find.text('Complianz'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cookiebot').last);
       await tester.pumpAndSettle();
       expect(find.byType(SelectableText), findsNothing);
       expect(confirm().onPressed, isNull);
@@ -188,14 +189,16 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('CookieConsent v3').last);
       await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsAdvancedCategories), findsOneWidget);
+      expect(find.text(FormStrings.cmsAnalyticsCategory), findsNothing);
+      await tester.tap(find.text(FormStrings.cmsAdvancedCategories));
+      await tester.pumpAndSettle();
       expect(find.text(FormStrings.cmsAnalyticsCategory), findsOneWidget);
-      expect(find.text(FormStrings.cmsPolicyId), findsNothing);
       await tester.tap(find.text('CookieConsent v3'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cookiebot').last);
       await tester.pumpAndSettle();
-      expect(find.text('Cookiebot CBID'), findsOneWidget);
-      expect(find.text(FormStrings.cmsValidFrom), findsOneWidget);
+      expect(find.text('Cookiebot CBID'), findsNothing);
       expect(find.text(FormStrings.cmsAnalyticsCategory), findsNothing);
       expect(
         tester
@@ -240,7 +243,6 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, '42');
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.cmsConfirm));
@@ -305,7 +307,7 @@ void main() {
       );
       await pump();
       await tester.pumpAndSettle();
-      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(CheckboxListTile), findsNothing);
       sites = ['https://poradatel.cz', 'https://tanec.cz'];
       saved = false;
       await pump();
@@ -316,8 +318,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(loads, 2, reason: 'canonical save reloads current semantic scope');
       expect(
-        tester.widget<TextField>(find.byType(TextField).first).enabled,
-        true,
+        tester
+            .widget<CheckboxListTile>(find.byType(CheckboxListTile))
+            .onChanged,
+        isNotNull,
       );
       sites = ['https://tanec.cz'];
       saved = false;
@@ -330,8 +334,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(loads, 3);
       expect(
-        tester.widget<TextField>(find.byType(TextField).first).enabled,
-        true,
+        tester
+            .widget<CheckboxListTile>(find.byType(CheckboxListTile))
+            .onChanged,
+        isNotNull,
       );
     },
   );

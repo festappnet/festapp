@@ -17,14 +17,12 @@ class FormStrings {
       'FeatureFormSettings.cmsTransferHelp'.tr();
   static String get cmsPlatform => 'FeatureFormSettings.cmsPlatform'.tr();
   static String get cmsProvider => 'FeatureFormSettings.cmsProvider'.tr();
-  static String get cmsPolicyId => 'FeatureFormSettings.cmsPolicyId'.tr();
-  static String get cmsCmpRevision => 'FeatureFormSettings.cmsCmpRevision'.tr();
   static String get cmsAnalyticsCategory =>
       'FeatureFormSettings.cmsAnalyticsCategory'.tr();
   static String get cmsMarketingCategory =>
       'FeatureFormSettings.cmsMarketingCategory'.tr();
-  static String get cmsValidFrom => 'FeatureFormSettings.cmsValidFrom'.tr();
-  static String get cmsMaxAge => 'FeatureFormSettings.cmsMaxAge'.tr();
+  static String get cmsAdvancedCategories =>
+      'FeatureFormSettings.cmsAdvancedCategories'.tr();
   static String get cmsCoverage => 'FeatureFormSettings.cmsCoverage'.tr();
   static String get cmsConfirm => 'FeatureFormSettings.cmsConfirm'.tr();
   static String get cmsExport => 'FeatureFormSettings.cmsExport'.tr();

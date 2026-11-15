@@ -327,12 +327,11 @@
   }
 
   // src/embed/host_wix_consent.js
-  var instant = (value) => typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
   function createWixConsentSource(win, input) {
     let config;
     try {
       config = typeof input === "string" ? JSON.parse(input) : { ...input };
-      if (config.provider !== "wix" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin || !instant(config.consentValidFrom) || !Number.isSafeInteger(config.maxAgeSeconds) || config.maxAgeSeconds <= 0 || config.maxAgeSeconds > 365 * 86400) config = null;
+      if (config.provider !== "wix" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin) config = null;
     } catch {
       config = null;
     }
@@ -346,7 +345,7 @@
         const date = saved?.createdDate;
         const timestamp2 = typeof date === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?(?:Z|[+-]\d\d:\d\d)$/.test(date) ? Date.parse(date) : Object.prototype.toString.call(date) === "[object Date]" ? date.getTime() : NaN;
         const now = win.Date.now();
-        if (saved?.defaultPolicy !== false || p?.essential !== true || !["functional", "analytics", "advertising", "dataToThirdParty"].every((k) => typeof p[k] === "boolean") || !Number.isFinite(timestamp2) || timestamp2 < Date.parse(config.consentValidFrom) || timestamp2 > now + 6e4 || now - timestamp2 >= config.maxAgeSeconds * 1e3) return null;
+        if (saved?.defaultPolicy !== false || p?.essential !== true || !["functional", "analytics", "advertising", "dataToThirdParty"].every((k) => typeof p[k] === "boolean") || !Number.isFinite(timestamp2) || timestamp2 > now + 6e4) return null;
         return {
           consentRevision: config.consentRevision,
           analytics: p.analytics,
@@ -411,8 +410,8 @@
     let config;
     try {
       config = typeof input === "string" ? JSON.parse(input) : { ...input };
-      if (config?.provider !== "complianz" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !policyId(config.policyId)) config = null;
-      else config = Object.freeze({ ...config, policyId: policyId(config.policyId) });
+      if (config?.provider !== "complianz" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision)) config = null;
+      else config = Object.freeze(config);
     } catch {
       config = null;
     }
@@ -422,7 +421,7 @@
       try {
         if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
         const cmp = win.complianz;
-        if (cmp?.consenttype !== "optin" || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) || typeof win.cmplz_get_cookie !== "function" || typeof win.cmplz_get_banner_status !== "function" || typeof win.cmplz_has_consent !== "function" || win.cmplz_get_banner_status() !== "dismissed" || policyId(cmp.current_policy_id) !== config.policyId || policyId(win.cmplz_get_cookie("policy_id")) !== config.policyId) return null;
+        if (cmp?.consenttype !== "optin" || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) || typeof win.cmplz_get_cookie !== "function" || typeof win.cmplz_get_banner_status !== "function" || typeof win.cmplz_has_consent !== "function" || win.cmplz_get_banner_status() !== "dismissed" || !policyId(cmp.current_policy_id) || policyId(win.cmplz_get_cookie("policy_id")) !== policyId(cmp.current_policy_id)) return null;
         const stats = win.cmplz_get_cookie("statistics"), ads = win.cmplz_get_cookie("marketing");
         if (![stats, ads].every((value) => ["allow", "deny"].includes(value))) return null;
         const services = win.cmplz_get_cookie("consented_services");
@@ -489,7 +488,6 @@
     "CookiebotOnDialogDisplay"
   ];
   var uuid = (value) => typeof value === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value);
-  var instant2 = (value) => typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
   var consentId = (value) => typeof value === "string" && value.length <= 256 && /^[A-Za-z0-9+/=_-]+$/.test(value) && !/^-?[01]$/.test(value);
   function persisted(doc, id) {
     const cookies = doc.cookie.split(";").map((value2) => value2.trim()).filter((value2) => value2.startsWith("CookieConsent="));
@@ -503,7 +501,7 @@
     const key = `stamp:'${id}'`, at = value.indexOf(key);
     return value.startsWith("{") && value.endsWith("}") && (value.match(/[{,]stamp:/g) || []).length === 1 && at > 0 && "{,".includes(value[at - 1]) && ",}".includes(value[at + key.length]);
   }
-  function loader(win, config) {
+  function loader(win) {
     const scripts = [...win.document.querySelectorAll("script[src]")].filter((script2) => {
       const url2 = new URL(script2.src, win.document.baseURI);
       return url2.origin === "https://consent.cookiebot.com" && url2.pathname === "/uc.js";
@@ -511,7 +509,8 @@
     if (scripts.length !== 1) return null;
     const script = scripts[0], url = new URL(script.src);
     const attribute = script.getAttribute("data-cbid"), query = url.searchParams.getAll("cbid");
-    if (query.length > 1 || !attribute && !query.length || [attribute, ...query].filter((value) => value !== null).some((value) => !uuid(value) || value.toLowerCase() !== config.cbid)) return null;
+    if (query.length > 1 || !attribute && !query.length || [attribute, ...query].filter((value) => value !== null).some((value) => !uuid(value))) return null;
+    if (attribute && query.length && attribute.toLowerCase() !== query[0].toLowerCase()) return null;
     return { tcf: !!script.getAttribute("data-framework") || !!url.searchParams.get("data-framework") };
   }
   function createCookiebotSource(win, input) {
@@ -519,8 +518,8 @@
     try {
       config = typeof input === "string" ? JSON.parse(input) : { ...input };
       const origin = new URL(config.origin);
-      if (config.provider !== "cookiebot" || ![config.organization, config.unit].every((value) => Number.isSafeInteger(value) && value > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !uuid(config.cbid) || origin.origin !== config.origin || origin.protocol !== "https:" || !instant2(config.consentValidFrom) || !Number.isSafeInteger(config.maxAgeSeconds) || config.maxAgeSeconds <= 0 || config.maxAgeSeconds > 365 * 86400) config = null;
-      else config = Object.freeze({ ...config, cbid: config.cbid.toLowerCase(), validFrom: Date.parse(config.consentValidFrom) });
+      if (config.provider !== "cookiebot" || ![config.organization, config.unit].every((value) => Number.isSafeInteger(value) && value > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || origin.origin !== config.origin || origin.protocol !== "https:") config = null;
+      else config = Object.freeze(config);
     } catch {
       config = null;
     }
@@ -529,13 +528,13 @@
     const read = (scope) => {
       try {
         if (!config || pending || win.location.origin !== config.origin || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
-        const script = loader(win, config), cmp = win.Cookiebot, consent = cmp?.consent;
+        const script = loader(win), cmp = win.Cookiebot, consent = cmp?.consent;
         if (!script || consent?.method !== "explicit" || consent.necessary !== true || ![consent.preferences, consent.statistics, consent.marketing, cmp.consented, cmp.declined, cmp.hasResponse].every((value) => typeof value === "boolean") || cmp.regulations?.gdprApplies !== true || cmp.regulations.ccpaApplies !== false || typeof cmp.regulations.lgpdApplies !== "boolean" || consent.services !== void 0 || // Undocumented account mode; when exposed it must be an opt-in mode.
         cmp.responseMode !== void 0 && !["optin", "leveloptin", "inlineoptin"].includes(cmp.responseMode)) return null;
         const accepted = consent.preferences || consent.statistics || consent.marketing;
         if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
         const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
-        if (!consentId(id) || consent.stamp !== id || !Number.isSafeInteger(utc) || utc < config.validFrom || utc > now + 6e4 || now - utc >= config.maxAgeSeconds * 1e3) return null;
+        if (!consentId(id) || consent.stamp !== id || !Number.isSafeInteger(utc) || utc > now + 6e4) return null;
         if (!persisted(win.document, id)) return null;
         return {
           consentRevision: config.consentRevision,
@@ -596,7 +595,7 @@
     try {
       config = typeof input === "string" ? JSON.parse(input) : { ...input };
       const categories = config.categories === void 0 ? { analytics: "analytics", marketing: "marketing" } : config.categories;
-      if (config.provider !== "cookieconsent" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !revision(config.revision) || !categoryName(categories?.analytics) || !categoryName(categories?.marketing) || categories.analytics === categories.marketing) config = null;
+      if (config.provider !== "cookieconsent" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !categoryName(categories?.analytics) || !categoryName(categories?.marketing) || categories.analytics === categories.marketing) config = null;
       else config = Object.freeze({ ...config, categories: Object.freeze({ ...categories }) });
     } catch {
       config = null;
@@ -607,9 +606,9 @@
       try {
         if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
         const cmp = win.CookieConsent;
-        if (cmp?.validConsent() !== true || cmp.getConfig("mode") !== "opt-in" || cmp.getConfig("revision") !== config.revision) return null;
+        if (cmp?.validConsent() !== true || cmp.getConfig("mode") !== "opt-in" || !revision(cmp.getConfig("revision"))) return null;
         const cookie = cmp.getCookie(), categories = cmp.getConfig("categories");
-        if (cookie?.revision !== config.revision || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) || typeof cookie.consentId !== "string" || !cookie.consentId || !timestamp(cookie.consentTimestamp) || !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() || !cookie.services || typeof cookie.services !== "object" || Array.isArray(cookie.services)) return null;
+        if (cookie?.revision !== cmp.getConfig("revision") || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) || typeof cookie.consentId !== "string" || !cookie.consentId || !timestamp(cookie.consentTimestamp) || !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() || !cookie.services || typeof cookie.services !== "object" || Array.isArray(cookie.services)) return null;
         const choice = {};
         for (const purpose of ["analytics", "marketing"]) {
           const name = config.categories[purpose], category = categories?.[name];

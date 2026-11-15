@@ -22,10 +22,8 @@ for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false
  });
 for(const input of ['{',null,{}, {...cookiebotConfig,provider:'other'},
  ...[0,'1',-1].map(organization=>({...cookiebotConfig,organization})),{...cookiebotConfig,unit:0},
- {...cookiebotConfig,consentRevision:'x'},...['',undefined,'bad'].map(cbid=>({...cookiebotConfig,cbid})),
- ...['https://host.example/','http://host.example','https://host.example/path',undefined].map(origin=>({...cookiebotConfig,origin})),
- ...['2026-01-01','2026-02-31T00:00:00.000Z',undefined].map(consentValidFrom=>({...cookiebotConfig,consentValidFrom})),
- ...[0,-1,'100',365*86400+1,1.5,undefined].map(maxAgeSeconds=>({...cookiebotConfig,maxAgeSeconds}))])
+ {...cookiebotConfig,consentRevision:'x'},
+ ...['https://host.example/','http://host.example','https://host.example/path',undefined].map(origin=>({...cookiebotConfig,origin}))])
  test('invalid Cookiebot config stays configured and denied '+JSON.stringify(input),()=>{
   const f=fixture(both,input);try{assert.equal(f.registry.configured,true);assert.equal(f.read(),null)}finally{f.close()}
  });
@@ -36,12 +34,11 @@ const invalid={
  'nonboolean category':f=>f.cmp.consent.statistics='true','necessary not accepted':f=>f.cmp.consent.necessary=false,
  'unknown regulation':f=>delete f.cmp.regulations,'GDPR not applicable':f=>f.cmp.regulations.gdprApplies=false,
  'CCPA opt-out':f=>f.cmp.regulations.ccpaApplies=true,'unknown LGPD':f=>delete f.cmp.regulations.lgpdApplies,
- 'old policy cutoff':f=>{f.cmp.consentUTC=new f.win.Date('2025-01-01');const utc=f.cmp.consentUTC.getTime();f.store({stamp:'old',necessary:true,preferences:false,statistics:true,marketing:true,utc})},
  'future choice':f=>f.cmp.consentUTC=new f.win.Date(f.win.Date.now()+120000),
  'missing date':f=>delete f.cmp.consentUTC,'invalid date':f=>f.cmp.consentUTC=new f.win.Date('invalid'),
  'date string':f=>f.cmp.consentUTC=f.cmp.consentUTC.toISOString(),
  'expired cookie':f=>{f.win.document.cookie='CookieConsent=;max-age=0;path=/'},
- 'different CBID':f=>f.script.setAttribute('data-cbid','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+ 'inconsistent CBID':f=>f.script.src+='?cbid=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
  'missing CBID':f=>f.script.removeAttribute('data-cbid'),
  'duplicate loaders':f=>f.win.document.head.append(f.script.cloneNode(true)),
  'wrong loader origin':f=>f.script.src='https://consent.cookiebot.com.evil.example/uc.js',
@@ -65,8 +62,8 @@ test('organization, unit, semantic revision and configured origin bind the recor
  }finally{f.close()}
  const other=fixture(both,{...cookiebotConfig,origin:'https://other.example'});try{assert.equal(other.read(),null)}finally{other.close()}
 });
-test('expiry is enforced by elapsed age even while cookie and API remain present',()=>{
- const f=fixture();try{f.win.Date.now=()=>f.cmp.consentUTC.getTime()+cookiebotConfig.maxAgeSeconds*1000;assert.equal(f.read(),null)}finally{f.close()}
+test('Cookiebot owns expiry while its persisted record remains present',()=>{
+ const f=fixture();try{f.win.Date.now=()=>f.cmp.consentUTC.getTime()+cookiebotConfig.maxAgeSeconds*1000;assert.deepEqual(f.read(),both)}finally{f.close()}
 });
 for(const cookie of ['-1','%zz',"{stamp:'-1',necessary:true,preferences:true,statistics:true,marketing:true,utc:1}",
  "{stamp:'x',stamp:'y'}","{stamp:'x',services:{ad:false}}",'{"statistics":true,}',
@@ -172,7 +169,7 @@ test('last unsubscribe removes exactly the CMP listeners and its interval',async
  }finally{f.close()}
 });
 test('generated helper selects Cookiebot and invalid configuration never falls back to GCM',async()=>{
- for(const input of [cookiebotConfig,{...cookiebotConfig,cbid:'invalid'},'{']){
+ for(const input of [cookiebotConfig,{...cookiebotConfig,provider:'unknown'},'{']){
   const win=new JSDOM('',{url:cookiebotConfig.origin,runScripts:'outside-only',pretendToBeVisual:true}).window;
   try{
    cookiebotFixture(win,{choice:both});win.dataLayer=[['consent','default',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'}]];
@@ -225,4 +222,11 @@ test('a mismatch present before any match never grants',()=>{
   cmp.store({stamp:'b3RoZXI=',necessary:true,preferences:false,statistics:false,marketing:false,method:'explicit',ver:1,utc:1,region:'cz'});
   assert.equal(createCookiebotSource(win,cookiebotConfig).read(scope),null);
  }finally{win.close()}
+});
+
+test('provider-only and obsolete mapping fields are accepted',()=>{
+ for(const extra of [{},{cbid:'obsolete',consentValidFrom:'invalid',maxAgeSeconds:0}]) {
+  const {cbid,consentValidFrom,maxAgeSeconds,...base}=cookiebotConfig;
+  const f=fixture(both,{...base,...extra});try{assert.deepEqual(f.read(),both)}finally{f.close()}
+ }
 });

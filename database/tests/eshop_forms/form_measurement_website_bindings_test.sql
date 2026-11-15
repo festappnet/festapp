@@ -4,6 +4,10 @@ DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; org big
  fid bigint:=(x->>'form')::bigint; scope jsonb; result jsonb; b jsonb; exported jsonb; before_policy jsonb; legacy_revision text; rejected boolean; signature text;
  config jsonb:='{"provider":"cookieconsent","revision":7,"categories":{"analytics":"statistika návštěv","marketing":"reklama"}}';
 BEGIN
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"complianz","policyId":"obsolete"}'),'{"provider":"complianz"}'::jsonb,'legacy policy ID stripped');
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"cookiebot"}'),'{"provider":"cookiebot"}'::jsonb,'Cookiebot needs no mapping');
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"wix"}'),'{"provider":"wix"}'::jsonb,'Wix needs no mapping');
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"cookieconsent"}'),'{"provider":"cookieconsent"}'::jsonb,'CookieConsent categories optional');
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=org;
  UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://organizer.example"]}' WHERE id=un;
  UPDATE public.forms SET is_open=true,data='{"analytics":{"enabled":true}}' WHERE id=fid;

@@ -26,6 +26,20 @@ try {
   const data=await scalar(a,'SELECT public.get_unit_website_consent_bindings($1) v',[unit]);
   assert.equal(data.bindings.length,1);assert.equal(data.bindings[0].version,1);
  });
+ await test('provider cleanup preserves existing confirmed binding and scope',async()=>{
+  const source=readFileSync(new URL('../../../supabase/migrations/20261115210000_website_consent_live_provider_state.sql',import.meta.url),'utf8');
+  await a.query('BEGIN');
+  try {
+   await a.query(`UPDATE analytics.website_consent_bindings SET provider_config='{"provider":"complianz","policyId":"42","cbid":"obsolete","revision":42,"consentValidFrom":"2026-01-01T00:00:00.000Z","maxAgeSeconds":86400}' WHERE unit=$1`,[unit]);
+   const before=await scalar(a,'SELECT to_jsonb(b) v FROM analytics.website_consent_bindings b WHERE unit=$1',[unit]);
+   assert.equal(before.enabled,true);assert.equal(before.confirmed_revision,scope.consentRevision);
+   assert.ok(before.confirmed_by);assert.ok(before.confirmed_at);
+   await a.query(source);await a.query(source);
+   const after=await scalar(a,'SELECT to_jsonb(b) v FROM analytics.website_consent_bindings b WHERE unit=$1',[unit]);
+   assert.deepEqual(after,{...before,provider_config:{provider:'complianz'}});
+   assert.equal((await scalar(a,'SELECT public.unit_measurement_consent_scope_internal($1) v',[unit])).consentRevision,scope.consentRevision);
+  } finally {await a.query('ROLLBACK');}
+ });
  await test('confirmation waits for Unit save and rejects the superseded semantic revision',async()=>{
   await a.query('BEGIN');
   await a.query(`UPDATE public.units SET data=data||'{"measurement_consent_version":2}' WHERE id=$1`,[unit]);
