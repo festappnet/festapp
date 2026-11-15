@@ -5743,7 +5743,7 @@
     "approved": "Storno nebo změna přijata; stav platby sledujte samostatně",
     "rejected": "Žádost zamítnuta",
     "withdrawn": "Žádost stažena",
-    "resolved": "Obsluha žádost vyřešila",
+    "resolved": "Vyřízeno",
     "withdraw": "Stáhnout žádost",
     "response": "Odpověď pořadatele",
     "approve": "Schválit a provést",
@@ -5782,11 +5782,13 @@
     "cancel_selected": "Vybrané vstupenky budou stornovány. Není potvrzená platba k vrácení.",
     "cancel_manual_refund_selected": "Vybrané vstupenky budou stornovány. Případné vrácení peněz vyřídí obsluha samostatně.",
     "cancel_refund_selected": "Vybrané vstupenky budou stornovány a odpovídající dostupná částka připravena k refundaci. Peníze ještě nejsou vrácené.",
-    "request_cancel_selected": "Odešlete žádost o storno pouze vybraných vstupenek. Do schválení zůstávají platné."
+    "request_cancel_selected": "Odešlete žádost o storno pouze vybraných vstupenek. Do schválení zůstávají platné.",
+    "cancelTickets": "Stornovat vstupenky",
+    "answersLocked": "Odeslané odpovědi jsou pro zákazníka zamčené, včetně jména a telefonu. Opravy řeší obsluha."
   },
   "FeatureCustomerSelfService": {
     "title": "Zákaznická samoobsluha",
-    "description": "Změny objednávek z jejich stávajícího přehledu. Jednotlivé operace a jejich pravidla se povolují samostatně ve formuláři."
+    "description": "Storno, refundace a přesuny termínů podle pravidel pořadatele. Odeslané odpovědi zákazník neupravuje."
   },
   "DiscountCodes": {
     "title": "Slevové kódy",

@@ -359,7 +359,7 @@
     },
     {
       "migration": "20261115130000_customer_order_policy_foundation.sql",
-      "active": true,
+      "active": false,
       "header": "-- Customer order self-service. Additive schema; feature/operations remain disabled until explicitly configured.",
       "sources": [
         "customer_order_changes/policy_schema.sql",
@@ -393,7 +393,9 @@
         "eshop_waitlist/email_render_context.sql",
         "eshop/get_order_details_for_email.sql",
         "ticket_wallet/projection.sql"
-      ]
+      ],
+      "sha256": "dc87a62f55bd0b8023ec37fef779cebfb248440e2ccf92c37ee44b12e6dbd98c",
+      "checkSources": true
     },
     {
       "migration": "20261115140000_discount_code_projections.sql",
@@ -410,6 +412,17 @@
       "header": "-- Public waitlist counter visibility, enabled by default in the reader.",
       "sources": [
         "eshop_forms/form_settings.sql"
+      ]
+    },
+    {
+      "migration": "20261115160000_customer_self_service_completion.sql",
+      "active": true,
+      "header": "-- Complete selected-ticket customer cancellation validation; preserve published foundation bytes.",
+      "sources": [
+        "customer_order_changes/policy.sql",
+        "customer_order_changes/preview.sql",
+        "customer_order_changes/commands.sql",
+        "customer_order_changes/staff.sql"
       ]
     }
   ]

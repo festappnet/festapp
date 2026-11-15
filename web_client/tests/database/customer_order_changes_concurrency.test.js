@@ -6,14 +6,14 @@ import pg from 'pg';
 import {createTestWorkspace} from './runtime_workspace.js';
 import {assertLocalDatabaseUrl,assertDisposableDatabase} from './disposable_database.js';
 const read=p=>readFileSync(new URL('../../../'+p,import.meta.url),'utf8');
-async function workspace(run){
+async function workspace(run,{twoTickets=false}={}){
  const lease=await createTestWorkspace();assertLocalDatabaseUrl(lease.databaseUrl);
  const clients=[];let pending=[];
  const connect=async()=>{const c=new pg.Client({connectionString:lease.databaseUrl});await c.connect();clients.push(c);await assertDisposableDatabase(c);await c.query("SET statement_timeout='20s'; SET lock_timeout='15s'; SET festapp.email_wake='scheduled'");return c;};
  try{
   const control=await connect();await control.query(read('database/tests/helpers/assertions.sql'));await control.query(read('database/tests/helpers/payment_lifecycle_fixture.sql'));await control.query(read('database/tests/customer_order_changes/fixture.sql'));
   const scalar=async(sql,args=[])=>Object.values((await control.query(sql,args)).rows[0])[0];
-  const x=await scalar('SELECT pg_temp.customer_fixture()');
+  const x=await scalar(twoTickets?'SELECT pg_temp.customer_two_fixture()':'SELECT pg_temp.customer_fixture()');
   await control.query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.role','authenticated',false)",[x.actor]);
   const writers=[await connect(),await connect()];
   const service=async c=>c.query("SET request.jwt.claim.role='service_role'; SET request.jwt.claim.sub=''; SET ROLE service_role");
@@ -39,15 +39,15 @@ async function workspace(run){
  }finally{await Promise.allSettled(pending);await Promise.all(clients.map(c=>c.end()));await lease.release();}
 }
 test('one write capability has one winner across distinct simultaneous commands',async()=>workspace(async({scalar,x,writers,gateway,cap,race})=>{
- const payload={order:{[x.field]:'777 111 222'}},token=await cap('edit',payload),a=randomUUID(),b=randomUUID();
- const preview=await gateway(writers[0],'preview',token,'edit',payload,a);
- const outcomes=await race([c=>gateway(c,'command',token,'edit',payload,a,preview.fingerprint),c=>gateway(c,'command',token,'edit',payload,b,preview.fingerprint)]);
+ const payload={reason:'Cannot attend'},token=await cap('cancel',payload),a=randomUUID(),b=randomUUID();
+ const preview=await gateway(writers[0],'preview',token,'cancel',payload,a);
+ const outcomes=await race([c=>gateway(c,'command',token,'cancel',payload,a,preview.fingerprint),c=>gateway(c,'command',token,'cancel',payload,b,preview.fingerprint)]);
  assert.equal(outcomes.filter(r=>r.value?.code===200).length,1);assert.equal(outcomes.filter(r=>r.error?.code==='42501').length,1);
  assert.equal(Number(await scalar('SELECT count(*) FROM eshop.customer_order_change_events WHERE order_id=$1',[x.order])),1);
 }));
 test('simultaneous exact retries return one committed result and one refund-free audit',async()=>workspace(async({scalar,x,writers,gateway,cap,race})=>{
- const payload={order:{[x.field]:'777 222 333'}},token=await cap('edit',payload),command=randomUUID();const preview=await gateway(writers[0],'preview',token,'edit',payload,command);
- const outcomes=await race([c=>gateway(c,'command',token,'edit',payload,command,preview.fingerprint),c=>gateway(c,'command',token,'edit',payload,command,preview.fingerprint)]);
+ const payload={reason:'Cannot attend'},token=await cap('cancel',payload),command=randomUUID();const preview=await gateway(writers[0],'preview',token,'cancel',payload,command);
+ const outcomes=await race([c=>gateway(c,'command',token,'cancel',payload,command,preview.fingerprint),c=>gateway(c,'command',token,'cancel',payload,command,preview.fingerprint)]);
  assert.equal(outcomes.filter(r=>r.value?.code===200).length,2);assert.equal(Number(await scalar('SELECT count(*) FROM eshop.customer_order_change_events WHERE command_id=$1',[command])),1);
  assert.equal(Number(await scalar('SELECT count(*) FROM eshop.refund_requests WHERE order_id=$1',[x.order])),0);
 }));
@@ -64,14 +64,14 @@ test('withdrawal and organizer approval serialize without a canceled-yet-withdra
  assert.ok(status==='withdrawn'&&state==='ordered'||status==='approved'&&state==='storno');
 }));
 test('a saved stricter policy and a customer confirmation share the same fence',async()=>workspace(async({scalar,x,writers,gateway,cap,race})=>{
- const payload={order:{[x.field]:'777 333 444'}},token=await cap('edit',payload),command=randomUUID();const preview=await gateway(writers[0],'preview',token,'edit',payload,command);
- const policy=(await scalar('SELECT public.customer_order_policy_internal($1)',[x.form])).policy;policy.edit.enabled=false;
+ const payload={reason:'Cannot attend'},token=await cap('cancel',payload),command=randomUUID();const preview=await gateway(writers[0],'preview',token,'cancel',payload,command);
+ const policy=(await scalar('SELECT public.customer_order_policy_internal($1)',[x.form])).policy;policy.cancel.enabled=false;
  await writers[1].query('RESET ROLE');await writers[1].query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.role','authenticated',false)",[x.actor]);await writers[1].query('SET ROLE authenticated');
  const form={id:Number(x.form),occasion:Number(x.occasion),expected_aggregate_version:0,customer_self_service:policy};
- const outcomes=await race([c=>gateway(c,'command',token,'edit',payload,command,preview.fingerprint),async c=>(await c.query('SELECT public.update_form_client_sync_v1($1,$2) r',[form,randomUUID()])).rows[0].r]);
+ const outcomes=await race([c=>gateway(c,'command',token,'cancel',payload,command,preview.fingerprint),async c=>(await c.query('SELECT public.update_form_client_sync_v1($1,$2) r',[form,randomUUID()])).rows[0].r]);
  assert.equal(outcomes[1].value?.code,200);assert.ok(outcomes[0].value?.code===200||outcomes[0].error?.code==='42501');
- const phone=await scalar("SELECT data->>'phone' FROM eshop.orders WHERE id=$1",[x.order]);assert.equal(phone,outcomes[0].value?'777 333 444':null);
- assert.equal((await scalar('SELECT public.customer_order_policy_internal($1)',[x.form])).policy.edit.enabled,false);
+ const state=await scalar("SELECT state FROM eshop.orders WHERE id=$1",[x.order]);assert.equal(state,outcomes[0].value?'storno':'ordered');
+ assert.equal((await scalar('SELECT public.customer_order_policy_internal($1)',[x.form])).policy.cancel.enabled,false);
 }));
 
 test('two term moves competing for the last place keep one allocation and one unchanged order', async()=>workspace(async({control,scalar,x,writers,gateway,cap,race})=>{
@@ -122,3 +122,16 @@ test('scanner admission and confirmed cancellation cannot both succeed',async()=
  assert.equal(await scalar('SELECT state FROM eshop.tickets WHERE id=$1',[x.ticket]),cancelled?'storno':'used');
  assert.equal(Number(await scalar('SELECT count(*) FROM eshop.refund_requests WHERE order_id=$1',[x.order])),0);
 }));
+
+
+test('two different selected-ticket cancellations cannot commit from the same stale order preview',async()=>workspace(async({x,scalar,writers,gateway,cap,race})=>{
+ const payloads=[{ticketIds:[Number(x.ticket)]},{ticketIds:[Number(x.otherTicket)]}],ids=[randomUUID(),randomUUID()];
+ const tokens=await Promise.all(payloads.map(p=>cap('cancel',p)));
+ const previews=await Promise.all(tokens.map((t,i)=>gateway(writers[i],'preview',t,'cancel',payloads[i],ids[i])));
+ assert.ok(previews.every(p=>p.partial===true&&p.effect==='cancel'));
+ const outcomes=await race(tokens.map((token,i)=>c=>gateway(c,'command',token,'cancel',payloads[i],ids[i],previews[i].fingerprint)));
+ assert.equal(outcomes.filter(r=>r.value?.code===200).length,1);
+ assert.equal(outcomes.filter(r=>r.error?.code==='40001').length,1,JSON.stringify(outcomes));
+ assert.equal(Number(await scalar("SELECT count(*) FROM public.get_order_tickets_internal($1) WHERE state='storno'",[x.order])),1);
+ assert.equal(Number(await scalar('SELECT price FROM eshop.orders WHERE id=$1',[x.order])),1000);
+},{twoTickets:true}));

@@ -176,7 +176,10 @@
       "povinný důvod",
       "refundace",
       "přesun termínu",
-      "změna údajů"
+      "změna údajů",
+      "storno jedné vstupenky",
+      "místenka",
+      "vybrané vstupenky"
     ]
   },
   "en": {
@@ -334,7 +337,10 @@
       "required reason",
       "refund",
       "term move",
-      "change details"
+      "change details",
+      "cancel one ticket",
+      "reserved seat",
+      "selected tickets"
     ]
   }
 }

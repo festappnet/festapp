@@ -34,7 +34,7 @@ scripts; clients keep it only in memory. The native URI getter never serializes 
 
 Automatic moves require explicit actual form terms and product/answer mapping,
 same occasion/price/currency, compatible payment configuration and free capacity.
-Seats, discounts, inventory, deposits, invoice repair and uncertain finance produce
+Moves with seats, discounts, inventory, deposits, invoice repair and uncertain finance produce
 staff requests. A request does not reserve capacity, invalidate admission or prove
 refunded money. The current rules and verification record are in
 `docs/plans/customer-self-service-plan-2026-11-15.md` and its RESULT companion.
@@ -42,3 +42,21 @@ refunded money. The current rules and verification record are in
 The additive migration is assembled from canonical sources; regenerate it with
 `python3 automation/assemble-customer-order-changes-migration.py` and then regenerate
 canonical source parity. Migration does not enable the feature or its operations.
+
+Selected-ticket cancellation is a separate scope of the same cancellation operation.
+The preview rejects duplicate, foreign and cross-order shared ticket identities.
+It binds exact IDs into the emailed proposal and receipt; support requests retain
+those IDs for staff approval. Non-selected admission, QR identities and allocations
+remain unchanged. `cancel_ticket_selection_domain_internal` is also the existing
+staff bulk cancellation effect; its staff facade keeps locks and current rights.
+Seats alone do not prohibit cancellation; indivisible selection-unit guards remain.
+Partial online refunds require the provider's existing admission decision workflow
+and produce support work. Bank/cash partial cancellation is automatic only under
+the compatible configured policy; refund facts remain in the existing engine.
+
+Release policy: all submitted answers are customer read-only, including contact
+fields. `customer_order_operation_enabled_internal` supports only cancel/move;
+preview and command effects also reject edit. Legacy policy input remains
+validated for compatibility but cannot persist an enabled edit rule. A stored
+legacy enabled rule or credential does not override the server lock. Staff
+response commands retain their independent typed authorization and shared effects.

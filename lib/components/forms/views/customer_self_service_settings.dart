@@ -477,6 +477,10 @@ class _CustomerSelfServiceSettingsState
       customerChangesHelp(context),
       Padding(
         padding: const EdgeInsets.all(12),
+        child: Text(customerChangeText('answersLocked')),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -509,7 +513,7 @@ class _CustomerSelfServiceSettingsState
                 setState(() {});
               },
             ),
-            for (final op in ['edit', 'cancel', 'move']) _operation(op),
+            for (final op in ['cancel', 'move']) _operation(op),
             if (_error != null)
               Semantics(
                 liveRegion: true,

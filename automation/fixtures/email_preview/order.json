@@ -74,10 +74,6 @@
   },
   "overviewActions": [
     {
-      "operation": "edit",
-      "enabled": true
-    },
-    {
       "operation": "cancel",
       "enabled": true
     },

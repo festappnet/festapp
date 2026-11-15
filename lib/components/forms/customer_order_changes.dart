@@ -52,8 +52,9 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
   int _generation = 0;
   String _command = const Uuid().v4();
   Map<String, dynamic>? _proposal, _preview;
-  List<CustomerOrderChangeAction> get _actions =>
-      widget.data.allowedActions.where((a) => a.enabled).toList();
+  List<CustomerOrderChangeAction> get _actions => widget.data.allowedActions
+      .where((a) => a.enabled && const ['cancel', 'move'].contains(a.operation))
+      .toList();
   @override
   void initState() {
     super.initState();
@@ -129,7 +130,8 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
           'token': token,
           'commandId': _command,
         });
-    if (proposal['orderId'] != orderId) {
+    if (proposal['orderId'] != orderId ||
+        !const ['cancel', 'move', 'withdraw'].contains(proposal['operation'])) {
       throw const CustomerOrderChangeException('unavailable');
     }
     final preview = await _client.call({
@@ -184,7 +186,13 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
     _fields.clear();
     _originals.clear();
     _reason.clear();
-    _selectedTickets..clear()..addAll((action.data['tickets'] as List? ?? const []).map((t) => (t['id'] as num).toInt()));
+    _selectedTickets
+      ..clear()
+      ..addAll(
+        (action.data['tickets'] as List? ?? const []).map(
+          (t) => (t['id'] as num).toInt(),
+        ),
+      );
     for (final field in action.data['fields'] as List? ?? const []) {
       final values = field['ticket'] == true
           ? field['values'] as List? ?? const []
@@ -225,7 +233,12 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
   Widget _edit(CustomerOrderChangeAction action) {
     final children = <Widget>[
       Text(
-        customerChangeText(action.operation),
+        customerChangeText(
+          action.operation == 'cancel' &&
+                  (action.data['tickets'] as List? ?? const []).isNotEmpty
+              ? 'cancelTickets'
+              : action.operation,
+        ),
         style: Theme.of(context).textTheme.titleMedium,
       ),
     ];
@@ -284,11 +297,27 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
         }
       }
     }
-    if (action.operation == 'cancel' && (action.data['tickets'] as List? ?? const []).isNotEmpty) {
+    if (action.operation == 'cancel' &&
+        (action.data['tickets'] as List? ?? const []).isNotEmpty) {
       children.add(Text(customerChangeText('selectTickets')));
       for (final ticket in action.data['tickets'] as List) {
         final id = (ticket['id'] as num).toInt();
-        children.add(CheckboxListTile(contentPadding: EdgeInsets.zero, title: Text(_ticketLabel(id)), value: _selectedTickets.contains(id), onChanged: _busy ? null : (value) => setState(() { if (value == true) { _selectedTickets.add(id); } else { _selectedTickets.remove(id); } })));
+        children.add(
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(_ticketLabel(id)),
+            value: _selectedTickets.contains(id),
+            onChanged: _busy
+                ? null
+                : (value) => setState(() {
+                    if (value == true) {
+                      _selectedTickets.add(id);
+                    } else {
+                      _selectedTickets.remove(id);
+                    }
+                  }),
+          ),
+        );
       }
     }
     if (action.operation == 'move') {
@@ -363,9 +392,15 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
                       payload.addAll({'order': order, 'tickets': tickets});
                     } else {
                       payload['reason'] = _reason.text.trim();
-                      if (action.operation == 'cancel' && (action.data['tickets'] as List? ?? const []).isNotEmpty) {
-                        if (_selectedTickets.isEmpty) { setState(() => _message = 'selectOneTicket'); return; }
-                        payload['ticketIds'] = _selectedTickets.toList()..sort();
+                      if (action.operation == 'cancel' &&
+                          (action.data['tickets'] as List? ?? const [])
+                              .isNotEmpty) {
+                        if (_selectedTickets.isEmpty) {
+                          setState(() => _message = 'selectOneTicket');
+                          return;
+                        }
+                        payload['ticketIds'] = _selectedTickets.toList()
+                          ..sort();
                       }
                       if (_target != null) payload['targetFormId'] = _target;
                     }
@@ -439,14 +474,23 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
               Text(customerChangeText('review')),
               Text(
                 customerChangeText(
-                  preview['partial'] == true ? '${effect}_selected' : const ['edit', 'move', 'cancel', 'withdraw'].contains(effect)
+                  preview['partial'] == true
+                      ? '${effect}_selected'
+                      : const [
+                          'edit',
+                          'move',
+                          'cancel',
+                          'withdraw',
+                        ].contains(effect)
                       ? '${effect}_effect'
                       : effect!,
                 ),
               ),
-              if (_proposal?['operation'] == 'cancel' && preview['partial'] == true) ...[
+              if (_proposal?['operation'] == 'cancel' &&
+                  preview['partial'] == true) ...[
                 Text(customerChangeText('remainingTickets')),
-                for (final id in preview['ticketIds'] as List? ?? const []) Text(_ticketLabel(id)),
+                for (final id in preview['ticketIds'] as List? ?? const [])
+                  Text(_ticketLabel(id)),
               ],
               if (_proposal?['operation'] == 'edit') ...[
                 for (final entry
@@ -516,7 +560,15 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
                 for (final action in _actions)
                   OutlinedButton(
                     onPressed: _busy ? null : () => _open(action),
-                    child: Text(customerChangeText(action.operation)),
+                    child: Text(
+                      customerChangeText(
+                        action.operation == 'cancel' &&
+                                (action.data['tickets'] as List? ?? const [])
+                                    .isNotEmpty
+                            ? 'cancelTickets'
+                            : action.operation,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -532,10 +584,14 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
-                  '${customerChangeText(request['operation'])}: ${customerChangeText(request['status'])}',
+                  '${customerChangeText(request['operation'] == 'cancel' && request['ticketIds'] is List ? 'cancelTickets' : request['operation'])}: ${customerChangeText(request['status'])}',
                 ),
                 subtitle: Text(
                   [
+                    if (request['ticketIds'] is List)
+                      (request['ticketIds'] as List)
+                          .map(_ticketLabel)
+                          .join(', '),
                     request['reason'],
                     request['response'],
                   ].whereType<String>().join('\n'),
@@ -558,9 +614,22 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
   }
 
   String _ticketLabel(dynamic id) {
-    final person = widget.data.people.where((p) => p['id'].toString() == id.toString()).firstOrNull;
-    final items = widget.data.orders.expand((o) => o['items'] as List? ?? const []).where((i) => i['ticketId'].toString() == id.toString());
-    return [person?['label'] ?? '${customerChangeText('ticket')} $id', ...items.map((i) => [i['title'],i['spotGroupTitle'],i['spotTitle']].whereType<String>().where((v) => v.isNotEmpty).join(' / '))].join(' - ');
+    final person = widget.data.people
+        .where((p) => p['id'].toString() == id.toString())
+        .firstOrNull;
+    final items = widget.data.orders
+        .expand((o) => o['items'] as List? ?? const [])
+        .where((i) => i['ticketId'].toString() == id.toString());
+    return [
+      person?['label'] ?? '${customerChangeText('ticket')} $id',
+      ...items.map(
+        (i) => [
+          i['title'],
+          i['spotGroupTitle'],
+          i['spotTitle'],
+        ].whereType<String>().where((v) => v.isNotEmpty).join(' / '),
+      ),
+    ].join(' - ');
   }
 
   String _fieldLabel(dynamic id) {

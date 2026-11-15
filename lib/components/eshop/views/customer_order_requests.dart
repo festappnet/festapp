@@ -88,9 +88,15 @@ class _CustomerOrderRequestsState extends State<CustomerOrderRequests> {
           for (final request in widget.requests) ...[
             const Divider(),
             Text(
-              '${customerChangeText(request['operation'])}: ${customerChangeText(request['status'])}',
+              '${customerChangeText(request['operation'] == 'cancel' && request['ticketIds'] is List ? 'cancelTickets' : request['operation'])}: ${customerChangeText(request['status'])}',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            if (request['ticketIds'] is List)
+              Text(
+                (request['ticketIds'] as List)
+                    .map((id) => '${customerChangeText('ticket')} $id')
+                    .join(', '),
+              ),
             if (request['reason'] != null)
               SelectableText(
                 '${customerChangeText('reason')}: ${request['reason']}',

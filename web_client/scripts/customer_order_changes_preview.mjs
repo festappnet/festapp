@@ -25,7 +25,7 @@ try{
  await db.query(readFileSync(resolve(root,'database/tests/customer_order_changes/fixture.sql'),'utf8'));
  const fixtures=[];
  for(const locale of ['cs','en']){
-  const x=(await db.query('SELECT pg_temp.customer_fixture() x')).rows[0].x;
+  const x=(await db.query('SELECT pg_temp.customer_two_fixture() x')).rows[0].x;
   await db.query("SELECT set_config('request.jwt.claim.sub',$1,false),set_config('request.jwt.claim.role','authenticated',false)",[x.actor]);
   const title=locale==='cs'?'Taneční večer v kulturním domě':'Dance evening at the town hall';
   await db.query('UPDATE public.organizations SET title=$1,data=$2 WHERE id=$3',[locale==='cs'?'Spolek Přátelé tance':'Friends of Dance Association',{DEFAULT_URL:origin,DEFAULT_LANGUAGE:locale},x.organization]);
@@ -37,7 +37,7 @@ try{
   await db.query('UPDATE eshop.product_types SET title=$1 WHERE id=(SELECT product_type FROM eshop.products WHERE id=$2)',[locale==='cs'?'Vstupné':'Admission',x.product]);
   await db.query('UPDATE eshop.orders SET data=data||$1::jsonb WHERE id=$2',[{name:locale==='cs'?'Jana':'Jane',surname:locale==='cs'?'Nováková':'Novak',email:`buyer-${locale}@example.test`},x.order]);
   let policy=(await db.query('SELECT public.customer_order_policy_internal($1) p',[x.form])).rows[0].p.policy;
-  policy.cancel={...policy.cancel,mode:'approval_required',reason_required:true,refund_mode:'manual'};
+  policy.cancel={...policy.cancel,mode:process.env.CUSTOMER_PREVIEW_CANCEL_MODE==='automatic'?'automatic':'approval_required',reason_required:true,refund_mode:'manual'};
   await db.query('SELECT public.save_customer_order_policy_internal($1,$2)',[x.form,policy]);
   await db.query("UPDATE eshop.orders SET data=jsonb_set(jsonb_set(data,'{tickets,0,products,0,title}',$1::jsonb),'{tickets,0,products,0,type_title}',$2::jsonb) WHERE id=$3",[JSON.stringify(locale==='cs'?'Vstup na taneční večer':'Dance evening admission'),JSON.stringify(locale==='cs'?'Vstupné':'Admission'),x.order]);
   const targets=[];
@@ -52,6 +52,14 @@ try{
   }
   policy.move={enabled:true,allowed_until:new Date(Date.now()+86400000).toISOString(),targets};
   await db.query('SELECT public.save_customer_order_policy_internal($1,$2)',[x.form,policy]);
+  if(process.env.CUSTOMER_PREVIEW_SEATS==='1') {
+    const seated=(await db.query('SELECT pg_temp.payment_attach_spot($1) x',[x])).rows[0].x;
+    await db.query("UPDATE eshop.spots SET title='12' WHERE id=$1",[seated.spot]);
+    await db.query('UPDATE eshop.blueprints SET title=$1 WHERE id=(SELECT blueprint FROM eshop.spots WHERE id=$2)',[locale==='cs'?'Taneční sál':'Dance hall',seated.spot]);
+    const spot=(await db.query("INSERT INTO eshop.spots(occasion,blueprint,product,order_product_ticket,title) SELECT $1,s.blueprint,$2,opt.id,'13' FROM eshop.spots s CROSS JOIN eshop.order_product_ticket opt WHERE s.id=$3 AND opt.\"order\"=$4 AND opt.ticket=$5 RETURNING id",[x.occasion,x.product,seated.spot,x.order,x.otherTicket])).rows[0].id;
+    await db.query("UPDATE eshop.orders SET data=jsonb_set(jsonb_set(data,'{tickets,0,products,0,spot_title}','\"12\"'::jsonb),'{tickets,1,products,0}',data#>'{tickets,1,products,0}'||jsonb_build_object('spot_id',$1::bigint,'spot_title','13')) WHERE id=$2",[spot,x.order]);
+  }
+  await db.query("UPDATE eshop.orders SET data=jsonb_set(data,'{tickets}',(SELECT jsonb_agg(jsonb_set(ticket,'{products}',(SELECT jsonb_agg(product||jsonb_build_object('title',$1::text,'type_title',$2::text)) FROM jsonb_array_elements(ticket->'products') product))) FROM jsonb_array_elements(data->'tickets') ticket)) WHERE id=$3",[locale==='cs'?'Vstup na taneční večer':'Dance evening admission',locale==='cs'?'Vstupné':'Admission',x.order]);
   fixtures.push({...x,locale,url:origin+`/order?order_id=${x.order}&token=${x.readToken}`});
  }
  // Quota bypasses and successful RPC injections are deliberately absent. Only

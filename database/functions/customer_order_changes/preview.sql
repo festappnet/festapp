@@ -29,7 +29,7 @@ DECLARE o eshop.orders; policy jsonb; op text; rule jsonb; actions jsonb:='[]'; 
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
  policy:=public.customer_order_policy_internal(o.form)->'policy';
- FOREACH op IN ARRAY ARRAY['edit','cancel','move'] LOOP
+ FOREACH op IN ARRAY ARRAY['cancel','move'] LOOP
   rule:=policy->op;
   enabled:=public.customer_order_operation_enabled_internal(o.form,op);
   reason:=CASE WHEN NOT enabled THEN 'policy_unavailable'
@@ -60,6 +60,7 @@ DECLARE o eshop.orders; oc public.occasions; rule jsonb; rev bigint; effect text
  selected bigint[]; partial boolean:=false; selected_price numeric;
  snapshot jsonb; fields jsonb; current_value jsonb; all_payload jsonb;
 BEGIN
+ IF p_operation='edit' THEN RAISE insufficient_privilege USING MESSAGE='CUSTOMER_ANSWERS_READ_ONLY'; END IF;
  IF p_operation IS NULL OR p_operation NOT IN ('edit','cancel','move','withdraw') OR jsonb_typeof(p_payload) IS DISTINCT FROM 'object'
   OR octet_length(p_payload::text)>32768 THEN RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_CHANGE_INPUT_INVALID'; END IF;
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order;
@@ -84,6 +85,7 @@ BEGIN
     OR EXISTS(SELECT 1 FROM jsonb_array_elements(p_payload->'ticketIds') id WHERE jsonb_typeof(id)<>'number' OR id::text!~'^[1-9][0-9]*$') THEN RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_TICKET_SELECTION_INVALID'; END IF;
    SELECT array_agg(value::bigint ORDER BY value::bigint) INTO selected FROM jsonb_array_elements_text(p_payload->'ticketIds');
    IF cardinality(selected)<>(SELECT count(DISTINCT id) FROM unnest(selected) id) OR EXISTS(SELECT 1 FROM unnest(selected) chosen(id) WHERE NOT EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) t WHERE t.id=chosen.id AND t.state NOT IN ('storno','expired','stock','waitlisted','preparing_payment'))) THEN RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_TICKET_SELECTION_INVALID'; END IF;
+   IF EXISTS(SELECT 1 FROM eshop.order_product_ticket x WHERE x.ticket=ANY(selected) AND x."order"<>o.id) THEN RAISE insufficient_privilege USING MESSAGE='CUSTOMER_TICKET_SCOPE_INVALID'; END IF;
    partial:=cardinality(selected)<(SELECT count(*) FROM public.get_order_tickets_internal(o.id) WHERE state NOT IN ('storno','expired'));
   ELSE SELECT array_agg(id ORDER BY id) INTO selected FROM public.get_order_tickets_internal(o.id); END IF;
   -- Mutability/print guards below are translated into a request only for a
@@ -156,6 +158,8 @@ BEGIN
     IF EXISTS(SELECT 1 FROM eshop.payment_info pi WHERE pi.id=o.payment_info AND (public.payment_method_is_online_internal(pi.payment_method) OR pi.deposit_amount IS NOT NULL)) OR (amount>0 AND amount<o.price) OR o.data ? 'discount' OR selected_price<0 OR selected_price>o.price THEN effect:='request_cancel';blocked:='partial_finance_requires_review'; END IF;
     BEGIN PERFORM public.assert_order_discount_unchanged_internal(o.id);
     EXCEPTION WHEN raise_exception THEN IF SQLERRM='DISCOUNTED_ORDER_PRICE_IMMUTABLE' THEN effect:='request_cancel';blocked:='discount_requires_review'; ELSE RAISE;END IF;END;
+    IF (SELECT count(*) FROM jsonb_array_elements(coalesce(o.data->'tickets','[]')) sale_ticket WHERE (sale_ticket->>'id')::bigint=ANY(selected))<>cardinality(selected)
+     OR (SELECT coalesce(sum((product->>'price')::numeric),0) FROM jsonb_array_elements(coalesce(o.data->'tickets','[]')) sale_ticket CROSS JOIN LATERAL jsonb_array_elements(coalesce(sale_ticket->'products','[]')) product) IS DISTINCT FROM o.price THEN effect:='request_cancel';blocked:='partial_snapshot_requires_review'; END IF;
     amount:=least(greatest(amount,0),selected_price);
    END IF;
    BEGIN PERFORM public.check_blueprint_selection_units_internal(ARRAY(SELECT s.id FROM eshop.spots s JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE x.ticket=ANY(selected)));

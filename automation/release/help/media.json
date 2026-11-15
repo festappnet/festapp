@@ -1528,10 +1528,10 @@
     "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
     "width": 1280,
     "height": 1000,
-    "alt": "Přehled objednávky s žádostí o storno čekající na pořadatele.",
-    "caption": "Žádost čeká na schválení. Objednávka i vstupenky zůstávají platné.",
+    "alt": "Část přehledu objednávky s možnostmi storna a přesunu, bez úpravy odpovědí.",
+    "caption": "Odeslané odpovědi zůstávají zamčené. Zákazník může využít jen povolené storno nebo změnu termínu.",
     "openLabel": "Zvětšit náhled (nová karta)",
-    "sha256": "e1e2a252a2c52096db4c3acfe1d5f3bb0ba73420d6cd527cc911ce94554265c1"
+    "sha256": "34acef26cb977c730cc56855ecbecba15aa1514ccbc8976ed0ebf367fbdc3e21"
   },
   {
     "id": "cs/customer-self-service/mobile",
@@ -1542,10 +1542,10 @@
     "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
     "width": 390,
     "height": 844,
-    "alt": "Přehled objednávky s žádostí o storno čekající na pořadatele.",
-    "caption": "Žádost čeká na schválení. Objednávka i vstupenky zůstávají platné.",
+    "alt": "Část přehledu objednávky s možnostmi storna a přesunu, bez úpravy odpovědí.",
+    "caption": "Odeslané odpovědi zůstávají zamčené. Zákazník může využít jen povolené storno nebo změnu termínu.",
     "openLabel": "Zvětšit náhled (nová karta)",
-    "sha256": "cd762d3fcf5165435a281e141735c4de5799ac2a210affe3540e9923103b7999",
+    "sha256": "8b0a1d91b1232b538e3a1ca5d9051c2063cb144cbe8e83478be27a4c41b7c4b9",
     "device": "mobile"
   },
   {
@@ -1557,10 +1557,10 @@
     "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
     "width": 1280,
     "height": 1000,
-    "alt": "Order overview with a cancellation request waiting for staff.",
-    "caption": "The request awaits approval. The order and admission remain valid.",
+    "alt": "Order overview section with cancellation and date-change actions, without answer editing.",
+    "caption": "Submitted answers stay locked. Customers can use only the allowed cancellation or date-change actions.",
     "openLabel": "Enlarge preview (new tab)",
-    "sha256": "50b3987cbf83c1b32397f78935ad86e75f438b8efbb2ec36de2b9e8e01f33795"
+    "sha256": "3206c8cfe9573c440cf03a7d892342ce45fbb7ef1a72570e968dd8af458a17da"
   },
   {
     "id": "en/customer-self-service/mobile",
@@ -1571,10 +1571,68 @@
     "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
     "width": 390,
     "height": 844,
-    "alt": "Order overview with a cancellation request waiting for staff.",
-    "caption": "The request awaits approval. The order and admission remain valid.",
+    "alt": "Order overview section with cancellation and date-change actions, without answer editing.",
+    "caption": "Submitted answers stay locked. Customers can use only the allowed cancellation or date-change actions.",
     "openLabel": "Enlarge preview (new tab)",
-    "sha256": "78b960181e88d9fb8022a769f117ca56068aa878590b4107fd165ca9ca843481",
+    "sha256": "ef1777fd463fcb1284aff1553a4b4264f8b73f7e4ac010347e9c7cbf5118a14b",
+    "device": "mobile"
+  },
+  {
+    "id": "cs/customer-self-service/partial-preview-desktop",
+    "file": "cs/customer-self-service/partial-preview-desktop.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual selected-ticket UI, production Edge and verified disposable PostgreSQL",
+    "width": 1280,
+    "height": 1000,
+    "alt": "Náhled storna vybraného sedadla 12 se zachováním druhé vstupenky.",
+    "caption": "Před potvrzením zkontrolujte výběr. Ostatní vstupenky zůstávají platné.",
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "sha256": "863411675885c6dbeda8a54178ffd8d0812d193a2c17f440b18ec6cc39f0b80d"
+  },
+  {
+    "id": "cs/customer-self-service/partial-preview-mobile",
+    "file": "cs/customer-self-service/partial-preview-mobile.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual selected-ticket UI, production Edge and verified disposable PostgreSQL",
+    "width": 390,
+    "height": 844,
+    "alt": "Náhled storna vybraného sedadla 12 se zachováním druhé vstupenky.",
+    "caption": "Před potvrzením zkontrolujte výběr. Ostatní vstupenky zůstávají platné.",
+    "openLabel": "Zvětšit snímek (nová karta)",
+    "sha256": "f30f4bb112067ed42603166dd5bde9771ece2ed69b3e7a151f5691c61ae1539d",
+    "device": "mobile"
+  },
+  {
+    "id": "en/customer-self-service/partial-selector-desktop",
+    "file": "en/customer-self-service/partial-selector-desktop.png",
+    "locale": "en",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual selected-ticket UI, production Edge and verified disposable PostgreSQL",
+    "width": 1280,
+    "height": 1000,
+    "alt": "Ticket cancellation chooser showing distinct seats 12 and 13.",
+    "caption": "Select only the tickets you want to cancel. Other tickets stay valid.",
+    "openLabel": "Enlarge screenshot (new tab)",
+    "sha256": "b3a6037413714af4108a2968a7317b9ec64804882f260017f487b4da95982d35"
+  },
+  {
+    "id": "en/customer-self-service/partial-selector-mobile",
+    "file": "en/customer-self-service/partial-selector-mobile.png",
+    "locale": "en",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual selected-ticket UI, production Edge and verified disposable PostgreSQL",
+    "width": 390,
+    "height": 844,
+    "alt": "Ticket cancellation chooser showing distinct seats 12 and 13.",
+    "caption": "Select only the tickets you want to cancel. Other tickets stay valid.",
+    "openLabel": "Enlarge screenshot (new tab)",
+    "sha256": "1ea0fc28b8baf22cb6d81bbc02f88637d44d67daf69270a6a67aadc8f9c885f3",
     "device": "mobile"
   }
 ]

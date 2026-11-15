@@ -204,6 +204,50 @@ void main() {
     },
   );
 
+  testWidgets('customer cancellation sends only checked tickets', (
+    tester,
+  ) async {
+    final api = _ChangeApi();
+    final data = fixture()
+      ..['allowedActions'] = [
+        {'operation': 'edit', 'enabled': true, 'fields': []},
+        {
+          'operation': 'cancel',
+          'enabled': true,
+          'tickets': [
+            {'id': 1},
+            {'id': 2},
+          ],
+        },
+      ];
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: CustomerOrderChanges(
+              scope: CustomerOrderScope('a' * 64, 1),
+              data: CustomerOrderOverview(data),
+              client: api,
+              onChanged: () async {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('CustomerSelfService.cancelTickets'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNWidgets(2));
+    await tester.tap(find.byType(CheckboxListTile).last);
+    await tester.pump();
+    await tester.ensureVisible(find.text('CustomerSelfService.sendLink'));
+    await tester.tap(find.text('CustomerSelfService.sendLink'));
+    await tester.pumpAndSettle();
+    expect(api.calls.single['action'], 'challenge');
+    expect(api.calls.single['payload']['ticketIds'], [1]);
+  });
+
   testWidgets('customer change ignores preview arriving after scope changes', (
     tester,
   ) async {
@@ -264,6 +308,8 @@ class _ChangeApi implements CustomerOrderChangesApi {
               'effect': 'request_cancel',
               'fingerprint': 'fresh',
             });
+      case 'challenge':
+        return {'code': 202};
       case 'command':
         if (failures++ == 0) throw const CustomerOrderChangeException('failed');
         return {'code': 200};

@@ -126,7 +126,7 @@ Deno.test('self-service companion follows server actions and preserves one autho
  const authored=`<p>Vlastní text pořadatele.</p><a href="${url.replaceAll('&','&amp;')}">Moje objednávka</a>`;
  const rendered=completeEmailContent(completeEmailContent(authored,links),links);
  assert.equal((rendered.match(/<a /g)||[]).length,1);assert.equal((rendered.match(/data-festapp-order-changes/g)||[]).length,1);
- assert.match(rendered,/Vlastní text pořadatele/);assert.match(rendered,/upravit údaje/);assert.match(rendered,/změnu termínu/);assert.doesNotMatch(rendered,/požádat o storno/);
+ assert.match(rendered,/Vlastní text pořadatele/);assert.doesNotMatch(rendered,/upravit údaje/);assert.match(rendered,/změnu termínu/);assert.doesNotMatch(rendered,/požádat o storno/);
  assert.equal(completeEmailContent('<p>Bez tlačítka.</p>',links),'<p>Bez tlačítka.</p>');
  const off=completeEmailContent(authored,overviewRequiredLinks(url,'cs',[]));assert.doesNotMatch(off,/data-festapp-order-changes/);
 });

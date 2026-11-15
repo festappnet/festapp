@@ -97,6 +97,9 @@ BEGIN
       AND NOT coalesce(src.is_hidden,false) AND NOT coalesce(dst.is_hidden,false))) THEN
     RAISE invalid_parameter_value USING MESSAGE='customer answer mapping scope invalid'; END IF;
  END LOOP;
+ -- Submitted answers are customer read-only in this release, including contact
+ -- fields. Retain legacy input validation but never persist an enabled edit rule.
+ IF normalized ? 'edit' THEN normalized:=jsonb_set(normalized,'{edit}','{"enabled":false,"fields":[]}'::jsonb); END IF;
  SELECT policy INTO previous FROM eshop.customer_order_change_policies WHERE form_id=p_form FOR UPDATE;
  IF previous IS NOT DISTINCT FROM normalized THEN RETURN; END IF;
  INSERT INTO eshop.customer_order_change_policies(form_id,revision,policy,updated_by)
@@ -121,7 +124,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,exte
   AND jsonb_path_exists(coalesce(o.features,'[]'),'$[*] ? (@.code == "customer_self_service" && @.is_enabled == true)')
   FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
   JOIN eshop.customer_order_change_policies p ON p.form_id=f.id
-  WHERE f.id=p_form AND p_operation IN ('edit','cancel','move')),false);
+  WHERE f.id=p_form AND p_operation IN ('cancel','move')),false);
 $$;
 REVOKE ALL ON FUNCTION public.customer_order_operation_enabled_internal(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 

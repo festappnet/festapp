@@ -29,7 +29,13 @@ export async function customerChangeCall(client, body) {
     } catch { /* A transport failure has no proven result. */ }
     throw Object.assign(
       new Error(
-        status === 409 ? "conflict" : status === 422 ? "invalid" : status === 403 ? "unavailable" : "failed",
+        status === 409
+          ? "conflict"
+          : status === 422
+          ? "invalid"
+          : status === 403
+          ? "unavailable"
+          : "failed",
       ),
       { status },
     );
@@ -44,12 +50,21 @@ export function renderCustomerOrderChanges(
   onRefresh,
 ) {
   if (!scope || !client) return;
-  const ticketLabel = id => {
-    const person = data.people.find(p => String(p.id) === String(id));
-    const items = (data.orders || []).flatMap(o => o.items || []).filter(i => String(i.ticketId) === String(id));
-    return [person?.label || `${text("ticket")} ${id}`, ...items.map(i => [i.title,i.spotGroupTitle,i.spotTitle].filter(Boolean).join(" / "))].join(" - ");
+  const ticketLabel = (id) => {
+    const person = data.people.find((p) => String(p.id) === String(id));
+    const items = (data.orders || []).flatMap((o) => o.items || []).filter(
+      (i) => String(i.ticketId) === String(id),
+    );
+    return [
+      person?.label || `${text("ticket")} ${id}`,
+      ...items.map((i) =>
+        [i.title, i.spotGroupTitle, i.spotTitle].filter(Boolean).join(" / ")
+      ),
+    ].join(" - ");
   };
-  const actions = (data.allowedActions || []).filter((a) => a.enabled);
+  const actions = (data.allowedActions || []).filter((a) =>
+    a.enabled && ["cancel", "move"].includes(a.operation)
+  );
   const requests = data.changeRequests || [];
   let session = host._customerChangeSession;
   const token = takeCustomerChangeToken();
@@ -67,8 +82,11 @@ export function renderCustomerOrderChanges(
   node(panel, "h2", text("title"), { id: "customer-changes-title" });
   const locale = LocalizationService.currentLocale;
   node(panel, "a", text("help"), {
-    href: locale === "cs" ? "/napoveda/zakaznicka-samoobsluha/" : "/help/customer-self-service/",
-    target: "_blank", rel: "noopener noreferrer",
+    href: locale === "cs"
+      ? "/napoveda/zakaznicka-samoobsluha/"
+      : "/help/customer-self-service/",
+    target: "_blank",
+    rel: "noopener noreferrer",
   });
   const status = node(panel, "p", "", {
     role: "status",
@@ -76,7 +94,11 @@ export function renderCustomerOrderChanges(
   });
   const work = node(panel, "div");
   const report = (error) => {
-    status.textContent = text(["conflict", "invalid", "unavailable"].includes(error?.message) ? error.message : "failed");
+    status.textContent = text(
+      ["conflict", "invalid", "unavailable"].includes(error?.message)
+        ? error.message
+        : "failed",
+    );
     status.setAttribute("role", "alert");
   };
   const end = () => {
@@ -114,7 +136,15 @@ export function renderCustomerOrderChanges(
     host.dataset.customerEditing = "true";
     status.textContent = "";
     const form = node(work, "form");
-    node(form, "h3", text(action.operation));
+    node(
+      form,
+      "h3",
+      text(
+        action.operation === "cancel" && action.tickets?.length
+          ? "cancelTickets"
+          : action.operation,
+      ),
+    );
     const inputs = [];
     const addField = (field, ticketId, value) => {
       const group = node(form, "div", "", { class: "customer-change-field" });
@@ -156,10 +186,10 @@ export function renderCustomerOrderChanges(
       node(group, "legend", text("selectTickets"));
       for (const ticket of action.tickets) {
         const label = node(group, "label");
-        const input = node(label, "input", "", {type:"checkbox"});
+        const input = node(label, "input", "", { type: "checkbox" });
         input.checked = true;
         node(label, "span", ticketLabel(ticket.id));
-        selectedTickets.push({id:ticket.id,input});
+        selectedTickets.push({ id: ticket.id, input });
       }
     }
     let target, reason;
@@ -177,7 +207,9 @@ export function renderCustomerOrderChanges(
         node(
           target,
           "option",
-          `${t.title || ""}${date ? ` - ${date}` : ""}${t.automatic ? "" : ` (${text("manual")})`}`,
+          `${t.title || ""}${date ? ` - ${date}` : ""}${
+            t.automatic ? "" : ` (${text("manual")})`
+          }`,
           { value: String(t.formId) },
         );
       }
@@ -221,8 +253,12 @@ export function renderCustomerOrderChanges(
       } else {
         payload = { reason: reason.value.trim() };
         if (selectedTickets.length) {
-          payload.ticketIds = selectedTickets.filter(t => t.input.checked).map(t => t.id);
-          if (!payload.ticketIds.length) { status.textContent = text("selectOneTicket"); return; }
+          payload.ticketIds = selectedTickets.filter((t) => t.input.checked)
+            .map((t) => t.id);
+          if (!payload.ticketIds.length) {
+            status.textContent = text("selectOneTicket");
+            return;
+          }
         }
         if (target) payload.targetFormId = Number(target.value);
       }
@@ -236,7 +272,13 @@ export function renderCustomerOrderChanges(
       class: "overview-admission-actions",
     });
     for (const action of actions) {
-      button(controls, action.operation, () => open(action));
+      button(
+        controls,
+        action.operation === "cancel" && action.tickets?.length
+          ? "cancelTickets"
+          : action.operation,
+        () => open(action),
+      );
     }
   } else if (!session) node(panel, "p", text("noActions"));
   if (requests.length) {
@@ -244,8 +286,20 @@ export function renderCustomerOrderChanges(
     const list = node(panel, "ul");
     for (const request of requests) {
       const item = node(list, "li");
-      node(item, "p", `${text(request.operation)}: ${text(request.status)}`);
-      if (request.ticketIds?.length) node(panel, "p", request.ticketIds.map(ticketLabel).join(", "));
+      node(
+        item,
+        "p",
+        `${
+          text(
+            request.operation === "cancel" && request.ticketIds?.length
+              ? "cancelTickets"
+              : request.operation,
+          )
+        }: ${text(request.status)}`,
+      );
+      if (request.ticketIds?.length) {
+        node(item, "p", request.ticketIds.map(ticketLabel).join(", "));
+      }
       if (request.reason) node(item, "p", request.reason);
       if (request.response) {
         node(item, "p", `${text("response")}: ${request.response}`);
@@ -275,6 +329,9 @@ export function renderCustomerOrderChanges(
           session.proposal = source;
         }
         const proposal = session.proposal;
+        if (!["cancel", "move", "withdraw"].includes(proposal.operation)) {
+          throw new Error("unavailable");
+        }
         const impact = await customerChangeCall(client, {
           action: "preview",
           token: session.token,
@@ -289,8 +346,10 @@ export function renderCustomerOrderChanges(
         node(
           work,
           "p",
-          text(impact.partial ? `${impact.effect}_selected` :
-            ["edit", "move", "withdraw", "cancel"].includes(impact.effect)
+          text(
+            impact.partial
+              ? `${impact.effect}_selected`
+              : ["edit", "move", "withdraw", "cancel"].includes(impact.effect)
               ? `${impact.effect}_effect`
               : impact.effect,
           ),
@@ -298,7 +357,9 @@ export function renderCustomerOrderChanges(
         if (proposal.operation === "cancel" && impact.partial) {
           node(work, "p", text("remainingTickets"));
           const list = node(work, "ul");
-          for (const id of impact.ticketIds || []) node(list, "li", ticketLabel(id));
+          for (const id of impact.ticketIds || []) {
+            node(list, "li", ticketLabel(id));
+          }
         }
         if (proposal.operation === "edit") {
           for (
@@ -346,11 +407,14 @@ export function renderCustomerOrderChanges(
             work,
             "p",
             `${text("target")}: ${
-              [impact.target.title, impact.target.startsAt
-                ? new Date(impact.target.startsAt).toLocaleString(
-                  LocalizationService.currentLocale,
-                )
-                : null].filter(Boolean).join(" - ")
+              [
+                impact.target.title,
+                impact.target.startsAt
+                  ? new Date(impact.target.startsAt).toLocaleString(
+                    LocalizationService.currentLocale,
+                  )
+                  : null,
+              ].filter(Boolean).join(" - ")
             }`,
           );
           node(work, "p", text("difference"));

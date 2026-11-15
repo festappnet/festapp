@@ -51,7 +51,7 @@
     "approved": "Cancellation or change accepted; check payment status separately",
     "rejected": "Request rejected",
     "withdrawn": "Request withdrawn",
-    "resolved": "Handled by staff",
+    "resolved": "Abgeschlossen",
     "withdraw": "Withdraw request",
     "response": "Organizer’s response",
     "approve": "Approve and perform",
@@ -90,11 +90,13 @@
     "cancel_selected": "The selected tickets will be cancelled. There is no confirmed payment to refund.",
     "cancel_manual_refund_selected": "The selected tickets will be cancelled. Staff handle any refund separately.",
     "cancel_refund_selected": "The selected tickets will be cancelled and the corresponding available amount reserved for a refund. Money has not yet been returned.",
-    "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval."
+    "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval.",
+    "cancelTickets": "Tickets stornieren",
+    "answersLocked": "Abgegebene Antworten einschließlich Name und Telefonnummer sind für Kunden gesperrt. Korrekturen übernimmt das Personal."
   },
   "FeatureCustomerSelfService": {
     "title": "Kunden-Selbstbedienung",
-    "description": "Bestellungen in der bestehenden Übersicht ändern. Einzelne Vorgänge und ihre Regeln werden separat im Formular freigegeben."
+    "description": "Stornierung, Erstattungen und Terminwechsel nach Veranstalterregeln. Kunden können abgegebene Antworten nicht bearbeiten."
   },
   "EmailDomainSuffix": {
     "warning": "Die Domainendung .{suffix} ist uns unbekannt. Prüfen Sie die E-Mail-Adresse.",

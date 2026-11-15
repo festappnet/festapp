@@ -17,3 +17,15 @@ BEGIN
  FROM eshop.customer_order_change_policies p JOIN public.forms f ON f.id=p.form_id JOIN public.occasions o ON o.id=f.occasion WHERE p.form_id=(x->>'form')::bigint;
  RETURN token;
 END $$;
+
+CREATE FUNCTION pg_temp.customer_two_fixture() RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE x jsonb:=pg_temp.customer_fixture(); result jsonb; oid bigint; ids bigint[]; token text:=encode(extensions.gen_random_bytes(32),'hex');
+BEGIN
+ result:=public.create_ticket_order_client_sync_v1(jsonb_build_object('form',(SELECT key FROM public.forms WHERE id=(x->>'form')::bigint),'email','two-'||extensions.gen_random_uuid()||'@example.test','fields',jsonb_build_array(jsonb_build_object(x->>'field','123')),
+  'ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))),jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product'))))),extensions.gen_random_uuid(),extensions.gen_random_uuid());
+ PERFORM assert_eq(result->>'status','applied','two-ticket checkout succeeds');
+ oid:=(result#>>'{data,order,id}')::bigint;
+ SELECT array_agg(id ORDER BY id) INTO ids FROM public.get_order_tickets_internal(oid);
+ PERFORM public.issue_order_overview_internal(oid,jsonb_build_object('tokenHash',encode(extensions.digest(token,'sha256'),'hex'),'contentHash',repeat('b',64),'sealed','{}'::jsonb),extensions.gen_random_uuid());
+ RETURN x||jsonb_build_object('order',oid,'ticket',ids[1],'otherTicket',ids[2],'readToken',token,'payment',(SELECT payment_info FROM eshop.orders WHERE id=oid));
+END $$;
