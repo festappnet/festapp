@@ -66,6 +66,14 @@ const main = stampImports(fs.readFileSync(path.join(buildDir, 'main.dart.js'), '
 fs.writeFileSync(path.join(buildDir, 'main.dart.js'), main);
 fs.writeFileSync(path.join(buildDir, versionedMain), main);
 
+// Renderer JS and WASM form one ABI. A query parameter cannot isolate them
+// from an older service worker which matches cached paths with ignoreSearch.
+// Move the complete engine directory under this release's immutable pathname.
+const rendererDirectory = `canvaskit.${version.replaceAll('+', '-')}`;
+const hasRenderer = fs.existsSync(path.join(buildDir, 'canvaskit'));
+if (hasRenderer) {
+  fs.renameSync(path.join(buildDir, 'canvaskit'), path.join(buildDir, rendererDirectory));
+}
 for (const relative of ['index.html', 'flutter_bootstrap.js']) {
   const file = path.join(buildDir, relative);
   if (!fs.existsSync(file)) {
@@ -77,6 +85,16 @@ for (const relative of ['index.html', 'flutter_bootstrap.js']) {
     throw new Error(`emit_version_manifest: ${relative} lacks ${marker}`);
   }
   let stamped = source.replaceAll(marker, `"mainJsPath":"${versionedMain}"`);
+  if (hasRenderer) {
+    const loader = '_flutter.loader.load({';
+    if (!stamped.includes(loader)) {
+      throw new Error(`emit_version_manifest: ${relative} lacks the Flutter loader call`);
+    }
+    stamped = stamped.replaceAll(loader,
+      `${loader}config:{canvasKitBaseUrl:${JSON.stringify(rendererDirectory + '/')}},`);
+    stamped = stamped.replaceAll('.initializeEngine({',
+      `.initializeEngine({canvasKitBaseUrl:${JSON.stringify(rendererDirectory + '/')},`);
+  }
   if (relative === 'index.html') {
     // Existing Chrome HTTP caches can predate today's no-store headers.
     // The document must not execute a previous generation's recovery code.

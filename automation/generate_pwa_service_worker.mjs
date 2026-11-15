@@ -852,7 +852,10 @@ self.addEventListener('fetch', (event) => {
     // quick while preserving offline access for resources the user has used.
     let response;
     try {
-      response = await fetch(request);
+      // A new CacheStorage generation must not import stale HTTP-cache bytes
+      // from a previous deployment (including subsetted icon/font assets).
+      response = await fetch(request, PRECACHE_PATHS.has(url.pathname)
+        ? { cache: 'no-store' } : undefined);
     } catch (_) {
       return Response.error();
     }

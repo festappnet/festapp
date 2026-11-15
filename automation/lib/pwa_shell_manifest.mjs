@@ -104,7 +104,7 @@ export async function collectPwaShellManifest(buildDir) {
   const files = collected.filter(entry => {
     // Flutter ships both engines even for a CanvasKit-only build. Skwasm and
     // Wimp cannot be selected by that build; retain every CanvasKit variant.
-    if (canvasKitOnly && /^\/canvaskit\/(?:skwasm(?:_heavy)?|wimp)\.(?:js|wasm)$/.test(entry.url)) return false;
+    if (canvasKitOnly && /^\/canvaskit(?:\.[0-9][0-9A-Za-z.+-]*)?\/(?:skwasm(?:_heavy)?|wimp)\.(?:js|wasm)$/.test(entry.url)) return false;
     if (!/^\/main\.dart\..*js_\d+\.part\.js$/.test(entry.url)) return true;
     // Keep only this release's chunk when its immutable alias exists.
     const suffix = entry.url.match(/js_(\d+\.part\.js)$/)[1];

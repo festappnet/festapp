@@ -164,12 +164,28 @@ printf "const supabaseUrl = '%s'; const anonKey = '%s'; const authKey = 'sb-%s-a
   > "$BUILD_DIR/web-assets/app.js"
 printf 'deferredPartUris:["main.dart.js_1.part.js"]\n' >> "$BUILD_DIR/main.dart.js"
 printf '// $__dart_deferred_initializers__ font catalog chunk\n' > "$BUILD_DIR/main.dart.js_1.part.js"
+# Reproduce stale unversioned engine caches: the emitted loader must choose
+# a different pathname for both members of the new JS/WASM ABI pair.
+mkdir -p "$BUILD_DIR/canvaskit/chromium"
+printf 'current engine JS' > "$BUILD_DIR/canvaskit/chromium/canvaskit.js"
+printf 'current engine WASM' > "$BUILD_DIR/canvaskit/chromium/canvaskit.wasm"
+for entry in index.html flutter_bootstrap.js; do
+  printf '\n_flutter.loader.load({onEntrypointLoaded:function(engine){engine.initializeEngine({});}});\n' >> "$BUILD_DIR/$entry"
+done
 cp "$PROJECT_ROOT/automation/emit_version_manifest.sh" "$TMP_ROOT/automation/emit_version_manifest.sh"
 chmod +x "$TMP_ROOT/automation/emit_version_manifest.sh"
 
 "$TMP_ROOT/automation/emit_version_manifest.sh" "$BUILD_DIR" "1.2.3+456" > "$TMP_ROOT/emit.log" 2>&1 || {
     echo "  FAIL: emit_version_manifest.sh exited non-zero. Log:"; cat "$TMP_ROOT/emit.log"; fail=1;
 }
+assert_file "$BUILD_DIR/canvaskit.1.2.3-456/chromium/canvaskit.js"
+assert_file "$BUILD_DIR/canvaskit.1.2.3-456/chromium/canvaskit.wasm"
+assert_contains "$BUILD_DIR/index.html" 'config:{canvasKitBaseUrl:"canvaskit.1.2.3-456/"}'
+assert_contains "$BUILD_DIR/flutter_bootstrap.js" 'config:{canvasKitBaseUrl:"canvaskit.1.2.3-456/"}'
+assert_contains "$BUILD_DIR/index.html" '.initializeEngine({canvasKitBaseUrl:"canvaskit.1.2.3-456/",'
+if [ -d "$BUILD_DIR/canvaskit" ]; then
+  echo "  FAIL: mutable renderer directory remains"; fail=1
+fi
 assert_file    "$BUILD_DIR/main.dart.1.2.3-456.js_1.part.js"
 assert_contains "$BUILD_DIR/main.dart.1.2.3-456.js" 'main.dart.1.2.3-456.js_1.part.js'
 assert_not_contains "$BUILD_DIR/main.dart.1.2.3-456.js" '"main.dart.js_1.part.js"'
