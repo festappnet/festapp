@@ -1,5 +1,5 @@
 {
-  "status": "live_verified_monitoring_in_progress",
+  "status": "complete",
   "deployed_source_sha": "1464872fd2c08226109f698856a38acb70ca6964",
   "supabase_release": "self-hosted/v0.8.4",
   "postgres_version_num": 170012,
@@ -38,17 +38,44 @@
     "independent_new_backup_restore": "pass",
     "restore_seconds": 13.96
   },
-  "logical_backup_status": "running",
+  "logical_backup_status": "pass",
   "monitoring": {
-    "status": "running",
-    "dedicated_monitor_started_at": "2026-11-15T04:38:08Z",
-    "minimum_30_minute_end_at": "2026-11-15T05:08:08Z",
-    "existing_24_hour_monitoring": "active; future observation not claimed complete"
+    "status": "pass",
+    "started_at": "2026-11-15T04:38:08.097722Z",
+    "ended_at": "2026-11-15T05:08:08.079279Z",
+    "recorded_interval_seconds": 1799.982,
+    "nominal_monitor_seconds": 1800,
+    "public_probe_cycles": 173,
+    "db_host_container_samples": 29,
+    "unexpected_5xx": 0,
+    "curl_errors": 0,
+    "unhealthy_containers": 0,
+    "final_read_only_readiness_after_window": "2026-11-15T05:08:49.160966Z",
+    "email_delivery_healthy": true,
+    "email_producer_access_ok": true,
+    "email_alerts": [],
+    "email_due_backlog": 0,
+    "existing_24_hour_monitoring": "active",
+    "next_24_hour_observation_due_at": "2026-11-16T04:30:08.257073Z",
+    "next_24_hour_observation_status": "pending; future observation not claimed complete"
   },
   "canonical_package_reconciliation": {
     "status": "pass",
     "live_lds_sha256": "0f780d3c29e14331f5d673236a6ae65473c9c1bdfaef3dac09ed9553af4b6de2",
     "other_six_payloads_unchanged": true,
     "prepared_from_original_installed_snapshot": true
+  },
+  "logical_backup": {
+    "run_id": "20261115T043506Z",
+    "off_host_verified": true,
+    "uploaded_at": "2026-11-15T04:57:40Z",
+    "encrypted_artifacts": 4,
+    "total_bytes": 1907841478
+  },
+  "skills_improved": {
+    "repository": "miakh/development-tools",
+    "commit": "79cd504",
+    "skill": "supabase-postgres-update",
+    "installed": true
   }
 }

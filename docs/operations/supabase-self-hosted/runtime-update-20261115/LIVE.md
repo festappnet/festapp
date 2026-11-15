@@ -12,8 +12,8 @@ waived independent review for the ongoing release after the review gate was
 identified. The sealed derivative is
 `sha256:ac20ae95be84d0bb429889d4f9c55c6533fc45fcb974f26280cf96316a88094f`.
 Actual results are in [production-live.json](production-live.json) and adjacent
-receipts. That receipt explicitly distinguishes still-running monitoring and
-logical backup from completed checks.
+receipts. Both new backups, independent physical recovery and the post-live
+monitoring window passed. The subsequent 24-hour observation remains pending.
 
 ## Availability and production corrections
 
@@ -76,8 +76,15 @@ current runtime failure from the earlier attempt's journal phase alone.
   this new set and WAL. A fresh network-none container restored to
   04:34:25.121645 UTC, paused at 04:34:24.484832 UTC / `27/8B0A12E8`, and passed
   catalog checks in 13.96 s. No ports, host binds or production integrations ran.
-- The dedicated 30-minute monitor and the logical backup owner run after live
-  recovery. Their current completion state is recorded in production-live.json.
+- The encrypted logical backup `20261115T043506Z` completed at 04:57:40 UTC.
+  Its owner verified all four artifacts off-host (1,907,841,478 bytes; five
+  matching files including manifest, zero differences). The dedicated
+  30-minute monitor passed: 173 probe cycles per endpoint and 29 database/host
+  samples, zero 5xx, curl errors or unhealthy-container samples. The raw recorded
+  interval is 1799.982 s; final read-only readiness at 05:08:49.160966 UTC extends
+  the observations beyond 30 minutes. Email delivery and producer access were
+  healthy with no alerts, due messages or post-action backlog. See
+  [the complete aggregate receipt](live-monitor-summary.json).
   Existing host monitoring remains active for the subsequent 24-hour window;
   future observations are not represented as already performed.
 
@@ -91,3 +98,8 @@ Completed local rehearsal containers, copies and dependency caches were released
 after the new independent restore passed. Original runtime image/config guards
 and protected image archives remain retained through 2026-11-22. Existing backup
 retention remains owned by its established maintenance scripts.
+
+The reusable `supabase-postgres-update` skill was added, validated and installed
+from the canonical `miakh/development-tools` repository (commit `79cd504`). It
+records the actual environment/bootstrap, bind, mount-order, CORS, readiness and
+publication lessons. No quantified future speedup is claimed.
