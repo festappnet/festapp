@@ -35,9 +35,9 @@ host-tool upgrades and preserves the explicit PostgreSQL 17.12 exception:
 node automation/hetzner-supabase/runtime/verify-pins.mjs --bundle --registry
 ```
 
-Preparation and the complete isolated upgrade/recovery drill are recorded in
-[runtime-update-20261115](runtime-update-20261115/README.md). Preparation is not
-a live deployment receipt.
+The isolated upgrade/recovery drill and the production result are recorded in
+[runtime-update-20261115](runtime-update-20261115/LIVE.md), including the
+production corrections, actual availability window and new-backup recovery.
 
 With an authenticated Docker registry session, add `--registry` to check the
 `linux/arm64` image digests. A newer upstream version can make this comparison

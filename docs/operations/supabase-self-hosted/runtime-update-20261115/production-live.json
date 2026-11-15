@@ -1,0 +1,54 @@
+{
+  "status": "live_verified_monitoring_in_progress",
+  "deployed_source_sha": "1464872fd2c08226109f698856a38acb70ca6964",
+  "supabase_release": "self-hosted/v0.8.4",
+  "postgres_version_num": 170012,
+  "postgres_derivative": "sha256:ac20ae95be84d0bb429889d4f9c55c6533fc45fcb974f26280cf96316a88094f",
+  "public_admission_restored_at": "2026-11-15T04:30:08.257073Z",
+  "first_confirmed_maintenance_503_at": "2026-11-15T04:14:03.326126Z",
+  "approximate_api_maintenance_seconds": 964.931,
+  "original_updater_elapsed_seconds": 1267.826,
+  "planned_900_second_budget_met": false,
+  "confirmed_writes_recovery": "Same original PGDATA and key volume retained; no production data restore or rewind. Fencing LSN 27/820004F8.",
+  "existing_mcp_connection": {
+    "status": "pass",
+    "at": "2026-11-15T04:31:00.297Z",
+    "backend": "https://api.festapp.net",
+    "tenant": "festapptickets",
+    "organization_id": 3,
+    "new_login_required": false
+  },
+  "cav_preservation": {
+    "existing_organization_admins": 1,
+    "full_unit_memberships": 2,
+    "full_occasion_memberships": 4,
+    "independent_owner_read_only_readback": "pass"
+  },
+  "cav_browser_compatibility": {
+    "status": "pass",
+    "frontend_update_required_for_backend": false,
+    "google_and_mcp_features_activated": false,
+    "functions_preflight_status": 200,
+    "existing_gateway_cors_preserved": true
+  },
+  "physical_full_backup": {
+    "label": "20261115-043147F",
+    "status": "pass",
+    "archive_check": "pass",
+    "independent_new_backup_restore": "pass",
+    "restore_seconds": 13.96
+  },
+  "logical_backup_status": "running",
+  "monitoring": {
+    "status": "running",
+    "dedicated_monitor_started_at": "2026-11-15T04:38:08Z",
+    "minimum_30_minute_end_at": "2026-11-15T05:08:08Z",
+    "existing_24_hour_monitoring": "active; future observation not claimed complete"
+  },
+  "canonical_package_reconciliation": {
+    "status": "pass",
+    "live_lds_sha256": "0f780d3c29e14331f5d673236a6ae65473c9c1bdfaef3dac09ed9553af4b6de2",
+    "other_six_payloads_unchanged": true,
+    "prepared_from_original_installed_snapshot": true
+  }
+}

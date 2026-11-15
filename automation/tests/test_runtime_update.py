@@ -40,6 +40,8 @@ class FakeRuntime:
         self.fail_services = True
         self.fail_database = False
         self.database_running = True
+        self.stale_caddy = False
+        self.replace_db_mount = False
         self.current_new = False
         self.timers = {m.QUIET_TIMERS[0]:'active',m.QUIET_TIMERS[1]:'inactive'}
         pins = json.loads((RUNTIME/'pins.json').read_text())
@@ -48,7 +50,7 @@ class FakeRuntime:
         self.compose_files = ['docker-compose.yml','docker-compose.festapp.yml','docker-compose.database-target.yml',
             'docker-compose.email.yml','docker-compose.pgbackrest.yml','docker-compose.resource-budget.yml']
         self.env = {'SUPABASE_DB_URL':'postgresql://postgres:fixture@db:5432/'+m.DATABASE,
-            'APP_LINKS_ORGANIZATION_ID':'3','SUPABASE_ANON_KEY':'fixture-anon'}
+            'APP_LINKS_ORGANIZATION_ID':'3','SUPABASE_ANON_KEY':'fixture-anon','SUPABASE_SERVICE_ROLE_KEY':'fixture-service'}
         required = ['EMAIL_SES_ACCOUNT_ID','EMAIL_SES_REGION','EMAIL_SES_ACCESS_KEY_ID','EMAIL_SES_SECRET_ACCESS_KEY',
             'EMAIL_SES_TRANSACTIONAL_SET','EMAIL_SES_SECURITY_SET','EMAIL_PAYLOAD_KEY','EMAIL_SNS_TOPIC_ARN',
             'AUTH_EMAIL_PUBLIC_URL','AUTH_EMAIL_HOOK_SECRET','FESTAPP_MONITORING_URL','FESTAPP_MONITORING_TOKEN','DEFAULT_EMAIL']
@@ -67,7 +69,8 @@ class FakeRuntime:
         self.desired['services']['functions'].update({'mem_limit':'2147483648',
             'command':['start','--user-worker-request-idle-timeout','150000','--main-service','/home/deno/functions/main']})
         self.desired['services']['functions']['environment']['DENO_TLS_CA_STORE'] = 'system,mozilla'
-        self.mounts = [{'Type':'volume','Name':'fixture-data','Destination':'/var/lib/postgresql/data','RW':True}]
+        self.mounts = [{'Type':'volume','Name':'fixture-data','Destination':'/var/lib/postgresql/data','RW':True},
+            {'Type':'volume','Name':'fixture-keys','Destination':'/etc/postgresql-custom','RW':True}]
         names = set(self.compose_files) | m.FILES | {'caddy/Caddyfile'}
         self.caddy = '(festapp_supabase_proxy) {\n\treverse_proxy 127.0.0.1:8000 {\n\t\theader_up X-Real-IP {client_ip}\n\t}\n}\n'
         for name in names:
@@ -93,7 +96,10 @@ class FakeRuntime:
         self.calls.append(list(args))
         output=''
         code=0
-        if args[:2] == ['docker','inspect']:
+        if args[:4] == ['docker','exec','festapp-caddy','stat']:
+            value=(self.root/'caddy/Caddyfile').stat()
+            output=str(value.st_dev)+':'+str(value.st_ino+int(self.stale_caddy))
+        elif args[:2] == ['docker','inspect']:
             name=args[2]
             if name=='supabase-db':
                 result={'Image':self.db_image,'Mounts':self.mounts}
@@ -152,6 +158,8 @@ class FakeRuntime:
             elif 'ps' in args:
                 output='fixture-container-'+args[-1]
             elif 'up' in args and args[-1]=='db':
+                self.mounts.reverse()
+                if self.replace_db_mount:self.mounts[0]['Name']='replacement-keys'
                 if self.fail_database:
                     code=1
                     self.database_running=False
@@ -217,6 +225,21 @@ class RuntimeUpdateTest(unittest.TestCase):
             m.apply(self.fake.args(dry_run=True))
         self.assertFalse((self.fake.state/'state.json').exists())
         self.assertFalse(any('stop' in call or 'up' in call for call in self.fake.calls))
+
+    def test_stale_caddy_inode_stops_before_pause(self):
+        self.fake.stale_caddy=True
+        with self.assertRaisesRegex(RuntimeError,'stale inode'):
+            m.apply(self.fake.args(dry_run=True))
+        self.assertFalse(self.fake.paused)
+        self.assertFalse((self.fake.state/'state.json').exists())
+
+    def test_actual_key_mount_replacement_is_rejected_before_service_migrations(self):
+        self.fake.replace_db_mount=True
+        with self.assertRaisesRegex(RuntimeError,'mount identity changed'):
+            m.apply(self.fake.args())
+        state=json.loads((self.fake.state/'state.json').read_text())
+        self.assertFalse(state['migration_point'])
+        self.assertNotIn('database_updated',state['done'])
 
     def test_partial_migration_failure_retains_fence_and_resume_skips_database_restart(self):
         with self.assertRaises(RuntimeError):m.apply(self.fake.args())

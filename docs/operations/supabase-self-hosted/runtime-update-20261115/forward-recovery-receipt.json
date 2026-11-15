@@ -1,0 +1,18 @@
+{
+  "status": "runtime_applied",
+  "at": "2026-11-15T04:30:08.257073+00:00",
+  "source_sha": "1464872fd2c08226109f698856a38acb70ca6964",
+  "postgres_version_num": "170012",
+  "original_mounts_unchanged": true,
+  "functions_memory_bytes": 2147483648,
+  "worker_probe": 401,
+  "auth_with_anon": 200,
+  "rest_with_service_read_only": 200,
+  "anonymous_openapi_expected_rbac_denial": 403,
+  "invalid_absent_empty_apikey": "401/403 denied",
+  "original_cron_email_mcp_timers_restored": true,
+  "public_auth": 200,
+  "caddy_original_restored": true,
+  "operator_forward_script_sha256": "797d3bc530c138d42eee47a66bebf097294d968d2d07455e78c0cd81691c2285",
+  "original_elapsed_seconds": 1267.826
+}
