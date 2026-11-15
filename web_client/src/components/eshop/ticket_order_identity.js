@@ -6,6 +6,9 @@ export function canonicalCommandPayload(value) {
 }
 export function terminalOrderResponse(data) {
     const code = data?.code ?? data?.data?.code;
+    // SQL rolls back this admission rejection and freezes it in the receipt.
+    // A new explicit attempt must not replay the same rejected command forever.
+    if (code === 429 && (data?.errorCode ?? data?.data?.errorCode) === 'ABUSE_LIMIT_EXCEEDED') return true;
     return Number.isInteger(code) && (code === 200 || code >= 1000 && code < 2000 || code >= 400 && code < 500 && ![408, 429].includes(code));
 }
 export async function claimTicketOrderIdentity(endpoint, payload, principal, storage = browserStorage, {requirePending = false} = {}) {

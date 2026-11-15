@@ -57,6 +57,8 @@ void main() {
   final previousPaths = PathProviderPlatform.instance;
   late Completer<void> recorded;
   var paymentOutcome = 'success';
+  Map<String, dynamic> checkoutOutcome = {'code': 200};
+  final checkouts = <Map<String, dynamic>>[];
   Completer<void>? transactionsGate;
   var transactionsFail = false, transactionsReads = 0, contextReads = 0;
   String? instructionsError;
@@ -112,6 +114,15 @@ void main() {
       httpClient: MockClient((request) async {
         final endpoint = request.url.path.split('/').last;
         final payload = jsonDecode(request.body) as Map<String, dynamic>;
+        if (endpoint == 'send-ticket-order') {
+          checkouts.add(payload);
+          return http.Response(
+            jsonEncode(checkoutOutcome),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         if (endpoint == 'get_payment_method_policy') {
           final unit = payload['p_unit'] as int?;
           if (delayPolicy)
@@ -271,6 +282,25 @@ void main() {
       }),
     );
   });
+  test(
+    'checkout capacity rejection releases only a definitive rejected intent',
+    () async {
+      for (final definitive in [false, true]) {
+        final payload = {'form': 'capacity-$definitive', 'ticket': <dynamic>[]};
+        checkoutOutcome = {
+          'code': 429,
+          if (definitive) 'errorCode': 'ABUSE_LIMIT_EXCEEDED',
+        };
+        expect((await DbOrders.sendTicketOrder(payload)).data['code'], 429);
+        checkoutOutcome = {'code': 200};
+        await DbOrders.sendTicketOrder(payload);
+        final first = checkouts[checkouts.length - 2];
+        final retry = checkouts.last;
+        expect(first['commandId'] == retry['commandId'], !definitive);
+      }
+    },
+  );
+
   tearDownAll(() async {
     await Supabase.instance.dispose();
     await StorageHelper.closeDatabase('default.db');

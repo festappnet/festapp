@@ -1,11 +1,29 @@
 """Compare executed semantic cases, including groups and skips, across moves."""
 from collections import Counter
 import json
+import re
 from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "automation/client_test_inventory.json"
+
+
+def check_ci_entrypoints(contract, manifest):
+    """Every expected case must have an entrypoint executed by its CI owner.
+
+    Full semantic comparison still follows execution. This cheap check catches
+    cases recorded from a local-only runner before compilation or DB setup.
+    """
+    for lane, rows in manifest['ci_cases'].items():
+        roots = set(re.findall(r'[\w./-]+\.dart', contract['steps'][lane]['script']))
+        covered = set(roots)
+        for move in manifest['ci_moves'][lane].values():
+            if isinstance(move, dict) and move['entrypoint'] in roots:
+                covered.add(move['source'])
+        missing = sorted({row[0] for row in rows} - covered)
+        if missing:
+            raise ValueError(f'{lane}: expected cases have no executed CI entrypoint: {missing}')
 
 
 def is_semantic_case(test):

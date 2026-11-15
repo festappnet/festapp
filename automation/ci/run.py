@@ -19,6 +19,8 @@ from resources import flutter_slot
 from contextlib import nullcontext
 
 ROOT=Path(__file__).resolve().parents[2]
+sys.path.append(str(ROOT/'automation'))
+from client_test_inventory import check_ci_entrypoints
 CONTRACT=json.loads((ROOT/'automation/ci/checks.json').read_text())
 CACHE=Path.home()/('Library/Caches/festapp-ci' if sys.platform=='darwin' else '.cache/festapp-ci')
 
@@ -90,6 +92,7 @@ def inventory():
         raise ValueError('Test inventory ownership changed. New: '+str(sorted(current-recorded))+'; removed: '+str(sorted(recorded-current)))
     if actual!=expected:
         raise ValueError('SQL inventory changed; assign explicit CI/broad DB ownership. New: '+str(sorted(actual-expected))+'; removed: '+str(sorted(expected-actual)))
+    check_ci_entrypoints(CONTRACT,json.loads((ROOT/'automation/client_test_inventory.json').read_text()))
     selected=set()
     for value in CONTRACT['sqlGroups'].values():
         selected.update(path for path in actual if any(filter in path for filter in value['filters']))

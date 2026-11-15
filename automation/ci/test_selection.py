@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -15,6 +16,16 @@ POLICY = json.loads((ROOT / selection.POLICY).read_text())
 SHA = 'a' * 40
 BASE = 'b' * 40
 URL = 'https://github.com/fixture/repo/actions/runs/123'
+
+
+class InventoryPreflightTest(unittest.TestCase):
+    def test_registration_failure_prevents_selection_and_reuse(self):
+        with patch.object(sys,'argv',['selection.py','seat-checkout']), \
+             patch.object(selection,'preflight_inventory',side_effect=ValueError('registration failed')), \
+             patch.object(selection,'decide') as decide:
+            with self.assertRaisesRegex(ValueError,'registration failed'):
+                selection.main()
+            decide.assert_not_called()
 
 
 class ApiTransportTest(unittest.TestCase):

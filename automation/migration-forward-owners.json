@@ -439,10 +439,20 @@
     },
     {
       "migration": "20261115190000_order_confirmation_seating_snapshot.sql",
-      "active": true,
+      "active": false,
       "header": "-- Keep canonical seating in creation history; compare legacy group labels only when historically recorded.",
       "sources": [
         "eshop_orders/get_order_change_summary_v1.sql",
+        "eshop/finalize_ticket_order.sql"
+      ],
+      "checkSources": true,
+      "sha256": "b69c5c1c2c80ba9dbffe968a5ff1c491a3e4fbc9e4db7c363f9418cd5a95c361"
+    },
+    {
+      "migration": "20261115200000_checkout_admission_errors.sql",
+      "active": true,
+      "header": "-- Preserve checkout admission errors and atomic rollback without weakening limits.",
+      "sources": [
         "eshop/finalize_ticket_order.sql"
       ]
     }

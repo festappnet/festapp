@@ -5749,6 +5749,9 @@
     "resolve": "Mark as handled",
     "staffHelp": "Approval checks tickets, capacity and financial permission again. Complete a manual refund only after recording the actual returned money.",
     "saveRules": "Self-service rules",
+    "setupHelp": "Enable cancellation or date changes below, configure the rules and save the whole form. Customers then find available changes in the order overview linked from their confirmation email.",
+    "notConfigured": "The feature is enabled, but cancellation and date changes are still disabled for this form.",
+    "configuredHelp": "Available changes follow the rules below. Use Save to store rule changes together with the rest of the form settings.",
     "enabled": "Enable operation",
     "deadline": "Allow until",
     "automatic": "Automatically after customer confirmation",
@@ -5786,7 +5789,7 @@
   },
   "FeatureCustomerSelfService": {
     "title": "Customer self-service",
-    "description": "Cancellation, refunds and date changes under organizer rules. Customers cannot edit submitted answers."
+    "description": "Configure each form under Settings - Customer self-service. Enabling this feature alone does not allow cancellation or date changes. Customers cannot edit submitted answers."
   },
   "DiscountCodes": {
     "title": "Discount codes",

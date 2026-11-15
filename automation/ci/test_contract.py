@@ -96,9 +96,25 @@ class MirrorContractTest(unittest.TestCase):
             subprocess.run(['git','add','web_client/tests/core/old.test.js'],cwd=root,check=True)
             old.unlink()
             (tests/'new.test.js').write_text('new')
+            (root/'automation').mkdir()
+            (root/'automation/client_test_inventory.json').write_text(json.dumps({'ci_cases':{},'ci_moves':{}}))
             contract={'sqlInventory':{'knownTests':[]},'knownTestInputs':['web_client/tests/core/new.test.js'],'sqlGroups':{}}
             with patch.object(runner,'ROOT',root),patch.object(runner,'CONTRACT',contract):runner.inventory()
             self.assertIn('old.test.js',subprocess.check_output(['git','ls-files'],cwd=root,text=True))
+
+    def test_semantic_cases_require_an_executed_root_or_documented_move(self):
+        contract={'steps':{'ticket-client':{'script':'fvm flutter test test/ci.dart'}}}
+        manifest={'ci_cases':{'ticket-client':[['test/local_only.dart','new case',False,1]]},
+                  'ci_moves':{'ticket-client':{}}}
+        with self.assertRaisesRegex(ValueError,'no executed CI entrypoint'):
+            runner.check_ci_entrypoints(contract,manifest)
+        manifest['ci_cases']['ticket-client'][0][0]='test/component.dart'
+        manifest['ci_moves']['ticket-client']['component']={
+            'source':'test/component.dart','entrypoint':'test/ci.dart','added_group':'component'}
+        runner.check_ci_entrypoints(contract,manifest)
+        manifest['ci_moves']['ticket-client']['component']['entrypoint']='test/local_only.dart'
+        with self.assertRaisesRegex(ValueError,'no executed CI entrypoint'):
+            runner.check_ci_entrypoints(contract,manifest)
 
     def test_browser_installer_matches_the_declared_playwright_version(self):
         version=json.loads((ROOT/'web_client/package.json').read_text())['devDependencies']['playwright']
@@ -178,7 +194,7 @@ class RunnerSafetyTest(unittest.TestCase):
         for browser_exit,image_exit,major in [(0,0,'15'),(17,0,'15'),(0,19,'17'),(17,19,'17')]:
             with self.subTest(browser=browser_exit,image=image_exit),tempfile.TemporaryDirectory() as directory:
                 root=Path(directory)
-                for relative in ('automation/ci/prepare-seat.sh','automation/ci/browser.sh','automation/local_db/test-base.json'):
+                for relative in ('automation/ci/prepare-seat.sh','automation/ci/browser.sh','automation/local_db/test-base.json','automation/local_db/images.py'):
                     target=root/relative;target.parent.mkdir(parents=True,exist_ok=True)
                     shutil.copyfile(ROOT/relative,target)
                 binary=root/'bin';binary.mkdir()
@@ -195,6 +211,8 @@ for _ in range(200):
     time.sleep(.01)
 else: sys.exit(91)
 (root/(name+'.finished')).touch()
+if name=='docker' and sys.argv[1:3]==['image','inspect'] and os.environ['IMAGE_EXIT']=='0':
+    print('[{}]')
 sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
 ''')
                     tool.chmod(0o755)
@@ -203,11 +221,13 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
                      'PROVISION_FIXTURE':directory,'BROWSER_EXIT':str(browser_exit),'IMAGE_EXIT':str(image_exit),
                      'FESTAPP_TEST_PG_MAJOR':major,'GITHUB_ENV':str(root/'github-env')}
                 result=subprocess.run(['bash',str(root/'automation/ci/prepare-seat.sh')],env=env,timeout=10,capture_output=True,text=True)
-                self.assertEqual(result.returncode,browser_exit or image_exit,result.stderr)
+                self.assertEqual(result.returncode,browser_exit or (1 if image_exit else 0),result.stderr)
                 self.assertTrue((root/'docker.finished').exists())
                 self.assertTrue((root/'pnpm.finished').exists())
                 config=json.loads((ROOT/'automation/local_db/test-base.json').read_text())
-                self.assertEqual((root/'docker.started').read_text(),'pull '+config['providers'][major]['image'])
+                image=config['providers'][major]['image']
+                expected=('image inspect '+image) if not image_exit else ('pull '+image.replace('public.ecr.aws/','docker.io/',1))
+                self.assertEqual((root/'docker.started').read_text(),expected)
                 self.assertIn('--only-shell chromium',(root/'pnpm.started').read_text())
 
     def test_ticket_preparation_can_overlap_edge_without_overlapping_flutter(self):

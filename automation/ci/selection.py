@@ -12,6 +12,7 @@ import zipfile
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 POLICY = 'automation/ci/checks.json'
@@ -208,6 +209,8 @@ def main():
     contract = json.loads((ROOT / 'automation/ci/checks.json').read_text())
     if args.lane not in contract['jobs']:
         parser.error('Unknown CI lane')
+    # Check source/semantic ownership before downloads, compilation or reuse.
+    preflight_inventory()
     policy = json.loads((ROOT / POLICY).read_text())
     event_path = os.environ.get('GITHUB_EVENT_PATH')
     event = json.loads(Path(event_path).read_text()) if event_path else {}
@@ -236,6 +239,11 @@ def main():
                              f'Previous check: {result["url"]}\n\n'
                              f'Source: `{result["source"]}`\n\n'
                              f'Input SHA-256: `{result["fingerprint"]}`\n')
+
+
+def preflight_inventory():
+    subprocess.run([sys.executable,str(ROOT/'automation/ci/run.py'),'inventory'],
+                   cwd=ROOT,check=True,stdout=subprocess.DEVNULL)
 
 
 if __name__ == '__main__':

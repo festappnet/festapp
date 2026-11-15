@@ -59,6 +59,9 @@
     "resolve": "Mark as handled",
     "staffHelp": "Approval checks tickets, capacity and financial permission again. Complete a manual refund only after recording the actual returned money.",
     "saveRules": "Self-service rules",
+    "setupHelp": "Aktivieren Sie unten Stornierungen oder Terminänderungen, legen Sie die Regeln fest und speichern Sie das gesamte Formular. Verfügbare Änderungen finden Kunden dann in der Bestellübersicht aus ihrer Bestätigungs-E-Mail.",
+    "notConfigured": "Die Funktion ist aktiviert, aber Stornierungen und Terminänderungen sind für dieses Formular noch deaktiviert.",
+    "configuredHelp": "Verfügbare Änderungen richten sich nach den folgenden Regeln. Speichern Sie Regeländerungen zusammen mit den übrigen Formulareinstellungen.",
     "enabled": "Enable operation",
     "deadline": "Allow until",
     "automatic": "Automatically after customer confirmation",
@@ -96,7 +99,7 @@
   },
   "FeatureCustomerSelfService": {
     "title": "Kunden-Selbstbedienung",
-    "description": "Stornierung, Erstattungen und Terminwechsel nach Veranstalterregeln. Kunden können abgegebene Antworten nicht bearbeiten."
+    "description": "Legen Sie die Regeln für jedes Formular unter Einstellungen - Kunden-Selbstbedienung fest. Das Aktivieren allein erlaubt keine Stornierungen oder Terminänderungen. Kunden können abgesendete Antworten nicht bearbeiten."
   },
   "EmailDomainSuffix": {
     "warning": "Die Domainendung .{suffix} ist uns unbekannt. Prüfen Sie die E-Mail-Adresse.",

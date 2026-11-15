@@ -960,8 +960,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.fanout_unit_map_catalog_internal_v1(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7ce4f86bcbf5ea1284ee9f93c60b7b2b'),'current SQL source parity: public.fanout_unit_map_catalog_internal_v1(uuid,bigint)');
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.finalize_occasion_setup_draft(uuid,bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='614c02d904b7c372ba89606b948c2d47'),'current SQL source parity: public.finalize_occasion_setup_draft(uuid,bigint,uuid)');
--- supabase/migrations/20261115190000_order_confirmation_seating_snapshot.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='e16db5203db7379f62f841557c89cf61'),'current SQL source parity: public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)');
+-- supabase/migrations/20261115200000_checkout_admission_errors.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='63021047fbc50d61579895b683e9a997'),'current SQL source parity: public.finalize_ticket_order_internal_v1(bigint,jsonb,boolean)');
 -- supabase/migrations/20261113190000_apple_ticket_wallet_updates.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.finish_apple_ticket_wallet(bigint,uuid,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='730af6daf02c193fe391ecaeb282ea17'),'current SQL source parity: public.finish_apple_ticket_wallet(bigint,uuid,boolean)');
 -- supabase/migrations/20261113190000_apple_ticket_wallet_updates.sql
