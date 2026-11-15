@@ -6,7 +6,7 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/icons/fstappicon.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
-  # for web use https://realfavicongenerator.net/
+  # Browser icons: fvm dart run scripts/generate_icons.dart assets/icons/fstappicon.png
 #  web:
 #    generate: false
 #    image_path: "assets/icons/fstappicon-transparent.png"
