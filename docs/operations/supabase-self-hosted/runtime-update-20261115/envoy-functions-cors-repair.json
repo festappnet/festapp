@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "at": 1794717455.5330365,
+  "change": "Restore original inherited gateway CORS for Functions; authorization/basic-auth/RBAC and feature registries unchanged",
+  "template_before_sha256": "c8aad7b60afbf34530ed405da7b4c14531812e80c3fcbaf54318cc362e2c99d0",
+  "template_after_sha256": "0f780d3c29e14331f5d673236a6ae65473c9c1bdfaef3dac09ed9553af4b6de2",
+  "cav_mcp_preflight": 200,
+  "cors_header_present": true,
+  "envoy_restarted": false
+}

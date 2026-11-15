@@ -77,7 +77,10 @@ def prepare(installed, output, source_sha, db_image, baseline_db_image, rehearsa
     old = next(r for r in old_routes if r.get('match', {}).get('prefix') == '/functions/v1/')
     new = next(r for r in new_routes if r.get('match', {}).get('prefix') == '/functions/v1/')
     old['route'] = copy.deepcopy(new['route'])
-    old['typed_per_filter_config']['envoy.filters.http.cors'] = copy.deepcopy(new['typed_per_filter_config']['envoy.filters.http.cors'])
+    # Festapp browser Functions still rely on the installed gateway CORS
+    # contract, including disabled-feature errors. Preserve that policy; the
+    # upstream 0.8.4 per-route disable breaks existing clients.
+    # Function authorization and tenant feature configuration stay unchanged.
     cds = yaml.safe_load((installed/'volumes/api/envoy/cds.yaml').read_text())
 
     def clusters(value):
@@ -90,9 +93,13 @@ def prepare(installed, output, source_sha, db_image, baseline_db_image, rehearsa
             for child in value:
                 clusters(child)
     clusters(cds)
+    lds_text = yaml.safe_dump(lds,sort_keys=False)
+    # Preserve string types after sed substitutes optional legacy-mode keys.
+    # An unquoted empty substitution becomes YAML null and invalid Envoy RBAC.
+    lds_text = re.sub(r'(?m)^(\s*exact: )(\$\{[A-Z_]+\})$', r'\1"\2"', lds_text)
     payload = {'docker-compose.festapp.yml':text.encode(),
         'volumes/api/envoy/cds.yaml':yaml.safe_dump(cds,sort_keys=False).encode(),
-        'volumes/api/envoy/lds.template.yaml':yaml.safe_dump(lds,sort_keys=False).encode(),
+        'volumes/api/envoy/lds.template.yaml':lds_text.encode(),
         'volumes/functions/main/index.ts':(HERE/'functions-main/index.ts').read_bytes(),
         'volumes/functions/main/memory-pressure.ts':(HERE/'functions-main/memory-pressure.ts').read_bytes(),
         'volumes/functions/deno.jsonc':(HERE/'functions-main/deno.jsonc').read_bytes(),

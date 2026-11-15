@@ -1,5 +1,6 @@
 # Supabase 0.8.4 / PostgreSQL 17.12 - execution record and runbook
 
+Production is live; see [the result and incident record](LIVE.md).
 Preparation and isolated recovery passed on 2026-11-15. This document alone
 does not attest production deployment. The subsequent live receipt owns that
 claim. Scope is the shared canonical api.festapp.net backend, organization 3;
@@ -28,7 +29,7 @@ no frontend, Android, tenant branch, OS or unrelated dependency release.
   used Vault decryption, and encrypted post-upgrade backup/PITR passed. See
   adjacent receipts. Unused extensions received compatibility checks only.
 - Transport/state tests mock operating-system commands; they are separate from
-  the native restore/service evidence. Twenty targeted Node tests and nine
+  the native restore/service evidence. Twenty targeted Node tests and eleven
   Python tests passed. Current main's inventory check passed after rebase.
 
 The November 12 archive failure was a transient DNS failure resolving R2 through

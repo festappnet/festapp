@@ -220,6 +220,10 @@ def apply(args):
                 require(not (STATE / 'state.json').exists(), 'Existing update state requires --resume.')
                 for name, expected in manifest['baseline_files'].items():
                     require(digest(ROOT / name) == expected, 'Installed baseline config drift.')
+                caddy_stat = (ROOT / 'caddy/Caddyfile').stat()
+                require(run(['docker','exec','festapp-caddy','stat','-Lc','%d:%i',
+                             '/etc/caddy/Caddyfile'],True) == str(caddy_stat.st_dev)+':'+str(caddy_stat.st_ino),
+                        'Caddy bind mount references a stale inode; repair before opening the window.')
                 require(inspect('supabase-db')['Image'] == manifest['baseline_db_image'], 'Baseline DB image drift.')
                 model = json.loads(run(compose + ['config', '--format', 'json'], True))
                 helper.validate_configuration(model, inspect('supabase-edge-functions'))
@@ -358,7 +362,9 @@ def apply(args):
 
             def database():
                 run(compose + ['up', '-d', '--no-deps', '--wait', '--wait-timeout', '90', 'db'])
-                require(inspect('supabase-db')['Mounts'] == state['db_mounts'], 'Database mount identity changed.')
+                require(sorted(inspect('supabase-db')['Mounts'], key=lambda item:item['Destination'])
+                        == sorted(state['db_mounts'], key=lambda item:item['Destination']),
+                        'Database mount identity changed.')
                 require(sql("SELECT current_setting('server_version_num')") == manifest['postgres_version_num'], 'Wrong live SQL version.')
                 verify_identity()
                 run(['docker', 'exec', '--user', 'postgres', 'supabase-db', 'pgbackrest', '--stanza=festapp', 'check'])
@@ -379,9 +385,13 @@ def apply(args):
                 require(run(['curl', '--silent', '--show-error', '--max-time', '10',
                     '--output', '/dev/null', '--write-out', '%{http_code}', '-H', 'apikey: ' + anon,
                     'http://127.0.0.1:8000/auth/v1/health'], True) == '200', 'Auth health failed.')
+                # The OpenAPI root is intentionally admin-only; use the same
+                # bounded read-only service-role probe as the native rehearsal.
+                service = model['services']['functions']['environment']['SUPABASE_SERVICE_ROLE_KEY']
                 require(run(['curl', '--silent', '--show-error', '--max-time', '10',
-                    '--output', '/dev/null', '--write-out', '%{http_code}', '-H', 'apikey: ' + anon,
-                    'http://127.0.0.1:8000/rest/v1/'], True) == '200', 'REST health failed.')
+                    '--output', '/dev/null', '--write-out', '%{http_code}', '-H', 'apikey: ' + service,
+                    '-H', 'Authorization: Bearer ' + service,
+                    'http://127.0.0.1:8000/rest/v1/organizations?select=id&id=eq.3'], True) == '200', 'REST health failed.')
 
             def retain_images():
                 guards = []

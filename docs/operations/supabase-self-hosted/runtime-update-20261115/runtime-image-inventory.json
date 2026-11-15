@@ -1,0 +1,86 @@
+{
+  "captured_at_utc": "2026-11-15T04:45:10.096780+00:00",
+  "source_sha": "1464872fd2c08226109f698856a38acb70ca6964",
+  "package_manifest_sha256": "8d900057eeeb9b881b01aea08b190967d7530f7e9d7d6755cba8aab0aabc8b58",
+  "installed_compose_overlays": [
+    "docker-compose.yml",
+    "docker-compose.festapp.yml",
+    "docker-compose.database-target.yml",
+    "docker-compose.email.yml",
+    "docker-compose.pgbackrest.yml",
+    "docker-compose.resource-budget.yml"
+  ],
+  "database": {
+    "database": "festapp_rehearsal_20260909220601",
+    "server_version": "17.12",
+    "server_version_num": "170012",
+    "org3_canonical": true,
+    "observed_at_utc": "2026-11-15T04:45:10.086889"
+  },
+  "images": {
+    "db": {
+      "container": "supabase-db",
+      "image_id": "sha256:ac20ae95be84d0bb429889d4f9c55c6533fc45fcb974f26280cf96316a88094f",
+      "configured_image": "sha256:ac20ae95be84d0bb429889d4f9c55c6533fc45fcb974f26280cf96316a88094f",
+      "running": true,
+      "health": "healthy"
+    },
+    "auth": {
+      "container": "supabase-auth",
+      "image_id": "sha256:3439d5affb9e96395d1348521f4c675eea7096d8d76d18d4e31fcc08df802116",
+      "configured_image": "supabase/gotrue:v2.197.0@sha256:3439d5affb9e96395d1348521f4c675eea7096d8d76d18d4e31fcc08df802116",
+      "running": true,
+      "health": "healthy"
+    },
+    "rest": {
+      "container": "supabase-rest",
+      "image_id": "sha256:dfa6464b877fa7b1b0be85740f6ce6985144b509a6edb5f09c5ee67e687e8c1f",
+      "configured_image": "postgrest/postgrest:v14.18@sha256:dfa6464b877fa7b1b0be85740f6ce6985144b509a6edb5f09c5ee67e687e8c1f",
+      "running": true,
+      "health": "healthy"
+    },
+    "realtime": {
+      "container": "realtime-dev.supabase-realtime",
+      "image_id": "sha256:b9595f81031fb95b78a6d34d365e31c2e946c8e9abc204c9f8efa9c97de506ca",
+      "configured_image": "supabase/realtime:v2.148.3@sha256:b9595f81031fb95b78a6d34d365e31c2e946c8e9abc204c9f8efa9c97de506ca",
+      "running": true,
+      "health": "healthy"
+    },
+    "supavisor": {
+      "container": "supabase-pooler",
+      "image_id": "sha256:98861660eb5f2ef229c383b0cf1532c7937705c60513d2edf0c0cd1523d61437",
+      "configured_image": "supabase/supavisor:2.9.13@sha256:98861660eb5f2ef229c383b0cf1532c7937705c60513d2edf0c0cd1523d61437",
+      "running": true,
+      "health": "healthy"
+    },
+    "envoy": {
+      "container": "supabase-envoy",
+      "image_id": "sha256:eebc293321d015af3ce65cb2424d0a7aaab417a7101f2a4e57d514b7826789ba",
+      "configured_image": "envoyproxy/envoy:v1.39.6@sha256:eebc293321d015af3ce65cb2424d0a7aaab417a7101f2a4e57d514b7826789ba",
+      "running": true,
+      "health": "healthy"
+    },
+    "studio": {
+      "container": "supabase-studio",
+      "image_id": "sha256:6fede89ed2397566843f4913d575b062df7180e06dc434744c9cfed0c5a46d53",
+      "configured_image": "supabase/studio:2026.11.02-sha-a05e7ec@sha256:6fede89ed2397566843f4913d575b062df7180e06dc434744c9cfed0c5a46d53",
+      "running": true,
+      "health": "healthy"
+    },
+    "meta": {
+      "container": "supabase-meta",
+      "image_id": "sha256:e3e00f3d8315884717b9751cbf47888a0359c640097d96abff987de37a0edf81",
+      "configured_image": "supabase/postgres-meta:v0.100.0@sha256:e3e00f3d8315884717b9751cbf47888a0359c640097d96abff987de37a0edf81",
+      "running": true,
+      "health": "healthy"
+    },
+    "functions": {
+      "container": "supabase-edge-functions",
+      "image_id": "sha256:37da62f867b8d7e636e9d62c65497ecaa9f05bfa37bc70c2dc9ccb06461ff982",
+      "configured_image": "supabase/edge-runtime:v1.77.9@sha256:37da62f867b8d7e636e9d62c65497ecaa9f05bfa37bc70c2dc9ccb06461ff982",
+      "running": true,
+      "health": "healthy"
+    }
+  },
+  "service_count": 9
+}
