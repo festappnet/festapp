@@ -2509,6 +2509,7 @@
         "linkGoogle": "Połącz Google",
         "unlinkGoogle": "Odłącz Google",
         "googleUnavailable": "Logowanie przez Google jest obecnie niedostępne.",
+        "appsUnavailable": "Zarządzanie połączeniami aplikacji nie jest tutaj dostępne.",
         "apps": "Połączone aplikacje",
         "appsHint": "Te aplikacje mogą działać w Twoim imieniu w wybranym zakresie. Odebranie dostępu zablokuje ich kolejne żądania MCP.",
         "empty": "Nie masz aktywnych połączeń aplikacji.",

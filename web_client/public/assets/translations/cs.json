@@ -4613,6 +4613,7 @@
     "linkGoogle": "Propojit Google",
     "unlinkGoogle": "Odpojit Google",
     "googleUnavailable": "Přihlášení přes Google nyní není dostupné.",
+    "appsUnavailable": "Správa propojení aplikací zde není dostupná.",
     "apps": "Připojené aplikace",
     "appsHint": "Propojeným aplikacím zpřístupňujete vybrané akce podle svých aktuálních oprávnění. Jejich přístup můžete kdykoliv odebrat.",
     "empty": "Nemáte žádné aktivní propojení aplikací.",
