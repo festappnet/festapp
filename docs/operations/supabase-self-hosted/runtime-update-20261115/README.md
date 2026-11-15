@@ -28,7 +28,7 @@ no frontend, Android, tenant branch, OS or unrelated dependency release.
   used Vault decryption, and encrypted post-upgrade backup/PITR passed. See
   adjacent receipts. Unused extensions received compatibility checks only.
 - Transport/state tests mock operating-system commands; they are separate from
-  the native restore/service evidence. Twenty targeted Node tests and eight
+  the native restore/service evidence. Twenty targeted Node tests and nine
   Python tests passed. Current main's inventory check passed after rebase.
 
 The November 12 archive failure was a transient DNS failure resolving R2 through
@@ -45,6 +45,11 @@ fetch and rebase. Require the existing exact-SHA gate:
 python3 automation/ci/release_gate.py --source-sha "$(git rev-parse HEAD)"
 node automation/hetzner-supabase/runtime/verify-pins.mjs --bundle --registry
 ```
+
+The GoTrue 2.197 native MFA delegation/refresh freshness test also passed
+on an owned PostgreSQL 17.12 runtime (one executed test, no skips, 26.2 s).
+Preflight compares Compose null commands with image defaults and resolves its
+rendered dollar escaping before strict comparison with running containers.
 
 The source archive on the host is immutable under
 `/var/lib/festapp-runtime-update-staging-20261115/source`. The prepared package

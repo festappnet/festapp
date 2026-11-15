@@ -19,10 +19,10 @@ test('production-pinned GoTrue verifies independent MFA delegation and refresh n
     assert.match(project,/^festapp-[a-z0-9-]+$/);
     const source=await readFile(new URL('../../../automation/hetzner-supabase/runtime/docker-compose.festapp.yml',import.meta.url),'utf8');
     const productionImage=source.match(/image: (supabase\/gotrue:v[\d.]+@sha256:[a-f0-9]{64})/)[1];
-    assert.equal(productionImage,'supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7','Requalify the matching Auth release when production changes');
+    assert.equal(productionImage,'supabase/gotrue:v2.197.0@sha256:3439d5affb9e96395d1348521f4c675eea7096d8d76d18d4e31fcc08df802116','Requalify the matching Auth release when production changes');
     // Immutable release index contains the exact production arm64 manifest and
     // its amd64 sibling, so CI and this workstation execute the same release.
-    const image='supabase/gotrue:v2.189.0@sha256:385184459f57569c54c25209f51f3b2be99ddd7c4ce9e3555b5d3eea8447b7cf';
+    const image='supabase/gotrue:v2.197.0@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b';
     const address=(await exec('docker',['inspect','--format','{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}','supabase_db_'+project])).stdout.trim();
     assert.match(address,/^\d+\.\d+\.\d+\.\d+$/);
     const database=new URL(connection);database.hostname=address;database.port='5432';database.username='supabase_admin';
