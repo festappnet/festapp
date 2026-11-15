@@ -58,7 +58,9 @@ BEGIN
        AND value->>'title' IS NOT DISTINCT FROM v_after->i->>'title'
        AND value->>'currency_code' IS NOT DISTINCT FROM v_after->i->>'currency_code'
        AND nullif(value->>'spot_title', '') IS NOT DISTINCT FROM nullif(v_after->i->>'spot_title', '')
-       AND nullif(value->>'spot_group_title', '') IS NOT DISTINCT FROM nullif(v_after->i->>'spot_group_title', '')
+       -- A missing historical group was never captured, so enrichment cannot prove a change.
+       AND (nullif(value->>'spot_group_title', '') IS NULL
+         OR nullif(value->>'spot_group_title', '') IS NOT DISTINCT FROM nullif(v_after->i->>'spot_group_title', ''))
        AND abs(coalesce((value->>'price')::numeric,0)-coalesce((v_after->i->>'price')::numeric,0))<0.001
      ORDER BY ordinality LIMIT 1;
      IF j IS NOT NULL THEN v_before:=v_before-j; v_after:=v_after-i; END IF;

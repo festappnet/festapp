@@ -334,7 +334,7 @@
     },
     {
       "migration": "20261115120000_discount_codes.sql",
-      "active": true,
+      "active": false,
       "header": "-- Discount codes: additive schema, canonical SQL price allocation, atomic order consumption. Feature defaults off.",
       "sources": [
         "eshop_discounts/schema.sql",
@@ -355,7 +355,9 @@
         "eshop_forms/admin_form_orders.sql",
         "eshop/get_report_ws.sql",
         "eshop_orders/replacement_invoice_preparation.sql"
-      ]
+      ],
+      "checkSources": true,
+      "sha256": "0a0bc68235931b1c64c7ed9383536e7ae4270bd0c5f8e6f592b2fea3a8a006f9"
     },
     {
       "migration": "20261115130000_customer_order_policy_foundation.sql",
@@ -431,7 +433,18 @@
       "sources": [
         "eshop_orders/get_order_change_summary_v1.sql"
       ],
-      "active": true
+      "active": false,
+      "checkSources": true,
+      "sha256": "c0ac2a911f6604e34bd5564056604b878d2b1dcdcede7e4e4f467c7f7de74650"
+    },
+    {
+      "migration": "20261115190000_order_confirmation_seating_snapshot.sql",
+      "active": true,
+      "header": "-- Keep canonical seating in creation history; compare legacy group labels only when historically recorded.",
+      "sources": [
+        "eshop_orders/get_order_change_summary_v1.sql",
+        "eshop/finalize_ticket_order.sql"
+      ]
     }
   ]
 }
