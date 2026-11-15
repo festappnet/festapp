@@ -57,6 +57,9 @@ class FakeRuntime:
         self.model['services']['db']['image'] = self.old_db
         self.model['services']['db']['volumes'] = [{'type':'volume','source':'fixture-data','target':'/var/lib/postgresql/data'}]
         self.model['services']['functions'].update({'environment':self.env,'command':['start','--main-service','/home/deno/functions/main']})
+        self.model['services']['auth']['command'] = None
+        self.model['services']['supavisor']['command'] = ['/bin/sh','-c','exec pooler eval "$$(cat /etc/pooler/pooler.exs)"']
+        self.actual_commands = {'auth':['auth'], 'supavisor':['/bin/sh','-c','exec pooler eval "$(cat /etc/pooler/pooler.exs)"']}
         self.desired = copy.deepcopy(self.model)
         for service,image in self.images.items():
             self.desired['services'][service]['image'] = image
@@ -105,9 +108,9 @@ class FakeRuntime:
                 wanted=self.model['services'][service]
                 result={'Image':self.old_db if service=='db' else 'sha256:'+'3'*64,
                     'State':{'Running':True},'Config':{'Env':[k+'='+v for k,v in wanted.get('environment',{}).items()],
-                    'Cmd':wanted.get('command',[])}}
+                    'Cmd':self.actual_commands.get(service,wanted.get('command',[]))}}
             else:
-                result={'Architecture':'arm64'}
+                result={'Architecture':'arm64','Config':{'Cmd':['auth']}}
             output=json.dumps([result])
         elif args[:2] == ['docker','ps']:
             output='' if '--filter' in args else 'supabase-db\nsupabase-edge-functions\n'
@@ -206,6 +209,13 @@ class RuntimeUpdateTest(unittest.TestCase):
         self.assertFalse((self.fake.state/'state.json').exists())
         self.assertFalse(any('stop' in call or 'up' in call or 'restart' in call for call in self.fake.calls))
         self.assertFalse(any('UPDATE ' in call[-1] for call in self.fake.calls))
+
+    def test_changed_inherited_image_command_is_rejected_before_mutation(self):
+        self.fake.actual_commands['auth'] = ['unexpected-override']
+        with self.assertRaisesRegex(RuntimeError,'command drift: auth'):
+            m.apply(self.fake.args(dry_run=True))
+        self.assertFalse((self.fake.state/'state.json').exists())
+        self.assertFalse(any('stop' in call or 'up' in call for call in self.fake.calls))
 
     def test_partial_migration_failure_retains_fence_and_resume_skips_database_restart(self):
         with self.assertRaises(RuntimeError):m.apply(self.fake.args())

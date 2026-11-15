@@ -233,7 +233,15 @@ def apply(args):
                     require(current['State']['Running'] and all(str(value) == actual_env.get(key)
                         for key,value in wanted.get('environment',{}).items()), 'Installed service environment drift.')
                     if 'command' in wanted:
-                        require(wanted['command'] == current['Config']['Cmd'], 'Installed service command drift.')
+                        # Compose null inherits image CMD; its JSON output keeps
+                        # $$ escaping while Docker receives one literal dollar.
+                        expected_command = wanted['command']
+                        if expected_command is None:
+                            expected_command = inspect(current['Image'])['Config']['Cmd']
+                        else:
+                            expected_command = [arg.replace('$$', '$') for arg in expected_command]
+                        require(expected_command == current['Config']['Cmd'],
+                                'Installed service command drift: ' + service)
                     original_images[service] = current['Image']
                 # Exact selected bundle images must already exist locally.
                 for image in manifest['images'].values():
@@ -458,5 +466,9 @@ if __name__ == '__main__':
     parser.add_argument('--rollback', action='store_true')
     try:
         apply(parser.parse_args())
+    except RuntimeError as error:
+        # These invariant/transport errors contain static messages, never env.
+        raise SystemExit('Runtime update stopped: ' + str(error) +
+                         ' Inspect protected state/log; preserve admission and job state until recovery.') from None
     except Exception:
         raise SystemExit('Runtime update stopped. Inspect protected state/log; preserve admission and job state until recovery.') from None
