@@ -635,7 +635,8 @@
         "database/tests/eshop_discounts/",
         "database/tests/eshop_forms/waitlist_count_setting_test.sql",
         "database/tests/emails/order_change_summary_test.sql",
-        "database/tests/blueprint/form_bound_checkout_test.sql"
+        "database/tests/blueprint/form_bound_checkout_test.sql",
+        "database/tests/abuse/checkout_admission_test.sql"
       ]
     },
     "seat-notifications-1": {

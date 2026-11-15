@@ -16,6 +16,15 @@ repository.
   when its overview avoids reading a large file. Do not initialize it solely
   because it is available. If selected, read its initial instructions once.
 
+## Test ownership before publication
+
+- Before publishing added or moved tests, run `python3 automation/ci/run.py inventory`.
+  It checks SQL ownership and that expected Flutter cases have an executed CI
+  entrypoint. Keep the canonical test inventory explicit.
+- Validate new Flutter CI cases through the actual entrypoint in
+  `automation/ci/checks.json` and record its executed semantic cases. A passing
+  component or local-only runner does not attest registration in CI.
+
 ## Automatic cleanup after merge
 
 - After a successful merge, automatically retire the task's temporary worktree

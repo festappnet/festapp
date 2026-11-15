@@ -96,9 +96,25 @@ class MirrorContractTest(unittest.TestCase):
             subprocess.run(['git','add','web_client/tests/core/old.test.js'],cwd=root,check=True)
             old.unlink()
             (tests/'new.test.js').write_text('new')
+            (root/'automation').mkdir()
+            (root/'automation/client_test_inventory.json').write_text(json.dumps({'ci_cases':{},'ci_moves':{}}))
             contract={'sqlInventory':{'knownTests':[]},'knownTestInputs':['web_client/tests/core/new.test.js'],'sqlGroups':{}}
             with patch.object(runner,'ROOT',root),patch.object(runner,'CONTRACT',contract):runner.inventory()
             self.assertIn('old.test.js',subprocess.check_output(['git','ls-files'],cwd=root,text=True))
+
+    def test_semantic_cases_require_an_executed_root_or_documented_move(self):
+        contract={'steps':{'ticket-client':{'script':'fvm flutter test test/ci.dart'}}}
+        manifest={'ci_cases':{'ticket-client':[['test/local_only.dart','new case',False,1]]},
+                  'ci_moves':{'ticket-client':{}}}
+        with self.assertRaisesRegex(ValueError,'no executed CI entrypoint'):
+            runner.check_ci_entrypoints(contract,manifest)
+        manifest['ci_cases']['ticket-client'][0][0]='test/component.dart'
+        manifest['ci_moves']['ticket-client']['component']={
+            'source':'test/component.dart','entrypoint':'test/ci.dart','added_group':'component'}
+        runner.check_ci_entrypoints(contract,manifest)
+        manifest['ci_moves']['ticket-client']['component']['entrypoint']='test/local_only.dart'
+        with self.assertRaisesRegex(ValueError,'no executed CI entrypoint'):
+            runner.check_ci_entrypoints(contract,manifest)
 
     def test_browser_installer_matches_the_declared_playwright_version(self):
         version=json.loads((ROOT/'web_client/package.json').read_text())['devDependencies']['playwright']
