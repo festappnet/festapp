@@ -115,6 +115,18 @@ Conflicts in shared source always resolve to main's canonical content. A
 conflict in an allowed overlay path is an explicit tenant decision; blanket
 `ours` resolutions are forbidden.
 
+## Release CI and dependency maintenance
+
+Release admission requires every canonical source CI job, including failures in
+additional source workflows. GitHub's automatically generated Dependabot updater
+is dependency-maintenance automation, not source verification. Its check is
+informational only when Actions API metadata confirms the exact generated path
+`dynamic/dependabot/dependabot-updates`, `dynamic` event, `dependabot[bot]` Bot
+actor, matching source SHA and check suite. A repository workflow with the same
+job name, missing lookup metadata, or a required job always remains blocking.
+Security-audit failures and Dependabot security alerts are not dismissed by this
+classification.
+
 ## Private input boundary
 
 Festapp owns public schemas and authorization/business logic.
