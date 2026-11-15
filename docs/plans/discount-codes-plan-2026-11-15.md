@@ -398,3 +398,7 @@ blueprint checkoutu nyní explicitně nastavuje současnou bankovní platební
 politiku a bankEnabled, místo předpokladu implicitní dostupnosti platby.
 Generace 0.20.619+1149 zatím nebyla zveřejněna na webu; doplnění používá tutéž
 generaci připravovaného vydání.
+
+Obě existující SQL regrese jsou výslovně zařazené do CI skupiny
+`seat-contract-6`; kontrola `--list` potvrzuje jejich skutečné vybrání.
+Předchozí lokální spuštění samo nezajišťovalo jejich zahrnutí do této CI sady.
