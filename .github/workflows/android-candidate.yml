@@ -94,7 +94,7 @@ jobs:
           ref: ${{ matrix.sourceSha }}
           fetch-depth: 0
           clean: true
-      - name: Install the Windows-authoritative Gradle wrapper from trusted main
+      - name: Install the main-owned Gradle wrapper from trusted main
         shell: bash
         run: |
           install -m 0755 "$RUNNER_TEMP/gradlew" android/gradlew
