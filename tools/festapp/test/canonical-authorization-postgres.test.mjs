@@ -707,6 +707,9 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
 
       'payment_providers/schema.sql':['eshop.payment_providers'],
       'eshop_barion/schema.sql':['barion_connections','barion_attempts','barion_movements','barion_capabilities','barion_sources','barion_observations'].map(n=>'eshop.'+n),
+      'eshop_discounts/schema.sql':['eshop.discount_codes','eshop.order_discounts','eshop.discount_code_audit'],
+      'customer_order_changes/policy_schema.sql':['eshop.customer_order_change_policies'],
+      'customer_order_changes/runtime_schema.sql':['capabilities','sources','attempts','limits','requests','events'].map(name=>'eshop.customer_order_change_'+name),
       'presale_content/archive.sql':['public.form_presale_content_archive'],
       'notification_center/prepared_schema.sql':['projection_scopes','view_members','member_subjects','batch_summaries','summary_scopes','group_repairs','views','view_rows'].map(n=>'public.notification_center_'+n),
     };
@@ -749,6 +752,18 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     for(const column_name of ['failure_observed_at','failure_since','observation_id','refund_rf_verified']) expectedColumns.push(...bankColumnTemplate.map(g=>({...g,column_name})));
     // The exact Stripe/Barion payment_info columns inherit its unchanged table ACL.
     // API access to any other new column or any approved private-table column still fails.
+    // Discount sale snapshots inherit exactly the existing line table ACL.
+    const linePriceColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='order_product_ticket'&&g.column_name==='id');
+    assert.equal(linePriceColumnTemplate.length,10);
+    for(const column_name of ['base_price','discount_amount','net_price'])expectedColumns.push(...linePriceColumnTemplate.map(g=>({...g,column_name})));
+    for(const [table_name,columns,count] of [
+      ['forms',['term_start_at','term_end_at'],8],
+      ['occasions',['customer_self_service_epoch'],7],
+    ]) {
+      const inherited=before.columnGrants.filter(g=>g.table_schema==='public'&&g.table_name===table_name&&g.column_name==='id');
+      assert.equal(inherited.length,count);
+      for(const column_name of columns)expectedColumns.push(...inherited.map(g=>({...g,column_name})));
+    }
     const paymentColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id');
     for(const column_name of ['payment_method','stripe_connection_id','barion_connection_id'])expectedColumns.push(...paymentColumnTemplate.map(g=>({...g,column_name})));
     assert.deepEqual(sorted(after.columnGrants),sorted([...before.columnGrants,...expectedColumns]),
@@ -819,6 +834,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
         'storno_tickets_client_sync_v1(bigint[],uuid)',
         'update_bank_account(bigint,text,text,text,text[],text,bigint,text)',
         'update_bank_account_user(bigint,text,boolean,boolean)',
+        'update_order_responses(bigint,jsonb)',
         'update_scan_code(text,text)',
         'update_unit_user(jsonb)',
     ].sort());
@@ -827,7 +843,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     // Later reviewed cuts: explicit application ACLs (240210), ticket
     // cancellation (240240), participant authoring (271500), and the private
     // measurement metadata reader (20261106115500).
-    for(const [signature,removed] of [['accept_occasion_team_invitation(text,text)',['service_role']],['create_occasion_user_client_sync_v1(bigint,uuid,jsonb)',['service_role']],['get_my_admin_bank_accounts()',['service_role']],['get_occasion_team_invitation(text)',['service_role']],['get_order_details_for_email(bigint)',['PUBLIC','anon','authenticated']],['get_waitlist_email_tone_substitutions_internal(bigint)',['service_role']],['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']],['get_form_for_edit(text)',['PUBLIC']],['get_effective_form_data(bigint)',['service_role']],['storno_tickets_client_sync_v1(bigint[],uuid)',['service_role']],['update_unit_user(jsonb)',['PUBLIC','anon']]])
+    for(const [signature,removed] of [['update_order_responses(bigint,jsonb)',['PUBLIC','anon','service_role']],['accept_occasion_team_invitation(text,text)',['service_role']],['create_occasion_user_client_sync_v1(bigint,uuid,jsonb)',['service_role']],['get_my_admin_bank_accounts()',['service_role']],['get_occasion_team_invitation(text)',['service_role']],['get_order_details_for_email(bigint)',['PUBLIC','anon','authenticated']],['get_waitlist_email_tone_substitutions_internal(bigint)',['service_role']],['get_occasion_seo_data(text)',['PUBLIC']],['get_unit_edit_data(bigint)',['PUBLIC','anon']],['get_form_for_edit(text)',['PUBLIC']],['get_effective_form_data(bigint)',['service_role']],['storno_tickets_client_sync_v1(bigint[],uuid)',['service_role']],['update_unit_user(jsonb)',['PUBLIC','anon']]])
         assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>!removed.includes(g.grantee))),signature+' has only its reviewed revocations');
     for(const signature of publicRevocations) assert.deepEqual(sorted(changes.find(f=>f.signature===signature).grants),sorted(old.get(signature).grants.filter(g=>g.grantee!=='PUBLIC')),signature+' removes only PUBLIC execution');
     assert.deepEqual(sorted(changes.find(f=>f.signature==='begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants),sorted(old.get('begin_client_mutation_v1(uuid,text,bigint,uuid,text)').grants.filter(g=>g.grantee!=='service_role')));

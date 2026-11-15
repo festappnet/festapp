@@ -90,7 +90,7 @@ SHA-256 ověřených forwardů:
 ```text
 0a0bc68235931b1c64c7ed9383536e7ae4270bd0c5f8e6f592b2fea3a8a006f9  20261115120000_discount_codes.sql
 dc87a62f55bd0b8023ec37fef779cebfb248440e2ccf92c37ee44b12e6dbd98c  20261115130000_customer_order_policy_foundation.sql
-09ee1ce0e58e5402dfe1ac718480b210cbcb06459674b29c526b36dc601e5851  20261115140000_discount_code_projections.sql
+6ffdfc4124e5edea172269e791464acd52295355b5da03171f8d33b5195dc86c  20261115140000_discount_code_projections.sql
 ```
 
 ## Omezení a dosud neprovedené kroky
@@ -147,3 +147,14 @@ a nové definice vlastní explicitní forwardy. Všechny registrované historick
 migrace i aktivní forwardy prošly společným `verify_forward()`.
 Ochrana main vyžaduje jedno schválení jiným účtem; auto-merge není povolen.
 Bez schválení a přesných main CI gates se rollout neprovede.
+
+Následující plné CI prokázalo nutnost regenerovat existující ticket-layout
+readiness kontrakt po změně společného occasion writeru. Aktuální kanonický
+generátor aktualizoval hash; forward 14 nyní obsahuje přehled i tento kontrakt.
+Předchozí nasazený contract-refresh forward byl checksum-pinnut jako historie,
+bez změny jeho SQL. Pět skutečných MCP/HTTP/layout regression případů prošlo
+nad novou migrací. Přesný ACL kontrakt navíc registruje deset nových soukromých
+tabulek, šest nových sloupců se stejnými zděděnými právy původních tabulek
+a zúžení update_order_responses na authenticated. Porovnání celého katalogu
+ACL prošlo samostatně bez výjimek pro obecné nové tabulky nebo privilegia.
+Osm testů migration forward ownership rovněž prošlo.

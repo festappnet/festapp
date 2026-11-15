@@ -292,11 +292,13 @@
     },
     {
       "migration": "20261114130000_ticket_layout_contract_refresh.sql",
-      "active": true,
+      "active": false,
       "header": "-- Refresh the generated ticket-layout readiness attestation from current canonical owners.",
       "sources": [
         "others/get_ticket_layout_write_contract_v1.sql"
-      ]
+      ],
+      "sha256": "136e76e55ff60fca92d57c6b2c776b22c96eb43896d5e4f1d65c57b5554c84e9",
+      "checkSources": true
     },
     {
       "migration": "20261114140000_admin_order_digest_contacts.sql",
@@ -398,7 +400,8 @@
       "active": true,
       "header": "-- Discount sale snapshots in customer overviews, after shared customer-policy projection owners.",
       "sources": [
-        "eshop_waitlist/order_overview.sql"
+        "eshop_waitlist/order_overview.sql",
+        "others/get_ticket_layout_write_contract_v1.sql"
       ]
     }
   ]

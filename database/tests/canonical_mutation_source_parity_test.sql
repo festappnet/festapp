@@ -1408,8 +1408,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_details_for_generating(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9ba9b0ca73d1962300dddcb28bb9cb29'),'current SQL source parity: public.get_ticket_details_for_generating(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_for_authoring_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='48ec81f2cb122a32f6674d8ef09a1c5b'),'current SQL source parity: public.get_ticket_layout_for_authoring_v1(bigint)');
--- supabase/migrations/20261114130000_ticket_layout_contract_refresh.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_write_contract_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='bd28434f2dec3bf46061e1c890917dd7'),'current SQL source parity: public.get_ticket_layout_write_contract_v1()');
+-- supabase/migrations/20261115140000_discount_code_projections.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_layout_write_contract_v1()') AND md5(btrim(prosrc,E' \n\r\t'))='e53b89d7ef676e0aa9e4c4fa866c5c08'),'current SQL source parity: public.get_ticket_layout_write_contract_v1()');
 -- supabase/migrations/20261115130000_customer_order_policy_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_ticket_wallet_projections(text,bigint[],text)') AND md5(btrim(prosrc,E' \n\r\t'))='1197bc536ef8540975943039d60e9b71'),'current SQL source parity: public.get_ticket_wallet_projections(text,bigint[],text)');
 -- supabase/baseline/20261107170000_schema.sql

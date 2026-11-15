@@ -339,3 +339,10 @@ provedení implementace ani produkční operace neautorizuje.
   pending command/client identity. Chybějící identita ani změna aktéra nesmí
   automaticky vytvořit nový command. Flutter drží potvrzený snapshot odděleně
   od editovaného draftu, takže asynchronní invalidace nesmí potichu odstranit kód.
+
+- Důkaz z plného CI při přípravě rollout: společný occasion writer je součástí
+  existujícího ticket-layout readiness otisku. Je nutné spustit kanonický
+  `generate_ticket_layout_write_contract.py` a nasadit jeho aktualizovaný owner
+  ve forwardu 14 po společné foundation. Původní contract-refresh migrace zůstává
+  neměnná. Přesný ACL regression zároveň eviduje nové soukromé tabulky, sloupce
+  a explicitní revokace veřejného přístupu; nejde o povolení nové autority.
