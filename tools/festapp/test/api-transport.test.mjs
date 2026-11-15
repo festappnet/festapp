@@ -31,6 +31,40 @@ test('real OAuth API grants isolate resources, transports, immutable profile and
     assert.equal((await apiRequest(f,global.tokens)).status,401);
 });
 
+test('concurrency rejection is retryable and admission recovers after active requests finish', { timeout: 10000 }, async t => {
+    let hold = false, release, entered, admitted, count = 0;
+    const gate = new Promise(resolve => { release = resolve; });
+    const began = new Promise(resolve => { entered = resolve; });
+    const secondAdmitted = new Promise(resolve => { admitted = resolve; });
+    const f = await setup(t, {
+        rateLimiter: type => { if (hold && type === 'grant' && ++count === 2) admitted(); },
+        fetchImpl: async url => {
+            if (hold && url.pathname === '/auth/v1/token') { entered(); await gate; }
+        },
+    });
+    const { tokens } = await connect(f);
+    hold = true;
+    const pending = [];
+    try {
+        pending.push(apiRequest(f, tokens));
+        await began;
+        pending.push(apiRequest(f, tokens));
+        await secondAdmitted;
+        const response = await apiRequest(f, tokens);
+        assert.equal(response.status, 429);
+        const problem = await response.json();
+        assert.equal(problem.code, 'TEMPORARILY_LIMITED');
+        assert.equal(problem.retryable, true);
+        assert.equal(problem.outcome, 'rejected');
+    } finally {
+        hold = false;
+        release();
+        const responses = await Promise.all(pending);
+        for (const response of responses) assert.equal(response.status, 200);
+    }
+    assert.equal((await apiRequest(f, tokens)).status, 200);
+});
+
 test('API ingress, parsers, method, policy and unknown routes return safe Problem Details', async t => {
     const f=await setup(t), {tokens}=await connect(f);
     for (const [operation,body,headers,status] of [
