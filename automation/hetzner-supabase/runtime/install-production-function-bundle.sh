@@ -55,15 +55,15 @@ python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-email-cpu-budget.py" "$ST
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-monitoring.py" "$STAGE/main/index.ts"
 [[ -f "$STAGE/_shared/runtime_resource_metrics.ts" ]] || fail "Function bundle lacks native resource instrumentation"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-resource-metrics.py" "$STAGE/main/index.ts"
-if grep -Eq '^[[:space:]]*const memoryLimitMb = 150;?$' "$STAGE/main/index.ts"; then
-  sed -Ei 's/(const memoryLimitMb = )150;?$/\1512/' "$STAGE/main/index.ts"
+if grep -Eq '^[[:space:]]*const memoryLimitMb = (150|256);?$' "$STAGE/main/index.ts"; then
+  sed -Ei 's/(const memoryLimitMb = )(150|256);?$/\1512/' "$STAGE/main/index.ts"
 elif ! grep -Eq '^[[:space:]]*const memoryLimitMb = 512;?$' "$STAGE/main/index.ts"; then
   fail "upstream Function router memory-limit contract changed"
 fi
 grep -Eq '^[[:space:]]*const memoryLimitMb = 512;?$' "$STAGE/main/index.ts" ||
   fail "Function router memory limit was not raised for production workloads"
-if grep -Eq '^[[:space:]]*const workerTimeoutMs = 1 \* 60 \* 1000;?$' "$STAGE/main/index.ts"; then
-  sed -Ei 's/const workerTimeoutMs = 1 \* 60 \* 1000;?$/const workerTimeoutMs = 7 * 60 * 1000/' "$STAGE/main/index.ts"
+if grep -Eq '^[[:space:]]*const workerTimeoutMs = (1 \* 60 \* 1000|400_000);?$' "$STAGE/main/index.ts"; then
+  sed -Ei 's/const workerTimeoutMs = (1 \* 60 \* 1000|400_000);?$/const workerTimeoutMs = 7 * 60 * 1000/' "$STAGE/main/index.ts"
 elif ! grep -Eq '^[[:space:]]*const workerTimeoutMs = 7 \* 60 \* 1000;?$' "$STAGE/main/index.ts"; then
   fail "upstream Function router timeout contract changed"
 fi
