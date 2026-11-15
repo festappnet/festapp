@@ -1,6 +1,17 @@
 <?php
 // Shared envelope security only, never an assertion of server approval or live CMP.
-require dirname(__DIR__) . '/measurement/consent-export.php';
+$wordpress = ($argv[1] ?? '') === '--wordpress';
+if ($wordpress) {
+    define('ABSPATH', '/');
+    $GLOBALS['wp_parse_url_calls'] = 0;
+    function wp_parse_url($url) {
+        $GLOBALS['wp_parse_url_calls']++;
+        return parse_url($url);
+    }
+    require dirname(__DIR__) . '/wordpress/vstupenky-online/includes/consent-export.php';
+} else {
+    require dirname(__DIR__) . '/measurement/consent-export.php';
+}
 use function Festapp\CmsConsent\parse_export;
 function check($ok, $message) { if (!$ok) { throw new RuntimeException($message); } }
 $origin = 'https://organizer.example'; $service = 'https://tickets.example';
@@ -21,3 +32,5 @@ check(\Festapp\CmsConsent\origin_from_url('https://Organizer.Example:443/subdire
 check(\Festapp\CmsConsent\origin_from_url('https://organizer.example:8443/subdirectory/') === 'https://organizer.example:8443', 'non-default port retained');
 check(\Festapp\CmsConsent\origin_from_url('https://user@organizer.example/') === '', 'credentialed CMS URL rejected');
 echo "PASS shared CMS export envelope security (17 cases)\n";
+
+if ($wordpress) { check($GLOBALS['wp_parse_url_calls'] > 0, 'Generated WordPress adapter uses its CMS URL API'); echo "PASS generated WordPress URL API binding\n"; }

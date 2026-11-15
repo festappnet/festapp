@@ -56,4 +56,4 @@ COPYFILE_DISABLE=1 tar -cf - \
   integrations/joomla/build/mod_festapp_tickets/src/Helper/EmbedHelper.php |
   docker run --rm --network none -i \
     php@sha256:d8784155c4d37986be9ddd7a8950df7e78998cc48e35472cd69e2b9371424a65 \
-    sh -eu -c 'mkdir /work; tar -xf - -C /work; php /work/integrations/tests/consent-export-mixed-load.php; php /work/integrations/tests/consent-export-contract.php; php /work/integrations/tests/embed-appearance-contract.php; php /work/integrations/joomla/tests/measurement-defaults.php'
+    sh -eu -c 'mkdir /work; tar -xf - -C /work; php /work/integrations/tests/consent-export-mixed-load.php; php /work/integrations/tests/consent-export-contract.php; php /work/integrations/tests/consent-export-contract.php --wordpress; php /work/integrations/tests/embed-appearance-contract.php; php /work/integrations/joomla/tests/measurement-defaults.php'

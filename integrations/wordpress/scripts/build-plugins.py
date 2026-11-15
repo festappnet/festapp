@@ -37,7 +37,13 @@ for p in PRODUCTS:
  out=ROOT/slug;assert not out.is_symlink();out.mkdir(exist_ok=True)
  generated={}
  for source,target in FILES.items():generated[target.format(slug=slug)]=replace((SHARED/source).read_text(),p)
- generated['includes/consent-export.php']=(ROOT.parent/'measurement/consent-export.php').read_text()
+ # Bind the shared envelope algorithm to WordPress's native URL API and guard.
+ # Joomla keeps the native PHP binding; there is no runtime fallback or second parser.
+ consent_parser=(ROOT.parent/'measurement/consent-export.php').read_text()
+ native_binding='use function parse_url as parse_origin_url;'
+ assert consent_parser.count(native_binding)==1
+ wordpress_binding="use function wp_parse_url as parse_origin_url;\n\nif ( ! defined( 'ABSPATH' ) ) {\n\texit;\n}\n"
+ generated['includes/consent-export.php']=consent_parser.replace(native_binding,wordpress_binding)
  validate_minimum_wordpress(generated[f'{slug}.php'],generated['readme.txt'])
  # All textdomain arguments and namespaces are literal in the distributed sources.
  messages=set()

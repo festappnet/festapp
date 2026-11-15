@@ -1,34 +1,95 @@
 <?php
-/** Server export import. CMS owns local persistence, never consent semantics. */
+/**
+ * Server export import. CMS owns local persistence, never consent semantics.
+ *
+ * @package Festapp
+ */
+
 namespace FestappTickets;
-if ( ! defined( 'ABSPATH' ) ) { exit; }
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 require_once __DIR__ . '/consent-export.php';
+/**
+ * Read the locally saved import settings.
+ *
+ * @return array Stored settings.
+ */
 function consent_settings() {
-    $value = get_option( 'festapp-tickets_consent', array() );
-    return is_array( $value ) ? $value : array();
+	$value = get_option( 'festapp-tickets_consent', array() );
+	return is_array( $value ) ? $value : array();
 }
+/**
+ * Read an enabled, locally valid import; the service verifies approval.
+ *
+ * @return array|null Local configuration or null.
+ */
 function consent_config() {
-    $value = consent_settings();
-    return !empty( $value['enabled'] ) ? \Festapp\CmsConsent\parse_export( $value['export'] ?? '', allowed_origins(), \Festapp\CmsConsent\origin_from_url( home_url() ) ) : null;
+	$value = consent_settings();
+	return ! empty( $value['enabled'] ) ? \Festapp\CmsConsent\parse_export( $value['export'] ?? '', allowed_origins(), \Festapp\CmsConsent\origin_from_url( home_url() ) ) : null;
 }
+/**
+ * Validate imported configuration before local persistence.
+ *
+ * @param mixed $input Submitted settings.
+ * @return array Sanitized settings.
+ */
 function sanitize_consent_settings( $input ) {
-    if ( !is_array( $input ) ) { return array(); }
-    $raw = isset( $input['export'] ) && is_string( $input['export'] ) ? $input['export'] : '';
-    $config = \Festapp\CmsConsent\parse_export( $raw, allowed_origins(), \Festapp\CmsConsent\origin_from_url( home_url() ) );
-    if ( !$config && '' !== $raw ) { add_settings_error( 'festapp-tickets_consent', 'invalid_export', __( 'Import a valid export for this website from Festapp.', 'festapp-tickets' ) ); }
-    return array( 'enabled' => !empty( $input['enabled'] ) && null !== $config, 'export' => $config ? wp_json_encode( $config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) : '' );
+	if ( ! is_array( $input ) ) {
+		return array();
+	}
+	$raw    = isset( $input['export'] ) && is_string( $input['export'] ) ? $input['export'] : '';
+	$config = \Festapp\CmsConsent\parse_export( $raw, allowed_origins(), \Festapp\CmsConsent\origin_from_url( home_url() ) );
+	if ( ! $config && '' !== $raw ) {
+		add_settings_error( 'festapp-tickets_consent', 'invalid_export', __( 'Import a valid export for this website from Festapp.', 'festapp-tickets' ) ); }
+	return array(
+		'enabled' => ! empty( $input['enabled'] ) && null !== $config,
+		'export'  => $config ? wp_json_encode( $config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) : '',
+	);
 }
+/**
+ * Register the import option and its sanitizer.
+ *
+ * @return void
+ */
 function register_settings() {
-    register_setting( 'festapp-tickets_consent', 'festapp-tickets_consent', array( 'type' => 'array', 'sanitize_callback' => __NAMESPACE__ . '\\sanitize_consent_settings', 'default' => array() ) );
+	register_setting(
+		'festapp-tickets_consent',
+		'festapp-tickets_consent',
+		array(
+			'type'              => 'array',
+			'sanitize_callback' => __NAMESPACE__ . '\\sanitize_consent_settings',
+			'default'           => array(),
+		)
+	);
 }
+/**
+ * Add consent metadata only to this product helper.
+ *
+ * @param mixed $attributes Script attributes from WordPress.
+ * @return mixed Attributes with supported consent metadata.
+ */
 function consent_script_attributes( $attributes ) {
-    $config = consent_config();
-    if ( !$config || !is_array( $attributes ) || ( $attributes['id'] ?? '' ) !== helper_handle( $config['serviceOrigin'] ) . '-js' ) { return $attributes; }
-    $attributes['data-festapp-consent'] = wp_json_encode( $config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-    if ( 'cookiebot' === $config['providerConfig']['provider'] ) { $attributes['data-cookieconsent'] = 'ignore'; }
-    if ( 'complianz' === $config['providerConfig']['provider'] ) { $attributes['data-category'] = 'functional'; }
-    return $attributes;
+	$config = consent_config();
+	if ( ! $config || ! is_array( $attributes ) || ( $attributes['id'] ?? '' ) !== helper_handle( $config['serviceOrigin'] ) . '-js' ) {
+		return $attributes;
+	}
+	$attributes['data-festapp-consent'] = wp_json_encode( $config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	if ( 'cookiebot' === $config['providerConfig']['provider'] ) {
+		$attributes['data-cookieconsent'] = 'ignore';
+	}
+	if ( 'complianz' === $config['providerConfig']['provider'] ) {
+		$attributes['data-category'] = 'functional';
+	}
+	return $attributes;
 }
+/**
+ * Build a stable script handle for one service origin.
+ *
+ * @param string $origin Service origin.
+ * @return string Product-specific helper handle.
+ */
 function helper_handle( $origin ) {
 	return 'festapp-tickets-helper-' . substr( md5( $origin ), 0, 12 );
 }
@@ -55,10 +116,20 @@ function enqueue_helper( $origin ) {
 }
 
 
+/**
+ * Render this product link without modifying unrelated markup.
+ *
+ * @param array  $valid Validated URL and service origin.
+ * @param string $text Visible link text.
+ * @param string $classes Optional CSS classes.
+ * @return string Escaped link markup.
+ */
 function form_link_html( $valid, $text, $classes = '' ) {
 	$config = consent_config();
 	$marked = $config && $config['serviceOrigin'] === $valid['origin'];
-	if ( $marked ) { enqueue_helper( $valid['origin'] ); }
+	if ( $marked ) {
+		enqueue_helper( $valid['origin'] );
+	}
 	return sprintf(
 		'<a%s href="%s" target="_blank"%s>%s</a>',
 		'' === $classes ? '' : ' class="' . esc_attr( $classes ) . '"',

@@ -8,7 +8,7 @@
     <version>1.0.6</version>
     <infourl title="vstupenky.online pro Joomla">https://github.com/festappnet/festapp/tree/main/integrations/joomla</infourl>
     <downloads><downloadurl type="full" format="zip">https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.6/vstupenky.online.zip</downloadurl></downloads>
-    <sha256>d02b181ed668e087589a188a82cd9e4ac9d6cfc5b24311c6c24f1e904b4e99ff</sha256>
+    <sha256>70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7</sha256>
     <tags><tag>stable</tag></tags>
     <maintainer>Festapp</maintainer><maintainerurl>https://vstupenky.online/support/</maintainerurl>
     <targetplatform name="joomla" version="(5\.4|6\.1)" />
