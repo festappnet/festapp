@@ -34,7 +34,8 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
         limit(`client:${client.id}:${owner.profile.organizationId}`, 120);
         limit(`organization:${owner.profile.organizationId}`, 240);
         check((client.transports ?? ['mcp']).includes(transport), 'FORBIDDEN');
-        check((active.get(token.grantId) ?? 0) < 2 && total < 16, 'TEMPORARILY_LIMITED');
+        if ((active.get(token.grantId) ?? 0) >= 2 || total >= 16)
+            throw new OperationError('TEMPORARILY_LIMITED', true);
         limit(`grant:${token.grantId}`, 60);
         active.set(token.grantId, (active.get(token.grantId) ?? 0) + 1); total++;
         const pendingInvocations = new Set();
