@@ -3552,6 +3552,9 @@
     "unlimited": "Unlimited",
     "enabled": "Enable waitlist",
     "showRemaining": "Show remaining places",
+    "showCount": "Show waitlist count",
+    "showCountHelp": "Shows the current number of people on the waitlist directly in the registration form.",
+    "countSummary": "Currently on the waitlist: {count}",
     "durationHours": "Offer validity (hours)",
     "positiveNumber": "Enter a positive number",
     "activeEntries": "Active waiting registrations or offers prevent this change.",
@@ -5738,7 +5741,7 @@
     "approved": "Cancellation or change accepted; check payment status separately",
     "rejected": "Request rejected",
     "withdrawn": "Request withdrawn",
-    "resolved": "Handled by staff",
+    "resolved": "Completed",
     "withdraw": "Withdraw request",
     "response": "Organizer’s response",
     "approve": "Approve and perform",
@@ -5777,11 +5780,13 @@
     "cancel_selected": "The selected tickets will be cancelled. There is no confirmed payment to refund.",
     "cancel_manual_refund_selected": "The selected tickets will be cancelled. Staff handle any refund separately.",
     "cancel_refund_selected": "The selected tickets will be cancelled and the corresponding available amount reserved for a refund. Money has not yet been returned.",
-    "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval."
+    "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval.",
+    "cancelTickets": "Cancel tickets",
+    "answersLocked": "Submitted answers are locked for customers, including names and phone numbers. Contact staff for corrections."
   },
   "FeatureCustomerSelfService": {
     "title": "Customer self-service",
-    "description": "Order changes from the existing order overview. Enable each operation and configure its rules separately in the form."
+    "description": "Cancellation, refunds and date changes under organizer rules. Customers cannot edit submitted answers."
   },
   "DiscountCodes": {
     "title": "Discount codes",

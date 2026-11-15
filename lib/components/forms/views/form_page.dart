@@ -1195,7 +1195,7 @@ class _FormPageState extends State<FormPage> {
                                                     form!.definition.capacity!.waitingPeople +
                                                     form!.definition.capacity!.offeredPlaces,
                                                   ),
-                                                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+                                                  style: const TextStyle(fontWeight: FontWeight.w700),
                                                 ),
                                                 TextSpan(text: WaitlistStrings.countSummary.split('{count}').last),
                                               ])),

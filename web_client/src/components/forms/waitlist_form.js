@@ -86,12 +86,17 @@ export function renderWaitlistControls(page, model) {
         Number.isFinite(capacity?.waitingPeople) && Number.isFinite(capacity?.offeredPlaces)) {
         const count = document.createElement('p');
         count.className = 'waitlist-count';
-        const [before, after] = S.text('countSummary').split('{count}');
+        const fallback = `${S.count}: {count}`;
+        const summary = LocalizationService.tr('Waitlist.countSummary', {}, fallback);
+        const template = typeof summary === 'string' && summary.includes('{count}') ? summary : fallback;
         const number = document.createElement('strong');
         number.className = 'waitlist-count-number';
         number.textContent = formatDisplayNumber(
             capacity.waitingPeople + capacity.offeredPlaces, LocalizationService.currentLocale);
-        count.append(before, number, after || '');
+        template.split('{count}').forEach((part, index) => {
+            if (index) count.appendChild(number.cloneNode(true));
+            count.append(part);
+        });
         section.appendChild(count);
     }
 

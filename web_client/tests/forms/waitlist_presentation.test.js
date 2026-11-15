@@ -11,7 +11,7 @@ import { waitlistRegistrationPayload } from '../../src/components/forms/waitlist
 import { OrderResult } from '../../src/components/forms/order_result.js';
 import { LocalizationService } from '../../src/services/localization_service.js';
 register('../css_loader.mjs', import.meta.url);
-LocalizationService.translations = JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json', import.meta.url)));
+LocalizationService.translations = JSON.parse(readFileSync(new URL('../../public/assets/translations/cs.json', import.meta.url)));
 LocalizationService.currentLocale = 'cs';
 if (!globalThis.CustomEvent) globalThis.CustomEvent = class extends Event { constructor(type, options) { super(type); this.detail = options?.detail; } };
 const fields = [
@@ -30,6 +30,45 @@ function dom() {
 const initialDom = dom();
 const { OrderPreview } = await import('../../src/components/forms/order_preview.js');
 initialDom.window.close();
+
+test('served waitlist and customer self-service catalogs match canonical translations in every supported locale', () => {
+    for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
+        const canonical = JSON.parse(readFileSync(new URL(`../../../assets/translations/${locale}.json`, import.meta.url)));
+        const served = JSON.parse(readFileSync(new URL(`../../public/assets/translations/${locale}.json`, import.meta.url)));
+        for (const namespace of ['Waitlist', 'CustomerSelfService', 'FeatureCustomerSelfService']) {
+            assert.deepEqual(served[namespace], canonical[namespace], `${locale}.${namespace}`);
+        }
+        assert.match(served.Waitlist.countSummary, /\{count\}/, locale);
+    }
+});
+
+test('waitlist count has a localized fallback and preserves translated placeholder order', () => {
+    const translations = LocalizationService.translations;
+    const d = dom();
+    try {
+        for (const [summary, expected] of [
+            [undefined, `${translations.Waitlist.count}: 4`],
+            ['Waitlist.countSummary', `${translations.Waitlist.count}: 4`],
+            ['4', `${translations.Waitlist.count}: 4`],
+            ['{count} people waiting', '4 people waiting'],
+        ]) {
+            LocalizationService.translations = { ...translations,
+                Waitlist: { ...translations.Waitlist, countSummary: summary } };
+            const model = new FormModel({ registrationMode: 'waitlist', fields,
+                capacity: { waitingPeople: 4, offeredPlaces: 0 } });
+            const current = new FormSession(model);
+            const host = document.querySelector('main');
+            FormRenderer.render(host, current, model, false, {});
+            renderWaitlistControls({ host, currentSession: current }, model);
+            const count = host.querySelector('.waitlist-count');
+            assert.equal(count.textContent, expected);
+            assert.equal(count.querySelector('strong').textContent, '4');
+        }
+    } finally {
+        LocalizationService.translations = translations;
+        d.window.close();
+    }
+});
 
 test('regular occupancy includes waiting registrations; waitlist mode hides occupancy', () => {
     const d = dom();
