@@ -6,6 +6,8 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 
 test('legacy tenant favicon replaces both Vite entry and public copies', async () => {
+  const policy = await readFile(new URL('../tenant-overlays/generated.paths', import.meta.url), 'utf8');
+  assert.ok(policy.split('\n').includes('web_client/favicon.ico'), 'Vite favicon is a generated leaf owned by main');
   const root = await mkdtemp(path.join(tmpdir(), 'festapp-brand-'));
   try {
     await mkdir(path.join(root, 'web'));
