@@ -23,3 +23,19 @@ test('product row shows table and seat beside the correct price without interpre
   assert.match(details[0].closest('li').textContent,/450 CZK/);
  } finally {dom.window.close();delete globalThis.document;}
 });
+
+test('original prices are explicit for discounted order rows; history keeps net prices', async () => {
+ const {JSDOM}=await import('jsdom');
+ const {renderOverviewProducts}=await import('../../src/components/forms/order_overview_details.js');
+ const dom=new JSDOM('<main></main>'); globalThis.document=dom.window.document;
+ try {
+  const host=document.querySelector('main');
+  const items=[{title:'Vstupné',basePrice:100,price:70},{title:'Bezplatný doprovod',basePrice:0,price:0},{title:'Starší položka',price:25}];
+  renderOverviewProducts(host,items,'CZK',value=>String(value),{originalPrices:true});
+  assert.deepEqual([...host.querySelectorAll('.overview-product-price')].map(n=>n.textContent),['100','0','25']);
+  host.replaceChildren();
+  renderOverviewProducts(host,items,'CZK',value=>String(value));
+  assert.deepEqual([...host.querySelectorAll('.overview-product-price')].map(n=>n.textContent),['70','0','25']);
+  assert.equal(items[0].price,70);
+ } finally {dom.window.close();delete globalThis.document;}
+});

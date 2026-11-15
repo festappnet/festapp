@@ -1,3 +1,4 @@
+import { formatDisplayNumber } from "./numberFormatting.ts";
 import { escapeEmailHtml } from "./emailActionLink.ts";
 import { usesTicketTerminology } from "./orderItemTerminology.ts";
 import { formatCurrency } from "./utilities.ts";
@@ -10,8 +11,9 @@ import {
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
 export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
-    if (orderData.discount) decimalDigits = 2;
-    const currencyFormat = (amount: number, currency: string) => formatCurrency(amount, currency, decimalDigits);
+    const currencyFormat = (amount: number, currency: string) => orderData.discount
+        ? formatDisplayNumber(amount, lang === 'cs' ? 'cs-CZ' : 'en', {style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2})
+        : formatCurrency(amount, currency, decimalDigits);
     const { name, surname, email, phone, note } = orderData;
 
     const tr = {
@@ -99,7 +101,8 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         const productsRows = ticket.products.map((product: any) => {
             const price = Number(product.price || 0);
             overallTotal += price;
-            const formattedPrice = currencyFormat(price, product.currency_code || currencyCode);
+            const displayedPrice = orderData.discount ? Number(product.base_price ?? product.price ?? 0) : price;
+            const formattedPrice = currencyFormat(displayedPrice, product.currency_code || currencyCode);
 
             const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escapeEmailHtml).join(': ');
             const seating = [[tr.table, product.spot_group_title], [tr.seat, product.spot_title]]
@@ -144,9 +147,21 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     // --- 3. Total Price ---
     const formattedOverallTotal = currencyFormat(overallTotal, currencyCode);
     const discount = orderData.discount;
-    const discountHtml = discount ? `${tickets.length===0 ? `<strong>${lang==='cs'?'Původní prodej před stornem':'Original sale before cancellation'}</strong>` : ''}<div>${lang === 'cs' ? 'Slevový kód' : 'Discount code'}: ${escapeEmailHtml(discount.code)}</div>
-      <div>${lang === 'cs' ? 'Původní cena' : 'Original price'}: ${currencyFormat(Number(discount.base), discount.currency)}</div>
-      <div>${lang === 'cs' ? 'Sleva' : 'Discount'}: ${currencyFormat(Number(discount.discount), discount.currency)}</div>${tickets.length===0 ? `<div>${lang==='cs'?'Cena po slevě':'Discounted price'}: ${currencyFormat(Number(discount.net),discount.currency)}</div>` : ''}` : '';
+    const historicalDiscount = discount && (tickets.length === 0 || Math.round(overallTotal * 100) !== Math.round(Number(discount.net) * 100));
+    const discountLabels = lang === 'cs'
+        ? {code: 'Slevový kód', base: 'Původní cena', discount: 'Sleva', net: 'Cena po slevě'}
+        : {code: 'Discount code', base: 'Original price', discount: 'Discount', net: 'Discounted price'};
+    const discountHtml = discount ? `
+        <div class="order-discount-summary" style="max-width:480px;margin:16px auto 0;text-align:left;font-size:16px;font-weight:400;line-height:1.5;">
+            ${historicalDiscount ? `<p>${lang === 'cs' ? 'Původní prodej před stornem' : 'Original sale before cancellation'}</p>` : ''}
+            <p style="margin:0 0 16px;overflow-wrap:anywhere;">${discountLabels.code}: <strong>${escapeEmailHtml(discount.code)}</strong></p>
+            <table role="presentation" style="width:100%;border-collapse:collapse;">
+                <tr><td style="padding:4px 16px 4px 0;">${discountLabels.base}</td><td style="padding:4px 0;text-align:right;white-space:nowrap;">${currencyFormat(Number(discount.base), discount.currency)}</td></tr>
+                <tr><td style="padding:4px 16px 14px 0;">${discountLabels.discount}</td><td style="padding:4px 0 14px;text-align:right;white-space:nowrap;">−${currencyFormat(Number(discount.discount), discount.currency)}</td></tr>
+                <tr><td style="border-top:1px solid #cbd5e1;padding:14px 16px 0 0;font-size:18px;font-weight:700;">${discountLabels.net}</td><td style="border-top:1px solid #cbd5e1;padding:14px 0 0;text-align:right;white-space:nowrap;font-size:18px;font-weight:700;">${currencyFormat(Number(discount.net), discount.currency)}</td></tr>
+            </table>
+        </div>` : '';
+
 
     // Per-currency meta surcharge sums (visual-only, NOT included in overallTotal).
     // Renders as separate lines under Total Price, one per currency.
@@ -163,7 +178,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
 
     const totalSection = `
         <div style="text-align: right; padding-top: 16px; margin-top: 8px;">
-            ${discountHtml}<span style="font-size: 18px; font-weight: bold;">${tr.totalPrice}: ${formattedOverallTotal}</span>
+            ${discountHtml}${!discount || historicalDiscount ? `<div style="margin-top:16px;font-size:18px;font-weight:bold;">${tr.totalPrice}: ${formattedOverallTotal}</div>` : ''}
             ${metaSumHtml}
         </div>`;
 

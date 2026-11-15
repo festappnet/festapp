@@ -1,3 +1,5 @@
+import 'package:fstapp/components/discount_codes/discount_summary.dart';
+
 import '../customer_order_changes.dart';
 
 import 'package:fstapp/components/discount_codes/discount_strings.dart';
@@ -161,23 +163,9 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                         paragraph(
                           '${text('orderState')}: ${text(order['state'] ?? 'unknown')}',
                         ),
-                        paragraph(
-                          '${text('total')}: ${money(order['total'], order['currency'], card: paymentConnectors.containsHosted(order['payment']?['method']))}',
-                        ),
-                        if (order['discount'] != null) ...[
-                          if (order['state'] == 'storno')
-                            paragraph(DiscountStrings.text('originalSale')),
-                          paragraph(
-                            '${DiscountStrings.text('code')}: ${order['discount']['code']}',
-                          ),
-                          for (final key in ['base', 'discount', 'net'])
-                            paragraph(
-                              '${DiscountStrings.text(key)}: ${money(order['discount'][key], order['discount']['currency'], card: true)}',
-                            ),
-                        ],
                         for (final item in order['items'] ?? []) ...[
                           paragraph(
-                            '${item['title'] ?? ''}: ${money(item['price'], item['currency'])}',
+                            '${item['title'] ?? ''}: ${order['discount'] != null ? formatDiscountPrice(context, (item['basePrice'] ?? item['price']) as num, item['currency'] ?? order['currency']) : money(item['price'], item['currency'])}',
                           ),
                           if ([item['spotGroupTitle'], item['spotTitle']].any(
                             (value) =>
@@ -203,6 +191,26 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                         ],
+                        if (order['discount'] != null) ...[
+                          if (order['state'] == 'storno' ||
+                              ((order['total'] as num) * 100).round() !=
+                                  ((order['discount']['net'] as num) * 100)
+                                      .round())
+                            paragraph(DiscountStrings.text('originalSale')),
+                          DiscountSummary(
+                            discount: Map<String, dynamic>.from(
+                              order['discount'] as Map,
+                            ),
+                          ),
+                        ],
+                        if (order['discount'] == null ||
+                            order['state'] == 'storno' ||
+                            ((order['total'] as num) * 100).round() !=
+                                ((order['discount']['net'] as num) * 100)
+                                    .round())
+                          paragraph(
+                            '${text('total')}: ${money(order['total'], order['currency'], card: paymentConnectors.containsHosted(order['payment']?['method']))}',
+                          ),
                         if (order['payment'] != null)
                           ..._payment(
                             order['payment'] as Map,

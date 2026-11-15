@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:fstapp/services/utilities_all.dart';
+
+import 'discount_summary.dart';
 
 import 'discount_strings.dart';
 
@@ -54,12 +55,8 @@ class DiscountCodeEntry extends StatelessWidget {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ),
-      if (quote != null) ...[
-        for (final key in ['base', 'discount', 'net'])
-          Text(
-            '${DiscountStrings.text(key)}: ${Utilities.formatPrice(context, (quote![key] as num).toDouble(), currencyCode: quote!['currency'], decimalDigits: 2)}',
-          ),
-      ],
+      if (quote != null)
+        Semantics(liveRegion: true, child: DiscountSummary(discount: quote!)),
     ],
   );
 }

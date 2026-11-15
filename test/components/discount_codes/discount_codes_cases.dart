@@ -1,3 +1,4 @@
+import 'package:fstapp/components/discount_codes/discount_summary.dart';
 import 'package:fstapp/components/forms/views/order_finish_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/widgets_view/form_total_price.dart';
@@ -93,6 +94,81 @@ void main() {
         .data!;
     expect(text, matches(RegExp(r'80[,.]25')));
   });
+  testWidgets(
+    'discount summary aligns original, negative discount and one final total at narrow width',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: const Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 320,
+                child: DiscountSummary(
+                  discount: {
+                    'code': 'SLEVAAAA',
+                    'base': 200,
+                    'discount': 60,
+                    'net': 140,
+                    'currency': 'CZK',
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(RegExp(r'^200\s*Kč$')), findsOneWidget);
+      expect(find.textContaining(RegExp(r'^−60\s*Kč$')), findsOneWidget);
+      expect(find.textContaining(RegExp(r'^140\s*Kč$')), findsOneWidget);
+      expect(find.byType(Divider), findsOneWidget);
+      final right = tester
+          .getTopRight(find.textContaining(RegExp(r'^200\s*Kč$')))
+          .dx;
+      expect(
+        tester.getTopRight(find.textContaining(RegExp(r'^−60\s*Kč$'))).dx,
+        right,
+      );
+      expect(
+        tester.getTopRight(find.textContaining(RegExp(r'^140\s*Kč$'))).dx,
+        right,
+      );
+      expect(
+        tester
+            .widget<Text>(find.textContaining(RegExp(r'^140\s*Kč$')))
+            .style
+            ?.fontWeight,
+        FontWeight.w700,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'discount summary preserves cents and omits insignificant trailing zeros',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: const Scaffold(
+            body: DiscountSummary(
+              discount: {
+                'code': 'SLEVA',
+                'base': 100.5,
+                'discount': 30.25,
+                'net': 70.25,
+                'currency': 'CZK',
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining(RegExp(r'^100,5\s*Kč$')), findsOneWidget);
+      expect(find.textContaining(RegExp(r'^−30,25\s*Kč$')), findsOneWidget);
+      expect(find.textContaining(RegExp(r'^70,25\s*Kč$')), findsOneWidget);
+    },
+  );
   testWidgets(
     'unknown discounted order retries its existing submission without reopening a quote',
     (tester) async {

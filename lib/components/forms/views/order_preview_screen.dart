@@ -1,4 +1,4 @@
-import 'package:fstapp/components/discount_codes/discount_strings.dart';
+import 'package:fstapp/components/discount_codes/discount_summary.dart';
 import 'package:festapp_core/payments.dart';
 
 import '../models/verified_organization_identity.dart';
@@ -161,12 +161,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                             FeatureService.isDepositChoiceAvailable())
                           _buildDepositSection(context),
 
-                        if (widget.discount != null)
-                          for (final key in ['base', 'discount'])
-                            Text(
-                              '${DiscountStrings.text(key)}: ${Utilities.formatPrice(context, (widget.discount![key] as num).toDouble(), currencyCode: widget.discount!['currency'], decimalDigits: 2)}',
-                            ),
-                        // Total Price
+                        // One summary owns original, reduction and final price.
                         _buildTotalPrice(context),
 
                         const SizedBox(height: 16),
@@ -494,24 +489,28 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            PublicOrderStrings.totalPrice(
-              context,
-              Utilities.formatPrice(
+          if (widget.discount != null)
+            DiscountSummary(discount: widget.discount!)
+          else
+            Text(
+              PublicOrderStrings.totalPrice(
                 context,
-                widget.totalPrice,
-                currencyCode: _quotedCurrency,
-                decimalDigits:
-                    (_paymentOptions.cardConfigured || widget.discount != null)
-                    ? null
-                    : 0,
+                Utilities.formatPrice(
+                  context,
+                  widget.totalPrice,
+                  currencyCode: _quotedCurrency,
+                  decimalDigits:
+                      (_paymentOptions.cardConfigured ||
+                          widget.discount != null)
+                      ? null
+                      : 0,
+                ),
+              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontSize: 16 * OrderPreviewScreen.fontSizeFactor,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontSize: 16 * OrderPreviewScreen.fontSizeFactor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
           for (final line in metaLines)
             Padding(
               padding: const EdgeInsets.only(top: 4.0),

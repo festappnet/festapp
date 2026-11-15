@@ -393,3 +393,24 @@ test('pending refund remains separate from confirmed received and net facts', t 
     assert.equal(host.querySelector('.overview-refunded'),null);
     assert.equal(host.querySelectorAll('button').length,0);
 });
+
+test('discounted overview shows original admission then one three-row reduction summary', t => {
+ const host=setup(t),data=fixture();
+ data.people=[{id:2,currentOrderId:2,label:'Host',effectiveLifecycle:'admitted'}];data.offers=[];
+ Object.assign(data.orders[0],{total:70,payment:null,discount:{code:'SAVE<unsafe>',base:100,discount:30,net:70,currency:'CZK'},items:[{ticketId:2,title:'Vstupné',basePrice:100,price:70,currency:'CZK'}]});
+ renderOrderOverview(host,data);
+ assert.match(host.querySelector('.overview-product-price').textContent,/100/);
+ assert.equal(host.querySelector('.overview-order-total'),null);
+ const summary=host.querySelector('.discount-summary');
+ assert.equal(summary.querySelectorAll('.discount-summary-row').length,3);
+ assert.match(summary.querySelector('.discount-summary-row:nth-child(2) dd').textContent,/^−30/);
+ assert.match(summary.querySelector('.discount-summary-total dd').textContent,/70/);
+ assert.equal(summary.querySelector('.discount-summary-code strong').textContent,'SAVE<unsafe>');
+ assert.equal(summary.querySelector('unsafe'),null);
+ assert.ok(host.querySelector('.overview-products').compareDocumentPosition(summary)&window.Node.DOCUMENT_POSITION_FOLLOWING);
+ assert.equal(data.orders[0].items[0].price,70);
+ data.orders[0].state='storno';data.orders[0].total=0;
+ renderOrderOverview(host,data);
+ assert.match(host.querySelector('.discount-summary-total').textContent,/70/);
+ assert.match(host.querySelector('.overview-order-total').textContent,/0/);
+});

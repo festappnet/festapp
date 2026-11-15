@@ -1,3 +1,4 @@
+@import url('./discount_summary.css');
 /* Order Preview UI - Matching Flutter Design */
 
 /* Overlay Container */
@@ -454,28 +455,3 @@ body.dark-mode .deposit-option span {
 
 .order-preview-body > .waitlist-context { text-align: start; }
 .order-preview-body > .waitlist-intro { margin-inline: 0; }
-
-.preview-discount-summary {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 0 20px;
-    text-align: start;
-    font-size: 1rem;
-    font-weight: 400;
-}
-.preview-discount-code { margin-bottom: 16px; overflow-wrap: anywhere; }
-.preview-discount-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 16px;
-    margin-top: 10px;
-}
-.preview-discount-row > span:last-child { white-space: nowrap; text-align: end; }
-.preview-grand-total {
-    border-top: 1px solid var(--border-color, #ddd);
-    padding-top: 14px;
-    margin-top: 14px;
-    font-size: 1.15rem;
-    font-weight: 700;
-}

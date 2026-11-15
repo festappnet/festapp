@@ -111,13 +111,13 @@ try {
             await page.evaluate('window.showReview()');
             const review = page.locator('#order-preview-overlay');
             await review.locator('.preview-total-price').waitFor();
-            const layout = await review.locator('.preview-discount-summary').evaluate(summary => {
-                const rows = [...summary.querySelectorAll('.preview-discount-row')].map(row => {
-                    const [label, amount] = row.querySelectorAll('span');
+            const layout = await review.locator('.discount-summary').evaluate(summary => {
+                const rows = [...summary.querySelectorAll('.discount-summary-row')].map(row => {
+                    const [label, amount] = row.querySelectorAll('dt, dd');
                     const l = label.getBoundingClientRect(), a = amount.getBoundingClientRect();
                     return {left:l.left, right:a.right, gap:a.left-l.right, weight:Number(getComputedStyle(row).fontWeight)};
                 });
-                return {rows, align:getComputedStyle(summary).textAlign, codeWeight:Number(getComputedStyle(summary.querySelector('.preview-discount-code')).fontWeight)};
+                return {rows, align:getComputedStyle(summary).textAlign, codeWeight:Number(getComputedStyle(summary.querySelector('.discount-summary-code')).fontWeight)};
             });
             assert.equal(layout.rows.length,3,`${viewport}/${lang}: three review rows`);
             assert.ok(layout.rows.every(row => row.gap >= 8),`${viewport}/${lang}: review labels and amounts do not overlap`);

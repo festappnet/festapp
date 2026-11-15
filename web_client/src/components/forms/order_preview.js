@@ -1,3 +1,4 @@
+import {discountSummaryHtml} from './discount_summary.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { revealEmbedStep, preserveCheckoutScroll } from '../../services/embed_bridge.js';
@@ -647,12 +648,7 @@ export class OrderPreview {
 
         if (!isWaitlist) html += `
              <div class="preview-total-price">
-                 ${data.discount ? `<div class="preview-discount-summary">
-                   <div class="preview-discount-code">${htmlText`${LocalizationService.tr('DiscountCodes.code')}`}: <strong>${htmlText`${data.discount.code}`}</strong></div>
-                   <div class="preview-discount-row"><span>${htmlText`${LocalizationService.tr('DiscountCodes.base')}`}</span><span>${formatPrice(data.discount.base,data.currency,2,LocalizationService.currentLocale)}</span></div>
-                   <div class="preview-discount-row"><span>${htmlText`${LocalizationService.tr('DiscountCodes.discount')}`}</span><span>−${formatPrice(data.discount.discount,data.currency,2,LocalizationService.currentLocale)}</span></div>
-                   <div class="preview-discount-row preview-grand-total"><span>${htmlText`${LocalizationService.tr('DiscountCodes.net')}`}</span><span>${formattedPrice}</span></div>
-                 </div>` : totalPriceString}
+                 ${data.discount ? discountSummaryHtml(data.discount) : totalPriceString}
                  ${metaHtml}
              </div>
         `;
