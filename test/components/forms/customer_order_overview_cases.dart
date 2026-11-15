@@ -1,3 +1,5 @@
+import 'package:fstapp/components/discount_codes/discount_summary.dart';
+
 import 'dart:async';
 
 import 'package:fstapp/components/forms/customer_order_changes.dart';
@@ -65,6 +67,59 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
+  testWidgets(
+    'discounted overview shows original item before the shared net summary',
+    (tester) async {
+      tester.view.physicalSize = const Size(1000, 2200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final data = fixture();
+      final order = (data['orders'] as List).first as Map<String, dynamic>;
+      order['total'] = 70;
+      order.remove('payment');
+      order['items'] = [
+        {'title': 'Vstupné', 'price': 70, 'basePrice': 100, 'currency': 'CZK'},
+      ];
+      order['discount'] = {
+        'code': 'SLEVAAAA',
+        'base': 100,
+        'discount': 30,
+        'net': 70,
+        'currency': 'CZK',
+      };
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: CustomerOrderOverviewView(
+                load: () async => CustomerOrderOverview(data),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining(RegExp(r'^Vstupné: 100\s*Kč$')),
+        findsOneWidget,
+      );
+      expect(find.byType(DiscountSummary), findsOneWidget);
+      expect(find.textContaining('OrderOverview.total:'), findsNothing);
+      expect(
+        tester.getTopLeft(find.byType(DiscountSummary)).dy,
+        greaterThan(
+          tester
+              .getBottomLeft(
+                find.textContaining(RegExp(r'^Vstupné: 100\s*Kč$')),
+              )
+              .dy,
+        ),
+      );
+      expect(order['items'][0]['price'], 70);
+    },
+  );
   testWidgets(
     'partial overview keeps separate payment facts and refresh observes usage',
     (tester) async {

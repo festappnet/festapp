@@ -7,7 +7,7 @@ const node = (parent, tag, text, className) => {
     if (className) el.className = className;
     parent.append(el); return el;
 };
-export function renderOverviewProducts(host, items, currency, money) {
+export function renderOverviewProducts(host, items, currency, money, {originalPrices = false} = {}) {
     const list = node(host, 'ul', '', 'overview-products');
     for (const item of items) {
         const row = node(list, 'li', '');
@@ -17,7 +17,7 @@ export function renderOverviewProducts(host, items, currency, money) {
             .map(([title, value]) => `${title}: ${value}`).join(' · ');
         const standing = item.isStanding ? [tr('standing'), item.standingAreaTitle].filter(value => value != null && String(value).trim()).join(': ') : '';
         if (standing || seating) node(label, 'span', standing || seating, 'overview-product-seating');
-        node(row, 'strong', money(item.price, item.currency || currency), 'overview-product-price');
+        node(row, 'strong', money(originalPrices ? item.basePrice ?? item.price : item.price, item.currency || currency), 'overview-product-price');
     }
 }
 export function renderOverviewCustomer(host, answers = [], key) {

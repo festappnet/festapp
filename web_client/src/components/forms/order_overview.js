@@ -1,6 +1,7 @@
+import {discountSummaryHtml} from './discount_summary.js';
 import {renderCustomerOrderChanges} from './customer_order_changes.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
-import { formatDisplayNumber } from '../../utils/formatters.js';
+import { formatDisplayNumber, formatPrice } from '../../utils/formatters.js';
 import { renderCardPaymentStatus, formatCardMoney } from './card_payment_status.js';
 import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
 import { PublicOrderStrings } from './public_order_strings.js';
@@ -136,7 +137,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
             if (person.label) line(content, 'p', person.label);
             renderOverviewAnswers(content, person.answers, `ticket:${person.id}`);
             const items = (order?.items || []).filter(item => String(item.ticketId) === String(person.id));
-            if (items.length) renderOverviewProducts(content, items, order.currency, money);
+            if (items.length) renderOverviewProducts(content, items, order.currency, order.discount ? (value, currency) => formatPrice(value, currency, 2, LocalizationService.currentLocale) : money, {originalPrices: Boolean(order.discount)});
         }
     };
     const pendingPeople = data.people.filter(person => !data.orders.some(order => String(order.id) === String(person.currentOrderId)));
@@ -148,12 +149,19 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         const card = section(host, `${overviewText('orderDetails')} ${order.symbol}`, 'order-overview-card');
         renderOverviewCustomer(card, order.answers, `order:${order.id}`);
         renderAdmissions(card, data.people.filter(person => String(person.currentOrderId) === String(order.id)), order);
-        const total = line(card, 'dl', ''); total.className = 'overview-order-total';
-        fact(total, overviewText('total'), (isCardPaymentMethod(order.payment?.method) ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
         if (order.discount) {
-            if (order.state === 'storno') fact(total, LocalizationService.tr('DiscountCodes.originalSale'), '');
-            fact(total, LocalizationService.tr('DiscountCodes.code'), order.discount.code);
-            for (const key of ['base','discount','net']) fact(total, LocalizationService.tr(`DiscountCodes.${key}`), money(order.discount[key], order.discount.currency));
+            const historical = order.state === 'storno' || Math.round(Number(order.total) * 100) !== Math.round(Number(order.discount.net) * 100);
+            const discountHost = line(card, 'div', '');
+            if (historical) line(discountHost, 'p', LocalizationService.tr('DiscountCodes.originalSale'));
+            const summary = line(discountHost, 'div', '');
+            summary.innerHTML = discountSummaryHtml(order.discount);
+            if (historical) {
+                const total = line(card, 'dl', ''); total.className = 'overview-order-total';
+                fact(total, overviewText('total'), money(order.total, order.currency));
+            }
+        } else {
+            const total = line(card, 'dl', ''); total.className = 'overview-order-total';
+            fact(total, overviewText('total'), (isCardPaymentMethod(order.payment?.method) ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
         }
         const payment = order.payment;
         if (!isCardPaymentMethod(payment?.method) && payment) {
