@@ -19,3 +19,16 @@ test('missing or changed raw compiler provenance cannot seal the canonical recei
  delete records.flutter.source;f.put('build/web-components/flutter.json',JSON.stringify(records.flutter));
  assert.throws(()=>compilationProvenance(f.root,'static',f.tools),/provenance invalid/);
 });
+
+
+test('canonical catalog references participate in compiler provenance and owner changes require a rebuild',t=>{
+ const f=fixture(t);f.put('assets/translations/cs.json','{"label":"before"}');
+ const alias=path.join(f.root,'web_client/public/assets/translations/cs.json');
+ fs.mkdirSync(path.dirname(alias),{recursive:true});fs.symlinkSync('../../../../assets/translations/cs.json',alias);
+ f.put('build/web/main.js','compiled');
+ const records=f.components('cloudflare');
+ for(const [component,record]of Object.entries(records))f.put(`build/web-components/${component}.json`,JSON.stringify(record));
+ assert.deepEqual(Object.keys(compilationProvenance(f.root,'cloudflare',f.tools).components),['flutter','vite']);
+ f.put('assets/translations/cs.json','{"label":"after"}');
+ assert.throws(()=>compilationProvenance(f.root,'cloudflare',f.tools),/provenance invalid/);
+});
