@@ -26,6 +26,8 @@
     "version": "1.0.3",
     "market": "international",
     "changelog": "= 1.0.3 =\n* Import the server-confirmed cookie choice configuration from Festapp. Only the extension’s own form links participate; manual links remain unchanged.",
-    "upgrade_notice": "Configure and confirm your website in Festapp, then explicitly import its JSON export. Transfer stays off until enabled. No manual scope IDs or revisions are required."
+    "upgrade_notice": "Configure and confirm your website in Festapp, then explicitly import its JSON export. Transfer stays off until enabled. No manual scope IDs or revisions are required.",
+    "documentation": "Website integration guide: https://tickets.festapp.net/help/embed/\nWordPress setup: Settings > Festapp Tickets\nOrganizer help: https://tickets.festapp.net/help/\nService and organizer pricing: https://tickets.festapp.net/\nSupport: https://tickets.festapp.net/support/",
+    "installation": "In WordPress, open Plugins > Add New > Upload Plugin, select the Festapp Tickets plugin ZIP, click Install Now and activate the plugin."
   }
 ]

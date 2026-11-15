@@ -16,6 +16,7 @@ def replace(source,p):
  values={k.upper():str(v) for k,v in p.items()}
  values['OFFER_URL']=p['origin'].rstrip('/')+'/'
  values['DOCUMENTATION']=p.get('documentation', 'Setup help is available under Settings > '+p['name']+'. Support: '+p['origin']+'/support/')
+ values['INSTALLATION']=p.get('installation', 'In WordPress, open Plugins > Add New, search for '+p['name']+', click Install Now and activate the plugin. You can also upload the plugin ZIP manually.')
  values['CHANGELOG']=p.get('changelog', '= '+p['version']+' =\n* Clearly identify the WordPress appearance option as a local override of the app appearance.')
  values['UPGRADE_NOTICE']=p.get('upgrade_notice', 'No database migration. Existing form URLs, titles and height settings are retained. Appearance now follows the saved form setting; previous local appearance overrides no longer apply.')
  for key,value in values.items():source=source.replace('@@'+key+'@@',value)

@@ -90,7 +90,7 @@ All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript u
 
 == Installation ==
 
-1. In WordPress, open Plugins > Add New, search for @@NAME@@, click Install Now and activate the plugin. You can also upload the plugin ZIP manually.
+1. @@INSTALLATION@@
 2. Click Get started in the plugin list, or open Settings > @@NAME@@, and read the three setup steps and service/privacy disclosure.
 3. Save a form in your organizer account, copy its public URL, add the block or shortcode and publish.
 4. Preview the published page, including mobile layout and the standalone link.
