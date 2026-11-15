@@ -42,3 +42,16 @@ test('Android plugin and Kotlin versions match the Flutter 3.50 toolchain', () =
   assert.match(settings, /com\.android\.application" version "9\.3\.1"/);
   assert.match(settings, /org\.jetbrains\.kotlin\.android" version "2\.4\.20"/);
 });
+
+
+test('both native extensions share a Gradle 9 compatible CargoKit process owner', () => {
+  const pluginPath = path.join(root, 'packages/super_native_extensions/cargokit/gradle/plugin.gradle');
+  const plugin = fs.readFileSync(pluginPath, 'utf8');
+  assert.doesNotMatch(plugin, /project\.exec\s*\{/);
+  assert.match(plugin, /@Inject\s+abstract ExecOperations getExecOperations\(\)/);
+  const engineBuild = fs.readFileSync(path.join(root, 'packages/irondash_engine_context/android/build.gradle'), 'utf8');
+  const relativePlugin = engineBuild.match(/apply from: "([^"]+)"/)[1];
+  assert.equal(path.resolve(root, 'packages/irondash_engine_context/android', relativePlugin), pluginPath);
+  assert.match(fs.readFileSync(path.join(root, 'pubspec.yaml'), 'utf8'),
+    /irondash_engine_context:\s*\n\s*path: packages\/irondash_engine_context/);
+});
