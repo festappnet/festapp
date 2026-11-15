@@ -38,7 +38,7 @@ BEGIN
   END IF;
  END IF;
  RETURN jsonb_build_object('orderId',root.id,'organization',occ.organization,'occasion',occ.id,'unit',occ.unit,
- 'recipient',p_recipient,'occasionTitle',occ.title,'orderSymbol',root.order_symbol,
+ 'allowedActions',public.customer_order_actions_internal(root.id),'recipient',p_recipient,'occasionTitle',occ.title,'orderSymbol',root.order_symbol,
  'participantCount',(SELECT count(*) FROM public.get_order_tickets_internal(root.id)),
  'formLink',f.link,'webLink',(SELECT data->>'DEFAULT_URL' FROM public.organizations WHERE id=occ.organization),
  'source',CASE WHEN s.token_hash IS NOT NULL THEN jsonb_build_object('sealed',s.sealed,'contentHash',s.content_hash,'tokenHash',s.token_hash,'expiresAt',s.expires_at) END);

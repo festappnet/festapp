@@ -8,7 +8,7 @@ export function terminalOrderResponse(data) {
     const code = data?.code ?? data?.data?.code;
     return Number.isInteger(code) && (code === 200 || code >= 1000 && code < 2000 || code >= 400 && code < 500 && ![408, 429].includes(code));
 }
-export async function claimTicketOrderIdentity(endpoint, payload, principal, storage = browserStorage) {
+export async function claimTicketOrderIdentity(endpoint, payload, principal, storage = browserStorage, {requirePending = false} = {}) {
     // Transport provenance can refresh without changing the purchase intent.
     // Keep ordinary fingerprints unchanged and pin the original proof alongside
     // the pending command so its SQL payload hash also remains unchanged.
@@ -19,6 +19,7 @@ export async function claimTicketOrderIdentity(endpoint, payload, principal, sto
     let saved;
     try { saved = JSON.parse(storage.getItem(key) || 'null'); } catch { throw new Error('PAYMENT_RECOVERY_REQUIRED'); }
     if (saved && saved.principal !== (principal ?? null)) throw new Error('PAYMENT_RECOVERY_PRINCIPAL_CHANGED');
+    if (!saved && requirePending) throw new Error('PAYMENT_RECOVERY_REQUIRED');
     if (!saved) {
         // Older requests did not bind their actor. Do not silently replace an
         // outstanding old command with a newly authenticated purchase.

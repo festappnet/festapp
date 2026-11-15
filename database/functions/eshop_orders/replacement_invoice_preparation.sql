@@ -24,7 +24,7 @@ BEGIN
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
  SELECT o.state INTO state FROM eshop.orders o WHERE o.id=p_order FOR UPDATE;
  SELECT r.response INTO receipt FROM public.client_mutation_receipts r
-  WHERE r.command_id=p_command AND (r.command_name='inventory.order.replace' OR (r.command_name IN('inventory.order.create','inventory.waitlist.accept') AND r.response#>'{data,adminQuote}' IS NOT NULL)) AND r.status='completed'
+  WHERE r.command_id=p_command AND (r.command_name='inventory.order.replace' OR (r.command_name IN('inventory.order.create','inventory.waitlist.accept') AND (r.response#>'{data,adminQuote}' IS NOT NULL OR (r.response#>>'{data,paymentPreparationPolicy}'='leased_keep_pending' AND EXISTS(SELECT 1 FROM eshop.order_discounts d WHERE d.order_id=p_order AND d.command_id=p_command))))) AND r.status='completed'
   AND r.response->>'status'='applied' AND (r.response#>>'{data,order,id}')::bigint=p_order;
  IF receipt IS NULL AND NOT EXISTS(SELECT 1 FROM eshop.replacement_invoice_preparations a
   WHERE a.command_id=p_command AND a.order_id=p_order) THEN

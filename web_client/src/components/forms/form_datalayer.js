@@ -134,6 +134,18 @@ export class FormDataLayer {
             // Only a catalog product is accepted. Spot IDs, notes and all answers are ignored.
             for (const field of ticket.fields || []) if (Object.hasOwn(field, 'product_type')) add(field.product_type);
         }
+        if (session?.discountCode?.valid) {
+            // Project the SQL line snapshot. Never derive a discount from catalog prices.
+            const quoted = [];
+            for (const line of session.discountCode.quote.lines || []) {
+                const product = this.catalog.get(String(line.productId));
+                if (!product) return []; // An unknown catalog label cannot become an analytics item.
+                const existing = quoted.find(item => item.item_id === product.item_id && item.price === Number(line.net));
+                if (existing) existing.quantity++;
+                else quoted.push({...product, price:Number(line.net), quantity:1, currency:line.currency});
+            }
+            return quoted;
+        }
         return [...selected.values()];
     }
     update(payload, session, send = input=>this.emit(input)) {

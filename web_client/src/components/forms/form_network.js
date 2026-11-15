@@ -6,9 +6,9 @@ export class FormNetwork {
      * Submits the order payload to the backend.
      * @returns {Promise<{success: boolean, data: any, code: number}>}
      */
-    static async submitOrder(payload) {
+    static async submitOrder(payload, options = {}) {
         try {
-            const result = await DbOrders.sendOrder(payload);
+            const result = await DbOrders.sendOrder(payload, options);
             
             let resultData = {};
             if (result.success) {

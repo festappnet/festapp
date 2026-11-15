@@ -43,6 +43,7 @@ node --test \
 
 # Real Chromium covers visitor intent independently of synthetic session updates.
 pnpm run test:form-interaction-browser
+pnpm run test:discount-codes-browser
 
 # Real Chromium must see the form and account actions, including hidden ancestors.
 node scripts/test_form_access_browser.mjs

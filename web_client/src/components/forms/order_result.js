@@ -1,3 +1,4 @@
+import { LocalizationService } from '../../services/localization_service.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { FormStrings } from './form_strings.js';
 import { FeatureService } from '../features/feature_service.js';
@@ -74,6 +75,10 @@ export class OrderResult {
             colorClass = 'error-color';
         } else if (resultData?.errorCode === 'STRIPE_RECIPIENT_CHANGED') {
             title=paymentMethodText('reason_recipient_changed');subtitle=WaitlistStrings.refresh;icon='error';colorClass='error-color';
+        } else if (['ORDER_RECOVERY_REQUIRED','PAYMENT_RECOVERY_REQUIRED','PAYMENT_RECOVERY_PRINCIPAL_CHANGED'].includes(resultData?.errorCode)) {
+            title=LocalizationService.tr('DiscountCodes.recoveryUnavailable');subtitle='';icon='error';colorClass='error-color';
+        } else if (['DISCOUNT_QUOTE_CHANGED','DISCOUNT_INVALID'].includes(resultData?.errorCode)) {
+            title=LocalizationService.tr('DiscountCodes.changed');subtitle=LocalizationService.tr('DiscountCodes.invalid');icon='error';colorClass='error-color';
         } else if (resultData?.errorCode === 'STRIPE_PRICE_CHANGED') {
             title=paymentMethodText('priceChanged');subtitle=paymentMethodText('reviewPrices');icon='error';colorClass='error-color';
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
@@ -226,6 +231,12 @@ export class OrderResult {
             }, {alive: () => container.isConnected});
         }
 
+        if (!success && paymentActions.onRetry) {
+            const retry = document.createElement('button'); retry.type='button'; retry.className='btn btn-primary';
+            retry.textContent=LocalizationService.tr('DiscountCodes.retry');
+            retry.onclick=()=> {retry.disabled=true;paymentActions.onRetry();};
+            container.querySelector('.result-actions')?.prepend(retry);
+        }
         // Attach Event
         const backBtn = container.querySelector('.btn-back-to-form');
         if (backBtn) {

@@ -1,9 +1,9 @@
-CREATE OR REPLACE FUNCTION public.update_order_responses(
+CREATE OR REPLACE FUNCTION public.update_order_responses_domain_internal(
     p_order_id BIGINT,
     responses JSONB
 )
 RETURNS void
-SECURITY DEFINER
+SECURITY INVOKER
 LANGUAGE plpgsql
 SET search_path = public, extensions
 AS $$
@@ -43,11 +43,6 @@ BEGIN
     -- Raise an exception if the SELECT INTO returned no row
     IF v_occasion_id IS NULL THEN
         RAISE EXCEPTION 'Order not found: %', p_order_id;
-    END IF;
-
-    -- Check if the current user has order editing permissions for this occasion
-    IF (SELECT can_write_orders(v_occasion_id)) <> TRUE THEN
-        RAISE EXCEPTION 'User does not have permission to edit this order.';
     END IF;
 
     -- Reject the terminal state before form validation, without reversing
@@ -183,3 +178,17 @@ BEGIN
 
 END;
 $$;
+REVOKE ALL ON FUNCTION public.update_order_responses_domain_internal(bigint,jsonb)
+ FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.update_order_responses(p_order_id bigint,responses jsonb)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE v_occasion bigint;
+BEGIN
+ SELECT occasion INTO v_occasion FROM eshop.orders WHERE id=p_order_id;
+ IF v_occasion IS NULL OR public.can_write_orders(v_occasion) IS NOT TRUE THEN
+  RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+ PERFORM public.update_order_responses_domain_internal(p_order_id,responses);
+END $$;
+REVOKE ALL ON FUNCTION public.update_order_responses(bigint,jsonb) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.update_order_responses(bigint,jsonb) TO authenticated;

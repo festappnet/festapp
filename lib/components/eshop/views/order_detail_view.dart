@@ -1,3 +1,5 @@
+import 'customer_order_requests.dart';
+
 import 'package:festapp_core/payments.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -589,6 +591,15 @@ class _OrderDetailViewState extends State<OrderDetailView>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _financial(),
+        CustomerOrderRequests(
+          requests: (d.json['customerRequests'] as List? ?? const [])
+              .map((r) => Map<String, dynamic>.from(r as Map))
+              .toList(),
+          canWrite: d.canWrite,
+          onChanged: () async {
+            await c.load();
+          },
+        ),
         for (final issue in issues.take(2))
           ListTile(
             contentPadding: EdgeInsets.zero,

@@ -483,6 +483,13 @@
     "ticket_wallet/apple_updates_schema.sql",
     "ticket_wallet/apple_updates.sql",
     "user_permissions/webhook_operations.sql",
-    "integration_webhooks/webhooks.sql"
+    "integration_webhooks/webhooks.sql",
+    "eshop_discounts/schema.sql",
+    "user_permissions/discount_operations.sql",
+    "eshop_discounts/calculation.sql",
+    "eshop_discounts/management.sql",
+    "eshop_discounts/quote.sql",
+    "eshop_discounts/apply.sql",
+    "eshop/product_selection_contract.sql"
   ]
 }

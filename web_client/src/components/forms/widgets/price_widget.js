@@ -26,7 +26,8 @@ export class PriceWidget {
     }
 
     render(state = null) {
-        const { totalPrice, totalItems, currency, metaSurchargeSums } = state || this.session.currentState;
+        const original = state || this.session.currentState;
+        const { totalPrice, totalItems, currency, metaSurchargeSums } = this.session.discountCode?.priceData(original) ?? original;
 
         // Logic matched from FormPage._renderFloatingPriceWidget
         const formModel = this.session.formModel;
@@ -128,7 +129,7 @@ export class PriceWidget {
         }
 
         const locale = LocalizationService.currentLocale;
-        const formattedPrice = formatPrice(totalPrice, currency, formPaymentOptions(this.session.formModel.payments).cardConfigured ? 2 : 0, locale);
+        const formattedPrice = formatPrice(totalPrice, currency, (this.session.discountCode?.valid || formPaymentOptions(this.session.formModel.payments).cardConfigured) ? 2 : 0, locale);
 
         // Per-currency meta surcharge lines (visual-only, NOT added to totalPrice).
         // Negative amounts (slevy) render with "−".

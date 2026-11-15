@@ -323,6 +323,77 @@
         "occasion_setup/sale_status.sql",
         "scanning/sessions.sql"
       ]
+    },
+    {
+      "migration": "20261115120000_discount_codes.sql",
+      "active": true,
+      "header": "-- Discount codes: additive schema, canonical SQL price allocation, atomic order consumption. Feature defaults off.",
+      "sources": [
+        "eshop_discounts/schema.sql",
+        "abuse/policy.sql",
+        "user_permissions/discount_operations.sql",
+        "eshop_discounts/calculation.sql",
+        "eshop_discounts/management.sql",
+        "eshop_discounts/quote.sql",
+        "eshop_discounts/apply.sql",
+        "eshop/product_selection_contract.sql",
+        "eshop/materialize_ticket_products_internal_v1.sql",
+        "eshop/finalize_ticket_order.sql",
+        "eshop_orders/create_ticket_order_client_sync_v1.sql",
+        "eshop_waitlist/accept_offer.sql",
+        "eshop_orders/update_ticket_products_ws.sql",
+        "eshop/swap_spot_tickets.sql",
+        "eshop/confirm_blueprint_order_change.sql",
+        "eshop_forms/admin_form_orders.sql",
+        "eshop/get_report_ws.sql",
+        "eshop_orders/replacement_invoice_preparation.sql"
+      ]
+    },
+    {
+      "migration": "20261115130000_customer_order_policy_foundation.sql",
+      "active": true,
+      "header": "-- Customer order self-service. Additive schema; feature/operations remain disabled until explicitly configured.",
+      "sources": [
+        "customer_order_changes/policy_schema.sql",
+        "customer_order_changes/runtime_schema.sql",
+        "user_permissions/customer_order_changes.sql",
+        "ticket_wallet/collections.sql",
+        "ticket_wallet/capabilities.sql",
+        "eshop_forms/order_term.sql",
+        "abuse/orders.sql",
+        "customer_order_changes/policy.sql",
+        "eshop_orders/update_order_responses.sql",
+        "eshop_orders/update_order_detail_responses.sql",
+        "payment_providers/effects.sql",
+        "payment_providers/operations.sql",
+        "eshop_forms/update_form_client_sync_v1.sql",
+        "eshop_forms/get_form_for_edit.sql",
+        "others/update_occasion.sql",
+        "eshop/product_selection_contract.sql",
+        "customer_order_changes/move.sql",
+        "customer_order_changes/preview.sql",
+        "eshop_orders/storno_tickets_bulk.sql",
+        "customer_order_changes/commands.sql",
+        "customer_order_changes/staff.sql",
+        "eshop/materialize_ticket_products_internal_v1.sql",
+        "eshop_waitlist/order_overview.sql",
+        "eshop_orders/get_order_admin_detail.sql",
+        "notification_center/shared.sql",
+        "notification_center/email_preferences.sql",
+        "eshop_forms/admin_form_commands.sql",
+        "eshop_waitlist/order_overview_email.sql",
+        "eshop_waitlist/email_render_context.sql",
+        "eshop/get_order_details_for_email.sql",
+        "ticket_wallet/projection.sql"
+      ]
+    },
+    {
+      "migration": "20261115140000_discount_code_projections.sql",
+      "active": true,
+      "header": "-- Discount sale snapshots in customer overviews, after shared customer-policy projection owners.",
+      "sources": [
+        "eshop_waitlist/order_overview.sql"
+      ]
     }
   ]
 }

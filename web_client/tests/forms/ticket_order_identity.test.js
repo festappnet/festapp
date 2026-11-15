@@ -35,3 +35,14 @@ test('an uncertain ordinary purchase cannot acquire a new origin on retry',async
  assert.equal(retry.commandId,first.commandId);
  assert.deepEqual(retry.orderDetails,purchase);
 });
+
+test('discount recovery requires the original pending identity and never allocates a replacement',async()=>{
+ const s=storage(),payload={form:'f',ticket:[],discount:{code:'LAST',fingerprint:'a'.repeat(64)}};
+ const first=await claimTicketOrderIdentity('https://one',payload,'buyer',s);
+ const retry=await claimTicketOrderIdentity('https://one',payload,'buyer',s,{requirePending:true});
+ assert.equal(retry.commandId,first.commandId);assert.equal(retry.clientId,first.clientId);
+ await assert.rejects(claimTicketOrderIdentity('https://one',{...payload,discount:{code:'OTHER',fingerprint:'b'.repeat(64)}},'buyer',s,{requirePending:true}),/RECOVERY_REQUIRED/);
+ assert.equal(s.data.size,1);
+ first.complete();await assert.rejects(claimTicketOrderIdentity('https://one',payload,'buyer',s,{requirePending:true}),/RECOVERY_REQUIRED/);
+ assert.equal(s.data.size,0);
+});

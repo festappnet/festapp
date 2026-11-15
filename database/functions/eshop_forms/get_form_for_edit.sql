@@ -48,6 +48,8 @@ BEGIN
         'created_at', f.created_at,
         'data', public.normalize_form_metadata_internal(f.data),
         'measurement_status', public.form_measurement_status_internal(f.id),
+        'customer_self_service',public.customer_order_policy_internal(f.id)||jsonb_build_object('canEnableAutomaticRefund',public.can_manage_customer_order_policy(f.id,true)),
+        'term_start_at',f.term_start_at,'term_end_at',f.term_end_at,
         'type', f.type,
         'title', f.title,
         'header', f.header,

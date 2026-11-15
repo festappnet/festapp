@@ -10,6 +10,9 @@ BEGIN
  IF EXISTS(SELECT 1 FROM eshop.spots WHERE id=ANY(p_spot_ids) AND secret IS NOT NULL
   AND secret_expiration_time>clock_timestamp() AND secret IS DISTINCT FROM (p_input_data->>'secret')::uuid) THEN
   RAISE check_violation USING MESSAGE='BLUEPRINT_SEAT_PROTECTED'; END IF;
+ PERFORM public.assert_order_discount_unchanged_internal(x."order") FROM eshop.spots s
+  JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket WHERE s.id=ANY(p_spot_ids);
+ IF p_input_data ? 'discount' THEN RAISE EXCEPTION 'DISCOUNT_REPLACEMENT_UNSUPPORTED'; END IF;
  analysis:=public.analyze_new_order_spots(p_spot_ids);
  details:=public.blueprint_order_input_internal(p_spot_ids,p_input_data,analysis);
  IF public.payment_method_is_online_internal(p_input_data->>'payment_method') OR EXISTS(

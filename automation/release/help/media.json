@@ -1518,5 +1518,63 @@
     "alt": "Pokročilá nastavení akce s e-mailem pro odpovědi, časovým pásmem Europe/Prague a začátkem sekce Funkce.",
     "caption": "Pokročilá nastavení rozbalíte přímo v Nastavení akce. Zkontrolujte adresu pro odpovědi zákazníků a vyberte časové pásmo z nabídky.",
     "openLabel": "Zvětšit snímek (nová karta)"
+  },
+  {
+    "id": "cs/customer-self-service/desktop",
+    "file": "cs/customer-self-service/desktop.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
+    "width": 1280,
+    "height": 1000,
+    "alt": "Přehled objednávky s žádostí o storno čekající na pořadatele.",
+    "caption": "Žádost čeká na schválení. Objednávka i vstupenky zůstávají platné.",
+    "openLabel": "Zvětšit náhled (nová karta)",
+    "sha256": "e1e2a252a2c52096db4c3acfe1d5f3bb0ba73420d6cd527cc911ce94554265c1"
+  },
+  {
+    "id": "cs/customer-self-service/mobile",
+    "file": "cs/customer-self-service/mobile.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
+    "width": 390,
+    "height": 844,
+    "alt": "Přehled objednávky s žádostí o storno čekající na pořadatele.",
+    "caption": "Žádost čeká na schválení. Objednávka i vstupenky zůstávají platné.",
+    "openLabel": "Zvětšit náhled (nová karta)",
+    "sha256": "cd762d3fcf5165435a281e141735c4de5799ac2a210affe3540e9923103b7999",
+    "device": "mobile"
+  },
+  {
+    "id": "en/customer-self-service/desktop",
+    "file": "en/customer-self-service/desktop.png",
+    "locale": "en",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
+    "width": 1280,
+    "height": 1000,
+    "alt": "Order overview with a cancellation request waiting for staff.",
+    "caption": "The request awaits approval. The order and admission remain valid.",
+    "openLabel": "Enlarge preview (new tab)",
+    "sha256": "50b3987cbf83c1b32397f78935ad86e75f438b8efbb2ec36de2b9e8e01f33795"
+  },
+  {
+    "id": "en/customer-self-service/mobile",
+    "file": "en/customer-self-service/mobile.png",
+    "locale": "en",
+    "capturedAt": "2026-11-15",
+    "reviewedAt": "2026-11-15",
+    "source": "Actual order overview, production Edge handler and PostgREST over owned disposable SQL lease; local queued email sink",
+    "width": 390,
+    "height": 844,
+    "alt": "Order overview with a cancellation request waiting for staff.",
+    "caption": "The request awaits approval. The order and admission remain valid.",
+    "openLabel": "Enlarge preview (new tab)",
+    "sha256": "78b960181e88d9fb8022a769f117ca56068aa878590b4107fd165ca9ca843481",
+    "device": "mobile"
   }
 ]

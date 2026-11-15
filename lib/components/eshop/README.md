@@ -277,3 +277,53 @@ instead of cascading away financial facts.
 The cash-default forward repairs inferred policy disables only for the activated
 `vstupenky.online` organization. It uses the policy writer fence and retains
 explicit decisions, unit overrides and all other organizations’ stored policies.
+
+## Discount codes and sold prices
+
+`database/functions/eshop_discounts/` owns code definitions, revisions/audit,
+quote validation, decimal largest-remainder allocation and atomic consumption.
+The `discount_codes` occasion feature defaults off. The existing occasion fence
+serializes feature saves against checkout; the finalizer checks current policy
+and the quote fingerprint after admission/product locks, before payment.
+
+`orders.data.tickets[].products[].price` is the sold **net** price. Its adjacent
+`base_price` and `discount_amount` explain the price; `order_product_ticket`
+contains the same explicit base/discount/net columns. No-code orders retain
+their old amounts. Backfill reads stored sold JSON only; unknown historical
+item amounts stay null. `order_discounts.snapshot` survives cancellation,
+detachment and catalogue deletion and never restores a use on cancellation,
+expiry or refund. Statistics group discount amounts by currency.
+
+The existing order command identity includes the discount and fingerprint.
+The same UUID replays the same order, price and consumption. Product repricing,
+seat swaps and replacements of a discounted order are rejected by shared SQL
+owners; contact/nonfinancial corrections, delivery, cancellation and refund
+continue through their existing owners. Preprinted batches do not apply codes.
+Waitlist registration consumes none; each acceptance explicitly supplies a new
+code and uses the same finalizer.
+
+Bank, cash and hosted payments use the ordinary payment engine with the net
+amount. Discounted Fakturoid orders use its existing invoice preparation lease
+and receipt for unknown-outcome recovery, and invoice the stored net lines with
+the adapter's existing zero-VAT treatment. There is no second tax/payment engine.
+Public quote responses disclose only totals and the selected public product
+lines; definitions, audit and usage statistics require the typed organizer
+predicates. Raw codes never belong in URLs, analytics or generic error logs.
+
+The local forward is assembled with
+`python3 automation/assemble-discount-codes-migration.py`; application and
+activation are separate operational steps documented in
+[the implementation receipt](../../../docs/plans/discount-codes-RESULT-2026-11-15.md).
+
+## Customer order changes
+
+The existing customer overview contains self-service; there is no parallel portal.
+`CustomerOrderChanges` consumes the server's allowed-action/preview contract through
+`customer-order-changes`. Its write token remains in memory, confirmation is explicit,
+and uncertain retries preserve the same command UUID and proposal. The organizer's
+form settings own the policy draft; only the ordinary form Save persists it.
+
+`CustomerOrderRequests` belongs to the existing order detail and uses the independently
+protected staff decision command. It never represents a request status as refunded
+money. Shared SQL ownership, lock ordering and automatic/manual boundaries are
+documented in `database/functions/customer_order_changes/README.md`.

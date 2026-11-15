@@ -3330,6 +3330,42 @@
     "3b6418b956143f532dfb01c85a9c50089470ebd0144ef00dbbad75f6759b04ae": {
       "signature": "public.export_unit_website_consent_binding(uuid,bigint)",
       "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "ba20cb928af90c87c221221ea2b5934b8249789748744d45b6fb99141492a5c5": {
+      "signature": "public.can_manage_discount_codes(bigint)",
+      "source": "database/functions/user_permissions/discount_operations.sql"
+    },
+    "5eb837ceb1568c3e3853c4fcd024acc304c0875eade23f930b1e55e842a6bb9c": {
+      "signature": "public.quote_order_discount(jsonb)",
+      "source": "database/functions/eshop_discounts/quote.sql"
+    },
+    "207c53edd565fccb37e7e1b3af7459c6768025e4489c5e688858630a526ce1b2": {
+      "signature": "public.save_discount_code(bigint,jsonb,bigint,bigint)",
+      "source": "database/functions/eshop_discounts/management.sql"
+    },
+    "40e2d9fa9b5401b3e05182fef9733f0a849c265e4d6b266b62396b3b13f713da": {
+      "signature": "public.list_discount_codes(bigint)",
+      "source": "database/functions/eshop_discounts/management.sql"
+    },
+    "2493e1c03508c746c8deeaf477d30fc8148bd67cd632809647cffc9fe1ef16cc": {
+      "signature": "public.can_manage_customer_order_policy(bigint,boolean)",
+      "source": "database/functions/user_permissions/customer_order_changes.sql"
+    },
+    "ef159e22ac37f47dab622f8033973021f8318cbaf4dbb01a595f7e668db9d743": {
+      "signature": "public.update_order_responses(bigint,jsonb)",
+      "source": "database/functions/eshop_orders/update_order_responses.sql"
+    },
+    "a040f1dcb0d3f3be0653b1704df302731a17f2288139a7050fe2b3b72727ed01": {
+      "signature": "public.customer_order_change_gateway(text,text,bigint,text,jsonb,uuid,text,jsonb,text)",
+      "source": "database/functions/customer_order_changes/commands.sql"
+    },
+    "86d582e30a29f0833213ae56f3248da1e1eeb6cbae788420078aad5d76abe042": {
+      "signature": "public.command_customer_order_request(uuid,text,uuid,timestamp with time zone,text)",
+      "source": "database/functions/customer_order_changes/staff.sql"
+    },
+    "4100acd632ad941077f895b444233bdd246800868cd72c6f9c9ca9dfa77279fe": {
+      "signature": "public.storno_tickets_bulk_internal_v1(bigint[],boolean)",
+      "source": "database/functions/eshop_orders/storno_tickets_bulk.sql"
     }
   }
 }

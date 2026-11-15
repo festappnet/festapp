@@ -209,3 +209,26 @@ Deno.test('invoice deletion rejects ambiguous lookup and a mismatched VS', async
     assertEquals(deleted, false);
   }
 });
+
+Deno.test("discount invoice uses the immutable net lines and rejects a mismatched total", () => {
+  const discounted = {
+    ...order("CZK", "123456"),
+    data: { discount: {code:"SAVE",base:150,discount:24.5,net:125.5,currency:"CZK"},
+      tickets: [{products:[{title:"Admission",price:80.25},{title:"Dinner",price:45.25}]}] },
+  };
+  const payload=buildFakturoidInvoicePayload(discounted,"Event","command",1);
+  assertEquals(payload.lines,[{name:"Admission",quantity:1,unit_price:"80.25",vat_rate:0},{name:"Dinner",quantity:1,unit_price:"45.25",vat_rate:0}]);
+  assertThrows(()=>buildFakturoidInvoicePayload({...discounted,payment_info:{...discounted.payment_info,amount:150}},"Event","command",1),Error,"FAKTUROID_ORDER_SNAPSHOT_INVALID");
+});
+
+Deno.test('email overview renders the same base discount and net without subtracting twice',async()=>{
+  const {generateFullOrder}=await import('../_shared/orderOverview.ts');
+  for (const lang of ['cs','en'] as const) {
+    const html=generateFullOrder({discount:{code:'SAVE10',base:100,discount:19.75,net:80.25,currency:'CZK'}},
+      [{ticket_symbol:'TICKET1',products:[{title:'Admission',price:80.25,currency_code:'CZK'}]}],[],lang);
+    assertEquals(html.includes('SAVE10'),true);
+    assertEquals(/80[,.]25/.test(html),true);
+    assertEquals(/19[,.]75/.test(html),true);
+    assertEquals(/60[,.]50/.test(html),false);
+  }
+});
