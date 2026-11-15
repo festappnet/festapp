@@ -369,3 +369,8 @@ transportu uložení/obnovení při šířkách 390 a 1000), 27 JS testů, SQL
 regrese potvrzení a slev, 3 testy souběhu/retry a 8 testů forward ownerů.
 Izolovaná kontrola prohlížeče pokrývá CZ/EN mobil i desktop, rozestupy a
 zarovnání částek. Nedotýká se produkčních objednávek, aktivace ani e-mailů.
+
+Následné plné CI odhalilo, že lokalizované testy dialogu nesmějí sdílet
+proces s testy očekávajícími nepřeložené výchozí klíče. Dialog má vlastní
+registrovaný testovací root. Společné spuštění tohoto rootu a původní defaultní
+sady prošlo v běžném i opačném pořadí (110 testů v každém běhu).
