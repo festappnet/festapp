@@ -16,6 +16,26 @@ repository.
   when its overview avoids reading a large file. Do not initialize it solely
   because it is available. If selected, read its initial instructions once.
 
+## Automatic cleanup after merge
+
+- After a successful merge, automatically retire the task's temporary worktree
+  and its local and remote source branches as part of completing the task.
+  This is standing authorization; do not ask for cleanup confirmation again.
+- Fetch the authoritative target and verify that the merged change is present.
+  For squash or rebase merges, verify the merged PR and its exact source head
+  instead of requiring the original branch tip to be an ancestor.
+- Finish any release, checks or other active work that still needs the source
+  checkout first. Check for other sessions using it and preserve uncommitted
+  changes and necessary ignored inputs, including credentials and release files.
+  Remove only regenerable build output and caches without preserving them.
+- Run cleanup from a retained checkout, use ordinary `git worktree remove`, and
+  delete only the verified source refs. Guard remote deletion with the expected
+  branch SHA so a concurrent update cannot be lost. Prune stale remote refs.
+- Preserve the primary checkout, `main`, `master`, `prod/*`, `gh-pages` and any
+  other long-lived branch. Never force-remove dirty or active worktrees, discard
+  unique work, or interrupt another task to perform routine cleanup. If cleanup
+  must wait, record the concrete reason and complete it when that dependency ends.
+
 ## Explain large additions before publication
 
 - Before publishing a change adding 10,000 or more text lines, explain the
