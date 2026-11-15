@@ -78,7 +78,7 @@ for name in ('favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',
         if args.icon_dir:
             outputs['web/' + name] = data
         outputs['web_client/public/' + name] = data
-        if args.icon_dir and name == 'favicon.ico':
+        if name == 'favicon.ico':
             outputs['web_client/favicon.ico'] = data
     elif args.icon_dir:
         raise ValueError('Missing configured icon: ' + name)

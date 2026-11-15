@@ -891,6 +891,13 @@
       "sources": [
         "test/components/blueprint/blueprint_template_groups_test.dart"
       ]
+    },
+    "test/components/users/reset_password_navigation_test.dart": {
+      "kind": "environment",
+      "reason": "Actual password reset page, root router and Supabase auth singleton with disposable local storage and mocked HTTP transport.",
+      "sources": [
+        "test/components/users/reset_password_navigation_test.dart"
+      ]
     }
   }
 }

@@ -763,6 +763,27 @@ try {
   assert.equal(await (await dispatchFetch(management)).text(), 'online connections');
   assert.equal(cachedPuts.some(url => url.includes('/settings/connections')), false);
 
+  // Online account documents can outlive the worker that controls the tab.
+  // Their immutable imports must follow the network document, not the old shell.
+  for (const pathname of ['/settings/connections', '/settings/mcp-connect', '/google-auth', '/wallet']) {
+    const client = {
+      id: 'online-account-client', url: 'https://app.test' + pathname,
+      postMessage: () => {},
+      navigate: async url => { navigatedClients.push([client.id, url]); },
+    };
+    clientsById.set(client.id, client);
+    await reportVersion(client, '1.2.3+5');
+    const before = navigatedClients.length;
+    const response = await dispatchFetch(new Request('https://app.test/web-assets/index.js'), client.id);
+    assert.equal(navigatedClients.length, before, pathname + ' must not reload a newer online document');
+    assert.equal(await response.text(), 'web client bundle');
+    vm.runInNewContext('clientVersions.clear(); clientCacheNames.clear();', context);
+    assert.equal(await (await dispatchFetch(new Request('https://app.test/web-assets/index.js'), client.id)).text(), 'web client bundle');
+    networkAvailable = false;
+    assert.equal((await dispatchFetch(new Request('https://app.test/web-assets/index.js'), client.id)).type, 'error', 'private documents never mix cached executables');
+    networkAvailable = true;
+  }
+
   const marketingRoot = new Request('https://app.test/');
   Object.defineProperty(marketingRoot,'mode',{value:'navigate'});
   assert.equal(await (await dispatchFetch(marketingRoot,'','marketing-client')).text(),'<html>live organizers</html>');
