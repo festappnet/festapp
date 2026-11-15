@@ -1,3 +1,6 @@
+import '../components/forms/customer_order_overview_cases.dart'
+    as customer_order_overview;
+import '../components/discount_codes/discount_codes_cases.dart' as discounts;
 import '../support/register_client_suites.dart';
 import '../components/notification_center/notification_center_cases.dart'
     as suite0;
@@ -11,6 +14,8 @@ import '../components/eshop/views/add_cash_payment_dialog_cases.dart' as suite5;
 
 void main() {
   registerClientSuites({
+    'customer_order_overview': customer_order_overview.main,
+    'discount_codes': discounts.main,
     'notification_center': suite0.main,
     'notification_center_prepared': suite1.main,
     'form_appearance_theme': suite2.main,

@@ -2788,7 +2788,7 @@
     "public.update_order_detail_responses(bigint,bigint,jsonb,jsonb)": {
       "anon": false,
       "authenticated": true,
-      "service_role": true
+      "service_role": false
     },
     "public.sale_opening_notification_command(text,jsonb)": {
       "anon": false,
@@ -3504,6 +3504,46 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.can_manage_discount_codes(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.quote_order_discount(jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.save_discount_code(bigint,jsonb,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.list_discount_codes(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_manage_customer_order_policy(bigint,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.update_order_responses(bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.customer_order_change_gateway(text,text,bigint,text,jsonb,uuid,text,jsonb,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.command_customer_order_request(uuid,text,uuid,timestamp with time zone,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3553,7 +3593,12 @@
     "database/functions/ticket_wallet/control.sql",
     "database/functions/ticket_wallet/apple_updates.sql",
     "database/functions/ticket_wallet/collections.sql",
-    "database/functions/eshop_forms/website_consent_bindings.sql"
+    "database/functions/eshop_forms/website_consent_bindings.sql",
+    "database/functions/user_permissions/customer_order_changes.sql",
+    "database/functions/eshop_orders/update_order_responses.sql",
+    "database/functions/eshop_orders/update_order_detail_responses.sql",
+    "database/functions/customer_order_changes/commands.sql",
+    "database/functions/customer_order_changes/staff.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

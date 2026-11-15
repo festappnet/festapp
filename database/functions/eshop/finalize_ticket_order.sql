@@ -65,6 +65,7 @@ DECLARE
     v_payment_instructions jsonb;
     v_provider_payment jsonb;
     v_payment_policy jsonb;
+    v_discount jsonb;
 BEGIN
     PERFORM public.lock_blueprint_scope_internal(ARRAY[(SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid)]);
     PERFORM public.check_occasion_writable((SELECT occasion FROM public.forms WHERE key=(input_data->>'form')::uuid));
@@ -230,7 +231,15 @@ BEGIN
               'note',ticket_note,'products',result->'products');
         END LOOP;
 
-        order_data := public.strip_payment_sources_internal(input_data) - 'ticket' || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
+        IF input_data ? 'discount' THEN
+          v_discount:=public.apply_order_discount_internal(order_id,input_data,ticket_details);
+          calculated_price:=(v_discount->>'price')::numeric;
+          ticket_details:=v_discount->'tickets';
+        END IF;
+
+        order_data := public.strip_payment_sources_internal(input_data) - ARRAY['ticket','discount','discount_command_id'] || JSONB_BUILD_OBJECT('tickets', public.order_tickets_with_seating_internal(order_id, ticket_details));
+
+        IF v_discount IS NOT NULL THEN order_data:=order_data||jsonb_build_object('discount',v_discount->'discount'); END IF;
 
         v_payment_method:=input_data->>'payment_method';
         IF v_payment_method IS NULL THEN
@@ -369,7 +378,7 @@ BEGIN
         INSERT INTO eshop.orders_history (created_at, data, "order", state, price, currency_code)
         VALUES (
             now,
-            JSONB_BUILD_OBJECT('input_data', input_data, 'tickets', ticket_details,'payment_policy',v_payment_policy-'durationSeconds'),
+            JSONB_BUILD_OBJECT('input_data', input_data-ARRAY['discount','discount_command_id'], 'discount',v_discount->'discount', 'tickets', ticket_details,'payment_policy',v_payment_policy-'durationSeconds'),
             order_id,
             'ordered',
             calculated_price,
@@ -422,7 +431,10 @@ BEGIN
             )
         );
 
+        IF v_discount IS NOT NULL THEN result:=result||jsonb_build_object('paymentPreparationPolicy','leased_keep_pending'); END IF;
+
     EXCEPTION WHEN OTHERS THEN
+        IF SQLERRM='DISCOUNT_INVALID' THEN RETURN jsonb_build_object('code',400,'errorCode','DISCOUNT_INVALID'); END IF;
         -- In case of any error, the inner block is rolled back and we capture the error message.
         result := CASE
             WHEN SQLERRM = 'STRIPE_RECIPIENT_CHANGED' THEN

@@ -1,3 +1,4 @@
+import { DiscountCode } from './discount_code.js';
 import {createEmbedConsentSource} from './form_measurement_embed_consent.js';
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
 import { earlyFormLoad } from '../../startup/early_form_load.js';
@@ -355,7 +356,7 @@ export class FormPage extends Component {
     async refreshCapacityChoice(model, reason = 'FORM_CAPACITY_EXCEEDED') {
         const current = this.currentSession;
         const link = this.currentLink;
-        const priceChanged = reason === 'STRIPE_PRICE_CHANGED';
+        const priceChanged = ['STRIPE_PRICE_CHANGED','DISCOUNT_QUOTE_CHANGED','DISCOUNT_INVALID'].includes(reason);
         const recipientChanged = reason === 'STRIPE_RECIPIENT_CHANGED';
         const reviewRequired = priceChanged || recipientChanged;
         if (reviewRequired) this._paymentReviewPending = true;
@@ -651,6 +652,12 @@ export class FormPage extends Component {
             }
         });
 
+        this.discountCode = null;
+        if (!formModel.demoSimulation && formModel.registrationMode !== 'waitlist' &&
+            formModel.occasionFeatures?.some(f => f.code === 'discount_codes' && (f.is_enabled === true || f.isEnabled === true))) {
+            this.discountCode = new DiscountCode(session);
+            this.discountCode.mount(this.host.querySelector('form'));
+        }
         this.startMeasurement(formModel, showPreview);
         this.analytics?.observe(session);
         session.addEventListener('state-changed', () => {
@@ -852,14 +859,14 @@ export class FormPage extends Component {
 
     calculateTotal(form, formModel) {
         if (this.currentSession) {
-            return this.currentSession.state;
+            return this.discountCode?.priceData(this.currentSession.state) ?? this.currentSession.state;
         }
         const payload = FormDataReader.getPayload(form, formModel);
         return FormHelper.calculatePrice(payload, formModel);
     }
 
     // --- DEBUG HELPER ---
-    handlePreview(form, formModel) {
+    async handlePreview(form, formModel) {
         // Native Validation Check
         // Explicitly check native validity before proceeding,
         // as some browsers might not block onSubmit if preventDefault was called early?
@@ -869,6 +876,10 @@ export class FormPage extends Component {
             return;
         }
 
+        if (this.discountCode?.code) {
+            try { if (!await this.discountCode.apply()) return; }
+            catch { this.discountCode.reportInvalid(); return; }
+        }
         // Use prefetched module if available, or fetch now
         if (!this._previewModulePromise) {
             this._previewModulePromise = import('./order_preview.js');
@@ -912,7 +923,7 @@ export class FormPage extends Component {
         }
     }
 
-    submitOrder(form, formModel, unusedContent) {
+    submitOrder(form, formModel, unusedContent, retrySubmission = null) {
         // 1. Close Preview
         const previewOverlay = document.getElementById('order-preview-overlay');
         let previewHistoryClosed = Promise.resolve();
@@ -941,40 +952,51 @@ export class FormPage extends Component {
         const loader = this.showFullScreenLoader();
 
         // 3. Prepare Data
-        const payload = {...(this.currentSession ? this.currentSession.payload : FormDataReader.getPayload(form, formModel)), client_capabilities:['cash_reservations','no_payment_deadline']};
+        const payload = retrySubmission ? JSON.parse(JSON.stringify(retrySubmission.payload)) : {...(this.currentSession ? this.currentSession.payload : FormDataReader.getPayload(form, formModel)), client_capabilities:['cash_reservations','no_payment_deadline']};
 
         // Inject payment_type if deposit option was selected
-        if (this._pendingPaymentType) {
+        if (!retrySubmission && this._pendingPaymentType) {
             payload.payment_type = this._pendingPaymentType;
             this._pendingPaymentType = null;
         }
 
         // 4. Submit via Network
-        if(this._pendingPaymentMethod){
+        if(!retrySubmission && this._pendingPaymentMethod){
             if(isCardPaymentMethod(this._pendingPaymentMethod)){
                 Object.assign(payload, paymentConnectors.get(this._pendingPaymentMethod).quote(payload, this._pendingPaymentQuote));
             }
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }
+        const retryPayload = JSON.parse(JSON.stringify(payload));
+        const pinnedScope = retrySubmission?.waitlistScope ?? this.waitlistScope;
+        const pinnedTicketIds = retrySubmission?.ticketIds ?? formModel.selectedTicketIds;
+        const acceptanceOrder = retrySubmission?.acceptanceOrder ?? (formModel.offerBundle ? {
+            ...payload, ticket: payload.ticket.map(t => ({ ...t, fields: t.fields.map(f => {
+                const def = this.currentSession._getTicketSubDef(f._subFieldId);
+                return def && def.type !== 'product_type' ? { ...f, [def.id]: f[def.type] } : f;
+            }) })),
+        } : null);
         const submittedSession = this.currentSession;
         const measurementOutcome=this.analytics?.captureSubmission(payload);
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
-            await submittedSession?.awaitPendingReservations();
-            submittedCapability = submittedSession?.captureReservationCapability();
+            if (retrySubmission) submittedCapability = retrySubmission.capability;
+            else {
+                await submittedSession?.awaitPendingReservations();
+                submittedCapability = submittedSession?.captureReservationCapability();
+            }
             return formModel.demoSimulation
             ? Promise.resolve({ success: true, data: { demoSimulation: true } })
             : formModel.registrationMode === 'waitlist'
             ? this.waitlistCommands.command('register', waitlistRegistrationPayload(this.currentSession))
                 .then(data => ({ success: true, data: { ...data, ticketOrder: { order: data.order, analytics:data.analytics } } }))
             : formModel.offerBundle
-            ? this.waitlistCommands.accept(this.waitlistScope, formModel.selectedTicketIds, {
-                ...payload, ticket: payload.ticket.map(t => ({ ...t, fields: t.fields.map(f => {
-                    const def = this.currentSession._getTicketSubDef(f._subFieldId);
-                    return def && def.type !== 'product_type' ? { ...f, [def.id]: f[def.type] } : f;
-                }) })),
-            }).then(data => ({ success: true, data }))
-            : FormNetwork.submitOrder(payload);
+            ? this.waitlistCommands.accept(pinnedScope, pinnedTicketIds, acceptanceOrder, {reusePendingOnly:!!retrySubmission}).then(data => ({ success: true, data }))
+            : FormNetwork.submitOrder(payload, {reusePendingOnly:!!retrySubmission});
+        });
+        const retryOriginal = () => this.submitOrder(form,formModel,document.body,{
+            payload:retryPayload, capability:submittedCapability, acceptanceOrder,
+            waitlistScope:pinnedScope, ticketIds:pinnedTicketIds,
         });
         let outcomeReported = false;
         const reportOutcome = (success, data) => {
@@ -992,6 +1014,7 @@ export class FormPage extends Component {
              document.body.style.overflow = '';
 
              if (result.success) {
+                 this.discountCode?.clear();
                  submittedSession?.completeReservation(submittedCapability);
                  if (formModel.registrationMode === 'waitlist' && result.data.orderOverviewUrl) {
                      try {
@@ -1029,8 +1052,8 @@ export class FormPage extends Component {
                  window.scrollTo(0, 0);
              }
 
-             if (!result.success && ['FORM_CAPACITY_EXCEEDED', 'STRIPE_PRICE_CHANGED', 'STRIPE_RECIPIENT_CHANGED'].includes(result.data?.errorCode)) await this.refreshCapacityChoice(formModel, result.data.errorCode);
-             this.showFullScreenResult(result.success, result.data, formModel);
+             if (!result.success && ['FORM_CAPACITY_EXCEEDED', 'STRIPE_PRICE_CHANGED', 'STRIPE_RECIPIENT_CHANGED', 'DISCOUNT_QUOTE_CHANGED', 'DISCOUNT_INVALID'].includes(result.data?.errorCode)) await this.refreshCapacityChoice(formModel, result.data.errorCode);
+             this.showFullScreenResult(result.success, result.data, formModel, payload.discount && result.data?.code===503 ? retryOriginal : null);
 
         }).catch(async e => {
              reportOutcome(false);
@@ -1039,8 +1062,9 @@ export class FormPage extends Component {
              // Preserve the stable error UI without logging capability-bearing transport errors.
              loader.remove();
              document.body.style.overflow = '';
-             if (formModel.offerBundle) await this.refreshOffer(formModel);
-             this.showFullScreenResult(false, e.data || { code: 999, errorCode: e.message }, formModel);
+             const uncertain = payload.discount && (e.data?.code===503 || e.message==='WAITLIST_COMMAND_FAILED');
+             if (formModel.offerBundle && !uncertain) await this.refreshOffer(formModel);
+             this.showFullScreenResult(false, e.data || { code: 999, errorCode: e.message }, formModel,uncertain ? retryOriginal : null);
         });
     }
 
@@ -1099,7 +1123,8 @@ export class FormPage extends Component {
         return loader;
     }
 
-    showFullScreenResult(success, resultData, formModel) {
+    showFullScreenResult(success, resultData, formModel, retryOriginal = null) {
+        let retryAfterClose = false;
         // Push State
         RouterService.pushOverlayState('order-result');
 
@@ -1144,7 +1169,7 @@ export class FormPage extends Component {
                 this.currentLink = null;
                 // init renders a loading state before fetching the current server mode.
                 void this.init(link);
-            }
+            } else if (retryAfterClose && retryOriginal) queueMicrotask(retryOriginal);
         };
 
         // Handle Back History
@@ -1161,7 +1186,7 @@ export class FormPage extends Component {
             }, cardPaymentController ? {
                 onPay: () => cardPaymentController.continue(),
                 onRefresh: () => cardPaymentController.refresh(),
-            } : {});
+            } : retryOriginal ? {onRetry:()=> {retryAfterClose=true;RouterService.goBackProgrammatically();}} : {});
             if (this.identityFooter) {
                 this.identityFooter.render(formModel.organizationIdentity);
                 container.append(this.identityFooter.host);

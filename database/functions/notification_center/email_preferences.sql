@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION public.notification_center_email_category_internal(p_
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT CASE WHEN p_kind IN ('email_problem','bank_problem','payment_problem','provider_problem') THEN 'problems'
  WHEN p_kind='occasion_joined' THEN 'participants'
- WHEN p_kind IN ('waitlist_registered','offer_accepted','offer_declined','offer_expired','order_created','order_cancelled') THEN 'orders'
+ WHEN p_kind IN ('customer_order_request','waitlist_registered','offer_accepted','offer_declined','offer_expired','order_created','order_cancelled') THEN 'orders'
  WHEN p_kind='order_payment_received' THEN 'payments' END;
 $$;
 CREATE OR REPLACE FUNCTION public.notification_center_email_enabled_internal(e public.notification_center_events,p_user uuid,p_scopes text[])
@@ -108,7 +108,7 @@ GRANT EXECUTE ON FUNCTION public.activate_notification_center_emails(bigint) TO 
 REVOKE ALL ON FUNCTION public.notification_center_email_category_internal(text),public.notification_center_email_enabled_internal(public.notification_center_events,uuid,text[]) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.notification_center_email_catalog_internal(p_scopes text[],p_occasion bigint)
 RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- WITH kinds AS(SELECT kind,public.notification_center_email_category_internal(kind) category FROM unnest(ARRAY['occasion_joined','waitlist_registered','order_created','order_cancelled','offer_accepted','offer_declined','offer_expired','order_payment_received','payment_problem','bank_problem','email_problem','provider_problem']) kind)
+ WITH kinds AS(SELECT kind,public.notification_center_email_category_internal(kind) category FROM unnest(ARRAY['customer_order_request','occasion_joined','waitlist_registered','order_created','order_cancelled','offer_accepted','offer_declined','offer_expired','order_payment_received','payment_problem','bank_problem','email_problem','provider_problem']) kind)
  SELECT coalesce(jsonb_object_agg(kind,category),'{}') FROM kinds k WHERE EXISTS(SELECT 1 FROM unnest(p_scopes) x
   WHERE CASE WHEN k.kind='occasion_joined' THEN CASE WHEN p_occasion IS NULL THEN x LIKE 'app:%' ELSE x='app:'||p_occasion END
    WHEN k.kind='provider_problem' THEN x LIKE 'provider-unit:%'

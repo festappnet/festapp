@@ -45,6 +45,7 @@ export type WaitlistRenderContext = {
   timeZone?: string;
   communicationTone?: Tone;
   toneSubstitutions?: Record<string, string>;
+  allowedActions?: Array<{operation:string;enabled:boolean}>;
   overviewSource?: { sealed: Record<string, string>; contentHash: string; tokenHash: string };
   manageEnvelope?: Record<string, string>;
   manageContentHash?: string;
@@ -195,7 +196,7 @@ export async function renderWaitlistEmail(
   }
   const substitutions: Record<string, string | number> = {
     ...Object.fromEntries(toneKeys.map((key) => [key, context.toneSubstitutions![key]])),
-    ...overviewEmailSubstitutions(overviewUrl),
+    ...overviewEmailSubstitutions(overviewUrl, "cs", context.allowedActions),
     ...orderIdentityValues(source.occasionTitle, context.orderSymbol),
     participant_count: offer
       ? context.participantCount!
@@ -223,7 +224,7 @@ export async function renderWaitlistEmail(
         unit: row.unit,
       },
       substitutions,
-      requiredLinks: overviewRequiredLinks(overviewUrl),
+      requiredLinks: overviewRequiredLinks(overviewUrl, "cs", context.allowedActions),
       replyTo: context.replyTo,
     });
   return {

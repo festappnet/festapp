@@ -153,6 +153,10 @@ BEGIN
       'orders',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day) FROM order_days d),'[]'::jsonb),
       'payments',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY day,currency) FROM payment_days d),'[]'::jsonb)
     ),
+    'discounts_by_currency',coalesce((SELECT jsonb_agg(to_jsonb(d) ORDER BY currency_code) FROM (
+      SELECT d.currency_code,count(*) uses,sum(d.base_amount)::text base_amount,sum(d.discount_amount)::text discount_amount,sum(d.net_amount)::text net_amount
+      FROM eshop.order_discounts d JOIN eshop.discount_codes c ON c.id=d.code_id WHERE c.occasion IN (SELECT id FROM scope) GROUP BY d.currency_code
+    ) d),'[]'::jsonb),
     'products',coalesce((SELECT jsonb_agg(to_jsonb(p) ORDER BY type_id,product_id) FROM products p),'[]'::jsonb),
      'ticket_batches', (SELECT jsonb_build_object('total',count(*),'available',count(*) FILTER(WHERE i.sale_order_id IS NULL AND t.state<>'storno'),
       'sold_active',count(*) FILTER(WHERE i.sale_order_id IS NOT NULL AND t.state<>'storno'),

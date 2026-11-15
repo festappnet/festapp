@@ -174,7 +174,7 @@ for (const locale of ["cs", "en"] as const) {
             deadline: formatDatetime(payment.deadline, locale),
             amount,
             remainingTime: tr.days_remaining(5),
-            ...overviewEmailSubstitutions(fixture.overviewUrl, locale),
+            ...overviewEmailSubstitutions(fixture.overviewUrl, locale, fixture.overviewActions),
             order_overview_url: fixture.overviewUrl,
             // Raw scalar URL: composer escapes once according to context.
             fullOrder: generateFullOrder(
@@ -204,7 +204,7 @@ for (const locale of ["cs", "en"] as const) {
               lang: locale,
             }) : "",
           },
-          requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale),
+          requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale, fixture.overviewActions),
         });
       }
     }
@@ -250,7 +250,7 @@ for (const tone of communicationTones) {
         offered_count: "2",
         offered_places: waitlistCountPhrase(2, "place"),
         offer_expires_at: "30. 10. 2026 18:00",
-        ...overviewEmailSubstitutions(fixture.overviewUrl),
+        ...overviewEmailSubstitutions(fixture.overviewUrl,"cs",fixture.overviewActions),
         order_overview_url: fixture.overviewUrl,
         manage_waitlist_url: fixture.manageUrl,
         manage_waitlist_button: waitlistActionLink(
@@ -273,7 +273,7 @@ for (const tone of communicationTones) {
           escapeEmailHtml(fixture.offerUrl), toneValues.waitlist_offer_button_single,
         ),
       },
-      requiredLinks: overviewRequiredLinks(fixture.overviewUrl),
+      requiredLinks: overviewRequiredLinks(fixture.overviewUrl,"cs",fixture.overviewActions),
     });
   }
 }
@@ -284,15 +284,15 @@ for (const locale of ['cs','en'] as const) {
   for (const status of ['open','paid','partially_refunded','refunded','disputed','action_required','expired','pending']) {
    for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE','TICKET_ORDER_STORNO']) {
     const payment={payment_method:method,providerPayment:{status},collectionAction:{allowed:method!=='unknown'&&status==='open'}};
-    const substitutions=providerPaymentSubstitutions(payment,name,locale,overviewEmailSubstitutions(fixture.overviewUrl,locale).order_overview_button);
+    const substitutions=providerPaymentSubstitutions(payment,name,locale,overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions).order_overview_button);
     records.push({templateCode,scenario:method+'-'+status,locale,tone:'formal',paymentMethod:method,collectionAllowed:payment.collectionAction.allowed,
-     values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale),...substitutions,amount:formatCurrency(800,'CZK'),orderCommunication:orderCommunication(templateCode,fixture.occasionTitle,'formal',locale),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol)},requiredLinks:overviewRequiredLinks(fixture.overviewUrl,locale)});
+     values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),...substitutions,amount:formatCurrency(800,'CZK'),orderCommunication:orderCommunication(templateCode,fixture.occasionTitle,'formal',locale),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol)},requiredLinks:overviewRequiredLinks(fixture.overviewUrl,locale,fixture.overviewActions)});
    }
   }
  }
  for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE']) {
   const payment={payment_method:'cash',amount:800,paid:0,currency_code:'CZK',data:{payment_policy:{cashInstructions:locale==='cs'?'U vstupu.':'At the entrance.'}},collectionAction:{allowed:true}};
-  records.push({templateCode,scenario:'cash-unpaid',locale,tone:'formal',paymentMethod:'cash',collectionAllowed:true,values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale),
+  records.push({templateCode,scenario:'cash-unpaid',locale,tone:'formal',paymentMethod:'cash',collectionAllowed:true,values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),
    ...confirmationPaymentSubstitutions(payment,[],locale,'formal'),orderCommunication:orderCommunication(templateCode,fixture.occasionTitle,'formal',locale),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol),accountNumber:'',iban:'',variableSymbol:'',paymentAction:'',paymentMethodName:locale==='cs'?'Hotovost':'Cash'},requiredLinks:[]});
  }
 }

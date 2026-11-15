@@ -22,7 +22,11 @@
       "změnit cenu",
       "kapacita",
       "vyprodáno",
-      "zásoby"
+      "zásoby",
+      "slevové kódy",
+      "kupón",
+      "procentní sleva",
+      "pevná sleva"
     ],
     "seating": [
       "místenky",
@@ -164,6 +168,15 @@
       "automatizace",
       "podpis zprávy",
       "vlastní aplikace"
+    ],
+    "customer-self-service": [
+      "samoobsluha",
+      "storno",
+      "schválit storno",
+      "povinný důvod",
+      "refundace",
+      "přesun termínu",
+      "změna údajů"
     ]
   },
   "en": {
@@ -185,7 +198,11 @@
       "change a price",
       "capacity",
       "sold out",
-      "stock"
+      "stock",
+      "discount codes",
+      "coupon",
+      "percentage discount",
+      "fixed discount"
     ],
     "seating": [
       "assigned seating",
@@ -310,6 +327,14 @@
       "automation",
       "message signature",
       "custom application"
+    ],
+    "customer-self-service": [
+      "self service",
+      "cancellation approval",
+      "required reason",
+      "refund",
+      "term move",
+      "change details"
     ]
   }
 }

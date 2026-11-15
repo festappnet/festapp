@@ -85,6 +85,7 @@ BEGIN
     SELECT * INTO ord FROM eshop.orders WHERE id = opt."order" FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
+    PERFORM public.assert_order_discount_unchanged_internal(ord.id);
     original_product_id := opt.product;
 
     -- 2. Find the *original* product JSON and price from the order_ids.data

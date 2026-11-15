@@ -5,25 +5,31 @@ import 'package:fstapp/services/utilities_all.dart';
 /// The floating quote follows the same currency precision as the review.
 /// Temporary card unavailability does not change configured price precision.
 class FormTotalPrice extends StatelessWidget {
-  const FormTotalPrice(
-      {super.key,
-      required this.amount,
-      this.currencyCode,
-      this.payments,
-      this.style});
+  const FormTotalPrice({
+    super.key,
+    required this.amount,
+    this.currencyCode,
+    this.payments,
+    this.discounted = false,
+    this.style,
+  });
   final double amount;
+  final bool discounted;
   final String? currencyCode;
   final Map<String, dynamic>? payments;
   final TextStyle? style;
 
   @override
   Widget build(BuildContext context) => Text(
-        Utilities.formatPrice(context, amount,
-            currencyCode: currencyCode,
-            decimalDigits:
-                FormPaymentOptions.fromJson(payments).cardConfigured
-                    ? null
-                    : 0),
-        style: style,
-      );
+    Utilities.formatPrice(
+      context,
+      amount,
+      currencyCode: currencyCode,
+      decimalDigits:
+          (discounted || FormPaymentOptions.fromJson(payments).cardConfigured)
+          ? null
+          : 0,
+    ),
+    style: style,
+  );
 }

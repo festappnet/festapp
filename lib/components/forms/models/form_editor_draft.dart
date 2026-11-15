@@ -9,6 +9,8 @@ import 'form_bundle.dart';
 /// freeze is the sole boundary that assembles a complete immutable definition.
 class FormEditorDraft {
   FormDefinition definition;
+  bool customerPolicyDirty = false;
+  bool customerTermDirty = false;
   Map<String, dynamic>? paymentMethodPolicy;
   int aggregateVersion;
   Map<String, int> _productVersions = {};
@@ -20,17 +22,19 @@ class FormEditorDraft {
   );
   void captureProductCatalog(Iterable<ProductTypeModel> types) {
     for (final type in types) {
-      if (type.id != null)
+      if (type.id != null) {
         _productTypeVersions.putIfAbsent(
           type.id.toString(),
           () => type.aggregateVersion,
         );
+      }
       for (final product in type.products ?? const <ProductModel>[]) {
-        if (product.id != null)
+        if (product.id != null) {
           _productVersions.putIfAbsent(
             product.id.toString(),
             () => product.aggregateVersion,
           );
+        }
       }
     }
   }
@@ -159,6 +163,16 @@ class FormEditorDraft {
     result['settings'] = FormMetadata.authoringSettingsSnapshot(
       result.remove('data') as Map<String, dynamic>?,
     );
+    if (customerPolicyDirty) {
+      result['customer_self_service'] =
+          definition.customerSelfService?['policy'] ?? <String, dynamic>{};
+    }
+    if (customerTermDirty) {
+      result['term_start_at'] = definition.termStartAt
+          ?.toUtc()
+          .toIso8601String();
+      result['term_end_at'] = definition.termEndAt?.toUtc().toIso8601String();
+    }
     result['expected_aggregate_version'] = aggregateVersion;
     result['expected_product_versions'] = Map<String, int>.from(
       _productVersions,

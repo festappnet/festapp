@@ -50,8 +50,9 @@ class FeatureService {
       return false;
     }
     final featureList = features ?? RightsService.currentOccasion()!.features;
-    return featureList
-        .any((feature) => feature.code == featureCode && feature.isEnabled);
+    return featureList.any(
+      (feature) => feature.code == featureCode && feature.isEnabled,
+    );
   }
 
   /// Presentation terminology belongs to the occasion, regardless of form field
@@ -61,8 +62,10 @@ class FeatureService {
       isFeatureEnabled(FeatureConstants.ticket, features: features);
 
   static bool isTicketPregenerationEnabled({List<Feature>? features}) {
-    final ticket =
-        getFeatureDetails(FeatureConstants.ticket, features: features);
+    final ticket = getFeatureDetails(
+      FeatureConstants.ticket,
+      features: features,
+    );
     return isFeatureEnabled(FeatureConstants.ticket, features: features) &&
         ticket is TicketFeature &&
         ticket.pregeneratedTickets;
@@ -85,7 +88,12 @@ class FeatureService {
         ticketDarkColor: '000000',
         ticketBackground: '',
       ),
+      SimpleFeature(
+        code: FeatureConstants.customerSelfService,
+        isEnabled: false,
+      ),
       DepositFeature(code: FeatureConstants.deposit, isEnabled: false),
+      SimpleFeature(code: FeatureConstants.discountCodes, isEnabled: false),
       SimpleFeature(code: FeatureConstants.blueprint, isEnabled: false),
 
       // These features are only added to the list if the app is supported.
@@ -101,15 +109,17 @@ class FeatureService {
         SimpleFeature(code: FeatureConstants.timetable, isEnabled: false),
         SimpleFeature(code: FeatureConstants.volunteers, isEnabled: false),
         CompanionsFeature(
-            code: FeatureConstants.companions,
-            isEnabled: false,
-            companionsMax: 1,
-            allowUserCreate: true,
-            allowAdminAssign: false),
+          code: FeatureConstants.companions,
+          isEnabled: false,
+          companionsMax: 1,
+          allowUserCreate: true,
+          allowAdminAssign: false,
+        ),
         ScheduleFeature(
-            code: ScheduleFeature.metaSchedule,
-            isEnabled: true,
-            scheduleType: 'basic'),
+          code: ScheduleFeature.metaSchedule,
+          isEnabled: true,
+          scheduleType: 'basic',
+        ),
         ImportFeature(code: FeatureConstants.import, isEnabled: true),
         ContractFeature(code: FeatureConstants.contract, isEnabled: false),
         SimpleFeature(code: FeatureConstants.globalSearch, isEnabled: false),
@@ -123,16 +133,20 @@ class FeatureService {
   }
 
   /// Retrieves a feature based on its [featureCode].
-  static Feature? getFeatureDetails(String featureCode,
-      {List<Feature>? features}) {
-    var featuresList = features ??
+  static Feature? getFeatureDetails(
+    String featureCode, {
+    List<Feature>? features,
+  }) {
+    var featuresList =
+        features ??
         RightsService.currentOccasion()?.features ??
         RightsService.currentUnit()?.features;
     if (featuresList == null) {
       return null;
     }
-    return featuresList
-        .firstWhereOrNull((feature) => feature.code == featureCode);
+    return featuresList.firstWhereOrNull(
+      (feature) => feature.code == featureCode,
+    );
   }
 
   static dynamic getDefaultLocation() {
@@ -140,12 +154,12 @@ class FeatureService {
     if (mapFeature is MapFeature) {
       return {
         "lat": mapFeature.defaultMapLocation.lat,
-        "lng": mapFeature.defaultMapLocation.lng
+        "lng": mapFeature.defaultMapLocation.lng,
       };
     }
     return {
       "lat": MapFeature.defaultLocation.lat,
-      "lng": MapFeature.defaultLocation.lng
+      "lng": MapFeature.defaultLocation.lng,
     };
   }
 
@@ -212,8 +226,10 @@ class FeatureService {
   /// Returns the [CounselingFeature] config, or null when the feature is absent
   /// or stored as a plain feature.
   static CounselingFeature? getCounselingFeature({List<Feature>? features}) {
-    final feature =
-        getFeatureDetails(FeatureConstants.counseling, features: features);
+    final feature = getFeatureDetails(
+      FeatureConstants.counseling,
+      features: features,
+    );
     return feature is CounselingFeature ? feature : null;
   }
 
@@ -224,8 +240,10 @@ class FeatureService {
 
   /// Returns the maximum number of companions allowed.
   static CompanionsFeature? getCompanionsFeature({List<Feature>? features}) {
-    final feature =
-        getFeatureDetails(FeatureConstants.companions, features: features);
+    final feature = getFeatureDetails(
+      FeatureConstants.companions,
+      features: features,
+    );
     return feature is CompanionsFeature ? feature : null;
   }
 

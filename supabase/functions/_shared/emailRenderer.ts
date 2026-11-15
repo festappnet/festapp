@@ -6,7 +6,7 @@ import { renderSaleOpeningEmail } from "./saleOpeningEmail.ts";
 import { overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
 import {
-  orderEmailOverviewUrl,
+  orderEmailOverviewContext,
   overviewEmailSubstitutions,
 } from "./orderEmailOverview.ts";
 import { firstLoginEmail } from "./firstLoginEmail.ts";
@@ -129,12 +129,14 @@ export async function renderQueuedEmail(
         ? paymentRegistry.resolve(method).connector.displayName
         : String(method ?? ""),
     );
-    const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
+    const overviewContext = await orderEmailOverviewContext(row, emailRpc);
+    const overviewUrl = overviewContext?.url ?? null;
+    const overviewActions = overviewContext?.allowedActions ?? [];
     return {
       prepared: await renderEmail({
         to: row.recipient,
         templateCode: row.code,
-        requiredLinks: overviewRequiredLinks(overviewUrl, lang),
+        requiredLinks: overviewRequiredLinks(overviewUrl, lang, overviewActions),
         context: {
           organization: row.organization,
           occasion: row.occasion,
@@ -142,7 +144,7 @@ export async function renderQueuedEmail(
         },
         substitutions: {
           ...payment,
-          ...overviewEmailSubstitutions(overviewUrl, lang),
+          ...overviewEmailSubstitutions(overviewUrl, lang, overviewActions),
         },
         from: `${occasion.title} | Festapp <${Deno.env.get("DEFAULT_EMAIL")}>`,
         replyTo: reply_to,
@@ -173,7 +175,9 @@ export async function renderQueuedEmail(
     data: { ...row.data, orderId: row.order_id, requestSecret: secret },
   }, null);
   // Server context and snapshotted recipient are authoritative, never live replacement recipient.
-  const overviewUrl = await orderEmailOverviewUrl(row, emailRpc);
+  const overviewContext = await orderEmailOverviewContext(row, emailRpc);
+    const overviewUrl = overviewContext?.url ?? null;
+    const overviewActions = overviewContext?.allowedActions ?? [];
   if (row.message_kind !== "order_confirmation") {
     const current = await emailRpc("get_order_details_for_email", {
       p_order_id: row.order_id,
@@ -199,7 +203,7 @@ export async function renderQueuedEmail(
           payment,
           name,
           row.data?.lang ?? "cs",
-          overviewEmailSubstitutions(overviewUrl, row.data?.lang)
+          overviewEmailSubstitutions(overviewUrl, row.data?.lang, overviewActions)
             .order_overview_button,
         ),
       );
@@ -209,7 +213,7 @@ export async function renderQueuedEmail(
   const prepared = await renderEmail({
     to: row.recipient,
     templateCode: row.code,
-    requiredLinks: overviewRequiredLinks(overviewUrl, row.data?.lang),
+    requiredLinks: overviewRequiredLinks(overviewUrl, row.data?.lang, overviewActions),
     context: {
       organization: row.organization,
       occasion: row.occasion,
@@ -217,7 +221,7 @@ export async function renderQueuedEmail(
     },
     substitutions: {
       ...rendered.subs,
-      ...overviewEmailSubstitutions(overviewUrl, row.data?.lang),
+      ...overviewEmailSubstitutions(overviewUrl, row.data?.lang, overviewActions),
     },
     attachments: rendered.attachments ?? [],
     replyTo: rendered.reply_to,

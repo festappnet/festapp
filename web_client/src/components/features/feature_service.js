@@ -14,6 +14,7 @@ export class FeatureService {
 
     static get FeatureConstants() {
         return {
+            customerSelfService: 'customer_self_service',
             ticket: 'ticket',
             form: 'form',
             workshop: 'workshops',

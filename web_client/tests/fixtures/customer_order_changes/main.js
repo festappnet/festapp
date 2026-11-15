@@ -1,0 +1,13 @@
+import {createClient} from '@supabase/supabase-js';
+import {LocalizationService} from '../../../src/services/localization_service.js';
+import {ThemeService} from '../../../src/services/theme_service.js';
+import {WaitlistCommands} from '../../../src/components/forms/waitlist_commands.js';
+import {loadOrderOverview,parseOrderLocation} from '../../../src/components/forms/order_overview.js';
+import '../../../src/components/forms/form_component.css';
+const config=window.customerFixture;
+LocalizationService.currentLocale=config.locale;
+LocalizationService.translations=await (await fetch(`/fixture/translations/${config.locale}`)).json();
+ThemeService.setMode('light');
+const client=createClient(location.origin,config.anonKey,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+const scope=parseOrderLocation(location);
+await loadOrderOverview(document.querySelector('main'),new WaitlistCommands(client),scope);

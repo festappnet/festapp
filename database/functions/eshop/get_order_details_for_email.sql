@@ -16,7 +16,7 @@ BEGIN
     SELECT jsonb_build_object(
         'order', to_jsonb(o.*) || jsonb_build_object('data', o.data || jsonb_build_object(
           'tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))),
-        'occasion', to_jsonb(occ.*)||jsonb_build_object('locale',coalesce((SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=occ.organization),'cs')),
+        'occasion', to_jsonb(public.order_term_occasion_internal(o.id))||jsonb_build_object('locale',coalesce((SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=occ.organization),'cs')),
         -- Same statement snapshot as the ticket feature used by delivery.
         'wallet', jsonb_build_object(
           'feature',(SELECT f FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'),

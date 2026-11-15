@@ -448,6 +448,7 @@ export class OrderPreview {
             tickets,
             ticketCount: payloadTickets.length,
             totalPrice: totalPriceData.totalPrice,
+            discount: totalPriceData.discount,
             currency: totalPriceData.currency,
             hasTickets: FeatureService.usesTicketTerminology(formModel.occasionFeatures),
             tone: formModel.communicationTone,
@@ -631,7 +632,7 @@ export class OrderPreview {
         }
 
         // Total
-        const formattedPrice = formatPrice(data.totalPrice, data.currency, data.cardPricing ? 2 : 0, LocalizationService.currentLocale);
+        const formattedPrice = formatPrice(data.totalPrice, data.currency, (data.cardPricing || data.discount) ? 2 : 0, LocalizationService.currentLocale);
         const totalPriceString = PublicOrderStrings.totalPrice(formattedPrice);
 
         // Per-currency meta surcharge sums (visual-only, NOT added to totalPrice).
@@ -646,6 +647,9 @@ export class OrderPreview {
 
         if (!isWaitlist) html += `
              <div class="preview-total-price">
+                 ${data.discount ? `<div>${htmlText`${LocalizationService.tr('DiscountCodes.code')}`}: ${htmlText`${data.discount.code}`}</div>
+                   <div>${htmlText`${LocalizationService.tr('DiscountCodes.base')}`}: ${formatPrice(data.discount.base,data.currency,2,LocalizationService.currentLocale)}</div>
+                   <div>${htmlText`${LocalizationService.tr('DiscountCodes.discount')}`}: ${formatPrice(data.discount.discount,data.currency,2,LocalizationService.currentLocale)}</div>` : ''}
                  ${totalPriceString}
                  ${metaHtml}
              </div>

@@ -157,6 +157,10 @@ BEGIN
                     END IF;
                 END IF;
 
+                INSERT INTO eshop.order_product_ticket ("order", product, ticket,base_price,net_price)
+                VALUES (order_id, product_id, ticket_id,product_data.price,product_data.price)
+                RETURNING id INTO order_product_ticket_id;
+
                 -- Build the product details for the ticket
                 DECLARE
                     v_spot_title TEXT := NULL;
@@ -174,6 +178,8 @@ BEGIN
 
                     ticket_products := ticket_products || jsonb_strip_nulls(JSONB_BUILD_OBJECT(
                         'id', product_id,
+                        'order_product_ticket_id',order_product_ticket_id,
+                        'base_price',product_data.price,'discount_amount',0,
                         'title', product_data.title,
                         'type', product_data.type,
                         'type_title', product_data.type_title,
@@ -201,11 +207,6 @@ BEGIN
                 END IF;
                 v_total_deposit := v_total_deposit + v_product_deposit;
 
-                -- Link the ticket and product to the order
-                INSERT INTO eshop.order_product_ticket ("order", product, ticket)
-                VALUES (order_id, product_id, ticket_id)
-                RETURNING id INTO order_product_ticket_id;
-
                 -- For the spot product, link the generated order product ticket id to the spot record
                 IF spot_id IS NOT NULL THEN
                     IF product_id = spot_product_id THEN
@@ -228,37 +229,7 @@ BEGIN
                   'errorCode','ADMISSION_SOURCE_REQUIRES_SEATING')::text;
             END IF;
 
-            -- Only explicitly application-only forms may omit admission products.
-            -- Missing/active ticket containers retain the admission requirement.
-            -- Use the ID sentinel: an unassigned record cannot be inspected on
-            -- a fresh database connection with only ordinary fee products.
-            IF spot_product_id IS NULL AND NOT coalesce((
-                SELECT bool_and(ff.is_hidden IS TRUE)
-                FROM public.form_fields ff
-                WHERE ff.form=form_id AND ff.type='ticket'
-            ),false) THEN
-                RAISE EXCEPTION '%', JSONB_BUILD_OBJECT('code', 1015, 'message', 'Spot product is missing in ticket fields')::TEXT;
-            END IF;
-
-            -- An application fee is not an admission product. Removing that
-            -- requirement must still reject a missing mandatory fee, including
-            -- requests selecting only an optional dinner or no products at all.
-            IF spot_product_id IS NULL THEN
-                SELECT ff.id INTO missing_required_product_field
-                FROM public.form_fields ff
-                WHERE ff.form=form_id AND ff.type='product_type'
-                  AND ff.is_ticket_field AND ff.is_required AND NOT ff.is_hidden
-                  AND NOT EXISTS(SELECT 1 FROM eshop.products p
-                    WHERE p.id=ANY(products_array) AND p.product_type=ff.product_type)
-                ORDER BY ff.id LIMIT 1;
-                IF FOUND THEN
-                    RAISE EXCEPTION '%',jsonb_build_object('code',400,
-                      'errorCode','REQUIRED_FIELD_MISSING',
-                      'fieldId',missing_required_product_field,
-                      'message','Required product selection missing')::text;
-                END IF;
-            END IF;
-
+            PERFORM public.assert_ticket_required_products_internal(form_id,products_array);
 
  RETURN jsonb_build_object('products',ticket_products,'price',calculated_price,
   'deposit',v_total_deposit,'currency_code',first_currency_code,'spot',spot_id,'note',ticket_note);

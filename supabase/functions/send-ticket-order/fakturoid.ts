@@ -13,6 +13,8 @@ export interface FakturoidConfig {
 
 export interface FakturoidOrder {
   data?: {
+    discount?: {code: string; base: number; discount: number; net: number; currency: string};
+    tickets?: Array<{products: Array<{title: string; price: number}>}>;
     name?: string;
     surname?: string;
     street?: string;

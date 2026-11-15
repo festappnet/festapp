@@ -1242,6 +1242,66 @@
         "publication": "Canonical source updated locally; no source push or production deployment performed."
       },
       "cleanup": "Owned Flutter web-server, isolated browser and only the owned Supabase project stopped after successful readback. Other sessions and the control-channel server preserved."
+    },
+    {
+      "id": "customer-self-service-20261115",
+      "guides": [
+        "customer-self-service"
+      ],
+      "locales": [
+        "cs",
+        "en"
+      ],
+      "sourceState": "Current working tree; no deployment or activation",
+      "environment": {
+        "backend": "Verified disposable SQL lease, local PostgREST and production customer-order-changes Edge handler",
+        "renderer": "Actual order overview sources through Vite middleware, isolated headless browser, light",
+        "email": "Existing encrypted prepared email queue; local read sink, no external delivery"
+      },
+      "steps": [
+        "Open the existing order overview URL from the private locale fixture",
+        "Select cancellation and verify empty required reason blocks submission",
+        "Enter a reason, send challenge, respect order/IP throttles",
+        "Open the actual queued email anchor; verify fragment is removed and order is unchanged",
+        "Read the server preview and explicitly submit one approval request",
+        "Check one pending request and original order admission/payment state",
+        "Capture current desktop 1280x1000 and mobile 390x844",
+        "Move preview: choose distinguishable title/date, verify target products, do not claim a completed move"
+      ],
+      "screenshots": [
+        {
+          "mediaId": "cs/customer-self-service/desktop",
+          "file": "cs/customer-self-service/desktop.png",
+          "sha256": "e1e2a252a2c52096db4c3acfe1d5f3bb0ba73420d6cd527cc911ce94554265c1"
+        },
+        {
+          "mediaId": "cs/customer-self-service/mobile",
+          "file": "cs/customer-self-service/mobile.png",
+          "sha256": "cd762d3fcf5165435a281e141735c4de5799ac2a210affe3540e9923103b7999"
+        },
+        {
+          "mediaId": "en/customer-self-service/desktop",
+          "file": "en/customer-self-service/desktop.png",
+          "sha256": "50b3987cbf83c1b32397f78935ad86e75f438b8efbb2ec36de2b9e8e01f33795"
+        },
+        {
+          "mediaId": "en/customer-self-service/mobile",
+          "file": "en/customer-self-service/mobile.png",
+          "sha256": "78b960181e88d9fb8022a769f117ca56068aa878590b4107fd165ca9ca843481"
+        }
+      ],
+      "sourceFiles": {
+        "web_client/src/components/forms/customer_order_changes.js": "dde75d097ad0eff7c03d6038ce296e183add00c28bd583fee683354046070483",
+        "web_client/src/components/forms/order_overview.js": "a3d0baaa6f8bdd5b4a163512150f8781d984ed05917600d952e5d0f613e69b9c",
+        "supabase/functions/customer-order-changes/index.ts": "dd3f8e8bc30ba5bc4edfa291bd7e58fa38c2f7b3db5f0bad4836ca7c24c261c7",
+        "supabase/functions/_shared/customerOrderChangesHandler.ts": "300175a9520b5303ff9de8751deeaa17bb9a9eeeb61546bad05e286f0e592377",
+        "web_client/scripts/customer_order_changes_preview.mjs": "2cedc581424a4b532a2f9fc2685ce528ac6979cbd73e1aca44873f093210240e"
+      },
+      "notVerified": [
+        "Production rollout and activation",
+        "External SMTP delivery, real provider refund execution",
+        "Native device visual appearance; Flutter interaction contracts tested separately"
+      ]
     }
   ],
   "notVerified": [

@@ -1,7 +1,7 @@
-CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids BIGINT[], p_send_email BOOLEAN DEFAULT TRUE)
+CREATE OR REPLACE FUNCTION public.cancel_ticket_selection_domain_internal(p_ticket_ids BIGINT[], p_send_email BOOLEAN DEFAULT TRUE)
 RETURNS VOID
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public, extensions
 AS $$
 DECLARE
@@ -31,12 +31,6 @@ BEGIN
         WHERE t.id = ANY(p_ticket_ids)
         ORDER BY o.id
     LOOP
-        -- 2. SECURITY CHECK
-        -- Verify that the current user has editor permissions on the occasion associated with the order.
-        IF NOT public.can_write_orders(v_occasion_id) THEN
-            RAISE EXCEPTION 'Permission denied to storno tickets for order % on occasion %', v_order_id, v_occasion_id;
-        END IF;
-
         -- Repeated selected tickets in an otherwise active order are a no-op.
         IF NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket opt JOIN eshop.tickets t ON t.id=opt.ticket
           WHERE opt."order"=v_order_id AND t.id=ANY(p_ticket_ids) AND t.state IS DISTINCT FROM 'storno') THEN
@@ -154,4 +148,16 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[],boolean) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.cancel_ticket_selection_domain_internal(bigint[],boolean) FROM PUBLIC, anon, authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.storno_tickets_bulk_internal_v1(p_ticket_ids bigint[],p_send_email boolean DEFAULT true)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT DISTINCT occasion FROM eshop.tickets WHERE id=ANY(p_ticket_ids)));
+ PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=ANY(p_ticket_ids)));
+ IF EXISTS(SELECT 1 FROM eshop.order_product_ticket x JOIN eshop.orders o ON o.id=x."order"
+   WHERE x.ticket=ANY(p_ticket_ids) AND public.can_write_orders(o.occasion) IS NOT TRUE) THEN
+  RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
+ PERFORM public.cancel_ticket_selection_domain_internal(p_ticket_ids,p_send_email);
+END $$;
+REVOKE ALL ON FUNCTION public.storno_tickets_bulk_internal_v1(bigint[],boolean) FROM PUBLIC,anon,authenticated;

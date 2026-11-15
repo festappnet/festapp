@@ -1,7 +1,11 @@
 class OrderDataProductModel {
   final int? id;
   final String? type;
+
+  /// Charged net amount from the sold snapshot.
   final double? price;
+  final double? basePrice;
+  final double discountAmount;
   final String? title;
   final String? typeTitle;
   final String? spotTitle;
@@ -12,6 +16,8 @@ class OrderDataProductModel {
     this.id,
     this.type,
     this.price,
+    this.basePrice,
+    this.discountAmount = 0,
     this.title,
     this.typeTitle,
     this.spotTitle,
@@ -23,6 +29,8 @@ class OrderDataProductModel {
     return OrderDataProductModel(
       id: json['id'],
       type: json['type'],
+      basePrice: double.tryParse('${json['base_price']}'),
+      discountAmount: double.tryParse('${json['discount_amount']}') ?? 0,
       price: json['price'] != null
           ? double.tryParse(json['price'].toString())
           : null,

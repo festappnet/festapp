@@ -139,3 +139,27 @@ node --test automation/tests/help_pages.test.mjs automation/tests/help_search.te
 
 These changes do not publish or deploy help. The production release remains a
 separate authorized operation.
+
+## Customer self-service
+
+Run `node web_client/scripts/customer_order_changes_preview.mjs` from the repository.
+It leases a verified disposable database and starts loopback PostgREST, the production
+Edge handler and the actual order renderer. Its private mode-0600 locator file holds
+CS/EN overview URLs. Never print those URLs or verification fragments. Actual queued
+prepared mail is decrypted only by the local `/fixture/mail?order_id=...` sink; no
+SMTP provider is invoked. Only external queue wake is suppressed by a fixture-only
+pre-request function; authorization, throttles, receipts and domain SQL remain real.
+
+In an isolated muted light browser session, open the locale's overview, choose
+cancellation, verify the required reason, send the verification email and open its
+actual anchor. Capture preview before explicitly submitting the request. Verify
+one pending request with the order still valid, then capture desktop and mobile.
+For moves, verify distinct configured target names alongside their dates and the
+product breakdown before confirmation. Do not claim a move from a preview alone.
+Respect the real minimum 60 seconds between challenge emails per IP and order,
+and maximum three per hour. Generic 202 deliberately does not prove mail enqueue.
+
+Use absolute screenshot paths. Register current images and SHA-256 values in
+`media.json` and the `customer-self-service-20261115` catalogue chapter. Stop the
+owned Node process with SIGTERM, which releases its DB lease, local Edge process,
+PostgREST container and private files. Do not stop another session's runtime.
