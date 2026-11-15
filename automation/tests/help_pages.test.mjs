@@ -105,6 +105,10 @@ test('public guides render crawlable linked documents, code generator without un
  const joomla=fs.readFileSync(path.join(target,'joomla/index.html'),'utf8');assert.match(joomla,/Přístupný název iframe/);assert.match(joomla,/Uložený veřejný odkaz na formulář/);
  const wix=fs.readFileSync(path.join(target,'wix/index.html'),'utf8');assert.match(wix,/Add to Site/);assert.match(wix,/Přístupný název formuláře/);
  const measurement=fs.readFileSync(path.join(target,'mereni-formularu/index.html'),'utf8');
+ assert.match(measurement,/id="prenos"/);
+ assert.match(measurement,/Konfigurace exportovaná z Festappu/);
+ assert.doesNotMatch(measurement,/"organization":1|"unit":2|"consentRevision":"[a-f0-9]{32}"/,'organizer help must not teach hand-written server scope');
+ for(const guide of [joomla,wix,fs.readFileSync(path.join(target,'webnode/index.html'),'utf8')])assert.ok(guide.includes('/napoveda/mereni-formularu/#prenos'),'every supported website guide leads to the same export workflow');
  const presetName=measurement.match(/href="\/napoveda\/assets\/(festapp-host-gtm\.[a-f0-9]+\.json)" download/)[1];
  const presetBytes=fs.readFileSync(path.join(target,'assets',presetName));
  assert.deepEqual(presetBytes,fs.readFileSync(path.join(root,'integrations/measurement/festapp-host-gtm.json')),'public download is the validated canonical preset');
@@ -162,6 +166,8 @@ test('public guides render crawlable linked documents, code generator without un
  for(const slug of ['', 'integrations', 'form-measurement'])assert.doesNotMatch(fs.readFileSync(path.join(enTarget,slug,'index.html'),'utf8'),/WordPress|Joomla|Wix|MCP|agent access/,'global help does not promote withheld integrations');
  assert.equal(fs.existsSync(path.join(enTarget,'assets/mcp-reference.json')),false,'regional-only MCP metadata is not shipped');
  const enMeasurement=fs.readFileSync(path.join(enTarget,'form-measurement/index.html'),'utf8');
+ assert.match(enMeasurement,/id="transfer"/);
+ assert.doesNotMatch(enMeasurement,/"organization":1|"unit":2|"consentRevision":"[a-f0-9]{32}"/,'English help must not restore the manual server scope workflow');
  assert.ok(enMeasurement.includes(presetName),'both languages download one canonical preset');
  const published=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',enTarget],{encoding:'utf8'});
  assert.equal(published.status,0,published.stderr);
