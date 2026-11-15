@@ -1,0 +1,41 @@
+{
+  "state": "TECHNICALLY_VALIDATED_PENDING_CANONICAL_SOURCE_PUBLICATION",
+  "prepared_at_utc": "2026-11-15",
+  "critic_review": {
+    "status": "APPROVED_TECHNICAL_CANDIDATE",
+    "scope": "vstupenky-online 1.0.9 exact ZIP and offline SVN stage",
+    "zip_sha256": "66ae222ff90938fd920a08c971232e0a76af454d6c0294ac05ce2f861de5b5da",
+    "unresolved_technical_blockers": [],
+    "publication_authorization": "User authorized the existing regional WordPress.org product release; public write remains gated on canonical source publication/CI."
+  },
+  "source_commit": "84299040a98a19cc10f980baa5de972b3adfba33",
+  "production_service_fixes_deployed": true,
+  "remaining_external_gates": [
+    "Publish the exact source commit to canonical main and pass its required source CI/release gate; re-run the canonical WordPress submit-ready verifier against the published source."
+  ],
+  "products": [
+    {
+      "plugin": "vstupenky-online",
+      "version": "1.0.9",
+      "zip": "dist/vstupenky-online-1.0.9.zip",
+      "zip_sha256": "66ae222ff90938fd920a08c971232e0a76af454d6c0294ac05ce2f861de5b5da",
+      "files": 16,
+      "offline_submission": "dist/wordpress-org-draft",
+      "release_manifest_sha256": "10de607b786cb018a72fa7339728b327ca3e710c52192e9ac49ff52c585026d3"
+    }
+  ],
+  "evidence_sha256": {
+    "directory-readiness-20261115.json": "78d614ee3789a7c0513aff3d06840b99c39b61704f506aebab4e418607afc256"
+  },
+  "documentation_sha256": {
+    "README.md": "90c96e1ac299fda1c32f554691cf8be9d71337a97a11d8a08be700e4ba72e2e3",
+    "READINESS.md": "b2705deb87f24d18df2e72450b8006465a8cf64fcc7fdfec3a65fcca0f0bb3f7",
+    "SUBMISSION.md": "e0404826be789a55c2e1f3aef8ead1978d4d52b12577fe10eacb828bfe89d45c"
+  },
+  "source_commits": {
+    "product_candidate": "ea6f6034b",
+    "release_gate_fix": "84299040a98a19cc10f980baa5de972b3adfba33",
+    "final_prepublication_checkout": "9242e0fa24ebd8453c618c70e7a5a28341f70eec",
+    "canonical_main_publication": "pending"
+  }
+}

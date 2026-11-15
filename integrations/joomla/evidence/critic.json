@@ -1,30 +1,25 @@
 {
   "status": "APPROVED",
-  "reviewed_at": "2026-11-12T16:08:40.491860+00:00",
-  "reviewer_role": "Independent AI critic of the exact release; not a human review or approval by Joomla Extensions Directory",
-  "approval_scope": "Technical readiness of the exact regional vstupenky.online Joomla 1.0.5 ZIP and stable update feed for owned GitHub distribution. No global Festapp Tickets publication, no publication performed, and no JED acceptance claimed. Normal source-publication CI and final public readbacks remain separate gates.",
-  "zip_sha256": "104d98e8c83cea25b5e3fbf343dc7fd5969dcee89d83f3b986526bed25b8d31c",
-  "verification_sha256": "51971a4c052e25dd1ac46d366633f509af395ee1eeb3cee746d73f63c374ddf8",
+  "reviewed_at": "2026-11-15",
+  "reviewer_role": "independent regional CMS release critic",
+  "product": "vstupenky.online Joomla module",
+  "version": "1.0.6",
+  "source_commit": "9242e0fa24ebd8453c618c70e7a5a28341f70eec",
+  "zip_sha256": "70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7",
+  "verification_sha256": "cb086594488574360fc03f3029d75af2d9fd7f06ebd27577ad792ac246ff0547",
+  "update_feed_sha256": "ef6f19694d8d9e7737ffc9f3c1e6273d10dcf044640f4b3cec6dfd111ca64bcf",
+  "review_findings": [
+    "The exact 15-file ZIP is regional-only; it contains no Festapp Tickets module. Candidate metadata, embedded update URL, stable feed and checksums agree.",
+    "Independent byte audit confirmed the candidate ZIP, immutable archives, candidate metadata and feed, and recomputed all 43 verification source hashes plus 15 evidence hashes.",
+    "Canonical Joomla verifier passed for Joomla 5.4/PHP 8.3 and Joomla 6.1/PHP 8.4. The installed consent contract passed on both versions, and all 15 installed regional files matched the candidate ZIP.",
+    "Real updater discovery, download, SHA-256 and installation passed on both supported CMS versions while preserving module settings. The live form/seat-map read-only check created no order and selected no seat.",
+    "The consent setting is off by default. Local import status is explicitly not server approval; the public form rechecks current server policy. Exports can be replaced, revocation is not undone by an older export, and transfer does not preserve analytics visitor identity.",
+    "Release notes now describe version 1.0.6, exact supported Joomla/PHP versions, configuration and replacement flow, local/server status distinction, identity limitation, install/update instructions and support/documentation links."
+  ],
   "unresolved_release_blockers": [],
-  "evidence_summary": {
-    "frozen_source_files": 36,
-    "frozen_evidence_files": 15,
-    "zip_files_matching_package_manifest_and_generated_build": 12,
-    "joomla_5_contract_assertions": 304,
-    "joomla_6_contract_assertions": 304,
-    "installed_measurement_default_assertions_per_cms": 8,
-    "verified_cms": [
-      "Joomla 5.4.10 / PHP 8.3.36",
-      "Joomla 6.1.4 / PHP 8.4.27"
-    ],
-    "reviewed_checks": [
-      "Current source and all 15 receipt fingerprints equal the VERIFIED record; exact verification digest independently checked.",
-      "Immutable ZIP, convenience ZIP, all 12 file hashes, generated module, manifest identity/version/update URL and 1.0.5 feed/checksum agree.",
-      "Measurement default test retains generated-tree CI behavior while release verification explicitly selects installed modules; both receipts are fingerprint-bound.",
-      "Real native updater discovery/download/checksum/install preserves settings on both CMS versions; test boundary is a local feed with the same artifact bytes and synthetic older metadata.",
-      "Installed native forms, URL validation, translations, cache/reinstall, lifecycle/uninstall and real mobile form/seat/keyboard/helper paths passed.",
-      "Actual installed regional module reached live production helper/form with one helper, mobile auto-height, seat map and Escape; no order or seat selection.",
-      "Regional documentation describes Website choice, legacy Unit behavior and conversion-contact disclosure; package retains a single canonical external checkout/helper owner."
-    ]
-  }
+  "publication_gates_pending": [
+    "Publish this exact source and feed to canonical main after fetching and reconciling upstream; pass the exact-source CI/release gate.",
+    "Publish only the regional Joomla 1.0.6 GitHub release asset and verify public ZIP/feed bytes.",
+    "Refresh the existing JED listing metadata after the public asset/feed are verified; do not create a new listing or publish the global product."
+  ]
 }

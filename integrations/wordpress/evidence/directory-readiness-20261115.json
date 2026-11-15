@@ -1,0 +1,104 @@
+{
+  "state": "TECHNICALLY_VALIDATED_PENDING_CANONICAL_SOURCE_PUBLICATION",
+  "prepared_at_utc": "2026-11-15",
+  "scope": {
+    "product": "vstupenky-online",
+    "publisher": "festappnet",
+    "version": "1.0.9",
+    "global_festapp_tickets_publication": false,
+    "new_catalogue_listing": false
+  },
+  "source": {
+    "product_source_commit": "ea6f6034b (regional candidates generated from this frozen product source)",
+    "release_gate_fix_commit": "84299040a98a19cc10f980baa5de972b3adfba33",
+    "final_prepublication_checkout_commit": "9242e0fa24ebd8453c618c70e7a5a28341f70eec",
+    "canonical_main_publication": "pending",
+    "canonical_source_ci": "pending"
+  },
+  "artifact": {
+    "path": "dist/vstupenky-online-1.0.9.zip",
+    "sha256": "66ae222ff90938fd920a08c971232e0a76af454d6c0294ac05ce2f861de5b5da",
+    "files": 16,
+    "offline_submission": "dist/wordpress-org-draft",
+    "release_manifest_sha256": "10de607b786cb018a72fa7339728b327ca3e710c52192e9ac49ff52c585026d3",
+    "stable_tag": "1.0.9",
+    "previous_public_tag": "1.0.8"
+  },
+  "checks": {
+    "stage_integrity": {
+      "status": "PASS",
+      "trunk_and_tag_source_bytes_match_zip": true,
+      "catalog_assets": 9,
+      "tag_1_0_9_absent_at_preflight": true
+    },
+    "wpcs": {
+      "status": "PASS",
+      "version": "3.4.1",
+      "errors": 0,
+      "warnings": 0,
+      "evidence_sha256": "468b0a4a70c172318bf218d69b07780e6132fab68a74fd4dda555d461fee6b38"
+    },
+    "plugin_check": {
+      "status": "PASS",
+      "version": "2.1.0",
+      "engines": [
+        "WordPress 7.1.3/PHP 8.5.12",
+        "WordPress 6.6/PHP 7.4.33"
+      ],
+      "errors_per_engine": 0,
+      "warnings_per_engine": 1,
+      "known_warning": "Discouraged load_plugin_textdomain; retained for bundled translations in standalone ZIP installs",
+      "evidence_sha256": {
+        "current": "a8652c918b0a62283b6e814033c98b14edd658db4b2e13d492287d2ccee5a369",
+        "minimum": "a8652c918b0a62283b6e814033c98b14edd658db4b2e13d492287d2ccee5a369"
+      }
+    },
+    "installed_contracts": {
+      "status": "PASS",
+      "assertions_per_engine": 47,
+      "engines": [
+        "WordPress 7.1.3/PHP 8.5.12",
+        "WordPress 6.6/PHP 7.4.33"
+      ],
+      "all_16_installed_files_match_candidate": true,
+      "evidence_sha256": {
+        "current": "dcf3fc7a9cad34b6da77eb1d9beb83f90a120ce3626da64201739ff0d700c482",
+        "minimum": "f5b783fe18ed9b66c8a8380824c6fd24a68807c4018816789fa8f952bb6d02db"
+      }
+    },
+    "installed_consent_imports": {
+      "status": "PASS",
+      "products_in_private_interop_fixture": 2,
+      "engines": [
+        "WordPress 7.1.3/PHP 8.5.12",
+        "WordPress 6.6/PHP 7.4.33"
+      ],
+      "fixture_festapp_tickets_zip_sha256": "97660207816a769f15f8b463fbaa300f06d443a087993c361d23c62541f0f7b5",
+      "global_fixture_is_not_a_public_release_artifact": true,
+      "evidence_sha256": "af0e5e6e38ab42332945d55ac91abf810e9ec44d16640dafe64e310f1c08bf7a"
+    }
+  },
+  "production_service": {
+    "status": "LIVE",
+    "source_main_sha": "dbd8374dc4f8ba892976ee0e2f59ce672916c55e",
+    "version": "0.20.614+1141",
+    "coherent_live_probes": 3
+  },
+  "public_svn_preflight": {
+    "repository": "https://plugins.svn.wordpress.org/vstupenky-online/",
+    "revision": 3802616,
+    "trunk_stable_tag": "1.0.8",
+    "new_tag_1_0_9": "absent",
+    "working_copy": "~/.cache/festapp-cms-publication-20261115/wp-svn-wc",
+    "working_copy_clean": true
+  },
+  "credential_locator": {
+    "account": "festappnet",
+    "service": "plugins.svn.wordpress.org",
+    "protected_keychain_record_present": true,
+    "secret_retrieved_or_exposed": false
+  },
+  "remaining_external_gates": [
+    "Publish the exact source commit to canonical main and pass its required source CI/release gate; re-run the canonical WordPress submit-ready verifier against the published source."
+  ]
+}

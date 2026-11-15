@@ -1,13 +1,13 @@
 {
-  "checked_at": "2026-11-12T16:06:40.059336+00:00",
+  "checked_at": "2026-11-15T01:11:55.363641+00:00",
   "user_agent": "Festapp-Joomla-Release-Check/1.0 (+https://github.com/festappnet/festapp)",
   "checks": [
     {
       "url": "https://vstupenky.online/login",
       "final_url": "https://vstupenky.online/login",
       "status": 200,
-      "bytes": 26157,
-      "sha256": "472008cef674a1577640e267387a37fd09c4f22d703137195d191629996ebfd9",
+      "bytes": 26858,
+      "sha256": "ae0d7bdd41ec51b1d6cf18f2445397948eec9b4d8f8ab17f942a48d877a10e0c",
       "title": "Akce a plesy - vstupenky online | vstupenky.online",
       "expected_content": true
     },
@@ -52,7 +52,7 @@
       "final_url": "https://vstupenky.online/",
       "status": 200,
       "bytes": 236376,
-      "sha256": "c89e3ee8e50c400d2bea14a0d9c4b3c515feefbf9d5f56ad7b8d4036e79ab07a",
+      "sha256": "55d4033de4522253d97fefabe8e887eb816318be293180f5873f84900702a32d",
       "title": "Prodej vstupenek na akce | vstupenky.online",
       "expected_content": true
     },
@@ -60,8 +60,8 @@
       "url": "https://vstupenky.online/embed.js",
       "final_url": "https://vstupenky.online/embed.js",
       "status": 200,
-      "bytes": 66578,
-      "sha256": "480b1960596dea8eb7b54f27b7a3e0a6c178a0b1250922e3d99246dde62322ef",
+      "bytes": 73805,
+      "sha256": "44fa0a3bfd233c2c00865e923f72c5317a3fe25f554ac40fe70b50608e1a5820",
       "title": null,
       "expected_content": true
     }
