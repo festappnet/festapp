@@ -37,6 +37,9 @@ class WaitlistStrings {
   static String get unlimited => text('unlimited');
   static String get enabled => text('enabled');
   static String get showRemaining => text('showRemaining');
+  static String get showCount => text('showCount');
+  static String get showCountHelp => text('showCountHelp');
+  static String get countSummary => text('countSummary');
   static String get durationHours => text('durationHours');
   static String get positiveNumber => text('positiveNumber');
   static String get activeEntries => text('activeEntries');

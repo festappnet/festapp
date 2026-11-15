@@ -1,3 +1,4 @@
+import { formatDisplayNumber } from '../../utils/formatters.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { WaitlistStrings as S } from './waitlist_strings.js';
 
@@ -80,6 +81,20 @@ export function renderWaitlistControls(page, model) {
         message.textContent = S.text('explanation', tone);
     }
     section.appendChild(message);
+    if (!model.offerBundle && model.registrationMode === 'waitlist' &&
+        model.data?.waitlist?.show_count !== false &&
+        Number.isFinite(capacity?.waitingPeople) && Number.isFinite(capacity?.offeredPlaces)) {
+        const count = document.createElement('p');
+        count.className = 'waitlist-count';
+        const [before, after] = S.text('countSummary').split('{count}');
+        const number = document.createElement('strong');
+        number.className = 'waitlist-count-number';
+        number.textContent = formatDisplayNumber(
+            capacity.waitingPeople + capacity.offeredPlaces, LocalizationService.currentLocale);
+        count.append(before, number, after || '');
+        section.appendChild(count);
+    }
+
     if (section.textContent || model.offerBundle) form.prepend(section);
     const placeProductNotice = () => {
         const group = form.querySelector('.waitlist-product-options');

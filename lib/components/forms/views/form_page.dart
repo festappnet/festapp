@@ -1,3 +1,4 @@
+import 'package:festapp_core/formatting.dart';
 import 'dart:convert';
 
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -1180,6 +1181,24 @@ class _FormPageState extends State<FormPage> {
                                           if (form!.definition.isWaitlist)
                                             Text(
                                               '${WaitlistStrings.title}. ${WaitlistStrings.explanation}',
+                                            ),
+                                          if (_offerBundle == null &&
+                                              form!.definition.isWaitlist &&
+                                              form!.definition.showWaitlistCount &&
+                                              form!.definition.capacity != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 16),
+                                              child: Text.rich(TextSpan(children: [
+                                                TextSpan(text: WaitlistStrings.countSummary.split('{count}').first),
+                                                TextSpan(
+                                                  text: formatDisplayNumber(
+                                                    form!.definition.capacity!.waitingPeople +
+                                                    form!.definition.capacity!.offeredPlaces,
+                                                  ),
+                                                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+                                                ),
+                                                TextSpan(text: WaitlistStrings.countSummary.split('{count}').last),
+                                              ])),
                                             ),
                                           if (_offerBundle != null) ...[
                                             _buildOverview(),

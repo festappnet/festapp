@@ -632,7 +632,8 @@
         "database/tests/scanning/ball_order_test.sql",
         "database/tests/scanning/authorization_test.sql",
         "database/tests/customer_order_changes/",
-        "database/tests/eshop_discounts/"
+        "database/tests/eshop_discounts/",
+        "database/tests/eshop_forms/waitlist_count_setting_test.sql"
       ]
     },
     "seat-notifications-1": {
@@ -927,6 +928,7 @@
       "database/tests/eshop_forms/form_save_recovery_test.sql",
       "database/tests/eshop_forms/get_form_for_edit_short_title_test.sql",
       "database/tests/eshop_forms/primary_product_guard_test.sql",
+      "database/tests/eshop_forms/waitlist_count_setting_test.sql",
       "database/tests/eshop_orders/application_only_checkout_test.sql",
       "database/tests/eshop_orders/checkout_origin_test.sql",
       "database/tests/eshop_orders/customer_order_access_test.sql",

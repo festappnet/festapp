@@ -11,7 +11,7 @@ import { waitlistRegistrationPayload } from '../../src/components/forms/waitlist
 import { OrderResult } from '../../src/components/forms/order_result.js';
 import { LocalizationService } from '../../src/services/localization_service.js';
 register('../css_loader.mjs', import.meta.url);
-LocalizationService.translations = JSON.parse(readFileSync(new URL('../../public/assets/translations/cs.json', import.meta.url)));
+LocalizationService.translations = JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json', import.meta.url)));
 LocalizationService.currentLocale = 'cs';
 if (!globalThis.CustomEvent) globalThis.CustomEvent = class extends Event { constructor(type, options) { super(type); this.detail = options?.detail; } };
 const fields = [
@@ -46,6 +46,32 @@ test('regular occupancy includes waiting registrations; waitlist mode hides occu
     }
     d.window.close();
 });
+test('public waitlist notice shows the current people count by default and respects settings', () => {
+    const d = dom();
+    const host = document.querySelector('main');
+    for (const [data, registrationMode, offerBundle, capacity, expected] of [
+        [{}, 'waitlist', null, { waitingPeople: 4, offeredPlaces: 2 }, 'Aktuálně mezi náhradníky: 6'],
+        [{}, 'waitlist', null, { waitingPeople: 0, offeredPlaces: 0 }, 'Aktuálně mezi náhradníky: 0'],
+        [{ waitlist: { show_count: false } }, 'waitlist', null, { waitingPeople: 4, offeredPlaces: 2 }, null],
+        [{ waitlist: { show_count: true } }, 'waitlist', null, { waitingPeople: 3, offeredPlaces: 0 }, 'Aktuálně mezi náhradníky: 3'],
+        [{}, 'regular', null, { waitingPeople: 4, offeredPlaces: 2 }, null],
+        [{}, 'waitlist', null, null, null],
+        [{}, 'waitlist', null, {}, null],
+    ]) {
+        const model = new FormModel({ registrationMode, fields, data, capacity, offerBundle });
+        const current = new FormSession(model);
+        FormRenderer.render(host, current, model, false, {});
+        renderWaitlistControls({ host, currentSession: current }, model);
+        const count = host.querySelector('.form-registration-status .waitlist-count');
+        assert.equal(count?.textContent ?? null, expected);
+        if (expected) {
+            assert.ok(count.previousElementSibling.classList.contains('waitlist-intro'));
+            assert.equal(count.querySelector('strong.waitlist-count-number').textContent, expected.split(': ')[1]);
+        }
+    }
+    d.window.close();
+});
+
 test('occupancy includes active offer holds and reflects release without changing server mode', () => {
     const d = dom(); const host = document.querySelector('main');
     for (const offeredPlaces of [1, 0]) {

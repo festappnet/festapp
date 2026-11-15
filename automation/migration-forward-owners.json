@@ -403,6 +403,14 @@
         "eshop_waitlist/order_overview.sql",
         "others/get_ticket_layout_write_contract_v1.sql"
       ]
+    },
+    {
+      "migration": "20261115150000_waitlist_count_setting.sql",
+      "active": true,
+      "header": "-- Public waitlist counter visibility, enabled by default in the reader.",
+      "sources": [
+        "eshop_forms/form_settings.sql"
+      ]
     }
   ]
 }

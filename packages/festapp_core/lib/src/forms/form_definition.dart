@@ -312,6 +312,20 @@ class FormDefinition {
     },
   );
 
+  /// Public registration counter; existing forms show it unless disabled.
+  bool get showWaitlistCount =>
+      (data?['waitlist'] as Map?)?['show_count'] != false;
+
+  FormDefinition withShowWaitlistCount(bool value) => copyWith(
+    data: {
+      ...?data,
+      'waitlist': {
+        ...?(data?['waitlist'] as Map?)?.cast<String, dynamic>(),
+        'show_count': value,
+      },
+    },
+  );
+
   bool get enableCountdown {
     if (_scheduleData.containsKey(metaEnableCountdown)) {
       return _scheduleData[metaEnableCountdown] == true;
