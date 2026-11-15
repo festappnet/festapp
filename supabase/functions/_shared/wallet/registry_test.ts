@@ -30,3 +30,59 @@ Deno.test('native delivery failures provide readable instructions without leakin
  assertEquals(res.status,503);assertEquals(res.headers.get('content-type'),'text/html; charset=utf-8');
  const text=await res.text();assertEquals(text.includes('Vstupenku se nepodařilo připravit'),true);assertEquals(text.includes('private provider failure'),false);assertEquals(text.includes('a'.repeat(64)),false);assertEquals(text.includes('wallet_retry'),false);
 });
+
+import { AuthError } from '../authError.ts';
+import { syncTicketWalletHandler } from '../../sync-ticket-wallet/handler.ts';
+
+const request = () => new Request('https://api.invalid/sync-ticket-wallet', {
+  method: 'POST', body: JSON.stringify({requestSecret: 'private-secret'}),
+});
+
+Deno.test('wallet synchronization records the failed stage without leaking secrets or error messages', async () => {
+  for (const stage of ['authorize', 'reconcile'] as const) {
+    const logs: unknown[] = [];
+    let reconciled = false;
+    const handler = syncTicketWalletHandler({
+      authorize: async () => { if (stage === 'authorize') throw new AuthError('private-secret', 403); },
+      reconcile: async () => { reconciled = true; throw new TypeError('private provider URL and token'); },
+      report: failure => logs.push(failure),
+    });
+    const response = await handler(request());
+    assertEquals(response.status, 503);
+    assertEquals(await response.json(), {error: 'wallet_sync_unavailable'});
+    assertEquals(logs, [{stage, kind: stage === 'authorize' ? 'authorization' : 'type_error'}]);
+    assertEquals(reconciled, stage === 'reconcile');
+  }
+});
+
+Deno.test('wallet sync diagnostics cannot alter the response or replay an uncertain operation', async () => {
+  let calls = 0;
+  const handler = syncTicketWalletHandler({
+    authorize: async () => {},
+    reconcile: async () => { calls++; throw {name: 'private-secret', code: 'private-token'}; },
+    report: () => { throw new Error('log sink failed'); },
+  });
+  const response = await handler(request());
+  assertEquals(response.status, 503);
+  assertEquals(calls, 1);
+});
+
+Deno.test('wallet sync keeps method, missing secret, malformed JSON and success behavior', async () => {
+  const logs: unknown[] = [];
+  let calls = 0;
+  const handler = syncTicketWalletHandler({
+    authorize: async () => {},
+    reconcile: async () => { calls++; return {apple: {synced: 3, failed: 0}}; },
+    report: failure => logs.push(failure),
+  });
+  assertEquals((await handler(new Request('https://api.invalid'))).status, 405);
+  assertEquals((await handler(new Request('https://api.invalid', {method: 'POST', body: '{}'}))).status, 401);
+  const malformed = await handler(new Request('https://api.invalid', {method: 'POST', body: '{'}));
+  assertEquals(malformed.status, 503);
+  assertEquals(logs, [{stage: 'parse', kind: 'syntax_error'}]);
+  const success = await handler(request());
+  assertEquals(success.status, 200);
+  assertEquals(success.headers.get('cache-control'), 'no-store');
+  assertEquals(await success.json(), {apple: {synced: 3, failed: 0}});
+  assertEquals(calls, 1);
+});

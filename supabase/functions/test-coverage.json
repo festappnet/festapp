@@ -631,7 +631,8 @@
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
       ],
       "behaviorTests": [
-        "supabase/functions/_shared/ticketWallet_test.ts"
+        "supabase/functions/_shared/ticketWallet_test.ts",
+        "supabase/functions/_shared/wallet/registry_test.ts"
       ]
     },
     "manage-member-access": {
