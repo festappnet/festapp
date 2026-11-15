@@ -66,3 +66,13 @@ test('vendored Android libraries consume the SDK selected by Flutter', () => {
   assert.match(maplibreBuild, /getProperty\("compileSdkVersion"\)/);
   assert.match(maplibreBuild, /compileSdk = flutterCompileSdk/);
 });
+
+test('hosted Flutter plugins inherit a compile SDK floor without changing minimum SDKs', () => {
+  const build = fs.readFileSync(path.join(root, 'android/build.gradle'), 'utf8');
+  assert.match(build, /findByName\('flutter'\)/);
+  assert.match(build, /getByName\('androidComponents'\)\.finalizeDsl/);
+  assert.match(build, /dsl\.compileSdkPreview == null/);
+  assert.match(build, /\(dsl\.compileSdk \?: 0\) < flutter\.compileSdkVersion/);
+  assert.match(build, /dsl\.compileSdk = flutter\.compileSdkVersion/);
+  assert.doesNotMatch(build, /minSdkVersion\s*=/);
+});

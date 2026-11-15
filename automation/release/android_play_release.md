@@ -32,12 +32,32 @@ listing mutations.
 ## GitHub-hosted batches
 
 `Android candidate batch` is the canonical remote build entry point. Dispatch it
-from `main` with a JSON array of one to thirty tenant IDs. A cache-warming Linux
-job writes the main Gradle dependency cache once; up to five isolated tenant
-jobs then restore and update their dependency-specific caches. Tenant-generated
-Gradle files can have different cache keys from main, so tenant jobs must save
-their own cache after a miss. Flutter's SDK and Pub package caches are also
-enabled. No Android build job runs on macOS or a personal workstation.
+from `main` with a JSON array of one to thirty tenant IDs. Up to five isolated
+tenant jobs run on Linux. No Android build runs on a personal workstation.
+
+The `reuse_build_cache` dispatch option defaults to `true`. A warm-up job seeds
+shared Gradle state, then tenant jobs restore and update the same cache family.
+Gradle task output caching is enabled; Gradle validates each task's actual inputs,
+including tenant-specific resources and configuration. CargoKit's generic Rust
+compilation directories and public Cargo registry are cached separately across tenants. Native builds use committed Cargo lockfiles with `--locked`. Their key covers
+tracked native sources, dependency lockfile, Flutter/Gradle/NDK configuration,
+runner image, Rust compiler and all app Gradle settings except namespace and
+application ID. Signing inputs and final AAB/APK output directories are excluded.
+
+Cache entries restore from the newest compatible prefix. The first selected
+tenant is the sole writer for each batch; all tenants can read. Gradle warm state
+is saved only on a cold cache, and the writer updates compilation state even if
+later packaging fails. Complete native state is saved after successful builds
+only when a compatible native snapshot does not already exist. This avoids
+duplicating multi-gigabyte Gradle state for every matrix member. A cache-service failure permits a cold build. The workflow
+summary records the restored Gradle/native keys; a key match is evidence of reuse,
+not a measured speedup. Flutter SDK and Pub caches remain enabled independently.
+
+For an explicit cold diagnostic build, dispatch `reuse_build_cache=false`. This
+skips the shared warm-up, restore and save operations. Cache reuse never replaces
+the final package, version, signing and source verification or the encrypted
+candidate/production artifact flow. Sharing intermediates does not authorize a
+release of another tenant.
 
 Each tenant uses GitHub environments named `android-build-<tenant>` and
 `android-production-<tenant>`. Build environments contain
