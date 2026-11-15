@@ -95,6 +95,7 @@
         "packages/maplibre_platform_interface/**",
         "packages/nm/**",
         "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
         "packages/windows_file_picker/**"
       ]
     },
@@ -153,6 +154,7 @@
         "packages/maplibre_platform_interface/**",
         "packages/nm/**",
         "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
         "packages/windows_file_picker/**",
         "supabase/functions/**"
       ]
@@ -228,6 +230,7 @@
         "packages/maplibre_platform_interface/**",
         "packages/nm/**",
         "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
         "packages/windows_file_picker/**"
       ]
     }

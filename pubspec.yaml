@@ -159,6 +159,8 @@ dependency_overrides:
     path: packages/nm
   super_native_extensions:
     path: packages/super_native_extensions
+  irondash_engine_context:
+    path: packages/irondash_engine_context
 
 flutter:
 
