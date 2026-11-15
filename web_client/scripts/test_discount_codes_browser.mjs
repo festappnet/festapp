@@ -13,7 +13,7 @@ try {
         s.middlewares.use(async (req,res,next) => {
             if (req.url?.startsWith('/form/test')) {
                 res.setHeader('content-type','text/html; charset=utf-8');
-                return res.end('<!doctype html><html><head><meta name="color-scheme" content="light"></head><body><main></main><script type="module" src="/tests/fixtures/discount_codes/host.js"></script></body></html>');
+                return res.end('<!doctype html><html><head><meta name="color-scheme" content="light"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body><main></main><script type="module" src="/tests/fixtures/discount_codes/host.js"></script></body></html>');
             }
             const match = req.url?.match(/^\/assets\/translations\/(cs|en)\.json$/);
             if (!match) return next();
@@ -38,6 +38,10 @@ try {
         await page.evaluate(value=>window.resolveQuote(value),quote);
         await page.waitForFunction(() => window.fixture.discount.valid && !document.querySelector('details button').disabled);
         assert.match(await status.innerText(),new RegExp(labels.net));
+        if (lang === 'en') {
+            const expected = await page.evaluate(() => new Intl.NumberFormat('en', {style:'currency',currency:'CZK',minimumFractionDigits:0,maximumFractionDigits:2}).format(750));
+            assert.ok((await status.innerText()).includes(expected), 'English status uses the English currency format');
+        }
         assert.match(await page.locator('#floating-price-widget').innerText(),/750/);
         assert.equal(await page.evaluate('window.fixture.session.payload.discount.fingerprint'),'fixture-fingerprint');
         await page.screenshot({path:`/tmp/festapp-discount-${lang}.png`});
@@ -82,5 +86,47 @@ try {
         assert.equal(await page.locator('.fullscreen-result-overlay').count(),1);
         assert.equal(await page.evaluate('location.hash'),'#order-result');
     }
+    // The responsive contract runs against the real application styles and local fixture.
+    const visualErrors = [];
+    page.on('pageerror', error => visualErrors.push(error.message));
+    page.on('console', message => { if (message.type() === 'error') visualErrors.push(message.text()); });
+    for (const [viewport, size] of Object.entries({desktop:{width:1280,height:900},mobile:{width:390,height:844}})) {
+        await page.setViewportSize(size);
+        for (const [lang, labels] of Object.entries({cs:{apply:'Uplatnit',remove:'Odebrat'},en:{apply:'Apply',remove:'Remove'}})) {
+            await page.goto(`${origin}/form/test?lang=${lang}`); await page.waitForFunction('window.fixtureReady');
+            const details = page.locator('details');
+            await details.locator('summary').click();
+            await details.locator('input').fill('SAVE');
+            const apply = details.getByRole('button',{name:labels.apply});
+            const remove = details.getByRole('button',{name:labels.remove});
+            await apply.click(); await page.evaluate(value => window.resolveQuote(value), quote);
+            await page.waitForFunction(() => window.fixture.discount.valid && !document.querySelector('details button').disabled);
+            const a = await apply.boundingBox(), b = await remove.boundingBox();
+            assert.ok(a && b, `${viewport}/${lang}: both actions are visible`);
+            const horizontal = Math.max(b.x - a.x - a.width, a.x - b.x - b.width);
+            const vertical = Math.max(b.y - a.y - a.height, a.y - b.y - b.height);
+            assert.ok(horizontal >= 8 || vertical >= 8, `${viewport}/${lang}: action gap must be at least 8px, got horizontal ${horizontal}, vertical ${vertical}`);
+            assert.ok(a.x >= 0 && b.x >= 0 && a.x+a.width <= size.width && b.x+b.width <= size.width, `${viewport}/${lang}: actions fit viewport`);
+            await page.screenshot({animations:'disabled',path:`/tmp/festapp-discount-polish-${viewport}-${lang}.png`});
+            await page.evaluate('window.showReview()');
+            const review = page.locator('#order-preview-overlay');
+            await review.locator('.preview-total-price').waitFor();
+            const layout = await review.locator('.preview-discount-summary').evaluate(summary => {
+                const rows = [...summary.querySelectorAll('.preview-discount-row')].map(row => {
+                    const [label, amount] = row.querySelectorAll('span');
+                    const l = label.getBoundingClientRect(), a = amount.getBoundingClientRect();
+                    return {left:l.left, right:a.right, gap:a.left-l.right, weight:Number(getComputedStyle(row).fontWeight)};
+                });
+                return {rows, align:getComputedStyle(summary).textAlign, codeWeight:Number(getComputedStyle(summary.querySelector('.preview-discount-code')).fontWeight)};
+            });
+            assert.equal(layout.rows.length,3,`${viewport}/${lang}: three review rows`);
+            assert.ok(layout.rows.every(row => row.gap >= 8),`${viewport}/${lang}: review labels and amounts do not overlap`);
+            assert.ok(layout.rows.every(row => Math.abs(row.left-layout.rows[0].left) < 1 && Math.abs(row.right-layout.rows[0].right) < 1),`${viewport}/${lang}: review columns align`);
+            assert.notEqual(layout.align,'center',`${viewport}/${lang}: review is not centered text`);
+            assert.ok(layout.rows[2].weight >= 600 && layout.rows[2].weight > layout.rows[0].weight && layout.rows[2].weight > layout.codeWeight,`${viewport}/${lang}: total is emphasized`);
+            await page.screenshot({animations:'disabled',path:`/tmp/festapp-discount-polish-review-${viewport}-${lang}.png`});
+        }
+    }
+    assert.deepEqual(visualErrors, [], 'responsive browser console/page errors');
     console.log('PASS: CZ/EN discount UI, quote busy/error/removal, selection invalidation, floating/review net price and payment quote and retry history/replay (stub transports)');
 } finally { try { await owner.close(); } finally { await server?.close(); } }

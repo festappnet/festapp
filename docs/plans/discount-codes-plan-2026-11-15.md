@@ -1,7 +1,7 @@
 # Slevové kódy pro Festapp Tickets
 
 Datum: 2026-11-15
-Stav: Etapy implementovány a cíleně lokálně ověřeny; důkazy a omezení v discount-codes-RESULT-2026-11-15.md; produkce neprovedena
+Stav: Původní etapy nasazeny pro festapptickets ve verzi 0.20.618+1147. Následná oprava prezentace a porovnání potvrzení je popsána na konci plánu.
 Ověřování implementace: `standard` - ceny, platby, veřejný kontrakt a migrace
 Výchozí revize průzkumu: `a7e52244a`
 
@@ -346,3 +346,26 @@ provedení implementace ani produkční operace neautorizuje.
   ve forwardu 14 po společné foundation. Původní contract-refresh migrace zůstává
   neměnná. Přesný ACL regression zároveň eviduje nové soukromé tabulky, sloupce
   a explicitní revokace veřejného přístupu; nejde o povolení nové autority.
+
+## Oprava podle produkčního ověření 15. 11. 2026
+
+Objednávka s přiznanou slevou mohla ihned zobrazit zastaralé potvrzení, i když
+uložená historie i aktuální cena souhlasily. Důkaz vyvrátil předpoklad, že
+porovnání volitelných názvů míst je již normalizované: historický chybějící
+`spot_group_title` se lišil od obohacené prázdné hodnoty. Etapa projekcí proto
+normalizuje pouze NULL/prázdné názvy místa a skupiny v kanonickém SQL porovnání.
+Skutečné změny názvů a cen stále vyvolají upozornění. Forward
+`20261115180000_discount_confirmation_consistency.sql` nemění objednávky ani
+finanční engine. Regrese ověřuje také skutečný `get_products_for_ticket`.
+
+Správa kódů používá kompaktní standardní dialog a standardní patičku editoru.
+Po uložení načte serverový seznam před zavřením editoru; zobrazuje i nulové
+čerpání. Webová rekapitulace odděluje kód, původní cenu, slevu a výslednou
+částku; tlačítka mají responzivní rozestupy. Historie ukazuje kód a částky
+z neměnného historického snapshotu i při vypnuté funkci.
+
+Ověření následné opravy: 7 cílených Flutter testů (včetně skutečného RPC
+transportu uložení/obnovení při šířkách 390 a 1000), 27 JS testů, SQL
+regrese potvrzení a slev, 3 testy souběhu/retry a 8 testů forward ownerů.
+Izolovaná kontrola prohlížeče pokrývá CZ/EN mobil i desktop, rozestupy a
+zarovnání částek. Nedotýká se produkčních objednávek, aktivace ani e-mailů.

@@ -424,6 +424,14 @@
         "customer_order_changes/commands.sql",
         "customer_order_changes/staff.sql"
       ]
+    },
+    {
+      "migration": "20261115180000_discount_confirmation_consistency.sql",
+      "header": "-- Treat absent and empty optional placement labels equally in confirmation comparisons.",
+      "sources": [
+        "eshop_orders/get_order_change_summary_v1.sql"
+      ],
+      "active": true
     }
   ]
 }
