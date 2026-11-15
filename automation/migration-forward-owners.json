@@ -226,7 +226,9 @@
     {
       "migration": "20261113110000_notification_settings_unit_groups.sql",
       "manifest": "notification-settings-unit-groups-migration.json",
-      "active": true
+      "active": false,
+      "sha256": "0cc9714003f6fdafde7dab67ffd323789feb7bc4ab244e3814c31250da253617",
+      "checkSources": true
     },
     {
       "migration": "20261113123000_notification_payment_channels.sql",
@@ -265,7 +267,9 @@
     {
       "migration": "20261114010000_ticket_wallet_collections.sql",
       "manifest": "ticket-wallet-collections-migration.json",
-      "active": true
+      "active": false,
+      "sha256": "a3a9dc93db3afa58e61e84eb89a83cbaff9602260d9e03824218da510e225814",
+      "checkSources": true
     },
     {
       "migration": "20261114110000_admin_payment_digest_details.sql",
@@ -314,7 +318,7 @@
     },
     {
       "migration": "20261114233000_order_item_terminology.sql",
-      "active": true,
+      "active": false,
       "header": "-- Presentation-only ticket and application terminology from the occasion feature.",
       "sources": [
         "eshop/order_item_terminology.sql",
@@ -322,7 +326,9 @@
         "eshop_waitlist/order_overview.sql",
         "occasion_setup/sale_status.sql",
         "scanning/sessions.sql"
-      ]
+      ],
+      "sha256": "536ae265753dab10f9370f145adeaac2d7ecfeb034b301809e06169d54b78ab9",
+      "checkSources": true
     },
     {
       "migration": "20261115120000_discount_codes.sql",

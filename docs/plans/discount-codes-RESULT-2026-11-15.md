@@ -137,3 +137,13 @@ do autoritativní production Function bundle policy. Bez ní by endpoint nebyl
 vydán v koordinovaném balíku. Existující úplný inventory/bundle kontrakt tuto
 registraci ověřuje. Produkční backend identity a dnešní off-host backup byly
 read-only ověřeny; migrace 12/13/14 dosud nejsou aplikované.
+
+Publikovaný PR: https://github.com/festappnet/festapp/pull/881. Plné GitHub CI
+odhalilo a implementace opravila registraci SQL/native recovery case v obou
+inventářích a evidenci tří starších již nasazených migrací (notification unit
+groups, wallet collections, order item terminology). Jejich původní SQL bytes
+zůstávají shodné s upstreamem; metadata je nyní checksum-pinnují jako historii
+a nové definice vlastní explicitní forwardy. Všechny registrované historické
+migrace i aktivní forwardy prošly společným `verify_forward()`.
+Ochrana main vyžaduje jedno schválení jiným účtem; auto-merge není povolen.
+Bez schválení a přesných main CI gates se rollout neprovede.
