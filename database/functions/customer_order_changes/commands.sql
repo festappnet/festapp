@@ -32,6 +32,7 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extension
 DECLARE o eshop.orders; oc public.occasions; effect text:=p_preview->>'effect'; request_id uuid:=p_existing_request;
  item record; t eshop.tickets; merged jsonb; fields jsonb; result jsonb; request_status text:='open';
 BEGIN
+ IF p_operation='edit' THEN RAISE insufficient_privilege USING MESSAGE='CUSTOMER_ANSWERS_READ_ONLY'; END IF;
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order FOR UPDATE;
  SELECT * INTO STRICT oc FROM public.occasions WHERE id=o.occasion;
  IF effect='edit' THEN

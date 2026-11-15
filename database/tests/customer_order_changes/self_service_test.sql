@@ -16,6 +16,8 @@ BEGIN
  PERFORM assert_false(public.customer_order_operation_enabled_internal(f,'cancel'),'policy cannot replace feature');
  UPDATE public.occasions SET features=features||'[{"code":"customer_self_service","is_enabled":true}]'::jsonb WHERE id=oc;
  PERFORM assert_true(public.customer_order_operation_enabled_internal(f,'cancel'),'both explicit policy and feature permit operation policy gate');
+ PERFORM assert_false(public.customer_order_operation_enabled_internal(f,'edit'),'submitted answers stay locked even if input requests edits');
+ PERFORM assert_eq(public.customer_order_policy_internal(f)#>'{policy,edit,enabled}','false'::jsonb,'saved edit policy stays disabled');
  PERFORM assert_false(public.customer_order_operation_enabled_internal(f,'refund'),'no arbitrary operation');
  PERFORM assert_false(public.customer_order_operation_enabled_internal(f+9999999,'cancel'),'foreign form has no policy');
  SELECT revision INTO rev FROM eshop.customer_order_change_policies WHERE form_id=f;

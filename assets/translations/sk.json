@@ -51,7 +51,7 @@
     "approved": "Cancellation or change accepted; check payment status separately",
     "rejected": "Request rejected",
     "withdrawn": "Request withdrawn",
-    "resolved": "Handled by staff",
+    "resolved": "Vybavené",
     "withdraw": "Withdraw request",
     "response": "Organizer’s response",
     "approve": "Approve and perform",
@@ -90,11 +90,13 @@
     "cancel_selected": "The selected tickets will be cancelled. There is no confirmed payment to refund.",
     "cancel_manual_refund_selected": "The selected tickets will be cancelled. Staff handle any refund separately.",
     "cancel_refund_selected": "The selected tickets will be cancelled and the corresponding available amount reserved for a refund. Money has not yet been returned.",
-    "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval."
+    "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval.",
+    "cancelTickets": "Stornovať vstupenky",
+    "answersLocked": "Odoslané odpovede sú pre zákazníka zamknuté vrátane mena a telefónu. Opravy rieši obsluha."
   },
   "FeatureCustomerSelfService": {
     "title": "Zákaznícka samoobsluha",
-    "description": "Zmeny objednávok z ich existujúceho prehľadu. Jednotlivé operácie a ich pravidlá sa povoľujú samostatne vo formulári."
+    "description": "Storno, refundácie a presuny termínov podľa pravidiel organizátora. Zákazník odoslané odpovede neupravuje."
   },
   "EmailDomainSuffix": {
     "warning": "Koncovku domény .{suffix} nepoznáme. Skontrolujte e-mailovú adresu.",

@@ -55,3 +55,22 @@ test('move selector and confirmation retain target name, date and product breakd
  renderCustomerOrderChanges(host,data,scope,{functions:{invoke:async(_,{body})=>({data:body.action==='resolve'?{code:200,orderId:1,operation:'move',payload:{targetFormId:2}}:{code:200,effect:'move',target,fingerprint:'f'.repeat(64)}})}},async()=>{});
  await tick();await tick();assert.match(host.textContent,/Večerní termín.*2026/);assert.match(host.textContent,/Vstup na večer: 1000 CZK/);
 });
+
+test('partial cancellation sends exactly selected ticket IDs and blocks an empty selection',async t=>{
+ const host=setup(t),data=base(),calls=[];
+ data.people=[{id:1,label:'Jana Nováková'},{id:2,label:'Petr Novák'}];data.orders=[{items:[{ticketId:1,title:'Vstupné',spotTitle:'12'},{ticketId:2,title:'Vstupné',spotTitle:'13'}]}];
+ data.allowedActions[0].tickets=[{id:1},{id:2}];data.allowedActions.push({operation:'edit',enabled:true,fields:[]});
+ renderCustomerOrderChanges(host,data,scope,{functions:{invoke:async(_,{body})=>{calls.push(body);return {data:{code:202}};}}},async()=>{});
+ assert.equal(find(host,'Upravit údaje'),undefined);
+ find(host,'Stornovat vstupenky').click();
+ const boxes=[...host.querySelectorAll('input[type=checkbox]')];assert.equal(boxes.length,2);assert.match(host.textContent,/Jana Nováková.*12/);
+ boxes.forEach(b=>b.checked=false);host.querySelector('textarea').value='Změna plánů';host.querySelector('form').dispatchEvent(new window.Event('submit',{cancelable:true}));await tick();
+ assert.equal(calls.length,0);assert.match(host.textContent,/Vyberte alespoň jednu/);
+ boxes[0].checked=true;host.querySelector('form').dispatchEvent(new window.Event('submit',{cancelable:true}));await tick();assert.deepEqual(calls[0].payload,{reason:'Změna plánů',ticketIds:[1]});
+});
+
+test('partial preview names selected tickets and does not claim the entire order is canceled',async t=>{
+ const host=setup(t),data=base();data.people=[{id:1,label:'Jana Nováková'},{id:2,label:'Petr Novák'}];window.__festappCustomerChangeToken='b'.repeat(64);
+ renderCustomerOrderChanges(host,data,scope,{functions:{invoke:async(_,{body})=>({data:body.action==='resolve'?{code:200,orderId:1,operation:'cancel',payload:{ticketIds:[1]}}:{code:200,effect:'request_cancel',partial:true,ticketIds:[1],fingerprint:'c'.repeat(64)}})}},async()=>{});
+ await tick();await tick();assert.match(host.textContent,/pouze vybraných vstupenek/);assert.match(host.textContent,/Jana Nováková/);assert.doesNotMatch(host.textContent,/Vaše objednávka bude stornována/);
+});

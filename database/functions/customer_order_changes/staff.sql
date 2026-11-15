@@ -40,7 +40,7 @@ BEGIN
  ELSE
   IF nullif(btrim(p_response),'') IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='resolution response required'; END IF;
   -- A manual refund obligation cannot be marked paid by a staff click.
-  IF r.operation='cancel' AND r.status='approved' AND (coalesce((public.payment_method_context_internal(o.id)->>'net')::numeric,0)>CASE WHEN r.ticket_ids IS NULL THEN 0 ELSE o.price END OR public.payment_method_context_internal(o.id)->'invalidIdentity' IS DISTINCT FROM 'false'::jsonb OR coalesce((public.payment_method_context_internal(o.id)->>'pending')::numeric,0)>0) THEN
+  IF r.operation='cancel' AND r.status='approved' AND (coalesce((public.payment_method_context_internal(o.id)->>'net')::numeric,0)>CASE WHEN r.ticket_ids IS NULL OR o.state='storno' THEN 0 ELSE o.price END OR public.payment_method_context_internal(o.id)->'invalidIdentity' IS DISTINCT FROM 'false'::jsonb OR coalesce((public.payment_method_context_internal(o.id)->>'pending')::numeric,0)>0) THEN
    RAISE EXCEPTION 'REFUND_SETTLEMENT_REQUIRED' USING ERRCODE='40001'; END IF;
   UPDATE eshop.customer_order_change_requests SET status='resolved',response=btrim(p_response),decided_by=actor,
    decision_command=p_command,updated_at=clock_timestamp() WHERE id=r.id;

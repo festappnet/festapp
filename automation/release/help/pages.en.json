@@ -208,7 +208,7 @@
     "slug": "customer-self-service",
     "title": "Customer order self-service",
     "seoTitle": "Customer order self-service",
-    "description": "Configure details changes, cancellation approval and reasons, refunds and supported term moves.",
+    "description": "Ticket cancellation, approval, reasons, refunds and date changes. Submitted answers remain locked.",
     "label": "Customer order self-service",
     "preview": "en/customer-self-service/desktop"
   }

@@ -30,9 +30,9 @@ Podrobný předávací záznam obsahuje
   screenshoty a opakovatelný lokální e-mailový walkthrough. Nezávislá revize
   finálního webového rozsahu skončila `ship`; nativní vizuál tím není ověřen.
 
-Ověřování `standard`: prošlo 13 různých cílených SQL souborů, 6 skutečných
-PostgreSQL souběhů, 44 webových testů, 10 Edge/e-mailových testů, 8 bezpečnostních
-migračních kontrol, 7 help kontrol, 4 Flutter widget testy v původní session
+Ověřování `standard`: prošlo 14 různých cílených SQL souborů, 7 skutečných
+PostgreSQL souběhů, 46 webových testů, 10 Edge/e-mailových testů, 8 bezpečnostních
+migračních kontrol, 7 help kontrol, 5 Flutter widget testů v původní session
 i v kanonickém CI vstupu, 1 core URI test a 18 kontrol CI kontraktu. Přesné
 příkazy a hranice důkazů jsou v RESULT. Finální nové klientské soubory mají
 cílený analyzer bez diagnostik. Širší kontrola existujících FormPage/settings
@@ -50,6 +50,24 @@ přehrána pouze v ověřeném disposable lokálním runtime společně se souč
 kanonickými forwards. Zdrojový strom zároveň obsahuje samostatnou implementaci
 slev; její změny zůstaly zachované. Canonical source parity společného stavu
 prošla. Produkční migrace, deploy, aktivace, commit ani push nebyly provedeny.
+
+## Závazné upřesnění před nasazením: všechny odpovědi zamčené
+
+Uživatel výslovně zvolil „nechat zatím zamčené vše“. To nahrazuje dřívější
+návrh zákaznického allowlistu: žádná přímá změna odeslaných odpovědí, včetně
+jména a telefonu, není v tomto vydání podporovaná. Pořadatel ji nemůže zapnout.
+Server odmítá edit challenge, starou write capability i přímé edit potvrzení,
+i kdyby uložená starší policy edit povolovala. Nové policy ukládají explicitní
+edit pravidlo pouze vypnuté. Klienti ignorují starou serverovou edit akci,
+editor samoobsluhy nemá edit přepínač a e-mailový presenter editaci neinzeruje.
+Samostatné běžné oprávnění obsluhy měnit odpovědi zůstává zachované.
+
+Následující starší návrhové body o zákaznickém allowlistu jsou historický
+kontext, nikoli dostupné chování tohoto vydání. Finální etapy 2 a 5 ověřují
+výslovné uzamčení všech odpovědí; pozitivní capability/receipt/souběhové
+kontrakty používají storno nebo pracovní požadavek. Storno, refundace a
+podporované přesuny termínu zůstávají v rozsahu. Přesun pouze přemapuje
+stávající odpovědi podle schváleného doménového mapování; zákazník je neupravuje.
 
 ## Výsledek a produktový rozsah
 
@@ -75,10 +93,32 @@ výslovném zapnutí pořadatel ještě samostatně povoluje:
 
 | Operace | Rozsah první verze |
 |---|---|
-| Úprava údajů | Jméno kupujícího, telefon a explicitně povolené necenové odpovědi objednávky/účastníků. |
-| Storno | Celá objednávka; bez použitých vstupenek. U nezaplacené objednávky bez refundace. |
+| Úprava odpovědí | Pro zákazníka uzamčeno vše, včetně jména a telefonu. Opravy řeší existující oprávněná obsluha. |
+| Storno | Celá objednávka nebo vybrané vstupenky včetně samostatných místenek; bez použitých vybraných vstupenek. U nezaplacené objednávky bez refundace. |
 | Vrácení peněz | Celá dostupná zaplacená částka po stornu, bez storno poplatku. Automaticky jen do původního online zdroje, pokud connector podporuje zápis refundace. Banka/hotovost formou požadavku obsluze. |
 | Přesun termínu | Celá objednávka mezi explicitně propojenými formuláři téže akce, stejné měny a čisté ceny, bez rezervovaných sedadel a změny příjemce/metody platby. |
+
+Upřesnění zadání po prvním předání: zákazník může vybrat konkrétní vstupenky
+ke stornu. Místenka sama storno neblokuje; uvolní se pouze vybrané sedadlo,
+ostatní alokace a QR zůstanou zachované. Nedělitelná prodejní jednotka,
+použitá vybraná vstupenka, immutable tisk nebo faktura stále vyžadují obsluhu.
+Povinný důvod, schválení a lhůta platí pro výběr stejně jako pro celou objednávku.
+
+Dílčí storno využívá stejný soukromý doménový owner jako dosavadní staff bulk
+storno. Staff wrapper zachovává vlastní aktuální oprávnění po zámcích; customer
+boundary navíc kontroluje přesné ticket IDs a zakazuje i sdílené odkazy do jiné
+objednávky. Žádost ukládá přesný výběr pro pozdější schválení. Výběr se váže na
+ověřovací e-mail, fingerprint i receipt. Nepřibývá finanční ledger.
+
+Automatické dílčí storno je podporované u nezaplacené bankovní/hotovostní
+objednávky a při explicitním režimu storna s ručně vyřizovanou refundací
+u plně zaplacené kompatibilní objednávky. Dílčí online refundace/admission,
+záloha, nejednoznačný snapshot a sleva zůstávají scoped požadavkem obsluze.
+Dnešní provider owner vyžaduje pro částečnou refundaci vlastní admission
+rozhodnutí nad skutečnými finančními fakty; nesmí se obejít z nového wrapperu.
+Ruční vyřízení se opírá o stávající bankovní refund preparation a pozorovaný
+settlement. Samotné storno není vrácená platba; zbývající placené vstupenky
+nesmí zabránit uzavření již skutečně vypořádané dílčí refundace.
 
 Přesun do jiné akce není v první verzi automatický: současná finanční a
 reportovací identita je vázaná na původní akci. Zákazník může poslat požadavek
@@ -86,7 +126,7 @@ pořadateli; UI ho nesmí prezentovat jako dokončený přesun. Jde o vědomé o
 návrhu, nikoli o předpoklad, že libovolné dvě akce již tvoří jednu sérii.
 
 Mimo rozsah: změna přístupového/doručovacího e-mailu, bezpečný převod vlastnictví
-nebo přeprodej vstupenky, dílčí storna, výměna konkrétních sedadel, doplatky,
+nebo přeprodej vstupenky, výměna konkrétních sedadel, doplatky,
 výměna měny, automatický bankovní převod a storno poplatky. Změna jména není
 převodem vlastnictví; platí právo pořadatele zakázat ji u jmenných vstupenek.
 

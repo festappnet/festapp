@@ -778,6 +778,11 @@
       "database/tests/client_sync_v1_contract_test.sql",
       "database/tests/client_sync_v1_runtime_test.sql",
       "database/tests/companion_contract_test.sql",
+      "database/tests/customer_order_changes/authorization_test.sql",
+      "database/tests/customer_order_changes/commands_test.sql",
+      "database/tests/customer_order_changes/move_test.sql",
+      "database/tests/customer_order_changes/partial_cancellation_test.sql",
+      "database/tests/customer_order_changes/refund_test.sql",
       "database/tests/customer_order_changes/self_service_test.sql",
       "database/tests/debug_pairing_test.sql",
       "database/tests/demo_ball_prices_test.sql",
@@ -1172,11 +1177,7 @@
       "database/tests/users/profile_ownership_retirement_test.sql",
       "database/tests/users/profile_version_fanout_test.sql",
       "database/tests/users/reception_qr_login_test.sql",
-      "database/tests/users/reset_user_password_permissions_test.sql",
-      "database/tests/customer_order_changes/commands_test.sql",
-      "database/tests/customer_order_changes/authorization_test.sql",
-      "database/tests/customer_order_changes/refund_test.sql",
-      "database/tests/customer_order_changes/move_test.sql"
+      "database/tests/users/reset_user_password_permissions_test.sql"
     ],
     "unselectedOwner": "automation/test_all.sh db"
   },
@@ -1348,6 +1349,7 @@
     "database/tests/customer_order_changes/authorization_test.sql",
     "database/tests/customer_order_changes/commands_test.sql",
     "database/tests/customer_order_changes/move_test.sql",
+    "database/tests/customer_order_changes/partial_cancellation_test.sql",
     "database/tests/customer_order_changes/refund_test.sql",
     "database/tests/customer_order_changes/self_service_test.sql",
     "database/tests/debug_pairing_test.sql",

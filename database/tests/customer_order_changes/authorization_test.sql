@@ -3,76 +3,76 @@
 DO $$
 DECLARE x jsonb:=pg_temp.customer_fixture(); other jsonb:=pg_temp.customer_fixture(); token text; payload jsonb; preview jsonb; command uuid:=extensions.gen_random_uuid(); before_data jsonb; changed boolean;
 BEGIN
- payload:=jsonb_build_object('order',jsonb_build_object(x->>'field','+420 777 111 222'));token:=pg_temp.customer_cap(x,'edit',payload);
+ payload:='{"reason":"Customer request"}'::jsonb;token:=pg_temp.customer_cap(x,'cancel',payload);
  SELECT data INTO before_data FROM eshop.orders WHERE id=(x->>'order')::bigint;
  PERFORM set_config('request.jwt.claim.sub','',true);PERFORM set_config('request.jwt.claim.role','service_role',true);
  SET LOCAL ROLE service_role;
  BEGIN
-  PERFORM public.customer_order_change_gateway('preview',x->>'readToken',NULL,'edit',payload,command);RAISE EXCEPTION 'read token upgraded';
+  PERFORM public.customer_order_change_gateway('preview',x->>'readToken',NULL,'cancel',payload,command);RAISE EXCEPTION 'read token upgraded';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
-  PERFORM public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);RAISE EXCEPTION 'different operation accepted';
+  PERFORM public.customer_order_change_gateway('preview',token,NULL,'move',payload,command);RAISE EXCEPTION 'different operation accepted';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
-  PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit','{"order":{"email":"attacker@example.invalid"}}',command);RAISE EXCEPTION 'changed proposal accepted';
+  PERFORM public.customer_order_change_gateway('preview',token,NULL,'cancel','{"order":{"email":"attacker@example.invalid"}}',command);RAISE EXCEPTION 'changed proposal accepted';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- preview:=public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);
+ preview:=public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);
  RESET ROLE;
  UPDATE eshop.orders SET data=data||'{"phone":"admin update"}' WHERE id=(x->>'order')::bigint;
  SET LOCAL ROLE service_role;
  BEGIN
-  PERFORM public.customer_order_change_gateway('command',token,NULL,'edit',payload,command,preview->>'fingerprint');RAISE EXCEPTION 'stale preview accepted';
+  PERFORM public.customer_order_change_gateway('command',token,NULL,'cancel',payload,command,preview->>'fingerprint');RAISE EXCEPTION 'stale preview accepted';
  EXCEPTION WHEN serialization_failure THEN NULL; END;
  RESET ROLE;
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.client_mutation_receipts WHERE command_id=command),'conflict leaves no committed receipt');
  PERFORM assert_true((SELECT consumed_by IS NULL FROM eshop.customer_order_change_capabilities WHERE token_hash=encode(extensions.digest(token,'sha256'),'hex')),'conflict does not consume capability');
  UPDATE eshop.customer_order_change_capabilities SET organization_id=(other->>'organization')::bigint WHERE token_hash=encode(extensions.digest(token,'sha256'),'hex');
  SET LOCAL ROLE service_role;
- BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);RAISE EXCEPTION 'foreign tenant credential accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);RAISE EXCEPTION 'foreign tenant credential accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RESET ROLE;
- token:=pg_temp.customer_cap(x,'edit',payload);
+ token:=pg_temp.customer_cap(x,'cancel',payload);
  UPDATE eshop.customer_order_change_capabilities SET expires_at=clock_timestamp()-interval '1 second' WHERE token_hash=encode(extensions.digest(token,'sha256'),'hex');
  SET LOCAL ROLE service_role;
- BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);RAISE EXCEPTION 'expired accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);RAISE EXCEPTION 'expired accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RESET ROLE;
- token:=pg_temp.customer_cap(x,'edit',payload);
+ token:=pg_temp.customer_cap(x,'cancel',payload);
  UPDATE eshop.waitlist_capabilities SET revoked_at=clock_timestamp() WHERE token_hash=encode(extensions.digest(x->>'readToken','sha256'),'hex');
  SET LOCAL ROLE service_role;
- BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);RAISE EXCEPTION 'revoked parent accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);RAISE EXCEPTION 'revoked parent accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RESET ROLE;
  PERFORM assert_eq((SELECT data FROM eshop.orders WHERE id=(other->>'order')::bigint)->>'phone',NULL::text,'foreign order untouched');
 END $$;
 DO $$
 DECLARE x jsonb:=pg_temp.customer_fixture(); payload jsonb; token text; preview jsonb; command uuid:=extensions.gen_random_uuid(); result jsonb;
 BEGIN
- payload:=jsonb_build_object('order',jsonb_build_object(x->>'field','123'));token:=pg_temp.customer_cap(x,'edit',payload);
+ payload:='{"reason":"Customer request"}'::jsonb;token:=pg_temp.customer_cap(x,'cancel',payload);
  PERFORM set_config('request.jwt.claim.sub','',true);PERFORM set_config('request.jwt.claim.role','service_role',true);
  SET LOCAL ROLE service_role;
- preview:=public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);
- result:=public.customer_order_change_gateway('command',token,NULL,'edit',payload,command,preview->>'fingerprint');
+ preview:=public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);
+ result:=public.customer_order_change_gateway('command',token,NULL,'cancel',payload,command,preview->>'fingerprint');
  RESET ROLE;
  -- Replay is not a second authorization path around expiry, policy or revocation.
  UPDATE eshop.customer_order_change_capabilities SET expires_at=now()-interval '1 second' WHERE consumed_by=command;
  SET LOCAL ROLE service_role;
- BEGIN PERFORM public.customer_order_change_gateway('command',token,NULL,'edit',payload,command,preview->>'fingerprint');RAISE EXCEPTION 'expired receipt disclosed';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.customer_order_change_gateway('command',token,NULL,'cancel',payload,command,preview->>'fingerprint');RAISE EXCEPTION 'expired receipt disclosed';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RESET ROLE;
  PERFORM assert_eq((SELECT count(*) FROM eshop.customer_order_change_events WHERE command_id=command),1::bigint,'one effect despite replay denial');
 END $$;
 DO $$
 DECLARE x jsonb:=pg_temp.customer_fixture(); token text; payload jsonb; preview jsonb; command uuid:=extensions.gen_random_uuid(); result jsonb;
 BEGIN
- payload:=jsonb_build_object('order',jsonb_build_object(x->>'field','123'));token:=pg_temp.customer_cap(x,'edit',payload);
+ payload:='{"reason":"Customer request"}'::jsonb;token:=pg_temp.customer_cap(x,'cancel',payload);
  UPDATE public.unit_users SET is_editor=true WHERE unit=(SELECT unit FROM public.occasions WHERE id=(x->>'occasion')::bigint) AND "user"=(x->>'actor')::uuid;
  PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',(x->>'occasion')::bigint,'features','[{"code":"form","is_enabled":true},{"code":"customer_self_service","is_enabled":false}]'::jsonb));
  PERFORM public.update_occasion_internal_v1(jsonb_build_object('id',(x->>'occasion')::bigint,'features','[{"code":"form","is_enabled":true},{"code":"customer_self_service","is_enabled":true}]'::jsonb));
  PERFORM set_config('request.jwt.claim.sub','',true);PERFORM set_config('request.jwt.claim.role','service_role',true);
  SET LOCAL ROLE service_role;
- BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);RAISE EXCEPTION 'off/on resurrected credential';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);RAISE EXCEPTION 'off/on resurrected credential';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RESET ROLE;
- token:=pg_temp.customer_cap(x,'edit',payload);
+ token:=pg_temp.customer_cap(x,'cancel',payload);
  UPDATE eshop.customer_order_change_policies SET revision=revision+1 WHERE form_id=(x->>'form')::bigint;
  SET LOCAL ROLE service_role;
- BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);RAISE EXCEPTION 'old policy accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'cancel',payload,command);RAISE EXCEPTION 'old policy accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RESET ROLE;
 END $$;
 DO $$
@@ -116,7 +116,7 @@ BEGIN
   token:=pg_temp.customer_cap(x,'edit',payload);
   SET LOCAL ROLE service_role;
   BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);RAISE EXCEPTION 'forbidden fields accepted';
-  EXCEPTION WHEN invalid_parameter_value THEN NULL;END;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;END;
   RESET ROLE;
  END LOOP;
  payload:=jsonb_build_object('order',jsonb_build_object(x->>'field','123'));
@@ -124,11 +124,27 @@ BEGIN
  UPDATE public.form_fields SET is_hidden=true WHERE id=(x->>'field')::bigint;
  SET LOCAL ROLE service_role;
  BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,command);RAISE EXCEPTION 'now-hidden field accepted';
- EXCEPTION WHEN invalid_parameter_value THEN NULL;END;
+ EXCEPTION WHEN insufficient_privilege THEN NULL;END;
  RESET ROLE;
  -- Invoice repair is represented as support work, never an automatic mutation.
  UPDATE eshop.orders SET data=data||'{"invoice_id":"fixture-existing-invoice"}' WHERE id=(x->>'order')::bigint;
  result:=public.preview_customer_order_change_internal((x->>'order')::bigint,'cancel','{}');
  PERFORM assert_eq(result->>'effect','request_cancel','existing invoice requires staff review');
  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=(x->>'order')::bigint),'ordered','preview does not cancel invoiced order');
+END $$;
+DO $$
+DECLARE x jsonb:=pg_temp.customer_fixture(); token text; payload jsonb:=jsonb_build_object('order',jsonb_build_object(x->>'field','Updated phone')); before_data jsonb;
+BEGIN
+ -- A legacy enabled row and an already-issued credential cannot restore edits.
+ UPDATE eshop.customer_order_change_policies SET policy=jsonb_set(policy,'{edit}',jsonb_build_object('enabled',true,'allowed_until',now()+interval '1 day','fields',jsonb_build_array(jsonb_build_object('id',x->'field','type','phone')))) WHERE form_id=(x->>'form')::bigint;
+ token:=pg_temp.customer_cap(x,'edit',payload);
+ SELECT data INTO before_data FROM eshop.orders WHERE id=(x->>'order')::bigint;
+ PERFORM assert_false(public.customer_order_operation_enabled_internal((x->>'form')::bigint,'edit'),'global answer lock wins over old enabled policy');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM jsonb_array_elements(public.customer_order_actions_internal((x->>'order')::bigint)) a WHERE a->>'operation'='edit'),'customer action projection never offers edits');
+ PERFORM set_config('request.jwt.claim.sub','',true);PERFORM set_config('request.jwt.claim.role','service_role',true);
+ SET LOCAL ROLE service_role;
+ BEGIN PERFORM public.customer_order_change_gateway('challenge_context',x->>'readToken',(x->>'order')::bigint,'edit',payload);RAISE EXCEPTION 'edit challenge issued';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ BEGIN PERFORM public.customer_order_change_gateway('preview',token,NULL,'edit',payload,extensions.gen_random_uuid());RAISE EXCEPTION 'legacy edit credential accepted';EXCEPTION WHEN insufficient_privilege THEN NULL;END;
+ RESET ROLE;
+ PERFORM assert_eq((SELECT data FROM eshop.orders WHERE id=(x->>'order')::bigint),before_data,'all submitted answers remain unchanged');
 END $$;

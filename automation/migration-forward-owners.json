@@ -411,6 +411,17 @@
       "sources": [
         "eshop_forms/form_settings.sql"
       ]
+    },
+    {
+      "migration": "20261115160000_customer_self_service_completion.sql",
+      "active": true,
+      "header": "-- Complete selected-ticket customer cancellation validation; preserve published foundation bytes.",
+      "sources": [
+        "customer_order_changes/policy.sql",
+        "customer_order_changes/preview.sql",
+        "customer_order_changes/commands.sql",
+        "customer_order_changes/staff.sql"
+      ]
     }
   ]
 }

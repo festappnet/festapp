@@ -8,7 +8,7 @@ const available = (
 ) => [
   ...new Set(
     actions.filter((a) =>
-      a.enabled === true && ["edit", "cancel", "move"].includes(a.operation)
+      a.enabled === true && ["cancel", "move"].includes(a.operation)
     ).map((a) => a.operation),
   ),
 ];
@@ -16,12 +16,10 @@ export function overviewCopy(lang: string, actions: OverviewAction[] = []) {
   const en = lang === "en", ops = available(actions);
   const names: Record<string, string> = en
     ? {
-      edit: "edit details",
       cancel: "request cancellation",
       move: "request a date change",
     }
     : {
-      edit: "upravit údaje",
       cancel: "požádat o storno",
       move: "požádat o změnu termínu",
     };

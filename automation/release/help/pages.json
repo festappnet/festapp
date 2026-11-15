@@ -258,7 +258,7 @@
     "slug": "zakaznicka-samoobsluha",
     "title": "Zákaznická samoobsluha objednávky",
     "seoTitle": "Zákaznická samoobsluha objednávky",
-    "description": "Pravidla změn údajů, schvalovaného storna s důvodem, refundací a podporovaných přesunů termínu.",
+    "description": "Pravidla storna vstupenek, schvalování, důvodů, refundací a přesunů termínu. Odeslané odpovědi zůstávají zamčené.",
     "label": "Zákaznická samoobsluha objednávky",
     "preview": "cs/customer-self-service/desktop"
   }
