@@ -37,9 +37,9 @@ test('Android CI tracks and pins the Flutter 3.50 Gradle 9.5.0 wrapper', () => {
   );
 });
 
-test('Android plugin and Kotlin versions match the Flutter 3.50 toolchain', () => {
+test('Android plugin includes the JDK 17 lint fix while retaining the Flutter 3.50 toolchain', () => {
   const settings = fs.readFileSync(path.join(root, 'android/settings.gradle'), 'utf8');
-  assert.match(settings, /com\.android\.application" version "9\.3\.1"/);
+  assert.match(settings, /com\.android\.application" version "9\.3\.2"/);
   assert.match(settings, /org\.jetbrains\.kotlin\.android" version "2\.4\.20"/);
 });
 
