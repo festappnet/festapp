@@ -1,6 +1,6 @@
 # Joomla: vstupenky.online / Festapp Tickets
 
-Česká distribuce **vstupenky.online 1.0.5** a samostatná globální varianta 1.0.2
+Česká distribuce **vstupenky.online 1.0.6** a samostatný globální kandidát 1.0.3
 ze společného zdroje. Toto vydání se týká pouze vstupenky.online. Finální český balíček má název
 [vstupenky.online.zip](dist/vstupenky.online.zip). Kandidáti obou značek jsou
 v [artifacts/](artifacts/); SHA-256 a vstupní/souborové manifesty obsahuje

@@ -1,5 +1,20 @@
 # vstupenky.online - publikovatelnost
 
+## Centrální import souhlasu - vydání 1.0.9
+
+Toto vydání používá konfiguraci exportovanou z nastavení pořadatele. Interní
+ID a revize se v doplňku ručně nenastavují; aktuální schválení, verzi a
+odvolání ověřuje služba. Kompatibilní backend a helper jsou nasazené na
+vstupenky.online od softwarové generace 0.20.613+1140. Předchozí veřejná verze
+ověřená před přípravou tohoto vydání byla 1.0.8.
+
+Publikační ověření musí být svázané s přesným novým ZIPem a aktuálními
+zdrojovými vstupy podle `SUBMISSION.md`; historické výsledky níže je
+nenahrazují. Veřejné vydání a dostupnost aktualizace dokládá až readback
+skutečného katalogu, ZIPu a případného update feedu.
+
+## Historické výsledky
+
 ## Vydání 1.0.4 po schválení hostingu - 2026-11-06
 
 Hosting žádosti byl schválen po review 1.0.3. Publikovaný GitHub ZIP 1.0.4 má

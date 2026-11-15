@@ -103,5 +103,5 @@ finally:
     edit({'url':'https://vstupenky.online/form/embedded-synthetic'})
     edit({'url':'https://vstupenky.online/form/embedded-synthetic'}, article=True)
     run('close')
-(ROOT / 'evidence/browser.json').write_text(json.dumps({'boundary':'vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59941; international remote requests blocked; no purchase submitted','cases':cases},indent=2)+'\n')
+(ROOT / 'evidence/browser.json').write_text(json.dumps({'boundary':'vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59931; international remote requests blocked; no purchase submitted','cases':cases},indent=2)+'\n')
 print('PASS mobile/keyboard/auto-height/seat-selector/blocked-helper browser checks')

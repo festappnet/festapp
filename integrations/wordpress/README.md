@@ -1,5 +1,20 @@
 # vstupenky.online a Festapp Tickets pro WordPress
 
+## Vydání 1.0.9 - centrální import voleb cookies
+
+Český balíček vstupenky.online 1.0.9 importuje jedinou konfiguraci z nastavení
+pořadatele. Rozsah, revizi, potvrzení a odvolání vlastní server; doplněk
+neobsahuje ruční editor interních ID a revizí. Služba a společný helper jsou
+kompatibilní od generace 0.20.613+1140. Předchozí veřejná verze ověřená před
+přípravou tohoto vydání byla 1.0.8. Publikace se týká stávajícího českého slugu;
+globální kandidát Festapp Tickets 1.0.3 zůstává oddělený.
+
+Přesný ZIP, Plugin Check, WPCS, instalace a SVN staging musí projít aktuální
+branou podle [SUBMISSION.md](SUBMISSION.md). Veřejné vydání se potvrzuje
+porovnáním skutečného katalogového ZIPu s ověřenými soubory.
+
+## Historické publikační důkazy
+
 Oficiální české vydání **1.0.4** je dostupné v
 [katalogu WordPress.org](https://wordpress.org/plugins/vstupenky-online/).
 SVN revize 3787697 obsahuje trunk, neměnný tag 1.0.4 a katalogové obrázky;
