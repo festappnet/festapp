@@ -87,6 +87,7 @@ BEGIN
   'capabilities',jsonb_build_object('write',coalesce(public.can_write_orders(o.occasion),false),'allowedActions',actions),
   'payment',public.customer_order_payment_internal(o.id)-'transactions',
   'paymentOperations',public.payment_method_context_internal(o.id),
+  'customerRequests',public.customer_order_change_requests_internal(o.id,public.can_write_orders(o.occasion)),
   -- Authorized admin metadata stays readable after payment. Never issue or
   -- regenerate instructions as a side effect of viewing an order.
   'bankPaymentDetails',(SELECT jsonb_build_object(

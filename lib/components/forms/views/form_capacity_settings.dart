@@ -83,6 +83,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
   late bool _limited;
   late bool _waitlist;
   late bool _showRemaining;
+  late bool _showWaitlistCount;
   bool get _blocked =>
       (widget.form.definition.capacity?.waitingPeople ?? 0) > 0 ||
       (widget.form.definition.capacity?.offeredPlaces ?? 0) > 0;
@@ -93,6 +94,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
     _limited = widget.form.definition.participantCapacity != null;
     _waitlist = widget.form.definition.waitlistEnabled;
     _showRemaining = widget.form.definition.showRemainingCapacity;
+    _showWaitlistCount = widget.form.definition.showWaitlistCount;
     _capacity = TextEditingController(
         text: widget.form.definition.participantCapacity?.toString() ?? '');
     final hours =
@@ -122,6 +124,8 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
       waitlistOfferDurationSeconds:
           _limited && _waitlist ? _durationSeconds : null,
     );
+    widget.form.definition = widget.form.definition
+        .withShowWaitlistCount(_showWaitlistCount);
     Navigator.of(context).pop(true);
   }
 
@@ -219,6 +223,13 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                           : (value) => setState(
                                               () => _waitlist = value)),
                                   if (_waitlist) ...[
+                                    SwitchListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(WaitlistStrings.showCount),
+                                        subtitle: Text(WaitlistStrings.showCountHelp),
+                                        value: _showWaitlistCount,
+                                        onChanged: (value) => setState(
+                                            () => _showWaitlistCount = value)),
                                     const SizedBox(height: 16),
                                     TextFormField(
                                         controller: _hours,

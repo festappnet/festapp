@@ -64,13 +64,14 @@ export class WaitlistCommands {
     async command(operation, payload) {
         return this._invoke('waitlist-commands', { operation, payload });
     }
-    async accept(scope, ticketIds, orderDetails) {
+    async accept(scope, ticketIds, orderDetails, options = {}) {
         return this._invoke('send-ticket-order', {
             waitlistAcceptance: { ...scope, ticketIds }, orderDetails,
-        });
+        }, options);
     }
-    async _invoke(endpoint, body) {
+    async _invoke(endpoint, body, {reusePendingOnly = false} = {}) {
         const key = JSON.stringify(canonicalCommandPayload([endpoint, body]));
+        if (reusePendingOnly && !this.pending.has(key)) throw Object.assign(new Error('PAYMENT_RECOVERY_REQUIRED'), {data:{code:409,errorCode:'ORDER_RECOVERY_REQUIRED'}});
         const commandId = this.pending.get(key) || crypto.randomUUID();
         this.pending.set(key, commandId);
         const { data, error } = await this.client.functions.invoke(endpoint, {

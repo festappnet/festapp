@@ -20,6 +20,71 @@ import 'package:sembast/sembast.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('discount recovery reuses the pending receipt and cannot allocate a replacement UUID', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'festapp-discount-recovery-',
+    );
+    final provider = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = _Documents(directory.path);
+    addTearDown(() async {
+      await StorageHelper.closeDatabase('default.db');
+      PathProviderPlatform.instance = provider;
+      await directory.delete(recursive: true);
+    });
+    final payload = {
+      'form': 'form-key',
+      'ticket': [],
+      'discount': {'code': 'LAST', 'fingerprint': 'a' * 64},
+    };
+    final first = await ClientCommandIdentity.claimIntent(
+      'ticket_order',
+      payload,
+      principalBinding: 'backend:buyer',
+    );
+    expect(
+      await ClientCommandIdentity.claimIntent(
+        'ticket_order',
+        payload,
+        principalBinding: 'backend:buyer',
+        requirePending: true,
+      ),
+      first,
+    );
+    await expectLater(
+      ClientCommandIdentity.claimIntent(
+        'ticket_order',
+        {'form': 'changed'},
+        principalBinding: 'backend:buyer',
+        requirePending: true,
+      ),
+      throwsStateError,
+    );
+    await expectLater(
+      ClientCommandIdentity.claimIntent(
+        'ticket_order',
+        payload,
+        principalBinding: 'backend:other-buyer',
+        requirePending: true,
+      ),
+      throwsStateError,
+    );
+    await ClientCommandIdentity.completeIntent(
+      'ticket_order',
+      payload,
+      commandId: first,
+      principalBinding: 'backend:buyer',
+    );
+    await expectLater(
+      ClientCommandIdentity.claimIntent(
+        'ticket_order',
+        payload,
+        principalBinding: 'backend:buyer',
+        requirePending: true,
+      ),
+      throwsStateError,
+    );
+  });
+
   test('contact recovery after reload reuses the committed request and clears its durable intent', () async {
     final directory = await Directory.systemTemp.createTemp(
       'festapp-contact-recovery-',

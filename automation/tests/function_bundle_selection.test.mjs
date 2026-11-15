@@ -70,3 +70,27 @@ test('every canonical source Function is explicitly classified by the production
  assert.equal(Object.hasOwn(policy.edge_functions,'apple-wallet'),true);
  assert.equal(Object.hasOwn(policy.canonical_function_security.resolved,'apple-wallet'),true);
 });
+
+test('full bundle installer upgrades observed legacy router limits and rejects unknown limits', t => {
+ const source=readFileSync(resolve('automation/hetzner-supabase/runtime/install-production-function-bundle.sh'),'utf8');
+ const start=source.indexOf("if grep -Eq '^[[:space:]]*const memoryLimitMb");
+ const end=source.indexOf('\nfi\n[[ -z ',start);
+ assert(start>=0&&end>start,'isolate the actual staged-router limit checks');
+ const patch=source.slice(start,end);
+ const stage=mkdtempSync(join(tmpdir(),'festapp-router-limits-'));
+ t.after(()=>rmSync(stage,{recursive:true,force:true}));
+ mkdirSync(join(stage,'main'));
+ // Exercise the same sed expressions with BSD's explicit empty backup suffix.
+ const nativeSed=process.platform==='darwin' ? "sed() { if [[ $1 == -Ei ]]; then shift; command sed -E -i '' \"$@\"; else command sed \"$@\"; fi; }\n" : '';
+ const run=(memory,timeout)=>{
+  writeFileSync(join(stage,'main/index.ts'),`  const memoryLimitMb = ${memory}\n  const workerTimeoutMs = ${timeout}\n  const requestAbsentTimeoutMs = 60_000\n`);
+  return spawnSync('bash',['-c','set -euo pipefail\nfail() { echo "$*" >&2; exit 1; }\n'+nativeSed+patch],{encoding:'utf8',env:{...process.env,STAGE:stage}});
+ };
+ for(const [memory,timeout] of [['150','1 * 60 * 1000'],['256','400_000'],['512','7 * 60 * 1000']]) {
+  const result=run(memory,timeout);
+  assert.equal(result.status,0,result.stderr);
+  assert.equal(readFileSync(join(stage,'main/index.ts'),'utf8'),'  const memoryLimitMb = 512\n  const workerTimeoutMs = 7 * 60 * 1000\n  const requestAbsentTimeoutMs = 60_000\n');
+ }
+ assert.notEqual(run('1024','400_000').status,0);
+ assert.notEqual(run('512','300_000').status,0);
+});

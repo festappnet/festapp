@@ -46,6 +46,7 @@ class ClientCommandIdentity {
     String? principalBinding,
     String? scopeBinding,
     String? requestJson,
+    bool requirePending = false,
   }) async {
     final key = _pendingKey(namespace, payload);
     final activeKey = scopeBinding == null
@@ -55,6 +56,9 @@ class ClientCommandIdentity {
     return db.transaction((transaction) async {
       final store = StoreRef.main();
       var commandId = await store.record(key).get(transaction) as String?;
+      if (requirePending && (commandId == null || commandId.isEmpty)) {
+        throw StateError('PAYMENT_RECOVERY_REQUIRED');
+      }
       if (principalBinding != null) {
         final previousBinding = await store
             .record('$key:principal')

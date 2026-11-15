@@ -1,3 +1,4 @@
+import '../components/discount_codes/discount_codes_cases.dart' as discounts;
 import '../support/register_client_suites.dart';
 import '../components/map/map_surface_widget_cases.dart' as suite0;
 import '../components/forms/forms_contract_widget_cases.dart' as suite1;
@@ -15,6 +16,7 @@ import '../components/blueprint/blueprint_unit_cases.dart' as suite9;
 
 void main() {
   registerClientSuites({
+    'discount_codes': discounts.main,
     'map_surface_widget': suite0.main,
     'forms_contract_widget': suite1.main,
     'email_delivery_widget': suite2.main,

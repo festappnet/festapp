@@ -136,7 +136,12 @@ SET search_path = public, extensions
          END IF;
 
          UPDATE public.occasions
-            SET updated_at  = now,
+            SET customer_self_service_epoch=customer_self_service_epoch+CASE
+                  WHEN (SELECT coalesce(jsonb_agg(f ORDER BY f::text),'[]'::jsonb) FROM jsonb_array_elements(coalesce(old_features,'[]')) f WHERE f->>'code'='customer_self_service')
+                    IS DISTINCT FROM
+                    (SELECT coalesce(jsonb_agg(f ORDER BY f::text),'[]'::jsonb) FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='customer_self_service')
+                  THEN 1 ELSE 0 END,
+                updated_at  = now,
                 title       = COALESCE(input_data->>'title', title),
                 description = COALESCE(input_data->>'description', description),
                 link        = public.reserve_public_link_internal('occasion',occ_id,input_data->>'link',false),

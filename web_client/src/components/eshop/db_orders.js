@@ -3,13 +3,13 @@ import { claimTicketOrderIdentity, terminalOrderResponse } from './ticket_order_
 import { withCheckoutOrigin } from '../../services/checkout_origin.js';
 
 export class DbOrders {
-    static async sendOrder(orderData) {
+    static async sendOrder(orderData, {reusePendingOnly = false} = {}) {
         orderData = withCheckoutOrigin(orderData);
         const client = SupabaseService.getClient();
         if (!client) throw new Error('Supabase client not initialized');
         const session = await client.auth.getSession();
         if (session.error) throw session.error;
-        const intent = await claimTicketOrderIdentity(SupabaseService.endpoint, orderData, session.data?.session?.user?.id);
+        const intent = await claimTicketOrderIdentity(SupabaseService.endpoint, orderData, session.data?.session?.user?.id, undefined, {requirePending:reusePendingOnly});
         // A lost response cannot prove that the server rejected the order.
         // Preserve the pending identity so an in-page retry replays this intent.
         let response;

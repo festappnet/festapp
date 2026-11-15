@@ -1,3 +1,11 @@
+import 'package:festapp_core/formatting.dart';
+import 'dart:convert';
+
+import 'package:fstapp/components/features/feature_constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/components/discount_codes/discount_strings.dart';
+import 'package:fstapp/components/discount_codes/discount_code_entry.dart';
+
 import '../form_opening_timer.dart';
 import '../sale_opening_location_stub.dart'
     if (dart.library.js_interop) '../sale_opening_location_web.dart';
@@ -29,7 +37,6 @@ import 'customer_order_overview.dart';
 import 'package:fstapp/components/payments/payment_browser_stub.dart'
     if (dart.library.html) 'package:fstapp/components/payments/payment_browser_web.dart'
     if (dart.library.js_interop) 'package:fstapp/components/payments/payment_browser_web.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/waitlist_commands.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/components/forms/models/holder_models/form_ticket_model.dart';
@@ -123,6 +130,81 @@ class _FormPageState extends State<FormPage> {
   var _formKey = GlobalKey<FormBuilderState>();
   final ScrollController _scrollController = ScrollController();
 
+  final _discountCodeController = TextEditingController();
+  Map<String, dynamic>? _discountQuote;
+  String? _discountError;
+  bool _discountBusy = false;
+  bool get _discountEnabled =>
+      form != null &&
+      !form!.demoSimulation &&
+      (!form!.definition.isWaitlist || _offerBundle != null) &&
+      FeatureService.isFeatureEnabled(
+        FeatureConstants.discountCodes,
+        features: form!.occasion?.features,
+      );
+
+  Future<bool> _quoteDiscount() async {
+    if (_discountCodeController.text.trim().isEmpty) {
+      _discountQuote = null;
+      return true;
+    }
+    if (_discountBusy || formHolder == null) return false;
+    setState(() {
+      _discountBusy = true;
+      _discountError = null;
+    });
+    try {
+      _formKey.currentState?.save();
+      final quotedHolder = formHolder!;
+      final input = FormHelper.replaceSpotWithId(
+        FormHelper.getDataFromForm(quotedHolder),
+      )..['form'] = form!.definition.key;
+      final selection = jsonEncode(input['ticket']);
+      final quotedCode = _discountCodeController.text.trim();
+      input['discount'] = {'code': quotedCode};
+      final response = await Supabase.instance.client.rpc(
+        'quote_order_discount',
+        params: {'p_input': input},
+      );
+      if (!mounted ||
+          formHolder != quotedHolder ||
+          quotedCode != _discountCodeController.text.trim())
+        return false;
+      final current = FormHelper.replaceSpotWithId(
+        FormHelper.getDataFromForm(quotedHolder),
+      );
+      if (jsonEncode(current['ticket']) != selection) {
+        setState(() {
+          _discountQuote = null;
+          _discountError = DiscountStrings.text('changed');
+        });
+        return false;
+      }
+      if (response['code'] != 200) {
+        setState(() {
+          _discountQuote = null;
+          _discountError = DiscountStrings.text(
+            response['reason'] ?? 'invalid',
+          );
+        });
+        return false;
+      }
+      setState(
+        () => _discountQuote = Map<String, dynamic>.from(response['quote']),
+      );
+      return true;
+    } catch (_) {
+      if (mounted)
+        setState(() {
+          _discountQuote = null;
+          _discountError = DiscountStrings.text('invalid');
+        });
+      return false;
+    } finally {
+      if (mounted) setState(() => _discountBusy = false);
+    }
+  }
+
   bool _isSeatReservationVisible = false;
   bool _isOrderPreviewVisible = false;
   Completer<List<BlueprintSeat>?>? _seatReservationCompleter;
@@ -135,6 +217,7 @@ class _FormPageState extends State<FormPage> {
 
   @override
   void dispose() {
+    _discountCodeController.dispose();
     _popStateSubscription?.cancel();
     _saleOpeningTimer?.cancel();
     formSession?.dispose();
@@ -370,7 +453,11 @@ class _FormPageState extends State<FormPage> {
                 Icon(Icons.local_activity, color: Colors.white, size: 24),
                 const SizedBox(width: 10),
                 FormTotalPrice(
-                  amount: formSession?.totalPrice ?? 0,
+                  amount:
+                      (_discountQuote?['net'] as num?)?.toDouble() ??
+                      formSession?.totalPrice ??
+                      0,
+                  discounted: _discountQuote != null,
                   currencyCode: formHolder!.controller!.currencyCode,
                   payments: form?.definition.payments,
                   style: const TextStyle(
@@ -403,6 +490,16 @@ class _FormPageState extends State<FormPage> {
     if (formHolder?.controller?.reservationPending == true) return;
     if (_paymentReviewRequired) {
       await _applyChangedCapacity();
+      return;
+    }
+    if (!_discountEnabled && _discountCodeController.text.trim().isNotEmpty) {
+      setState(() {
+        _discountCodeController.clear();
+        _discountQuote = null;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(DiscountStrings.text('changed'))));
       return;
     }
     TextInput.finishAutofillContext();
@@ -479,7 +576,18 @@ class _FormPageState extends State<FormPage> {
       }
       return;
     }
-    if (valid) {
+    if (valid &&
+        _discountCodeController.text.trim().isNotEmpty &&
+        !await _quoteDiscount())
+      return;
+    if (valid && mounted) {
+      final confirmedDiscount = _discountQuote == null
+          ? null
+          : Map<String, dynamic>.unmodifiable(_discountQuote!);
+      final confirmedTotal =
+          (confirmedDiscount?['net'] as num?)?.toDouble() ??
+          formSession?.totalPrice ??
+          0;
       RouterService.pushOverlayState('order-preview');
       setState(() {
         _isOrderPreviewVisible = true;
@@ -495,11 +603,12 @@ class _FormPageState extends State<FormPage> {
             child: OrderPreviewScreen(
               organizationIdentity: form?.organizationIdentity,
               formHolder: formHolder!,
-              totalPrice: formSession?.totalPrice ?? 0,
+              totalPrice: confirmedTotal,
+              discount: confirmedDiscount,
               payments: form!.definition.payments,
               paymentSurface: paymentSurface(),
               metaSurchargeSums: formSession?.metaSurchargeSums ?? const {},
-              onSendPressed: _sendOrder,
+              onSendPressed: () => _sendOrder(confirmedDiscount),
               // When user clicks Close in UI, we just pop the sheet.
               // verification of _isOrderPreviewVisible in whenComplete will handle history sync.
 
@@ -527,7 +636,7 @@ class _FormPageState extends State<FormPage> {
     if (_scrollController.hasClients) _scrollController.jumpTo(0.0);
   }
 
-  Future<void> _sendOrder() async {
+  Future<void> _sendOrder(Map<String, dynamic>? confirmedDiscount) async {
     if (_isLoading ||
         formHolder == null ||
         form == null ||
@@ -550,12 +659,20 @@ class _FormPageState extends State<FormPage> {
     data[FormMetadata.metaSecret] =
         formHolder?.controller?.secret ?? form!.definition.secret;
     data[FormMetadata.metaForm] = form!.definition.key;
+    if (confirmedDiscount != null)
+      data['discount'] = {
+        'code': confirmedDiscount['code'],
+        'fingerprint': confirmedDiscount['fingerprint'],
+      };
     if (formHolder!.paymentType != null) {
       data['payment_type'] = formHolder!.paymentType;
     }
     if (paymentConnectors.containsHosted(formHolder!.paymentMethod)) {
       data['payment_method'] = formHolder!.paymentMethod;
-      data['client_capabilities'] = ['cash_reservations', 'no_payment_deadline'];
+      data['client_capabilities'] = [
+        'cash_reservations',
+        'no_payment_deadline',
+      ];
       data['payment_type'] = 'full';
       data['expected_payment_amount_minor'] = formHolder!.paymentAmountMinor;
       data['expected_payment_currency'] = formHolder!.paymentCurrency;
@@ -570,6 +687,7 @@ class _FormPageState extends State<FormPage> {
     final submittedCapability = submittingController.capability;
     if (!mounted) return;
 
+    var submissionAttempted = false;
     await showGeneralDialog(
       context: context,
       barrierDismissible: false, // Disable dismissing by tapping outside
@@ -578,7 +696,11 @@ class _FormPageState extends State<FormPage> {
         organizationIdentity: form?.organizationIdentity,
         overviewAvailable: _overviewScope != null,
         occasionTitle: form!.occasion?.title ?? form!.definition.title,
+        retryUnknownOutcome: confirmedDiscount != null,
         orderFutureFunction: () async {
+          final reusePendingOnly =
+              confirmedDiscount != null && submissionAttempted;
+          submissionAttempted = true;
           if (_offerId != null) {
             try {
               final result = await _waitlist.accept(
@@ -586,6 +708,7 @@ class _FormPageState extends State<FormPage> {
                 token: _waitlistToken,
                 ticketIds: _selectedTicketIds.toList(),
                 orderDetails: data,
+                reusePendingOnly: reusePendingOnly,
               );
               return FunctionResponse(
                 status: 200,
@@ -595,13 +718,25 @@ class _FormPageState extends State<FormPage> {
                 },
               );
             } on WaitlistCommandException catch (e) {
+              if (mounted &&
+                  [
+                    'DISCOUNT_QUOTE_CHANGED',
+                    'DISCOUNT_INVALID',
+                  ].contains(e.data['errorCode'])) {
+                setState(() => _paymentChangeReason = e.data['errorCode']);
+              }
               return FunctionResponse(status: 200, data: e.data);
             }
           }
-          final response = await DbOrders.sendTicketOrder(data);
+          final response = await DbOrders.sendTicketOrder(
+            data,
+            reusePendingOnly: reusePendingOnly,
+          );
           if (response.data is Map &&
               {
                 'STRIPE_PRICE_CHANGED',
+                'DISCOUNT_QUOTE_CHANGED',
+                'DISCOUNT_INVALID',
                 'STRIPE_RECIPIENT_CHANGED',
               }.contains(response.data['errorCode'])) {
             if (mounted)
@@ -636,6 +771,9 @@ class _FormPageState extends State<FormPage> {
         },
         onSuccess: () async {
           if (!mounted) return;
+          _discountCodeController.clear();
+          _discountQuote = null;
+          _discountError = null;
           Navigator.of(context).pop(); // Close the OrderPreview BottomSheet
           _scrollToTop();
         },
@@ -986,6 +1124,10 @@ class _FormPageState extends State<FormPage> {
                             else
                               FormBuilder(
                                 key: _formKey,
+                                onChanged: () {
+                                  if (_discountQuote != null)
+                                    setState(() => _discountQuote = null);
+                                },
                                 child: Builder(
                                   builder: (context) {
                                     return AutofillGroup(
@@ -1040,6 +1182,24 @@ class _FormPageState extends State<FormPage> {
                                             Text(
                                               '${WaitlistStrings.title}. ${WaitlistStrings.explanation}',
                                             ),
+                                          if (_offerBundle == null &&
+                                              form!.definition.isWaitlist &&
+                                              form!.definition.showWaitlistCount &&
+                                              form!.definition.capacity != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(top: 16),
+                                              child: Text.rich(TextSpan(children: [
+                                                TextSpan(text: WaitlistStrings.countSummary.split('{count}').first),
+                                                TextSpan(
+                                                  text: formatDisplayNumber(
+                                                    form!.definition.capacity!.waitingPeople +
+                                                    form!.definition.capacity!.offeredPlaces,
+                                                  ),
+                                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                                ),
+                                                TextSpan(text: WaitlistStrings.countSummary.split('{count}').last),
+                                              ])),
+                                            ),
                                           if (_offerBundle != null) ...[
                                             _buildOverview(),
                                             _buildWaitlistPeople(),
@@ -1063,6 +1223,28 @@ class _FormPageState extends State<FormPage> {
                                             _formKey,
                                             formHolder!,
                                           ),
+                                          if (_discountEnabled)
+                                            DiscountCodeEntry(
+                                              controller:
+                                                  _discountCodeController,
+                                              busy: _discountBusy,
+                                              quote: _discountQuote,
+                                              error: _discountError,
+                                              onChanged: () => setState(
+                                                () => _discountQuote = null,
+                                              ),
+                                              onApply: () {
+                                                _quoteDiscount();
+                                              },
+                                              onRemove: () {
+                                                setState(() {
+                                                  _discountCodeController
+                                                      .clear();
+                                                  _discountQuote = null;
+                                                  _discountError = null;
+                                                });
+                                              },
+                                            ),
                                           const SizedBox(height: 32),
                                           ButtonsHelper.primaryButton(
                                             context: context,
@@ -1342,6 +1524,7 @@ class _FormPageState extends State<FormPage> {
           formKey: _formKey,
         );
         formSession!.addListener(() {
+          _discountQuote = null;
           if (mounted) setState(() {});
         });
         holder.controller!.updateTotalPrice = formSession!.recalculateTotals;
@@ -1453,6 +1636,7 @@ class _FormPageState extends State<FormPage> {
       );
     }
     return CustomerOrderOverviewView(
+      scope: scope,
       key: ValueKey((scope, _showOverview)),
       load: () async {
         final result = await _waitlist.overview(scope);
@@ -1755,6 +1939,7 @@ class _FormPageState extends State<FormPage> {
         formKey: _formKey,
       );
       formSession!.addListener(() {
+        _discountQuote = null;
         setState(() {});
       });
 

@@ -465,6 +465,14 @@
         "apple-wallet-signing"
       ],
       "mutates_authority": true
+    },
+    "customer-order-changes": {
+      "trigger": "capability-http",
+      "effects": [
+        "database-rpc",
+        "canonical-email-enqueue"
+      ],
+      "mutates_authority": true
     }
   },
   "workers": {
@@ -558,7 +566,8 @@
       "payment-operation": "live-user-jwt-stored-order-scope-typed-operation-policy-exact-receipt-no-client-provider-secrets",
       "ticket-wallet": "explicit-post-256bit-ticket-capability-current-admission-fixed-origin-no-store-fenced-provider-identity",
       "sync-ticket-wallet": "private-machine-proof-fenced-bounded-current-ticket-state-reconciliation",
-      "apple-wallet": "pass-type-and-serial-bound-ApplePass-auth-device-scoped-update-enumeration-bounded-discarded-logs-service-only-persistence"
+      "apple-wallet": "pass-type-and-serial-bound-ApplePass-auth-device-scoped-update-enumeration-bounded-discarded-logs-service-only-persistence",
+      "customer-order-changes": "bounded-body-email-verified-single-use-proposal-capability-scoped-sql-gateway-exact-command-and-fingerprint-no-store"
     },
     "excluded": {
       "instance-install": "operator-installer-must-not-be-deployed-on-canonical-production"

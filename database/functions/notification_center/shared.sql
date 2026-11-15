@@ -2,7 +2,7 @@
 -- Serving adapters own scopes; these owners retain domain policy and history.
 CREATE OR REPLACE FUNCTION public.notification_center_order_activity_internal(p_kind text)
 RETURNS boolean LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT p_kind IN ('order_created','order_cancelled','order_payment_received','payment_problem','waitlist_registered','offer_accepted','offer_declined','offer_expired');
+ SELECT p_kind IN ('customer_order_request','order_created','order_cancelled','order_payment_received','payment_problem','waitlist_registered','offer_accepted','offer_declined','offer_expired');
 $$;
 
 CREATE OR REPLACE FUNCTION public.notification_center_batch_internal(

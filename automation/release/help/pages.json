@@ -251,5 +251,15 @@
     "id": "troubleshooting",
     "category": "troubleshooting",
     "preview": "cs/forms/summary-mobile"
+  },
+  {
+    "id": "customer-self-service",
+    "category": "orders",
+    "slug": "zakaznicka-samoobsluha",
+    "title": "Zákaznická samoobsluha objednávky",
+    "seoTitle": "Zákaznická samoobsluha objednávky",
+    "description": "Pravidla storna vstupenek, schvalování, důvodů, refundací a přesunů termínu. Odeslané odpovědi zůstávají zamčené.",
+    "label": "Zákaznická samoobsluha objednávky",
+    "preview": "cs/customer-self-service/desktop"
   }
 ]

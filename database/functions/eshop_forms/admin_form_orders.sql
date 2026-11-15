@@ -11,7 +11,7 @@ CREATE OR REPLACE FUNCTION public.form_order_input_internal(p_form bigint,p_inpu
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 BEGIN
  IF jsonb_typeof(p_input) IS DISTINCT FROM 'object' OR octet_length(p_input::text)>1048576
-  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_input) k WHERE k NOT IN ('email','fields','ticket','lang','form','payment_method','client_capabilities'))
+  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_input) k WHERE k NOT IN ('email','fields','ticket','lang','form','payment_method','client_capabilities','discount'))
   OR jsonb_typeof(p_input->'ticket') IS DISTINCT FROM 'array' OR jsonb_array_length(p_input->'ticket') NOT BETWEEN 1 AND 1000
   OR nullif(p_input->>'email','') IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='invalid administrative order'; END IF;
  IF p_input ? 'form' AND p_input->>'form' IS DISTINCT FROM (SELECT key::text FROM public.forms WHERE id=p_form) THEN

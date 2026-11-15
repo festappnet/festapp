@@ -13,6 +13,7 @@ class NotificationCenterStrings {
         'event_capacity_full',
         'form_opened',
         'form_closed',
+        'customer_order_request',
         'order_created',
         'waitlist_registered',
         'order_cancelled',

@@ -10,6 +10,7 @@ import {
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
 export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
+    if (orderData.discount) decimalDigits = 2;
     const currencyFormat = (amount: number, currency: string) => formatCurrency(amount, currency, decimalDigits);
     const { name, surname, email, phone, note } = orderData;
 
@@ -67,7 +68,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
     // --- 2. Tickets / Applications ---
     let overallTotal = 0;
     const itemLabel = usesTicketTerminology(occasionFeatures) ? tr.ticket : tr.application;
-    const currencyCode = tickets?.[0]?.products?.[0]?.currency_code || "CZK";
+    const currencyCode = orderData.discount?.currency || tickets?.[0]?.products?.[0]?.currency_code || "CZK";
 
     // Visual-only meta surcharge: shown under product (and summed per-currency under
     // Total Price), NEVER added to overallTotal. Only renders in virtual mode — real
@@ -142,6 +143,10 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
 
     // --- 3. Total Price ---
     const formattedOverallTotal = currencyFormat(overallTotal, currencyCode);
+    const discount = orderData.discount;
+    const discountHtml = discount ? `${tickets.length===0 ? `<strong>${lang==='cs'?'Původní prodej před stornem':'Original sale before cancellation'}</strong>` : ''}<div>${lang === 'cs' ? 'Slevový kód' : 'Discount code'}: ${escapeEmailHtml(discount.code)}</div>
+      <div>${lang === 'cs' ? 'Původní cena' : 'Original price'}: ${currencyFormat(Number(discount.base), discount.currency)}</div>
+      <div>${lang === 'cs' ? 'Sleva' : 'Discount'}: ${currencyFormat(Number(discount.discount), discount.currency)}</div>${tickets.length===0 ? `<div>${lang==='cs'?'Cena po slevě':'Discounted price'}: ${currencyFormat(Number(discount.net),discount.currency)}</div>` : ''}` : '';
 
     // Per-currency meta surcharge sums (visual-only, NOT included in overallTotal).
     // Renders as separate lines under Total Price, one per currency.
@@ -158,7 +163,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
 
     const totalSection = `
         <div style="text-align: right; padding-top: 16px; margin-top: 8px;">
-            <span style="font-size: 18px; font-weight: bold;">${tr.totalPrice}: ${formattedOverallTotal}</span>
+            ${discountHtml}<span style="font-size: 18px; font-weight: bold;">${tr.totalPrice}: ${formattedOverallTotal}</span>
             ${metaSumHtml}
         </div>`;
 

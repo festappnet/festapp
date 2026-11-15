@@ -1,8 +1,13 @@
+import 'package:fstapp/components/discount_codes/discount_strings.dart';
 import 'package:festapp_core/payments.dart';
+
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
+
 import 'package:fstapp/components/forms/order_overview_strings.dart';
+
 import '../waitlist_strings.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/theme_config.dart';
@@ -10,8 +15,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/forms/public_order_strings.dart';
 import 'package:fstapp/components/forms/widgets_view/payment_qr_card.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
+
 import '../widgets_view/card_payment_status.dart';
 import '../payment_method_strings.dart';
+
 import 'package:fstapp/components/payments/payment_gateway.dart';
 import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/components/payments/payment_browser_stub.dart'
@@ -26,6 +33,7 @@ class FinishOrderScreen extends StatefulWidget {
   final VerifiedOrganizationIdentity? organizationIdentity;
   final bool hasTickets;
   final bool overviewAvailable;
+  final bool retryUnknownOutcome;
   final String? occasionTitle;
   final Future<String?> Function(String)? deliveryStatusReader;
   final Future<void> Function()? onContinuePayment;
@@ -40,6 +48,7 @@ class FinishOrderScreen extends StatefulWidget {
     this.organizationIdentity,
     this.hasTickets = true,
     this.overviewAvailable = false,
+    this.retryUnknownOutcome = false,
     this.occasionTitle,
     this.deliveryStatusReader,
     this.onContinuePayment,
@@ -94,7 +103,8 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     try {
       final result = await widget.orderFutureFunction();
       final elapsed = DateTime.now().difference(start).inMilliseconds;
-      code = int.tryParse(
+      code =
+          int.tryParse(
             result.data["code"].toString().replaceAll(RegExp(r'\D'), ''),
           ) ??
           0;
@@ -116,7 +126,8 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     setState(() => _isLoading = false);
     _loadingController.stop();
     _mainController.forward();
-    if (_isSuccess && !paymentConnectors.containsHosted(_orderData?['payment']?['method'])) {
+    if (_isSuccess &&
+        !paymentConnectors.containsHosted(_orderData?['payment']?['method'])) {
       _observeDelivery();
     }
     if (_isSuccess &&
@@ -127,10 +138,12 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
         await _openCardCheckout(_orderData!['checkout_url']);
       } catch (_) {
         if (mounted)
-          setState(() => _orderData!['payment'] = {
-                ...?_orderData?['payment'],
-                'status': 'unknown'
-              });
+          setState(
+            () => _orderData!['payment'] = {
+              ...?_orderData?['payment'],
+              'status': 'unknown',
+            },
+          );
       }
     }
   }
@@ -158,14 +171,18 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     if (token == null || _readingPayment) return;
     _readingPayment = true;
     try {
-      final payment = await SupabasePaymentGateway(paymentConnectors.get(_orderData?['payment']?['method'])!).read(token);
+      final payment = await SupabasePaymentGateway(
+        paymentConnectors.get(_orderData?['payment']?['method'])!,
+      ).read(token);
       if (mounted) setState(() => _orderData!['payment'] = payment);
     } catch (_) {
       if (mounted)
-        setState(() => _orderData!['payment'] = {
-              ...?_orderData?['payment'],
-              'status': 'unknown'
-            });
+        setState(
+          () => _orderData!['payment'] = {
+            ...?_orderData?['payment'],
+            'status': 'unknown',
+          },
+        );
     } finally {
       _readingPayment = false;
     }
@@ -179,12 +196,16 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     final uri = connector.checkoutUri(value);
     final token = _payToken;
     if (token != null) {
-      rememberPaymentLink(token,
-          connector: paymentConnectors.get(_orderData?['payment']?['method'])!,
-          payUrl: _orderData?['payment_access']?['url']);
+      rememberPaymentLink(
+        token,
+        connector: paymentConnectors.get(_orderData?['payment']?['method'])!,
+        payUrl: _orderData?['payment_access']?['url'],
+      );
     }
-    if (!await LaunchUrlService.openExternalUrl(uri.toString(),
-        inCurrentWindow: true)) {
+    if (!await LaunchUrlService.openExternalUrl(
+      uri.toString(),
+      inCurrentWindow: true,
+    )) {
       throw StateError('payment_browser_unavailable');
     }
   }
@@ -194,7 +215,9 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     if (token == null || _readingPayment) return;
     _readingPayment = true;
     try {
-      final result = await SupabasePaymentGateway(paymentConnectors.get(_orderData?['payment']?['method'])!).prepare(token);
+      final result = await SupabasePaymentGateway(
+        paymentConnectors.get(_orderData?['payment']?['method'])!,
+      ).prepare(token);
       if (!mounted) return;
       if (result['payment'] is Map) {
         setState(() => _orderData!['payment'] = result['payment']);
@@ -211,11 +234,11 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     final capability = _orderData?['delivery_receipt'];
     if (capability is! String) return;
     final start = DateTime.now();
-    for (var attempt = 0;
-        attempt < 5 &&
-            mounted &&
-            DateTime.now().difference(start).inSeconds < 15;
-        attempt++) {
+    for (
+      var attempt = 0;
+      attempt < 5 && mounted && DateTime.now().difference(start).inSeconds < 15;
+      attempt++
+    ) {
       if (WidgetsBinding.instance.lifecycleState != null &&
           WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed)
         break;
@@ -225,10 +248,12 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
           state = await widget.deliveryStatusReader!(capability);
         } else {
           final response = await Supabase.instance.client.functions.invoke(
-              'email-confirmation-status',
-              body: {'capability': capability});
-          state =
-              response.data is Map ? response.data['state'] as String? : null;
+            'email-confirmation-status',
+            body: {'capability': capability},
+          );
+          state = response.data is Map
+              ? response.data['state'] as String?
+              : null;
         }
         if (!mounted) return;
         if (state == 'accepted') setState(() => _deliveryState = 'accepted');
@@ -241,7 +266,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
           'suppressed',
           'expired',
           'cancelled',
-          'retry_wait'
+          'retry_wait',
         ].contains(state)) {
           setState(() => _deliveryState = state as String);
           return;
@@ -308,71 +333,104 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     final payment = _orderData?['payment'];
     final handoff = _orderData?['payment_access']?['kind'] == 'handoff';
     final handoffUri = handoff && paymentSurface() == 'embed'
-        ? paymentHandoffUri(_orderData?['payment_access']?['url'],
-            _orderData?['payment_access']?['token'], connector: paymentConnectors.get(payment is Map ? payment['method'] : null))
+        ? paymentHandoffUri(
+            _orderData?['payment_access']?['url'],
+            _orderData?['payment_access']?['token'],
+            connector: paymentConnectors.get(
+              payment is Map ? payment['method'] : null,
+            ),
+          )
         : null;
-    if (_isSuccess && payment is Map && paymentConnectors.containsHosted(payment['method'])) {
+    if (_isSuccess &&
+        payment is Map &&
+        paymentConnectors.containsHosted(payment['method'])) {
       return SingleChildScrollView(
-          child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_orderData?['ticketOrder']?['order']?['order_symbol'] is String)
-            SelectableText(_orderData!['ticketOrder']['order']['order_symbol']),
-          CardPaymentStatus(
-            hasTickets: widget.hasTickets,
-            payment: {
-              ...payment.cast<String, dynamic>(),
-            },
-            onPay: handoff
-                ? null
-                : widget.onContinuePayment ??
-                    (_payToken == null ? null : _continueCardPayment),
-            onRefresh: handoff
-                ? null
-                : widget.onRefreshPayment ??
-                    (_payToken == null ? null : _refreshCardPayment),
-          ),
-          if (handoffUri != null)
-            FilledButton(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_orderData?['ticketOrder']?['order']?['order_symbol'] is String)
+              SelectableText(
+                _orderData!['ticketOrder']['order']['order_symbol'],
+              ),
+            CardPaymentStatus(
+              hasTickets: widget.hasTickets,
+              payment: {...payment.cast<String, dynamic>()},
+              onPay: handoff
+                  ? null
+                  : widget.onContinuePayment ??
+                        (_payToken == null ? null : _continueCardPayment),
+              onRefresh: handoff
+                  ? null
+                  : widget.onRefreshPayment ??
+                        (_payToken == null ? null : _refreshCardPayment),
+            ),
+            if (handoffUri != null)
+              FilledButton(
                 onPressed: () =>
                     LaunchUrlService.openExternalUrl(handoffUri.toString()),
-                child: Text(PaymentMethodStrings.text('continueInNewTab'))),
-          OrganizationIdentityFooter(identity: widget.organizationIdentity),
-          OutlinedButton(
+                child: Text(PaymentMethodStrings.text('continueInNewTab')),
+              ),
+            OrganizationIdentityFooter(identity: widget.organizationIdentity),
+            OutlinedButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _notifySuccessAfterClose();
               },
-              child: Text(widget.overviewAvailable
-                  ? OrderOverviewStrings.text('title')
-                  : PublicOrderStrings.backToForm)),
-        ],
-      ));
+              child: Text(
+                widget.overviewAvailable
+                    ? OrderOverviewStrings.text('title')
+                    : PublicOrderStrings.backToForm,
+              ),
+            ),
+          ],
+        ),
+      );
     }
     String title, subtitle;
     if (_isSuccess) {
       final cashInfo = _orderData?['ticketOrder']?['order']?['payment_info'];
-      title = cashInfo is Map && cashInfo['payment_method'] == 'cash' && (cashInfo['amount'] as num? ?? 0) > 0
+      title =
+          cashInfo is Map &&
+              cashInfo['payment_method'] == 'cash' &&
+              (cashInfo['amount'] as num? ?? 0) > 0
           ? PaymentMethodStrings.text('reservationConfirmed')
-          : PublicOrderStrings.successTitle(widget.tone, hasTickets: widget.hasTickets);
-      final email = ((_orderData?['ticketOrder'] as Map?)?['order']
-          as Map?)?['data']?['email'];
-      final formData = (((_orderData?['form'] ??
-              (_orderData?['ticketOrder'] as Map?)?['order']?['form'])
-          as Map?)?['data'] as Map?);
-      final hasPayment = _orderData?['payment_qr'] is Map &&
+          : PublicOrderStrings.successTitle(
+              widget.tone,
+              hasTickets: widget.hasTickets,
+            );
+      final email =
+          ((_orderData?['ticketOrder'] as Map?)?['order']
+              as Map?)?['data']?['email'];
+      final formData =
+          (((_orderData?['form'] ??
+                      (_orderData?['ticketOrder'] as Map?)?['order']?['form'])
+                  as Map?)?['data']
+              as Map?);
+      final hasPayment =
+          _orderData?['payment_qr'] is Map &&
           formData?[FeatureConstants.formShowPaymentQr]?.toString() == 'true';
-      subtitle = PublicOrderStrings.confirmationInfo(widget.tone,
-          hasPayment: hasPayment,
-          email: email is String ? email.trim() : '',
-          state: _deliveryState);
+      subtitle = PublicOrderStrings.confirmationInfo(
+        widget.tone,
+        hasPayment: hasPayment,
+        email: email is String ? email.trim() : '',
+        state: _deliveryState,
+      );
     } else if (_orderData?['errorCode'] == 'STRIPE_RECIPIENT_CHANGED') {
       title = PaymentMethodStrings.reason('recipient_changed');
       subtitle = WaitlistStrings.refresh;
+    } else if ([
+      'DISCOUNT_QUOTE_CHANGED',
+      'DISCOUNT_INVALID',
+    ].contains(_orderData?['errorCode'])) {
+      title = DiscountStrings.text('changed');
+      subtitle = DiscountStrings.text('invalid');
     } else if (_orderData?['errorCode'] == 'STRIPE_PRICE_CHANGED') {
       title = PaymentMethodStrings.text('priceChanged');
       subtitle = PaymentMethodStrings.text('reviewPrices');
+    } else if (_orderData?['errorCode'] == 'ORDER_RECOVERY_REQUIRED') {
+      title = DiscountStrings.text('recoveryUnavailable');
+      subtitle = '';
     } else if (code == 1017) {
       final prodTitle = _errorProduct?["title"] ?? "";
       title = PublicOrderStrings.productUnavailable(prodTitle);
@@ -409,23 +467,23 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
           Text(
             title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  // Use Theme text style
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: _isSuccess
-                      ? ThemeConfig.darkGreen
-                      : ThemeConfig.redColor(context),
-                ),
+              // Use Theme text style
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: _isSuccess
+                  ? ThemeConfig.darkGreen
+                  : ThemeConfig.redColor(context),
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             subtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  // Use Theme text style
-                  fontSize: 14,
-                  color: ThemeConfig.blackColor(context).withOpacity(0.7),
-                ),
+              // Use Theme text style
+              fontSize: 14,
+              color: ThemeConfig.blackColor(context).withOpacity(0.7),
+            ),
             textAlign: TextAlign.center,
           ),
           if (_isSuccess &&
@@ -433,18 +491,32 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: SelectableText(
-                  '${OrdersStrings.gridOrderSymbol}: ${_orderData!['ticketOrder']['order']['order_symbol']}'),
+                '${OrdersStrings.gridOrderSymbol}: ${_orderData!['ticketOrder']['order']['order_symbol']}',
+              ),
             ),
           if (_isSuccess && _orderData?['conversion'] == 'split')
             Text(
-                '${WaitlistStrings.remaining}: ${_orderData?['waitlistSummary']?['pendingPlaces'] ?? 0}. ${WaitlistStrings.explanation}'),
+              '${WaitlistStrings.remaining}: ${_orderData?['waitlistSummary']?['pendingPlaces'] ?? 0}. ${WaitlistStrings.explanation}',
+            ),
           if (_isSuccess) _buildPaymentQr(),
           if (handoffUri != null)
             FilledButton(
-                onPressed: () =>
-                    LaunchUrlService.openExternalUrl(handoffUri.toString()),
-                child: Text(PaymentMethodStrings.text('continueInNewTab'))),
+              onPressed: () =>
+                  LaunchUrlService.openExternalUrl(handoffUri.toString()),
+              child: Text(PaymentMethodStrings.text('continueInNewTab')),
+            ),
           OrganizationIdentityFooter(identity: widget.organizationIdentity),
+          if (widget.retryUnknownOutcome &&
+              !_isSuccess &&
+              (code == null || code == 0 || code == 503))
+            FilledButton(
+              onPressed: () {
+                if (_isLoading) return;
+                setState(() => _isLoading = true);
+                _executeOrder();
+              },
+              child: Text(DiscountStrings.text('retry')),
+            ),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () {
@@ -457,9 +529,11 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
-            child: Text(_isSuccess && widget.overviewAvailable
-                ? OrderOverviewStrings.text('title')
-                : PublicOrderStrings.backToForm),
+            child: Text(
+              _isSuccess && widget.overviewAvailable
+                  ? OrderOverviewStrings.text('title')
+                  : PublicOrderStrings.backToForm,
+            ),
           ),
         ],
       ),
@@ -472,15 +546,31 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
     final data = _orderData;
     if (data == null) return const SizedBox.shrink();
     final cash = data['ticketOrder']?['order']?['payment_info'];
-    if (cash is Map && cash['payment_method'] == 'cash' && (cash['amount'] as num? ?? 0)>0) {
-      final instructions = cash['data']?['payment_policy']?['cashInstructions'] as String? ?? '';
-      return Column(children: [Text(PaymentMethodStrings.text('reservationConfirmed')), Text('${PaymentMethodStrings.text('payOnSite')}: ${cash['amount']} ${cash['currency_code']}'), Text(instructions.isEmpty ? PaymentMethodStrings.text('cashInstructionsDefault') : instructions)]);
+    if (cash is Map &&
+        cash['payment_method'] == 'cash' &&
+        (cash['amount'] as num? ?? 0) > 0) {
+      final instructions =
+          cash['data']?['payment_policy']?['cashInstructions'] as String? ?? '';
+      return Column(
+        children: [
+          Text(PaymentMethodStrings.text('reservationConfirmed')),
+          Text(
+            '${PaymentMethodStrings.text('payOnSite')}: ${cash['amount']} ${cash['currency_code']}',
+          ),
+          Text(
+            instructions.isEmpty
+                ? PaymentMethodStrings.text('cashInstructionsDefault')
+                : instructions,
+          ),
+        ],
+      );
     }
     final pq = (data['payment_qr'] as Map?)?.cast<String, dynamic>();
     if (pq == null) return const SizedBox.shrink();
     final formData =
         (((data['form'] ?? (data['ticketOrder'] as Map?)?['order']?['form'])
-                as Map?)?['data'] as Map?)
+                    as Map?)?['data']
+                as Map?)
             ?.cast<String, dynamic>();
     final showQr =
         formData?[FeatureConstants.formShowPaymentQr]?.toString() == 'true';

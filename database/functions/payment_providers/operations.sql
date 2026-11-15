@@ -1,3 +1,65 @@
+-- Shared preparation effect; administrative/customer boundaries own distinct
+-- authorization. Only the original connector can determine write support.
+-- Call after policy fence -> capacity -> order -> payment locks. No dispatch.
+CREATE OR REPLACE FUNCTION public.prepare_order_refund_internal(
+ p_order bigint,p_method text,p_amount numeric,p_command uuid,p_input jsonb,p_existing_debits bigint[] DEFAULT '{}'
+) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE o eshop.orders; pi eshop.payment_info; c jsonb; cap jsonb; req eshop.refund_requests;
+ result jsonb; observed jsonb; debit_id bigint; v_method text:=p_method; amount numeric:=p_amount;
+ existing_debits bigint[]:=p_existing_debits; p_command_id uuid:=p_command; input_data jsonb:=p_input;
+ op text:='prepare_refund';
+BEGIN
+ IF jsonb_typeof(input_data) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'PAYMENT_INPUT_INVALID'; END IF;
+ input_data:=input_data||jsonb_build_object('operation',op,'orderId',p_order,'method',p_method,'amount',p_amount::text);
+ SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order FOR UPDATE;
+ SELECT * INTO STRICT pi FROM eshop.payment_info WHERE id=o.payment_info FOR UPDATE;
+ IF p_command IS NULL OR amount IS NULL OR amount<=0 OR amount*100<>trunc(amount*100)
+  OR amount>99999999.99 THEN RAISE EXCEPTION 'PAYMENT_AMOUNT_INVALID'; END IF;
+ IF public.payment_method_is_online_internal(pi.payment_method) AND v_method IS DISTINCT FROM pi.payment_method THEN
+  RAISE EXCEPTION 'PAYMENT_SOURCE_MISMATCH'; END IF;
+ IF EXISTS(SELECT 1 FROM eshop.order_deletion_fences WHERE order_id=o.id) THEN RAISE EXCEPTION 'ORDER_DELETION_IN_PROGRESS'; END IF;
+ c:=public.payment_method_context_internal(o.id);
+ -- No synthetic manager permission is passed to a connector. Online connector
+ -- capability is independent of the caller; bank/cash retain their own checks.
+ cap:=public.payment_provider_call_internal(v_method,'operation_capabilities',jsonb_build_object('orderId',o.id));
+ IF cap->'refund' IS DISTINCT FROM 'true'::jsonb OR NOT EXISTS(
+   SELECT 1 FROM eshop.payment_providers WHERE provider_key=v_method AND refund_write_supported AND refund_write_enabled)
+  OR c->'invalidIdentity' IS DISTINCT FROM 'false'::jsonb
+  OR EXISTS(SELECT 1 FROM eshop.refund_requests rr WHERE rr.payment_info=pi.id AND rr.result->'deviation'='true'::jsonb) THEN
+  RAISE EXCEPTION 'PAYMENT_REFUND_UNAVAILABLE'; END IF;
+   IF EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=v_method AND NOT partial_refund_supported) AND amount IS DISTINCT FROM (c->>'net')::numeric THEN RAISE EXCEPTION 'PAYMENT_PARTIAL_REFUND_UNSUPPORTED'; END IF;
+   IF amount>(c->>'available')::numeric THEN RAISE EXCEPTION 'REFUND_AVAILABLE_EXCEEDED'; END IF;
+   IF public.payment_method_verification_internal(v_method)='bank_event' THEN
+    PERFORM 1 FROM eshop.unit_bank_accounts link JOIN public.occasions oc ON oc.unit=link.unit
+     WHERE oc.id=o.occasion AND link.bank_account=pi.bank_account FOR SHARE OF link;
+    IF NOT FOUND THEN RAISE EXCEPTION 'BANK_REFUND_SOURCE_UNLINKED'; END IF;
+    -- An already imported debit with the same owned reference is evidence that
+    -- must be reconciled before another instruction can be issued. No reverse locks.
+    IF EXISTS(SELECT 1 FROM eshop.transactions t WHERE t.amount<0 AND t.payment_info IS NULL AND NOT t.id=ANY(coalesce(existing_debits,'{}'::bigint[]))
+     AND (t.bank_account_id=pi.bank_account OR public.bank_sync_accounts_match(t.id,pi.bank_account))
+     AND (trim(t.vs)=pi.variable_symbol::text OR (pi.currency_code='EUR' AND public.normalize_creditor_reference(t.payer_reference)=pi.creditor_reference))) THEN
+      RAISE EXCEPTION 'REFUND_RETRY_NEW_BANK_FACT' USING ERRCODE='40001'; END IF;
+   END IF;
+   INSERT INTO eshop.refund_requests(id,order_id,payment_info,method,amount,currency,status,payload,created_by)
+    VALUES(p_command_id,o.id,pi.id,v_method,amount,trim(pi.currency_code),'pending',input_data||jsonb_build_object('existingDebits',coalesce(to_jsonb(existing_debits),'[]')),auth.uid()) RETURNING * INTO req;
+   IF public.payment_method_verification_internal(v_method)='verified_provider_observation' THEN
+    UPDATE eshop.refund_requests SET payload=payload||jsonb_build_object('binding',public.payment_provider_call_internal(v_method,'refund_binding',jsonb_build_object('orderId',o.id))) WHERE id=req.id;
+    result:=jsonb_build_object('nextAction','processing');
+   ELSE
+    result:=public.payment_provider_call_internal(v_method,op,input_data||jsonb_build_object('requestId',req.id));
+    IF public.payment_method_verification_internal(v_method)='bank_event' AND cardinality(existing_debits)>0 THEN
+     FOREACH debit_id IN ARRAY existing_debits LOOP
+      observed:=public.observe_bank_refund_internal(debit_id);
+      IF observed->'matched' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'REFUND_EXISTING_DEBIT_REQUIRES_RECONCILIATION'; END IF;
+     END LOOP;
+     result:=jsonb_build_object('nextAction','recorded');
+    END IF;
+   END IF;
+ RETURN result;
+END $$;
+REVOKE ALL ON FUNCTION public.prepare_order_refund_internal(bigint,text,numeric,uuid,jsonb,bigint[])
+ FROM PUBLIC,anon,authenticated,service_role;
+
 -- Private context is only embedded in authorized admin readers.
 CREATE OR REPLACE FUNCTION public.payment_method_context_internal(p_order bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
@@ -101,34 +163,8 @@ BEGIN
   amount:=(input_data->>'amount')::numeric;
   IF amount=0 OR (op<>'correct_record' AND amount<0) THEN RAISE EXCEPTION 'PAYMENT_AMOUNT_INVALID'; END IF;
   IF op='prepare_refund' THEN
-   IF EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=v_method AND NOT partial_refund_supported) AND amount IS DISTINCT FROM (c->>'net')::numeric THEN RAISE EXCEPTION 'PAYMENT_PARTIAL_REFUND_UNSUPPORTED'; END IF;
-   IF amount>(c->>'available')::numeric THEN RAISE EXCEPTION 'REFUND_AVAILABLE_EXCEEDED'; END IF;
-   IF public.payment_method_verification_internal(v_method)='bank_event' THEN
-    PERFORM 1 FROM eshop.unit_bank_accounts link JOIN public.occasions oc ON oc.unit=link.unit
-     WHERE oc.id=o.occasion AND link.bank_account=pi.bank_account FOR SHARE OF link;
-    IF NOT FOUND THEN RAISE EXCEPTION 'BANK_REFUND_SOURCE_UNLINKED'; END IF;
-    -- An already imported debit with the same owned reference is evidence that
-    -- must be reconciled before another instruction can be issued. No reverse locks.
-    IF EXISTS(SELECT 1 FROM eshop.transactions t WHERE t.amount<0 AND t.payment_info IS NULL AND NOT t.id=ANY(coalesce(existing_debits,'{}'::bigint[]))
-     AND (t.bank_account_id=pi.bank_account OR public.bank_sync_accounts_match(t.id,pi.bank_account))
-     AND (trim(t.vs)=pi.variable_symbol::text OR (pi.currency_code='EUR' AND public.normalize_creditor_reference(t.payer_reference)=pi.creditor_reference))) THEN
-      RAISE EXCEPTION 'REFUND_RETRY_NEW_BANK_FACT' USING ERRCODE='40001'; END IF;
-   END IF;
-   INSERT INTO eshop.refund_requests(id,order_id,payment_info,method,amount,currency,status,payload,created_by)
-    VALUES(p_command_id,o.id,pi.id,v_method,amount,trim(pi.currency_code),'pending',input_data||jsonb_build_object('existingDebits',coalesce(to_jsonb(existing_debits),'[]')),auth.uid()) RETURNING * INTO req;
-   IF public.payment_method_verification_internal(v_method)='verified_provider_observation' THEN
-    UPDATE eshop.refund_requests SET payload=payload||jsonb_build_object('binding',public.payment_provider_call_internal(v_method,'refund_binding',jsonb_build_object('orderId',o.id))) WHERE id=req.id;
-    result:=jsonb_build_object('nextAction','processing');
-   ELSE
-    result:=public.payment_provider_call_internal(v_method,op,input_data||jsonb_build_object('requestId',req.id));
-    IF public.payment_method_verification_internal(v_method)='bank_event' AND cardinality(existing_debits)>0 THEN
-     FOREACH debit_id IN ARRAY existing_debits LOOP
-      observed:=public.observe_bank_refund_internal(debit_id);
-      IF observed->'matched' IS DISTINCT FROM 'true'::jsonb THEN RAISE EXCEPTION 'REFUND_EXISTING_DEBIT_REQUIRES_RECONCILIATION'; END IF;
-     END LOOP;
-     result:=jsonb_build_object('nextAction','recorded');
-    END IF;
-   END IF;
+   result:=public.prepare_order_refund_internal(o.id,v_method,amount,p_command_id,input_data,existing_debits);
+   SELECT * INTO STRICT req FROM eshop.refund_requests WHERE id=p_command_id;
   ELSE
    result:=public.payment_provider_call_internal(v_method,op,input_data);
    IF op='correct_record' THEN

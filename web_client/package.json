@@ -1,6 +1,6 @@
 {
   "name": "festapp-web-client",
-  "version": "0.20.616",
+  "version": "0.20.618",
   "description": "Standalone Web Client for Festapp",
   "type": "module",
   "scripts": {
@@ -20,7 +20,8 @@
     "test:measurement-nested-browser": "node scripts/test_form_measurement_nested_browser.mjs",
     "test:measurement-adversarial-browser": "node scripts/test_form_measurement_runtime_adversarial.mjs",
     "prepare:build": "node scripts/build_scanner_decoder.mjs && node scripts/build_runtime.mjs && node scripts/build_embed.mjs && node scripts/build_measurement_runtime.mjs && node ../automation/configure_fonts.js .. --assets-only",
-    "compile": "vite build"
+    "compile": "vite build",
+    "test:discount-codes-browser": "node scripts/test_discount_codes_browser.mjs"
   },
   "dependencies": {
     "@festapp/venue-layout": "file:vendor/festapp-venue-layout-0.3.13-3b096496c86e.tgz",

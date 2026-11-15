@@ -1,7 +1,7 @@
 import { openOrderOverviewUrl } from "./customerOrderAccess.ts";
 import { prepareOrderOverviewSource } from "./waitlistEmail.ts";
 
-export async function orderEmailOverviewUrl(
+export async function orderEmailOverviewContext(
   row: { order_id: number; recipient: string; message_id: string },
   rpc: (name: string, params: Record<string, unknown>) => Promise<any>,
 ) {
@@ -24,6 +24,16 @@ export async function orderEmailOverviewUrl(
   // contact repair must not rewrite that evidence or rotate the existing link.
   // Keep verification of its tenant, root order, unit, token and content hash.
   const { recipient: _currentRecipient, ...orderContext } = context;
-  return await openOrderOverviewUrl(orderContext, context.source);
+  return {
+    url: await openOrderOverviewUrl(orderContext, context.source),
+    allowedActions: context.allowedActions ?? [],
+  };
 }
 export { overviewEmailSubstitutions } from "./emailActionLink.ts";
+
+export async function orderEmailOverviewUrl(
+  row: { order_id: number; recipient: string; message_id: string },
+  rpc: (name: string, params: Record<string, unknown>) => Promise<any>,
+) {
+  return (await orderEmailOverviewContext(row, rpc))?.url ?? null;
+}

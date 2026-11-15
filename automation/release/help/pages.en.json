@@ -201,5 +201,15 @@
     "description": "Check the public URL, HTML code, automatic height and website cache before contacting support.",
     "label": "Troubleshooting",
     "preview": "en/forms/buyer-mobile"
+  },
+  {
+    "id": "customer-self-service",
+    "category": "orders",
+    "slug": "customer-self-service",
+    "title": "Customer order self-service",
+    "seoTitle": "Customer order self-service",
+    "description": "Ticket cancellation, approval, reasons, refunds and date changes. Submitted answers remain locked.",
+    "label": "Customer order self-service",
+    "preview": "en/customer-self-service/desktop"
   }
 ]

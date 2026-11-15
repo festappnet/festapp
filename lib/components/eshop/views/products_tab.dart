@@ -1,7 +1,11 @@
+import 'package:fstapp/components/discount_codes/discount_codes_dialog.dart';
+import 'package:fstapp/components/discount_codes/discount_strings.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/components/eshop/product_grid_record.dart';
+
 import 'product_price_waves_dialog.dart';
+
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 
@@ -83,17 +87,20 @@ class _ProductsTabState extends State<ProductsTab>
     if (products.isNotEmpty) {
       _serverClockOffset = products.first.priceClockOffset;
     }
-    final times = products
-        .expand((product) => [
-              ...product.priceChanges
-                  .where((p) => !p.applied && p.failureCode == null)
-                  .map((p) => p.time),
-              ...product.visibilityChanges
-                  .where((p) => !p.applied && p.failureCode == null)
-                  .map((p) => p.time),
-            ])
-        .toList()
-      ..sort();
+    final times =
+        products
+            .expand(
+              (product) => [
+                ...product.priceChanges
+                    .where((p) => !p.applied && p.failureCode == null)
+                    .map((p) => p.time),
+                ...product.visibilityChanges
+                    .where((p) => !p.applied && p.failureCode == null)
+                    .map((p) => p.time),
+              ],
+            )
+            .toList()
+          ..sort();
     _nextChange = times.firstOrNull;
     if (_controller != null) {
       final column = _controller!.columns.firstWhere(
@@ -101,8 +108,9 @@ class _ProductsTabState extends State<ProductsTab>
       );
       if (column.width != _automaticPlanWidth) _manualPlanWidth = true;
       if (!_manualPlanWidth) {
-        _automaticPlanWidth =
-            products.any((p) => p.priceChanges.isNotEmpty) ? 300 : 180;
+        _automaticPlanWidth = products.any((p) => p.priceChanges.isNotEmpty)
+            ? 300
+            : 180;
         column.width = _automaticPlanWidth;
       }
     }
@@ -165,11 +173,10 @@ class _ProductsTabState extends State<ProductsTab>
       barrierDismissible: false,
       builder: (context) => ProductPriceChangesDialog(
         product: product,
-        suggestedTimes:
-            ProductPriceWave.columns(bundle.priceWaves, bundle.products)
-                .map((w) => w.time)
-                .where((time) => time.isAfter(now))
-                .toList(),
+        suggestedTimes: ProductPriceWave.columns(
+          bundle.priceWaves,
+          bundle.products,
+        ).map((w) => w.time).where((time) => time.isAfter(now)).toList(),
         canEdit: RightsService.canUpdateOrders(),
         onOpenWaves: () => openWaves = true,
         reload: () async {
@@ -197,30 +204,29 @@ class _ProductsTabState extends State<ProductsTab>
   bool _isLoading = true;
 
   List<String> get columnIdentifiers => [
-        EshopColumnIds.PRODUCT_ID,
-        EshopColumnIds.PRODUCT_TYPE,
-        EshopColumnIds.PRODUCT_TITLE,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
-          EshopColumnIds.PRODUCT_SHORT_TITLE,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.services))
-          EshopColumnIds.PRODUCT_INCLUDED_INVENTORY,
-        EshopColumnIds.PRODUCT_DESCRIPTION,
-        EshopColumnIds.PRODUCT_IS_HIDDEN,
-        EshopColumnIds.PRODUCT_PRICE,
-        EshopColumnIds.PRODUCT_CURRENCY_CODE,
-        if (FeatureService.isFeatureEnabled(FeatureConstants.deposit) &&
-            !FeatureService.isDepositVirtualMode())
-          EshopColumnIds.PRODUCT_DEPOSIT,
-        if (FeatureService.isDepositVirtualMode())
-          EshopColumnIds.PRODUCT_SURCHARGE,
-        if (FeatureService.isDepositVirtualMode())
-          EshopColumnIds.PRODUCT_SURCHARGE_CURRENCY,
-        EshopColumnIds.PRODUCT_PAID_COUNT,
-        EshopColumnIds.PRODUCT_ORDERED_COUNT,
-        EshopColumnIds.PRODUCT_MAXIMUM,
-        EshopColumnIds.PRODUCT_USED_IN_FORMS,
-        EshopColumnIds.PRODUCT_ORDER,
-      ];
+    EshopColumnIds.PRODUCT_ID,
+    EshopColumnIds.PRODUCT_TYPE,
+    EshopColumnIds.PRODUCT_TITLE,
+    if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
+      EshopColumnIds.PRODUCT_SHORT_TITLE,
+    if (FeatureService.isFeatureEnabled(FeatureConstants.services))
+      EshopColumnIds.PRODUCT_INCLUDED_INVENTORY,
+    EshopColumnIds.PRODUCT_DESCRIPTION,
+    EshopColumnIds.PRODUCT_IS_HIDDEN,
+    EshopColumnIds.PRODUCT_PRICE,
+    EshopColumnIds.PRODUCT_CURRENCY_CODE,
+    if (FeatureService.isFeatureEnabled(FeatureConstants.deposit) &&
+        !FeatureService.isDepositVirtualMode())
+      EshopColumnIds.PRODUCT_DEPOSIT,
+    if (FeatureService.isDepositVirtualMode()) EshopColumnIds.PRODUCT_SURCHARGE,
+    if (FeatureService.isDepositVirtualMode())
+      EshopColumnIds.PRODUCT_SURCHARGE_CURRENCY,
+    EshopColumnIds.PRODUCT_PAID_COUNT,
+    EshopColumnIds.PRODUCT_ORDERED_COUNT,
+    EshopColumnIds.PRODUCT_MAXIMUM,
+    EshopColumnIds.PRODUCT_USED_IN_FORMS,
+    EshopColumnIds.PRODUCT_ORDER,
+  ];
 
   @override
   void didChangeDependencies() {
@@ -260,20 +266,22 @@ class _ProductsTabState extends State<ProductsTab>
 
     _automaticPlanWidth =
         initialBundle.products.any((p) => p.priceChanges.isNotEmpty)
-            ? 300
-            : 180;
-    List<ProductGridRecord> records(ProductsEditBundle bundle) =>
-        bundle.products
-            .map((product) => ProductGridRecord(
-                  product: product,
-                  commands: DbEshop.commands,
-                  guard: ExceptionHandler.guardVoid,
-                  productTypeTitle: bundle.productTypes
-                      .where((type) => type.id == product.productTypeId)
-                      .firstOrNull
-                      ?.title,
-                ))
-            .toList();
+        ? 300
+        : 180;
+    List<ProductGridRecord> records(ProductsEditBundle bundle) => bundle
+        .products
+        .map(
+          (product) => ProductGridRecord(
+            product: product,
+            commands: DbEshop.commands,
+            guard: ExceptionHandler.guardVoid,
+            productTypeTitle: bundle.productTypes
+                .where((type) => type.id == product.productTypeId)
+                .firstOrNull
+                ?.title,
+          ),
+        )
+        .toList();
     List<ProductGridRecord>? firstLoadProducts = records(initialBundle);
     final newController = SingleDataGridController<ProductGridRecord>(
       context: context,
@@ -290,8 +298,11 @@ class _ProductsTabState extends State<ProductsTab>
         _trackPlans(newBundle.products);
         return records(newBundle);
       },
-      fromPlutoJson: (json) => ProductGridRecord.fromPlutoJson(json,
-          commands: DbEshop.commands, guard: ExceptionHandler.guardVoid),
+      fromPlutoJson: (json) => ProductGridRecord.fromPlutoJson(
+        json,
+        commands: DbEshop.commands,
+        guard: ExceptionHandler.guardVoid,
+      ),
       firstColumnType: DataGridFirstColumn.delete,
       idColumn: TbEshop.products.id,
       columnHelp: {
@@ -304,6 +315,20 @@ class _ProductsTabState extends State<ProductsTab>
         isAddActionPossible: () => false,
       ),
       headerChildren: [
+        if (RightsService.canUpdateOrders())
+          DataGridAction(
+            name: DiscountStrings.text('title'),
+            requiresSelection: false,
+            action: (SingleDataGridController controller, [_]) =>
+                showDialog<void>(
+                  context: context,
+                  builder: (_) => DiscountCodesDialog(
+                    occasion: RightsService.currentOccasionId()!,
+                    bundle: initialBundle,
+                  ),
+                ),
+            isEnabled: () => !_dialogOpen,
+          ),
         DataGridAction(
           name: OrdersStrings.priceWaves,
           requiresSelection: false,
@@ -345,8 +370,9 @@ class _ProductsTabState extends State<ProductsTab>
             ? 300
             : 180,
         renderer: (cell) {
-          final model = cell.row.cells[EshopColumnIds.PRODUCT_MODEL_REFERENCE]!
-              .value as ProductGridRecord;
+          final model =
+              cell.row.cells[EshopColumnIds.PRODUCT_MODEL_REFERENCE]!.value
+                  as ProductGridRecord;
           return ProductPriceChangeCell(
             focusNode: _planFocusNodes.putIfAbsent(
               model.id!,
@@ -376,18 +402,22 @@ class _ProductsTabState extends State<ProductsTab>
       setState(() => _refreshAvailable = true);
       return;
     }
-    final bundle = await ExceptionHandler.guard(context,
-        futureFunction: () =>
-            DbEshop.getProductsAndTypesForOccasion(_occasionLink!));
+    final bundle = await ExceptionHandler.guard(
+      context,
+      futureFunction: () =>
+          DbEshop.getProductsAndTypesForOccasion(_occasionLink!),
+    );
     if (!mounted || bundle == null) return;
     _dialogOpen = true;
     await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => ProductPriceWavesDialog(
-            occasionLink: _occasionLink!,
-            initialBundle: bundle,
-            canEdit: RightsService.canUpdateOrders()));
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ProductPriceWavesDialog(
+        occasionLink: _occasionLink!,
+        initialBundle: bundle,
+        canEdit: RightsService.canUpdateOrders(),
+      ),
+    );
     _dialogOpen = false;
     if (mounted) await _refresh(force: true);
   }

@@ -7,6 +7,7 @@ class FeatureConstants {
   static const String metaDescription = "description";
 
   // Feature codes
+  static const String customerSelfService = "customer_self_service";
   static const String ticket = "ticket";
   static const String form = "form";
   static const String songbook = "songbook";
@@ -25,6 +26,7 @@ class FeatureConstants {
   static const String schedule = "schedule";
   static const String contract = "contract";
   static const String deposit = "deposit";
+  static const String discountCodes = "discount_codes";
   static const String import = "import"; // New feature
   static const String globalSearch = "global_search";
   static const String eventFeedback = "event_feedback";

@@ -184,7 +184,8 @@
         "test/components/eshop/order_delete_availability_cases.dart",
         "test/components/occasion/occasion_setup_invitations_cases.dart",
         "test/components/occasion/occasion_setup_communication_cases.dart",
-        "test/components/occasion/occasion_setup_details_cases.dart"
+        "test/components/occasion/occasion_setup_details_cases.dart",
+        "test/components/discount_codes/discount_codes_cases.dart"
       ]
     },
     "test/sessions/shared_default_3_test.dart": {

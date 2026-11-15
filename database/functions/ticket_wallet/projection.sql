@@ -6,7 +6,7 @@ BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO t FROM eshop.tickets WHERE id=p_ticket;
  SELECT * INTO c FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket;
- SELECT * INTO o FROM public.occasions WHERE id=t.occasion;
+ SELECT * INTO o FROM public.order_term_occasion_internal(c.order_id);
  SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
  state:='INACTIVE';
  IF t.id IS NOT NULL AND t.occasion=c.occasion AND o.organization=c.organization
@@ -32,7 +32,7 @@ BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO t FROM eshop.tickets WHERE id=p_ticket;
  SELECT * INTO c FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket;
- SELECT * INTO o FROM public.occasions WHERE id=t.occasion;
+ SELECT * INTO o FROM public.order_term_occasion_internal(c.order_id);
  SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
  state:=public.ticket_wallet_state_internal(p_ticket);
  IF t.id IS NOT NULL THEN
@@ -53,10 +53,7 @@ CREATE OR REPLACE FUNCTION public.refresh_ticket_wallet_term_internal(p_ticket b
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
- UPDATE eshop.ticket_wallet_capabilities c SET event_end_at=o.end_time,expires_at=o.end_time+interval '7 days'
- FROM public.occasions o JOIN eshop.tickets t ON t.occasion=o.id
- WHERE c.ticket_id=p_ticket AND t.id=c.ticket_id AND o.id=c.occasion AND o.organization=c.organization
- AND c.revoked_at IS NULL AND c.reissue_after IS NULL AND o.end_time IS NOT NULL AND c.event_end_at IS DISTINCT FROM o.end_time;
+ PERFORM public.refresh_order_wallet_term_domain_internal((SELECT order_id FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket));
 END $$;
 REVOKE ALL ON FUNCTION public.refresh_ticket_wallet_term_internal(bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.refresh_ticket_wallet_term_internal(bigint) TO service_role;

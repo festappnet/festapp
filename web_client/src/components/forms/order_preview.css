@@ -374,6 +374,8 @@ body.dark-mode .deposit-option span {
 .form-occupancy { text-align: start; margin: 0 0 8px; font-size: 1rem; color: color-mix(in srgb, var(--text-color) 85%, var(--background-color, #fff)); overflow-wrap: anywhere; }
 .waitlist-mode-label { display: block; margin-block-end: 8px; font-size: 1.0625rem; line-height: 1.4; }
 .form-registration-status .waitlist-intro { margin: 0; }
+.form-registration-status .waitlist-count { margin: 16px 0 0; font-weight: 500; line-height: 1.5; }
+.form-registration-status .waitlist-count-number { font-size: 1em; font-weight: 700; line-height: inherit; white-space: nowrap; }
 .form-registration-status > :last-child { margin-block-end: 0; }
 .form-registration-status .waitlist-intro:empty { display: none; }
 .waitlist-intro { margin: 0 auto 16px; max-width: 65ch; line-height: 1.5; overflow-wrap: anywhere; }
