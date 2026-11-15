@@ -359,7 +359,9 @@ historie ukládal původní neobohacené `ticket_details`.
 Etapa vytvoření i čtení snapshotů proto používá tentýž výsledek stávajícího
 `order_tickets_with_seating_internal` pro objednávku i její první historii.
 Nevzniká další výpočet ani dodatečné čtení metadata. U existujících snapshotů
-chybějící/prázdná historická skupina nedokládá změnu jejího názvu. Známé názvy
+chybějící historický klíč skupiny nedokládá změnu jejího názvu. Výslovně
+uložený NULL/prázdný název naopak označuje známé nezařazené místo a přidání
+skupiny zůstává změnou. Známé názvy
 skupin, čísla míst, identity produktů, ceny a skutečné přesuny se stále
 porovnávají. Staré historie se nepřepisují a finanční údaje se neopravují.
 

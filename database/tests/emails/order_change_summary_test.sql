@@ -113,6 +113,12 @@ BEGIN
  PERFORM assert_eq(public.get_products_for_ticket(t2)#>>'{data,order_history,is_newer_version_available}','false','Legacy discounted ticket editor remains current after group enrichment');
  UPDATE eshop.orders SET data=jsonb_set(current_data,'{tickets,0,products,0,spot_title}','"1F"') WHERE id=o;
  PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','true','A known seat number change still requires an update without a historical group');
+ -- A recorded null/empty value is a known ungrouped placement, not an absent legacy field.
+ UPDATE eshop.orders_history SET data=jsonb_set(original,'{tickets,0,products,0,spot_group_title}','null')||'{"is_sent_to_customer":true}' WHERE "order"=o;
+ UPDATE eshop.orders SET data=current_data WHERE id=o;
+ PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','true','Adding a group to a recorded ungrouped seat remains a change');
+ UPDATE eshop.orders_history SET data=jsonb_set(original,'{tickets,0,products,0,spot_group_title}','""')||'{"is_sent_to_customer":true}' WHERE "order"=o;
+ PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','true','A recorded empty group is still a known ungrouped baseline');
  -- Once recorded, group changes are comparable and remain actionable.
  UPDATE eshop.orders_history SET data=current_data||'{"is_sent_to_customer":true}' WHERE "order"=o;
  UPDATE eshop.orders SET data=jsonb_set(current_data,'{tickets,0,products,0,spot_group_title}','"Balkon"') WHERE id=o;
