@@ -495,7 +495,7 @@
       }
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/components/notification_center/notification_email_settings_test.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart test/components/blueprint/blueprint_template_groups_test.dart\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/payment_policy_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/customer_self_service_settings_test.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/components/notification_center/notification_email_settings_test.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart\n\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart test/components/blueprint/blueprint_template_groups_test.dart\nfvm flutter test --no-pub --concurrency=1 test/components/eshop/payment_policy_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -687,7 +687,8 @@
         "test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart",
         "test/sessions/setup_font_catalog_test_ci_cases.dart",
         "test/components/notification_center/notification_email_settings_test.dart",
-        "test/components/discount_codes/discount_codes_dialog_test.dart"
+        "test/components/discount_codes/discount_codes_dialog_test.dart",
+        "test/sessions/customer_self_service_settings_test.dart"
       ],
       "standalone": [
         "test/components/eshop/ticket_delivery_request_test.dart",
@@ -699,9 +700,10 @@
         "test/components/occasion/occasion_setup_blueprint_open_test.dart",
         "test/components/occasion/setup_font_catalog_test.dart",
         "test/components/notification_center/notification_email_settings_test.dart",
-        "test/components/discount_codes/discount_codes_dialog_test.dart"
+        "test/components/discount_codes/discount_codes_dialog_test.dart",
+        "test/sessions/customer_self_service_settings_test.dart"
       ],
-      "reason": "Four compatible catalog/font groups; SDK/client/font registries and the full-catalog discount dialog remain isolated. Normal and reverse order required."
+      "reason": "Compatible catalog/font groups share engines; SDK/client registries and full-catalog discount and self-service settings remain isolated. Normal and reverse order required."
     }
   },
   "resources": {
@@ -1952,6 +1954,7 @@
     "test/data_services/rights_explicit_occasion_test.dart",
     "test/data_services/sign_in_code_login_test.dart",
     "test/services/platform_request_headers_test.dart",
+    "test/sessions/customer_self_service_settings_test.dart",
     "test/sessions/extended_catalog_czech_test.dart",
     "test/sessions/extended_catalog_default_test.dart",
     "test/sessions/extended_czech_test.dart",

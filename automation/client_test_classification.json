@@ -899,6 +899,19 @@
       "sources": [
         "test/components/users/reset_password_navigation_test.dart"
       ]
+    },
+    "test/sessions/customer_self_service_settings_test.dart": {
+      "kind": "environment",
+      "reason": "Full English localization catalog and time/rights fixtures require an isolated engine; ticket_default_cases deliberately uses an uninitialized catalog.",
+      "environment": {
+        "binding": "standard",
+        "catalog": "en",
+        "rootSupabase": "forbidden"
+      },
+      "sources": [
+        "test/sessions/customer_self_service_settings_test.dart",
+        "test/components/forms/customer_self_service_settings_cases.dart"
+      ]
     }
   }
 }

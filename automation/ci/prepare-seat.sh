@@ -10,7 +10,7 @@ config = json.loads(Path('automation/local_db/test-base.json').read_text())
 print(config['providers'][os.environ.get('FESTAPP_TEST_PG_MAJOR', '15')]['image'])
 PY
 )"
-docker pull "$image" &
+python3 automation/local_db/images.py "$image" > /dev/null &
 image_pid=$!
 trap 'kill "$image_pid" 2>/dev/null || true; wait "$image_pid" 2>/dev/null || true' EXIT
 

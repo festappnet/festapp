@@ -1,4 +1,3 @@
-import 'customer_self_service_settings_cases.dart' as self_service;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'customer_order_overview_cases.dart' as customer_order_overview;
@@ -10,7 +9,6 @@ import 'waitlist_commands_cases.dart' as waitlist_commands;
 
 // Scoped groups share one engine; process-global fixtures stay isolated.
 void main() {
-  group('customer_self_service_settings', self_service.main);
   group('customer_order_overview', customer_order_overview.main);
   group('order_finish_screen', order_finish_screen.main);
   group('payment_qr_card', payment_qr_card.main);

@@ -7,6 +7,57 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import runtime
+from local_db import images
+
+
+class ImageResolutionTest(unittest.TestCase):
+    image = 'public.ecr.aws/supabase/postgres:15.8.1.085@sha256:' + 'a' * 64
+
+    def test_cached_pin_needs_no_registry_download(self):
+        with patch.object(images.subprocess,'check_output',return_value=b'[{"Id":"same-content"}]'), \
+             patch.object(images.subprocess,'run') as pull:
+            self.assertEqual(images.resolve(self.image)[0],self.image)
+            pull.assert_not_called()
+
+    def test_cached_mirror_needs_no_registry_download(self):
+        mirror=self.image.replace('public.ecr.aws/','docker.io/',1)
+        def inspect(command,**kwargs):
+            if command[-1]==self.image:raise subprocess.CalledProcessError(1,command)
+            return b'[{"Id":"same-content"}]'
+        with patch.object(images.subprocess,'check_output',side_effect=inspect), \
+             patch.object(images.subprocess,'run') as pull:
+            self.assertEqual(images.resolve(self.image)[0],mirror)
+            pull.assert_not_called()
+
+    def test_quota_failure_uses_only_the_identical_pinned_official_mirror(self):
+        mirror=self.image.replace('public.ecr.aws/','docker.io/',1)
+        downloaded=set()
+        def inspect(command,**kwargs):
+            if command[-1] not in downloaded:
+                raise subprocess.CalledProcessError(1,command)
+            return b'[{"Id":"same-content"}]'
+        def pull(command,**kwargs):
+            if command[-1]==self.image:
+                return subprocess.CompletedProcess(command,1,stderr='Data limit exceeded')
+            downloaded.add(command[-1])
+            return subprocess.CompletedProcess(command,0)
+        with patch.object(images.subprocess,'check_output',side_effect=inspect), \
+             patch.object(images.subprocess,'run',side_effect=pull) as calls:
+            self.assertEqual(images.resolve(self.image),(mirror,{'Id':'same-content'}))
+            self.assertEqual([c.args[0] for c in calls.call_args_list],
+                             [['docker','pull',self.image],['docker','pull',mirror]])
+
+    def test_both_registries_unavailable_remains_a_failure(self):
+        with patch.object(images.subprocess,'check_output',side_effect=subprocess.CalledProcessError(1,'inspect')), \
+             patch.object(images.subprocess,'run',return_value=subprocess.CompletedProcess([],1)):
+            with self.assertRaisesRegex(RuntimeError,'approved registries'):
+                images.resolve(self.image)
+
+    def test_mutable_tags_and_unapproved_registry_mirrors_are_rejected(self):
+        with self.assertRaisesRegex(ValueError,'pinned by digest'):
+            images.references('public.ecr.aws/supabase/postgres:latest')
+        foreign='registry.invalid/postgres:15@sha256:'+'a'*64
+        self.assertEqual(images.references(foreign),[foreign])
 
 
 class RuntimeIdentityTest(unittest.TestCase):
@@ -71,6 +122,21 @@ class RuntimeIdentityTest(unittest.TestCase):
         result.stdout=json.dumps([data])
         with patch.object(runtime.subprocess,'run',return_value=result):
             with self.assertRaisesRegex(ValueError,'exact loopback'): instance.inspect()
+
+    def test_mirror_container_requires_the_same_pinned_provider_digest(self):
+        instance=runtime.Runtime()
+        mirror=images.references(runtime.CONFIG['image'])[1]
+        command=['postgres','-D','/etc/postgresql',
+                 *[arg for k,v in runtime.CONFIG['settings'].items() for arg in ('-c',k+'='+v)]]
+        data={'Config':{'Labels':{runtime.LABEL:runtime.VERSION},'Image':mirror,'Cmd':command},
+              'HostConfig':{'PortBindings':{'5432/tcp':[{'HostIp':'127.0.0.1','HostPort':str(instance.port)}]}}}
+        result=subprocess.CompletedProcess([],0,json.dumps([data]))
+        with patch.object(runtime.subprocess,'run',return_value=result):
+            self.assertEqual(instance.inspect()['Config']['Image'],mirror)
+            data['Config']['Image']=mirror.split('@')[0]+'@sha256:'+'0'*64
+            result.stdout=json.dumps([data])
+            with self.assertRaisesRegex(ValueError,'image/provider major mismatch'):
+                instance.inspect()
 
     def test_remote_environment_never_selects_the_runtime_target(self):
         with patch.dict(os.environ,{'DATABASE_URL':'postgresql://invalid:invalid@production.invalid/postgres'}):

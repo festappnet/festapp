@@ -194,7 +194,7 @@ class RunnerSafetyTest(unittest.TestCase):
         for browser_exit,image_exit,major in [(0,0,'15'),(17,0,'15'),(0,19,'17'),(17,19,'17')]:
             with self.subTest(browser=browser_exit,image=image_exit),tempfile.TemporaryDirectory() as directory:
                 root=Path(directory)
-                for relative in ('automation/ci/prepare-seat.sh','automation/ci/browser.sh','automation/local_db/test-base.json'):
+                for relative in ('automation/ci/prepare-seat.sh','automation/ci/browser.sh','automation/local_db/test-base.json','automation/local_db/images.py'):
                     target=root/relative;target.parent.mkdir(parents=True,exist_ok=True)
                     shutil.copyfile(ROOT/relative,target)
                 binary=root/'bin';binary.mkdir()
@@ -211,6 +211,8 @@ for _ in range(200):
     time.sleep(.01)
 else: sys.exit(91)
 (root/(name+'.finished')).touch()
+if name=='docker' and sys.argv[1:3]==['image','inspect'] and os.environ['IMAGE_EXIT']=='0':
+    print('[{}]')
 sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
 ''')
                     tool.chmod(0o755)
@@ -219,11 +221,13 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
                      'PROVISION_FIXTURE':directory,'BROWSER_EXIT':str(browser_exit),'IMAGE_EXIT':str(image_exit),
                      'FESTAPP_TEST_PG_MAJOR':major,'GITHUB_ENV':str(root/'github-env')}
                 result=subprocess.run(['bash',str(root/'automation/ci/prepare-seat.sh')],env=env,timeout=10,capture_output=True,text=True)
-                self.assertEqual(result.returncode,browser_exit or image_exit,result.stderr)
+                self.assertEqual(result.returncode,browser_exit or (1 if image_exit else 0),result.stderr)
                 self.assertTrue((root/'docker.finished').exists())
                 self.assertTrue((root/'pnpm.finished').exists())
                 config=json.loads((ROOT/'automation/local_db/test-base.json').read_text())
-                self.assertEqual((root/'docker.started').read_text(),'pull '+config['providers'][major]['image'])
+                image=config['providers'][major]['image']
+                expected=('image inspect '+image) if not image_exit else ('pull '+image.replace('public.ecr.aws/','docker.io/',1))
+                self.assertEqual((root/'docker.started').read_text(),expected)
                 self.assertIn('--only-shell chromium',(root/'pnpm.started').read_text())
 
     def test_ticket_preparation_can_overlap_edge_without_overlapping_flutter(self):

@@ -1,5 +1,3 @@
-import '../components/forms/customer_self_service_settings_cases.dart'
-    as self_service;
 import '../components/forms/customer_order_overview_cases.dart'
     as customer_order_overview;
 import '../components/discount_codes/discount_codes_cases.dart' as discounts;
@@ -16,7 +14,6 @@ import '../components/eshop/views/add_cash_payment_dialog_cases.dart' as suite5;
 
 void main() {
   registerClientSuites({
-    'customer_self_service_settings': self_service.main,
     'customer_order_overview': customer_order_overview.main,
     'discount_codes': discounts.main,
     'notification_center': suite0.main,
