@@ -1,0 +1,19 @@
+{
+  "status": "pass",
+  "image": "supabase/postgres:17.12.0.000@sha256:6c056e9a0f81d423c1a81fdf4e6587c16efd3f63960897371dab8ae2694a4714",
+  "postgres": "17.12",
+  "fresh_owned_runtime": true,
+  "production_data_or_keys_loaded": false,
+  "provider_input_hashes": {
+    "provider.sql": "07e6380d4e1f01c6ef3bcca733e76ebcfc24331868695fd475cc1364016c18a4",
+    "roles.sql": "2d87bf005c1ab4301757898cfffe38b1f9c8ec78eed4bac9bcc4e7e3b7d1d605"
+  },
+  "sql_tests": [
+    "database/tests/client_sync_v1_runtime_test.sql",
+    "database/tests/client_sync_production_hardening_test.sql",
+    "database/tests/eshop/reset_password_via_scan_authorization_test.sql",
+    "database/tests/emails/order_email_recovery_test.sql"
+  ],
+  "reservation_concurrency": true,
+  "seconds": 2.512
+}

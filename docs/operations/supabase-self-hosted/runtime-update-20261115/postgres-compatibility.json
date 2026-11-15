@@ -1,0 +1,390 @@
+{
+  "restore": {
+    "status": "pass",
+    "tool": "pgbackrest 2.57.0",
+    "backup_label": "20261108-031514F_20261114-031542D",
+    "target": "2026-11-14T03:20:00Z",
+    "postgres_recovery_target": "2026-11-14 03:20:00+00:00",
+    "paused_at_target": true,
+    "replay_at": "2026-11-14T03:19:59.523581+00:00",
+    "replay_lsn": "26/4F0797B8",
+    "catalog_smoke": true,
+    "application_rest_read_smoke": false,
+    "production_integrations_started": false,
+    "network": "none",
+    "ports": false,
+    "host_mounts": false,
+    "application_preloads_disabled": true,
+    "encrypted_key_escrow_used": true,
+    "isolated_restore_seconds": 13.14,
+    "full_service_rto_proven": false,
+    "storage_r2_consistency_proven": false
+  },
+  "upgrade": {
+    "status": "started",
+    "network": "none",
+    "volume": "festapp-pg1712-rehearsal-data",
+    "before": {
+      "_supabase": {
+        "version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          }
+        ]
+      },
+      "festapp_rehearsal_20260909220601": {
+        "version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          },
+          {
+            "name": "dblink",
+            "version": "1.2"
+          },
+          {
+            "name": "http",
+            "version": "1.6"
+          },
+          {
+            "name": "moddatetime",
+            "version": "1.0"
+          },
+          {
+            "name": "pg_net",
+            "version": "0.20.3"
+          },
+          {
+            "name": "pg_stat_statements",
+            "version": "1.11"
+          },
+          {
+            "name": "pg_trgm",
+            "version": "1.6"
+          },
+          {
+            "name": "pgaudit",
+            "version": "17.1"
+          },
+          {
+            "name": "pgcrypto",
+            "version": "1.3"
+          },
+          {
+            "name": "pgjwt",
+            "version": "0.2.0"
+          },
+          {
+            "name": "postgres_fdw",
+            "version": "1.1"
+          },
+          {
+            "name": "supabase_vault",
+            "version": "0.3.1"
+          },
+          {
+            "name": "unaccent",
+            "version": "1.1"
+          },
+          {
+            "name": "uuid-ossp",
+            "version": "1.1"
+          }
+        ]
+      },
+      "postgres": {
+        "version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          },
+          {
+            "name": "uuid-ossp",
+            "version": "1.1"
+          },
+          {
+            "name": "pgcrypto",
+            "version": "1.3"
+          },
+          {
+            "name": "pg_net",
+            "version": "0.20.3"
+          },
+          {
+            "name": "pg_stat_statements",
+            "version": "1.11"
+          },
+          {
+            "name": "supabase_vault",
+            "version": "0.3.1"
+          },
+          {
+            "name": "dblink",
+            "version": "1.2"
+          },
+          {
+            "name": "http",
+            "version": "1.6"
+          },
+          {
+            "name": "moddatetime",
+            "version": "1.0"
+          },
+          {
+            "name": "pg_cron",
+            "version": "1.6.4"
+          },
+          {
+            "name": "pg_trgm",
+            "version": "1.6"
+          },
+          {
+            "name": "pgaudit",
+            "version": "17.1"
+          },
+          {
+            "name": "pgjwt",
+            "version": "0.2.0"
+          },
+          {
+            "name": "unaccent",
+            "version": "1.1"
+          },
+          {
+            "name": "postgres_fdw",
+            "version": "1.1"
+          }
+        ]
+      },
+      "template1": {
+        "version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          }
+        ]
+      }
+    },
+    "after": {
+      "_supabase": {
+        "version": "PostgreSQL 17.12 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          }
+        ]
+      },
+      "festapp_rehearsal_20260909220601": {
+        "version": "PostgreSQL 17.12 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          },
+          {
+            "name": "dblink",
+            "version": "1.2"
+          },
+          {
+            "name": "http",
+            "version": "1.6"
+          },
+          {
+            "name": "moddatetime",
+            "version": "1.0"
+          },
+          {
+            "name": "pg_net",
+            "version": "0.20.3"
+          },
+          {
+            "name": "pg_stat_statements",
+            "version": "1.11"
+          },
+          {
+            "name": "pg_trgm",
+            "version": "1.6"
+          },
+          {
+            "name": "pgaudit",
+            "version": "17.1"
+          },
+          {
+            "name": "pgcrypto",
+            "version": "1.3"
+          },
+          {
+            "name": "pgjwt",
+            "version": "0.2.0"
+          },
+          {
+            "name": "postgres_fdw",
+            "version": "1.1"
+          },
+          {
+            "name": "supabase_vault",
+            "version": "0.3.1"
+          },
+          {
+            "name": "unaccent",
+            "version": "1.1"
+          },
+          {
+            "name": "uuid-ossp",
+            "version": "1.1"
+          }
+        ]
+      },
+      "postgres": {
+        "version": "PostgreSQL 17.12 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          },
+          {
+            "name": "uuid-ossp",
+            "version": "1.1"
+          },
+          {
+            "name": "pgcrypto",
+            "version": "1.3"
+          },
+          {
+            "name": "pg_net",
+            "version": "0.20.3"
+          },
+          {
+            "name": "pg_stat_statements",
+            "version": "1.11"
+          },
+          {
+            "name": "supabase_vault",
+            "version": "0.3.1"
+          },
+          {
+            "name": "dblink",
+            "version": "1.2"
+          },
+          {
+            "name": "http",
+            "version": "1.6"
+          },
+          {
+            "name": "moddatetime",
+            "version": "1.0"
+          },
+          {
+            "name": "pg_cron",
+            "version": "1.6.4"
+          },
+          {
+            "name": "pg_trgm",
+            "version": "1.6"
+          },
+          {
+            "name": "pgaudit",
+            "version": "17.1"
+          },
+          {
+            "name": "pgjwt",
+            "version": "0.2.0"
+          },
+          {
+            "name": "unaccent",
+            "version": "1.1"
+          },
+          {
+            "name": "postgres_fdw",
+            "version": "1.1"
+          }
+        ]
+      },
+      "template1": {
+        "version": "PostgreSQL 17.12 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+        "collation_version": "153.121",
+        "recorded_collation": "153.121",
+        "extensions": [
+          {
+            "name": "plpgsql",
+            "version": "1.0"
+          }
+        ]
+      }
+    },
+    "candidate_start_seconds": 0.371
+  },
+  "rollback": {
+    "status": "pass",
+    "seconds": 0.425,
+    "confirmed_fixture_preserved": true,
+    "pg_only_binary_rollback": true,
+    "service_migrations_tested": false
+  },
+  "new_backup": {
+    "status": "pass",
+    "physical_production_data_clone": true,
+    "postgres": "17.12",
+    "pgbackrest": "2.57.0",
+    "full_backup_seconds": 8.036,
+    "isolated_restore_seconds": 7.099,
+    "full_label": "20261115-014452F",
+    "time_target": "2026-11-15 01:45:00.648365+00",
+    "confirmed_fixture_preserved": true,
+    "later_fixture_excluded": true,
+    "differential_backup": true,
+    "network": "none",
+    "repo_type": "encrypted-posix-fixture",
+    "off_host_production_repo_tested": false
+  },
+  "installed_config": {
+    "status": "pass",
+    "installed_custom_config_and_key_volume": true,
+    "outbound_network": "none",
+    "background_integrations_disabled": true,
+    "seconds": 0.524,
+    "catalog": {
+      "version": "170012",
+      "preloads": "pg_stat_statements, pgaudit, plpgsql, plpgsql_check, pg_cron, pg_net, pgsodium, auto_explain, pg_tle, plan_filter, supabase_vault",
+      "vault_rows": 2,
+      "collation": "153.121"
+    }
+  },
+  "vault_keys": {
+    "status": "pass",
+    "used_by": [
+      "blueprint image processing",
+      "notification dispatch"
+    ],
+    "secret_count": 2,
+    "old_new_decryption_digest_equal": true,
+    "production_custom_key_volume_preserved": true,
+    "secret_values_logged": false,
+    "network": "none"
+  },
+  "status": "pass",
+  "postgres_version_num": 170012,
+  "base_main_sha": "1c3d9677ceff5e0cc261c912400a0fcc88a1e961",
+  "pgbackrest": "2.57.0",
+  "bundle_override": true
+}

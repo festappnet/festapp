@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly REVISION=241bb11c0627f2981746d37033f57dbfa81d29b0
+readonly REVISION=189adda99d1b56da55fc5a6ee3f849354aaea92a
 readonly ROOT=/opt/festapp-supabase
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR

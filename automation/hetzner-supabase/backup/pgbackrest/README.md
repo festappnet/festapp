@@ -1,8 +1,10 @@
 # Festapp pgBackRest
 
 Standard pgBackRest 2.57.0 (Alpine packaged version 2.57.0-r0), added to the
-exact existing Supabase PostgreSQL 17.6 image. PostgreSQL/extensions are not
-upgraded. All backup, differential, WAL, retention, checks and restore semantics
+canonical Supabase PostgreSQL 17.12 ARM64 image, using its own Alpine 3.23
+repositories. The runtime update preserves pgBackRest 2.57.0, repository/key
+custody and historical recovery points. The original 17.6 derivative remains
+in the protected rollback set. All backup, differential, WAL, retention, checks and restore semantics
 are implemented by pgBackRest, not by application code.
 
 The user authorized installation and production activation on 2026-10-16.

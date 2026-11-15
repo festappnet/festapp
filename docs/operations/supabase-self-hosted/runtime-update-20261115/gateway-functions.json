@@ -1,0 +1,63 @@
+{
+  "status": "pass",
+  "checks": [
+    {
+      "path": "/auth/v1/health",
+      "method": "GET",
+      "expected": 401,
+      "actual": 401,
+      "cors": "https://vstupenky.online"
+    },
+    {
+      "path": "/auth/v1/health",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "cors": "https://vstupenky.online"
+    },
+    {
+      "path": "/rest/v1/organizations?select=id&id=eq.3",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200,
+      "cors": "https://vstupenky.online"
+    },
+    {
+      "path": "/functions/v1/email-confirmation-status",
+      "method": "OPTIONS",
+      "expected": 200,
+      "actual": 200,
+      "cors": "*"
+    },
+    {
+      "path": "/functions/v1/process-email-queue",
+      "method": "POST",
+      "expected": 401,
+      "actual": 401,
+      "cors": "*"
+    },
+    {
+      "path": "/functions/v1/download-ticket",
+      "method": "POST",
+      "expected": 401,
+      "actual": 401,
+      "cors": "*"
+    },
+    {
+      "path": "/functions/v1/email-confirmation-status",
+      "method": "POST",
+      "expected": 403,
+      "actual": 403,
+      "cors": "*"
+    },
+    {
+      "path": "/functions/v1/nonexistent-upgrade-fixture",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404,
+      "cors": "*"
+    }
+  ],
+  "offline": true,
+  "production_keys_loaded": false
+}

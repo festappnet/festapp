@@ -1,0 +1,124 @@
+{
+  "status": "pass",
+  "network": "none",
+  "production_provider_calls": false,
+  "stages": [
+    {
+      "name": "original_complete_stack_and_pre_window_backup",
+      "seconds": 20.064
+    },
+    {
+      "name": "candidate_complete_stack_and_old_session_refresh",
+      "seconds": 59.553
+    },
+    {
+      "name": "full_service_lsn_recovery_and_original_job_state_restored",
+      "seconds": 103.871
+    }
+  ],
+  "original_cron_fixture": [
+    {
+      "id": 10,
+      "active": true
+    },
+    {
+      "id": 13,
+      "active": false
+    },
+    {
+      "id": 23,
+      "active": false
+    },
+    {
+      "id": 12,
+      "active": true
+    },
+    {
+      "id": 14,
+      "active": true
+    },
+    {
+      "id": 15,
+      "active": false
+    },
+    {
+      "id": 16,
+      "active": true
+    },
+    {
+      "id": 17,
+      "active": false
+    },
+    {
+      "id": 18,
+      "active": true
+    },
+    {
+      "id": 19,
+      "active": false
+    },
+    {
+      "id": 20,
+      "active": true
+    },
+    {
+      "id": 24,
+      "active": true
+    },
+    {
+      "id": 21,
+      "active": false
+    },
+    {
+      "id": 25,
+      "active": false
+    },
+    {
+      "id": 22,
+      "active": true
+    },
+    {
+      "id": 26,
+      "active": true
+    },
+    {
+      "id": 27,
+      "active": false
+    }
+  ],
+  "migration_heads_before": {
+    "festapp_rehearsal_20260909220601:auth": "20260302000000",
+    "festapp_rehearsal_20260909220601:_realtime": "20260422000000",
+    "festapp_rehearsal_20260909220601:realtime": "20260528120000",
+    "_supabase:_supavisor": "20260323000000"
+  },
+  "pre_window_backup": "20261115-031358F",
+  "fencing_lsn": "26/56000248",
+  "catalog": {
+    "reindexed": 11
+  },
+  "migration_heads_after": {
+    "festapp_rehearsal_20260909220601:auth": "20260831180000",
+    "festapp_rehearsal_20260909220601:_realtime": "20260805000000",
+    "festapp_rehearsal_20260909220601:realtime": "20261009120000",
+    "_supabase:_supavisor": "20260323000000"
+  },
+  "upgrade_seconds": 59.552,
+  "rollback_seconds": 103.871,
+  "recovery_timing": "Conservative wall bound includes interrupted fixture readiness assertion and resume; begins 1s before first candidate shutdown",
+  "all_installed_bundle_services_started": true,
+  "realtime_scope": "startup health only; unused by app",
+  "pooler_scope": "startup health only; no new CONNECT grants",
+  "existing_session_refresh_preserved": true,
+  "acknowledged_before_fence_write_preserved": true,
+  "post_fence_fixture_excluded": true,
+  "original_email_pause_restored": true,
+  "full_service_recovery": true,
+  "total_seconds": 183.487,
+  "old_db_image": "sha256:58ab4c77b25c7dc79582c23ed872619ee2494ad7dc12cd3af4c6e6b053571bd0",
+  "new_db_image": "sha256:ac20ae95be84d0bb429889d4f9c55c6533fc45fcb974f26280cf96316a88094f",
+  "original_cron_state_restored": true,
+  "combined-resume.py_sha256": "8f78cf2c74226140040d4a3f9a8ebfd32d2974f3d3c8a5414247216c5a9010ab",
+  "combined-tail.py_sha256": "0c035c7e167439bdf0c893a6ada583e0bdc4ef1f7ff3af675776768b9b3dd77d",
+  "combined-rehearsal.py_sha256": "ebc8ba34ccd0a8cbd86002d559b5dec1108581742897abc7cbea2b76021354cd"
+}

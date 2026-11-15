@@ -1,6 +1,6 @@
 {
   "manifestVersion": 1,
-  "checkedAt": "2026-09-02T15:00:00Z",
+  "checkedAt": "2026-11-15T02:07:24.162856+00:00",
   "architecture": "linux/arm64",
   "policy": "latest-stable-compatible-bundle",
   "host": {
@@ -12,36 +12,42 @@
     "hcloudProvider": "1.68.0"
   },
   "supabase": {
-    "release": "self-hosted/v0.8.0",
-    "commit": "241bb11c0627f2981746d37033f57dbfa81d29b0",
+    "release": "self-hosted/v0.8.4",
+    "commit": "189adda99d1b56da55fc5a6ee3f849354aaea92a",
     "postgresMajor": 17,
-    "upstreamPostgresLatestStable": "18.6",
-    "postgresDecision": "Use the PostgreSQL major tested by the latest stable Supabase bundle for cutover. Upgrade to PostgreSQL 18 only in a separate rehearsed release after Supabase publishes a stable compatible bundle.",
+    "upstreamPostgresLatestStable": "18.7",
+    "postgresDecision": "Rehearsed PostgreSQL 17.12 override of the selected Supabase bundle PostgreSQL 17.6.1.136; preserve PostgreSQL major 17, existing extensions, configuration, key volume and pgBackRest 2.57.0.",
     "registryEvidence": {
-      "resolvedAt": "2026-08-27T00:00:00Z",
-      "resolver": "docker manifest inspect --verbose",
+      "resolvedAt": "2026-11-15T02:07:24.162856+00:00",
+      "resolver": "OCI authenticated manifest GET and SHA-256 content verification",
       "platform": "linux/arm64",
       "authenticatedRefreshRequiredBeforeProduction": true
     },
     "images": {
-      "studio": "supabase/studio:2026.08.03-sha-022b374@sha256:cb20b9a2b8fbb4f47a616c959dfdbde75668603c38d5ddd018e3f25a9f009937",
-      "envoy": "envoyproxy/envoy:v1.39.0@sha256:5edd669228659835ac243e3ffa5c08a65e92bb267d56da5c28317dbcf5a70292",
-      "auth": "supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7",
-      "rest": "postgrest/postgrest:v14.12@sha256:844785450d6b046ee97f1c67ea37e3ff6b4ed7ee3570b1b91c03f66f032c4805",
-      "realtime": "supabase/realtime:v2.102.3@sha256:11651eb260639365adfd8d886ac1bfba9b069440cf92cc29f400f3b4a6554cb9",
-      "postgresMeta": "supabase/postgres-meta:v0.96.6@sha256:abbb468e4e5a14b5b4edd29caf1fa1d98ee606da89fed3bfc653a6f85985401a",
-      "edgeRuntime": "supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7",
-      "postgres": "supabase/postgres:17.6.1.136@sha256:a9946f08d31e8eb1149229c94e5c26603a9233116807cbbd93d75179cbac516a",
-      "supavisor": "supabase/supavisor:2.9.5@sha256:1dd306835b0215909cf76371a7a20be71268bbc97619f7133b882c5e9a7392e8",
+      "studio": "supabase/studio:2026.11.02-sha-a05e7ec@sha256:6fede89ed2397566843f4913d575b062df7180e06dc434744c9cfed0c5a46d53",
+      "envoy": "envoyproxy/envoy:v1.39.6@sha256:eebc293321d015af3ce65cb2424d0a7aaab417a7101f2a4e57d514b7826789ba",
+      "auth": "supabase/gotrue:v2.197.0@sha256:3439d5affb9e96395d1348521f4c675eea7096d8d76d18d4e31fcc08df802116",
+      "rest": "postgrest/postgrest:v14.18@sha256:dfa6464b877fa7b1b0be85740f6ce6985144b509a6edb5f09c5ee67e687e8c1f",
+      "realtime": "supabase/realtime:v2.148.3@sha256:b9595f81031fb95b78a6d34d365e31c2e946c8e9abc204c9f8efa9c97de506ca",
+      "postgresMeta": "supabase/postgres-meta:v0.100.0@sha256:e3e00f3d8315884717b9751cbf47888a0359c640097d96abff987de37a0edf81",
+      "edgeRuntime": "supabase/edge-runtime:v1.77.9@sha256:37da62f867b8d7e636e9d62c65497ecaa9f05bfa37bc70c2dc9ccb06461ff982",
+      "postgres": "supabase/postgres:17.12.0.000@sha256:6c056e9a0f81d423c1a81fdf4e6587c16efd3f63960897371dab8ae2694a4714",
+      "supavisor": "supabase/supavisor:2.9.13@sha256:98861660eb5f2ef229c383b0cf1532c7937705c60513d2edf0c0cd1523d61437",
       "caddy": "caddy:2.11.4@sha256:1172d4213087d3fc30bafc7ff2c2896180eb0c41ff7f75f315568fb36cabdcba",
       "cloudflared": "cloudflare/cloudflared:2026.10.3@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39"
     },
     "historicalBackupImages": {
       "storage": "supabase/storage-api:v1.60.4@sha256:9326eb9c6b74c0a5ba393ab46a08a51d16bc5ea5f2978fc5b0f17fc67c64a4de"
+    },
+    "postgresOverride": {
+      "image": "supabase/postgres:17.12.0.000@sha256:6c056e9a0f81d423c1a81fdf4e6587c16efd3f63960897371dab8ae2694a4714",
+      "bundleImage": "supabase/postgres:17.6.1.136",
+      "releaseCommit": "95eeb9f21d83a473b38036e1da70c31bc597418a",
+      "evidence": "docs/operations/supabase-self-hosted/runtime-update-20261115/postgres-compatibility.json"
     }
   },
   "sources": {
-    "supabase": "https://github.com/supabase/supabase/tree/self-hosted/v0.8.0/docker",
+    "supabase": "https://github.com/supabase/supabase/tree/self-hosted/v0.8.4/docker",
     "postgresql": "https://www.postgresql.org/docs/release/",
     "ubuntu": "https://ubuntu.com/download/server",
     "dockerEngine": "https://docs.docker.com/engine/release-notes/29/",

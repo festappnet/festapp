@@ -98,3 +98,8 @@ test('pgBackRest derivative follows the canonical database image without changin
   assert.ok(base);
   assert.equal(dockerfile.match(/^FROM (.+)$/m)?.[1], base, 'Update/rebuild the derivative alongside the canonical database image.');
 });
+
+test('pgBackRest replay timestamps respect the timezone-aware recovery target', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_pgbackrest_recovery.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});

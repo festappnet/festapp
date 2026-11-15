@@ -5,12 +5,20 @@ shares only the network-none container's private loopback, with fixture auth.
 """
 import argparse,datetime,json,os,re,subprocess,tempfile,time,uuid
 from pathlib import Path
-IMAGE='festapp-postgres-pgbackrest:17.6-2.57.0-r0'
+IMAGE='festapp-postgres-pgbackrest:17.12-2.57.0-r0'
 def postgres_recovery_target(value):
  target=datetime.datetime.fromisoformat(value.replace('Z','+00:00'))
  if target.tzinfo is None:raise ValueError('Recovery target requires an explicit timezone')
  # PostgreSQL's recovery GUC rejects the otherwise valid ISO UTC suffix Z.
  return target.astimezone(datetime.timezone.utc).isoformat(sep=' ')
+
+def replay_at_or_before_target(replay_at,target):
+ if not replay_at:return False
+ replay=datetime.datetime.fromisoformat(replay_at)
+ requested=datetime.datetime.fromisoformat(target)
+ if replay.tzinfo is None or requested.tzinfo is None:
+  raise ValueError('Replay and target timestamps require explicit timezones')
+ return replay<=requested
 
 def main():
  p=argparse.ArgumentParser();p.add_argument('--repo-dir',type=Path,required=True);p.add_argument('--recovery',type=Path,required=True);p.add_argument('--identity',type=Path,required=True);p.add_argument('--target',required=True);p.add_argument('--backup-label',required=True);p.add_argument('--evidence',type=Path,required=True);p.add_argument('--rest-smoke',action='store_true');a=p.parse_args()
@@ -69,7 +77,7 @@ def main():
     if a.rest_smoke:
      state['network_disabled']=sql("BEGIN READ ONLY; SELECT current_setting('listen_addresses')='127.0.0.1' AND current_setting('primary_conninfo')='' AND current_setting('max_logical_replication_workers')='0'; COMMIT;")=='t'
     assert state['preloads_disabled'] and state['network_disabled'] and state['archiving_disabled']
-    assert state['replay_at'] and datetime.datetime.fromisoformat(state['replay_at'])<=target
+    assert replay_at_or_before_target(state['replay_at'],target)
     # Assert isolation from Docker's actual config, not just requested flags.
     actual=json.loads(run('docker','inspect',name,capture=True))[0]
     assert actual['HostConfig']['NetworkMode']=='none' and not actual['HostConfig']['PortBindings']

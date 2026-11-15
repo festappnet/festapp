@@ -28,9 +28,51 @@ assert.match(pins.supabase.historicalBackupImages.storage, digestPattern);
 for (const [name, source] of Object.entries(pins.sources)) {
   assert.match(source, /^https:\/\//, `${name} must cite an HTTPS primary source`);
 }
+if (pins.supabase.postgresOverride) {
+  const override = pins.supabase.postgresOverride;
+  assert.equal(override.image, pins.supabase.images.postgres);
+  assert.equal(override.bundleImage, 'supabase/postgres:17.6.1.136');
+  assert.equal(override.releaseCommit, '95eeb9f21d83a473b38036e1da70c31bc597418a');
+  assert.equal(override.image, 'supabase/postgres:17.12.0.000@sha256:6c056e9a0f81d423c1a81fdf4e6587c16efd3f63960897371dab8ae2694a4714');
+  assert.equal(override.evidence, 'docs/operations/supabase-self-hosted/runtime-update-20261115/postgres-compatibility.json');
+  const evidence = JSON.parse(fs.readFileSync(new URL(`../../../${override.evidence}`, import.meta.url)));
+  assert.equal(evidence.status, 'pass');
+  assert.equal(evidence.postgres_version_num, 170012);
+  assert.equal(evidence.installed_config.status, 'pass');
+  assert.equal(evidence.new_backup.status, 'pass');
+  assert.equal(evidence.vault_keys.old_new_decryption_digest_equal, true);
+}
 process.stdout.write(`runtime pins valid: ${pins.supabase.release}, ${Object.keys(pins.supabase.images).length} immutable images\n`);
 
 if (process.argv.includes('--online')) await verifyOnline();
+else if (process.argv.includes('--bundle')) await verifySelectedBundle();
+
+async function verifySelectedBundle() {
+  const ref = await fetchJson(`https://api.github.com/repos/supabase/supabase/git/ref/tags/${pins.supabase.release}`);
+  const commit = ref.object.type === 'tag' ? (await fetchJson(ref.object.url)).object.sha : ref.object.sha;
+  assert.equal(commit, pins.supabase.commit, 'Selected Supabase tag/commit mismatch');
+  const response = await fetch(`https://raw.githubusercontent.com/supabase/supabase/${commit}/docker/docker-compose.yml`).then(assertResponse);
+  await verifyImages(await response.text());
+  process.stdout.write('selected Supabase bundle and explicit PostgreSQL override verified; host tools unchanged\n');
+}
+
+async function verifyImages(compose) {
+  const images = new Set(compose.split(/\r?\n/).map(line => line.match(/^\s+image:\s+(\S+)$/)?.[1]).filter(Boolean));
+  for (const [name, pinned] of Object.entries(pins.supabase.images)) {
+    if (!['caddy', 'cloudflared'].includes(name)) {
+      const selected = name === 'postgres' && pins.supabase.postgresOverride
+        ? pins.supabase.postgresOverride.bundleImage : pinned.split('@')[0];
+      assert.ok(images.has(selected), `${name} is not in the selected Supabase bundle`);
+    }
+    if (process.argv.includes('--registry') && !['caddy', 'cloudflared'].includes(name)) {
+      const inspected = JSON.parse(execFileSync('docker', ['manifest', 'inspect', '--verbose', pinned.split('@')[0]], { encoding: 'utf8' }));
+      const manifests = Array.isArray(inspected) ? inspected : [inspected];
+      const arm64 = manifests.find(value => value.Descriptor?.platform?.os === 'linux' && value.Descriptor?.platform?.architecture === 'arm64');
+      assert.ok(arm64, `${name} has no linux/arm64 registry manifest`);
+      assert.equal(arm64.Descriptor.digest, pinned.split('@')[1], `${name} arm64 digest changed`);
+    }
+  }
+}
 
 async function verifyOnline() {
   const latestRepositories = {
@@ -62,7 +104,9 @@ async function verifyOnline() {
     .map((line) => line.match(/^\s+image:\s+(\S+)$/)?.[1]).filter(Boolean));
   for (const [name, pinned] of Object.entries(pins.supabase.images)) {
     if (!['caddy', 'cloudflared'].includes(name)) {
-      assert.ok(composeImages.has(pinned.split('@')[0]), `${name} is not in the selected Supabase bundle`);
+      const selected = name === 'postgres' && pins.supabase.postgresOverride
+        ? pins.supabase.postgresOverride.bundleImage : pinned.split('@')[0];
+      assert.ok(composeImages.has(selected), `${name} is not in the selected Supabase bundle`);
     }
     if (process.argv.includes('--registry')) {
       let inspected;

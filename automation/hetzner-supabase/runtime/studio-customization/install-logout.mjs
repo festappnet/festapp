@@ -7,16 +7,22 @@ const chunksRoot = path.join(studioRoot, '.next/server/chunks/ssr');
 const pagesRoot = path.join(studioRoot, '.next/server/pages');
 const sourceAsset = process.env.FESTAPP_STUDIO_LOGOUT_ASSET || '/opt/festapp-studio/logout.js';
 const targetAsset = path.join(studioRoot, 'public/festapp-admin/logout.js');
-const documentMarker = 'children:[(0,b.jsx)(c.Main,{}),(0,b.jsx)(c.NextScript,{})]';
-const patchedDocument = 'children:[(0,b.jsx)(c.Main,{}),(0,b.jsx)(c.NextScript,{}),(0,b.jsx)("script",{src:"/festapp-admin/logout.js",defer:!0})]';
+const documents = [
+  ['children:[(0,b.jsx)(c.Main,{}),(0,b.jsx)(c.NextScript,{})]', 'b'],
+  ['children:[(0,d.jsx)(f.r,{}),(0,d.jsx)(e.Main,{}),(0,d.jsx)(e.NextScript,{})]', 'd'],
+].map(([original, jsx]) => ({ original,
+  patched: original.slice(0, -1) + `,(0,${jsx}.jsx)("script",{src:"/festapp-admin/logout.js",defer:!0})]`,
+}));
 
 const javascriptFiles = fs.readdirSync(chunksRoot)
   .filter((name) => name.endsWith('.js'))
   .map((name) => path.join(chunksRoot, name));
-const originalMatches = javascriptFiles
-  .filter((file) => fs.readFileSync(file, 'utf8').includes(documentMarker));
-const patchedMatches = javascriptFiles
-  .filter((file) => fs.readFileSync(file, 'utf8').includes(patchedDocument));
+const originalMatches = javascriptFiles.flatMap(file => documents
+  .filter(document => fs.readFileSync(file, 'utf8').includes(document.original))
+  .map(document => ({ file, document })));
+const patchedMatches = javascriptFiles.flatMap(file => documents
+  .filter(document => fs.readFileSync(file, 'utf8').includes(document.patched))
+  .map(document => ({ file, document })));
 
 if (originalMatches.length + patchedMatches.length !== 1) {
   throw new Error(
@@ -25,9 +31,9 @@ if (originalMatches.length + patchedMatches.length !== 1) {
 }
 
 if (originalMatches.length === 1) {
-  const documentChunk = originalMatches[0];
+  const { file: documentChunk, document } = originalMatches[0];
   const source = fs.readFileSync(documentChunk, 'utf8');
-  const patched = source.replace(documentMarker, patchedDocument);
+  const patched = source.replace(document.original, document.patched);
   if (patched === source || patched.split('/festapp-admin/logout.js').length !== 2) {
     throw new Error('Failed to install the pinned Studio logout script reference');
   }

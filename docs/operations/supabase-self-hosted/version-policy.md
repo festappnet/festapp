@@ -27,6 +27,18 @@ information and checks the selected upstream Compose bundle:
 node automation/hetzner-supabase/runtime/verify-pins.mjs --online
 ```
 
+For the selected backend upgrade, use `--bundle --registry` to verify only
+the pinned Supabase release and its ARM64 artifacts. This avoids unrelated
+host-tool upgrades and preserves the explicit PostgreSQL 17.12 exception:
+
+```bash
+node automation/hetzner-supabase/runtime/verify-pins.mjs --bundle --registry
+```
+
+Preparation and the complete isolated upgrade/recovery drill are recorded in
+[runtime-update-20261115](runtime-update-20261115/README.md). Preparation is not
+a live deployment receipt.
+
 With an authenticated Docker registry session, add `--registry` to check the
 `linux/arm64` image digests. A newer upstream version can make this comparison
 fail; that is a review finding, not authority to update or restart production.

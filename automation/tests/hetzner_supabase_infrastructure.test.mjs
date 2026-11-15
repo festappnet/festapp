@@ -12,6 +12,11 @@ function read(name) {
   return fs.readFileSync(path.join(terraformDir, name), 'utf8');
 }
 
+test('runtime updater rejects drift and preserves fencing across partial failures and resume', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_runtime_update.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test('Hetzner rehearsal module pins stable Terraform/provider and protected low-cost compute', () => {
   const versions = read('versions.tf');
   const variables = read('variables.tf');
@@ -51,7 +56,8 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   const compose = fs.readFileSync(path.join(runtime, 'docker-compose.festapp.yml'), 'utf8');
   const caddy = fs.readFileSync(path.join(runtime, 'Caddyfile'), 'utf8');
   const databaseTarget = fs.readFileSync(path.join(runtime, 'docker-compose.database-target.yml'), 'utf8');
-  assert.match(deploy, /241bb11c0627f2981746d37033f57dbfa81d29b0/);
+  const pins = JSON.parse(fs.readFileSync(path.join(root, 'automation/hetzner-supabase/runtime/pins.json')));
+  assert.ok(deploy.includes(`readonly REVISION=${pins.supabase.commit}`));
   assert.match(deploy, /refusing to overwrite/);
   assert.doesNotMatch(deploy, /rm\s|down\s+-v|prune/);
   assert.match(compose, /127\.0\.0\.1:8000:8000/);
@@ -135,6 +141,13 @@ test('Studio customization installs an idempotent same-origin Access logout cont
     fs.readFileSync(path.join(tempDir, 'public/festapp-admin/logout.js'), 'utf8'),
     fs.readFileSync(asset, 'utf8'),
   );
+  fs.writeFileSync(chunk, 'children:[(0,d.jsx)(f.r,{}),(0,d.jsx)(e.Main,{}),(0,d.jsx)(e.NextScript,{})]');
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const installed = spawnSync('node', [installer], { encoding: 'utf8', env });
+    assert.equal(installed.status, 0, installed.stderr);
+  }
+  assert.equal(fs.readFileSync(chunk, 'utf8').match(/\/festapp-admin\/logout\.js/g)?.length, 1);
+  assert.match(fs.readFileSync(chunk, 'utf8'), /\(0,d\.jsx\)\(f\.r,\{\}\)/);
 });
 
 test('rehearsal environment remains valid when sourced by a shell', () => {

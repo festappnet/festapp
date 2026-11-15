@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "used_by": [
+    "blueprint image processing",
+    "notification dispatch"
+  ],
+  "secret_count": 2,
+  "old_new_decryption_digest_equal": true,
+  "production_custom_key_volume_preserved": true,
+  "secret_values_logged": false,
+  "network": "none"
+}
