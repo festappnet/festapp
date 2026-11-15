@@ -27,6 +27,17 @@ def git(*args):
 INFORMATIONAL_CHECKS = {'measurement-runtime-drift'}
 
 
+def dependency_update(check):
+    """GitHub's generated updater creates dependency PRs; it does not test source."""
+    run = check.get('_workflow_run') or {}
+    actor = run.get('actor') or {}
+    return (check.get('name') == 'Dependabot'
+            and run.get('path') == 'dynamic/dependabot/dependabot-updates'
+            and run.get('event') == 'dynamic'
+            and actor.get('login') == 'dependabot[bot]' and actor.get('type') == 'Bot'
+            and run.get('head_sha') == check.get('head_sha'))
+
+
 def problems(checks, required, sha):
     latest = {}
     for check in checks:
@@ -34,6 +45,8 @@ def problems(checks, required, sha):
             continue
         if (check['name'] in INFORMATIONAL_CHECKS and check['name'] not in required
                 and check.get('_workflow_path') == '.github/workflows/measurement-runtime-drift.yml'):
+            continue
+        if check['name'] not in required and dependency_update(check):
             continue
         name = check['name']
         if name not in latest or check['id'] > latest[name]['id']:
@@ -53,25 +66,28 @@ def identify_informational_workflows(checks, repository):
 
     Missing metadata or unavailable lookup fails closed: the check still blocks.
     """
-    paths = {}
+    runs_by_suite = {}
     for check in checks:
-        if check.get('name') not in INFORMATIONAL_CHECKS:
+        if check.get('name') not in INFORMATIONAL_CHECKS | {'Dependabot'}:
             continue
+        check['_workflow_path'] = None
+        check['_workflow_run'] = None
         suite = check.get('check_suite', {}).get('id')
         if not isinstance(suite, int):
             continue
-        if suite not in paths:
-            paths[suite] = None
+        if suite not in runs_by_suite:
+            runs_by_suite[suite] = None
             try:
                 data = json.loads(subprocess.check_output(['gh', 'api',
                     f'repos/{repository}/actions/runs?check_suite_id={suite}&per_page=100'],
                     cwd=ROOT, text=True, stderr=subprocess.DEVNULL))
                 runs = [r for r in data['workflow_runs'] if r.get('check_suite_id') == suite]
                 if len(runs) == 1:
-                    paths[suite] = runs[0].get('path')
+                    runs_by_suite[suite] = runs[0]
             except (subprocess.CalledProcessError, OSError, ValueError, KeyError):
                 pass
-        check['_workflow_path'] = paths[suite]
+        check['_workflow_run'] = runs_by_suite[suite]
+        check['_workflow_path'] = (runs_by_suite[suite] or {}).get('path')
 
 
 def release_source():

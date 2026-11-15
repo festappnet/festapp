@@ -1,5 +1,6 @@
 """Release admission: actual CLI/git boundary plus check-run policy cases."""
 import json
+import copy
 import os
 from pathlib import Path
 import subprocess
@@ -58,6 +59,39 @@ class CheckPolicyTest(unittest.TestCase):
         fake = check('a')
         fake['app'] = {'slug': 'unrelated'}
         self.assertTrue(gate.problems([fake], ['a'], SHA))
+
+    def test_generated_dependency_updater_is_not_source_ci(self):
+        bot = check('Dependabot', 'failure')
+        bot['check_suite'] = {'id': 42}
+        run = dict(check_suite_id=42, path='dynamic/dependabot/dependabot-updates',
+                   event='dynamic', head_sha=SHA,
+                   actor={'login': 'dependabot[bot]', 'type': 'Bot'})
+        self.assertTrue(gate.problems([check('a'), bot], ['a'], SHA))
+        with patch.object(gate.subprocess, 'check_output', return_value=json.dumps({'workflow_runs': [run]})):
+            gate.identify_informational_workflows([bot], 'fixture/repo')
+        self.assertEqual(gate.problems([check('a'), bot], ['a'], SHA), [])
+        self.assertTrue(gate.problems([bot], ['a'], SHA))
+        self.assertTrue(gate.problems([bot], ['Dependabot'], SHA))
+
+        for field, replacement in [
+            ('path', '.github/workflows/security-audit.yml'), ('event', 'push'),
+            ('head_sha', 'b' * 40), ('actor', {'login': 'other[bot]', 'type': 'Bot'}),
+            ('actor', {'login': 'dependabot[bot]', 'type': 'User'}),
+        ]:
+            with self.subTest(field=field, replacement=replacement):
+                altered = {**copy.deepcopy(run), field: replacement}
+                with patch.object(gate.subprocess, 'check_output', return_value=json.dumps({'workflow_runs': [altered]})):
+                    gate.identify_informational_workflows([bot], 'fixture/repo')
+                self.assertTrue(gate.problems([check('a'), bot], ['a'], SHA))
+
+    def test_dependency_updater_lookup_failure_remains_blocking(self):
+        bot = check('Dependabot', 'failure')
+        bot['check_suite'] = {'id': 42}
+        bot['_workflow_run'] = {'path': 'stale lookup'}
+        with patch.object(gate.subprocess, 'check_output', side_effect=OSError('unavailable')):
+            gate.identify_informational_workflows([bot], 'fixture/repo')
+        self.assertTrue(gate.problems([bot], [], SHA))
+        self.assertIsNone(bot['_workflow_run'])
 
 
 class ReleaseCliTest(unittest.TestCase):
