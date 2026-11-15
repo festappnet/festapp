@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
-import {formUrl, settingsFrom, TAG_NAME, SERVICE_ORIGIN, HELP_URL} from '../src/config.js';
+import {formUrl, settingsFrom, TAG_NAME, SERVICE_ORIGIN, HELP_URL, PROPERTIES} from '../src/config.js';
 import {registerTicketElement} from '../src/element.js';
 import {initSettings, saveSettings} from '../src/settings_controller.js';
 
@@ -124,7 +124,7 @@ test('settings validate before any writes, serialize readbacks and stop on a fai
   await assert.rejects(saveSettings(api, {'form-url':'https://evil.invalid/form/a'}));
   assert.equal(calls.length, 0);
   await saveSettings(api, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Test','inherit-style':'false'});
-  assert.deepEqual(calls.map(call=>call.slice(0,2)), [['set','form-url'],['get','form-url'],['set','form-title'],['get','form-title'],['set','measurement'],['get','measurement']]);
+  assert.deepEqual(calls.map(call=>call.slice(0,2)), PROPERTIES.flatMap(name=>[['set',name],['get',name]]));
   assert.equal(data['inherit-style'], undefined);
   const writes=[];
   await assert.rejects(saveSettings({async setProp(name) {writes.push(name);},async getProp() {return 'unexpected';}}, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`}));
@@ -153,7 +153,7 @@ test('settings wait for propagated readback before writing sibling properties', 
       return value;
     },
   }, {'form-url':`${SERVICE_ORIGIN}/form/ukazka`,'form-title':'Delayed','inherit-style':'false'});
-  assert.deepEqual(confirmed, ['form-url', 'form-title', 'measurement']);
+  assert.deepEqual(confirmed, PROPERTIES);
 });
 
 test('settings page fails closed outside editor and surfaces save success', async () => {
@@ -255,7 +255,7 @@ test('settings leave stale appearance properties inert and expose no local contr
     assert.equal(dom.window.document.getElementById('inherit-style'),null);
     dom.window.document.querySelector('form').dispatchEvent(new dom.window.Event('submit',{cancelable:true}));
     await tick();
-    assert.deepEqual(writes,['form-url','form-title','measurement']);
+    assert.deepEqual(writes,PROPERTIES);
     assert.equal(values['inherit-style'],'false','existing stored data is never reinterpreted as authority');
     assert.match(dom.window.document.getElementById('status').textContent,/Uloženo/);
   } finally {dom.window.close();}
@@ -277,4 +277,49 @@ for(const existing of [true,false])test('settings default only new widgets to ho
  try {await initSettings(dom.window.document,{getProp:async name=>existing&&name==='form-url'?`${SERVICE_ORIGIN}/form/a`:''});
  assert.equal(dom.window.document.querySelector('[name="measurement"]').value,existing?'unit':'host');
  } finally {dom.window.close();}
+});
+
+// Wix host SDK/CMP is modeled here; actual native cookie reset was checked on
+// the recorded public development site without publishing or placing orders.
+const nativeExport=(version=1)=>({schemaVersion:1,serviceOrigin:SERVICE_ORIGIN,websiteOrigin:'https://wix-site.invalid',
+ binding:{id:'11111111-1111-1111-1111-111111111111',version},providerConfig:{provider:'wix',organization:1,unit:2,consentRevision:'a'.repeat(32),
+ origin:'https://wix-site.invalid',consentValidFrom:'2026-01-01T00:00:00.000Z',maxAgeSeconds:86400}});
+test('Wix import stays off by default, validates envelope before writes and persists complete export',async()=>{
+ const base={'form-url':`${SERVICE_ORIGIN}/form/a`};
+ assert.equal(settingsFrom(base)['consent-enabled'],'off');
+ const raw=JSON.stringify(nativeExport());
+ const valid=settingsFrom({...base,'consent-export':raw,'consent-enabled':'on'});
+ assert.equal(valid['consent-enabled'],'on');assert.deepEqual(JSON.parse(valid['consent-export']),nativeExport());
+ for(const value of ['{',JSON.stringify({...nativeExport(),serviceOrigin:'https://foreign.example'})]) {
+  let calls=0;await assert.rejects(saveSettings({setProp:()=>calls++},{...base,'consent-export':value,'consent-enabled':'on'}));assert.equal(calls,0);
+ }
+});
+test('Wix element delegates managed import, preserves iframe and retires source on off/removal',async()=>{
+ const dom=new JSDOM('',{url:'https://wix-site.invalid'});const win=dom.window;
+ let source,connections=0,stops=0;
+ win.FestappEmbed={connectMeasurementSource(value){source=value;connections++;return ()=>{stops++;source=null;};}};
+ win.consentPolicyManager={getCurrentConsentPolicy:()=>({defaultPolicy:false,createdDate:new Date(),policy:{essential:true,functional:false,analytics:true,advertising:true,dataToThirdParty:true}})};
+ registerTicketElement(win,async()=>'Site');
+ const element=win.document.createElement(TAG_NAME);element.setAttribute('form-url',`${SERVICE_ORIGIN}/form/a`);
+ element.setAttribute('consent-export',JSON.stringify(nativeExport()));element.setAttribute('consent-enabled','on');win.document.body.append(element);
+ try {
+  await tick();await tick();assert.equal(connections,1);assert.ok(source);
+  const iframe=element.querySelector('iframe');assert.equal(element.querySelector('a').hasAttribute('data-festapp-consent-link'),true);
+  const requested={organization:1,unit:2,processingRevision:'technical',consentRevision:'a'.repeat(32),requiredPurposes:['analytics','marketing'],binding:nativeExport().binding,websiteOrigin:win.location.origin};
+  assert.equal(source.read(requested).analytics,true);
+  element.setAttribute('form-title','Updated');await tick();assert.equal(connections,1);assert.equal(element.querySelector('iframe'),iframe);
+  element.setAttribute('consent-export',JSON.stringify(nativeExport(2)));await tick();assert.equal(source.read(requested),null);
+  element.setAttribute('consent-enabled','off');await tick();assert.equal(source,null);assert.ok(stops>=2);
+  assert.equal(element.querySelector('a').rel,'noopener noreferrer');assert.equal(element.querySelector('iframe'),iframe);
+  element.remove();await tick();
+ }finally{win.close();}
+});
+test('Wix conflicting or foreign site imports fail closed without rewriting manual links',async()=>{
+ const dom=new JSDOM('<a id="manual" target="_blank" rel="noopener noreferrer" href="https://vstupenky.online/form/a">Open</a>',{url:'https://wix-site.invalid'});const win=dom.window;let source;
+ win.FestappEmbed={connectMeasurementSource(value){source=value;return ()=>{source=null;};}};
+ registerTicketElement(win,async()=>'Site');
+ try {
+  for(const version of [1,2]) {const e=win.document.createElement(TAG_NAME);e.setAttribute('form-url',`${SERVICE_ORIGIN}/form/a`);e.setAttribute('consent-enabled','on');e.setAttribute('consent-export',JSON.stringify(nativeExport(version)));win.document.body.append(e);}
+  await tick();await tick();assert.equal(source.read({}),null);assert.equal(win.document.querySelector('#manual').rel,'noopener noreferrer');
+ }finally{win.close();}
 });

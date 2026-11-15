@@ -3314,6 +3314,22 @@
     "5e08b16671474d6dcb18fcf9591f7a21ef774163cdf2ff7bc7540f74581465a6": {
       "signature": "public.integration_webhook_api_v1(bigint,text,jsonb)",
       "source": "database/functions/integration_webhooks/webhooks.sql"
+    },
+    "109bc844c5aa71016f502fbea7dacf89a9de437e3ee93c06aa871a1855279890": {
+      "signature": "public.get_unit_website_consent_bindings(bigint)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "4f089c924881a4beb85f5da175e3a20479cc53de1c3f2466418ae834389388c5": {
+      "signature": "public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "cda18acac047a59ad06bd45184616a58501244211fa35999a74d7d9f3148f310": {
+      "signature": "public.disable_unit_website_consent_binding(uuid,bigint)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "3b6418b956143f532dfb01c85a9c50089470ebd0144ef00dbbad75f6759b04ae": {
+      "signature": "public.export_unit_website_consent_binding(uuid,bigint)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
     }
   }
 }

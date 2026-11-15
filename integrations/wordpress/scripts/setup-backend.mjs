@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
-const project='festapp-vo-wordpress-20261023';
+const project=process.env.FESTAPP_CMS_TEST_PROJECT || 'festapp-vo-wordpress-20261023';
+if (project !== 'festapp-vo-wordpress-20261023' && !/^festapp-cms-consent-[a-z0-9-]+$/.test(project)) throw Error('Refusing unowned test project');
+const base=Number(process.env.FESTAPP_CMS_TEST_BASE_PORT || 59820);
+if (!Number.isInteger(base) || base < 1024 || base > 65520) throw Error('Invalid test base port');
 const workdir='.private/backend';
 const run=(cmd,args,options={})=>{const r=spawnSync(cmd,args,{stdio:'inherit',...options});if(r.status)process.exit(r.status)};
 fs.mkdirSync('.private',{recursive:true,mode:0o700});
@@ -9,7 +12,7 @@ const config=`${workdir}/supabase/config.toml`;
 if(!fs.existsSync(config)){
  run('supabase',['init','--workdir',workdir]);
  let s=fs.readFileSync(config,'utf8').replace(/^project_id = .*$/m,`project_id = "${project}"`).replace('major_version = 17','major_version = 15');
- for(const [a,b] of [[54321,59821],[54322,59822],[54320,59820],[54323,59823],[54324,59824],[54327,59827],[54329,59829]])s=s.replaceAll(String(a),String(b));
+ for(const [a,b] of [[54321,base+1],[54322,base+2],[54320,base],[54323,base+3],[54324,base+4],[54327,base+7],[54329,base+9]])s=s.replaceAll(String(a),String(b));
  for(const section of ['db.seed','realtime','studio','inbucket','analytics','edge_runtime'])s=s.replace(new RegExp(`(\\[${section.replaceAll('.','\\.')}\\][\\s\\S]*?enabled = )true`),'$1false');
  s+='\n[functions.preview-ticket-layout]\nstatic_files = ["./functions/_shared/ticket-assets/*.ttf"]\n[functions.vo-local-capture]\nstatic_files = ["./functions/_shared/ticket-assets/*.ttf"]\n';
  fs.writeFileSync(config,s);

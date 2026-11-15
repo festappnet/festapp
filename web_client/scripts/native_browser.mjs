@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import net from 'node:net';
-import {chromium} from 'playwright';
+import {chromium, firefox, webkit} from 'playwright';
 import {emitTiming, timed} from './test_timings.mjs';
 
 // Every browser request, including service workers and WebSockets, traverses
 // this owned proxy. Only fixture origins explicitly registered by the caller
 // can reach the network. No DNS lookup is performed for rejected targets.
-export async function createNativeBrowser({externalOrigins = []} = {}) {
+export async function createNativeBrowser({externalOrigins = [], engine = 'chromium'} = {}) {
+    const engines = {chromium, firefox, webkit};
+    assert.ok(Object.hasOwn(engines, engine), 'unsupported browser engine');
     const approvedExternal = new Set(['https://www.googletagmanager.com']);
     for (const origin of externalOrigins) assert.ok(approvedExternal.has(origin), 'unapproved external fixture origin');
     const allowed = new Set(externalOrigins);
@@ -36,8 +38,10 @@ export async function createNativeBrowser({externalOrigins = []} = {}) {
         req.pipe(upstream);
     });
     proxy.on('connect', (req, socket, head) => {
-        const remote = allowed.has(`https://${req.url.replace(/:443$/, '')}`) && req.url.endsWith(':443');
-        const url = remote ? new URL(`https://${req.url}`) : target(`http://${req.url}`);
+        let httpsUrl;
+        try { httpsUrl = new URL(`https://${req.url}`); } catch { denied++; socket.destroy(); return; }
+        const remote = allowed.has(httpsUrl.origin);
+        const url = remote ? httpsUrl : target(`http://${req.url}`);
         if (!url || url.pathname !== '/') { denied++; socket.destroy(); return; }
         const upstream = net.connect(Number(url.port || (url.protocol === 'https:' ? 443 : 80)), hostname(url), () => {
             socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
@@ -67,8 +71,10 @@ export async function createNativeBrowser({externalOrigins = []} = {}) {
     const port=proxy.address().port;
     let browser;
     try {
-        browser = await timed('browser.launch', () => chromium.launch({headless:true,
-            proxy:{server:`http://127.0.0.1:${port}`}, args:['--site-per-process', '--proxy-bypass-list=<-loopback>', '--disable-quic', '--disable-background-networking', '--force-webrtc-ip-handling-policy=disable_non_proxied_udp', '--mute-audio']}));
+        browser = await timed('browser.launch', () => engines[engine].launch({headless:true,
+            proxy:{server:`http://127.0.0.1:${port}`},
+            ...(engine === 'chromium' ? {args:['--site-per-process', '--proxy-bypass-list=<-loopback>', '--disable-quic', '--disable-background-networking', '--force-webrtc-ip-handling-policy=disable_non_proxied_udp', '--mute-audio']} : {}),
+            ...(engine === 'firefox' ? {firefoxUserPrefs:{'media.peerconnection.enabled':false,'media.volume_scale':'0','network.proxy.allow_hijacking_localhost':true}} : {})}));
     } catch (error) { await closeProxy(); throw error; }
     const contexts = new Set();
     let created=0, closing=false, disconnected=false, closePromise;
@@ -76,14 +82,14 @@ export async function createNativeBrowser({externalOrigins = []} = {}) {
     return {
         allow(origin) {
             const url=new URL(origin);
-            assert.ok(url.protocol==='http:' && ['127.0.0.1','localhost','[::1]'].includes(url.hostname) && url.port && url.origin===origin,
-                'fixture origin must be explicit local HTTP and port');
+            assert.ok(['http:', 'https:'].includes(url.protocol) && ['127.0.0.1','localhost','[::1]'].includes(url.hostname) && url.port && url.origin===origin,
+                'fixture origin must be explicit local HTTP(S) and port');
             allowed.add(origin);
         },
         get deniedRequests() { return denied; },
         async context(options={}) {
             assert.ok(!closing, 'browser owner is closed');
-            assert.deepEqual(Object.keys(options).filter(key => key !== 'viewport'), [], 'unsupported context options');
+            assert.deepEqual(Object.keys(options).filter(key => !['viewport', 'ignoreHTTPSErrors'].includes(key)), [], 'unsupported context options');
             const context=await timed('browser.context-start',()=>browser.newContext({...options, colorScheme:null}));
             contexts.add(context);created++;
             await context.addInitScript(({origins}) => {

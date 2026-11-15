@@ -219,7 +219,35 @@
     "embedOpenAppearance": "Змінити вигляд форми",
     "embedHostDataLayer": "Надсилати дані вимірювання до dataLayer сайту",
     "measurementConsentBridge": "Переймати згоду з банера схвалених сайтів",
-    "measurementConsentBridgeConfirmation": "Увімкнувши це, ви підтверджуєте, що всі сайти, схвалені для вимірювання, ви ведете як контролер, а їхній банер згоди прямо охоплює також форму на vstupenky.online, її цілі, вимірювання організатора на домені *.pages.dev і Festapp як обробника. Згоду на сайті має бути можливо будь-коли відкликати."
+    "measurementConsentBridgeConfirmation": "Увімкнувши це, ви підтверджуєте, що всі сайти, схвалені для вимірювання, ви ведете як контролер, а їхній банер згоди прямо охоплює також форму на vstupenky.online, її цілі, вимірювання організатора на домені *.pages.dev і Festapp як обробника. Згоду на сайті має бути можливо будь-коли відкликати.",
+    "cmsTransfer": "Передавання вибору cookies до форми",
+    "cmsTransferHelp": "Виберіть свій сайт і банер cookies. Перенесіть конфігурацію до розширення WordPress або Joomla.",
+    "cmsPlatform": "Система сайту",
+    "cmsProvider": "Банер cookies",
+    "cmsPolicyId": "Ідентифікатор політики Complianz",
+    "cmsCmpRevision": "Ревізія CookieConsent",
+    "cmsAnalyticsCategory": "Категорія аналітики",
+    "cmsMarketingCategory": "Категорія маркетингу",
+    "cmsValidFrom": "Згоди дійсні з (UTC)",
+    "cmsMaxAge": "Максимальний вік згоди в секундах",
+    "cmsCoverage": "Підтверджую, що політика та банер cookies цього сайту охоплюють форму, аналітику, маркетинг, вимірювання організатора на *.pages.dev і Festapp як обробника даних. Відвідувачі можуть відкликати свій вибір у будь-який час.",
+    "cmsConfirm": "Підтвердити охоплення",
+    "cmsExport": "Показати експорт",
+    "cmsDisable": "Вимкнути передавання",
+    "cmsCopy": "Копіювати конфігурацію",
+    "cmsExportHelp": "Вставте конфігурацію до розширення на вибраному сайті. Після зміни політики або зіставлення повторно підтвердьте охоплення та замініть експорт. Передавання вибору cookies не зберігає аналітичну ідентичність відвідувача.",
+    "cmsUnavailable": "Не вдалося перевірити конфігурацію або вона змінилася. Завантажте поточний стан і повторно підтвердьте охоплення.",
+    "cmsState_draft": "Чернетка",
+    "cmsState_disabled": "Вимкнено",
+    "cmsState_ready": "Готово до експорту",
+    "cmsState_approval_required": "Сайт потребує схвалення",
+    "cmsState_confirmation_required": "Політика змінилася. Повторно підтвердьте охоплення.",
+    "cmsState_unavailable": "Передавання недоступне. Перевірте вимірювання, передавання та схвалення сайту.",
+    "cmsHtml": "HTML / Webnode та інші сайти",
+    "cmsEnableImport": "Enable imported configuration",
+    "cmsImportLabel": "Configuration exported from Festapp",
+    "cmsImportInvalid": "Paste a valid Festapp export for this service.",
+    "cmsHtmlImportHelp": "In Festapp, open Organizer settings > Measurement > My websites. Confirm coverage and copy the export. Place the code only on the selected website. The form verifies current approval; import does not preserve analytics visitor identity."
   },
   "EmailDelivery": {
     "title": "Email",
@@ -3505,5 +3533,120 @@
   "UnitSettings": {
     "measurementSummaryEnabled": "Вимірювання ввімкнено",
     "measurementSummaryDisabled": "Вимірювання вимкнено"
+  },
+  "ApplicationTerminology": {
+    "CardPayments": {
+      "emailPending": "Готуємо підтвердження заявки.",
+      "emailAccepted": "Електронний лист із підтвердженням заявки прийнято до надсилання.",
+      "admissionHold": "Дію заявок призупинено. Зверніться до організатора.",
+      "disputed": "Дію заявок призупинено.",
+      "emailNotRequested": "Інформація про надсилання заявок поки недоступна."
+    },
+    "CardRefundDecision": {
+      "explanation": "Повернення коштів здійснюється у Stripe Dashboard. Тут ви лише вирішуєте, які заявки залишаються чинними.",
+      "keep": "Залишити заявки чинними",
+      "keepHint": "Решта заявок залишаться чинними.",
+      "cancelSelected": "Скасувати вибрані заявки",
+      "cancelHint": "Виберіть лише невикористані заявки. Цю дію тут неможливо скасувати.",
+      "ineligible": "Ця заявка неможливо скасувати",
+      "chooseAction": "Виберіть дію, а для скасування - принаймні один заявка.",
+      "ticketUnavailable": "Вибраний заявка більше недоступний. Оновіть дані та виберіть знову.",
+      "decide": "Уточнити чинність заявок"
+    },
+    "Seating": {
+      "noAdmissions": "Поки немає допущених заявок. Нові реєстрації з’являться тут.",
+      "workRemaining": "Призначте місця допущеним заявкам. Реєстрація працює без змін.",
+      "ticket": "Заявка",
+      "unchanged": "Заявки, QR-коди, ціни й платежі не зміняться. Електронний лист не надсилатиметься. Раніше завантажені PDF не оновлюються автоматично.",
+      "selectAdmission": "Виберіть підтверджену заявку, а потім відповідне місце на плані або в списку.",
+      "noResults": "Жодна заявка не відповідає пошуку або категорії.",
+      "search": "Шукати власника, замовлення або заявку",
+      "admissions": "Допущені заявки",
+      "noChanges": "Виберіть хоча б одну заявку і місце.",
+      "CONTEXT_CHANGED": "Заявка, місце або налаштування змінилися. Чернетку збережено. Оновіть дані та знову перевірте призначення.",
+      "ATOMIC_UNIT_INCOMPLETE": "Кожне місце спільної групи потребує окремої відповідної заявки. Заповніть усі призначення.",
+      "ADMISSION_DATA_AMBIGUOUS": "Позиція вхідного доступу неоднозначна. Попросіть уповноваженого організатора виправити вказану заявку.",
+      "ADMISSION_ASSIGNED_ELSEWHERE": "Заявка уже має місце на іншому плані. Скористайтеся явною процедурою переміщення.",
+      "USED_TICKET_PROTECTED": "Використану заявку тут не можна перемістити або призначити їй нове місце.",
+      "BATCH_TICKET_PRINT_IMMUTABLE": "Тут не можна змінювати місце заявки з друкованої партії.",
+      "readRequired": "Для перегляду власників заявок потрібен дозвіл на читання замовлень."
+    },
+    "PaymentOperations": {
+      "belowThreshold": "Після повернення необхідна оплата або завдаток не будуть покриті. Використані та скасовані заявки залишаться без змін.",
+      "lifecyclePreserved": "Замовлення скасоване або термін дії минув. Повернення не відновить його стан чи заявки."
+    },
+    "OrderOverview": {
+      "downloadFailed": "Не вдалося завантажити заявку. Спробуйте ще раз.",
+      "usedTickets": "Використані заявки",
+      "order_sent": "Заявки надіслано",
+      "tickets": "Заявки",
+      "ticket": "Заявка",
+      "downloadFailed_informal": "Не вдалося завантажити заявку. Спробуй ще раз."
+    },
+    "Scanner": {
+      "ticket_cancelled": "Заявку скасовано",
+      "entry_intro": "Підключіть цей пристрій до події та почніть перевіряти заявки.",
+      "reason_password_reset_not_available": "Password reset is not available for this application.",
+      "confirm_one": "Confirm this application",
+      "ticket_label": "Заявка",
+      "ticket_group": "Scanned applications",
+      "group_hint": "Each application is checked separately. Select one to see its details.",
+      "check_ticket": "Check application",
+      "camera_ready": "Hold a application to the camera",
+      "camera_aim": "Point at the application QR code",
+      "choose_input": "Application details will appear here after scanning. Confirm admission with one button.",
+      "looking_up": "Checking application…",
+      "already_used": "Application has already been used",
+      "unpaid": "Payment has not been confirmed",
+      "valid": "Application is valid",
+      "no_products": "This application has no products selected for this view",
+      "next": "Next application",
+      "used": "Used applications",
+      "symbol": "Application code",
+      "search_input": "Ім’я, електронна пошта або код заявки",
+      "hid_ready": "For scanners that type codes like a keyboard. Focus the field and scan. Enter only looks up the application; confirm admission with the button.",
+      "preview": "Application preview",
+      "reason_not_found": "Заявку на цю подію не знайдено",
+      "reason_admission_not_allowed": "Current application or order state prevents admission.",
+      "note": "Application note",
+      "ticket_fields": "Дані заявки",
+      "core_status": "Статус заявки та результат підтвердження",
+      "core_notes": "Заповнені примітки замовлення та заявки",
+      "back_to_tickets": "Назад до заявок",
+      "all_products_help": "Буде показано всі продукти заявки, включно з новими.",
+      "preview_help": "Введіть код наявної заявки, щоб перевірити зміни перед збереженням. Це не підтверджує вхід.",
+      "preview_empty": "Введіть код заявки для попереднього перегляду.",
+      "entry_device_hint": "Наприклад, «Головний вхід». Перевірки заявок записуватимуться під цією назвою.",
+      "ticket_note": "Примітка до заявки",
+      "confirm_valid": "Confirm valid applications",
+      "tickets": "Applications",
+      "manual_search": "Manual application search",
+      "reason_already_used": "Another device admitted this application, or it was marked used.",
+      "holder_name": "Application holder"
+    },
+    "FeatureOrders": {
+      "provideScanLinkInstruction": "Надайте це посилання або код тим, хто перевірятиме заявки.",
+      "waveAvailabilityHideHint": "From the scheduled time, customers cannot place new orders for this product. Hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule. Existing orders and applications are unchanged.",
+      "waveAvailabilityHelp": "At the scheduled time you can change product availability as well as its price. Keep availability: this wave leaves availability unchanged; earlier scheduled changes still apply. Offer for sale: customers can see the product, subject to capacity and other sale conditions. Hide from sale: customers cannot place new orders for the product; existing applications and orders are unchanged.\n\nHiding can withdraw a particular application option from sale. However, hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule."
+    },
+    "FeatureTicket": {
+      "confirmTicket": "Підтвердити заявку"
+    },
+    "Common": {
+      "ticket": "Заявка"
+    },
+    "PaymentMethods": {
+      "stripeHint": "Сплатіть безпечно через Stripe. Підтвердження заявки надійде після підтвердження оплати."
+    },
+    "EmailTemplates": {
+      "usage": {
+        "ticketOrderPaymentDone_description": "Надсилається після підтвердження завдатку або доплати за замовленням із завдатком. Заявки надсилаються окремо."
+      }
+    },
+    "FeatureBlueprint": {
+      "swapUsedGroup": "Неподільну групу з використаною заявкою неможливо обміняти.",
+      "releaseTemporaryReservationProtected": "Деякі місця вже належать замовленню. Керуйте їхніми заявками окремо.",
+      "toastMaxTicketsReached": "Неможливо вибрати більше заявок."
+    }
   }
 }

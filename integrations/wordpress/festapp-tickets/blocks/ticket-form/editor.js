@@ -41,4 +41,29 @@
         name: 'website', title: 'Festapp Tickets', isDefault: true,
         attributes: {measurement: 'host'}, scope: ['inserter'],
     });
+    // A link or button to the standalone form. PHP renders and validates it.
+    blocks.registerBlockType('festapp-tickets/form-link', {
+        edit: function (props) {
+            const a = props.attributes;
+            const settings = window.festappTicketsEditor;
+            const plausible = settings.origins.some((origin) => a.url.startsWith(origin + '/form/') && /^(?:[A-Za-z0-9_-]|%[A-F0-9]{2})+$/.test(a.url.slice(origin.length + 6)));
+            return el('div', editor.useBlockProps({className: 'festapp-tickets-editor'}),
+                el('h3', null, __('Festapp Tickets form link', 'festapp-tickets')),
+                el(components.TextControl, {label: __('Form URL', 'festapp-tickets'), value: a.url, type: 'url',
+                    placeholder: 'https://tickets.festapp.net/form/saved-slug',
+                    onChange: (url) => props.setAttributes({url}),
+                    help: __('Use https://tickets.festapp.net/form/saved-slug without query parameters or personal fragments.', 'festapp-tickets')}),
+                a.url && !plausible ? el(components.Notice, {status: 'warning', isDismissible: false}, __('Check the public URL. The server accepts only an allowed form address.', 'festapp-tickets')) : null,
+                el(components.TextControl, {label: __('Link text', 'festapp-tickets'), value: a.text, placeholder: __('Buy tickets', 'festapp-tickets'),
+                    onChange: (text) => props.setAttributes({text})}),
+                el(components.SelectControl, {label: __('Display as', 'festapp-tickets'), value: a.style,
+                    options: [{label: __('Button', 'festapp-tickets'), value: 'button'}, {label: __('Text link', 'festapp-tickets'), value: 'link'}],
+                    onChange: (style) => props.setAttributes({style})}),
+                el('p', null, settings.consentTransfer
+                    ? __('The import is enabled locally. The form verifies current approval and the saved cookie choice.', 'festapp-tickets')
+                    : __('The form opens in a new tab with its own cookie notice. Cookie choice transfer can be enabled under Settings.', 'festapp-tickets'))
+            );
+        },
+        save: function () { return null; }
+    });
 })(window.wp.blocks, window.wp.element, window.wp.blockEditor, window.wp.components, window.wp.i18n);

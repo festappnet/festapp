@@ -8,8 +8,9 @@ import '../card_payment_strings.dart';
 /// separate payment capability, never obtained from the read projection.
 class CardPaymentStatus extends StatefulWidget {
   const CardPaymentStatus(
-      {super.key, required this.payment, this.onPay, this.onRefresh});
+      {super.key, required this.payment, this.onPay, this.onRefresh, this.hasTickets});
   final Map<String, dynamic> payment;
+  final bool? hasTickets;
   final Future<void> Function()? onPay;
   final VoidCallback? onRefresh;
   static const states = {
@@ -49,6 +50,7 @@ class CardPaymentStatus extends StatefulWidget {
 }
 
 class _CardPaymentStatusState extends State<CardPaymentStatus> {
+  String _text(String key) => CardPaymentStrings.text(key, hasTickets: widget.hasTickets);
   bool _busy = false;
   bool _uncertain = false;
   @override
@@ -91,26 +93,26 @@ class _CardPaymentStatusState extends State<CardPaymentStatus> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(CardPaymentStrings.text('title'),
+          Text(_text('title'),
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 16),
           Semantics(
               liveRegion: true,
-              child: paragraph(CardPaymentStrings.text(state))),
+              child: paragraph(_text(state))),
           for (final key in ['amount', 'received', 'returned'])
             if (money(payment[key]) != null)
               paragraph(
-                  '${CardPaymentStrings.text(key)}: ${money(payment[key])}'),
+                  '${_text(key)}: ${money(payment[key])}'),
           if (payment['reservationExpiresAt'] is String &&
               {'open', 'declined'}.contains(state))
             if (DateTime.tryParse(payment['reservationExpiresAt'])
                 case final DateTime date)
               paragraph(
-                  '${CardPaymentStrings.text('reservation')}: ${DateFormat.yMd(locale).add_jm().format(date.toLocal())}'),
+                  '${_text('reservation')}: ${DateFormat.yMd(locale).add_jm().format(date.toLocal())}'),
           if (payment['admissionState'] == 'hold' && state != 'disputed')
-            paragraph(CardPaymentStrings.text('admissionHold')),
+            paragraph(_text('admissionHold')),
           if (state == 'paid')
-            paragraph(CardPaymentStrings.text({
+            paragraph(_text({
               'failed',
               'suppressed',
               'dead',
@@ -126,17 +128,17 @@ class _CardPaymentStatusState extends State<CardPaymentStatus> {
             if (onPay != null)
               FilledButton(
                   onPressed: _busy ? null : _pay,
-                  child: Text(CardPaymentStrings.text(
+                  child: Text(_text(
                       _busy ? 'preparing' : 'continuePayment')))
             else
-              paragraph(CardPaymentStrings.text('protectedPaymentLink')),
+              paragraph(_text('protectedPaymentLink')),
           if (!CardPaymentStatus.canContinue(payment) &&
               {'open', 'declined'}.contains(state))
-            paragraph(CardPaymentStrings.text('protectedPaymentLink')),
+            paragraph(_text('protectedPaymentLink')),
           if (onRefresh != null)
             TextButton(
                 onPressed: onRefresh,
-                child: Text(CardPaymentStrings.text('refresh'))),
+                child: Text(_text('refresh'))),
         ]);
   }
 }

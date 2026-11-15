@@ -639,7 +639,35 @@
     "appearanceLight": "Light",
     "appearanceDark": "Dark",
     "embedInheritStyle": "Match website appearance",
-    "embedOpenAppearance": "Edit form appearance"
+    "embedOpenAppearance": "Edit form appearance",
+    "cmsTransfer": "Transfer cookie choices to the form",
+    "cmsTransferHelp": "Select your website, integration and cookie banner. Transfer the same configuration into WordPress, Joomla, Wix or an HTML embed.",
+    "cmsPlatform": "Website platform",
+    "cmsProvider": "Cookie banner",
+    "cmsPolicyId": "Complianz policy ID",
+    "cmsCmpRevision": "CookieConsent revision",
+    "cmsAnalyticsCategory": "Analytics category",
+    "cmsMarketingCategory": "Marketing category",
+    "cmsValidFrom": "Consents valid from (UTC)",
+    "cmsMaxAge": "Maximum consent age in seconds",
+    "cmsCoverage": "I confirm that this website’s policy and banner cover the form, analytics, marketing, organizer measurement on *.pages.dev and Festapp as processor. Visitors can withdraw their choice at any time.",
+    "cmsConfirm": "Confirm coverage",
+    "cmsExport": "Show export",
+    "cmsDisable": "Disable transfer",
+    "cmsCopy": "Copy configuration",
+    "cmsExportHelp": "Paste this configuration into the extension on the selected website. After a policy or mapping change, confirm coverage again and replace the export. Cookie choice transfer does not preserve analytics visitor identity.",
+    "cmsUnavailable": "The configuration could not be verified or has changed. Reload the current state and confirm coverage again.",
+    "cmsState_draft": "Draft",
+    "cmsState_disabled": "Disabled",
+    "cmsState_ready": "Ready to export",
+    "cmsState_approval_required": "Website approval required",
+    "cmsState_confirmation_required": "The policy has changed. Confirm coverage again.",
+    "cmsState_unavailable": "Transfer is unavailable. Check measurement, transfer and website approval.",
+    "cmsHtml": "HTML / Webnode and other websites",
+    "cmsEnableImport": "Enable imported configuration",
+    "cmsImportLabel": "Configuration exported from Festapp",
+    "cmsImportInvalid": "Paste a valid Festapp export for this service.",
+    "cmsHtmlImportHelp": "In Festapp, open Organizer settings > Measurement > My websites. Confirm coverage and copy the export. Place the code only on the selected website. The form verifies current approval; import does not preserve analytics visitor identity."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -5512,5 +5540,148 @@
     "publicPage": "Public page",
     "formIntroduction": "Introduction",
     "formOutline": "Form outline"
+  },
+  "ApplicationTerminology": {
+    "ProductsDialog": {
+      "infoTicketSymbol": "Application Symbol",
+      "cancelTicketPrefix": "CANCEL APPLICATION ",
+      "cancelledTicketsTitle": "Cancelled applications:",
+      "removedTicketsTitle": "Removed applications:",
+      "addedTicketsTitle": "Added applications:",
+      "changeTicketLabel": "Application {symbol}",
+      "dialogTitleFallback": "Application products",
+      "globalChangesNote": "Email includes changes from all applications in this order.",
+      "productChangesForTicket": "Product changes on application {symbol}"
+    },
+    "CardPayments": {
+      "emailPending": "We are preparing your application confirmation.",
+      "emailAccepted": "The application confirmation email was accepted for sending.",
+      "admissionHold": "Application admission is on hold. Contact the organizer.",
+      "disputed": "Application admission is on hold.",
+      "emailNotRequested": "Application delivery information is not yet available."
+    },
+    "CardRefundDecision": {
+      "explanation": "Refunds are issued in Stripe Dashboard. Here you only decide which admissions remain valid.",
+      "keep": "Keep admissions",
+      "keepHint": "Keep the remaining applications valid.",
+      "cancelSelected": "Cancel selected applications",
+      "cancelHint": "Select only unused applications to cancel. This cannot be undone here.",
+      "ineligible": "Not eligible for cancellation",
+      "chooseAction": "Choose an action and, for cancellation, at least one application.",
+      "ticketUnavailable": "A selected application is no longer available. Refresh and choose again.",
+      "decide": "Resolve admissions"
+    },
+    "Seating": {
+      "noAdmissions": "No admitted applications yet. New admissions will appear here.",
+      "workRemaining": "Assign seats to admitted applications. Registration continues unchanged.",
+      "ticket": "Application",
+      "unchanged": "Applications, QR codes, prices and payments stay unchanged. No email is sent. Previously downloaded PDFs do not update automatically.",
+      "selectAdmission": "Select an admitted application, then choose a compatible seat on the plan or in the list.",
+      "noResults": "No applications match this search or category.",
+      "search": "Search holder, order or application",
+      "admissions": "Admissions",
+      "noChanges": "Choose at least one application and seat.",
+      "CONTEXT_CHANGED": "A application, seat or configuration changed. Your draft remains. Refresh and review the exact pairs again.",
+      "ATOMIC_UNIT_INCOMPLETE": "Every seat in a shared unit needs its own eligible application. Complete the explicit pairs before confirming.",
+      "ADMISSION_DATA_AMBIGUOUS": "The admission item is ambiguous. Ask an authorized organizer to repair the referenced application.",
+      "ADMISSION_ASSIGNED_ELSEWHERE": "This admission already has a seat on another plan. Use the explicit relocation workflow.",
+      "USED_TICKET_PROTECTED": "A used application cannot be moved or newly assigned here.",
+      "BATCH_TICKET_PRINT_IMMUTABLE": "A batch-printed application cannot change seating here.",
+      "readRequired": "Order-read access is required to view application holders."
+    },
+    "PaymentOperations": {
+      "belowThreshold": "The required payment or deposit will no longer be covered. Used and cancelled applications remain unchanged.",
+      "lifecyclePreserved": "The order is cancelled or expired. The refund will not restore its status or applications."
+    },
+    "OrderOverview": {
+      "downloadFailed": "Could not download the application. Please try again.",
+      "usedTickets": "Applications used",
+      "order_sent": "Applications sent",
+      "tickets": "Applications",
+      "ticket": "Application",
+      "downloadFailed_informal": "Could not download the application. Please try again."
+    },
+    "Scanner": {
+      "ticket_cancelled": "Application cancelled",
+      "entry_intro": "Connect this device to an event to start checking applications.",
+      "reason_password_reset_not_available": "Password reset is not available for this application.",
+      "confirm_one": "Confirm this application",
+      "ticket_label": "Application",
+      "ticket_group": "Scanned applications",
+      "group_hint": "Each application is checked separately. Select one to see its details.",
+      "check_ticket": "Check application",
+      "camera_ready": "Hold a application to the camera",
+      "camera_aim": "Point at the application QR code",
+      "choose_input": "Application details will appear here after scanning. Confirm admission with one button.",
+      "looking_up": "Checking application…",
+      "already_used": "Application has already been used",
+      "unpaid": "Payment has not been confirmed",
+      "valid": "Application is valid",
+      "no_products": "This application has no products selected for this view",
+      "next": "Next application",
+      "used": "Used applications",
+      "symbol": "Application code",
+      "search_input": "Name, email or application code",
+      "hid_ready": "For scanners that type codes like a keyboard. Focus the field and scan. Enter only looks up the application; confirm admission with the button.",
+      "preview": "Application preview",
+      "reason_not_found": "Application not found in this event",
+      "reason_admission_not_allowed": "Current application or order state prevents admission.",
+      "note": "Application note",
+      "ticket_fields": "Application answers",
+      "core_status": "Application status and confirmation result",
+      "core_notes": "Order and application notes, when provided",
+      "back_to_tickets": "Back to applications",
+      "all_products_help": "All products on the application will appear, including newly added products.",
+      "preview_help": "Enter an existing application code to check your draft before saving. This does not confirm admission.",
+      "preview_empty": "Enter a application code to see the preview.",
+      "entry_device_hint": "For example, “Main entrance”. Application checks will be recorded under this name.",
+      "ticket_note": "Application note",
+      "confirm_valid": "Confirm valid applications",
+      "tickets": "Applications",
+      "manual_search": "Manual application search",
+      "reason_already_used": "Another device admitted this application, or it was marked used.",
+      "holder_name": "Application holder"
+    },
+    "FeatureOrders": {
+      "ticket": "Registration",
+      "tickets": "Registrations",
+      "ticketUsage": "Application usage",
+      "confirmTicketFailed": "Failed to confirm application.",
+      "provideScanLinkInstruction": "Provide the following link or code to the people who will be checking the applications.",
+      "waveAvailabilityHideHint": "From the scheduled time, customers cannot place new orders for this product. Hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule. Existing orders and applications are unchanged.",
+      "waveAvailabilityHelp": "At the scheduled time you can change product availability as well as its price. Keep availability: this wave leaves availability unchanged; earlier scheduled changes still apply. Offer for sale: customers can see the product, subject to capacity and other sale conditions. Hide from sale: customers cannot place new orders for the product; existing applications and orders are unchanged.\n\nHiding can withdraw a particular application option from sale. However, hiding the only option in a required choice prevents checkout. To end all sales, use the form’s sale schedule.",
+      "scanInstructionsAppUser": "Tip: Users can show their QR code from their application or directly from the mobile app Profile."
+    },
+    "FormsFeature": {
+      "addTicket": "Add Application",
+      "Ticket": "Application",
+      "labelMaxTicketsPerOrder": "Max applications per order:",
+      "helperMaxTicketsPerOrder": "How many applications a user can buy in a single order (default: 1)."
+    },
+    "FeatureTicket": {
+      "confirmTicket": "Confirm Application",
+      "selectTicket": "Select Application"
+    },
+    "Common": {
+      "ticket": "Application"
+    },
+    "PaymentMethods": {
+      "stripeHint": "Pay securely through Stripe. Your application confirmation is issued after payment confirmation."
+    },
+    "EmailTemplates": {
+      "usage": {
+        "ticketOrderPaymentDone_description": "Sent after a deposit or the remaining balance of a deposit order is confirmed as paid. Applications are sent separately."
+      }
+    },
+    "FeatureBlueprint": {
+      "ticketLabel": "Application",
+      "swapSummaryCustomer": "Application: {applicationsymbol} ({customerName})",
+      "swapUsedGroup": "An atomic group containing a used application cannot be swapped.",
+      "releaseTemporaryReservationProtected": "Some seats now belong to an order. Manage their applications separately.",
+      "maxTicketsReached": "Maximum number of applications reached",
+      "toastMaxTicketsReached": "It is not possible to select more applications.",
+      "catalogAffectedSeats": "This shared product is assigned to {count} seats. Existing sold application prices are managed by the server.",
+      "standingNoAdmissionType": "First create a application form for this event. It prepares the admission product type needed here."
+    }
   }
 }

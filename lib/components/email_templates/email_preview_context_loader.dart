@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../occasion/occasion_model.dart';
 import '../features/feature_constants.dart';
+import '../features/feature_service.dart';
 import '../eshop/db_eshop.dart';
 import '../eshop/models/product_edit_bundle.dart';
 import '../../data_services/rights_service.dart';
@@ -67,9 +68,7 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
   final base = EmailPreviewContext(
     communicationTone: tone,
     occasionTitle: occasion.title,
-    ticketsEnabled: features.any(
-      (f) => f.code == FeatureConstants.ticket && f.isEnabled,
-    ),
+    ticketsEnabled: FeatureService.usesTicketTerminology(features: features),
     blueprintEnabled: features.any(
       (f) => f.code == FeatureConstants.blueprint && f.isEnabled,
     ),

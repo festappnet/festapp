@@ -165,6 +165,7 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
                         // Submit Button
                         if (widget.totalPrice > 0) ...[
                           PaymentMethodPicker(
+                            hasTickets: widget.hasTickets,
                               options: _paymentOptions,
                               surface: widget.paymentSurface,
                               selected: _paymentMethod,
@@ -289,8 +290,8 @@ class _OrderPreviewScreenState extends State<OrderPreviewScreen> {
 
         ticketInfoRows.add(Text(
           ticketHolder.tickets.length > 1
-              ? "${OrderItemStrings.itemSingular} $ticketIndex"
-              : OrderItemStrings.itemSingular,
+              ? "${OrderItemStrings.singular(widget.hasTickets)} $ticketIndex"
+              : OrderItemStrings.singular(widget.hasTickets),
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontSize: 16 * OrderPreviewScreen.fontSizeFactor,
                 fontWeight: FontWeight.bold,

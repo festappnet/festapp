@@ -142,8 +142,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                               children: [
                                 SwitchListTile(
                                     contentPadding: EdgeInsets.zero,
-                                    title: Text(FeatureService.isFeatureEnabled(
-                                            FeatureConstants.ticket)
+                                    title: Text(FeatureService.usesTicketTerminology()
                                         ? WaitlistStrings.limitTickets
                                         : WaitlistStrings.limitCapacity),
                                     subtitle: Text(_blocked
@@ -174,8 +173,7 @@ class _FormCapacityDialogState extends State<FormCapacityDialog> {
                                       controller: _capacity,
                                       decoration: InputDecoration(
                                           labelText:
-                                              FeatureService.isFeatureEnabled(
-                                                      FeatureConstants.ticket)
+                                              FeatureService.usesTicketTerminology()
                                                   ? WaitlistStrings.text(
                                                       'capacityTickets')
                                                   : WaitlistStrings.text(

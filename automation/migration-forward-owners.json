@@ -311,6 +311,18 @@
         "others/duplicate_occasion.sql",
         "eshop_forms/form_creation_domain.sql"
       ]
+    },
+    {
+      "migration": "20261114233000_order_item_terminology.sql",
+      "active": true,
+      "header": "-- Presentation-only ticket and application terminology from the occasion feature.",
+      "sources": [
+        "eshop/order_item_terminology.sql",
+        "sale_opening_notifications/settings.sql",
+        "eshop_waitlist/order_overview.sql",
+        "occasion_setup/sale_status.sql",
+        "scanning/sessions.sql"
+      ]
     }
   ]
 }

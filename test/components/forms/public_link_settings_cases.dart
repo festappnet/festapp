@@ -105,6 +105,52 @@ void main() {
     },
   );
 
+  test('HTML embed accepts one server export, escapes it and rejects foreign service scope', () {
+    final export = {
+      'schemaVersion': 1,
+      'serviceOrigin': 'https://tenant.example',
+      'websiteOrigin': 'https://website.example',
+      'binding': {'id': '11111111-1111-1111-1111-111111111111', 'version': 1},
+      'providerConfig': {
+        'provider': 'cookieconsent',
+        'organization': 1,
+        'unit': 2,
+        'consentRevision': 'a' * 32,
+        'origin': 'https://website.example',
+        'categories': {
+          'analytics': '</script><script>alert(1)</script>',
+          'marketing': 'marketing',
+        },
+        'revision': 1,
+      },
+    };
+    final raw = jsonEncode(export);
+    expect(parseFormConsentExport(raw, 'https://tenant.example'), export);
+    final code = formEmbedCode(
+      tenantUrl: 'https://tenant.example',
+      savedLink: 'saved',
+      title: 'Form',
+      fallbackLabel: 'Open',
+      consentExport: raw,
+    );
+    expect(code, contains('data-festapp-consent-link'));
+    expect(code, contains('data-festapp-consent="'));
+    expect(code, isNot(contains('</script><script>')));
+    expect(code, contains('&lt;/script&gt;'));
+    expect(parseFormConsentExport(raw, 'https://other.example'), isNull);
+    expect(
+      () => formEmbedCode(
+        tenantUrl: 'https://other.example',
+        savedLink: 'saved',
+        title: 'Form',
+        fallbackLabel: 'Open',
+        consentExport: raw,
+      ),
+      throwsArgumentError,
+    );
+    expect(parseFormConsentExport('{', 'https://tenant.example'), isNull);
+  });
+
   testWidgetsWithEnvironment(
     () => _environment,
     'embed dialog preserves appearance and independently controls sizing and measurement',
@@ -124,7 +170,7 @@ void main() {
           .widgetList<CopyButton>(find.byType(CopyButton))
           .singleWhere((button) => button.value.contains('<iframe'))
           .value;
-      expect(find.byType(CheckboxListTile), findsOneWidget);
+      expect(find.byType(CheckboxListTile), findsNWidgets(2));
       expect(find.text(FormStrings.embedInheritStyle), findsNothing);
       expect(copiedCode(), isNot(contains('data-festapp-style')));
       expect(copiedCode(), contains('/embed.js'));
@@ -145,7 +191,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedFixed).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsOneWidget);
+      expect(find.byType(CheckboxListTile), findsNWidgets(2));
       expect(copiedCode(), isNot(contains('data-festapp-style')));
       expect(copiedCode(), contains('/embed.js'));
       expect(copiedCode(), contains('data-festapp-height="fixed"'));
@@ -162,7 +208,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.embedAutomatic).last);
       await tester.pumpAndSettle();
-      expect(find.byType(CheckboxListTile), findsOneWidget);
+      expect(find.byType(CheckboxListTile), findsNWidgets(2));
       expect(copiedCode(), isNot(contains('data-festapp-style')));
       expect(copiedCode(), isNot(contains('data-festapp-height="fixed"')));
     },
@@ -188,7 +234,9 @@ void main() {
       );
       await tester.tap(find.text(FormStrings.embedAction));
       await tester.pumpAndSettle();
-      final openAppearance = find.byKey(const ValueKey('embed-open-appearance'));
+      final openAppearance = find.byKey(
+        const ValueKey('embed-open-appearance'),
+      );
       await tester.ensureVisible(openAppearance);
       await tester.pumpAndSettle();
       await tester.tap(openAppearance);

@@ -142,7 +142,6 @@ class FeaturesStrings {
   // Feature Ticket
   static String get labelShowHiddenNote =>
       'FeatureTicket.labelShowHiddenNote'.tr();
-  static String get selectTicket => 'FeatureTicket.selectTicket'.tr();
   static String get unknown => 'FeatureTicket.unknown'.tr();
   static String get noData => 'FeatureTicket.noData'.tr();
   static String get ticketDescription => 'FeatureTicket.description'

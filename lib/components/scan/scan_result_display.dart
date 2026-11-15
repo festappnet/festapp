@@ -5,6 +5,7 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -90,7 +91,7 @@ class ScanResultDisplay extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
-                        OrdersStrings.scanInstructionsAppUser,
+                        OrderItemStrings.scanInstructionsAppUser,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -383,7 +384,8 @@ class ScanResultDisplay extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 16.0),
               child: ElevatedButton(
                 onPressed: onConfirm,
-                child: Text(ScanStrings.confirmTicket),
+                child: Text(OrderItemStrings.text('FeatureTicket.confirmTicket',
+                    hasTickets: FeatureService.usesTicketTerminology(features: features))),
               ),
             ),
 

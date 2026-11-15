@@ -1,8 +1,10 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/formatting.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class CardRefundDecisionStrings {
-  static String text(String key) => 'CardRefundDecision.$key'.tr();
+  static String text(String key) =>
+      OrderItemStrings.text('CardRefundDecision.$key');
   static String amount(int minor, String currency, {String? locale}) =>
       formatDisplayCurrency(
         minor / 100,

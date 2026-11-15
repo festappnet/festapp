@@ -57,6 +57,10 @@ void main() {
         Object body;
         if (request.url.path.endsWith('/get_unit_for_edit')) {
           body = {'code': 200, 'data': stored};
+        } else if (request.url.path.endsWith(
+          '/get_unit_website_consent_bindings',
+        )) {
+          body = {'consentRevision': 'a' * 32, 'bindings': []};
         } else if (request.url.path.endsWith('/get_payment_method_policy')) {
           body = {
             'organizationId': 1,

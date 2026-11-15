@@ -672,3 +672,66 @@ Save proposed websites through the Unit aggregate first, then refresh approval
 status and request permission. Drafts must not be presented as submitted requests.
 The frontend fails closed when the new lifecycle fields are unavailable; apply
 the forward SQL migration before deploying its reader.
+
+### Managed CMS consent configuration (schema 1)
+
+SQL in `website_consent_bindings.sql` owns one durable binding per Unit and exact
+saved website origin. `get_unit_website_consent_bindings(p_unit)` returns current
+`consentRevision` and bindings. Managers save through
+`save_unit_website_consent_binding(p_unit,p_website_origin,p_platform,p_provider_config,
+p_expected_version,p_expected_consent_revision,p_confirm)`. Version 0 creates;
+every write increments version, clears old confirmation and optionally records
+an explicit new confirmation. Stale version or notice raises SQLSTATE 40001.
+`disable_unit_website_consent_binding(p_binding,p_expected_version)` retains the
+row. `export_unit_website_consent_binding(p_binding,p_expected_version)` only
+exports effective, confirmed bindings. All four RPCs require the canonical Unit
+configuration capability and authenticated identity; no direct table access.
+
+Export: `{schemaVersion:1,serviceOrigin,websiteOrigin,binding:{id,version},
+providerConfig:{provider,organization,unit,consentRevision,...}}`.
+`serviceOrigin` comes from the stored organization's `DEFAULT_URL`. Complianz
+adds `policyId`; CookieConsent v3 adds positive `revision` and distinct
+`categories:{analytics,marketing}` (1-128 UTF-16 units each, Unicode/spaces
+preserved); Cookiebot adds `cbid`, UTC `consentValidFrom` and `maxAgeSeconds`
+(1-31536000). Scope and notice revision are server derived, never CMS inputs.
+
+The public form policy carries `website_consent_bindings` with only `id`,
+`version`, `websiteOrigin`, `effective`, including disabled tombstones. An origin
+with a row requires matching binding identity/version on every transferred
+choice. Removing binding fields cannot fall back to an external adapter there.
+External adapters on unmanaged origins retain their existing contract. Binding
+changes affect `processing_revision`, never the semantic `consent_revision`.
+Refresh retires a changed grant; policy loss never extends the 60-second lease.
+CMS import status indicates local acceptance only. Cookie choice transfer does
+not promise continuity of an analytics visitor identity.
+
+The same schema also covers `platform: wix` and `platform: html` (including
+Webnode). Platform changes update the existing Unit/origin row; they do not create
+a second consent policy. Wix settings and the HTML generators import the same
+export, with transfer off by default. Their own fallback links can participate;
+unrelated page links remain untouched. Wix checkout provenance and the signed
+`checkout_origin` flow remain separate and unchanged.
+
+The native `wix` adapter reads the public synchronous
+`window.consentPolicyManager.getCurrentConsentPolicy()` boundary exposed by
+`@wix/site`'s consentPolicyManager module. It requires `defaultPolicy === false`,
+a valid top-level `createdDate`, `essential === true` and boolean purpose fields.
+Analytics maps to `analytics`; marketing requires both `advertising` and
+`dataToThirdParty`, and is clamped when TCF is present. As Wix has no notice
+revision, the organizer archives `consentValidFrom` and `maxAgeSeconds` against
+the confirmed Festapp revision, as for Cookiebot. Missing timestamps, default
+policy, stale/future/expired records and unavailable APIs never import. No
+consent cookie values or visitor identifiers are exported to CMS configuration.
+
+Each read rechecks the current native API; event, polling, focus and visibility
+updates catch resets, other-tab changes and expiry. The installed SDK's
+`@wix/consent-policy-manager@1.15.0` is a thin public API wrapper. The existing
+public development site was tested in an isolated browser on 2026-11-14: deleting
+the exact `consent-policy` cookie and resetting from a second tab immediately
+returned `defaultPolicy: true` in the first tab without reload. That observation
+covers the tested live host; modeled SDK tests are not a claim of live hosting
+coverage for every Wix editor or account.
+
+Primary Wix contracts: [consent requirements](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/gdpr-compliance/implement-cookie-consent-requirements),
+[consent apps and default policy](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/about-consent-apps),
+[consent policy manager](https://dev.wix.com/docs/sdk/host-modules/site/consent-policy-manager/introduction).

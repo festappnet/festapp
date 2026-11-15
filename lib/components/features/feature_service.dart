@@ -54,6 +54,12 @@ class FeatureService {
         .any((feature) => feature.code == featureCode && feature.isEnabled);
   }
 
+  /// Presentation terminology belongs to the occasion, regardless of form field
+  /// visibility, item count, payment state or ticket delivery settings.
+  /// Keep in sync with `_shared/orderItemTerminology.ts` and its shared cases.
+  static bool usesTicketTerminology({List<Feature>? features}) =>
+      isFeatureEnabled(FeatureConstants.ticket, features: features);
+
   static bool isTicketPregenerationEnabled({List<Feature>? features}) {
     final ticket =
         getFeatureDetails(FeatureConstants.ticket, features: features);

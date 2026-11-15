@@ -8,9 +8,11 @@ namespace Joomla\CMS\Language {
 namespace {
     define('ABSPATH', '/');
     define('_JEXEC', true);
+    function get_option($name, $default = false) { return $default; }
     function wp_get_environment_type() { return 'production'; }
     function wp_strip_all_tags($value) { return strip_tags($value); }
     function esc_attr($value) { return htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); }
+    function esc_html($value) { return esc_attr($value); }
     function esc_html__($value, $domain) { return esc_attr($value); }
     function esc_url($value) { return esc_attr($value); }
     function __($value, $domain) { return $value; }
@@ -25,6 +27,7 @@ namespace {
     foreach ([['vstupenky-online', 'VstupenkyOnline', 'https://vstupenky.online'],
               ['festapp-tickets', 'FestappTickets', 'https://tickets.festapp.net']] as [$product, $namespace, $origin]) {
         require "$root/wordpress/$product/includes/embed.php";
+        require "$root/wordpress/$product/includes/consent.php";
         $module = 'mod_' . str_replace('-', '_', $product);
         require "$root/joomla/build/$module/src/Helper/EmbedHelper.php";
         $joomla = 'Festapp\\Module\\' . $namespace . '\\Site\\Helper\\EmbedHelper';

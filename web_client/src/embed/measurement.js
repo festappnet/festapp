@@ -1,3 +1,4 @@
+import {consentScope, managedConsentOrigin, sameConsentBinding} from '../components/forms/measurement_consent_source.js';
 import {validId} from './protocol.js';
 import {measurementProtocol, analyticsPayload, campaignContext, measurementConsent, measurementManifest, sameMeasurementManifest} from '../components/forms/form_measurement_contract.js';
 
@@ -18,6 +19,9 @@ export class EmbedMeasurement {
                 const value=data.measurement;
                 if(!sameMeasurementManifest(value.manifest,this.measurementManifest))return;
                 // The lease proves a live helper. The purposes are only state for tags.
+                const scope = consentScope(this.measurementManifest, this.origin);
+                const managed = !this.dataLayer && managedConsentOrigin(this.measurementManifest, this.origin);
+                const imported = !managed || (scope && sameConsentBinding(scope.binding, value.binding));
                 const granted=validId(value.leaseId);
                 const changed=this.leaseId!==value.leaseId;
                 if(changed)this.stop();
@@ -25,7 +29,7 @@ export class EmbedMeasurement {
                 this.leaseUntil=granted?Date.now()+Math.min(60000,Math.max(0,Number(value.ttl)||0)):0;
                 this.win.clearTimeout(this.leaseTimer);
                 this.leaseTimer=this.win.setTimeout(()=>{this.stop();this.consentNotify?.(false);},Math.max(0,this.leaseUntil-Date.now()));
-                this.consentNotify?.(granted?{...measurementConsent(value.consent),leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
+                this.consentNotify?.(granted && imported?{...measurementConsent(value.consent),leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
             } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===measurementProtocol &&
                 data.measurement.generation===this.grant.generation && data.measurement.leaseId===this.grant.leaseId &&
                 sameMeasurementManifest(data.measurement.manifest,this.grant.manifest) && Date.now()<this.leaseUntil) {

@@ -23,6 +23,7 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_strings.dart';
 import 'package:fstapp/components/eshop/views/order_detail_view.dart';
 import 'package:fstapp/components/features/feature.dart';
+import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -32,6 +33,24 @@ import '../../support/fixtures/widget_environment_fixture.dart';
 
 void main() {
   WidgetEnvironmentFixture.register();
+
+  final terminologyCases = jsonDecode(
+    File('test/fixtures/order_item_terminology.json').readAsStringSync(),
+  ) as List;
+  for (final value in terminologyCases) {
+    test('occasion terminology: ${value['name']}', () {
+      final features = (value['features'] as List? ?? []).map((feature) =>
+        SimpleFeature(
+          code: feature['code'] as String,
+          isEnabled: feature['is_enabled'] == true,
+          title: '',
+          description: '',
+        ),
+      ).toList();
+      expect(FeatureService.usesTicketTerminology(features: features),
+          value['tickets']);
+    });
+  }
 
   setUpAll(() async {
     if (Platform.environment['FESTAPP_ORDER_DETAIL_CAPTURE_DIR'] == null)
@@ -741,7 +760,7 @@ void main() {
   );
 
   testWidgets(
-    'hidden issuance container presents multiple applications even with ticket feature enabled',
+    'hidden issuance preserves occasion terminology without enabling downloads',
     (tester) async {
       await open(
         tester,
@@ -750,14 +769,16 @@ void main() {
         issuanceHidden: true,
         maximum: 2,
       );
-      expect(find.text('Application 100'), findsOneWidget);
-      expect(find.text('Application 101'), findsOneWidget);
+      expect(find.text('Ticket 100'), findsOneWidget);
+      expect(find.text('Ticket 101'), findsOneWidget);
       expect(find.text('Historical supper'), findsNWidgets(2));
-      await tester.ensureVisible(find.text('Application 101'));
-      await tester.tap(find.text('Application 101'));
+      await tester.ensureVisible(find.text('Ticket 101'));
+      await tester.tap(find.text('Ticket 101'));
       await tester.pumpAndSettle();
       expect(find.text('Historical supper'), findsNWidgets(4));
-      expect(find.text('2 applications'), findsOneWidget);
+      expect(find.text('2 tickets'), findsOneWidget);
+      expect(find.text('Tickets and places'), findsOneWidget);
+      expect(find.byType(AsyncDownloadButton), findsNothing);
       expect(find.textContaining('assigned places'), findsNothing);
       expect(find.text('Edit products'), findsNothing);
       expect(tester.takeException(), isNull);

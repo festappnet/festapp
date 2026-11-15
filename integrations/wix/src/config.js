@@ -1,9 +1,10 @@
+import {parseConsentExport} from '../../../web_client/src/embed/host_consent_export.js';
 export const SERVICE_ORIGIN = 'https://vstupenky.online';
 export const HELP_URL = 'https://festapp-wix.pages.dev/help';
 export const CHECKOUT_CONTEXT_ENDPOINT = 'https://api.festapp.net/functions/v1/wix-checkout-context';
 export const TAG_NAME = 'vstupenky-online-form';
 export const DEFAULT_TITLE = 'Prodej vstupenek - vstupenky.online';
-export const PROPERTIES = ['form-url', 'form-title', 'measurement'];
+export const PROPERTIES = ['form-url', 'form-title', 'measurement', 'consent-export', 'consent-enabled'];
 
 // This is a public form URL, never an authentication or editor URL.
 export function formUrl(value) {
@@ -25,5 +26,8 @@ export function settingsFrom(values) {
   const url = formUrl(values['form-url']);
   if (!url) throw new Error('Vložte veřejný odkaz https://vstupenky.online/form/… bez dalších parametrů.');
   const title = String(values['form-title'] || DEFAULT_TITLE).trim().slice(0, 200) || DEFAULT_TITLE;
-  return {'form-url': url, 'form-title': title, measurement:values.measurement === 'host' ? 'host' : 'unit'};
+  const raw=typeof values['consent-export']==='string' ? values['consent-export'].trim() : '';
+  const config=raw ? parseConsentExport(raw,{serviceOrigin:SERVICE_ORIGIN}) : null;
+  if ((raw && !config) || (values['consent-enabled']==='on' && !config)) throw new Error('Vložte platný export pro tento web z Festappu.');
+  return {'consent-export':config ? JSON.stringify(config) : '', 'consent-enabled':values['consent-enabled']==='on' && config ? 'on' : 'off', 'form-url': url, 'form-title': title, measurement:values.measurement === 'host' ? 'host' : 'unit'};
 }

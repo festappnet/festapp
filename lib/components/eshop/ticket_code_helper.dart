@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:material_ui/material_ui.dart';
@@ -92,7 +93,7 @@ class TicketCodeHelper {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        OrdersStrings.provideScanLinkInstruction,
+                        OrderItemStrings.provideScanLinkInstruction,
                         style: TextStyle(fontSize: 15),
                       ),
                       const SizedBox(height: 28),

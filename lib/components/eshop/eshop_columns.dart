@@ -966,7 +966,7 @@ class EshopColumns {
         EshopColumnIds.TICKET_CONFIRM: (Map<String, dynamic> data) => [
               TrinaColumn(
                 enableAutoEditing: false,
-                title: OrdersStrings.ticketUsage,
+                title: OrderItemStrings.ticketUsage,
                 field: EshopColumnIds.TICKET_CONFIRM,
                 type: TrinaColumnType.text(),
                 width: 200,

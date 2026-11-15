@@ -146,3 +146,14 @@ test('policy refresh and unchanged source renewals clamp the runtime deadline',a
 for(const expiresAt of [0,NaN,Infinity,-1]) test('malformed source deadline cannot become unlimited '+expiresAt,async t=>{
  const f=fixture(t,{consent:{analytics:true,marketing:true,leaseId:'source',expiresAt}});await f.start();assert.equal(f.transport.grant,null);
 });
+
+test('managed binding changes retire live senders even when semantic notice is unchanged',async t=>{
+ const id='11111111-1111-1111-1111-111111111111';
+ let answer={...policy,consent_revision:'a'.repeat(32),website_consent_bindings:[{id,version:1,websiteOrigin:'https://host.example',effective:true}]};
+ const f=fixture(t,{source:async()=>answer});await f.start();
+ const first=f.session.capture();
+ answer={...answer,website_consent_bindings:[{...answer.website_consent_bindings[0],version:2,effective:false}]};
+ await f.session.refresh();
+ assert.equal(first({event:'form_start'}),false,'manifest boundary also guards peers missing technical fingerprint updates');
+ assert.equal(f.session.policy.consent_revision,'a'.repeat(32));
+});

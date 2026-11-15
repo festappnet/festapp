@@ -4,7 +4,7 @@ Tags: tickets, events, registration, gutenberg, shortcode
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4.33
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,6 +124,17 @@ Allow https://vstupenky.online in frame-src and, for the helper, script-src. Do 
 = What happens on deactivation or deletion? =
 The plugin owns no tables, options or remote orders, and performs no remote writes on activation, deactivation or uninstall. Service orders remain. Deactivation can expose raw shortcode text; remove the block/shortcode or replace it with a normal public link.
 
+= How do I transfer cookie choices from my website? =
+
+In Festapp, open Organizer settings > Measurement > My websites. Save changes,
+select your website and cookie banner, and explicitly confirm policy coverage.
+Copy the resulting JSON into Configuration exported from Festapp in this
+extension's settings, then enable the import. No internal IDs or revisions are
+entered manually. The form checks current approval; local import acceptance
+alone does not establish a working transfer. Only this extension's form-link
+block/shortcode and fallback links participate. Manual links stay unchanged.
+Cookie choice transfer does not preserve analytics visitor identity.
+
 == Screenshots ==
 
 1. Local onboarding and service disclosure.
@@ -134,31 +145,10 @@ The plugin owns no tables, options or remote orders, and performs no remote writ
 
 == Changelog ==
 
-= 1.0.8 =
-* Improve ticket sales and event registration documentation and Czech translations.
-
-= 1.0.7 =
-* Add an explicit measurement destination with conversion-sharing disclosure; retain Unit mode for existing embeds.
-
-= 1.0.6 =
-* Prevent a dark iframe canvas before the shared helper loads.
-
-= 1.0.5 =
-* Control embedded appearance only through the saved form setting; remove local overrides.
-
-= 1.0.4 =
-* Configure appearance per block or shortcode through the shared embed contract.
-
-= 1.0.3 =
-* Declare the minimum supported WordPress major release consistently.
-
-= 1.0.2 =
-* Link the service offer directly to the canonical homepage.
-
-= 1.0.1 =
-* Clearly identify the WordPress appearance option as a local override of the app appearance.
+= 1.0.9 =
+* Import the server-confirmed cookie choice configuration from Festapp. Only the extension’s own form links participate; manual links remain unchanged.
 
 == Upgrade Notice ==
 
-= 1.0.8 =
-Documentation and Czech translation updates. Existing forms, measurement settings and purchase behavior are unchanged.
+= 1.0.9 =
+Configure and confirm your website in Festapp, then explicitly import its JSON export. Transfer stays off until enabled. No manual scope IDs or revisions are required.

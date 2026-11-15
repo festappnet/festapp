@@ -41,7 +41,7 @@ function privacyUrl(value) {
     } catch { return null; }
 }
 
-export function startMeasurementConsent({win = window, model, setConsent, host}) {
+export function startMeasurementConsent({win = window, model, setConsent, host, remoteSource}) {
     prepareConsentLink(win);
     const policy = model.data?.analytics;
     if (!Number.isSafeInteger(policy?.organization) || !Number.isSafeInteger(policy?.unit)) return () => {};
@@ -405,7 +405,7 @@ ${layout}`;
     };
     try {
         enhance();
-        stopLink = requestLinkedConsent({win, policy, hasChoice:hasLocalChoice, settled:showNormal, revoke:expireImportedChoice,
+        const remoteOptions = {win, policy, hasChoice:hasLocalChoice, settled:showNormal, revoke:expireImportedChoice,
             accept:(choice, metadata) => {
                 if (hasLocalChoice()) return;
                 const unchanged = imported && remoteChoice.analytics === choice.analytics && remoteChoice.marketing === choice.marketing;
@@ -419,7 +419,8 @@ ${layout}`;
                 // Clamp an open draft before publishing a source grant. A heartbeat
                 // never restores a switch the visitor has just turned off.
                 applyKlaroVisitChoice(manager, choice, editing ? previousDraft : null);
-            }});
+            }};
+        stopLink = remoteSource ? remoteSource.connect(remoteOptions) : requestLinkedConsent(remoteOptions);
         if (!stopLink.pending) showNormal();
     } catch { showNormal(); }
     return () => {fail(); choices.remove();};

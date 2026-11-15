@@ -112,7 +112,8 @@ class MirrorContractTest(unittest.TestCase):
     def test_flutter_browser_contracts_have_one_owner_and_semantic_inventory(self):
         steps=runner.CONTRACT['steps']
         for source in ('test/browser/browser_preference_store_test.dart',
-                       'test/components/html/html_image_preview_cases.dart'):
+                       'test/components/html/html_image_preview_cases.dart',
+                       'test/components/navigation/platform_route_parser_cases.dart'):
             owners=[name for name,unit in steps.items() if source in unit['script']]
             self.assertEqual(owners,['image-client-browser'])
         command=steps['image-client-browser']['script'].splitlines()
@@ -122,7 +123,7 @@ class MirrorContractTest(unittest.TestCase):
         inventory=json.loads((ROOT/'automation/client_test_inventory.json').read_text())
         self.assertTrue({'ticket-client','navigation-contract','image-client-browser'}
                         .issubset(inventory['ci_cases']))
-        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']),6)
+        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']),10)
         self.assertIn('automation/testing/navigation_default.dart',
                       steps['navigation-contract']['script'])
 

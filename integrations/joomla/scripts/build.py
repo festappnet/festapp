@@ -39,6 +39,7 @@ def build():
             dest = target / name
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(expand(source.read_text()))
+        (target/'src/Helper/consent-export.php').write_text((ROOT.parent/'measurement/consent-export.php').read_text())
         for locale, strings in json.loads((ROOT / 'translations.json').read_text()).items():
             language = target / 'language' / locale
             language.mkdir(parents=True)

@@ -1,4 +1,4 @@
-import {consentScope, readConsentSource} from '../components/forms/measurement_consent_source.js';
+import {consentScope, readConsentSource, managedConsentOrigin} from '../components/forms/measurement_consent_source.js';
 import {measurementProtocol, measurementConsent, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
@@ -13,11 +13,16 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
         record.heartbeat = null;
     };
     const readChoice = record => {
-        try { return measurementConsent(record.choice?.read(record.manifest)); }
+        try {
+            const scope = consentScope(record.manifest, window.location.origin);
+            const choice = record.choice?.read(record.manifest);
+            record.consentBinding = choice && scope?.binding ? scope.binding : undefined;
+            return measurementConsent(choice);
+        }
         catch { return measurementConsent(false); }
     };
-    const sendConsent = (frame, record) => record.channel.send('measurement-consent', {measurement:{protocol:measurementProtocol, manifest:record.manifest, leaseId:record.lease?.id,
-            ttl:record.lease ? 60000 : 0, consent:readChoice(record)}});
+    const sendConsent = (frame, record) => { const choice = readChoice(record); return record.channel.send('measurement-consent', {measurement:{protocol:measurementProtocol, manifest:record.manifest, leaseId:record.lease?.id,
+            ttl:record.lease ? 60000 : 0, binding:record.consentBinding, consent:choice}}); };
     const revoke = (frame, record) => {
         record.lease = null;
         record.pageContext = null;
@@ -33,7 +38,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             const legacyRead = scopedChoice(record, () => consentMode.read());
             bindChoice(frame, record, notify => ({
                 read:manifest => usesHostDataLayer(frame) ? false : consentSource?.configured
-                    ? consentSource.read(consentScope(manifest)) : legacyRead(manifest),
+                    ? consentSource.read(consentScope(manifest, window.location.origin)) : managedConsentOrigin(manifest, window.location.origin) ? false : legacyRead(manifest),
                 dispose:(() => {
                     const a = consentMode.subscribe(notify), b = consentSource?.subscribe(notify);
                     return () => { a(); b?.(); };
@@ -50,7 +55,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
     const scopedChoice = (record, read) => {
         let scope = scopeOf(record.manifest);
         return manifest => {
-            if (!manifest) return false;
+            if (!manifest || managedConsentOrigin(manifest, window.location.origin)) return false;
             scope ??= scopeOf(manifest);
             return scope === scopeOf(manifest) ? read() : false;
         };
@@ -86,7 +91,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             return bindChoice(frame, record, notify => {
                 const dispose = source.subscribe(notify);
                 return {dispose, read:manifest => {
-                    return readConsentSource(source, consentScope(manifest));
+                    return readConsentSource(source, consentScope(manifest, window.location.origin));
                 }};
             });
         },

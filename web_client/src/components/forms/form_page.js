@@ -1,3 +1,4 @@
+import {createEmbedConsentSource} from './form_measurement_embed_consent.js';
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
 import { earlyFormLoad } from '../../startup/early_form_load.js';
 import { FormDataLayer } from './form_datalayer.js';
@@ -581,7 +582,7 @@ export class FormPage extends Component {
                 this.embedBridge.setMeasurementRuntime(runtime);
             }
             let identity=hasBrowserSession(window)?'authenticated':'anonymous';
-            const consentSource=this.embedBridge?{connect:(policy,notify)=>this.embedBridge.connectConsent(policy,notify)}:{
+            const consentSource=this.embedBridge ? createEmbedConsentSource({bridge:this.embedBridge,model:formModel,host:this.host}) : {
                 connect:(policy,notify)=>{
                     let disposed=false,cleanup;
                     if(policy?.visitor_role!=='staff') import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{

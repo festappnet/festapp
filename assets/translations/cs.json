@@ -639,7 +639,35 @@
     "appearanceLight": "Světlý",
     "appearanceDark": "Tmavý",
     "embedInheritStyle": "Přizpůsobit vzhled webu",
-    "embedOpenAppearance": "Upravit vzhled formuláře"
+    "embedOpenAppearance": "Upravit vzhled formuláře",
+    "cmsTransfer": "Přenos voleb cookies do formuláře",
+    "cmsTransferHelp": "Vyberte svůj web, způsob vložení a cookie lištu. Stejnou konfiguraci přeneste do doplňku WordPressu, Joomly či Wixu nebo do HTML vložení.",
+    "cmsPlatform": "Systém webu",
+    "cmsProvider": "Cookie lišta",
+    "cmsPolicyId": "Complianz ID zásad",
+    "cmsCmpRevision": "Revize CookieConsent",
+    "cmsAnalyticsCategory": "Kategorie analytiky",
+    "cmsMarketingCategory": "Kategorie marketingu",
+    "cmsValidFrom": "Souhlasy platné od (UTC)",
+    "cmsMaxAge": "Maximální stáří souhlasu v sekundách",
+    "cmsCoverage": "Potvrzuji, že zásady a cookie lišta tohoto webu pokrývají formulář, analytiku, marketing, měření pořadatele na *.pages.dev a Festapp jako zpracovatele. Návštěvníci mohou volbu kdykoli odvolat.",
+    "cmsConfirm": "Potvrdit pokrytí",
+    "cmsExport": "Zobrazit export",
+    "cmsDisable": "Vypnout přenos",
+    "cmsCopy": "Kopírovat konfiguraci",
+    "cmsExportHelp": "Konfiguraci vložte do doplňku na vybraném webu. Po změně zásad nebo mapování potvrďte pokrytí znovu a nahraďte export. Přenos voleb cookies nezachovává měřicí identitu návštěvníka.",
+    "cmsUnavailable": "Konfiguraci se nepodařilo ověřit nebo se mezitím změnila. Načtěte aktuální stav a potvrďte pokrytí znovu.",
+    "cmsState_draft": "Rozpracováno",
+    "cmsState_disabled": "Vypnuto",
+    "cmsState_ready": "Připraveno k exportu",
+    "cmsState_approval_required": "Web vyžaduje schválení",
+    "cmsState_confirmation_required": "Zásady se změnily. Potvrďte pokrytí znovu.",
+    "cmsState_unavailable": "Přenos není účinný. Ověřte zapnutí měření, přenosu a schválení webu.",
+    "cmsHtml": "HTML / Webnode a další weby",
+    "cmsEnableImport": "Zapnout importovanou konfiguraci",
+    "cmsImportLabel": "Konfigurace exportovaná z Festappu",
+    "cmsImportInvalid": "Vložte platný export z Festappu pro tuto službu.",
+    "cmsHtmlImportHelp": "Ve Festappu otevřete Nastavení pořadatele > Měření > Moje weby. Potvrďte pokrytí a zkopírujte export. Kód vložte pouze na vybraný web. Formulář ověří aktuální schválení; import nezachovává měřicí identitu návštěvníka."
   },
   "OrderGridColumns": {
     "id": "Id",
@@ -5514,5 +5542,148 @@
     "publicPage": "Veřejná stránka",
     "formIntroduction": "Úvod",
     "formOutline": "Osnova formuláře"
+  },
+  "ApplicationTerminology": {
+    "ProductsDialog": {
+      "infoTicketSymbol": "Symbol přihlášky",
+      "cancelTicketPrefix": "STORNOVAT PŘIHLÁŠKU ",
+      "cancelledTicketsTitle": "Stornované přihlášky:",
+      "removedTicketsTitle": "Odebrané přihlášky:",
+      "addedTicketsTitle": "Přidané přihlášky:",
+      "changeTicketLabel": "Přihláška {symbol}",
+      "dialogTitleFallback": "Produkty na přihlášce",
+      "globalChangesNote": "E-mail zahrnuje změny ze všech přihlášek v této objednávce.",
+      "productChangesForTicket": "Změny produktů na přihlášce {symbol}"
+    },
+    "CardPayments": {
+      "emailPending": "Připravujeme potvrzení přihlášky.",
+      "emailAccepted": "E-mail s potvrzením přihlášky byl předán k odeslání.",
+      "admissionHold": "Platnost přihlášek je pozastavena. Kontaktujte pořadatele.",
+      "disputed": "Platnost přihlášek je pozastavena.",
+      "emailNotRequested": "Informace o odeslání přihlášek zatím není k dispozici."
+    },
+    "CardRefundDecision": {
+      "explanation": "Peníze se vracejí ve Stripe Dashboard. Zde pouze rozhodnete, které přihlášky zůstanou platné.",
+      "keep": "Ponechat přihlášky platné",
+      "keepHint": "Zbývající přihlášky zůstanou platné.",
+      "cancelSelected": "Stornovat vybrané přihlášky",
+      "cancelHint": "Vyberte pouze nepoužité přihlášky ke stornování. Tento krok zde nelze vrátit.",
+      "ineligible": "Tuto přihlášku nelze stornovat",
+      "chooseAction": "Vyberte postup a při rušení alespoň jednu přihlášku.",
+      "ticketUnavailable": "Vybraná přihláška již není dostupná. Obnovte údaje a vyberte znovu.",
+      "decide": "Dořešit přihlášky"
+    },
+    "Seating": {
+      "noAdmissions": "Zatím nejsou žádné přijaté přihlášky. Nové přihlášky se zobrazí zde.",
+      "workRemaining": "Přiřaďte místa přijatým přihláškám. Přihlašování funguje beze změny.",
+      "ticket": "Přihláška",
+      "unchanged": "Přihlášky, QR kódy, ceny a platby zůstanou beze změny. E-mail se neodešle. Již stažené PDF se samo neaktualizuje.",
+      "selectAdmission": "Vyberte přijatou přihlášku a poté odpovídající místo na plánku nebo v seznamu.",
+      "noResults": "Vyhledávání nebo kategorii neodpovídá žádná přihláška.",
+      "search": "Hledat držitele, objednávku nebo přihlášku",
+      "admissions": "Přijaté přihlášky",
+      "noChanges": "Vyberte alespoň jednu přihlášku a místo.",
+      "CONTEXT_CHANGED": "Přihláška, místo nebo nastavení se změnily. Rozpracovaná přiřazení zůstala zachována. Obnovte údaje a znovu je zkontrolujte.",
+      "ATOMIC_UNIT_INCOMPLETE": "Každé místo ve společné skupině potřebuje vlastní oprávněnou přihlášku. Doplňte všechna přiřazení.",
+      "ADMISSION_DATA_AMBIGUOUS": "Položka vstupného není jednoznačná. Požádejte oprávněného organizátora o opravu uvedené přihlášky.",
+      "ADMISSION_ASSIGNED_ELSEWHERE": "Přihláška už má místo na jiném plánku. Použijte výslovný postup přesunutí.",
+      "USED_TICKET_PROTECTED": "Použitou přihlášku zde nelze přesunout ani nově usadit.",
+      "BATCH_TICKET_PRINT_IMMUTABLE": "U přihlášky z tiskové dávky zde nelze měnit místo.",
+      "readRequired": "Pro zobrazení držitelů potřebujete oprávnění ke čtení objednávek."
+    },
+    "PaymentOperations": {
+      "belowThreshold": "Po vrácení nebude dosažena potřebná úhrada nebo záloha. Použité a stornované přihlášky zůstanou zachovány.",
+      "lifecyclePreserved": "Objednávka je stornovaná nebo vypršela. Vrácení neobnoví její stav ani přihlášky."
+    },
+    "OrderOverview": {
+      "downloadFailed": "Přihlášku se nepodařilo stáhnout. Zkuste to znovu.",
+      "usedTickets": "Použité přihlášky",
+      "order_sent": "Přihlášky odeslány",
+      "tickets": "Přihlášky",
+      "ticket": "Přihláška",
+      "downloadFailed_informal": "Přihlášku se nepodařilo stáhnout. Zkus to znovu."
+    },
+    "Scanner": {
+      "ticket_cancelled": "Přihláška je stornovaná",
+      "entry_intro": "Připojte toto zařízení k akci a začněte kontrolovat přihlášky.",
+      "reason_password_reset_not_available": "Obnova hesla pro tuto přihlášku není dostupná.",
+      "confirm_one": "Potvrdit tuto přihlášku",
+      "ticket_label": "Přihláška",
+      "ticket_group": "Načtené přihlášky",
+      "group_hint": "Každá přihláška se ověřuje samostatně. Klepnutím zobrazíte detail.",
+      "check_ticket": "Ověřit přihlášku",
+      "camera_ready": "Přihlášku před kameru",
+      "camera_aim": "Namiřte na QR kód přihlášky",
+      "choose_input": "Po načtení se zde zobrazí přihláška. Vstup potvrdíte jedním tlačítkem.",
+      "looking_up": "Ověřuji přihlášku…",
+      "already_used": "Přihláška už byla použita",
+      "unpaid": "Přihláška není zaplacená",
+      "valid": "Přihláška je platná",
+      "no_products": "Pro toto zobrazení nemá přihláška žádné produkty",
+      "next": "Další přihláška",
+      "used": "Použité přihlášky",
+      "symbol": "Kód přihlášky",
+      "search_input": "Jméno, e-mail nebo kód přihlášky",
+      "hid_ready": "Čtečka zadává kód jako klávesnice. Klikněte do pole a načtěte kód. Enter pouze vyhledá přihlášku, vstup potvrďte tlačítkem.",
+      "preview": "Náhled přihlášky",
+      "reason_not_found": "Přihláška nebyla v této akci nalezena",
+      "reason_admission_not_allowed": "Aktuální stav přihlášky nebo objednávky neumožňuje vstup.",
+      "note": "Poznámka přihlášky",
+      "ticket_fields": "Údaje přihlášky",
+      "core_status": "Stav přihlášky a výsledek potvrzení",
+      "core_notes": "Vyplněné poznámky objednávky a přihlášky",
+      "back_to_tickets": "Zpět na přihlášky",
+      "all_products_help": "Zobrazí se všechny produkty dané přihlášky, včetně nově přidaných.",
+      "preview_help": "Zadejte kód existující přihlášky a ověřte návrh před uložením. Vstup se tím nepotvrdí.",
+      "preview_empty": "Náhled se zobrazí po zadání kódu přihlášky.",
+      "entry_device_hint": "Například „Hlavní vstup“. Pod tímto názvem budou zaznamenány kontroly přihlášek.",
+      "ticket_note": "Poznámka ke přihlášce",
+      "confirm_valid": "Potvrdit platné",
+      "tickets": "Přihlášek",
+      "manual_search": "Ruční hledání přihlášek",
+      "reason_already_used": "Vstup potvrdilo také jiné zařízení nebo byl označen jako použitý.",
+      "holder_name": "Jméno držitele"
+    },
+    "FeatureOrders": {
+      "ticket": "Přihláška",
+      "tickets": "Přihlášky",
+      "ticketUsage": "Využití přihlášky",
+      "confirmTicketFailed": "Nepodařilo se potvrdit přihlášku",
+      "provideScanLinkInstruction": "Předejte následující odkaz nebo kód lidem, kteří budou kontrolovat přihlášky.",
+      "waveAvailabilityHideHint": "Od uvedeného termínu produkt nepůjde nově objednat. Skrytí jediné možnosti v povinném výběru zabrání dokončení objednávky. Celý prodej ukončete nastavením termínu prodeje ve formuláři. Existující objednávky a přihlášky se nezmění.",
+      "waveAvailabilityHelp": "V uvedeném termínu můžete kromě ceny změnit i nabídku produktu. Ponechat dostupnost: tato vlna dostupnost nezmění; dřívější naplánované změny zůstanou v platnosti. Nabídnout k prodeji: produkt se zobrazí zákazníkům, pokud to dovolují kapacita a ostatní podmínky prodeje. Skrýt z prodeje: produkt nepůjde nově objednat; existující přihlášky a objednávky se nezmění.\n\nSkrytím můžete stáhnout konkrétní tarif z nabídky. Pokud ale skryjete jedinou možnost v povinném výběru, zákazník objednávku nedokončí. Pro ukončení celého prodeje nastavte termín prodeje ve formuláři.",
+      "scanInstructionsAppUser": "Tip: Users can show their QR code from their application or directly from the mobile app Profile."
+    },
+    "FormsFeature": {
+      "addTicket": "Přidat přihlášku",
+      "Ticket": "Přihláška",
+      "labelMaxTicketsPerOrder": "Maximum přihlášek na objednávku:",
+      "helperMaxTicketsPerOrder": "Kolik přihlášek si uživatel může koupit v jedné objednávce (výchozí: 1)."
+    },
+    "FeatureTicket": {
+      "confirmTicket": "Potvrdit přihlášku",
+      "selectTicket": "Vybrat přihlášku"
+    },
+    "Common": {
+      "ticket": "Přihláška"
+    },
+    "PaymentMethods": {
+      "stripeHint": "Zaplatíte bezpečně přes Stripe. Potvrzení přihlášky obdržíte po potvrzení platby."
+    },
+    "EmailTemplates": {
+      "usage": {
+        "ticketOrderPaymentDone_description": "Zákazník dostane e-mail po potvrzení přijaté zálohy nebo doplatku zálohové objednávky. Přihlášky se odesílají samostatně."
+      }
+    },
+    "FeatureBlueprint": {
+      "ticketLabel": "Přihláška",
+      "swapSummaryCustomer": "Přihláška: {ticketSymbol} ({customerName})",
+      "swapUsedGroup": "Nedělitelnou skupinu s použitou přihláškou nelze prohodit.",
+      "releaseTemporaryReservationProtected": "Některá místa již patří do objednávky. Jejich přihlášky můžete spravovat samostatně.",
+      "maxTicketsReached": "Bylo dosaženo maximálního počtu přihlášek.",
+      "toastMaxTicketsReached": "Více přihlášek není možné vybrat.",
+      "catalogAffectedSeats": "Tento sdílený produkt používá {count} míst. Ceny již prodaných přihlášek spravuje server.",
+      "standingNoAdmissionType": "Nejprve vytvořte pro tuto akci přihlašovací formulář. Ten připraví potřebný typ vstupného."
+    }
   }
 }

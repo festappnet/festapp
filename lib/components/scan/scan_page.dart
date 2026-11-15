@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
@@ -367,7 +368,8 @@ class _ScanPageState extends State<ScanPage> {
 
     final TicketModel? selectedTicket = await showDialog(
       context: context,
-      builder: (ctx) => TicketSearchDialog(allTickets: allTickets),
+      builder: (ctx) => TicketSearchDialog(allTickets: allTickets,
+          hasTickets: FeatureService.usesTicketTerminology(features: _features)),
     );
 
     if (selectedTicket != null) {
@@ -445,7 +447,7 @@ class _ScanPageState extends State<ScanPage> {
     } else {
       VibrateService.vibrateNotOk();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(OrdersStrings.confirmTicketFailed)),
+        SnackBar(content: Text(OrderItemStrings.confirmTicketFailed)),
       );
     }
   }

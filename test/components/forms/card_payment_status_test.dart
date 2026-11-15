@@ -37,6 +37,21 @@ void main() {
   });
   WidgetEnvironmentFixture env() => WidgetEnvironmentFixture(
       locale: const Locale('cs'), translations: translations);
+  for (final tickets in [true, false]) {
+    testWidgets('delivery copy follows explicit occasion terminology: $tickets', (tester) async {
+      await env().pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(body: CardPaymentStatus(
+          hasTickets: tickets,
+          payment: {...payment('paid'), 'deliveryState': 'accepted'},
+        )),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining(tickets ? 'vstupenkami' : 'potvrzením přihlášky'), findsOneWidget);
+      expect(find.textContaining(tickets ? 'potvrzením přihlášky' : 'vstupenkami'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets(
       'A08 read projection cannot render a payment action without its separate owner',
       (tester) async {

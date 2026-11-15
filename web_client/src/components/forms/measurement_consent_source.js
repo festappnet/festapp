@@ -2,7 +2,7 @@ import {measurementConsent} from './form_measurement_contract.js';
 // One public scope/record contract for iframe adapters and linked visits. The
 // revision belongs to the saved record or archived CMP-policy mapping, never
 // to a value copied from the requested scope.
-export function consentScope(policy) {
+export function consentScope(policy, origin) {
     const revision = policy?.processingRevision ?? policy?.processing_revision;
     const purposes = policy?.requiredPurposes ?? policy?.required_purposes;
     if (![policy?.organization, policy?.unit].every(v => Number.isSafeInteger(v) && v > 0) ||
@@ -11,9 +11,23 @@ export function consentScope(policy) {
             !purposes.includes('analytics') || !purposes.includes('marketing')))) return null;
     const consentRevision = policy.consentRevision ?? policy.consent_revision;
     if (consentRevision !== undefined && (typeof consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(consentRevision))) return null;
-    return {organization:policy.organization, unit:policy.unit, processingRevision:revision, requiredPurposes:['analytics','marketing'],
+    let binding = policy.binding, websiteOrigin = policy.websiteOrigin;
+    if (policy.website_consent_bindings !== undefined) {
+        if (!Array.isArray(policy.website_consent_bindings)) return null;
+        const records = policy.website_consent_bindings.filter(b => b.websiteOrigin === origin);
+        if (records.length > 1) return null;
+        if (records.length) {
+            if (records[0].effective !== true) return null;
+            binding = {id:records[0].id, version:records[0].version}; websiteOrigin = origin;
+        }
+    }
+    if (binding !== undefined && (!validConsentBinding(binding) || typeof websiteOrigin !== 'string')) return null;
+    return {...(binding !== undefined ? {binding:{id:binding.id,version:binding.version}, websiteOrigin} : {}), organization:policy.organization, unit:policy.unit, processingRevision:revision, requiredPurposes:['analytics','marketing'],
         ...(consentRevision !== undefined ? {consentRevision} : {})};
 }
+export const validConsentBinding = b => !!b && typeof b.id === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(b.id) && Number.isSafeInteger(b.version) && b.version > 0;
+export const sameConsentBinding = (a,b) => validConsentBinding(a) && validConsentBinding(b) && a.id === b.id && a.version === b.version;
+export const managedConsentOrigin = (policy, origin) => Array.isArray(policy?.website_consent_bindings) && policy.website_consent_bindings.some(b => b.websiteOrigin === origin);
 export const sameConsentScope = (a, b) => !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
 export function readConsentSource(source, scope) {
     if (!scope) return null;
@@ -24,7 +38,7 @@ export function readConsentSource(source, scope) {
         const matches = value?.consentRevision !== undefined
             ? scope.consentRevision !== undefined && value.consentRevision === scope.consentRevision
             : value?.processingRevision === scope.processingRevision;
-        return matches ? measurementConsent(value) : null;
+        return matches && (!scope.binding || sameConsentBinding(value?.binding, scope.binding)) ? measurementConsent(value) : null;
     } catch { return null; }
 }
 export function createConsentSourceRegistry() {

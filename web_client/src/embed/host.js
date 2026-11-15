@@ -1,5 +1,6 @@
 import {createConsentSourceRegistry} from '../components/forms/measurement_consent_source.js';
 import {installHostConsentLink} from './host_consent_link.js';
+import {createManagedConsentSource} from './host_consent_export.js';
 import {createComplianzSource} from './host_complianz.js';
 import {createCookieConsentSource} from './host_cookieconsent.js';
 import {createCookiebotSource} from './host_cookiebot.js';
@@ -24,7 +25,9 @@ if (!window.__festappEmbedV1) {
             try { provider = JSON.parse(input)?.provider; } catch { /* Invalid stays configured and denied. */ }
             const createSource = provider === 'cookiebot' ? createCookiebotSource
                 : provider === 'cookieconsent' ? createCookieConsentSource : createComplianzSource;
-            consentSource.connect(createSource(window, input));
+            let managed = false;
+            try { managed = JSON.parse(input)?.schemaVersion !== undefined; } catch { /* Deny invalid input. */ }
+            consentSource.connect(managed ? createManagedConsentSource(window, input, productOrigin) : createSource(window, input));
         }
         installHostConsentLink(window, productOrigin, consentSource);
     } catch { /* No trusted script origin, no consent link bridge. */ }
