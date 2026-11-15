@@ -58,6 +58,18 @@ export function inventory(root, excluded = new Set(), prefix = '') {
   return result;
 }
 
+function translationReference(root,file) {
+  const match=/^web_client\/public\/assets\/translations\/(cs|en|sk|de|pl|uk)\.json$/.exec(file);
+  if(!match)throw new Error(`Unsupported build input: ${file}`);
+  const owner=`assets/translations/${match[1]}.json`;
+  const expected=path.join(fs.realpathSync(root),owner);
+  const absolute=path.join(root,file), link=fs.readlinkSync(absolute);
+  const stat=fs.lstatSync(expected);
+  if(path.isAbsolute(link) || !stat.isFile() || fs.realpathSync(expected)!==expected || fs.realpathSync(absolute)!==expected)
+    throw new Error(`Unsupported canonical translation reference: ${file}`);
+  return {owner,link,stat};
+}
+
 function inputFiles(root,excluded,prefix='') {
   const files=[];
   for(const entry of fs.readdirSync(path.join(root,prefix),{withFileTypes:true})) {
@@ -65,6 +77,7 @@ function inputFiles(root,excluded,prefix='') {
     const relative=prefix?`${prefix}/${entry.name}`:entry.name;
     if(entry.isDirectory())files.push(...inputFiles(root,excluded,relative));
     else if(entry.isFile())files.push(relative);
+    else if(entry.isSymbolicLink()) {translationReference(root,relative);files.push(relative);}
     else throw new Error(`Unsupported build input: ${relative}`);
   }
   return files;
@@ -147,7 +160,7 @@ export function fingerprint(root, component, target, tools = toolchain(root,comp
   }
   // Git ignores generated assets. They remain real compiler inputs.
   for (const directory of manifest.generatedRoots) {
-    if (fs.existsSync(path.join(root, directory))) for (const file of inputFiles(path.join(root, directory), excluded)) paths.add(`${directory}/${file}`);
+    if (fs.existsSync(path.join(root, directory))) for (const file of inputFiles(root, excluded, directory)) paths.add(file);
   }
   const matches = (file, entries) => entries.some(p => p.endsWith('/') ? file.startsWith(p) : file === p);
   const inputs = [...paths].sort().filter(file => {
@@ -161,7 +174,11 @@ export function fingerprint(root, component, target, tools = toolchain(root,comp
     const absolute = path.join(root, file);
     if (!fs.existsSync(absolute)) return {path:file, missing:true};
     const stat = fs.lstatSync(absolute);
-    if (stat.isSymbolicLink() || !stat.isFile()) throw new Error(`Unclassified build input: ${file}`);
+    if (stat.isSymbolicLink()) {
+      const {owner,link,stat:target}=translationReference(root,file);
+      return {path:file,reference:link,owner,mode:target.mode & 0o777,hash:sha(compilerBytes(root,owner,versionPackaging))};
+    }
+    if (!stat.isFile()) throw new Error(`Unclassified build input: ${file}`);
     return {path:file, mode:stat.mode & 0o777, hash:sha(compilerBytes(root,file,versionPackaging))};
   });
   const environment = Object.fromEntries(Object.entries(process.env).filter(([name]) => name!=='FLUTTER_VERSION' && /^(VITE_|DART_|FLUTTER_|NODE_OPTIONS$|NODE_ENV$|FESTAPP_OCCASION_SETUP$)/.test(name)).sort());

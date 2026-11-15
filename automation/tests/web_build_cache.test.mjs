@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import {execFileSync,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {fingerprint,componentBuild,pruneCache,stampFlutterMetadata,dependencyDigest} from '../lib/web_build_cache.mjs';
+import {fingerprint,componentBuild,pruneCache,stampFlutterMetadata,dependencyDigest,inventory} from '../lib/web_build_cache.mjs';
 import {fixture} from './web_build_fixture.mjs';
 
 test('actual dirty, untracked, generated, mode, SDK and tenant inputs invalidate',t=>{
@@ -128,4 +128,49 @@ test('failed compiler never publishes; dead owner recovers; retention protects l
  fs.mkdirSync(entry);fs.mkdirSync(entry+'.lock');pruneCache(f.home,0,0);assert.ok(fs.existsSync(entry));
  const interrupted=entry+'.tmp-interrupted';fs.mkdirSync(interrupted);fs.utimesSync(interrupted,new Date(0),new Date(0));
  fs.rmSync(entry+'.lock',{recursive:true});pruneCache(f.home,0,0);assert.ok(!fs.existsSync(entry));assert.ok(!fs.existsSync(interrupted));
+});
+
+
+test('canonical translation references bind every component to the owner bytes', t => {
+ const f=fixture(t);
+ for(const locale of ['cs','en','sk','de','pl','uk']) {
+  f.put(`assets/translations/${locale}.json`,JSON.stringify({label:'before'}));
+  const alias=path.join(f.root,`web_client/public/assets/translations/${locale}.json`);
+  fs.mkdirSync(path.dirname(alias),{recursive:true});
+  fs.symlinkSync(`../../../../assets/translations/${locale}.json`,alias);
+ }
+ const keys=()=>Object.fromEntries(['flutter','vite','bundle'].map(c=>[c,fingerprint(f.root,c,'static',f.tools).key]));
+ const before=keys();
+ f.put('assets/translations/cs.json',JSON.stringify({label:'after'}));
+ const after=keys();
+ for(const component of Object.keys(before))assert.notEqual(after[component],before[component],component);
+});
+
+test('translation references reject other locales, outside owners and arbitrary links', t => {
+ const f=fixture(t);
+ f.put('assets/translations/cs.json','{}');f.put('assets/translations/en.json','{}');
+ const alias=path.join(f.root,'web_client/public/assets/translations/cs.json');
+ fs.mkdirSync(path.dirname(alias),{recursive:true});
+ fs.symlinkSync('../../../../assets/translations/en.json',alias);
+ assert.throws(()=>fingerprint(f.root,'bundle','static',f.tools),/Unsupported canonical translation reference/);
+ fs.unlinkSync(alias);
+ fs.symlinkSync(path.join(f.root,'assets/translations/cs.json'),alias);
+ assert.throws(()=>fingerprint(f.root,'bundle','static',f.tools),/Unsupported canonical translation reference/);
+ fs.unlinkSync(alias);
+ fs.symlinkSync('../../../../assets/translations/cs.json',alias);
+ fs.unlinkSync(path.join(f.root,'assets/translations/cs.json'));
+ fs.symlinkSync(path.join(f.root,'assets/translations/en.json'),path.join(f.root,'assets/translations/cs.json'));
+ assert.throws(()=>fingerprint(f.root,'bundle','static',f.tools),/Unsupported/);
+ fs.unlinkSync(path.join(f.root,'assets/translations/cs.json'));
+ f.put('assets/translations/cs.json','{}');
+ fs.symlinkSync('../../assets/translations/cs.json',path.join(f.root,'web_client/public/arbitrary.json'));
+ assert.throws(()=>fingerprint(f.root,'bundle','static',f.tools),/Unsupported build input/);
+});
+
+
+test('published artifacts still reject every symbolic reference',t=>{
+ const f=fixture(t);f.put('assets/translations/cs.json','{}');
+ const output=path.join(f.root,'build/web');fs.mkdirSync(output,{recursive:true});
+ fs.symlinkSync(path.join(f.root,'assets/translations/cs.json'),path.join(output,'cs.json'));
+ assert.throws(()=>inventory(output),/Unsupported symlink/);
 });
