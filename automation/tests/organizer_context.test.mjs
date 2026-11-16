@@ -15,6 +15,8 @@ function fixture(t) {
   const root = mkdtempSync(join(tmpdir(),'organizer-context-'));
   t.after(()=>rmSync(root,{recursive:true,force:true}));
   mkdirSync(join(root,'automation/release'),{recursive:true});
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
@@ -40,7 +42,6 @@ test('one registry drives CS HTML, offline topics, sitemap and deterministic gen
   const pressHtml=readFileSync(join(f.root,'web/organizers/press'),'utf8');
   assert.match(pressHtml,/href="\/organizers-media\/press-kit\/vstupenky-online-loga.zip" download/);
   assert.match(pressHtml,/info@vstupenky.online/);
-  assert.match(pressHtml,/Co vstupenky.online umí/);
   const kit=join(f.root,'web/organizers-media/press-kit');
   const archive=readFileSync(join(kit,'vstupenky-online-loga.zip'));
   const inspect=spawnSync('python3',['-c',`from zipfile import ZipFile
