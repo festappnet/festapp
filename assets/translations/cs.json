@@ -1941,7 +1941,14 @@
     "reservation_changed": "Rezervace míst se změnila. Vraťte se na formulář a znovu vyberte dostupná místa. Vyplněné údaje zůstaly zachovány.",
     "CHECKOUT_CONTEXT_EXPIRED": "Platnost formuláře vypršela. Obnovte stránku a zkuste objednávku znovu odeslat.",
     "outcomeUnknownTitle": "Výsledek objednávky není potvrzený",
-    "outcomeUnknownHint": "Nepodařilo se ověřit, zda objednávka vznikla. Před vytvořením nové objednávky zkontrolujte e-mail. Stejný pokus můžete zopakovat návratem do formuláře bez obnovení stránky."
+    "outcomeUnknownHint": "Nepodařilo se ověřit, zda objednávka vznikla. Před vytvořením nové objednávky zkontrolujte e-mail. Stejný pokus můžete zopakovat návratem do formuláře bez obnovení stránky.",
+    "capacityOrderTitle": "Objednávka nevznikla",
+    "capacityRegistrationTitle": "Přihláška nevznikla",
+    "emailRecipientLimit": "Pro tuto e-mailovou adresu je dočasně vyčerpaný limit automatických zpráv.",
+    "emailServiceLimit": "Dočasně jsme dosáhli limitu pro odesílání e-mailů.",
+    "serviceLimit": "Služba je dočasně vytížená a nemohla přijmout další požadavek.",
+    "capacityRetry": "Zkuste to znovu {when}.",
+    "capacityRetryLater": "Zkuste to znovu později."
   },
   "FeatureTicket": {
     "enableManualTicketScan": "Povolit ruční skenování vstupenek",

@@ -1940,7 +1940,14 @@
     "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept.",
     "CHECKOUT_CONTEXT_EXPIRED": "This form has expired. Reload the page and try submitting your order again.",
     "outcomeUnknownTitle": "Order outcome is unconfirmed",
-    "outcomeUnknownHint": "We could not confirm whether your order was created. Check your email before placing a new order. To retry the same attempt, return to the form without reloading the page."
+    "outcomeUnknownHint": "We could not confirm whether your order was created. Check your email before placing a new order. To retry the same attempt, return to the form without reloading the page.",
+    "capacityOrderTitle": "Order was not created",
+    "capacityRegistrationTitle": "Registration was not created",
+    "emailRecipientLimit": "The automatic message limit for this email address has temporarily been reached.",
+    "emailServiceLimit": "The email sending limit has temporarily been reached.",
+    "serviceLimit": "The service is temporarily at capacity and could not accept another request.",
+    "capacityRetry": "Try again {when}.",
+    "capacityRetryLater": "Please try again later."
   },
   "FeatureTicket": {
     "enableManualTicketScan": "Enable Manual Ticket Scan",

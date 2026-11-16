@@ -496,7 +496,14 @@
     "copied": "Kopiert",
     "orderLabel": "Bestellung",
     "outcomeUnknownTitle": "Bestellergebnis nicht bestätigt",
-    "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden."
+    "outcomeUnknownHint": "Wir konnten nicht bestätigen, ob Ihre Bestellung erstellt wurde. Prüfen Sie Ihre E-Mails, bevor Sie eine neue Bestellung aufgeben. Für denselben Versuch kehren Sie zum Formular zurück, ohne die Seite neu zu laden.",
+    "capacityOrderTitle": "Die Bestellung wurde nicht erstellt",
+    "capacityRegistrationTitle": "Die Anmeldung wurde nicht erstellt",
+    "emailRecipientLimit": "Das Limit für automatische Nachrichten an diese E-Mail-Adresse ist vorübergehend erreicht.",
+    "emailServiceLimit": "Das Limit für den E-Mail-Versand ist vorübergehend erreicht.",
+    "serviceLimit": "Der Dienst ist vorübergehend ausgelastet und konnte keine weitere Anfrage annehmen.",
+    "capacityRetry": "Versuchen Sie es {when} erneut.",
+    "capacityRetryLater": "Bitte versuchen Sie es später erneut."
   },
   "FeatureFormSettings": {
     "measurementWebsites": "My websites",

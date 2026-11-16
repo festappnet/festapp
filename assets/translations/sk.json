@@ -516,7 +516,14 @@
     "copied": "Skopírované",
     "orderLabel": "Objednávka",
     "outcomeUnknownTitle": "Výsledok objednávky nie je potvrdený",
-    "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky."
+    "outcomeUnknownHint": "Nepodarilo sa overiť, či objednávka vznikla. Pred vytvorením novej objednávky skontrolujte e-mail. Rovnaký pokus môžete zopakovať návratom do formulára bez obnovenia stránky.",
+    "capacityOrderTitle": "Objednávka nevznikla",
+    "capacityRegistrationTitle": "Prihláška nevznikla",
+    "emailRecipientLimit": "Pre túto e-mailovú adresu je dočasne vyčerpaný limit automatických správ.",
+    "emailServiceLimit": "Dočasne sme dosiahli limit na odosielanie e-mailov.",
+    "serviceLimit": "Služba je dočasne vyťažená a nemohla prijať ďalšiu požiadavku.",
+    "capacityRetry": "Skúste to znova {when}.",
+    "capacityRetryLater": "Skúste to znova neskôr."
   },
   "FeatureFormSettings": {
     "measurementWebsites": "My websites",

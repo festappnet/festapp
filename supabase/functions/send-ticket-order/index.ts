@@ -10,9 +10,13 @@ import {
 import { executeConfirmedSeatOrder } from "./confirmedReplacement.ts";
 import { prepareFakturoidTicketOrder } from "./fakturoidPreparation.ts";
 import { fakturoidGateway } from "./fakturoid.ts";
-import { type HostedPaymentDependencies, requireHostedPayment } from "../_shared/payments/contracts.ts";
+import {
+  type HostedPaymentDependencies,
+  requireHostedPayment,
+} from "../_shared/payments/contracts.ts";
 import { prepareOrderDelivery } from "../_shared/payments/orderDelivery.ts";
 import { paymentRegistry } from "../_shared/payments/runtime.ts";
+import { executeTicketOrderRpc } from "./ticketOrderRpc.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,7 +42,9 @@ Deno.serve(async (req) => {
         errorCode: "INVALID_TICKET_ORDER_INTENT",
       }, { status: 400, headers: corsHeaders });
     }
-    if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+    if (
+      payload === null || typeof payload !== "object" || Array.isArray(payload)
+    ) {
       return Response.json({
         code: 400,
         errorCode: "INVALID_TICKET_ORDER_INTENT",
@@ -129,9 +135,14 @@ Deno.serve(async (req) => {
     if (preparedOrder) {
       paymentRegistry.stripOrderSources(preparedOrder);
       if (paymentRegistry.hasHosted(preparedOrder.payment_method)) {
-        paymentDependencies = requireHostedPayment(paymentRegistry.resolve(preparedOrder.payment_method));
-        if (!paymentDependencies.order) throw new Error("payment_order_not_configured");
-        preparedOrder[paymentDependencies.order.sourceField] = await paymentDependencies.order.prepareSource();
+        paymentDependencies = requireHostedPayment(
+          paymentRegistry.resolve(preparedOrder.payment_method),
+        );
+        if (!paymentDependencies.order) {
+          throw new Error("payment_order_not_configured");
+        }
+        preparedOrder[paymentDependencies.order.sourceField] =
+          await paymentDependencies.order.prepareSource();
       }
     }
     if (replacement && !authorizationHeader) {
@@ -227,46 +238,33 @@ Deno.serve(async (req) => {
       sync: { replacements: [] },
     });
 
-    if (authorizationHeader && !waitlistAcceptance) {
-      console.info("Creating ticket order via user-scoped authorization");
-      const userClient = createUserClient(authorizationHeader);
-
-      const { data, error } = await userClient.rpc(
-        rpcName,
-        rpcParameters,
-      );
-      if (error) {
-        console.error("RPC Error (User Context):", error);
-        ticketOrderResponse = { code: 500, message: error.message };
-      } else {
-        ticketOrderResponse = data?.data ?? data;
-      }
-    } else {
-      console.info("Creating ticket order via system authorization");
-      const { data, error } = await supabaseAdmin.rpc(
-        rpcName,
-        rpcParameters,
-      );
-      if (waitlistAcceptance && !error) acceptanceEnvelope = data;
-      if (waitlistAcceptance && error) {
-        return new Response(
-          JSON.stringify({ error: "waitlist_command_failed" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-      ticketOrderResponse = error
-        ? {
-          code: error.code === "PT429" ? 429 : 500,
-          errorCode: error.code === "PT429"
-            ? "ABUSE_LIMIT_EXCEEDED"
-            : undefined,
-          message: error.message,
-        }
-        : data?.data ?? data;
+    const userScoped = authorizationHeader && !waitlistAcceptance;
+    console.info(
+      `Creating ticket order via ${
+        userScoped ? "user-scoped" : "system"
+      } authorization`,
+    );
+    const rpcResult = await executeTicketOrderRpc(
+      userScoped ? createUserClient(authorizationHeader!) : supabaseAdmin,
+      rpcName,
+      rpcParameters,
+    );
+    if (rpcResult.error) {
+      console.error("Ticket order RPC error:", rpcResult.error);
     }
+    if (waitlistAcceptance && !rpcResult.error) {
+      acceptanceEnvelope = rpcResult.envelope;
+    }
+    if (waitlistAcceptance && rpcResult.error) {
+      return new Response(
+        JSON.stringify({ error: "waitlist_command_failed" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+    ticketOrderResponse = rpcResult.order;
 
     // Safety check if response is null/undefined
     if (!ticketOrderResponse) {
@@ -309,20 +307,24 @@ Deno.serve(async (req) => {
     const order = ticketOrder.order;
     let providerResult: Record<string, unknown> | undefined;
     if (paymentRegistry.hasHosted(order?.payment_info?.payment_method)) {
-      const binding = paymentDependencies ?? requireHostedPayment(paymentRegistry.resolve(order.payment_info.payment_method));
+      const binding = paymentDependencies ??
+        requireHostedPayment(
+          paymentRegistry.resolve(order.payment_info.payment_method),
+        );
       if (!binding.order) throw new Error("payment_order_not_configured");
       const source = await binding.order.readSource(order.id, commandId);
       providerResult = await prepareOrderDelivery(
         source,
         order.id,
         commandId,
-        preparedOrder?.payment_surface ?? waitlistAcceptance?.orderDetails?.payment_surface,
+        preparedOrder?.payment_surface ??
+          waitlistAcceptance?.orderDetails?.payment_surface,
         ticketOrder.payment,
         binding,
       );
     }
     if (
-      order?.payment_info?.payment_method === 'bank' &&
+      order?.payment_info?.payment_method === "bank" &&
       Number(order?.payment_info?.amount) > 0
     ) {
       const preparation = await prepareFakturoidTicketOrder({
@@ -349,7 +351,7 @@ Deno.serve(async (req) => {
     }
 
     const paymentInfo = ticketOrder.order?.payment_info;
-    const payment = paymentInfo?.payment_method === 'bank' && paymentInfo &&
+    const payment = paymentInfo?.payment_method === "bank" && paymentInfo &&
         Number(paymentInfo.amount) > 0
       ? presentPayment(paymentInfo)
       : null;
