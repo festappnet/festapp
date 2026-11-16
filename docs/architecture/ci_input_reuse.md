@@ -12,7 +12,12 @@ and the seven-day reuse limit. `run.py affected` and `selection.py fingerprint`
 use the same `owners()` function. Unknown paths and unregistered tests select
 all jobs. Shared contracts have all consumers. Known Flutter package paths include
 locks and manifests; unknown packages remain conservative. Git tree entries bind
-content, path, mode, additions, removals and renames. Unit inputs live alongside their scripts in the same contract. Units without explicit inputs retain the conservative lane inputs. Unknown paths/tests select every unit. `after` orders verification, while optional `requires` names preparation that must execute with a consumer; default preparation closure follows `after`. The selected DAG removes only already verified dependencies.
+content, path, mode, additions, removals and renames. Unit inputs live alongside their scripts in the same contract. Units without explicit inputs retain the conservative lane inputs. Unknown paths/tests select every unit. `after` orders verification, while optional `requires` names preparation that must execute with a consumer; default preparation closure follows `after`. The selected DAG removes only already verified ordering checks and always keeps
+runtime requirements as actual scheduler edges. SQL workspaces call canonical
+prepare before cloning, so a behavior test need not rerun independent full-replay
+checks whose exact-input execution evidence remains valid. Selected commands and
+resource claims control Flutter, SQL and browser provisioning; missing preparation
+flags default conservatively and invalid flags fail before execution.
 
 The registry JSON is hashed as a canonical projection of the lane/unit command,
 input map, resources, preparation dependencies and relevant registered test paths,
@@ -40,7 +45,8 @@ serial because fixtures may commit, analyze tables or replace functions.
 and verifies the dynamic partition covers every `*-postgres.test.mjs` file.
 The ordinary `test:postgres` command still runs the complete suite. Both CI
 groups retain the marked-database and paused-delivery guard, and each claims one
-of the existing two DB slots. API generation finishes before either consumer;
+of three admitted DB slots within the unchanged 3500 MiB/three-worker budget.
+Whole-cluster mutation units reserve all three slots. API generation finishes before either consumer;
 the local mirror also waits for the server-policy API writer. Backend changes
 invalidate MCP proofs; standalone checkout UI changes do not.
 
@@ -141,10 +147,15 @@ Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix
 reinstalls shared package dependencies. CMS uses one frozen WordPress tool
 installation within the run, keeping all copied environment state private.
-Only pinned browser binaries are cached on GitHub, keyed by OS/architecture,
-package/lock/config. System libraries are still installed; no database or CMS
-state is restored. Image references and the nine-scenario browser matrix remain
-unchanged. Layer archive caching is not added without transfer cost evidence.
+Pinned browser binaries and upstream image layers are cached on GitHub. The
+image cache binds platform, runtime configuration, lockfile, workflow and helper;
+archive bytes and loaded image identities are checked. Only registry-digest
+upstream images are exported, never custom builds, containers, volumes, accounts
+or credentials. WordPress base tags still resolve each run; a warm hit avoids
+another export. System browser libraries and all private CMS/database state are
+prepared normally. All nine browser scenarios remain; the iframe renewal case
+advances browser time through its real 20-second interval and requires the real
+message. Transfer/restore overhead is included in hosted measurements.
 
 The first definition rollout requires full execution. Main/release concurrency
 is unchanged. Batch related ready changes before publication and assign one

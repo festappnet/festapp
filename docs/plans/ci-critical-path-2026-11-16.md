@@ -181,3 +181,20 @@ Missing proof executes the check. Provision Flutter, SQL and browser tools only
 when selected commands/resources need them; unknown/missing flags retain full
 preparation. Verify dependency omission is rejected and exercise a real standalone
 checkout browser workspace without the independent upgrade-test units.
+
+The frozen repeat passed on clean source `dcfb7ba74`: image-contract PASS
+(106 CI tests plus its existing storage/retention checks); seat-checkout PASS,
+all 17 units, same 283 MCP cases with zero skips, 96.36 s versus 126.72 s
+(-24.0%) in the paired native sample. Receipt `20261116T182532-f256c91fdccb`
+reports complete/input-unchanged true and dirty=false. Container peak 476.1 MiB
+versus 464.4 MiB. Three DB admissions are retained at the existing 3500 MiB and
+three-worker budget; all five whole-cluster claims consume all three slots.
+This native paired sample is not a promise about GitHub CPU/cache variability.
+
+A real public checkout/offline-recovery check then acquired a completely new,
+uniquely marked canonical Runtime/database, without the independent upgrade-test
+units. Both browser scenarios passed; 14.99 s including bootstrap and cleanup.
+The task-owned container, volume, lease/cache were verified and removed.
+Partial execution also explicitly retains `requires` as scheduler edges after
+already-verified ordering checks are removed, so consumers cannot race installs.
+A scheduler regression test exercises exactly that race.

@@ -152,6 +152,25 @@ class MirrorContractTest(unittest.TestCase):
         self.assertIn('seat-runtime-contract',steps['seat-database']['after'])
         self.assertEqual(steps['ticket-client']['after'],['ticket-core'])
 
+    def test_partial_executor_waits_for_required_install_when_ordered_check_is_reused(self):
+        from scheduler import execute_dag
+        import threading
+        import time
+        units=runner.selected_units(['ticket-preview-and-delivery'])
+        selected={'ticket-client','ticket-install'}
+        partial={name:{'after':[dep for dep in row['after'] if dep in selected],'resources':{}}
+                 for name,row in units.items() if name in selected}
+        installed=threading.Event()
+        def execute(name,row):
+            if name=='ticket-install':
+                time.sleep(.02)
+                installed.set()
+            else:
+                self.assertTrue(installed.is_set(),'Consumer raced dependency installation')
+        results=execute_dag(partial,{},execute)
+        self.assertEqual({row['status'] for row in results.values()},{'PASS'})
+        self.assertNotIn('ticket-core',results)
+
     def test_runtime_provisioning_conditions_match_their_consumers(self):
         workflow=yaml.safe_load((ROOT/'.github/workflows/seat-checkout-regressions.yml').read_text())
         seat=workflow['jobs']['seat-checkout']['steps']
@@ -369,7 +388,7 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
         units=runner.selected_units(['ticket-preview-and-delivery'])
         self.assertEqual(units['ticket-install']['after'],[])
         self.assertEqual(units['ticket-core']['after'],['ticket-install'])
-        self.assertEqual(units['ticket-client']['after'],['ticket-core'])
+        self.assertEqual(units['ticket-client']['after'],['ticket-core','ticket-install'])
         budget=runner.CONTRACT['resources']['ramMiB']
         edge=units['ticket-edge']['resources']['ramMiB']
         self.assertLessEqual(edge+units['ticket-install']['resources']['ramMiB'],budget)

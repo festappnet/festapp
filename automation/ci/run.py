@@ -78,7 +78,8 @@ def install(package):
 def selected_units(names):
     ownership={unit:job for job,value in CONTRACT['jobs'].items() for unit in value['steps']}
     selected={name for job in names for name in CONTRACT['jobs'][job]['steps']}
-    return {name:{**definition,'job':ownership[name],'after':[dependency for dependency in definition.get('after',[]) if dependency in selected]}
+    return {name:{**definition,'job':ownership[name],'after':[dependency for dependency in
+                 dict.fromkeys([*definition.get('after',[]),*definition.get('requires',[])]) if dependency in selected]}
             for name,definition in CONTRACT['steps'].items() if name in selected}
 
 
