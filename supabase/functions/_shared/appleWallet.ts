@@ -6,7 +6,7 @@ import {parseOrganizationBranding} from './organizationBranding.ts';
 import { googleWalletAppearance, walletPublicImage } from './googleWalletAppearance.ts';
 import {walletHash} from './wallet/identity.ts';
 import type {WalletProjection} from './wallet/contracts.ts';
-import { normalizeTicketData } from './ticketRenderData.ts';
+import { normalizeTicketData, ticketSeating, ticketShowsSeat } from './ticketRenderData.ts';
 
 export type AppleWalletCredentials = {
  passTypeIdentifier: string; teamIdentifier: string;
@@ -45,7 +45,8 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
  const normalized=normalizeTicketData(ticket,occasion,{});
  const appearance=googleWalletAppearance(occasion.ticketFeature,occasion.data);
  const products=ticket.order_product_ticket??[];
- const seat=products.find((p:any)=>p.spot_title);
+ const seating=ticketSeating(ticket);
+ const showSeat=ticketShowsSeat(occasion.ticketFeature);
  const types=[...new Set(products.map((p:any)=>p.product?.title).filter(Boolean))].join(', ');
  const zone=occasion.data?.timezone||'Europe/Prague';
  const date=new Intl.DateTimeFormat('cs-CZ',{timeZone:zone,dateStyle:'medium',timeStyle:'short'}).format(new Date(occasion.start_time));
@@ -62,8 +63,8 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
   barcodes:[{format:'PKBarcodeFormatQR',message:ticket.ticket_symbol,messageEncoding:'utf-8',altText:ticket.ticket_symbol}],
   eventTicket:{
    primaryFields:[field('event','Akce / Event',occasion.title)],
-   secondaryFields:[field('date','Datum / Date',date),...(normalized.occasionPlace?[field('venue','Místo / Venue',normalized.occasionPlace)]:[])],
-   auxiliaryFields:[...(seat?.spot_group_title?[field('table','Stůl / Table',seat.spot_group_title)]:[]),...(seat?.spot_title?[field('seat','Místo / Seat',seat.spot_title)]:[]),...(types?[field('admission','Vstup / Admission',types)]:[])],
+   secondaryFields:[field('date','Datum / Date',date),...(normalized.occasionPlace?[field('venue','Místo konání / Venue',normalized.occasionPlace)]:[])],
+   auxiliaryFields:[...(seating.table?[field('table','Stůl / Table',seating.table)]:[]),...(showSeat&&seating.seat?[field('seat','Místo / Seat',seating.seat)]:[]),...(types?[field('admission','Vstup / Admission',types)]:[])],
    backFields:[field('number','Vstupenka / Ticket',ticket.ticket_symbol),...(state==='COMPLETED'?[field('status','Stav / Status','Vstupenka již byla použita. / This ticket has already been used.')]:[])],
   },
  };

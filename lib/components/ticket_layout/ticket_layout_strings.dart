@@ -168,6 +168,8 @@ class TicketLayoutStrings {
   static String get properties => 'TicketLayout.properties'.tr();
   static String get qr => 'TicketLayout.qr'.tr();
   static String get ticketSymbol => 'TicketLayout.ticketSymbol'.tr();
+  static String get seat => 'TicketLayout.seat'.tr();
+  static String get showSeat => 'TicketLayout.showSeat'.tr();
   static String get spotGroup => 'TicketLayout.spotGroup'.tr();
   static String get note => 'TicketLayout.note'.tr();
   static String get price => 'TicketLayout.price'.tr();

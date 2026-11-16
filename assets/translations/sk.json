@@ -1167,6 +1167,8 @@
     "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
   },
   "TicketLayout": {
+    "seat": "Miesto pri stole",
+    "showSeat": "Zobraziť miesto pri stole",
     "alwaysVisible": "Vždy viditeľné - tento prvok nemožno skryť",
     "hideElement": "Skryť prvok",
     "showElement": "Zobraziť prvok",

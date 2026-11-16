@@ -166,6 +166,19 @@ class BackgroundDropService extends FakeService {
 }
 
 void main() {
+  test('table seat appearance survives persistence and undo', () {
+    final original = document();
+    final controller = TicketLayoutController(original);
+    expect(original.showSeat, isFalse);
+    controller.replace(original.withShowSeat(true));
+    final restored = TicketTemplate.fromJson(controller.document.toJson());
+    expect(restored.showSeat, isTrue);
+    expect(restored.validate('wide'), isEmpty);
+    controller.undo();
+    expect(controller.document.showSeat, isFalse);
+    controller.dispose();
+  });
+
   test(
     'private image reads keep credentials on the configured Worker origin',
     () async {
@@ -361,6 +374,40 @@ void main() {
     expect(calls[2].containsKey('previewOccasion'), isFalse);
     expect(calls[3].containsKey('previewOccasion'), isFalse);
   });
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'table seat switch updates preview and supports undo',
+    (tester) async {
+      final r = resources();
+      addTearDown(r.dispose);
+      r.scenarios['normal']!['spotGroupWithSeat'] = 'Stůl: 12, Místo: 3';
+      final base = document();
+      final c = TicketLayoutController(base.withElements([
+        ...base.elements,
+        const TicketElement(id: 'spotGroup', binding: 'spotGroup', box: Rect.fromLTWH(10, 180, 160, 20)),
+      ]))..select('spotGroup');
+      addTearDown(c.dispose);
+      await _environment.pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        theme: ThemeData.light(),
+        home: Scaffold(body: SingleChildScrollView(
+          child: TicketLayoutProperties(controller: c),
+        )),
+      ));
+      final toggle = find.widgetWithText(SwitchListTile, 'Zobrazit místo u stolu');
+      expect(toggle, findsOneWidget);
+      await tester.tap(toggle);
+      await tester.pump();
+      expect(c.document.showSeat, isTrue);
+      expect(r.previewData(c.document, 'normal')['spotGroup'], 'Stůl: 12, Místo: 3');
+      c.undo();
+      await tester.pump();
+      expect(c.document.showSeat, isFalse);
+      expect((tester.widget<SwitchListTile>(toggle)).value, isFalse);
+      expect(find.text('Místo konání'), findsNothing);
+      expect('TicketLayout.occasionPlace'.tr(), 'Místo konání');
+    },
+  );
   WidgetEnvironmentFixture.register();
   final localizationWarnings = <String>[];
   late LocalizationLogFixture localizationLogs;

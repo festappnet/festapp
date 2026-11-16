@@ -53,6 +53,7 @@ void main() {
                 key: key,
                 child: TicketWalletCardPreview(
                   platform: platform,
+                  showSeat: true,
                   previewLabel: 'Orientační náhled Google Wallet',
                   sampleCodeLabel: 'UKÁZKA - NEPLATÍ PRO VSTUP',
                   appearance: const GoogleWalletAppearance(
@@ -104,6 +105,9 @@ void main() {
         tester.getSize(find.byType(TicketWalletCardPreview)).height,
         lessThan(tester.getSize(find.byType(Scaffold)).height),
       );
+      expect(find.text('12'), findsOneWidget);
+      expect(find.text('3'), findsOneWidget);
+      expect(find.text('Místo u stolu'), findsOneWidget);
       expect(tester.takeException(), isNull);
       const path = String.fromEnvironment('UI_SCREENSHOT_DIR');
       if (path.isNotEmpty) {
@@ -154,6 +158,7 @@ void main() {
                     width: 344,
                     child: TicketWalletCardPreview(
                       platform: platform,
+                  showSeat: true,
                       previewLabel: 'Náhled',
                       sampleCodeLabel: 'UKÁZKA',
                       appearance: const GoogleWalletAppearance(
@@ -227,6 +232,7 @@ void main() {
                       ),
                       child: TicketWalletCardPreview(
                         platform: platform,
+                  showSeat: true,
                         previewLabel: 'Náhled',
                         sampleCodeLabel: 'UKÁZKA',
                         appearance: const GoogleWalletAppearance(

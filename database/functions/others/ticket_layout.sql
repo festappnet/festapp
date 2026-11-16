@@ -26,7 +26,7 @@ BEGIN
     UNION ALL SELECT elem.value->'style'->>'fontId' FROM jsonb_each(p_layout->'templates') tmpl CROSS JOIN LATERAL jsonb_array_elements(tmpl.value->'elements') elem
   ) fonts WHERE id IS NOT NULL)>12 THEN RAISE EXCEPTION 'Too many ticket fonts'; END IF;
   FOR kind,t IN SELECT * FROM jsonb_each(p_layout->'templates') LOOP
-    IF EXISTS(SELECT 1 FROM jsonb_object_keys(t) AS keys(key) WHERE keys.key NOT IN ('canvasGradient','canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','border','pageFit','page','ticketArea','elements')) THEN RAISE EXCEPTION 'Invalid template metadata'; END IF;
+    IF EXISTS(SELECT 1 FROM jsonb_object_keys(t) AS keys(key) WHERE keys.key NOT IN ('canvasGradient','canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','spotGroupAppearance','border','pageFit','page','ticketArea','elements')) THEN RAISE EXCEPTION 'Invalid template metadata'; END IF;
     IF kind NOT IN ('wide','named') OR jsonb_typeof(t->'elements') IS DISTINCT FROM 'array'
       OR jsonb_array_length(t->'elements') NOT BETWEEN 2 AND 32
       OR (t ? 'pageFit' AND t->'pageFit' IS DISTINCT FROM '"ticket"'::jsonb)
@@ -69,6 +69,12 @@ BEGIN
       IF EXISTS(SELECT 1 FROM jsonb_array_elements_text(t->'flow') AS flow_item(value) WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(t->'elements') AS flow_element(value) WHERE flow_element.value->>'id'=flow_item.value AND flow_element.value->>'binding' NOT IN ('qr','logo')))
         OR (SELECT count(*)<>count(DISTINCT flow_item.value) FROM jsonb_array_elements_text(t->'flow') AS flow_item(value))
       THEN RAISE EXCEPTION 'Invalid ticket flow'; END IF;
+    END IF;
+    IF t ? 'spotGroupAppearance' THEN
+      IF jsonb_typeof(t->'spotGroupAppearance') IS DISTINCT FROM 'object'
+        OR jsonb_typeof(t->'spotGroupAppearance'->'showSeat') IS DISTINCT FROM 'boolean'
+        OR (SELECT count(*) FROM jsonb_object_keys(t->'spotGroupAppearance')) <> 1
+      THEN RAISE EXCEPTION 'Invalid table appearance'; END IF;
     END IF;
     IF t ? 'qrAppearance' THEN
       IF jsonb_typeof(t->'qrAppearance') IS DISTINCT FROM 'object'

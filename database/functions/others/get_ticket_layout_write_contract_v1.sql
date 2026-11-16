@@ -100,7 +100,7 @@ BEGIN
   ('public.update_occasion_182(jsonb)','bdcda71506ac0abb50a466bb18eb1cc7',true,true),
   ('public.update_occasion_203(jsonb)','916b23b47758d87e478b3b7d84a50ee2',true,true),
   ('public.update_occasion_internal_v1(jsonb)','e57ee2a1c8cb4110d1a78b99f9894a96',true,true),
-  ('public.validate_ticket_layout(jsonb)','53d7703a06dbde87349a0ac04e50cd54',false,true),
+  ('public.validate_ticket_layout(jsonb)','a69c5ebb2b3e7dcf241202182c4dfa4a',false,true),
   ('public.validate_ticket_layout_references(bigint,jsonb)','aad01d93c9f0a7035efa243caa3d5a20',false,true),
   ('public.validate_ticket_wallet_appearance(jsonb)','bdcc55cb2a986056fbae005acee1990c',false,true)
  ) expected(signature,body_md5,definer,needs_path)

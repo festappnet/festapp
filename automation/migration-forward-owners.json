@@ -507,6 +507,15 @@
       "sources": [
         "emails/fakturoid_email_gate.sql"
       ]
+    },
+    {
+      "migration": "20261116150000_ticket_table_seat_appearance.sql",
+      "active": true,
+      "header": "-- Table seat display is a typed ticket-template appearance, shared by preview and PDF.",
+      "sources": [
+        "others/ticket_layout.sql",
+        "others/get_ticket_layout_write_contract_v1.sql"
+      ]
     }
   ]
 }

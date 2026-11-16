@@ -197,6 +197,7 @@ class TicketLayoutResources {
     String scenario,
   ) {
     final base = Map<String, String?>.of(scenarios[scenario]!);
+    if (template.showSeat) base['spotGroup'] = base['spotGroupWithSeat'] ?? base['spotGroup'];
     final selected = <int, Map<String, dynamic>>{};
     final admissions = catalog
         .where((t) => t.admission && t.example != null)

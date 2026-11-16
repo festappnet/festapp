@@ -2986,6 +2986,8 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "seat": "Místo u stolu",
+    "showSeat": "Zobrazit místo u stolu",
     "alwaysVisible": "Vždy viditelné - tento prvek nelze skrýt",
     "hideElement": "Skrýt prvek",
     "showElement": "Zobrazit prvek",
@@ -3174,7 +3176,7 @@
     "removeText": "Odstranit text",
     "addElement": "Přidat prvek",
     "occasionStartTime": "Čas",
-    "occasionPlace": "Místo",
+    "occasionPlace": "Místo konání",
     "style_silk_light": "Hedvábí - světlé",
     "style_silk_dark": "Hedvábí - tmavé"
   },

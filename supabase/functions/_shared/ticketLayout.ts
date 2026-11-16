@@ -13,7 +13,7 @@ export type TicketType = 'wide' | 'named';
 export type Binding = typeof bindings[number];
 export interface Box { x: number; y: number; width: number; height: number }
 export interface Element { id: string; binding: Binding; productTypeId?:number; label?:string; text?:string; box: Box; visible: boolean; locked: boolean; style: { fontId?: string; fontSize: number; minFontSize: number; maxLines: number; color: string; align: 'left' | 'center' | 'right'; bold?:boolean; italic?:boolean; underline?:boolean } }
-export interface Template { canvasGradient?:string[]; canvasColor?:string; canvasOpacity?:number; backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:string[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
+export interface Template { spotGroupAppearance?:{showSeat:boolean}; canvasGradient?:string[]; canvasColor?:string; canvasOpacity?:number; backgroundCrop?:Box; pageMargin?:number; backgroundTransform?: {scale:number;x:number;y:number}; fontId?: string; font?:'futura'|'robotoSlab'|'roboto'|'russoOne'; flow?:string[]; flowStep?:number; qrAppearance?:{background:string;opacity:number;margin:number}; border?:boolean; pageFit?: 'ticket'; page: {width: number; height: number}; ticketArea: Box; elements: Element[] }
 export interface TicketLayout { schemaVersion: 3; templates: { wide?: Template; named?: Template } }
 export function ticketLayoutByteSize(value:unknown):number {
   const spacing=(v:any):number=>Array.isArray(v)?Math.max(0,v.length-1)+v.reduce((n,x)=>n+spacing(x),0):v&&typeof v==='object'?(()=>{const entries=Object.entries(v).filter(([,x])=>x!==undefined);return entries.length+Math.max(0,entries.length-1)+entries.reduce((n,[,x])=>n+spacing(x),0);})():0;
@@ -27,7 +27,7 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
   const fontIds=new Set<string>();
   const checkFont=(id:unknown)=>{if(id===undefined)return;if(typeof id!=='string'||! /^(gf:|builtin:[a-z0-9-]+:)[a-f0-9]{64}$/.test(id)||(!knownFontId(id)&&!registeredIds.has(id)))fail();fontIds.add(id as string);if(fontIds.size>12)fail();};
   for (const t of Object.values(v.templates)) {
-    if(t&&Object.keys(t).some(k=>!['canvasGradient','canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','border','pageFit','page','ticketArea','elements'].includes(k)))fail();
+    if(t&&Object.keys(t).some(k=>!['canvasGradient','canvasColor','canvasOpacity','backgroundCrop','pageMargin','backgroundTransform','fontId','flow','flowStep','qrAppearance','spotGroupAppearance','border','pageFit','page','ticketArea','elements'].includes(k)))fail();
     if(t?.canvasOpacity!==undefined && (!Number.isFinite(t.canvasOpacity)||t.canvasOpacity<0||t.canvasOpacity>1))fail();
     if(t?.canvasColor!==undefined && (typeof t.canvasColor!=='string'||(t.canvasColor!=='transparent'&&!/^[0-9a-fA-F]{6}$/.test(t.canvasColor))))fail();
     if(t?.canvasGradient!==undefined && (!Array.isArray(t.canvasGradient)||t.canvasGradient.length!==2||t.canvasGradient.some(c=>typeof c!=='string'||!/^[0-9a-fA-F]{6}$/.test(c))))fail();
@@ -36,6 +36,7 @@ export function validateLayout(value: unknown,registeredIds:ReadonlySet<string>=
     if(t?.flowStep!==undefined && (!Number.isFinite(t.flowStep)||t.flowStep<1||t.flowStep>842))fail();
     if(t?.border!==undefined && typeof t.border!=='boolean')fail();
     if(t?.flow!==undefined && (!Array.isArray(t.flow)||new Set(t.flow).size!==t.flow.length||t.flow.some(id=>!t.elements?.some(e=>e.id===id&&!['qr','logo'].includes(e.binding)))))fail();
+    if(t?.spotGroupAppearance!==undefined && (!t.spotGroupAppearance || typeof t.spotGroupAppearance.showSeat!=='boolean' || Object.keys(t.spotGroupAppearance).some(k=>k!=='showSeat')))fail();
     if(t?.qrAppearance!==undefined && (!t.qrAppearance||!/^[0-9a-fA-F]{6}$/.test(t.qrAppearance.background)||!Number.isFinite(t.qrAppearance.opacity)||t.qrAppearance.opacity<0||t.qrAppearance.opacity>1||!Number.isFinite(t.qrAppearance.margin)||t.qrAppearance.margin<0||t.qrAppearance.margin>8))fail();
     if (!t || (t.pageFit!==undefined && t.pageFit!=='ticket')) fail();
     if(t.pageMargin!==undefined && (t.pageFit!=='ticket'||!Number.isFinite(t.pageMargin)||t.pageMargin<0||t.pageMargin>72))fail();

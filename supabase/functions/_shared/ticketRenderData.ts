@@ -35,6 +35,15 @@ export function indexProductCatalog(raw:any,occasionId:number,allowDraftIds=fals
 export function validateProductReferences(t:Template,c:ProductCatalog) {
   for(const e of t.elements)if(e.binding==='productType'&&!c.types.has(e.productTypeId!))throw new Error('ticket_product_type_missing:'+e.id);
 }
+/** One deterministic seating selection for PDF, native Wallet passes and email. */
+export function ticketSeating(ticket:any):{table:string|null;seat:string|null} {
+ const selected=[...(ticket.order_product_ticket??[])].sort((a,b)=>Number(a.id??0)-Number(b.id??0)).find(p=>text(p.spot_group_title)||text(p.spot_title));
+ return {table:text(selected?.spot_group_title),seat:text(selected?.spot_title)};
+}
+export function ticketShowsSeat(feature:any):boolean {
+ const type=feature?.ticket_type==='named'?'named':'wide';
+ return feature?.layout?.templates?.[type]?.spotGroupAppearance?.showSeat===true;
+}
 export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog?:ProductCatalog,template?:Template):RenderData {
   if(ticket.occasion!=null&&ticket.occasion!==occasion.id)throw new Error('ticket_cross_occasion');
   const locale = ['cs','en','de','pl','sk','uk'].includes(occasion.locale) ? occasion.locale : 'cs';
@@ -48,7 +57,7 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog
     if(!p)throw new Error('ticket_product_missing:'+opt.product);
     if(!matches.has(p.product_type))matches.set(p.product_type,productValue(p));
   }
-  const spot=opts.find(o=>text(o.spot_group_title));
+  const seating=ticketSeating(ticket);
   let timeZone=occasion.data?.timezone||'Europe/Prague';
   try { new Intl.DateTimeFormat(locale,{timeZone}); } catch { timeZone='Europe/Prague'; }
   let date='';
@@ -62,10 +71,11 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog
     try {startTime=new Intl.DateTimeFormat(locale,options).format(new Date(occasion.start_time));}
     catch {startTime=new Intl.DateTimeFormat(locale,{...options,timeZone:'Europe/Prague'}).format(new Date(occasion.start_time));}
   }
-  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:spot?`${en ? 'Table' : 'Stůl'}: ${text(spot.spot_group_title)}`:null,note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatDisplayNumber(ticket.price,locale,{style:'currency',currency:ticket.currency_code||'CZK'})}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
+  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:seating.table?`${en ? 'Table' : 'Stůl'}: ${seating.table}`:null,note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatDisplayNumber(ticket.price,locale,{style:'currency',currency:ticket.currency_code||'CZK'})}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
+  d.spotGroupWithSeat=d.spotGroup&&seating.seat?`${d.spotGroup}, ${en?'Seat':'Místo'}: ${seating.seat}`:d.spotGroup;
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
-  return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,matches.get(e.productTypeId!)??null):d[e.binding]]));
+  return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,matches.get(e.productTypeId!)??null):e.binding==='spotGroup'&&template.spotGroupAppearance?.showSeat?d.spotGroupWithSeat:d[e.binding]]));
 }
 export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatalog,template?:Template):RenderData {
   const d=normalizeTicketData({ticket_symbol:sampleSymbol,note:null,price:null,currency_code:'CZK',order_product_ticket:[]},occasion??{title:'Slavnostní večer',start_time:'2026-10-01T18:00:00Z',data:{place_name:'Kulturní dům'}},{name:'Jana',surname:'Nováková'});
@@ -76,9 +86,10 @@ export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatal
   d.qr='festapp-preview:'+d.ticketSymbol;
   const en = occasion?.locale === 'en';
   d.spotGroup=en?'Table: 12':'Stůl: 12';
+  d.spotGroupWithSeat=d.spotGroup+(en?', Seat: 3':', Místo: 3');
   if(en) { d.orderName='Alex Morgan'; if(!occasion?.title)d.occasionTitle='Evening under the stars'; }
   if(scenario==='long') {d.note=en?'Note: '+('A long guest note with anExtraLongWordWithoutSpaces ').repeat(8):'Poznámka: '+('Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer ').repeat(8);d.orderName=en?'Alexandra Morgan Taylor':'Kateřina Šťastná Nováková';}
-  if(scenario==='missing'){d.note=null;d.spotGroup=null;d.orderName=null;}
+  if(scenario==='missing'){d.note=null;d.spotGroup=null;d.spotGroupWithSeat=null;d.orderName=null;}
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
   const selected=new Map<number,CatalogType['example']>();
@@ -91,5 +102,5 @@ export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatal
   const examples=[...selected.values()].filter((e):e is NonNullable<CatalogType['example']>=>!!e);
   const currencies=new Set(examples.map(e=>e.currency_code));
   if(examples.length&&currencies.size===1&&examples.every(e=>e.price!=null&&e.currency_code!=null))d.price=(en?'Price: ':'Cena: ')+formatCurrency(examples.reduce((sum,e)=>sum+Math.round(e.price!*100),0)/100,examples[0].currency_code!);
-  return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,scenario==='missing'?null:catalog?.types.get(e.productTypeId!)?.example?.value??null):d[e.binding]]));
+  return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,scenario==='missing'?null:catalog?.types.get(e.productTypeId!)?.example?.value??null):e.binding==='spotGroup'&&template.spotGroupAppearance?.showSeat?d.spotGroupWithSeat:d[e.binding]]));
 }

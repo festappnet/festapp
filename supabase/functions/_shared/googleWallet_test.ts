@@ -1,7 +1,7 @@
 import {assertEquals,assert,assertRejects} from 'jsr:@std/assert@1';
 import {GoogleWallet,googleSigner,walletDate,walletDocuments,walletIds} from './googleWallet.ts';
 const identity={issuer:'123456',environment:'local-immutable',organization:3,occasion:9,ticketId:44};
-const projection:any={branding:{APP_NAME:'vstupenky.online',DEFAULT_URL:'https://vstupenky.online'},state:'ACTIVE',ticket:{id:44,ticket_symbol:'ČÍSLO-1',order_product_ticket:[{spot_title:'12',spot_group_title:'A',product:{title:'Dospělý'}}]},occasion:{id:9,organization:3,title:'Večer hudby',start_time:'2026-07-01T18:00:00Z',end_time:'2026-07-02T00:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
+const projection:any={branding:{APP_NAME:'vstupenky.online',DEFAULT_URL:'https://vstupenky.online'},state:'ACTIVE',ticket:{id:44,ticket_symbol:'ČÍSLO-1',order_product_ticket:[{spot_title:'12',spot_group_title:'A',product:{title:'Dospělý'}}]},occasion:{ticketFeature:{layout:{templates:{wide:{spotGroupAppearance:{showSeat:true}}}}},id:9,organization:3,title:'Večer hudby',start_time:'2026-07-01T18:00:00Z',end_time:'2026-07-02T00:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
 Deno.test('Wallet identities isolate environments/tenants and preserve exact QR without purchaser data',async()=>{
  const ids=await walletIds(identity);assertEquals(await walletIds(identity),ids);
  assert((await walletIds({...identity,environment:'production'})).objectId!==ids.objectId);
@@ -107,4 +107,16 @@ Deno.test('timeout after accepted object write retries the same identity without
  await assertRejects(()=>google.synchronize(ids,projection,async()=>{}),DOMException);
  await google.synchronize(ids,projection,async()=>{});
  assertEquals(remote.id,ids.objectId);assertEquals(writes,1,'retry reads the accepted state');
+});
+
+Deno.test('native Wallet follows the selected template seat setting and retains table-only data',()=>{
+ for(const showSeat of [undefined,false,true]) {
+  const value=structuredClone(projection);
+  value.occasion.ticketFeature={ticket_type:'named',layout:{templates:{wide:{spotGroupAppearance:{showSeat:!showSeat}},named:{spotGroupAppearance:{showSeat}}}}};
+  const doc=walletDocuments({classId:'123.test',objectId:'123.ticket'},value).objectBody;
+  assertEquals(!!doc.seatInfo,showSeat===true);
+  value.ticket.order_product_ticket=[{id:1,spot_group_title:'Terasa'}];
+  const tableOnly=walletDocuments({classId:'123.test',objectId:'123.ticket'},value).objectBody;
+  assertEquals(tableOnly.textModulesData.find((f:any)=>f.id==='table')?.body,'Terasa');assertEquals(tableOnly.seatInfo,undefined);
+ }
 });

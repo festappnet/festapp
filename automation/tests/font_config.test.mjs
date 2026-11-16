@@ -33,6 +33,8 @@ try {
   const pubspec = fs.readFileSync(path.join(root, 'pubspec.yaml'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'web_client/src/theme_config.css'), 'utf8');
   assert.match(pubspec, /family: Cerebri-Sans/);
+  assert.match(pubspec, /family: WalletPreviewSans/);
+  assert.match(pubspec, /asset: supabase\/functions\/_shared\/ticket-assets\/roboto\.ttf/);
   assert.match(pubspec, /asset: fonts\/Cerebri-Sans-Regular\.ttf/);
   assert.match(pubspec, /asset: fonts\/Cerebri-Sans-Bold\.ttf/);
   assert.doesNotMatch(pubspec, /asset: fonts\/Futura/);

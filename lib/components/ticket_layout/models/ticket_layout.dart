@@ -201,6 +201,18 @@ class TicketTemplate {
           if (opacity != null) 'canvasOpacity': opacity,
         },
       );
+  bool get showSeat =>
+      (appearance['spotGroupAppearance'] as Map?)?['showSeat'] == true;
+  TicketTemplate withShowSeat(bool value) => TicketTemplate(
+    fitPageToTicket: fitPageToTicket,
+    page: page,
+    area: area,
+    elements: elements,
+    appearance: {
+      ...appearance,
+      'spotGroupAppearance': {'showSeat': value},
+    },
+  );
   Map get qrAppearance => appearance['qrAppearance'] as Map? ?? const {};
   List<TicketElement> positionedElements(Map<String, String?> data) {
     final flow = (appearance['flow'] as List? ?? const [])
@@ -260,6 +272,7 @@ class TicketTemplate {
           'flow',
           'flowStep',
           'qrAppearance',
+          'spotGroupAppearance',
           'backgroundTransform',
           'backgroundCrop',
           'canvasGradient',
@@ -628,6 +641,13 @@ class TicketTemplate {
             pageMargin < 0 ||
             pageMargin > 72))
       errors.add('geometry');
+    final seating = appearance['spotGroupAppearance'];
+    if (appearance.containsKey('spotGroupAppearance') &&
+        (seating is! Map ||
+            seating.length != 1 ||
+            seating['showSeat'] is! bool)) {
+      errors.add('spotGroupAppearance');
+    }
     if (!validFont(fontId)) errors.add('font');
     bool inside(Rect b, Size size) =>
         [b.left, b.top, b.width, b.height].every((v) => v.isFinite) &&
@@ -783,6 +803,7 @@ void validateTicketLayout(
         'flow',
         'flowStep',
         'qrAppearance',
+        'spotGroupAppearance',
         'border',
         'pageFit',
         'page',

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.20.624+1155
+version: 0.20.625+1156
 
 environment:
   sdk: ^3.14.0
@@ -169,9 +169,6 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   fonts:
-    - family: WalletPreviewSans
-      fonts:
-        - asset: supabase/functions/_shared/ticket-assets/roboto.ttf
     - family: Futura
       fonts:
         - asset: fonts/Futura PT Book.ttf
@@ -180,6 +177,9 @@ flutter:
           weight: 500
         - asset: fonts/Gill Sans Bold.otf
           weight: 700
+    - family: WalletPreviewSans
+      fonts:
+        - asset: supabase/functions/_shared/ticket-assets/roboto.ttf
   assets:
     - automation/tickets/setup-appearance-fonts.json
     - assets/email_templates/preview_examples.json

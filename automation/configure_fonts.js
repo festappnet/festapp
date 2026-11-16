@@ -144,6 +144,9 @@ if (fs.existsSync(pubspecPath)) {
         if (font.style !== 'normal') newFontSection += `          style: ${font.style}\n`;
     });
     
+    // Native Wallet previews use a shared system-like face independently of tenant branding.
+    newFontSection += '    - family: WalletPreviewSans\n      fonts:\n        - asset: supabase/functions/_shared/ticket-assets/roboto.ttf\n';
+
     const fontsRegex = /  fonts:\n(\s{4}- family:[\s\S]*?)(?=\n\s{2}[a-z]|\nflutter:|$)/;
     
     if (pubspec.match(fontsRegex)) {

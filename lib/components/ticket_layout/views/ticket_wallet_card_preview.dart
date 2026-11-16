@@ -8,6 +8,7 @@ import '../google_wallet_appearance.dart';
 import '../../../app_config.dart';
 import '../../../widgets/logo_widget.dart';
 import '../ticket_delivery_strings.dart';
+import '../ticket_layout_strings.dart';
 
 enum TicketWalletPlatform { google, apple }
 
@@ -20,12 +21,14 @@ class TicketWalletCardPreview extends StatelessWidget {
     required this.occasion,
     required this.previewLabel,
     required this.sampleCodeLabel,
+    this.showSeat = false,
     this.platform = TicketWalletPlatform.google,
   });
   final GoogleWalletAppearance appearance;
   final Map<String, dynamic> occasion;
   final String previewLabel, sampleCodeLabel;
   final TicketWalletPlatform platform;
+  final bool showSeat;
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +242,7 @@ class TicketWalletCardPreview extends StatelessWidget {
                         ),
                       if (place != null && '$place'.trim().isNotEmpty) ...[
                         const SizedBox(width: 12),
-                        Expanded(child: field('Místo / Venue', '$place')),
+                        Expanded(child: field('Místo konání / Venue', '$place')),
                       ],
                     ],
                   ),
@@ -276,6 +279,11 @@ class TicketWalletCardPreview extends StatelessWidget {
                 // The adapter sends place as a text module, not class.venue.
                 // It therefore appears in details, rather than under the title.
               ],
+              const SizedBox(height: 16),
+              inset(Row(children: [
+                Expanded(child: field(TicketLayoutStrings.spotGroup, '12')),
+                if (showSeat) Expanded(child: field(TicketLayoutStrings.seat, '3', alignEnd: true)),
+              ])),
               const SizedBox(height: 16),
             ],
           ),

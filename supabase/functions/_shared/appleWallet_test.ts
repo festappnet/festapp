@@ -10,7 +10,7 @@ import {reconcileAppleTicketWallet} from './appleWalletUpdates.ts';
 import type {GoogleWallet} from './googleWallet.ts';
 const credentials={passTypeIdentifier:'pass.net.festapp.test',teamIdentifier:'TESTTEAM01'} as AppleWalletCredentials;
 const identity={environment:'test',organization:1,occasion:2,ticketId:3};
-const projection:any={branding:{APP_NAME:'Ukázkový portál',DEFAULT_URL:'https://tenant.invalid'},state:'ACTIVE',ticket:{ticket_symbol:'EXACT-QR-č',order_product_ticket:[{spot_title:'12',spot_group_title:'Stůl 4',product:{title:'Vstupné'}}]},occasion:{title:'Večer hudby',start_time:'2027-03-28T18:00:00Z',end_time:'2027-03-28T22:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
+const projection:any={branding:{APP_NAME:'Ukázkový portál',DEFAULT_URL:'https://tenant.invalid'},state:'ACTIVE',ticket:{ticket_symbol:'EXACT-QR-č',order_product_ticket:[{spot_title:'12',spot_group_title:'Stůl 4',product:{title:'Vstupné'}}]},occasion:{ticketFeature:{layout:{templates:{wide:{spotGroupAppearance:{showSeat:true}}}}},title:'Večer hudby',start_time:'2027-03-28T18:00:00Z',end_time:'2027-03-28T22:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
 const resolved={...identity,webOrigin:'https://tenant.invalid',providers:{google:false,apple:true},applePassTypeIdentifier:credentials.passTypeIdentifier,appleTeamIdentifier:credentials.teamIdentifier,projection};
 
 Deno.test('Apple serial isolates backend, organization, event and ticket; QR and native fields retain canonical values',async()=>{
@@ -111,4 +111,16 @@ Deno.test('Apple collections plan at most ten, preserve each signed pass and rej
   const issue=apple.issue;apple.issue=async(...args:Parameters<AppleWallet['issue']>)=>{const bytes=await issue(...args);changed=true;return bytes;};
   assertEquals(await connector.issue({...input,revision:plan!.revision,part:1}),null);
  }finally{Deno.env.delete('EMAIL_PAYLOAD_KEY');}
+});
+
+Deno.test('native Wallet follows the selected template seat setting and retains table-only data',()=>{
+ for(const showSeat of [undefined,false,true]) {
+  const value=structuredClone(projection);
+  value.occasion.ticketFeature={ticket_type:'named',layout:{templates:{wide:{spotGroupAppearance:{showSeat:!showSeat}},named:{spotGroupAppearance:{showSeat}}}}};
+  const doc=appleWalletDocument('test',value,credentials).eventTicket.auxiliaryFields;
+  assertEquals(doc.some((f:any)=>f.key==='seat'),showSeat===true);
+  value.ticket.order_product_ticket=[{id:1,spot_group_title:'Terasa'}];
+  const tableOnly=appleWalletDocument('test',value,credentials).eventTicket.auxiliaryFields;
+  assertEquals(tableOnly.find((f:any)=>f.key==='table')?.value,'Terasa');
+ }
 });

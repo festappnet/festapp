@@ -1,3 +1,4 @@
+import {ticketSeating,ticketShowsSeat} from './ticketRenderData.ts';
 import { escapeTicketText } from './ticketDelivery.ts';
 import { openEmail, sealEmail } from './emailPayload.ts';
 import { walletHash } from './wallet/identity.ts';
@@ -103,8 +104,8 @@ export async function prepareWalletEmail(row:any,tickets:any[],feature:any,rpc:W
   const source=await openEmail<any>(context.source.sealed);
   if(source.purpose!=='ticket_wallet'||source.ticketId!==ticket.id||source.organization!==context.organization||source.occasion!==context.occasion||await walletHash(source.token)!==context.source.tokenHash)throw new Error('wallet_source');
   const url=walletEmailUrl(context,source.token,lang);
-  const spot=ticket.order_product_ticket?.find((p:any)=>p.spot_title);
-  const description=[walletTicketLabel(index+1,tickets.length,lang),spot?.spot_title,spot?.spot_group_title].filter(Boolean).join(' - ');
+  const seating=ticketSeating(ticket);
+  const description=[walletTicketLabel(index+1,tickets.length,lang),ticketShowsSeat(feature)?seating.seat:null,seating.table].filter(Boolean).join(' - ');
   const actions=walletActions(context,url,lang,ready);
   if(actions.length)prepared.push({ticketId:ticket.id,context,url,description,actions});
  }

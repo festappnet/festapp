@@ -144,3 +144,44 @@ Deno.test('English date range keeps month before both days', () => {
     {locale:'en',title:'Evening',start_time:'2026-11-22T18:00:00Z',end_time:'2026-11-25T18:00:00Z',data:{timezone:'Europe/Prague'}});
   if (!/^Nov 22.*25, 2026$/.test(data.occasionDatePlace ?? '')) throw new Error(JSON.stringify(data));
 });
+
+Deno.test('table appearance renders the selected seat, preserves defaults and handles missing data',()=>{
+ const template=preset('wide');
+ const ticket={ticket_symbol:'X3827K6M8R',order_product_ticket:[{id:2,spot_group_title:'Other',spot_title:'9'},{id:1,spot_group_title:'Terasa',spot_title:'3'}]};
+ assertEquals(normalizeTicketData(ticket,{id:7},{},undefined,template).spotGroup,'Stůl: Terasa');
+ template.spotGroupAppearance={showSeat:true};
+ validateLayout({schemaVersion:3,templates:{wide:template}});
+ assertEquals(normalizeTicketData(ticket,{id:7},{},undefined,template).spotGroup,'Stůl: Terasa, Místo: 3');
+ assertEquals(normalizeTicketData(ticket,{id:7,locale:'en'},{},undefined,template).spotGroup,'Table: Terasa, Seat: 3');
+ assertEquals(normalizeTicketData({...ticket,order_product_ticket:[{id:1,spot_group_title:'Terasa'}]},{id:7},{},undefined,template).spotGroup,'Stůl: Terasa');
+ assertEquals(normalizeTicketData({...ticket,order_product_ticket:[]},{id:7},{},undefined,template).spotGroup,null);
+ assertEquals(sampleData('normal',{id:7},undefined,template).spotGroup,'Stůl: 12, Místo: 3');
+ assertEquals(sampleData('missing',{id:7},undefined,template).spotGroup,null);
+ for(const bad of [null,[],{},true,{showSeat:'true'},{showSeat:true,extra:1}]) {
+  const layout:any={schemaVersion:3,templates:{wide:{...template,spotGroupAppearance:bad}}};
+  assertThrows(()=>validateLayout(layout));
+ }
+});
+
+Deno.test('production PDF encodes the saved table and seat choice in its printed text',async()=>{
+ const {prepareTicketRenderer}=await import('./ticketGeneration.ts');
+ const {fontMetrics,futuraId}=await import('./ticketFonts.ts');
+ const {PDFDocument,PDFRawStream}=await import('npm:pdf-lib');
+ const fontkit=await import('npm:fontkit');
+ const {inflateSync}=await import('node:zlib');
+ const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');
+ const metrics=fontMetrics(font),encodingDoc=await PDFDocument.create();encodingDoc.registerFontkit(fontkit);
+ const embedded=await encodingDoc.embedFont(font);
+ const alphabet=new Map(Array.from('Stůl: Terasa, Místo: 3X3827K6M8R').map(c=>[embedded.encodeText(c).toString().slice(1,-1).toUpperCase(),c]));
+ for(const showSeat of [false,true]) {
+  const template=preset('wide');template.spotGroupAppearance={showSeat};
+  const render=await prepareTicketRenderer({id:7,features:[{code:'ticket',layout:{schemaVersion:3,templates:{wide:template}}}]},{},{},{
+   load:async()=>({font,metrics,fonts:{[futuraId]:{id:futuraId,bytes:font,metrics,family:'Futura PT',weight:400}}}),products:async()=>rawCatalog
+  });
+  const result=await render({ticket_symbol:'X3827K6M8R',order_product_ticket:[{id:1,product:1,spot_group_title:'Terasa',spot_title:'3'}]});
+  const pdf=await PDFDocument.load(result.bytes);
+  const printed=pdf.context.enumerateIndirectObjects().flatMap(([,o])=>o instanceof PDFRawStream?Array.from(new TextDecoder().decode(inflateSync(o.getContents())).matchAll(/<([A-Fa-f0-9]+)>\s*Tj/g),m=>alphabet.get(m[1].toUpperCase())??'?'):[]).join('');
+  assertEquals(printed.includes(showSeat?'Stůl: Terasa, Místo: 3':'Stůl: Terasa'),true);
+  assertEquals(printed.includes('Místo: 3'),showSeat);
+ }
+});

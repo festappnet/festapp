@@ -1150,6 +1150,8 @@
     "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
   },
   "TicketLayout": {
+    "seat": "Miejsce przy stole",
+    "showSeat": "Pokaż miejsce przy stole",
     "alwaysVisible": "Zawsze widoczny - tego elementu nie można ukryć",
     "hideElement": "Ukryj element",
     "showElement": "Pokaż element",

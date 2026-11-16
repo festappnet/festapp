@@ -133,6 +133,7 @@ class _TicketWalletAppearanceEditorState
             const SizedBox(height: 12),
             TicketWalletCardPreview(
               platform: platform,
+              showSeat: widget.feature.layout?['templates']?[widget.feature.ticketType == 'named' ? 'named' : 'wide']?['spotGroupAppearance']?['showSeat'] == true,
               appearance: appearance,
               occasion: widget.occasion,
               previewLabel: t('walletPreview'),

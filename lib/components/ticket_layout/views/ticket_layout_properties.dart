@@ -112,6 +112,14 @@ class TicketLayoutProperties extends StatelessWidget {
                             icon: const Icon(Icons.delete_outline),
                             label: Text(TicketLayoutStrings.removeText))),
                   ],
+                  if (e.binding == 'spotGroup')
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(TicketLayoutStrings.showSeat),
+                      value: controller.document.showSeat,
+                      onChanged: e.locked ? null : (value) => controller.replace(
+                        controller.document.withShowSeat(value)),
+                    ),
                   if (text) ...[
                     if (fontControl != null) fontControl!,
                     const SizedBox(height: 12),

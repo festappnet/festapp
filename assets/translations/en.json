@@ -2984,6 +2984,8 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "seat": "Seat at table",
+    "showSeat": "Show seat at table",
     "alwaysVisible": "Always visible - this element cannot be hidden",
     "hideElement": "Hide element",
     "showElement": "Show element",

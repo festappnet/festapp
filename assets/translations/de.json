@@ -1148,6 +1148,8 @@
     "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
   },
   "TicketLayout": {
+    "seat": "Sitzplatz am Tisch",
+    "showSeat": "Sitzplatz am Tisch anzeigen",
     "alwaysVisible": "Immer sichtbar - dieses Element kann nicht ausgeblendet werden",
     "hideElement": "Element ausblenden",
     "showElement": "Element anzeigen",
