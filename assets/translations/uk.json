@@ -2321,6 +2321,7 @@
     "connected": "Connected",
     "connectedClient": "Підключений застосунок має доступ до Вашого облікового запису.",
     "closeHint": "Ви можете закрити це вікно та повернутися до підключеного застосунку.",
+    "closeManually": "Браузер не закрив це вікно. Закрийте вкладку кнопкою закриття та поверніться до підключеного застосунку. Підключення завершено.",
     "closeWindow": "Close window",
     "backToTenant": "Back to {tenant}",
     "waitingForClient": "Finishing the connection. A helper window opened to complete authentication.",

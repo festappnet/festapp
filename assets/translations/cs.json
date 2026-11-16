@@ -4157,6 +4157,7 @@
     "connected": "Propojeno",
     "connectedClient": "Připojená aplikace má povolený přístup k Vašemu účtu.",
     "closeHint": "Toto okno můžete zavřít a vrátit se do připojené aplikace.",
+    "closeManually": "Prohlížeč toto okno nezavřel. Zavřete kartu pomocí jejího křížku a vraťte se do připojené aplikace. Propojení je dokončeno.",
     "closeWindow": "Zavřít okno",
     "backToTenant": "Zpět na {tenant}",
     "waitingForClient": "Dokončujeme propojení. Potvrzení se otevřelo v pomocném okně.",

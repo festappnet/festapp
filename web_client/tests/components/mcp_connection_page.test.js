@@ -27,7 +27,7 @@ function fixture({ native = false, authenticated = true, occasions = [{ id: 99, 
         } } };
     const container = document.getElementById('form-page-container');
     const page = new Page(container, { client, browser, pause: async () => {} });
-    return { page, calls, container, navigation, popup, opened: () => opened };
+    return { page, calls, container, navigation, popup, browser, opened: () => opened };
 }
 test('select all is explicit, supports mixed/clear, and sends only shown IDs on approval', async () => {
     const f = fixture(); await f.page.init();
@@ -480,4 +480,33 @@ test('MFA approval keeps the code transient and preserves the displayed consent'
     assert.deepEqual(f.calls.at(-1).access, {type: 'occasions', occasionIds: [99]});
     assert(!f.container.textContent.includes('123456'));
     assert.equal(f.page.mfaCode, undefined);
+});
+
+test('completed user-opened tab gives an accessible manual-close fallback without repeating consent', async () => {
+    for (const throws of [false, true]) {
+        const f = fixture({ native: true }); await f.page.init(); f.page.selected.add(99);
+        await f.page.finish('approve');
+        let attempts = 0;
+        f.browser.close = () => { attempts++; if (throws) throw new Error('Browser refused close'); };
+        const calls = f.calls.length;
+        f.container.querySelector('button[data-primary]').click();
+        assert.equal(attempts, 1);
+        assert.equal(f.page.state, 'connected');
+        assert.equal(f.calls.length, calls, 'closing must never repeat OAuth or consent');
+        assert.equal(f.container.querySelector('button[data-primary]'), null);
+        assert.match(f.container.querySelector('[role="status"]').textContent, /Prohlížeč toto okno nezavřel/);
+        const back = f.container.querySelector('[data-back-to-tenant]');
+        assert.equal(back.getAttribute('href'), '/');
+        assert.equal(document.activeElement, back);
+        assert.deepEqual(f.navigation, [resume], 'blocked close must not force navigation');
+    }
+});
+test('completed script-opened window closes without a misleading failure message', async () => {
+    const f = fixture({ native: true }); await f.page.init(); f.page.selected.add(99);
+    await f.page.finish('approve');
+    f.browser.close = () => { f.browser.closed = true; };
+    f.container.querySelector('button[data-primary]').click();
+    assert.equal(f.browser.closed, true);
+    assert.equal(f.page.closeUnavailable, false);
+    assert.doesNotMatch(f.container.textContent, /Prohlížeč toto okno nezavřel/);
 });

@@ -2271,6 +2271,7 @@
     "connected": "Connected",
     "connectedClient": "Pripojená aplikácia má povolený prístup k Vášmu účtu.",
     "closeHint": "Toto okno môžete zavrieť a vrátiť sa do pripojenej aplikácie.",
+    "closeManually": "Prehliadač toto okno nezavrel. Zatvorte kartu pomocou jej krížika a vráťte sa do pripojenej aplikácie. Prepojenie je dokončené.",
     "closeWindow": "Close window",
     "backToTenant": "Back to {tenant}",
     "waitingForClient": "Finishing the connection. A helper window opened to complete authentication.",

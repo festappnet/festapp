@@ -47,6 +47,7 @@ export class McpConnectionPage {
         this.generation = 0;
         this.busy = false;
         this.state = 'loading';
+        this.closeUnavailable = false;
         this.permissionMode = 'requested';
     }
 
@@ -489,10 +490,19 @@ export class McpConnectionPage {
             button('cancel', () => this.finish('cancel'));
         } else if (this.state === 'connected') {
             add('p', this.text('connectedClient'));
-            add('p', this.text('closeHint'));
-            button('closeWindow', () => this.browser.close());
+            add('p', this.text(this.closeUnavailable ? 'closeManually' : 'closeHint'));
+            if (!this.closeUnavailable) button('closeWindow', () => {
+                // User-opened tabs may refuse close(); opener/history heuristics
+                // are unreliable after OAuth navigation and opener isolation.
+                try { this.browser.close(); } catch { /* Offer the same fallback when closing throws. */ }
+                if (this.browser.closed) return;
+                this.closeUnavailable = true;
+                this.render();
+                this.container.querySelector('[data-back-to-tenant]')?.focus();
+            });
             const back = add('a', this.text('backToTenant', { tenant: AppConfig.appName }));
             back.href = '/';
+            back.dataset.backToTenant = '';
         } else {
             const message = add('p', this.text(this.state === 'loading' ? 'connecting' : this.state));
             message.setAttribute('role', this.state === 'error' ? 'alert' : 'status');
