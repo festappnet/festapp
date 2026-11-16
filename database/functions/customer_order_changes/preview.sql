@@ -17,7 +17,7 @@ REVOKE ALL ON FUNCTION public.customer_change_read_scope_internal(text,bigint) F
 CREATE OR REPLACE FUNCTION public.customer_order_change_requests_internal(p_order bigint,p_staff boolean DEFAULT false)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',id,'operation',operation,'status',status,
- 'reason',reason,'response',response,'ticketIds',to_jsonb(ticket_ids),'targetFormId',target_form_id,'createdAt',created_at,'updatedAt',updated_at,
+ 'reason',reason,'response',response,'ticketIds',to_jsonb(ticket_ids),'createdAt',created_at,'updatedAt',updated_at,
  'canWithdraw',status='open' AND public.customer_order_feature_enabled_internal((SELECT form FROM eshop.orders WHERE id=p_order)),'canDecide',p_staff AND status='open') ORDER BY created_at DESC),'[]')
  FROM eshop.customer_order_change_requests WHERE order_id=p_order;
 $$;
@@ -29,7 +29,7 @@ DECLARE o eshop.orders; policy jsonb; op text; rule jsonb; actions jsonb:='[]'; 
 BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
  policy:=public.customer_order_policy_internal(o.form)->'policy';
- FOREACH op IN ARRAY ARRAY['cancel','move'] LOOP
+ FOREACH op IN ARRAY ARRAY['cancel'] LOOP
   rule:=policy->op;
   enabled:=public.customer_order_operation_enabled_internal(o.form,op);
   reason:=CASE WHEN NOT enabled THEN 'policy_unavailable'
@@ -40,14 +40,7 @@ BEGIN
    ELSE NULL END;
   actions:=actions||jsonb_build_array(jsonb_build_object('operation',op,'enabled',reason IS NULL,'reason',reason,
    'allowedUntil',rule->'allowed_until','mode',rule->'mode','reasonRequired',rule->'reason_required',
-   'refundMode',rule->'refund_mode','tickets',CASE WHEN op='cancel' AND reason IS NULL THEN (SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,o.form)) ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t WHERE t.state NOT IN ('used','storno','expired','stock','waitlisted','preparing_payment')) ELSE '[]'::jsonb END,'fields',CASE WHEN op='edit' AND reason IS NULL THEN (
-    SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'type',f.type,'title',f.title,'required',f.is_required,
-     'ticket',f.is_ticket_field,'options',f.data->'options',
-     'value',(SELECT answer->f.id::text FROM jsonb_array_elements(coalesce(o.data->'fields','[]')) answer WHERE answer ? f.id::text LIMIT 1),
-     'values',(SELECT jsonb_agg(jsonb_build_object('ticketId',t.id,'value',(SELECT answer->f.id::text FROM jsonb_array_elements(coalesce(t.data->'fields','[]')) answer WHERE answer ? f.id::text LIMIT 1)) ORDER BY t.id) FROM public.get_order_tickets_internal(o.id) t))),'[]') FROM public.form_fields f
-    JOIN jsonb_array_elements(rule->'fields') allow ON (allow->>'id')::bigint=f.id AND allow->>'type'=f.type
-    WHERE f.form=o.form AND NOT coalesce(f.is_hidden,false) AND f.product_type IS NULL) END,
-   'targets',CASE WHEN op='move' AND reason IS NULL THEN public.customer_move_targets_internal(o.id) ELSE '[]'::jsonb END));
+   'refundMode',rule->'refund_mode','tickets',CASE WHEN op='cancel' AND reason IS NULL THEN (SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,o.form)) ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t WHERE t.state NOT IN ('used','storno','expired','stock','waitlisted','preparing_payment')) ELSE '[]'::jsonb END));
  END LOOP;
  RETURN actions;
 END $$;
@@ -56,12 +49,12 @@ REVOKE ALL ON FUNCTION public.customer_order_actions_internal(bigint) FROM PUBLI
 CREATE OR REPLACE FUNCTION public.preview_customer_order_change_internal(p_order bigint,p_operation text,p_payload jsonb,p_staff boolean DEFAULT false)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; oc public.occasions; rule jsonb; rev bigint; effect text; blocked text; reason text;
- f public.form_fields; ticket_id bigint; patch record; finance jsonb; amount numeric:=0; target jsonb;
+ f public.form_fields; ticket_id bigint; patch record; finance jsonb; amount numeric:=0;
  selected bigint[]; partial boolean:=false; selected_price numeric;
  snapshot jsonb; fields jsonb; current_value jsonb; all_payload jsonb;
 BEGIN
  IF p_operation='edit' THEN RAISE insufficient_privilege USING MESSAGE='CUSTOMER_ANSWERS_READ_ONLY'; END IF;
- IF p_operation IS NULL OR p_operation NOT IN ('edit','cancel','move','withdraw') OR jsonb_typeof(p_payload) IS DISTINCT FROM 'object'
+ IF p_operation IS NULL OR p_operation NOT IN ('cancel','withdraw') OR jsonb_typeof(p_payload) IS DISTINCT FROM 'object'
   OR octet_length(p_payload::text)>32768 THEN RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_CHANGE_INPUT_INVALID'; END IF;
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order;
  SELECT * INTO STRICT oc FROM public.occasions WHERE id=o.occasion;
@@ -74,7 +67,7 @@ BEGIN
    RAISE EXCEPTION 'CUSTOMER_CHANGE_CONFLICT' USING ERRCODE='40001'; END IF;
   effect:='withdraw';
  ELSE
-  IF NOT p_staff AND p_operation IN ('cancel','move') AND EXISTS(SELECT 1 FROM eshop.customer_order_change_requests WHERE order_id=o.id AND operation=p_operation AND status='open') THEN RAISE EXCEPTION 'CUSTOMER_REQUEST_ALREADY_OPEN' USING ERRCODE='40001'; END IF;
+  IF NOT p_staff AND p_operation='cancel' AND EXISTS(SELECT 1 FROM eshop.customer_order_change_requests WHERE order_id=o.id AND operation=p_operation AND status='open') THEN RAISE EXCEPTION 'CUSTOMER_REQUEST_ALREADY_OPEN' USING ERRCODE='40001'; END IF;
   IF o.state NOT IN ('created','ordered','paid','sent') OR o.source_waitlist_order_id IS NOT NULL
    OR EXISTS(SELECT 1 FROM eshop.orders WHERE source_waitlist_order_id=o.id)
    OR EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) WHERE state IN ('waitlisted','stock','preparing_payment')) THEN
@@ -100,32 +93,7 @@ BEGIN
   -- All provider/bank/cash facts and reservations come from the existing engine.
   finance:=public.payment_method_context_internal(o.id);
   amount:=coalesce((finance->>'net')::numeric,0);
-  IF p_operation='edit' THEN
-   IF blocked IS NOT NULL THEN RAISE EXCEPTION 'CUSTOMER_ORDER_UNAVAILABLE' USING ERRCODE='40001'; END IF;
-   IF (coalesce(p_payload->'order','{}')='{}'::jsonb AND coalesce(p_payload->'tickets','{}')='{}'::jsonb) OR p_payload-ARRAY['order','tickets']<>'{}'::jsonb OR (NOT p_payload ? 'order' AND NOT p_payload ? 'tickets')
-    OR (p_payload ? 'order' AND jsonb_typeof(p_payload->'order')<>'object')
-    OR (p_payload ? 'tickets' AND jsonb_typeof(p_payload->'tickets')<>'object') THEN
-    RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_FIELDS_INVALID'; END IF;
-   FOR ticket_id,fields IN
-    SELECT NULL::bigint,coalesce(p_payload->'order','{}') UNION ALL
-    SELECT key::bigint,value FROM jsonb_each(coalesce(p_payload->'tickets','{}'))
-   LOOP
-    IF jsonb_typeof(fields)<>'object' OR (ticket_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) WHERE id=ticket_id)) THEN
-     RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_FIELDS_INVALID'; END IF;
-    FOR patch IN SELECT * FROM jsonb_each(fields) LOOP
-     SELECT * INTO f FROM public.form_fields WHERE form=o.form AND id::text=patch.key
-      AND coalesce(is_ticket_field,false)=(ticket_id IS NOT NULL) AND NOT coalesce(is_hidden,false) AND product_type IS NULL;
-     IF f.id IS NULL OR NOT EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(rule->'fields','[]')) a WHERE a->>'id'=f.id::text AND a->>'type'=f.type)
-      OR f.type NOT IN ('name','surname','phone','text','city','address','select_one')
-      OR jsonb_typeof(patch.value) IS DISTINCT FROM 'string' OR length(patch.value#>>'{}')>4000
-      OR (f.is_required AND nullif(btrim(patch.value#>>'{}'),'') IS NULL)
-      OR (f.type='select_one' AND patch.value NOT IN ('""'::jsonb,'null'::jsonb) AND NOT EXISTS(
-        SELECT 1 FROM jsonb_array_elements(coalesce(f.data->'options','[]')) option WHERE option->'value'=patch.value)) THEN
-      RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_FIELDS_INVALID'; END IF;
-    END LOOP;
-   END LOOP;
-   effect:='edit';
-  ELSIF p_operation='cancel' THEN
+  IF p_operation='cancel' THEN
    IF p_payload-ARRAY['reason','ticketIds']<>'{}'::jsonb OR (p_payload ? 'reason' AND jsonb_typeof(p_payload->'reason')<>'string') THEN
     RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_CHANGE_INPUT_INVALID'; END IF;
    reason:=public.validate_customer_cancellation_reason_internal(rule,p_payload->>'reason');
@@ -168,12 +136,6 @@ BEGIN
     OR public.provider_order_payment_projection_internal(o.id)->>'status' IN ('disputed','unknown','action_required')
     OR public.provider_order_payment_projection_internal(o.id)->'reconciliationPending'='true'::jsonb THEN
     effect:='request_cancel';blocked:='finance_requires_review'; END IF;
-  ELSE
-   IF p_payload-ARRAY['targetFormId','reason']<>'{}'::jsonb OR jsonb_typeof(p_payload->'targetFormId') IS DISTINCT FROM 'number'
-    OR length(coalesce(p_payload->>'reason',''))>2000 THEN RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_MOVE_INVALID'; END IF;
-   target:=public.customer_move_preview_internal(o.id,(p_payload->>'targetFormId')::bigint);
-   effect:=CASE WHEN blocked IS NULL AND target->'automatic'='true'::jsonb THEN 'move' ELSE 'request_move' END;
-   blocked:=coalesce(blocked,target->>'reason');
   END IF;
  END IF;
  snapshot:=jsonb_build_object('form',o.form,'state',o.state,'data',o.data,'price',o.price,'payment',o.payment_info,
@@ -182,9 +144,9 @@ BEGIN
   'requests',public.customer_order_change_requests_internal(o.id),
   'definitions',(SELECT jsonb_agg(to_jsonb(definition) ORDER BY definition.id) FROM public.form_fields definition WHERE definition.form=o.form),
   'allocations',(SELECT jsonb_agg(to_jsonb(x) ORDER BY x.id) FROM eshop.order_product_ticket x WHERE x."order"=o.id),
-  'tickets',(SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.get_order_tickets_internal(o.id) t),'target',target);
+  'tickets',(SELECT jsonb_agg(to_jsonb(t) ORDER BY t.id) FROM public.get_order_tickets_internal(o.id) t));
  RETURN jsonb_build_object('code',200,'operation',p_operation,'effect',effect,'reason',blocked,'refundAmount',CASE WHEN effect='cancel_refund' THEN amount ELSE 0 END,
-  'partial',partial,'ticketIds',to_jsonb(selected),'currency',o.currency_code,'target',target,'policyRevision',rev,'expiresAt',statement_timestamp()+interval '5 minutes',
+  'partial',partial,'ticketIds',to_jsonb(selected),'currency',o.currency_code,'policyRevision',rev,'expiresAt',statement_timestamp()+interval '5 minutes',
   'fingerprint',encode(extensions.digest(snapshot::text,'sha256'),'hex'));
 END $$;
 REVOKE ALL ON FUNCTION public.preview_customer_order_change_internal(bigint,text,jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;

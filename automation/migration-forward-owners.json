@@ -455,6 +455,31 @@
       "sources": [
         "eshop/finalize_ticket_order.sql"
       ]
+    },
+    {
+      "migration": "20261116010000_customer_cancellation_cutover.sql",
+      "active": true,
+      "header": "-- Canonical cancellation-only self-service. Guarded retirement of unused term-moving capability.",
+      "sources": [
+        "customer_order_changes/retire_move_preflight.sql",
+        "customer_order_changes/policy.sql",
+        "customer_order_changes/preview.sql",
+        "customer_order_changes/commands.sql",
+        "customer_order_changes/staff.sql",
+        "eshop_forms/admin_form_commands.sql",
+        "eshop_forms/update_form_client_sync_v1.sql",
+        "eshop_forms/get_form_for_edit.sql",
+        "eshop/get_order_details_for_email.sql",
+        "ticket_wallet/projection.sql",
+        "ticket_wallet/capabilities.sql",
+        "ticket_wallet/collections.sql",
+        "customer_order_changes/retire_moves.sql"
+      ],
+      "retiredSources": [
+        "customer_order_changes/move.sql",
+        "customer_order_changes/runtime_schema.sql",
+        "eshop_forms/order_term.sql"
+      ]
     }
   ]
 }

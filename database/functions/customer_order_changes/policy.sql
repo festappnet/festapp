@@ -9,13 +9,13 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,ex
 DECLARE op record; rule jsonb; field jsonb; result jsonb:='{}';
 BEGIN
  IF p_policy IS NULL OR jsonb_typeof(p_policy)<>'object' OR octet_length(p_policy::text)>16384
-  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_policy) k WHERE k NOT IN ('edit','cancel','move')) THEN
+  OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_policy) k WHERE k NOT IN ('edit','cancel')) THEN
   RAISE invalid_parameter_value USING MESSAGE='invalid customer change policy'; END IF;
  FOR op IN SELECT * FROM jsonb_each(p_policy) LOOP
   rule:=op.value;
   IF jsonb_typeof(rule)<>'object' OR jsonb_typeof(rule->'enabled') IS DISTINCT FROM 'boolean'
    OR EXISTS(SELECT 1 FROM jsonb_object_keys(rule) k WHERE k NOT IN ('enabled','allowed_until',
-     'fields','mode','reason_required','refund_mode','targets')) THEN
+     'fields','mode','reason_required','refund_mode')) THEN
    RAISE invalid_parameter_value USING MESSAGE='invalid customer operation policy'; END IF;
   IF rule->'enabled'='true'::jsonb OR rule ? 'allowed_until' THEN
    IF jsonb_typeof(rule->'allowed_until') IS DISTINCT FROM 'string'
@@ -40,26 +40,9 @@ BEGIN
    END LOOP;
    IF (SELECT count(*) FROM jsonb_array_elements(rule->'fields'))<>(SELECT count(DISTINCT value->>'id') FROM jsonb_array_elements(rule->'fields')) THEN
     RAISE invalid_parameter_value USING MESSAGE='duplicate customer field'; END IF;
-  ELSE
-   IF rule ?| ARRAY['fields','mode','reason_required','refund_mode'] OR jsonb_typeof(rule->'targets') IS DISTINCT FROM 'array'
-    OR jsonb_array_length(rule->'targets')>25 THEN RAISE invalid_parameter_value USING MESSAGE='invalid customer move targets'; END IF;
-   FOR field IN SELECT value FROM jsonb_array_elements(rule->'targets') LOOP
-    IF jsonb_typeof(field)<>'object' OR field-ARRAY['formId','products','fields']<>'{}'::jsonb
-     OR jsonb_typeof(field->'formId') IS DISTINCT FROM 'number' OR field->>'formId' !~ '^[1-9][0-9]*$'
-     OR jsonb_typeof(field->'products') IS DISTINCT FROM 'object'
-     OR (field ? 'fields' AND jsonb_typeof(field->'fields')<>'object') THEN
-     RAISE invalid_parameter_value USING MESSAGE='invalid customer target mapping'; END IF;
-    IF EXISTS(SELECT 1 FROM jsonb_each(field->'products') x WHERE x.key!~'^[1-9][0-9]*$' OR x.value::text!~'^[1-9][0-9]*$')
-     OR EXISTS(SELECT 1 FROM jsonb_each(coalesce(field->'fields','{}')) x WHERE x.key!~'^[1-9][0-9]*$' OR x.value::text!~'^[1-9][0-9]*$') THEN
-     RAISE invalid_parameter_value USING MESSAGE='invalid customer target identifiers'; END IF;
-    IF EXISTS(SELECT 1 FROM jsonb_each_text(coalesce(field->'fields','{}')) m GROUP BY m.value HAVING count(*)>1) THEN
-     RAISE invalid_parameter_value USING MESSAGE='customer answer mapping must be one-to-one'; END IF;
-   END LOOP;
   END IF;
   result:=result||jsonb_build_object(op.key,rule);
  END LOOP;
- IF (SELECT count(*) FROM jsonb_array_elements(coalesce(result#>'{move,targets}','[]')))<>(SELECT count(DISTINCT v->>'formId') FROM jsonb_array_elements(coalesce(result#>'{move,targets}','[]')) v) THEN
-  RAISE invalid_parameter_value USING MESSAGE='duplicate customer target'; END IF;
  RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.normalize_customer_order_policy_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
@@ -79,23 +62,6 @@ BEGIN
   IF NOT EXISTS(SELECT 1 FROM public.form_fields f WHERE f.form=p_form AND f.id=(field->>'id')::bigint
     AND f.type=field->>'type' AND NOT coalesce(f.is_hidden,false) AND f.product_type IS NULL) THEN
    RAISE invalid_parameter_value USING MESSAGE='customer field scope or type invalid'; END IF;
- END LOOP;
- FOR field IN SELECT value FROM jsonb_array_elements(coalesce(normalized#>'{move,targets}','[]')) LOOP
-  IF NOT EXISTS(SELECT 1 FROM public.forms dst JOIN public.occasions target ON target.id=dst.occasion
-    JOIN public.occasions source ON source.id=fid WHERE dst.id=(field->>'formId')::bigint AND dst.id<>p_form
-    AND target.organization=source.organization AND public.can_read_form_catalog(target.id)) THEN
-   RAISE invalid_parameter_value USING MESSAGE='customer target scope invalid'; END IF;
-  IF EXISTS(SELECT 1 FROM jsonb_each_text(field->'products') mapping
-    WHERE NOT EXISTS(SELECT 1 FROM eshop.products src JOIN eshop.products dst ON dst.id=mapping.value::bigint
-      JOIN public.forms target ON target.id=(field->>'formId')::bigint WHERE src.id=mapping.key::bigint
-      AND src.occasion=fid AND dst.occasion=target.occasion)) THEN
-    RAISE invalid_parameter_value USING MESSAGE='customer product mapping scope invalid'; END IF;
-  IF EXISTS(SELECT 1 FROM jsonb_each_text(coalesce(field->'fields','{}')) mapping
-    WHERE NOT EXISTS(SELECT 1 FROM public.form_fields src JOIN public.form_fields dst ON dst.id=mapping.value::bigint
-      WHERE src.id=mapping.key::bigint AND src.form=p_form AND dst.form=(field->>'formId')::bigint
-      AND src.type=dst.type AND src.is_ticket_field IS NOT DISTINCT FROM dst.is_ticket_field
-      AND NOT coalesce(src.is_hidden,false) AND NOT coalesce(dst.is_hidden,false))) THEN
-    RAISE invalid_parameter_value USING MESSAGE='customer answer mapping scope invalid'; END IF;
  END LOOP;
  -- Submitted answers are customer read-only in this release, including contact
  -- fields. Retain legacy input validation but never persist an enabled edit rule.
@@ -124,7 +90,7 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,exte
   AND jsonb_path_exists(coalesce(o.features,'[]'),'$[*] ? (@.code == "customer_self_service" && @.is_enabled == true)')
   FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
   JOIN eshop.customer_order_change_policies p ON p.form_id=f.id
-  WHERE f.id=p_form AND p_operation IN ('cancel','move')),false);
+  WHERE f.id=p_form AND p_operation='cancel'),false);
 $$;
 REVOKE ALL ON FUNCTION public.customer_order_operation_enabled_internal(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 

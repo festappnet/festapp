@@ -63,7 +63,7 @@ export function renderCustomerOrderChanges(
     ].join(" - ");
   };
   const actions = (data.allowedActions || []).filter((a) =>
-    a.enabled && ["cancel", "move"].includes(a.operation)
+    a.enabled && a.operation === "cancel"
   );
   const requests = data.changeRequests || [];
   let session = host._customerChangeSession;
@@ -192,28 +192,7 @@ export function renderCustomerOrderChanges(
         selectedTickets.push({ id: ticket.id, input });
       }
     }
-    let target, reason;
-    if (action.operation === "move") {
-      const id = "customer-target";
-      node(form, "label", text("target"), { for: id });
-      target = node(form, "select", "", { id, required: "" });
-      node(target, "option", "", { value: "" });
-      for (const t of action.targets || []) {
-        const date = t.startsAt
-          ? new Date(t.startsAt).toLocaleString(
-            LocalizationService.currentLocale,
-          )
-          : "";
-        node(
-          target,
-          "option",
-          `${t.title || ""}${date ? ` - ${date}` : ""}${
-            t.automatic ? "" : ` (${text("manual")})`
-          }`,
-          { value: String(t.formId) },
-        );
-      }
-    }
+    let reason;
     if (action.operation !== "edit") {
       node(
         form,
@@ -260,7 +239,6 @@ export function renderCustomerOrderChanges(
             return;
           }
         }
-        if (target) payload.targetFormId = Number(target.value);
       }
       challenge(action.operation, payload, submit);
     };
@@ -329,7 +307,7 @@ export function renderCustomerOrderChanges(
           session.proposal = source;
         }
         const proposal = session.proposal;
-        if (!["cancel", "move", "withdraw"].includes(proposal.operation)) {
+        if (!["cancel", "withdraw"].includes(proposal.operation)) {
           throw new Error("unavailable");
         }
         const impact = await customerChangeCall(client, {
@@ -349,7 +327,7 @@ export function renderCustomerOrderChanges(
           text(
             impact.partial
               ? `${impact.effect}_selected`
-              : ["edit", "move", "withdraw", "cancel"].includes(impact.effect)
+              : ["edit", "withdraw", "cancel"].includes(impact.effect)
               ? `${impact.effect}_effect`
               : impact.effect,
           ),
@@ -402,32 +380,7 @@ export function renderCustomerOrderChanges(
             }`,
           );
         }
-        if (impact.target) {
-          node(
-            work,
-            "p",
-            `${text("target")}: ${
-              [
-                impact.target.title,
-                impact.target.startsAt
-                  ? new Date(impact.target.startsAt).toLocaleString(
-                    LocalizationService.currentLocale,
-                  )
-                  : null,
-              ].filter(Boolean).join(" - ")
-            }`,
-          );
-          node(work, "p", text("difference"));
-          for (const ticket of impact.target.tickets || []) {
-            for (const item of ticket.products || []) {
-              node(
-                work,
-                "p",
-                `${item.title}: ${item.price} ${item.currency_code}`,
-              );
-            }
-          }
-        }
+
         if (proposal.payload.reason) {
           node(work, "p", `${text("reason")}: ${proposal.payload.reason}`);
         }

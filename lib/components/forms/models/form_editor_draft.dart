@@ -10,7 +10,6 @@ import 'form_bundle.dart';
 class FormEditorDraft {
   FormDefinition definition;
   bool customerPolicyDirty = false;
-  bool customerTermDirty = false;
   Map<String, dynamic>? paymentMethodPolicy;
   int aggregateVersion;
   Map<String, int> _productVersions = {};
@@ -166,12 +165,6 @@ class FormEditorDraft {
     if (customerPolicyDirty) {
       result['customer_self_service'] =
           definition.customerSelfService?['policy'] ?? <String, dynamic>{};
-    }
-    if (customerTermDirty) {
-      result['term_start_at'] = definition.termStartAt
-          ?.toUtc()
-          .toIso8601String();
-      result['term_end_at'] = definition.termEndAt?.toUtc().toIso8601String();
     }
     result['expected_aggregate_version'] = aggregateVersion;
     result['expected_product_versions'] = Map<String, int>.from(

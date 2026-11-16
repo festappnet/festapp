@@ -96,8 +96,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
     _form?.definition.customerSelfService,
-    _form?.definition.termStartAt?.toIso8601String(),
-    _form?.definition.termEndAt?.toIso8601String(),
     _bankEnabled,
     _cashEnabled,
     _cashInstructionsController.text,

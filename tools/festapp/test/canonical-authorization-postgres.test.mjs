@@ -709,7 +709,6 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
       'eshop_barion/schema.sql':['barion_connections','barion_attempts','barion_movements','barion_capabilities','barion_sources','barion_observations'].map(n=>'eshop.'+n),
       'eshop_discounts/schema.sql':['eshop.discount_codes','eshop.order_discounts','eshop.discount_code_audit'],
       'customer_order_changes/policy_schema.sql':['eshop.customer_order_change_policies'],
-      'customer_order_changes/runtime_schema.sql':['capabilities','sources','attempts','limits','requests','events'].map(name=>'eshop.customer_order_change_'+name),
       'presale_content/archive.sql':['public.form_presale_content_archive'],
       'notification_center/prepared_schema.sql':['projection_scopes','view_members','member_subjects','batch_summaries','summary_scopes','group_repairs','views','view_rows'].map(n=>'public.notification_center_'+n),
     };
@@ -719,6 +718,16 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
       assert.deepEqual(declared.toSorted(),relations.toSorted(),source+' reviewed private relations');
       forwardPrivateTables.push(...relations.map(relation=>relation.split('.')));
     }
+    // Runtime DDL was retired by the cancellation cutover. These retained
+    // private tables originate in the immutable foundation migration; verify
+    // its complete declaration inventory and still compare every live ACL.
+    const customerFoundation=await readFile(new URL('../../../supabase/migrations/20261115130000_customer_order_policy_foundation.sql',import.meta.url),'utf8');
+    const customerTables=['capabilities','sources','attempts','limits','requests','events']
+      .map(name=>'eshop.customer_order_change_'+name);
+    const customerDeclarations=[...customerFoundation.matchAll(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?((?:public|eshop)\.\w+)/gi)].map(m=>m[1]);
+    assert.deepEqual(customerDeclarations.toSorted(),[...customerTables,'eshop.customer_order_change_policies'].toSorted(),
+      'customer foundation reviewed private relations');
+    forwardPrivateTables.push(...customerTables.map(relation=>relation.split('.')));
     const expectedTables=approvedPrivateTables.flatMap(table_name=>ownerTables.map(g=>({...g,table_name})));
     // The ticketing profile migration grants only SELECT for service-side
     // seat/area projection. Every other table privilege remains exact.
@@ -757,13 +766,14 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     assert.equal(linePriceColumnTemplate.length,10);
     for(const column_name of ['base_price','discount_amount','net_price'])expectedColumns.push(...linePriceColumnTemplate.map(g=>({...g,column_name})));
     for(const [table_name,columns,count] of [
-      ['forms',['term_start_at','term_end_at'],8],
       ['occasions',['customer_self_service_epoch'],7],
     ]) {
       const inherited=before.columnGrants.filter(g=>g.table_schema==='public'&&g.table_name===table_name&&g.column_name==='id');
       assert.equal(inherited.length,count);
       for(const column_name of columns)expectedColumns.push(...inherited.map(g=>({...g,column_name})));
     }
+    assert.deepEqual((await db.query("select column_name from information_schema.columns where table_schema='public' and table_name='forms' and column_name=any($1)",[['term_start_at','term_end_at']])).rows,[],
+      'retired form term columns have no remaining grants');
     const paymentColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id');
     for(const column_name of ['payment_method','stripe_connection_id','barion_connection_id'])expectedColumns.push(...paymentColumnTemplate.map(g=>({...g,column_name})));
     assert.deepEqual(sorted(after.columnGrants),sorted([...before.columnGrants,...expectedColumns]),

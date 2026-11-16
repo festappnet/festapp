@@ -65,7 +65,7 @@ export async function readCustomerChangeInput(
     (data.orderId !== undefined &&
       (!Number.isSafeInteger(data.orderId) || data.orderId <= 0)) ||
     (data.operation !== undefined &&
-      !["edit", "cancel", "move", "withdraw"].includes(data.operation)) ||
+      !["edit", "cancel", "withdraw"].includes(data.operation)) ||
     (data.payload !== undefined &&
       (!data.payload || Array.isArray(data.payload) ||
         typeof data.payload !== "object")) ||
@@ -172,7 +172,7 @@ export async function openCustomerChangeSource(
     source.version !== 1 || source.purpose !== "customer_order_change" ||
     source.token !== token || source.orderId !== orderId ||
     !/^[a-f0-9]{64}$/.test(source.readToken) ||
-    !["edit", "cancel", "move", "withdraw"].includes(source.operation)
+    !["edit", "cancel", "withdraw"].includes(source.operation)
   ) throw new Error("INVALID_CAPABILITY");
   return { orderId, operation: source.operation, payload: source.payload };
 }

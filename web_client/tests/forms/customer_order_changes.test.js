@@ -45,15 +45,19 @@ test('captured token is consumed once and never enters location or persistent st
  const host=setup(t);window.__festappCustomerChangeToken='b'.repeat(64);assert.equal(takeCustomerChangeToken(), 'b'.repeat(64));assert.equal(takeCustomerChangeToken(),null);assert.equal(window.location.hash,'');assert.equal(window.localStorage.length,0);assert.ok(host);
 });
 
-test('move selector and confirmation retain target name, date and product breakdown',async t=>{
- const host=setup(t),target={formId:2,title:'Večerní termín',startsAt:'2026-12-10T18:00:00Z',automatic:true,tickets:[{products:[{title:'Vstup na večer',price:1000,currency_code:'CZK'}]}]};
- const data=base();data.allowedActions=[{operation:'move',enabled:true,targets:[target]}];
- renderCustomerOrderChanges(host,data,scope,{functions:{invoke:async()=>({data:{code:202}})}},async()=>{});
- find(host,'Změnit termín').click();
- const option=host.querySelector('select option[value="2"]');assert.match(option.textContent,/Večerní termín/);assert.match(option.textContent,/2026/);
- host.replaceChildren();window.__festappCustomerChangeToken='b'.repeat(64);
- renderCustomerOrderChanges(host,data,scope,{functions:{invoke:async(_,{body})=>({data:body.action==='resolve'?{code:200,orderId:1,operation:'move',payload:{targetFormId:2}}:{code:200,effect:'move',target,fingerprint:'f'.repeat(64)}})}},async()=>{});
- await tick();await tick();assert.match(host.textContent,/Večerní termín.*2026/);assert.match(host.textContent,/Vstup na večer: 1000 CZK/);
+test('self-service hides date changes and rejects obsolete date-change links',async t=>{
+ const host=setup(t),data=base(),calls=[];
+ data.allowedActions=[{operation:'move',enabled:true,targets:[{formId:2,title:'Jiný termín'}]}];
+ const client={functions:{invoke:async(_,{body})=>{calls.push(body);return{data:{code:200,orderId:1,operation:'move',payload:{targetFormId:2}}};}}};
+ renderCustomerOrderChanges(host,data,scope,client,async()=>{});
+ assert.equal(host.querySelector('select'),null);assert.equal(find(host,'Změnit termín'),undefined);
+ assert.equal(calls.length,0);
+ window.__festappCustomerChangeToken='b'.repeat(64);
+ renderCustomerOrderChanges(host,data,scope,client,async()=>{});
+ await tick();await tick();
+ assert.deepEqual(calls.map(c=>c.action),['resolve']);
+ assert.equal(find(host,'Potvrdit změnu'),undefined);
+ assert.equal(host.querySelector('select'),null);
 });
 
 test('partial cancellation sends exactly selected ticket IDs and blocks an empty selection',async t=>{

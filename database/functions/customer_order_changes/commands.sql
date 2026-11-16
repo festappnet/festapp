@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.lock_customer_order_change_internal(p_order bigint,p_target bigint DEFAULT NULL)
+CREATE OR REPLACE FUNCTION public.lock_customer_order_change_internal(p_order bigint)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE oc public.occasions; fid bigint;
 BEGIN
@@ -6,14 +6,14 @@ BEGIN
  SELECT * INTO STRICT oc FROM public.occasions WHERE id=oc.id;
  PERFORM public.payment_policy_fence_internal(oc.organization);
  PERFORM public.lock_blueprint_scope_internal(ARRAY[oc.id]);
- PERFORM 1 FROM public.forms WHERE id IN(fid,p_target) AND occasion=oc.id ORDER BY id FOR UPDATE;
+ PERFORM 1 FROM public.forms WHERE id=fid AND occasion=oc.id ORDER BY id FOR UPDATE;
  PERFORM 1 FROM eshop.orders WHERE id=p_order FOR UPDATE;
  -- Form saves take this same occasion fence before their product locks.
  PERFORM 1 FROM eshop.products WHERE occasion=oc.id ORDER BY id FOR UPDATE;
  PERFORM 1 FROM eshop.payment_info WHERE id=(SELECT payment_info FROM eshop.orders WHERE id=p_order) FOR UPDATE;
  PERFORM 1 FROM eshop.tickets WHERE id IN(SELECT id FROM public.get_order_tickets_internal(p_order)) ORDER BY id FOR UPDATE;
 END $$;
-REVOKE ALL ON FUNCTION public.lock_customer_order_change_internal(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.lock_customer_order_change_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 CREATE OR REPLACE FUNCTION public.publish_customer_order_request_internal(p_request uuid)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
@@ -33,32 +33,14 @@ DECLARE o eshop.orders; oc public.occasions; effect text:=p_preview->>'effect'; 
  item record; t eshop.tickets; merged jsonb; fields jsonb; result jsonb; request_status text:='open';
 BEGIN
  IF p_operation='edit' THEN RAISE insufficient_privilege USING MESSAGE='CUSTOMER_ANSWERS_READ_ONLY'; END IF;
+ IF p_operation IS NULL OR p_operation NOT IN ('cancel','withdraw') THEN RAISE invalid_parameter_value USING MESSAGE='CUSTOMER_CHANGE_INPUT_INVALID'; END IF;
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order FOR UPDATE;
  SELECT * INTO STRICT oc FROM public.occasions WHERE id=o.occasion;
- IF effect='edit' THEN
-  IF coalesce(p_payload->'order','{}')<>'{}'::jsonb THEN PERFORM public.update_order_responses_domain_internal(o.id,p_payload->'order'); END IF;
-  FOR item IN SELECT * FROM jsonb_each(coalesce(p_payload->'tickets','{}')) LOOP
-   SELECT * INTO STRICT t FROM eshop.tickets WHERE id=item.key::bigint FOR UPDATE;
-   SELECT coalesce(jsonb_object_agg(a.key,a.value),'{}') INTO merged FROM jsonb_array_elements(coalesce(t.data->'fields','[]')) f CROSS JOIN LATERAL jsonb_each(f) a;
-   SELECT coalesce(jsonb_agg(jsonb_build_object(key,value) ORDER BY key),'[]') INTO fields FROM jsonb_each(merged||item.value);
-   UPDATE eshop.tickets SET data=jsonb_set(coalesce(t.data,'{}'),'{fields}',fields) WHERE id=t.id;
-  END LOOP;
-  IF coalesce(p_payload->'tickets','{}')<>'{}'::jsonb THEN
-   UPDATE eshop.orders ord SET data=jsonb_set(ord.data,'{tickets}',(SELECT coalesce(jsonb_agg(
-    CASE WHEN p_payload->'tickets' ? (snapshot->>'id') THEN jsonb_set(snapshot,'{fields}',(SELECT data->'fields' FROM eshop.tickets WHERE id=(snapshot->>'id')::bigint)) ELSE snapshot END),'[]')
-    FROM jsonb_array_elements(coalesce(ord.data->'tickets','[]')) snapshot)),updated_at=clock_timestamp() WHERE ord.id=o.id;
-   INSERT INTO eshop.orders_history("order",state,price,data,currency_code) SELECT id,state,price,data,currency_code FROM eshop.orders WHERE id=o.id;
-  END IF;
-  -- Materialized ticket documents and Wallet share the existing delivery owner.
-  UPDATE eshop.orders SET email_payment_version=email_payment_version+1 WHERE id=o.id;
-  PERFORM public.cancel_order_email_intents(o.id);
-  PERFORM public.enqueue_order_wallet_internal(o.id);
-  IF o.state IN ('paid','sent') THEN PERFORM public.enqueue_paid_order_tickets(o.id); END IF;
- ELSIF effect IN ('request_cancel','request_move','cancel_manual_refund') OR (p_operation IN ('cancel','move') AND nullif(btrim(p_payload->>'reason'),'') IS NOT NULL) THEN
-  IF effect IN ('cancel_manual_refund','cancel_refund') THEN request_status:='approved'; ELSIF effect IN ('cancel','move') THEN request_status:='resolved'; END IF;
+ IF effect IN ('request_cancel','cancel_manual_refund') OR (p_operation='cancel' AND nullif(btrim(p_payload->>'reason'),'') IS NOT NULL) THEN
+  IF effect IN ('cancel_manual_refund','cancel_refund') THEN request_status:='approved'; ELSIF effect='cancel' THEN request_status:='resolved'; END IF;
   IF p_existing_request IS NULL THEN
-  INSERT INTO eshop.customer_order_change_requests(order_id,organization_id,operation,reason,target_form_id,customer_command,status,ticket_ids)
-  VALUES(o.id,oc.organization,p_operation,nullif(btrim(p_payload->>'reason'),''),nullif(p_payload->>'targetFormId','')::bigint,p_command,request_status,CASE WHEN p_payload ? 'ticketIds' THEN ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(p_payload->'ticketIds')) END)
+  INSERT INTO eshop.customer_order_change_requests(order_id,organization_id,operation,reason,customer_command,status,ticket_ids)
+  VALUES(o.id,oc.organization,p_operation,nullif(btrim(p_payload->>'reason'),''),p_command,request_status,CASE WHEN p_payload ? 'ticketIds' THEN ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(p_payload->'ticketIds')) END)
   ON CONFLICT(order_id,operation) WHERE status='open' DO NOTHING RETURNING id INTO request_id;
   IF request_id IS NULL THEN SELECT id INTO request_id FROM eshop.customer_order_change_requests WHERE order_id=o.id AND operation=p_operation AND status='open'; END IF;
   PERFORM public.publish_customer_order_request_internal(request_id);
@@ -79,14 +61,12 @@ BEGIN
    PERFORM public.enqueue_order_email('TICKET_ORDER_STORNO',jsonb_build_object('order_id',o.id),oc.organization,oc.id,oc.unit);
   ELSE PERFORM public.cancel_order_domain_internal_v1(o.id,true); END IF;
   PERFORM public.enqueue_order_wallet_internal(o.id);
- ELSIF effect='move' THEN
-  PERFORM public.move_customer_order_domain_internal(o.id,(p_payload->>'targetFormId')::bigint);
  ELSIF effect='withdraw' THEN
   UPDATE eshop.customer_order_change_requests SET status='withdrawn',updated_at=clock_timestamp()
    WHERE id=(p_payload->>'requestId')::uuid AND order_id=o.id AND status='open' RETURNING id INTO request_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'CUSTOMER_CHANGE_CONFLICT' USING ERRCODE='40001'; END IF;
  END IF;
- IF (effect IN ('edit','move','request_cancel','request_move','withdraw') OR p_preview->'partial'='true'::jsonb) AND (SELECT state FROM eshop.orders WHERE id=o.id)<>'storno' THEN
+ IF (effect IN ('request_cancel','withdraw') OR p_preview->'partial'='true'::jsonb) AND (SELECT state FROM eshop.orders WHERE id=o.id)<>'storno' THEN
   PERFORM public.enqueue_order_email('TICKET_ORDER_UPDATE',jsonb_build_object('order_id',o.id),oc.organization,oc.id,oc.unit,now(),'customer-change:'||p_command);
  END IF;
  INSERT INTO eshop.customer_order_change_events(command_id,order_id,operation,outcome,request_id)
@@ -107,7 +87,7 @@ BEGIN
  IF p_action IS NULL OR p_action NOT IN ('challenge_context','challenge','resolve','preview','command') THEN RAISE invalid_parameter_value; END IF;
  IF p_action IN ('challenge_context','challenge') THEN
   parent:=public.customer_change_read_scope_internal(p_token,p_order);
-  PERFORM public.lock_customer_order_change_internal(parent.order_id,nullif(p_payload->>'targetFormId','')::bigint);
+  PERFORM public.lock_customer_order_change_internal(parent.order_id);
   parent:=public.customer_change_read_scope_internal(p_token,p_order);
   SELECT * INTO STRICT o FROM eshop.orders WHERE id=parent.order_id;
   SELECT * INTO STRICT oc FROM public.occasions WHERE id=o.occasion;
@@ -145,7 +125,7 @@ BEGIN
   RETURN jsonb_build_object('code',200,'orderId',cap.order_id,'operation',cap.operation,
     'source',(SELECT sealed FROM eshop.customer_order_change_sources WHERE capability_id=cap.id));
  END IF;
- PERFORM public.lock_customer_order_change_internal(cap.order_id,nullif(p_payload->>'targetFormId','')::bigint);
+ PERFORM public.lock_customer_order_change_internal(cap.order_id);
  cap:=public.authorize_customer_change_internal(p_token,p_command);
  IF p_operation IS DISTINCT FROM cap.operation OR encode(extensions.digest(p_payload::text,'sha256'),'hex') IS DISTINCT FROM cap.proposal_hash THEN
   RAISE insufficient_privilege USING MESSAGE='INVALID_CAPABILITY'; END IF;

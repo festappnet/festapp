@@ -13,6 +13,7 @@ import 'package:fstapp/components/forms/views/customer_self_service_settings.dar
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:fstapp/widgets/time_data_range_picker.dart';
 
 import '../../support/fixtures/rights_context_fixture.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -81,6 +82,16 @@ void main() {
         );
         addTearDown(rights.dispose);
         final form = FormEditorDraft(id: 1, occasionId: 7);
+        if (enabled) {
+          form.definition = form.definition.copyWith(
+            customerSelfService: {
+              'policy': {
+                'move': {'enabled': true, 'targets': <dynamic>[]},
+              },
+            },
+          );
+        }
+        final originalPolicy = jsonEncode(form.definition.customerSelfService);
         await environment.pumpWidget(
           tester,
           MaterialApp(
@@ -103,7 +114,10 @@ void main() {
           findsOneWidget,
         );
         expect(form.customerPolicyDirty, isFalse);
-        expect(form.definition.customerSelfService, isNull);
+        expect(jsonEncode(form.definition.customerSelfService), originalPolicy);
+        expect(find.text('CustomerSelfService.move'), findsNothing);
+        expect(find.text('CustomerSelfService.termHelp'), findsNothing);
+        expect(find.byType(TimeDatePicker), findsNothing);
         if (!enabled) {
           await tester.tap(find.text('Customer self-service'));
           await tester.pumpAndSettle();
@@ -123,7 +137,13 @@ void main() {
           expect(policy['cancel']['enabled'], isTrue);
           expect(policy['cancel']['mode'], 'approval_required');
           expect(policy['cancel']['refund_mode'], 'none');
-          expect(policy['move']['enabled'], isFalse);
+          expect(policy.containsKey('move'), isFalse);
+          expect(find.byType(TimeDatePicker), findsOneWidget);
+          final deadline = tester.widget<TimeDatePicker>(
+            find.byType(TimeDatePicker),
+          );
+          expect(deadline.dateLabel, customerChangeText('deadlineDate'));
+          expect(deadline.timeLabel, customerChangeText('deadlineTime'));
           expect(
             find.text(customerChangeText('configuredHelp')),
             findsOneWidget,

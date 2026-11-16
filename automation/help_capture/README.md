@@ -154,8 +154,7 @@ In an isolated muted light browser session, open the locale's overview, choose
 cancellation, verify the required reason, send the verification email and open its
 actual anchor. Capture preview before explicitly submitting the request. Verify
 one pending request with the order still valid, then capture desktop and mobile.
-For moves, verify distinct configured target names alongside their dates and the
-product breakdown before confirmation. Do not claim a move from a preview alone.
+Confirm that no date-change action or term selector is offered.
 Respect the real minimum 60 seconds between challenge emails per IP and order,
 and maximum three per hour. Generic 202 deliberately does not prove mail enqueue.
 
