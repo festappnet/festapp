@@ -317,7 +317,11 @@ for (const locale of ['cs','en','sk','de','pl','uk']) {
   records.push({templateCode, scenario: 'standard', locale, tone,
    values: saleOpeningSubstitutions(locale, locale === 'cs' ? 'Podzimní ples' : locale === 'sk' ? 'Jesenný ples' : locale === 'de' ? 'Herbstball' : locale === 'pl' ? 'Bal jesienny' : locale === 'uk' ? 'Осінній бал' : 'Autumn ball',
     'https://example.invalid/form/preview',
-    'https://example.invalid/form/preview#sale_opening=unsubscribe&token=preview'), requiredLinks: []});
+    'https://example.invalid/form/preview#sale_opening=unsubscribe&token=preview'),
+   applicationContextTemplates: Object.fromEntries(Object.entries(saleOpeningSubstitutions(locale, '',
+    'https://example.invalid/form/preview',
+    'https://example.invalid/form/preview#sale_opening=unsubscribe&token=preview', {hasTickets: false})).filter(([code]) => code !== 'occasionTitle')),
+   requiredLinks: []});
   }
  }
 }
@@ -421,7 +425,7 @@ for (const record of records) {
   record.singleApplicationTemplates = contextualize({
     fullOrder: generateFullOrder(fixture.orderData, tickets.slice(0, 1),
       applicationFeatures, record.locale as "cs" | "en", fixture.orderSymbol),
-    changeOverview: zero ? "" : generateChangeOverview(singleChanges, record.locale as "cs" | "en"),
+    changeOverview: zero || !values.changeOverview ? "" : generateChangeOverview(singleChanges, record.locale as "cs" | "en"),
   });
   record.singleApplicationDefaults = {
     preview_total: formatCurrency(zero ? 0 : 450),
