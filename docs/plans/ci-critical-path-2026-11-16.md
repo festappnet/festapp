@@ -131,4 +131,8 @@ These are individual samples on shared GitHub runners, not controlled averages.
 
 Partial-run input ownership and tool provisioning now avoid unrelated work; a
 new affected-change hosted sample is still needed to quantify that benefit.
-Final source after removing the rejected cache requires fresh canonical checks.
+After removing the rejected cache, clean source `f92ffc5f6` passed the affected
+canonical image + Wix mirror (eight units), complete=true and
+inputsUnchanged=true: `20261116T193514-7945f9afa6f2`. All nine installed CMS cases
+passed; CMS was 123.2 s and the combined local mirror 155.1 s. Hosted validation
+for the final published source remains a separate gate.
