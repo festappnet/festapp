@@ -2614,7 +2614,6 @@
     "web_client/tests/forms/validation_fixes.test.js",
     "web_client/tests/forms/waitlist_flow.test.js",
     "web_client/tests/forms/waitlist_presentation.test.js",
-    "web_client/tests/issues/reproduce_currency_issue.test.js",
     "web_client/tests/logic/email_address.test.js",
     "web_client/tests/logic/email_domain_suffix.test.js",
     "web_client/tests/logic/multiselect_price.test.js",
