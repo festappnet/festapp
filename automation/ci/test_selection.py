@@ -211,7 +211,9 @@ class ReusePolicyTest(unittest.TestCase):
                 if not self.checkout_available: raise ValueError('foreign base')
                 return b''
             raise AssertionError(args)
-        with patch.object(selection,'git',side_effect=git), \
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(selection.Path,'home',return_value=Path(directory)), \
+             patch.object(selection,'git',side_effect=git), \
              patch.object(selection,'ensure_commit'), \
              patch.object(selection,'definition',side_effect=definition or (lambda *args:'trusted')), \
              patch.object(selection,'fingerprint',side_effect=fingerprint or (lambda *args:'same-inputs')), \
