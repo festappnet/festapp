@@ -47,6 +47,21 @@ invalidate MCP proofs; standalone checkout UI changes do not.
 The existing immutable receipt includes repository ID, workflow definition digest,
 run/job ID and attempt, event, actual checkout SHA/tree, lane input digest,
 runner image/architecture, declared tool versions and full scenario inventory.
+
+Host `ImageVersion` remains in the audit receipt, while compatibility compares
+the OS family (`ImageOS`), operating system, CPU architecture and every declared
+runtime version exactly. Different opaque builds of the same compatible host
+image do not invalidate identical source inputs. Missing/malformed image metadata,
+a different OS/CPU or different Node/Python/pnpm still requires execution. SDK,
+browser and database image pins remain covered by the source and lockfile digests.
+
+Functional CMS and backend units project only known, canonical application
+version stamps: the web package's version field, the generated version export
+and the HTML build-version assignment where declared. Every other byte, package
+dependency/script/exports order, file mode and path stays an input. Unknown
+formats fall back to raw bytes. Startup and browser checkout keep raw version
+inputs and verify the new generation. The image-health preflight has explicit
+image/deploy-contract owners rather than the unknown-path fallback to every lane.
 Schema 2 records each unit's input digest, PASS and `executed`/`reused` state. Reused rows retain the original run/attempt/job, source and immutable artifact digest. Only directly executed rows from a complete, clean, unchanged aggregate can supply evidence. Lane-only/schema-1 artifacts never become unit evidence. Local and legacy receipts cannot attest
 hosted execution.
 

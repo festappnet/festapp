@@ -124,6 +124,33 @@ Naměřený součet RSS procesů přípravy byl 632 MiB, kontraktů 912 MiB.
 Navazující rezervace plánovače proto mají 768 a 1024 MiB; celkový rozpočet
 3500 MiB ani dva DB sloty se nezvyšují. Tato korekce mění jen plánování CI.
 
+## Zpřesnění skutečných vstupů po kontrole celkových časů
+
+Časy celého checkout jobu 306 s, 299 s a 395 s nepotvrzovaly stabilní
+zrychlení celého CI. Dílčí zrychlení MCP se nesmí vydávat za kratší celkové
+čekání. Main `6633f0802` navíc potřeboval po změně samotného produceru novou
+úplnou baseline; všech osm jobs prošlo, ale checkout trval 410 s.
+
+Audit nav/ticket receipts `4c2293b5a` proti `5ad637d2b` potvrdil identické
+jednotkové vstupy, Node 22.23.4 a Python 3.14.4. Celé sady znovu spustila
+pouze odlišná hodnota host `ImageVersion` (`20261111.196.1` proti
+`20261111.82.6`). Ta je nově auditní metadata; OS rodina, architektura a
+připnuté runtime verze se nadále musí shodovat. Chybějící metadata nejsou důkaz.
+
+Replay skutečného UI diffu `5ad637d2b..f3aa2dda0` odhalil další falešné
+závislosti CMS/MCP: verzi web package, dva generované version stamps a
+nepřiřazený `automation/verify_image_service.mjs`. Nové projekce ignorují jen
+známou číselnou verzi a zachovávají ostatní bajty, pořadí package exports,
+režim souboru i cestu. Startup a browser checkout používají původní raw vstupy.
+Kontrola obrázků nyní patří image-contract a web-startup. Replay po opravě
+potvrdil shodné CMS/MCP fingerprinty přes tento reálný UI diff; nejde zatím
+o měření kratšího hosted času. Nová sdílená MCP connection CSS zůstává explicitním
+vstupem MCP skupin. Negativní testy hlídají změny kódu, závislostí i OS/runtime.
+
+Po publikaci této koherentní změny musí vzniknout jedna čerstvá baseline.
+Následný obyčejný commit záznamu měření se stejnými implementačními vstupy
+ověří skutečné převzetí výsledků v GitHubu a celkové čekání na osm zelených jobs.
+
 ## Baseline
 
 [Uložený vzorek](ci-efficiency-baseline-2026-11-16.json) vznikl read-only
