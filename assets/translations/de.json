@@ -1148,6 +1148,10 @@
     "importFailed": "Bild- oder Zwischenablage-Import fehlgeschlagen. Der Entwurf bleibt erhalten."
   },
   "TicketLayout": {
+    "alwaysVisible": "Immer sichtbar - dieses Element kann nicht ausgeblendet werden",
+    "hideElement": "Element ausblenden",
+    "showElement": "Element anzeigen",
+    "settings": "Ticketeinstellungen",
     "style_silk_light": "Seide - hell",
     "style_silk_dark": "Seide - dunkel",
     "style_concert_stub": "Konzert · Kontrollabschnitt",

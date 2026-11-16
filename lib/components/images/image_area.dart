@@ -1,5 +1,6 @@
 import 'package:fstapp/services/import_file.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/images/image_url_helper.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/theme_config.dart';
@@ -134,49 +135,54 @@ class _ImageAreaState extends State<ImageArea> {
 
     // If we have a URL (either initial or newly uploaded), show it
     if (_currentUrl != null && _currentUrl!.isNotEmpty) {
+      final colors = Theme.of(context).colorScheme;
       return Stack(
         clipBehavior: Clip.none,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: widget.preview ?? Image.network(
-              ImageUrlHelper.transformImageUrl(_currentUrl!, width: ImageUrlHelper.mediumWidth),
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.broken_image, size: 40, color: ThemeConfig.grey600(context)),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Failed to load image',
-                          style: TextStyle(color: ThemeConfig.grey600(context)),
-                        ),
-                      ],
+          // Keep the action clear of the image, including custom crop previews.
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: 56),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: widget.preview ?? Image.network(
+                ImageUrlHelper.transformImageUrl(_currentUrl!, width: ImageUrlHelper.mediumWidth),
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return SizedBox(
+                    height: 200,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.broken_image, size: 40, color: ThemeConfig.grey600(context)),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Failed to load image',
+                            style: TextStyle(color: ThemeConfig.grey600(context)),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
-          Positioned(
+          PositionedDirectional(
             top: 0,
-            right: 0,
-            child: IconButton(
-              icon: Icon(Icons.close, color: ThemeConfig.redColor(context)),
-              // Set onPressed to null to disable the button
-              onPressed: widget.enabled
-                  ? () {
-                      widget.onRemove();
-                    }
-                  : null,
-              padding: const EdgeInsets.all(4),
-              constraints: const BoxConstraints(),
+            end: 0,
+            child: IconButton.filled(
+              tooltip: CommonStrings.delete,
+              icon: const Icon(Icons.delete_outline),
+              onPressed: widget.enabled ? widget.onRemove : null,
+              style: IconButton.styleFrom(
+                backgroundColor: colors.errorContainer,
+                foregroundColor: colors.onErrorContainer,
+                minimumSize: const Size(48, 48),
+                maximumSize: const Size(48, 48),
+              ),
             ),
           ),
         ],

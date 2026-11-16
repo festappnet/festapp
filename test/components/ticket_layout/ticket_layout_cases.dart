@@ -3732,11 +3732,29 @@ void main() {
       await tester.pump();
       expect(c.selectedIds, {'occasionTitle'});
       for (final binding in ['qr', 'ticketSymbol']) {
-        final button = find.descendant(
-          of: find.widgetWithText(ListTile, 'TicketLayout.$binding'.tr()),
-          matching: find.byType(IconButton),
+        final row = find.widgetWithText(ListTile, 'TicketLayout.$binding'.tr());
+        expect(
+          find.descendant(of: row, matching: find.byType(IconButton)),
+          findsNothing,
         );
-        expect(tester.widget<IconButton>(button).onPressed, isNull);
+        expect(
+          find.descendant(
+            of: row,
+            matching: find.byTooltip('TicketLayout.alwaysVisible'.tr()),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: row,
+            matching: find.byIcon(Icons.visibility_outlined),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: row, matching: find.byIcon(Icons.lock)),
+          findsOneWidget,
+        );
       }
     },
   );

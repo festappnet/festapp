@@ -1150,6 +1150,10 @@
     "importFailed": "Import obrazu lub schowka nie powiódł się. Szkic został zachowany."
   },
   "TicketLayout": {
+    "alwaysVisible": "Zawsze widoczny - tego elementu nie można ukryć",
+    "hideElement": "Ukryj element",
+    "showElement": "Pokaż element",
+    "settings": "Ustawienia biletów",
     "style_silk_light": "Jedwab - jasny",
     "style_silk_dark": "Jedwab - ciemny",
     "style_concert_stub": "Koncert · odcinek kontrolny",

@@ -2,6 +2,8 @@ import '../ticket_layout/ticket_layout_service.dart';
 import 'occasion_features_controller.dart';
 import 'occasion_settings_layout.dart';
 import 'occasion_settings_io.dart';
+import '../navigation/route_visibility.dart';
+import '../navigation/routed_day_tabs.dart';
 import 'occasion_timezone_field.dart';
 import '../blueprint/seating_strings.dart';
 
@@ -76,6 +78,8 @@ class OccasionSettingsTab extends StatefulWidget {
 class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   late final HtmlSaveCoordinator _htmlSave;
   OccasionFeaturesController _featuresController = OccasionFeaturesController();
+  StackRouter? _routeRouter;
+  bool _revealingFeature = false;
   late OccasionSettingsLayoutController _layoutController;
   int _generation = 0;
   bool _hasValidationErrors = false;
@@ -154,6 +158,11 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final root = context.router.root;
+    if (_routeRouter != root) {
+      _routeRouter?.removeListener(_routeChanged);
+      _routeRouter = root..addListener(_routeChanged);
+    }
     final link = context.routeData.inheritedPathParams.optString(
       AppRouter.linkFormatted,
     );
@@ -161,10 +170,37 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
       occasionLink = link;
       _loadData();
     }
+    _routeChanged();
+  }
+
+  void _routeChanged() => WidgetsBinding.instance.addPostFrameCallback(
+    (_) => _revealRequestedFeature(),
+  );
+
+  void _revealRequestedFeature() {
+    if (!mounted ||
+        _isLoading ||
+        _revealingFeature ||
+        !isVisibleRouteInstance(context)) {
+      return;
+    }
+    final code = _routeRouter?.urlState.uri.queryParameters['feature'];
+    if (code == null || _featuresController.onReveal == null) return;
+    _revealingFeature = true;
+    _featuresController.reveal(code);
+    unawaited(
+      DayRouteSelection.write(
+        context.router.root,
+        'feature',
+        null,
+        replace: true,
+      ).whenComplete(() => _revealingFeature = false),
+    );
   }
 
   @override
   void dispose() {
+    _routeRouter?.removeListener(_routeChanged);
     _draftRevision.dispose();
     _timezoneExpansion.dispose();
     if (widget.htmlSave == null) _htmlSave.dispose();
@@ -208,6 +244,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
             _layoutController.reveal(widget.initialChapter);
           }
           _draftRevision.value++;
+          _revealRequestedFeature();
         });
         _isLoading = false;
       });

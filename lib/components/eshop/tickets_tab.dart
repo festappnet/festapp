@@ -1,5 +1,8 @@
 import 'ticket_cancellation_updates.dart';
 
+import 'package:fstapp/components/ticket_layout/ticket_layout_strings.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action_confirmation.dart';
@@ -7,6 +10,7 @@ import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
@@ -126,6 +130,22 @@ class _TicketsTabState extends State<TicketsTab> {
             action: (SingleDataGridController singleDataGrid, [_]) =>
                 _scanTickets(singleDataGrid),
             isEnabled: RightsService.canUpdateOrders,
+          ),
+        if (FeatureService.isFeatureEnabled(FeatureConstants.ticket) &&
+            RightsService.hasCapability(
+              AuthorizationCapabilities.navigationOccasionSettings,
+            ))
+          DataGridAction(
+            name: TicketLayoutStrings.settings,
+            requiresSelection: false,
+            isEnabled: () => RightsService.hasCapability(
+              AuthorizationCapabilities.navigationOccasionSettings,
+            ),
+            action: (_, [originalAction]) => context.tabsRouter.navigate(
+              const SettingsSectionRoute().copyWith(
+                queryParams: {'feature': FeatureConstants.ticket},
+              ),
+            ),
           ),
       ],
       columns: EshopColumns.generateColumns(

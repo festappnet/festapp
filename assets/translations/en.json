@@ -2984,6 +2984,10 @@
     "dayChanges": "{day}: {count} changes"
   },
   "TicketLayout": {
+    "alwaysVisible": "Always visible - this element cannot be hidden",
+    "hideElement": "Hide element",
+    "showElement": "Show element",
+    "settings": "Ticket settings",
     "style_concert_stub": "Concert · admission stub",
     "style_ball_silk": "Ball · silk invitation",
     "style_festival_poster": "Festival · mini poster",

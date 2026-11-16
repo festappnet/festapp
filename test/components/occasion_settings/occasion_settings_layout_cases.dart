@@ -12,6 +12,9 @@ import 'package:fstapp/components/html/rich_html_editor.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_layout.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
+import 'package:fstapp/components/navigation/root_route_navigation.dart';
+import 'package:fstapp/components/ticket_layout/ticket_layout_strings.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
@@ -31,6 +34,44 @@ void main() {
     );
     await TimeHelper.initializeTimeZone();
   });
+
+  testWidgetsWithEnvironment(
+    () => environment,
+    'ticket settings shortcut opens existing modal and can be used repeatedly',
+    (tester) async {
+      final rights = RightsContextFixture();
+      addTearDown(rights.dispose);
+      final fixture = OccasionSettingsFixture();
+      fixture.installRights();
+      final router = OccasionSettingsFixtureRouter(fixture);
+      addTearDown(router.dispose);
+      const target = '/ples-u-lipy/settings?feature=ticket';
+      await environment.pumpWidget(
+        tester,
+        MaterialApp.router(
+          builder: DependencyMaterialBridge.builder,
+          routerConfig: router.config(
+            deepLinkBuilder: (_) => DeepLink.path(target),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsOneWidget);
+      expect(find.byType(TicketSettings), findsOneWidget);
+      expect(router.urlState.uri.queryParameters['feature'], isNull);
+      final edit = find.widgetWithText(FilledButton, TicketLayoutStrings.edit);
+      expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
+      tester.widget<AppDialog>(find.byType(AppDialog)).onClose!();
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsNothing);
+      await router.navigate(rootRouteForPath(router, target));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsOneWidget);
+      expect(find.byType(TicketSettings), findsOneWidget);
+      expect(fixture.saves, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgetsWithEnvironment(
     () => environment,

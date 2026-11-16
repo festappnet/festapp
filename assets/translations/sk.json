@@ -1167,6 +1167,10 @@
     "importFailed": "Import obrázka alebo schránky zlyhal. Rozpracovaný obsah zostal zachovaný."
   },
   "TicketLayout": {
+    "alwaysVisible": "Vždy viditeľné - tento prvok nemožno skryť",
+    "hideElement": "Skryť prvok",
+    "showElement": "Zobraziť prvok",
+    "settings": "Nastavenia vstupeniek",
     "style_silk_light": "Hodváb - svetlý",
     "style_silk_dark": "Hodváb - tmavý",
     "style_concert_stub": "Koncert · kontrolný ústrižok",

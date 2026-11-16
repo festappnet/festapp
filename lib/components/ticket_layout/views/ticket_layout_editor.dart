@@ -736,20 +736,43 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
                             TicketLayoutStrings.noExample,
                       )
                     : null,
-                leading: Semantics(
-                  toggled: e.visible,
-                  child: IconButton(
-                    tooltip: TicketLayoutStrings.visible,
-                    icon: Icon(
-                      e.visible ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: ['qr', 'ticketSymbol'].contains(e.binding)
-                        ? null
-                        : () => controller.change(
+                leading: ['qr', 'ticketSymbol'].contains(e.binding)
+                    ? Tooltip(
+                        message: TicketLayoutStrings.alwaysVisible,
+                        child: SizedBox.square(
+                          dimension: 48,
+                          child: Center(
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                const Icon(Icons.visibility_outlined),
+                                PositionedDirectional(
+                                  end: -4,
+                                  bottom: -4,
+                                  child: ColoredBox(
+                                    color: Theme.of(c).colorScheme.surface,
+                                    child: const Icon(Icons.lock, size: 12),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    : Semantics(
+                        toggled: e.visible,
+                        child: IconButton(
+                          tooltip: e.visible
+                              ? TicketLayoutStrings.hideElement
+                              : TicketLayoutStrings.showElement,
+                          icon: Icon(
+                            e.visible ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: () => controller.change(
                             e.copyWith(visible: !e.visible),
                           ),
-                  ),
-                ),
+                        ),
+                      ),
                 trailing: e.locked ? const Icon(Icons.lock, size: 16) : null,
                 onTap: () {
                   if (editCanvas || editBackground) {

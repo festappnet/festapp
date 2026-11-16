@@ -264,6 +264,9 @@ class TicketLayoutProperties extends StatelessWidget {
                   SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(TicketLayoutStrings.visible),
+                      subtitle: ['qr', 'ticketSymbol'].contains(e.binding)
+                          ? Text(TicketLayoutStrings.alwaysVisible)
+                          : null,
                       value: e.visible,
                       onChanged: ['qr', 'ticketSymbol'].contains(e.binding)
                           ? null

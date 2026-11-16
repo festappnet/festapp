@@ -2986,6 +2986,10 @@
     "dayChanges": "{day}: {count} změn"
   },
   "TicketLayout": {
+    "alwaysVisible": "Vždy viditelné - tento prvek nelze skrýt",
+    "hideElement": "Skrýt prvek",
+    "showElement": "Zobrazit prvek",
+    "settings": "Nastavení vstupenek",
     "style_concert_stub": "Koncert · kontrolní útržek",
     "style_ball_silk": "Ples · hedvábná pozvánka",
     "style_festival_poster": "Festival · malý plakát",

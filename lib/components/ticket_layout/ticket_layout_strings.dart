@@ -145,6 +145,10 @@ class TicketLayoutStrings {
   static String get fontFamily => 'TicketLayout.fontFamily'.tr();
   static String get fontSize => 'TicketLayout.fontSize'.tr();
   static String get visible => 'TicketLayout.visible'.tr();
+  static String get alwaysVisible => 'TicketLayout.alwaysVisible'.tr();
+  static String get hideElement => 'TicketLayout.hideElement'.tr();
+  static String get showElement => 'TicketLayout.showElement'.tr();
+  static String get settings => 'TicketLayout.settings'.tr();
   static String get locked => 'TicketLayout.locked'.tr();
   static String get align => 'TicketLayout.align'.tr();
   static String get left => 'TicketLayout.left'.tr();
@@ -172,5 +176,6 @@ class TicketLayoutStrings {
   static String get orderName => 'TicketLayout.orderName'.tr();
   static String get logo => 'TicketLayout.logo'.tr();
   static String get footer => 'TicketLayout.footer'.tr();
-  static String binding(String value) => 'TicketLayout.${value == 'footer' ? 'text' : value}'.tr();
+  static String binding(String value) =>
+      'TicketLayout.${value == 'footer' ? 'text' : value}'.tr();
 }
