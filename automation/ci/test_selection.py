@@ -60,6 +60,16 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
             self.assertNotIn(backend,units)
             self.assertIn(backend,selection.unit_owners('database/functions/eshop/finalize_ticket_order.sql','seat-checkout',CONTRACT))
 
+    def test_mcp_database_groups_follow_backend_inputs_without_checkout_ui(self):
+        lane='seat-checkout'
+        groups={'seat-mcp-authorization','seat-mcp-contracts'}
+        self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
+        for path in ['database/functions/eshop/finalize_ticket_order.sql',
+                     'tools/festapp/src/operations.mjs',
+                     'tools/festapp/scripts/test-postgres.mjs',
+                     'database/tests/helpers/authorization_context_reference.sql']:
+            self.assertTrue(groups.issubset(selection.unit_owners(path,lane,CONTRACT)),path)
+
 
 class ScopedPolicyTest(unittest.TestCase):
     def test_registered_test_in_another_lane_does_not_invalidate_cms(self):

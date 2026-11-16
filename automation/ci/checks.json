@@ -185,9 +185,12 @@
       "node": "22.23.4",
       "steps": [
         "seat-install",
+        "seat-mcp-prepare",
         "seat-upgrade",
         "seat-runtime-contract",
         "seat-database",
+        "seat-mcp-authorization",
+        "seat-mcp-contracts",
         "occasion-lifecycle",
         "seat-authorization",
         "seat-google-auth",
@@ -370,7 +373,10 @@
         "seat-payments",
         "seat-orders",
         "seat-delivery",
-        "seat-services"
+        "seat-services",
+        "seat-mcp-prepare",
+        "seat-mcp-authorization",
+        "seat-mcp-contracts"
       ],
       "resources": {
         "ramMiB": 256
@@ -460,6 +466,32 @@
         "web_client/.npmrc"
       ]
     },
+    "seat-mcp-prepare": {
+      "script": "python3 automation/ci/run.py install tools/festapp\npnpm --dir tools/festapp run pretest:postgres\npnpm --dir tools/festapp exec node --test test/postgres-selection.test.mjs\n",
+      "after": [
+        "seat-install",
+        "mcp-auth-contract"
+      ],
+      "requires": [
+        "seat-install"
+      ],
+      "resources": {
+        "ramMiB": 256,
+        "sourceGeneration": 1
+      },
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/**",
+        "tools/festapp/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/tests/database/**",
+        "packages/festapp_contracts/**",
+        "assets/**",
+        "test/fixtures/**"
+      ]
+    },
     "seat-database": {
       "script": "python3 automation/ci/run.py inventory\npython3 automation/local_db/runtime.py prepare\n\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\n",
       "after": [
@@ -492,8 +524,54 @@
         "seat-install"
       ]
     },
+    "seat-mcp-authorization": {
+      "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs authorization\n",
+      "after": [
+        "seat-database",
+        "seat-mcp-prepare"
+      ],
+      "resources": {
+        "ramMiB": 900,
+        "dbCluster": 1
+      },
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/**",
+        "tools/festapp/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/tests/database/**",
+        "packages/festapp_contracts/**",
+        "assets/**",
+        "test/fixtures/**"
+      ]
+    },
+    "seat-mcp-contracts": {
+      "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts\n",
+      "after": [
+        "seat-database",
+        "seat-mcp-prepare"
+      ],
+      "resources": {
+        "ramMiB": 900,
+        "dbCluster": 1
+      },
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/**",
+        "tools/festapp/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/tests/database/**",
+        "packages/festapp_contracts/**",
+        "assets/**",
+        "test/fixtures/**"
+      ]
+    },
     "seat-services": {
-      "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp run test:postgres\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
+      "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
       "after": [
         "seat-database"
       ],
@@ -512,7 +590,8 @@
         "web_client/scripts/**",
         "web_client/package.json",
         "web_client/pnpm*",
-        "tools/festapp/**",
+        "tools/festapp/test/postgres-guard.test.mjs",
+        "tools/festapp/test/postgres.mjs",
         "packages/festapp_contracts/**",
         "assets/translations/**",
         "database/tests/performance/sale_status_product_scope.sql",
@@ -1193,7 +1272,9 @@
     "seat-payments",
     "seat-orders",
     "seat-delivery",
-    "seat-services"
+    "seat-services",
+    "seat-mcp-authorization",
+    "seat-mcp-contracts"
   ],
   "sqlInventory": {
     "knownTests": [
@@ -2534,6 +2615,7 @@
     "tools/festapp/test/organizer-postgres.test.mjs",
     "tools/festapp/test/people-postgres.test.mjs",
     "tools/festapp/test/postgres-guard.test.mjs",
+    "tools/festapp/test/postgres-selection.test.mjs",
     "tools/festapp/test/process-lock.test.mjs",
     "tools/festapp/test/product-options-postgres.test.mjs",
     "tools/festapp/test/product-waves-postgres.test.mjs",

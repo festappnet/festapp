@@ -107,10 +107,13 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual(runner.CONTRACT['steps']['mcp-auth-install']['after'], [])
         for name, lane in runner.CONTRACT['jobs'].items():
             for unit in lane['steps']:
-                # Wix already serializes the local mirror's shared package install;
-                # hosted jobs have isolated worktrees. New ownership must stay local.
-                if unit != 'wix-install':
+                # Serialize shared installs/API generation in the local mirror.
+                # Hosted jobs filter dependencies to their isolated worktree.
+                if unit not in ('wix-install','seat-mcp-prepare'):
                     self.assertTrue(set(runner.CONTRACT['steps'][unit]['after']) <= set(lane['steps']))
+        self.assertIn('mcp-auth-contract',runner.CONTRACT['steps']['seat-mcp-prepare']['after'])
+        for unit in ('seat-mcp-authorization','seat-mcp-contracts'):
+            self.assertIn(unit,runner.CONTRACT['steps']['wix-install']['after'])
         for entrypoint in ('automation/cloudflare_build.sh','automation/ci_build.sh'):
             self.assertIn('automation/build_web_bundle.sh',(ROOT/entrypoint).read_text())
         builder=(ROOT/'automation/build_web_bundle.sh').read_text()

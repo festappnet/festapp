@@ -33,6 +33,17 @@ artifact instead of repeating that source suite.
 
 ## Direct execution evidence
 
+MCP PostgreSQL tests use two independent leased databases: the canonical
+authorization matrix and the remaining contracts. Files within each group stay
+serial because fixtures may commit, analyze tables or replace functions.
+`seat-mcp-prepare` installs dependencies, prepares immutable API contracts once
+and verifies the dynamic partition covers every `*-postgres.test.mjs` file.
+The ordinary `test:postgres` command still runs the complete suite. Both CI
+groups retain the marked-database and paused-delivery guard, and each claims one
+of the existing two DB slots. API generation finishes before either consumer;
+the local mirror also waits for the server-policy API writer. Backend changes
+invalidate MCP proofs; standalone checkout UI changes do not.
+
 The existing immutable receipt includes repository ID, workflow definition digest,
 run/job ID and attempt, event, actual checkout SHA/tree, lane input digest,
 runner image/architecture, declared tool versions and full scenario inventory.

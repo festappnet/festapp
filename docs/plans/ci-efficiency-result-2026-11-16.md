@@ -80,6 +80,35 @@ browser checkout trval 5,36 s, tedy netvoří hlavní čekání. Kompletní DAG 
 tento receipt. Další optimalizace této servisní sady musí zachovat izolaci
 DB a skutečné integrační testy; nejde bez důkazu zvýšit souběh nad stejnými daty.
 
+## Izolovaný souběh MCP databázových testů
+
+Další audit našel 280-testový MCP PostgreSQL blok uvnitř `seat-services`.
+Pokus s připraveným dotazem nezrychlil autorizační matici dostatečně, proto
+zůstal původní test všech 2048 kombinací zcela beze změny.
+
+MCP nyní tvoří dvě jednotky se samostatnými runtime leases a jedním DB slotem:
+`seat-mcp-authorization` (24 testů) a `seat-mcp-contracts` (256 testů).
+Uvnitř každé databáze zůstávají soubory sériové. Společná příprava v
+`seat-mcp-prepare` generuje API podklady jednou, mimo běžící testy. Guard pro
+vlastněnou lokální databázi, vypnutý cron a pozastavené doručování zůstává v
+obou skupinách. Dva stávající DB sloty a RAM limity se nezvyšují.
+
+Na stejném Macu, Node 22.23.4 a schématu main `c3b23c1aa` trval celý
+původní sériový MCP blok 81,79 s; okno obou nových skupin 45,87 s (-44 %).
+Všech 280 testů prošlo, nula skip/fail. Receipt
+`20261116T144031-2b9b0d341a13` dokládá různé databáze obou skupin,
+`complete:true` a `inputsUnchanged:true`. Zbylá `seat-services` měla 18,41 s.
+Tento cílený mirror potvrdil server-policy, seat-checkout, web-startup i Wix.
+Ostatní čtyři lanes prošly v předchozím mirroru; prvotní blokaci způsoboval
+starý odvozený MCP dokumentační otisk po změně package příkazu a byl opraven
+kanonickým generátorem. Cache a zatížení mohou naměřené časy ovlivnit.
+
+Dynamické rozdělení i jeho test hlídají úplnost a jedinečnost všech souborů
+`*-postgres.test.mjs`; nový soubor automaticky přibude do kontraktů. Běžný
+`pnpm --dir tools/festapp run test:postgres` nadále spouští celou sadu.
+Samotná změna UI checkoutu již nemá MCP databázové jednotky mezi vlastníky;
+změna backendu, fixture nebo MCP implementace je stále invaliduje.
+
 ## Baseline
 
 [Uložený vzorek](ci-efficiency-baseline-2026-11-16.json) vznikl read-only
