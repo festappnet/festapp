@@ -1,5 +1,6 @@
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
+import {stripVTControlCharacters} from 'node:util';
 
 const repository = 'festappnet/festapp';
 const day = 86400000;
@@ -13,6 +14,23 @@ const consumerPaths = new Set([...producerPaths,
   '.github/workflows/android-production.yml',
   '.github/workflows/google-play-gateway.yml',
 ]);
+
+export function readJobLog(jobId, execute = execFileSync) {
+  const endpoint = `repos/${repository}/actions/jobs/${jobId}/logs`;
+  // Job logs are captured as data, never emitted to a terminal. Newer gh
+  // versions require explicit consent even with piped stdout; older versions
+  // do not support the flag. Only this exact read-only rejection is retried.
+  const options = {maxBuffer: 32 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe']};
+  let output;
+  try {
+    output = execute('gh', ['api', endpoint], options);
+  } catch (error) {
+    if (error.status !== 1 || error.stderr?.toString().trim() !==
+        'the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway') throw error;
+    output = execute('gh', ['api', '--allow-escape-sequences', endpoint], options);
+  }
+  return stripVTControlCharacters(output.toString());
+}
 
 // A successful publication includes exact candidate verification and Play readback.
 // Read trusted action inputs, never truncated matrix job names or arbitrary output.
@@ -131,7 +149,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
         if (run.head_branch !== 'main' || run.path !== '.github/workflows/android-production.yml') continue;
         for (const job of list(`actions/runs/${run.id}/jobs?per_page=100`, 'jobs')) {
           if (job.conclusion !== 'success' || ![...tenants].some(t => job.name.startsWith(`publish (${t}, prod/${t}, `))) continue;
-          const receipt = publicationFromJob(run, job, gh([`repos/${repository}/actions/jobs/${job.id}/logs`]).toString());
+          const receipt = publicationFromJob(run, job, readJobLog(job.id));
           if (receipt) published.push(receipt);
         }
       }
