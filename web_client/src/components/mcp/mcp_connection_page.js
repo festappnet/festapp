@@ -202,10 +202,10 @@ export class McpConnectionPage {
             parent.appendChild(element);
             return element;
         };
-        const button = (key, action, disabled = false) => {
-            const element = add('button', this.text(key));
+        const button = (key, action, disabled = false, parent = root) => {
+            const element = add('button', this.text(key), parent);
             element.type = 'button';
-            if (key === 'approve' || key === 'login' || key === 'closeWindow') element.dataset.primary = '';
+            if (key === 'approve' || key === 'connecting' || key === 'login' || key === 'closeWindow') element.dataset.primary = '';
             element.disabled = this.busy || disabled;
             element.addEventListener('click', action);
             return element;
@@ -222,21 +222,34 @@ export class McpConnectionPage {
         }
         add('h1', this.text(this.state === 'connected' ? 'connected' : 'heading'));
         if (this.state === 'consent') {
-            add('h2', this.details.client);
-            if(this.details.api){add('p',`API: ${this.details.api.resource}`);add('p',`Data: ${this.details.api.dataProfile}`);}
+            const identity = add('header', '');
+            identity.className = 'mcp-identity';
+            add('h2', this.details.client, identity);
+            if (this.details.api) {
+                const api = add('div', '', identity);
+                api.className = 'mcp-api-disclosure';
+                add('p', `API: ${this.details.api.resource}`, api);
+                add('p', `Data: ${this.details.api.dataProfile}`, api);
+            }
             if (this.details.regionalPortal) {
                 const { name: portal, platform } = this.details.regionalPortal;
-                add('p', this.text('regionalPlatform', { portal, platform }));
+                add('p', this.text('regionalPlatform', { portal, platform }), identity);
             }
-            add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '');
+            add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '', identity).className = 'connection-identity';
+            const settings = add('div', '');
+            settings.className = 'mcp-settings';
             if (this.details.requestedPermissions?.length || this.details.canRequestCreate) {
-                const label = add('label', this.text('permissionMode'));
+                const permissionSettings = add('div', '', settings);
+                const label = add('label', this.text('permissionMode'), permissionSettings);
                 const mode = add('select', '', label); mode.name = 'permissionMode'; mode.disabled = this.busy;
                 for (const value of MCP_CONSENT_MODES) {
                     const option = add('option', this.text(`permissionMode_${value}`), mode);
                     option.value = value; option.selected = this.permissionMode === value;
                 }
-                add('p', this.text(`permissionHint_${this.permissionMode}`));
+                const hint = add('p', this.text(`permissionHint_${this.permissionMode}`), permissionSettings);
+                hint.id = 'mcp-permission-hint';
+                hint.className = 'mcp-field-hint';
+                mode.setAttribute('aria-describedby', hint.id);
                 mode.addEventListener('change', () => {
                     this.permissionMode = mode.value; this.render();
                     this.container.querySelector('[name="permissionMode"]')?.focus();
@@ -244,7 +257,9 @@ export class McpConnectionPage {
             }
             if (this.connection) {
                 const choices = this.details.connections;
-                const durationLabel = add('label', this.text('durationLabel'));
+                const durationSettings = add('div', '', settings);
+                durationSettings.className = 'mcp-duration';
+                const durationLabel = add('label', this.text('durationLabel'), durationSettings);
                 const duration = add('select', '', durationLabel); duration.name = 'durationDays'; duration.disabled = this.busy;
                 for (const days of CONNECTION_DURATION_DAYS.filter(days=>days<=(this.details.maxConsentDays??365))) {
                     const option = add('option', this.text(`duration${days}`), duration); option.value = String(days);
@@ -254,15 +269,20 @@ export class McpConnectionPage {
                     this.connection.durationDays = Number(duration.value); this.render();
                     this.container.querySelector('[name="durationDays"]')?.focus();
                 });
-                add('p', this.text('consentDeadline', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(consentDeadline(this.connection.durationDays))) }));
-                add('p', this.text('idleDurationHint', { days: CONNECTION_IDLE_SECONDS / DAY_SECONDS }));
-                if (this.connection.durationDays === 365) add('p', this.text('longDurationHint')).dataset.longDurationHint = '';
+                const durationHint = add('div', '', durationSettings);
+                durationHint.id = 'mcp-duration-hint';
+                durationHint.className = 'mcp-field-hint';
+                duration.setAttribute('aria-describedby', durationHint.id);
+                add('p', this.text('consentDeadline', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(consentDeadline(this.connection.durationDays))) }), durationHint);
+                add('p', this.text('idleDurationHint', { days: CONNECTION_IDLE_SECONDS / DAY_SECONDS }), durationHint);
+                if (this.connection.durationDays === 365) add('p', this.text('longDurationHint'), durationHint).dataset.longDurationHint = '';
 
                 const section = add('fieldset', ''); section.disabled = this.busy;
                 add('legend', this.text('connectionChoice'), section);
                 if (choices.length) {
                     for (const mode of ['replace', 'new']) {
                         const label = add('label', '', section);
+                        label.className = 'mcp-choice';
                         const radio = document.createElement('input'); radio.type = 'radio'; radio.name = 'connection-mode';
                         radio.value = mode; radio.checked = this.connection.mode === mode;
                         radio.addEventListener('change', () => {
@@ -290,6 +310,7 @@ export class McpConnectionPage {
                         // Show every target's scope before approval, using text nodes only.
                         for (const [index, c] of choices.entries()) {
                             const item = add('article', '', section);
+                            item.className = 'mcp-existing-connection';
                             add('h3', `${index + 1}. ${c.name || this.details.client}`, item);
                             add('p', this.text('connectionExpiry', { date: new Intl.DateTimeFormat(LocalizationService.currentLocale, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(c.expiresAt)) }), item);
                             for (const u of c.access.units) add('p', this.text(u.canCreateOccasions ? 'connectionOrganizerCreate' : 'connectionOrganizer', { id: u.unitId }), item);
@@ -307,13 +328,14 @@ export class McpConnectionPage {
                     const approve = root.querySelector('button[data-primary]'); if (approve) approve.disabled = this.busy || !this.canApprove;
                 });
             }
-            add('p', this.text('chooseScope'));
             const fieldset = add('fieldset', '');
             fieldset.disabled = this.busy;
             add('legend', this.text('choose'), fieldset);
+            add('p', this.text('chooseScope'), fieldset).className = 'mcp-scope-hint';
             const occasions = this.details.occasions;
             const checkbox = (title, checked, action, parent = fieldset) => {
                 const label = add('label', '', parent);
+                label.className = 'mcp-choice';
                 const input = document.createElement('input');
                 input.type = 'checkbox';
                 input.checked = checked;
@@ -414,8 +436,10 @@ export class McpConnectionPage {
             const selectionSummary = add('p', this.text(this.selectedUnits.size || this.selected.size ? 'selectionSummary' : 'selectionRequired', { organizers: this.selectedUnits.size, occasions: this.selected.size }));
             selectionSummary.className = 'mcp-selection-summary';
             add('p', this.text('duration', { appName: AppConfig.appName }));
-            button(this.busy ? 'connecting' : 'approve', () => this.finish('approve'), !this.canApprove);
-            button('cancel', () => this.finish('cancel'));
+            const actions = add('div', '');
+            actions.className = 'mcp-actions';
+            button(this.busy ? 'connecting' : 'approve', () => this.finish('approve'), !this.canApprove, actions);
+            button('cancel', () => this.finish('cancel'), false, actions);
         } else if (['mfaLogin', 'mfaApproval'].includes(this.state)) {
             add('p', this.text(this.state === 'mfaLogin' ? 'mfaLoginHint' : 'mfaApprovalHint'));
             const form = add('form', '');
@@ -482,7 +506,22 @@ export class McpConnectionPage {
         }
         const style = document.createElement('style');
         style.textContent = connectionPageStyles + `
-.mcp-connection h2{margin-block-start:24px}
+.mcp-identity{padding-bottom:24px;border-bottom:1px solid var(--connection-line)}
+.mcp-identity h2{margin:0;font-size:1.3rem}
+.mcp-api-disclosure{margin-top:12px;font-size:.875rem}
+.mcp-api-disclosure p{margin:2px 0}
+.mcp-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:28px;align-items:start}
+.mcp-settings:empty{display:none}
+.mcp-settings>div:only-child{grid-column:1/-1}
+.mcp-field-hint{font-size:.875rem;line-height:1.5;margin-top:8px!important}
+.mcp-field-hint p{margin:6px 0;line-height:1.5}
+.mcp-existing-connection{padding:12px 0;border-bottom:1px solid var(--connection-line)}
+.mcp-existing-connection h3{margin:0 0 8px}
+.mcp-existing-connection p{margin:4px 0;font-size:.875rem}
+.mcp-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+.mcp-actions button{margin:0}
+.mcp-scope-hint{margin:0 0 16px!important}
+
 .mcp-connected{max-width:640px}
 .mcp-success-mark{display:block;width:48px;height:48px;margin-bottom:20px;color:var(--connection-link);fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .mcp-connected button[data-primary]{margin-top:20px}
@@ -500,11 +539,16 @@ export class McpConnectionPage {
 .mcp-organizer label span{overflow-wrap:anywhere}
 .mcp-organizer-hint{margin:0 0 8px!important;padding-inline-start:34px;font-size:.875rem}
 .mcp-organizer-occasions{margin:12px 0 0 10px;padding-inline-start:20px;border-inline-start:1px solid var(--connection-line)}
-.mcp-connection fieldset{border:0;padding:0;margin:28px 0}
-.mcp-connection legend{font-weight:600;margin-bottom:16px}
-.mcp-connection label{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 0;cursor:pointer}
-.mcp-connection input:not([type=text]){width:22px;height:22px;flex-shrink:0;accent-color:var(--primary-color,#243858)}
-.mcp-connection input[type=text]{width:100%;padding:10px;font:inherit;box-sizing:border-box}
+.mcp-connection fieldset{min-width:0;border:0;padding:24px 0 0;margin:28px 0;border-top:1px solid var(--connection-line)}
+.mcp-connection legend{font-size:1.125rem;font-weight:600;padding:0 12px 0 0}
+.mcp-connection label{display:grid;gap:8px;min-width:0;margin:12px 0;font-weight:500;line-height:1.4}
+.mcp-settings label{margin-top:0}
+.mcp-connection label.mcp-choice{display:flex;align-items:center;gap:12px;min-height:44px;margin:0;padding:10px 0;cursor:pointer}
+.mcp-connection input[type=checkbox],.mcp-connection input[type=radio]{width:22px;height:22px;margin:0;flex-shrink:0;accent-color:var(--primary-color,#4465a6)}
+.mcp-connection select,.mcp-connection input[type=text],.mcp-connection input[type=password]{display:block;width:100%;min-width:0;min-height:48px;padding:10px 12px;font:inherit;font-weight:400;line-height:1.4;color:var(--text-color,#20242b);background:var(--card-bg,#fff);border:1px solid var(--connection-control-line);border-radius:8px;caret-color:var(--connection-link);color-scheme:light}
+.mcp-connection select:disabled,.mcp-connection input:disabled{cursor:not-allowed}
+body.dark-mode .mcp-connection select,body.dark-mode .mcp-connection input[type=text],body.dark-mode .mcp-connection input[type=password]{color-scheme:dark}
+@media(max-width:600px){.mcp-settings{grid-template-columns:minmax(0,1fr);gap:20px}.mcp-actions{flex-direction:column}.mcp-actions button{width:100%}.mcp-organizer-header{align-items:flex-start}.mcp-organizer-header .mcp-organizer-toggle{margin-inline-start:34px}.mcp-organizer-occasions{margin-inline-start:0;padding-inline-start:12px}}
 .mcp-connection a{display:block;margin-top:20px}
 `;
         this.container.replaceChildren(style, root);
