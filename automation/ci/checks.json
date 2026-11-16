@@ -49,7 +49,14 @@
         "automation/verify_measurement_runtimes.mjs",
         "automation/tests/measurement_runtimes.test.mjs",
         ".github/workflows/measurement-runtime-drift.yml",
-        "assets/translations/**"
+        "assets/translations/**",
+        "automation/tests/canonical_mutation_inventory.test.mjs",
+        "automation/tests/organizer_context.test.mjs",
+        "automation/client-sync/canonical-mutation-inventory.json",
+        "automation/client-sync/check_canonical_inventory.mjs",
+        "database/operations/canonical_mutation_contraction.sql",
+        "database/functions/blueprint/seating_sync.sql",
+        "automation/release/software-version.conf"
       ]
     },
     "wix-checkout-compatibility": {
@@ -318,7 +325,7 @@
       }
     },
     "deploy-contract": {
-      "script": "node --test automation/tests/local_release_manifest.test.mjs automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\nnode --test automation/tests/android_gradle_contract.test.mjs automation/tests/android_ci_release_contract.test.mjs\n",
+      "script": "node --test automation/tests/local_release_manifest.test.mjs automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\nnode --test automation/tests/android_gradle_contract.test.mjs automation/tests/android_ci_release_contract.test.mjs\nnode --test automation/tests/canonical_mutation_inventory.test.mjs automation/tests/organizer_context.test.mjs\n",
       "after": [
         "renderer-install"
       ],
@@ -479,6 +486,56 @@
         "seat-install"
       ]
     },
+    "seat-services": {
+      "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp run test:postgres\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
+      "after": [
+        "seat-database"
+      ],
+      "resources": {
+        "ramMiB": 900,
+        "dbCluster": 1,
+        "sourceGeneration": 1
+      },
+      "inputs": [
+        "database/functions/**",
+        "database/tests/helpers/**",
+        "database/tests/blueprint/fixtures.sql",
+        "supabase/**",
+        "automation/**",
+        "web_client/src/**",
+        "web_client/scripts/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "tools/festapp/**",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "database/tests/performance/sale_status_product_scope.sql",
+        "web_client/tests/database/retired_waitlist_registry.test.js",
+        "web_client/tests/database/sql_runner.test.js",
+        "database/tests/eshop_discounts/discount_codes_concurrency.test.mjs",
+        "web_client/tests/database/customer_order_changes_concurrency.test.js",
+        "web_client/tests/forms/customer_order_changes.test.js",
+        "*database/tests/occasion_setup*",
+        "*database/tests/payment_providers*",
+        "*database/tests/eshop_orders/customer_order_overview_test.sql*",
+        "*database/tests/eshop/bank_roundtrip_report_test.sql*",
+        "*database/tests/eshop/occasion_report_test.sql*",
+        "*database/tests/scanning/ball_order_test.sql*",
+        "*database/tests/scanning/authorization_test.sql*",
+        "*database/tests/customer_order_changes/*",
+        "*database/tests/eshop_discounts/*",
+        "*database/tests/eshop_forms/waitlist_count_setting_test.sql*",
+        "*database/tests/emails/order_change_summary_test.sql*",
+        "*database/tests/blueprint/form_bound_checkout_test.sql*",
+        "*database/tests/abuse/checkout_admission_test.sql*",
+        "database/tests/**/fixtures*",
+        "web_client/tests/fixtures/**",
+        "web_client/tests/database/disposable_database.js",
+        "web_client/tests/database/runtime_workspace.js",
+        "web_client/tests/database/*_fixture.js",
+        "test/fixtures/**"
+      ]
+    },
     "seat-authorization": {
       "script": "export FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL=\"$DATABASE_URL\"\nnode --test automation/tests/authorization_read_phase.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-authorization-1",
       "after": [
@@ -487,7 +544,27 @@
       "resources": {
         "ramMiB": 900,
         "dbCluster": 1
-      }
+      },
+      "inputs": [
+        "database/**",
+        "supabase/baseline/**",
+        "supabase/migrations/**",
+        "supabase/functions/_shared/**",
+        "supabase/functions/deno.lock",
+        "automation/**",
+        "lib/**",
+        "tools/festapp/**",
+        "assets/**",
+        "packages/festapp_contracts/**",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/db_*.mjs",
+        "web_client/tests/database/**",
+        "web_client/src/**/db_*.js",
+        "web_client/src/services/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "test/fixtures/**"
+      ]
     },
     "seat-google-auth": {
       "script": "export GOOGLE_AUTH_DATABASE_URL=\"$DATABASE_URL\"\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts\n",
@@ -497,7 +574,28 @@
       "resources": {
         "ramMiB": 900,
         "dbCluster": 1
-      }
+      },
+      "inputs": [
+        "database/**",
+        "supabase/baseline/**",
+        "supabase/migrations/**",
+        "supabase/functions/_shared/**",
+        "supabase/functions/deno.lock",
+        "automation/**",
+        "lib/**",
+        "tools/festapp/**",
+        "assets/**",
+        "packages/festapp_contracts/**",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/db_*.mjs",
+        "web_client/tests/database/**",
+        "web_client/src/**/db_*.js",
+        "web_client/src/services/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "test/fixtures/**",
+        "supabase/functions/google*/**"
+      ]
     },
     "seat-notifications": {
       "script": "python3 automation/assemble-admin-notification-delivery-migration.py --check\npython3 automation/assemble-notification-settings-clarity-migration.py --check\npython3 automation/assemble-notification-settings-unit-groups-migration.py --check\nnode --test automation/tests/admin_notification_upgrade.test.mjs automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net supabase/functions/_shared/notificationDispatcher_test.ts supabase/functions/_shared/adminNotificationEmail_test.ts supabase/functions/_shared/adminNotificationSender_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
@@ -507,7 +605,27 @@
       "resources": {
         "ramMiB": 900,
         "dbCluster": 1
-      }
+      },
+      "inputs": [
+        "database/**",
+        "supabase/baseline/**",
+        "supabase/migrations/**",
+        "supabase/functions/_shared/**",
+        "supabase/functions/deno.lock",
+        "automation/**",
+        "lib/**",
+        "tools/festapp/**",
+        "assets/**",
+        "packages/festapp_contracts/**",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/db_*.mjs",
+        "web_client/tests/database/**",
+        "web_client/src/**/db_*.js",
+        "web_client/src/services/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "test/fixtures/**"
+      ]
     },
     "seat-browser": {
       "script": "pnpm --dir web_client run test:seat-checkout-browser --offline-recovery\n",
@@ -521,7 +639,7 @@
       }
     },
     "ticket-edge": {
-      "script": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts supabase/functions/occasion-setup-email-preview/preview_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/_shared/communicationTone_test.ts supabase/functions/_shared/emailVariables_test.ts supabase/functions/_shared/emailCommunication_test.ts supabase/functions/_shared/confirmationContent_test.ts supabase/functions/_shared/orderEmailPresentation_test.ts supabase/functions/_shared/paymentPresentation_test.ts supabase/functions/send-custom-email/setupPreview_test.ts supabase/functions/send-custom-email/authoringContext_test.ts supabase/functions/send-email/deposit_templates_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-reset-password-link/index.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/googleWallet_test.ts supabase/functions/_shared/ticketWallet_test.ts supabase/functions/_shared/ticketWalletEmail_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/manage-member-access/handler_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts supabase/functions/exchange-sign-in-code/exchange_test.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write --allow-env --allow-net --allow-run=openssl supabase/functions/_shared/appleWallet_test.ts supabase/functions/apple-wallet/handler_test.ts supabase/functions/_shared/wallet/registry_test.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/customerOrderChanges_test.ts supabase/functions/_shared/orderEmailOverview_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/customer-order-changes/index.ts\n",
+      "script": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts supabase/functions/occasion-setup-email-preview/preview_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/_shared/communicationTone_test.ts supabase/functions/_shared/emailVariables_test.ts supabase/functions/_shared/emailCommunication_test.ts supabase/functions/_shared/confirmationContent_test.ts supabase/functions/_shared/orderEmailPresentation_test.ts supabase/functions/_shared/paymentPresentation_test.ts supabase/functions/send-custom-email/setupPreview_test.ts supabase/functions/send-custom-email/authoringContext_test.ts supabase/functions/send-email/deposit_templates_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-reset-password-link/index.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/googleWallet_test.ts supabase/functions/_shared/ticketWallet_test.ts supabase/functions/_shared/ticketWalletEmail_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/manage-member-access/handler_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts supabase/functions/exchange-sign-in-code/exchange_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/probe-complianz supabase/functions/fetch-http-data\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write --allow-env --allow-net --allow-run=openssl supabase/functions/_shared/appleWallet_test.ts supabase/functions/apple-wallet/handler_test.ts supabase/functions/_shared/wallet/registry_test.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/customerOrderChanges_test.ts supabase/functions/_shared/orderEmailOverview_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/customer-order-changes/index.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-ticket-order/index.ts\n",
       "after": [],
       "resources": {
         "ramMiB": 1100
@@ -564,7 +682,28 @@
       "resources": {
         "ramMiB": 900,
         "dbCluster": 1
-      }
+      },
+      "inputs": [
+        "database/**",
+        "supabase/baseline/**",
+        "supabase/migrations/**",
+        "supabase/functions/_shared/**",
+        "supabase/functions/deno.lock",
+        "automation/**",
+        "lib/**",
+        "tools/festapp/**",
+        "assets/**",
+        "packages/festapp_contracts/**",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/db_*.mjs",
+        "web_client/tests/database/**",
+        "web_client/src/**/db_*.js",
+        "web_client/src/services/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "test/fixtures/**",
+        "workers/image-worker/**"
+      ]
     },
     "seat-measurement": {
       "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-websites-migration.py --check\npython3 automation/assemble-measurement-request-lifecycle-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-consent-scope-migration.py --check\npython3 automation/assemble-website-consent-bindings-migration.py --check\nnode --test database/tests/eshop_forms/website_consent_concurrency.test.mjs\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/configuration-postgres.test.mjs test/form-measurement-adversarial-postgres.test.mjs test/form-measurement-migration-postgres.test.mjs test/form-measurement-chaos-postgres.test.mjs\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
@@ -737,10 +876,7 @@
         "web_client/src/**",
         "web_client/package.json",
         "web_client/pnpm*",
-        "automation/testing/**",
-        "web_client/scripts/**",
         "database/**",
-        "supabase/**",
         "automation/baseline.py",
         "automation/baselines/**",
         "web_client/tests/fixtures/**",
@@ -750,7 +886,16 @@
         "integrations/tests/**",
         "integrations/wix/src/**",
         "integrations/wix/package.json",
-        "integrations/wix/pnpm*"
+        "integrations/wix/pnpm*",
+        "supabase/baseline/**",
+        "supabase/migrations/**",
+        "supabase/functions/_shared/**",
+        "automation/testing/cms_consent_fixture.py",
+        "web_client/scripts/cms_consent_fixture_server.mjs",
+        "web_client/scripts/cms_consent_fixture_prepare.mjs",
+        "web_client/scripts/test_cms_managed_consent_browser.mjs",
+        "web_client/scripts/native_browser.mjs",
+        "web_client/scripts/test_timings.mjs"
       ]
     },
     "seat-payments": {
@@ -879,56 +1024,6 @@
         "*database/tests/emails/delivered_tickets_resolve_confirmation_test.sql*",
         "*database/tests/emails/order_email_bulk_reporting_test.sql*",
         "*database/tests/order_item_terminology_test.sql*",
-        "database/tests/**/fixtures*",
-        "web_client/tests/fixtures/**",
-        "web_client/tests/database/disposable_database.js",
-        "web_client/tests/database/runtime_workspace.js",
-        "web_client/tests/database/*_fixture.js",
-        "test/fixtures/**"
-      ]
-    },
-    "seat-services": {
-      "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/mcp-tree-postgres.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/inventory-assignments-postgres.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp run test:postgres\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
-      "after": [
-        "seat-database"
-      ],
-      "resources": {
-        "ramMiB": 900,
-        "dbCluster": 2,
-        "sourceGeneration": 1
-      },
-      "inputs": [
-        "database/functions/**",
-        "database/tests/helpers/**",
-        "database/tests/blueprint/fixtures.sql",
-        "supabase/**",
-        "automation/**",
-        "web_client/src/**",
-        "web_client/scripts/**",
-        "web_client/package.json",
-        "web_client/pnpm*",
-        "tools/festapp/**",
-        "packages/festapp_contracts/**",
-        "assets/translations/**",
-        "database/tests/performance/sale_status_product_scope.sql",
-        "web_client/tests/database/retired_waitlist_registry.test.js",
-        "web_client/tests/database/sql_runner.test.js",
-        "database/tests/eshop_discounts/discount_codes_concurrency.test.mjs",
-        "web_client/tests/database/customer_order_changes_concurrency.test.js",
-        "web_client/tests/forms/customer_order_changes.test.js",
-        "*database/tests/occasion_setup*",
-        "*database/tests/payment_providers*",
-        "*database/tests/eshop_orders/customer_order_overview_test.sql*",
-        "*database/tests/eshop/bank_roundtrip_report_test.sql*",
-        "*database/tests/eshop/occasion_report_test.sql*",
-        "*database/tests/scanning/ball_order_test.sql*",
-        "*database/tests/scanning/authorization_test.sql*",
-        "*database/tests/customer_order_changes/*",
-        "*database/tests/eshop_discounts/*",
-        "*database/tests/eshop_forms/waitlist_count_setting_test.sql*",
-        "*database/tests/emails/order_change_summary_test.sql*",
-        "*database/tests/blueprint/form_bound_checkout_test.sql*",
-        "*database/tests/abuse/checkout_admission_test.sql*",
         "database/tests/**/fixtures*",
         "web_client/tests/fixtures/**",
         "web_client/tests/database/disposable_database.js",
@@ -1155,8 +1250,8 @@
       "database/tests/client_sync_v1_runtime_test.sql",
       "database/tests/companion_contract_test.sql",
       "database/tests/customer_order_changes/authorization_test.sql",
-      "database/tests/customer_order_changes/commands_test.sql",
       "database/tests/customer_order_changes/cancellation_cutover_test.sql",
+      "database/tests/customer_order_changes/commands_test.sql",
       "database/tests/customer_order_changes/partial_cancellation_test.sql",
       "database/tests/customer_order_changes/refund_test.sql",
       "database/tests/customer_order_changes/self_service_test.sql",
@@ -1449,6 +1544,7 @@
       "database/tests/organization_verification/profile_test.sql",
       "database/tests/organization_verification/public_projection_test.sql",
       "database/tests/others/sync_via_http_test.sql",
+      "database/tests/payment_providers/bank_multicurrency_checkout_test.sql",
       "database/tests/payment_providers/bank_refund_contract_test.sql",
       "database/tests/payment_providers/cash_command_guards_test.sql",
       "database/tests/payment_providers/cash_configuration_lifecycle_test.sql",
@@ -1725,8 +1821,8 @@
     "database/tests/client_sync_v1_runtime_test.sql",
     "database/tests/companion_contract_test.sql",
     "database/tests/customer_order_changes/authorization_test.sql",
-    "database/tests/customer_order_changes/commands_test.sql",
     "database/tests/customer_order_changes/cancellation_cutover_test.sql",
+    "database/tests/customer_order_changes/commands_test.sql",
     "database/tests/customer_order_changes/partial_cancellation_test.sql",
     "database/tests/customer_order_changes/refund_test.sql",
     "database/tests/customer_order_changes/self_service_test.sql",
@@ -2034,6 +2130,7 @@
     "database/tests/organization_verification/profile_test.sql",
     "database/tests/organization_verification/public_projection_test.sql",
     "database/tests/others/sync_via_http_test.sql",
+    "database/tests/payment_providers/bank_multicurrency_checkout_test.sql",
     "database/tests/payment_providers/bank_refund_contract_test.sql",
     "database/tests/payment_providers/cash_command_guards_test.sql",
     "database/tests/payment_providers/cash_configuration_lifecycle_test.sql",
@@ -2261,6 +2358,8 @@
     "supabase/functions/exchange-sign-in-code/exchange_test.ts",
     "supabase/functions/fetch-http-data/handler_test.ts",
     "supabase/functions/fetch-http-data/safeFetch_test.ts",
+    "supabase/functions/probe-complianz/handler_test.ts",
+    "supabase/functions/probe-complianz/policy_test.ts",
     "supabase/functions/fetch-transactions/handler_test.ts",
     "supabase/functions/generate-order-agreement/agreementConfig_test.ts",
     "supabase/functions/manage-member-access/handler_test.ts",
@@ -2614,7 +2713,6 @@
     "web_client/tests/forms/validation_fixes.test.js",
     "web_client/tests/forms/waitlist_flow.test.js",
     "web_client/tests/forms/waitlist_presentation.test.js",
-    "web_client/tests/issues/reproduce_currency_issue.test.js",
     "web_client/tests/logic/email_address.test.js",
     "web_client/tests/logic/email_domain_suffix.test.js",
     "web_client/tests/logic/multiselect_price.test.js",

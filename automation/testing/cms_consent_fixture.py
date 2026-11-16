@@ -6,6 +6,7 @@ modeled at their documented public boundary. Default Joomla COOP is retained
 for installed tests; positive-path proxy routing explicitly removes that header.
 """
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -120,34 +121,45 @@ try:
  # copied environment's CLI. No node_modules copy and no shared CMS state.
  run(['python3','automation/ci/run.py','install','integrations/wordpress'],label='dependencies')
  env['FESTAPP_WP_ENV_CLI']=str(ROOT/'integrations/wordpress/node_modules/.bin/wp-env')
- browser_cache=Path(os.environ.get('PLAYWRIGHT_BROWSERS_PATH',Path.home()/('Library/Caches/ms-playwright' if sys.platform=='darwin' else '.cache/ms-playwright')))
- def cache_bytes():return sum(p.stat().st_size for p in browser_cache.rglob('*') if p.is_file()) if browser_cache.exists() else 0
- cache_before=cache_bytes();browser_started=time.monotonic()
- run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps','chromium','firefox','webkit'],label='browsers.install')
- emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
  run(['python3','scripts/package.py'],wp);run(['python3','scripts/package.py'],joomla)
- phase('Starting fresh disposable backend, WordPress minimum/current and Joomla 5/6')
  run(['node','scripts/setup-backend.mjs'],wp)
- started['backend']=True
- run(['supabase','start','--workdir','.private/backend','--exclude','realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp,label='backend.start')
- run(['bash','scripts/bootstrap-backend.sh'],wp,label='backend.bootstrap')
- sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
- started['wordpress']=True;run(['node','scripts/environment.mjs','start'],wp,label='wordpress.start')
- products=json.loads((wp/'products.json').read_text())
- for cli in ['cli','tests-cli']:
-  for p in products:run(['node','scripts/environment.mjs','run',cli,'wp','plugin','install',f'/var/www/html/wp-content/vo-artifacts/{p["slug"]}-{p["version"]}.zip','--activate','--force'],wp)
-  run(['node','scripts/environment.mjs','run',cli,'wp','eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-installed.php'],wp)
- started['joomla']=True;run(['python3','scripts/environment.py','start'],joomla,label='joomla.start')
+ phase('Starting independent owned services and browser dependencies concurrently')
  jprefix=project+'-joomla'
- for major in [5,6]:
-  for p in json.loads((joomla/'products.json').read_text()):
-   archive=f'{p["element"]}-{p["version"]}.zip'
-   run(['docker','cp',joomla/'artifacts'/archive,jprefix+'-'+str(major)+':/tmp/'+archive])
-   # docker cp retains a private ZIP's 0600 mode but assigns root ownership.
-   # Give only the installer user access; keep the host artifact private.
-   run(['docker','exec','--user','root',jprefix+'-'+str(major),'chown','www-data:www-data','/tmp/'+archive])
-   run(['docker','exec','--user','www-data',jprefix+'-'+str(major),'php','cli/joomla.php','extension:install','--path','/tmp/'+archive])
- run(['python3','tests/consent-installed.py'],joomla)
+ def prepare_backend():
+  started['backend']=True
+  run(['supabase','start','--workdir','.private/backend','--exclude','realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp,label='backend.start')
+  run(['bash','scripts/bootstrap-backend.sh'],wp,label='backend.bootstrap')
+  sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
+ def prepare_wordpress():
+  started['wordpress']=True;run(['node','scripts/environment.mjs','start'],wp,label='wordpress.start')
+  products=json.loads((wp/'products.json').read_text())
+  for cli in ['cli','tests-cli']:
+   for p in products:run(['node','scripts/environment.mjs','run',cli,'wp','plugin','install',f'/var/www/html/wp-content/vo-artifacts/{p["slug"]}-{p["version"]}.zip','--activate','--force'],wp)
+   run(['node','scripts/environment.mjs','run',cli,'wp','eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-installed.php'],wp)
+ def prepare_joomla():
+  started['joomla']=True;run(['python3','scripts/environment.py','start'],joomla,label='joomla.start')
+  for major in [5,6]:
+   for p in json.loads((joomla/'products.json').read_text()):
+    archive=f'{p["element"]}-{p["version"]}.zip'
+    run(['docker','cp',joomla/'artifacts'/archive,jprefix+'-'+str(major)+':/tmp/'+archive])
+    # docker cp retains a private ZIP's 0600 mode but assigns root ownership.
+    # Give only the installer user access; keep the host artifact private.
+    run(['docker','exec','--user','root',jprefix+'-'+str(major),'chown','www-data:www-data','/tmp/'+archive])
+    run(['docker','exec','--user','www-data',jprefix+'-'+str(major),'php','cli/joomla.php','extension:install','--path','/tmp/'+archive])
+  run(['python3','tests/consent-installed.py'],joomla)
+ def prepare_browsers():
+  browser_cache=Path(os.environ.get('PLAYWRIGHT_BROWSERS_PATH',Path.home()/('Library/Caches/ms-playwright' if sys.platform=='darwin' else '.cache/ms-playwright')))
+  def cache_bytes():return sum(p.stat().st_size for p in browser_cache.rglob('*') if p.is_file()) if browser_cache.exists() else 0
+  cache_before=cache_bytes();browser_started=time.monotonic()
+  run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps','chromium','firefox','webkit'],label='browsers.install')
+  emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
+ with ThreadPoolExecutor(max_workers=3) as workers:
+  pending=[(name,workers.submit(prepare)) for name,prepare in [('backend',prepare_backend),('wordpress',prepare_wordpress),('joomla',prepare_joomla),('browsers',prepare_browsers)]]
+  failures=[]
+  for name,future in pending:
+   try:future.result()
+   except Exception as error:failures.append((name,error))
+  if failures:raise RuntimeError('Owned CMS preparation failed: '+', '.join(name for name,_ in failures)) from failures[0][1]
  phase('Starting explicit local HTTPS transports (modeled CMP; Joomla positive proxy excludes COOP)')
  (fixture/'tls').mkdir()
  run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-keyout',fixture/'tls/key.pem','-out',fixture/'tls/cert.pem','-subj','/CN=127.0.0.1','-addext','subjectAltName=IP:127.0.0.1','-days','1'])
@@ -195,9 +207,10 @@ finally:
     try:p.wait(timeout=10)
     except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
   cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['node','scripts/environment.mjs','destroy','--force'],wp,'wordpress'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
-  for command,cwd,key in cleanup:
-   if started[key]:
-    try:run(command,cwd,label='cleanup.'+key)
+  with ThreadPoolExecutor(max_workers=3) as workers:
+   pending=[(key,workers.submit(run,command,cwd,label='cleanup.'+key)) for command,cwd,key in cleanup if started[key]]
+   for key,future in pending:
+    try:future.result()
     except Exception as error:print(f'Owned {key} cleanup failed: {error}',file=sys.stderr)
   if started['wordpress']:
    try:cleanup_partial_wordpress()

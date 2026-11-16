@@ -36,3 +36,8 @@ class UnitWebsiteConsent {
     return null;
   }
 }
+
+/// A fresh server probe rejected the reviewed ID before any binding was saved.
+class ComplianzPolicyChanged implements Exception {
+  const ComplianzPolicyChanged();
+}

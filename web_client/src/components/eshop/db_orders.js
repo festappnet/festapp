@@ -27,6 +27,7 @@ export class DbOrders {
         if (terminalOrderResponse(data)) intent.complete();
         const code = data?.code ?? 503;
         if (code === 200) return { success: true, data };
-        return { success: false, code, errorCode: data?.errorCode, message: data?.message || 'Unknown error', product: data?.product };
+        return { success: false, code, errorCode: data?.errorCode, message: data?.message || 'Unknown error', product: data?.product,
+            limitReason: data?.limitReason, retryAfterSeconds: data?.retryAfterSeconds };
     }
 }

@@ -61,6 +61,11 @@
       ],
       "mutates_authority": true
     },
+    "probe-complianz": {
+      "trigger": "client-http",
+      "effects": ["remote-http-read", "database-rpc"],
+      "mutates_authority": true
+    },
     "fetch-http-data": {
       "trigger": "client-http",
       "effects": [
@@ -542,6 +547,7 @@
   "canonical_function_security": {
     "blocked": {},
     "resolved": {
+      "probe-complianz": "caller-jwt-unit-configuration-management-approved-origin-pinned-https-policy-confirmation",
       "fetch-http-data": "occasion-editor-auth-public-dns-and-redirect-validation-image-only-bounded-response",
       "notify": "constant-time-bearer-auth-vault-backed-trigger-starts-disabled",
       "process-email-queue": "service-only-machine-proof-fenced-ses-send-and-worker-scoped-credentials",

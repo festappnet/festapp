@@ -312,3 +312,14 @@ It reuses `issueExistingUserSession` for an independent session of that verified
 actor only; browser refresh tokens, passwords and caller-supplied identity fields
 are never used. New Auth credentials go server-to-server to MCP, not to the app.
 See [the contract and runtime variables](../architecture/operations/remote-mcp-auth.md#first-party-tenant-consent).
+
+### Complianz policy detection
+
+`probe-complianz` uses the caller JWT and public anon key to check unit configuration
+management and saved/approved measurement origins before fetching external HTML.
+Deploy it alongside organizer UI changes. `verify_jwt = false` delegates JWT
+validation to the authenticated PostgREST RPCs; it does not allow anonymous probes.
+No additional secrets or database migration are required. The `confirm` action
+re-fetches the policy, checks the reviewed ID and calls the existing consent save
+RPC with its original version/revision conflict checks. Manual fallback continues
+to use that RPC directly. See [the consent contract](../integrations/form-datalayer.md).

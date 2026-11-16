@@ -79,10 +79,15 @@ BEGIN
   bank:=FOUND AND coalesce(cfg->'bankEnabled','false')='true'::jsonb;
   bank:=bank AND EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion
    JOIN eshop.unit_bank_accounts link ON link.unit=oc.unit JOIN eshop.bank_accounts b ON b.id=link.bank_account
-   WHERE f.id=p_form AND (f.bank_account IS NULL OR f.bank_account=b.id) AND b.type IS DISTINCT FROM 'CASH'
-   AND NOT EXISTS(SELECT 1 FROM public.form_fields ff JOIN eshop.products p ON p.product_type=ff.product_type
-    WHERE ff.form=f.id AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false)
-    AND p.price>0 AND NOT coalesce(b.supported_currencies,'{}'::text[]) @> ARRAY[trim(p.currency_code)]));
+   WHERE f.id=p_form AND (f.bank_account IS NULL OR f.bank_account=b.id) AND b.type IS DISTINCT FROM 'CASH');
+  -- Checkout selects a receiving account for the order's currency. Different
+  -- currencies may be covered by different accounts linked to the same unit.
+  bank:=bank AND NOT EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion
+   JOIN public.form_fields ff ON ff.form=f.id JOIN eshop.products p ON p.product_type=ff.product_type
+   WHERE f.id=p_form AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false) AND p.price>0
+   AND NOT EXISTS(SELECT 1 FROM eshop.unit_bank_accounts link JOIN eshop.bank_accounts b ON b.id=link.bank_account
+    WHERE link.unit=oc.unit AND (f.bank_account IS NULL OR f.bank_account=b.id) AND b.type IS DISTINCT FROM 'CASH'
+    AND coalesce(b.supported_currencies,'{}'::text[]) @> ARRAY[trim(p.currency_code)]));
   RETURN jsonb_build_object('providerId','bank','configured',bank,'available',bank,'supportedSurfaces','[]'::jsonb);
  ELSIF p_operation='operation_capabilities' THEN
   ready:=public.bank_refund_readiness_internal((p_args->>'orderId')::bigint);
