@@ -143,6 +143,9 @@ try:
   for p in json.loads((joomla/'products.json').read_text()):
    archive=f'{p["element"]}-{p["version"]}.zip'
    run(['docker','cp',joomla/'artifacts'/archive,jprefix+'-'+str(major)+':/tmp/'+archive])
+   # docker cp retains a private ZIP's 0600 mode but assigns root ownership.
+   # Give only the installer user access; keep the host artifact private.
+   run(['docker','exec','--user','root',jprefix+'-'+str(major),'chown','www-data:www-data','/tmp/'+archive])
    run(['docker','exec','--user','www-data',jprefix+'-'+str(major),'php','cli/joomla.php','extension:install','--path','/tmp/'+archive])
  run(['python3','tests/consent-installed.py'],joomla)
  phase('Starting explicit local HTTPS transports (modeled CMP; Joomla positive proxy excludes COOP)')
