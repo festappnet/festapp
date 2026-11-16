@@ -1,3 +1,4 @@
+import {informationDescriptors,informationDataSchemas,invokeInformationOperation} from './information.mjs';
 import {webhookDescriptors,webhookDataSchemas,invokeWebhookOperation} from './webhooks.mjs';
 import { inventoryAssignmentDescriptors, inventoryAssignmentDataSchemas, invokeInventoryAssignmentOperation } from './inventory-assignments.mjs';
 import {lifecycleDescriptors,lifecycleDataSchemas,invokeLifecycleOperation} from './lifecycle.mjs';
@@ -66,6 +67,7 @@ const dataSchemas = {
     ...blueprintDataSchemas,
     ...peopleDataSchemas,
     ...configurationDataSchemas,
+    ...informationDataSchemas,
     ...formDataSchemas,
     ...formSalesDataSchemas,
     ...emailTemplateDataSchemas,
@@ -162,7 +164,7 @@ const resultSchema = (id, schema = dataSchemas[id]) =>
             .optional(),
         meta: metaSchema,
     });
-const delegatedDescriptors = [...webhookDescriptors, ...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
+const delegatedDescriptors = [...webhookDescriptors, ...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...informationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
 const descriptors = [
     ...delegatedDescriptors.map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.', input: z.strictObject({}), domainReadOnly: true },
@@ -387,6 +389,7 @@ export class Operations {
                 else if (scannerDataSchemas[id]) data = await invokeScannerOperation(this.owner, client, id, args);
                 else if (blueprintDataSchemas[id]) data = await invokeBlueprintOperation(this.owner, client, id, args);
                 else if (peopleDataSchemas[id]) data = await invokePeopleOperation(this.owner, client, id, args);
+                else if (informationDataSchemas[id]) data = await invokeInformationOperation(this.owner, client, id, args);
                 else if (configurationDataSchemas[id]) data = await invokeConfigurationOperation(this.owner, client, id, args);
                 else if (formSalesDataSchemas[id]) data = await invokeFormSalesOperation(this.owner, client, id, args, context);
                 else if (formDataSchemas[id]) data = await invokeFormOperation(this.owner, client, id, args);

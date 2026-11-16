@@ -3366,6 +3366,10 @@
     "4100acd632ad941077f895b444233bdd246800868cd72c6f9c9ca9dfa77279fe": {
       "signature": "public.storno_tickets_bulk_internal_v1(bigint[],boolean)",
       "source": "database/functions/eshop_orders/storno_tickets_bulk.sql"
+    },
+    "cfe239223fbb2783b80df53876d0d0822427487721c53ff9b19768e71a10f140": {
+      "signature": "public.manage_information_authoring(bigint,bigint,bigint,text,jsonb,uuid)",
+      "source": "database/functions/authoring/information.sql"
     }
   }
 }

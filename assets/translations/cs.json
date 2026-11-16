@@ -4252,6 +4252,8 @@
     "mapExportsRead": "Exportovat místa",
     "speakerExportsRead": "Exportovat řečníky",
     "feedbackExportsRead": "Exportovat zpětnou vazbu",
+    "informationRead": "Číst informační stránky akcí",
+    "informationWrite": "Upravovat informační stránky akcí",
     "programRead": "Číst program a vzájemně výlučné skupiny",
     "programWrite": "Upravovat a odstraňovat program a vzájemně výlučné skupiny",
     "mapRead": "Číst místa, typy míst, cesty a ikony",

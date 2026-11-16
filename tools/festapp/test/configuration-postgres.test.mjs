@@ -101,13 +101,13 @@ test('MCP executor consumes real owner snapshots and explicit whole-unit delegat
  const gameSaved=await invokeConfigurationOperation(own,c,'occasions.game.save',{occasionId:f.occasion,commandId:randomUUID(),expectedVersion:1,start:null,end:null});assert.equal(gameSaved.status,'applied');
 });
 
-test('SDK lists all eight configuration tools and executes real versioned save snapshots',options,async t=>{
+test('SDK lists all configuration tools and executes real versioned save snapshots',options,async t=>{
  const {db,f}=await setup(t),c=client(db);
  const own={...owner(f),root:'/tmp/stage5-sdk',profile:{name:'fixture',tenantId:'fixture',organizationId:f.org,backendOrigin:'http://127.0.0.1:55432'},allowedOperations:configurationDescriptors.map(d=>d.id),authorized:async action=>action(c,{userId:f.actor})};
  const ops=new Operations(own),server=createServer(ops),sdk=new Client({name:'stage5-fixture',version:'1'});
  const [a,b]=InMemoryTransport.createLinkedPair();await server.connect(a);await sdk.connect(b);t.after(async()=>{await sdk.close();await server.close();});
  assert.equal((await db.query('select get_ticket_layout_write_contract_v1() value')).rows[0].value.ready,true,'settings owner changes must retain the ticket-layout write contract');
- const tools=await sdk.listTools();assert.equal(tools.tools.length,8);
+ const tools=await sdk.listTools();assert.equal(tools.tools.length,configurationDescriptors.length);
  const inspect=await sdk.callTool({name:'festapp_occasions_settings_inspect',arguments:{occasionId:f.occasion}});assert.equal(inspect.structuredContent.ok,true,JSON.stringify(inspect));
  const result=await sdk.callTool({name:'festapp_occasions_settings_save',arguments:{occasionId:f.occasion,commandId:randomUUID(),expectedVersion:inspect.structuredContent.data.aggregateVersion,changes:{title:'SDK occasion'}}});
  assert.equal(result.structuredContent.ok,true,JSON.stringify(result));assert.equal(result.structuredContent.data.title,'SDK occasion');
@@ -183,4 +183,38 @@ test('MCP consent version contract is positive, bounded and never nullable',()=>
  const parse=value=>schema.safeParse({unitId:1,commandId:randomUUID(),expectedVersion:0,changes:{settings:{measurement_consent_version:value}}}).success;
  for(const value of [1,2,2147483647])assert.equal(parse(value),true);
  for(const value of [null,0,-1,1.5,'2',2147483648])assert.equal(parse(value),false);
+});
+
+test('app landing uses native organization admin, CAS, target validation and safe retry semantics',options,async t=>{
+ const {db,f}=await setup(t);
+ await db.query('insert into organization_users(organization,"user",is_admin) values($1,$2,true)',[f.org,f.actor]);
+ await db.query("update organizations set data=jsonb_build_object('IS_APP_SUPPORTED',true,'APP_NAME','Keep','REPRESENTATIVE_OCCASION',$2::bigint) where id=$1",[f.org,f.occasion]);
+ await db.query('update occasions set is_open=true where id=$1',[f.occasion]);
+ const own=owner(f),raw=client(db),c={rpc:async(name,args)=>{
+  await db.query('savepoint landing_rpc');const result=await raw.rpc(name,args);
+  if(result.error)await db.query('rollback to savepoint landing_rpc');
+  await db.query('release savepoint landing_rpc');return result;
+ }};
+ await db.query('set local role authenticated');
+ const invoke=(operation,args={})=>invokeConfigurationOperation(own,c,`units.appLanding.${operation}`,{unitId:f.unit,...args});
+ assert.equal((await invoke('inspect')).occasionId,null);
+ const args={occasionId:f.occasion,expectedOccasionId:null};
+ assert.equal((await invoke('save',args)).status,'applied');
+ assert.equal((await invoke('save',args)).status,'unchanged');
+ await assert.rejects(invoke('save',{occasionId:null,expectedOccasionId:null}),{code:'APP_LANDING_CHANGED_RELOAD_REQUIRED'});
+ await assert.rejects(invoke('save',{occasionId:Number.MAX_SAFE_INTEGER,expectedOccasionId:f.occasion}),{code:'APP_LANDING_REJECTED'});
+ await db.query('reset role');
+ const otherUnit=Number((await db.query("insert into units(title,organization) values('Other organizer',$1) returning id",[f.org])).rows[0].id);
+ const foreign=Number((await db.query("insert into occasions(title,link,organization,unit,start_time,end_time,is_open) values('Other event',$1,$2,$3,now(),now()+interval '1 day',true) returning id",['landing-'+randomUUID(),f.org,otherUnit])).rows[0].id);
+ await db.query('set local role authenticated');
+ await assert.rejects(invoke('save',{occasionId:foreign,expectedOccasionId:f.occasion}),{code:'APP_LANDING_REJECTED'});
+ await db.query('reset role');await db.query('update occasions set is_open=false where id=$1',[f.occasion]);await db.query('set local role authenticated');
+ await assert.rejects(invoke('save',args),{code:'APP_LANDING_REJECTED'});
+ await db.query('reset role');await db.query('update occasions set is_open=true where id=$1',[f.occasion]);await db.query('update organization_users set is_admin=false where organization=$1 and "user"=$2',[f.org,f.actor]);await db.query('set local role authenticated');
+ assert.equal((await invoke('inspect')).canManage,false);
+ await assert.rejects(invoke('save',args),{code:'FORBIDDEN'});
+ await db.query('reset role');await db.query('update organization_users set is_admin=true where organization=$1 and "user"=$2',[f.org,f.actor]);await db.query('set local role authenticated');
+ assert.equal((await invoke('save',{occasionId:null,expectedOccasionId:f.occasion})).occasionId,null);
+ await db.query('reset role');
+ assert.deepEqual((await db.query('select data from organizations where id=$1',[f.org])).rows[0].data,{IS_APP_SUPPORTED:true,APP_NAME:'Keep',REPRESENTATIVE_OCCASION:f.occasion});
 });

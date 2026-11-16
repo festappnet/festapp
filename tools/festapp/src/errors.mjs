@@ -14,6 +14,7 @@ const permissionMessages = new Map([
     ['FORBIDDEN', 'The connected account or selected connection access does not permit this action. Check the selected event or organizer and ask its administrator to verify your account permissions. Retrying unchanged will not grant access.'],
 ]);
 const operationPermissionMessages = new Map([
+    ['units.appLanding.save', 'Changing the application home requires the live administrator role for the organization and whole-organizer consent. Organizer manager rights alone do not authorize this organization-wide setting.'],
     ['forms.save', 'Saving this form was denied. Your account needs form editor rights for this event or its organizer unit, and the form must belong to an event included in this connection. Ask the event organizer to verify your role and check the selected event and form. OAuth consent does not grant account permissions; reconnect only if the connection access or scopes need changing.'],
     ['units.settings.inspect', 'Reading organizer settings requires a live manager role for that organizer. Check the selected organizer and ask its administrator to verify the account role. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
     ['units.settings.save', 'Changing analytics or other organizer settings requires a live manager role for that organizer. Check the selected organizer and ask its administrator to verify the account role. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],

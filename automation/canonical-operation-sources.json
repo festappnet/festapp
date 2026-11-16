@@ -350,6 +350,7 @@
     "authoring/blueprints.sql",
     "authoring/scanner.sql",
     "authoring/program.sql",
+    "authoring/information.sql",
     "authoring/export_columns.sql",
     "authoring/history.sql",
     "authoring/exports.sql",

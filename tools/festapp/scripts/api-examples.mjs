@@ -44,6 +44,9 @@ export function schemaExample(schema, root = schema, key = '', depth = 0) {
 }
 export function operationExamples(descriptor, inputSchema, outputSchema) {
     const request = descriptor.id === 'products.save' ? {occasionId:7,commandId:UUID,product:{title:'Admission',price:'100.00',currency_code:'CZK',product_type:1}} : schemaExample(inputSchema);
+    if (descriptor.id === 'units.appLanding.save') Object.assign(request,{unitId:3,occasionId:7,expectedOccasionId:null});
+    if (descriptor.id === 'units.appLanding.inspect') request.unitId=3;
+    if (descriptor.id === 'information.save') Object.assign(request,{occasionId:7,expectedVersion:0,information:{id:1,title:'Photo galleries',description:'<p><a href="https://example.invalid/gallery">Previous event gallery</a></p>',type:null,isHidden:false,order:1,data:null}});
     if (descriptor.id === 'webhooks.update') request.state = 'active';
     if (descriptor.id === 'webhooks.create') request.url = 'https://receiver.example.invalid/webhooks/festapp';
     if (descriptor.id === 'orders.update') request.changes = {note:'Updated order note'};
@@ -52,6 +55,7 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     const response = {...schemaExample(outputSchema),ok:true};
     delete response.error;
     if (outputSchema.properties?.data) response.data = schemaExample(outputSchema.properties.data,outputSchema,'data');
+    if (descriptor.id.startsWith('units.appLanding.')) Object.assign(response.data,{organizationId:1,unitId:3,enabled:true,occasionId:7,canManage:true,...(descriptor.id.endsWith('.save')?{status:'applied'}:{})});
     if (descriptor.id === 'ticket_layouts.preview') response.data.image={mimeType:'image/png',data:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6ZsAAAAASUVORK5CYII='};
     if (descriptor.id === 'seats.preview_swap') {
         response.data.sourceSpotIds = [response.data.firstSpotId];
