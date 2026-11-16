@@ -55,6 +55,31 @@ Všech 228 navigačních případů i úplná devítipřípadová CMS matice zů
 Celkový lokální čas se nezkrátil: host/cache a další jednotky tento běh
 zpomalily. Úsporu celého hosted běhu proto z těchto lokálních čísel nevyvozujeme.
 
+### Hosted ověření druhé změny
+
+Main `68adba944ed1f28ad2b97985fe5cea3c68455565` prošel přesným release gate,
+všech osm jobs skutečně provedlo úplný čerstvý běh. Nová definice CI ještě
+neměla použitelný historický důkaz. Výsledek neprokazuje zrychlení celého
+cold běhu: hosted rozdíly proti `c802bdc85252` jsou smíšené.
+
+| Job | c802bdc85252 | 68adba944ed1 | Run druhého vzorku |
+| --- | ---: | ---: | --- |
+| image-contract | 82 s | 87 s | 43872415171 |
+| web-startup | 185 s | 161 s | 43872415027 |
+| navigation-interactions | 203 s | 203 s | 43872415132 |
+| server-policy | 172 s | 157 s | 43872414917 |
+| client-contract | 248 s | 255 s | 43872414917 |
+| ticket-preview-and-delivery | 283 s | 278 s | 43872415150 |
+| seat-checkout | 306 s | 401 s | 43872415150 |
+| wix-checkout-compatibility | 326 s | 341 s | 43872415321 |
+
+Checkout zpomalila zejména `seat-services` (211,68 s proti předchozím
+160,7 s). Její log obsahuje 280-testový blok trvající 162,19 s. Samotný
+browser checkout trval 5,36 s, tedy netvoří hlavní čekání. Kompletní DAG měl
+316,36 s, z toho příprava uvnitř runneru 1,96 s; action provisioning je mimo
+tento receipt. Další optimalizace této servisní sady musí zachovat izolaci
+DB a skutečné integrační testy; nejde bez důkazu zvýšit souběh nad stejnými daty.
+
 ## Baseline
 
 [Uložený vzorek](ci-efficiency-baseline-2026-11-16.json) vznikl read-only
