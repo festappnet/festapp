@@ -18,6 +18,17 @@ class FormStrings {
   static String get cmsPlatform => 'FeatureFormSettings.cmsPlatform'.tr();
   static String get cmsFreshChoiceHelp =>
       'FeatureFormSettings.cmsFreshChoiceHelp'.tr();
+  static String get cmsPolicySaved => 'FeatureFormSettings.cmsPolicySaved'.tr();
+  static String get cmsPolicyChanged =>
+      'FeatureFormSettings.cmsPolicyChanged'.tr();
+  static String get cmsPolicyDetected =>
+      'FeatureFormSettings.cmsPolicyDetected'.tr();
+  static String get cmsPolicyDetectionFailed =>
+      'FeatureFormSettings.cmsPolicyDetectionFailed'.tr();
+  static String get cmsPolicyManual =>
+      'FeatureFormSettings.cmsPolicyManual'.tr();
+  static String get cmsPolicyReload =>
+      'FeatureFormSettings.cmsPolicyReload'.tr();
   static String get cmsPolicyId => 'FeatureFormSettings.cmsPolicyId'.tr();
   static String get cmsProvider => 'FeatureFormSettings.cmsProvider'.tr();
   static String get cmsAnalyticsCategory =>

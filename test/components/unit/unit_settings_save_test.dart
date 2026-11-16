@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/db_units.dart';
+import 'package:fstapp/components/unit/unit_website_consent.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/components/unit/views/unit_settings_screen.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:festapp_core/time.dart' as tz;
@@ -40,6 +43,7 @@ void main() {
     var rejectApproval = false;
     String? approvalError;
     var rejectApprovalRead = false;
+    var probeError = 'policy_changed';
     var approvalRequests = 0;
     var approvalReads = 0;
     late Map<String, dynamic> approval;
@@ -55,7 +59,23 @@ void main() {
       );
       backend = await RootSupabaseFixture.open((request) async {
         Object body;
-        if (request.url.path.endsWith('/get_unit_for_edit')) {
+        if (request.url.path.endsWith('/probe-complianz')) {
+          expect(jsonDecode(request.body), {
+            'unitId': 7,
+            'origin': 'https://poradatel.cz',
+            'confirm': true,
+            'platform': 'wordpress',
+            'expectedPolicyId': '42',
+            'version': 1,
+            'revision': 'a' * 32,
+          });
+          return http.Response(
+            jsonEncode({'error': probeError, 'policyId': '43'}),
+            409,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        } else if (request.url.path.endsWith('/get_unit_for_edit')) {
           body = {'code': 200, 'data': stored};
         } else if (request.url.path.endsWith(
           '/get_unit_website_consent_bindings',
@@ -176,12 +196,14 @@ void main() {
     });
     tearDownAll(() => backend.dispose());
     setUp(() {
+      backend.requests.clear();
       saves.clear();
       updates = 0;
       rejectSave = false;
       rejectApproval = false;
       approvalError = null;
       rejectApprovalRead = false;
+      probeError = 'policy_changed';
       approvalRequests = 0;
       approvalReads = 0;
       approval = {
@@ -210,6 +232,41 @@ void main() {
             null,
           );
     });
+    test(
+      'Complianz HTTP policy conflict becomes a recoverable domain outcome',
+      () async {
+        await expectLater(
+          DbUnits.confirmDetectedComplianz(
+            7,
+            'https://poradatel.cz',
+            'wordpress',
+            '42',
+            1,
+            'a' * 32,
+          ),
+          throwsA(isA<ComplianzPolicyChanged>()),
+        );
+      },
+    );
+
+    test(
+      'Complianz unrelated HTTP conflict retains its original failure',
+      () async {
+        probeError = 'website_consent_conflict';
+        await expectLater(
+          DbUnits.confirmDetectedComplianz(
+            7,
+            'https://poradatel.cz',
+            'wordpress',
+            '42',
+            1,
+            'a' * 32,
+          ),
+          throwsA(isA<FunctionException>()),
+        );
+      },
+    );
+
     final csDefaultTitle =
         ((jsonDecode(File('assets/translations/cs.json').readAsStringSync())
                     as Map)['FeatureFormSettings']
@@ -468,6 +525,7 @@ void main() {
           expect(tester.widget<OutlinedButton>(retry).onPressed, isNotNull);
           expect(approvalRequests, 0);
           rejectApprovalRead = false;
+          probeError = 'policy_changed';
           await tester.tap(retry);
           await tester.pumpAndSettle();
           expect(approvalReads, 3);
@@ -515,6 +573,13 @@ void main() {
         await tester.tap(button);
         await tester.pumpAndSettle();
         expect(approvalRequests, 1);
+        expect(
+          backend.requests.where(
+            (request) => request.url.path.endsWith('/probe-complianz'),
+          ),
+          isEmpty,
+          reason: 'saving or requesting approval must not probe an unapproved website',
+        );
         if (failure == 'none') {
           expect(saves, hasLength(2));
           expect((stored['data'] as Map)['measurement_websites'], [

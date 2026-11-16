@@ -105,3 +105,27 @@ is unchanged. Batch related ready changes before publication and assign one
 monitor; queued runs are not a reason to dispatch duplicates. Measurement and
 remaining hosted verification are recorded in
 [CI efficiency result](../plans/ci-efficiency-result-2026-11-16.md).
+
+The subsequent measured pass starts the independent CMS backend, WordPress,
+Joomla and browser installation through three bounded workers, and joins all
+startup results before any scenario. Cleanup joins the three owned services
+independently. The same nine cases and all three browser engines remain required.
+Backend service tests use an ordinary isolated database lease while retaining
+the source-generation lock; cluster-changing upgrade tests remain exclusive.
+The service unit starts early and the PostgreSQL wildcard suite runs each of
+its four previously repeated files once.
+
+CMS fingerprints retain schemas, migrations, shared Function dependencies and
+all form code. A separate order Edge handler or unrelated browser script is
+owned by quick transport contracts rather than installed CMS preparation.
+Pure backend units declare their inputs instead of inheriting every checkout
+UI input. The canonical version file has an explicit release-contract owner;
+generated pubspec, package and HTML files retain their existing owning checks.
+Unknown inputs, changed CI definitions and unregistered tests still run the
+conservative complete coverage path.
+
+For a production artifact, use `automation/deploy_direct.sh` end to end. It
+exports the selected project configuration before building. A manual
+`cloudflare_build.sh` run without those exports can produce different component
+fingerprints and correctly fail the later upload receipt check. Do not reseal
+that artifact or bypass the mismatch; rebuild in the canonical environment.

@@ -662,6 +662,12 @@
     "cmsState_approval_required": "Website approval required",
     "cmsState_confirmation_required": "The policy has changed. Confirm coverage again.",
     "cmsState_unavailable": "Transfer is unavailable. Check measurement, transfer and website approval.",
+    "cmsPolicySaved": "Saved policy ID",
+    "cmsPolicyChanged": "The website policy changed during confirmation. Review the reloaded ID and confirm form coverage again.",
+    "cmsPolicyDetected": "The policy ID was read from your website. Confirmation pins this policy version.",
+    "cmsPolicyDetectionFailed": "The policy ID could not be detected (the site may block access or lack Complianz configuration). Retry or enter it manually.",
+    "cmsPolicyManual": "Enter manually",
+    "cmsPolicyReload": "Reload",
     "cmsPolicyIdHelp": "Use the policy ID covering the form. Your website administrator can find it in complianz.current_policy_id on your website.",
     "cmsPolicyIdInvalid": "Enter a valid policy ID: a positive whole number with at most 16 digits.",
     "cmsCategoriesInvalid": "Enter two different category names, each 1-128 characters long.",
@@ -1934,7 +1940,14 @@
     "reservation_changed": "Your seat reservation has changed. Return to the form and select available seats again. Your entered details have been kept.",
     "CHECKOUT_CONTEXT_EXPIRED": "This form has expired. Reload the page and try submitting your order again.",
     "outcomeUnknownTitle": "Order outcome is unconfirmed",
-    "outcomeUnknownHint": "We could not confirm whether your order was created. Check your email before placing a new order. To retry the same attempt, return to the form without reloading the page."
+    "outcomeUnknownHint": "We could not confirm whether your order was created. Check your email before placing a new order. To retry the same attempt, return to the form without reloading the page.",
+    "capacityOrderTitle": "Order was not created",
+    "capacityRegistrationTitle": "Registration was not created",
+    "emailRecipientLimit": "The automatic message limit for this email address has temporarily been reached.",
+    "emailServiceLimit": "The email sending limit has temporarily been reached.",
+    "serviceLimit": "The service is temporarily at capacity and could not accept another request.",
+    "capacityRetry": "Try again {when}.",
+    "capacityRetryLater": "Please try again later."
   },
   "FeatureTicket": {
     "enableManualTicketScan": "Enable Manual Ticket Scan",

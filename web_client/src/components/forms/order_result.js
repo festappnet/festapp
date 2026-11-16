@@ -68,6 +68,19 @@ export class OrderResult {
             title = isWaitlist ? WaitlistStrings.text('registered', tone) : PublicOrderStrings.successTitle(tone, hasTickets);
             const email = resultData?.ticketOrder?.order?.data?.email;
             subtitle = isWaitlist ? `${WaitlistStrings.text('waitingStatus', tone)} ${WaitlistStrings.text('resultNextStep', tone)}` : PublicOrderStrings.confirmationInfo(tone, Boolean(resultData?.payment_qr), typeof email === 'string' ? email.trim() : '');
+        } else if (resultData?.code === 429 && resultData.errorCode === 'ABUSE_LIMIT_EXCEEDED') {
+            title = PublicOrderStrings.text(hasTickets ? 'PublicOrder.capacityOrderTitle' : 'PublicOrder.capacityRegistrationTitle', tone);
+            const reason = resultData.limitReason === 'email_recipient' ? 'emailRecipientLimit'
+                : resultData.limitReason === 'email_service' ? 'emailServiceLimit' : 'serviceLimit';
+            subtitle = PublicOrderStrings.text(`PublicOrder.${reason}`, tone);
+            const retry = resultData.retryAfterSeconds;
+            if (Number.isSafeInteger(retry) && retry > 0 && retry <= 604800) {
+                const when = new Intl.RelativeTimeFormat(LocalizationService.currentLocale || 'en', {numeric:'always'})
+                    .format(Math.max(1, Math.ceil(retry / 60)), 'minute');
+                subtitle += ' ' + PublicOrderStrings.text('PublicOrder.capacityRetry', tone).replace('{when}', when);
+            } else subtitle += ' ' + PublicOrderStrings.text('PublicOrder.capacityRetryLater', tone);
+            icon = 'info';
+            colorClass = 'error-color';
         } else if (resultData?.errorCode === 'ORDER_OUTCOME_UNKNOWN') {
             title = PublicOrderStrings.text('PublicOrder.outcomeUnknownTitle', tone);
             subtitle = PublicOrderStrings.text('PublicOrder.outcomeUnknownHint', tone);

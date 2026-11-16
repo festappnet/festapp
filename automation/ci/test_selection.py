@@ -25,6 +25,41 @@ class CanonicalTranslationOwnershipTest(unittest.TestCase):
             self.assertTrue(consumers.issubset(selection.owners(f'assets/translations/{locale}.json',CONTRACT)))
 
 
+class CmsDependencyOwnershipTest(unittest.TestCase):
+    def fingerprints(self, changed):
+        import hashlib
+        lane='wix-checkout-compatibility'
+        paths=['web_client/src/components/forms/form_page.js',changed]
+        def tree(sha):
+            return [b'100644 blob '+hashlib.sha1((path+('changed' if sha==SHA and path==changed else 'original')).encode()).hexdigest().encode()+b'\t'+path.encode() for path in paths]
+        with patch.object(selection,'tree',side_effect=tree):
+            return {unit:(selection.fingerprint(BASE,lane,CONTRACT,unit),selection.fingerprint(SHA,lane,CONTRACT,unit)) for unit in ['wix-quick','wix-cms']}
+
+    def test_edge_order_handler_change_reruns_transport_contracts_without_reinstalling_real_cms(self):
+        result=self.fingerprints('supabase/functions/send-ticket-order/ticketOrderRpc.ts')
+        self.assertEqual(*result['wix-cms'])
+        self.assertNotEqual(*result['wix-quick'])
+
+    def test_form_schema_browser_and_shared_runtime_changes_still_invalidate_cms(self):
+        for path in ['web_client/src/components/forms/form_page.js',
+                     'supabase/migrations/20261116120000_bank_multicurrency_availability.sql',
+                     'supabase/functions/_shared/communicationTone.ts',
+                     'web_client/scripts/test_cms_managed_consent_browser.mjs',
+                     'automation/testing/cms_consent_fixture.py','new_area/unclassified.ts']:
+            with self.subTest(path=path):
+                self.assertNotEqual(*self.fingerprints(path)['wix-cms'])
+
+    def test_canonical_software_version_has_an_explicit_release_contract_owner(self):
+        self.assertEqual(selection.owners('automation/release/software-version.conf',CONTRACT),{'web-startup'})
+
+    def test_checkout_ui_does_not_reexecute_unrelated_backend_contracts(self):
+        units=selection.unit_owners('web_client/src/components/forms/order_result.js','seat-checkout',CONTRACT)
+        self.assertIn('seat-browser',units)
+        for backend in ['seat-authorization','seat-google-auth','seat-notifications','occasion-lifecycle']:
+            self.assertNotIn(backend,units)
+            self.assertIn(backend,selection.unit_owners('database/functions/eshop/finalize_ticket_order.sql','seat-checkout',CONTRACT))
+
+
 class InventoryPreflightTest(unittest.TestCase):
     def test_registration_failure_prevents_selection_and_reuse(self):
         with patch.object(sys,'argv',['selection.py','seat-checkout']), \

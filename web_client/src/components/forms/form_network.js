@@ -18,7 +18,9 @@ export class FormNetwork {
                     code: result.code,
                     errorCode: result.errorCode,
                     message: result.message, 
-                    product: result.product 
+                    product: result.product,
+                    limitReason: result.limitReason,
+                    retryAfterSeconds: result.retryAfterSeconds
                 };
             }
 
