@@ -1,6 +1,7 @@
 """CI input invalidation and trusted executed-check reuse boundaries."""
 from datetime import datetime, timedelta, timezone
 import json
+import copy
 from pathlib import Path
 import subprocess
 import sys
@@ -58,6 +59,54 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
         for backend in ['seat-authorization','seat-google-auth','seat-notifications','occasion-lifecycle']:
             self.assertNotIn(backend,units)
             self.assertIn(backend,selection.unit_owners('database/functions/eshop/finalize_ticket_order.sql','seat-checkout',CONTRACT))
+
+
+class ScopedPolicyTest(unittest.TestCase):
+    def test_registered_test_in_another_lane_does_not_invalidate_cms(self):
+        changed=copy.deepcopy(CONTRACT)
+        path='test/sessions/new_ticket_test.dart'
+        changed['knownTestInputs'].append(path)
+        changed['steps']['ticket-client']['script']+='fvm flutter test --concurrency=1 '+path+'\n'
+        with selection.lookup(), patch.object(selection,'tree',return_value=[]):
+            cms=selection.fingerprint(BASE,'wix-checkout-compatibility',CONTRACT,'wix-cms')
+            self.assertEqual(cms,selection.fingerprint(SHA,'wix-checkout-compatibility',changed,'wix-cms'))
+            self.assertNotEqual(selection.fingerprint(BASE,'ticket-preview-and-delivery',CONTRACT,'ticket-client'),
+                                selection.fingerprint(SHA,'ticket-preview-and-delivery',changed,'ticket-client'))
+
+    def test_own_contract_environment_and_shared_policy_changes_invalidate(self):
+        mutations=[lambda p:p['steps']['wix-cms'].update(script='different command'),
+                   lambda p:p['steps']['wix-install'].update(script='different install'),
+                   lambda p:p['steps']['wix-cms']['inputs'].append('new/**'),
+                   lambda p:p['steps']['wix-cms']['resources'].update(ramMiB=4000),
+                   lambda p:p['reusePolicy'].update(maxAgeDays=8),
+                   lambda p:p.update(unknownFuturePolicy=True),
+                   lambda p:p['knownTestInputs'].append('integrations/tests/new.test.mjs')]
+        for mutate in mutations:
+            changed=copy.deepcopy(CONTRACT);mutate(changed)
+            with self.subTest(mutation=mutate),selection.lookup(),patch.object(selection,'tree',return_value=[]):
+                self.assertNotEqual(selection.fingerprint(BASE,'wix-checkout-compatibility',CONTRACT,'wix-cms'),
+                                    selection.fingerprint(SHA,'wix-checkout-compatibility',changed,'wix-cms'))
+
+    def test_independent_sibling_command_does_not_reinstall_cms(self):
+        changed=copy.deepcopy(CONTRACT)
+        changed['steps']['wix-quick']['script']+='\nnode --test another-contract.test.js\n'
+        with selection.lookup(),patch.object(selection,'tree',return_value=[]):
+            self.assertEqual(selection.fingerprint(BASE,'wix-checkout-compatibility',CONTRACT,'wix-cms'),
+                             selection.fingerprint(SHA,'wix-checkout-compatibility',changed,'wix-cms'))
+            self.assertNotEqual(selection.fingerprint(BASE,'wix-checkout-compatibility',CONTRACT),
+                                selection.fingerprint(SHA,'wix-checkout-compatibility',changed))
+
+    def test_raw_registry_is_projected_but_executable_ci_remains_trusted(self):
+        def entries(sha):
+            return b'100644 blob '+sha.encode()+b'\t'+selection.POLICY.encode()+b'\0'+b'100644 blob stable\tautomation/ci/run.py\0'
+        with selection.lookup(),patch.object(selection,'git',side_effect=lambda *args:entries(args[3])):
+            self.assertEqual(selection.definition(BASE),selection.definition(SHA))
+        for path in ['automation/ci/run.py','.github/workflows/seat-checkout-regressions.yml']:
+            with selection.lookup(),patch.object(selection,'git',side_effect=lambda *args:b'100644 blob '+args[3].encode()+b'\t'+path.encode()+b'\0'):
+                self.assertNotEqual(selection.definition(BASE),selection.definition(SHA))
+        with selection.lookup(),patch.object(selection,'tree',side_effect=lambda sha:entries(sha).split(b'\0')):
+            self.assertEqual(selection.fingerprint(BASE,'wix-checkout-compatibility',CONTRACT,'wix-cms'),
+                             selection.fingerprint(SHA,'wix-checkout-compatibility',CONTRACT,'wix-cms'))
 
 
 class InventoryPreflightTest(unittest.TestCase):
@@ -221,6 +270,7 @@ class ReusePolicyTest(unittest.TestCase):
         self.corrupt = False
         self.parents = ('c'*40)+' '+BASE
         self.checkout_available = True
+        self.original_contract=copy.deepcopy(self.contract)
 
     def evaluate(self, fingerprint=None, runs=None, definition=None, consume=False):
         import hashlib, io, zipfile
@@ -250,6 +300,7 @@ class ReusePolicyTest(unittest.TestCase):
              patch.object(selection.Path,'home',return_value=Path(directory)), \
              patch.object(selection,'git',side_effect=git), \
              patch.object(selection,'ensure_commit'), \
+             patch.object(selection,'source_policy',return_value=self.original_contract), \
              patch.object(selection,'definition',side_effect=definition or (lambda *args:'trusted')), \
              patch.object(selection,'fingerprint',side_effect=fingerprint or (lambda *args:'same-inputs')), \
              patch.object(selection,'toolchain',return_value=self.tools), \
@@ -268,6 +319,25 @@ class ReusePolicyTest(unittest.TestCase):
         self.assertEqual(result['source'],BASE)
         self.assertEqual(result['jobId'],456)
         self.assertTrue(self.evaluate(fingerprint=lambda sha,*args:sha)['run'])
+
+    def test_historical_inventory_is_verified_against_its_source_contract(self):
+        self.contract['knownTestInputs'].append('test/sessions/new_ticket_test.dart')
+        self.assertFalse(self.evaluate(consume=True)['run'])
+        # Relabelling old aggregate evidence with today's inventory is rejected.
+        self.receipt['execution']['inventory']=self.contract['knownTestInputs']
+        self.assertTrue(self.evaluate()['run'])
+
+    def test_current_unit_cannot_reuse_a_different_source_command(self):
+        import hashlib
+        def digest(sha,lane,policy,unit=None):
+            return hashlib.sha256(selection.policy_inputs(lane,policy,unit)).hexdigest()
+        self.receipt['execution']['inputSha256']=digest(BASE,'image-contract',self.original_contract)
+        for name,row in self.receipt['units'].items():
+            row['inputSha256']=digest(BASE,'image-contract',self.original_contract,name)
+        self.contract['steps']['image-policy']['script']+='\nnew meaningful test'
+        result=self.evaluate(fingerprint=digest,consume=True)
+        self.assertIn('image-policy',result['execute'])
+        self.assertNotIn('image-policy',result['reuse'])
 
     def test_pr_merge_squash_and_rebase_commit_identity_is_not_input_identity(self):
         self.run['event']='pull_request'

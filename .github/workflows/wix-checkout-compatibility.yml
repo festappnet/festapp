@@ -48,12 +48,19 @@ jobs:
       - name: Ensure disposable backend SQL client
         if: steps.selection.outputs.cms == 'true'
         run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
+      - name: Identify pinned CMS browsers
+        id: cms-browser-key
+        if: steps.selection.outputs.cms == 'true'
+        run: |
+          cms_playwright_version="$(node -p "require('./web_client/package.json').devDependencies.playwright")"
+          [[ "$cms_playwright_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          printf 'key=cms-browsers-%s-%s-%s-playwright-%s\n' "$RUNNER_OS" "$RUNNER_ARCH" "${ImageOS:?}" "$cms_playwright_version" >> "$GITHUB_OUTPUT"
       - name: Restore pinned CMS browsers
         if: steps.selection.outputs.cms == 'true'
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
-          key: cms-browsers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('web_client/package.json', 'web_client/pnpm-lock.yaml', 'web_client/pnpm-workspace.yaml', 'web_client/scripts/native_browser.mjs', 'automation/testing/cms_consent_fixture.py') }}
+          key: ${{ steps.cms-browser-key.outputs.key }}
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}

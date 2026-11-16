@@ -26,6 +26,35 @@ nezneplatní instalovanou CMS jednotku, zatímco změna formuláře, schématu,
 sdíleného runtime nebo neznámý vstup ji stále spustí. Nová definice vyžaduje
 čerstvé úplné hosted ověření před dalším produkčním rolloutem.
 
+## Druhé zrychlení napříč CI
+
+Audit všech osmi hosted jobs na main `c802bdc85252` naměřil Wix 326 s,
+checkout 306 s, ticket-preview 283 s, client-contract 248 s, navigation 203 s,
+web-startup 185 s, server-policy 172 s a image-contract 82 s. Wix tedy není
+jediná dlouhá cesta. V předchozím vzorku měl Wix 502 s a checkout 494 s.
+
+Další změna odstraňuje globální zneplatnění důkazů pouhou editací registry
+JSON. Jednotka váže vlastní příkaz, mapu vstupů, prostředí a relevantní
+inventář; původní aggregate se vždy ověřuje proti vlastnímu historickému
+kontraktu. Změna spustitelného CI nebo workflow stále vynutí nové testy.
+Neznámé soubory/testy, nedoložené výsledky, chyby a sedmidenní stáří zůstávají
+konzervativní. Sdílená SQL politika zůstává společným vstupem.
+
+Stejné Flutter příkazy jsou sloučené bez změny seznamu případů. Odlišný
+`FESTAPP_APP_SUPPORTED=false` i Chrome platform zůstávají samostatné.
+Flutter konzumenti vyžadují skutečnou instalaci, nikoli opakování nezávislého
+předchozího testu. CMS browser cache váže přesnou verzi Playwrightu a
+OS/architekturu, nikoli verzi aplikace či změnu fixture. Instalace systémových
+knihoven zůstává zachována.
+
+Celý lokální mirror prošel: všech osm jobs PASS, `complete:true`,
+`inputsUnchanged:true`, receipt `20261116T135532-0e4805dd5749`, 507,74 s.
+Navigační jednotka klesla proti předchozímu lokálnímu vzorku z 70,21 na
+49,21 s, ticket-client ze 70,64 na 65,25 s a ticket-core z 3,34 na 1,33 s.
+Všech 228 navigačních případů i úplná devítipřípadová CMS matice zůstaly.
+Celkový lokální čas se nezkrátil: host/cache a další jednotky tento běh
+zpomalily. Úsporu celého hosted běhu proto z těchto lokálních čísel nevyvozujeme.
+
 ## Baseline
 
 [Uložený vzorek](ci-efficiency-baseline-2026-11-16.json) vznikl read-only

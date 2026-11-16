@@ -14,6 +14,18 @@ all jobs. Shared contracts have all consumers. Known Flutter package paths inclu
 locks and manifests; unknown packages remain conservative. Git tree entries bind
 content, path, mode, additions, removals and renames. Unit inputs live alongside their scripts in the same contract. Units without explicit inputs retain the conservative lane inputs. Unknown paths/tests select every unit. `after` orders verification, while optional `requires` names preparation that must execute with a consumer; default preparation closure follows `after`. The selected DAG removes only already verified dependencies.
 
+The registry JSON is hashed as a canonical projection of the lane/unit command,
+input map, resources, preparation dependencies and relevant registered test paths,
+instead of its entire raw blob. Shared policy fields, including SQL group policy,
+remain conservative inputs. Adding a registered Flutter test in another lane or
+changing an independent sibling's test command no longer invalidates installed
+CMS evidence. A changed command, environment dependency, input map, relevant
+test inventory or unknown policy field still invalidates the affected proof.
+The receipt's complete aggregate and inventory are verified against the policy
+at its original source commit, then its directly executed unit fingerprint must
+match today's inputs. Executable CI code and every workflow remain protected
+by the global trusted definition digest.
+
 `image-policy` owns the image worker typecheck and unit suite once. Server policy
 retains MCP/auth tests. All source startup/WebView scenarios remain in CI;
 production builders verify their exact canonical CI source and assembled tenant

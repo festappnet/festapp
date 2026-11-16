@@ -118,12 +118,43 @@ def _unit_owners(path, lane, policy):
     return matches or set(units)
 
 
+def policy_inputs(lane, policy, unit=None):
+    """Hash the executed contract, not unrelated test-list edits.
+
+    Shared policy fields stay conservative. Steps include the environment
+    dependency closure; a sibling command is not an input to an independent
+    unit. The actual files are still classified and hashed separately.
+    """
+    def compute():
+        units=set(policy['jobs'][lane]['steps'])
+        selected={unit} if unit else set(units)
+        while True:
+            expanded=selected|{dep for name in selected for dep in
+                policy['steps'][name].get('requires',policy['steps'][name].get('after',[])) if dep in units}
+            if expanded==selected: break
+            selected=expanded
+        result={key:value for key,value in policy.items() if key not in ('jobs','steps','knownTestInputs')}
+        result['job']={key:value for key,value in policy['jobs'][lane].items() if key!='steps'}
+        result['steps']={name:{**policy['steps'][name],
+            'after':[dep for dep in policy['steps'][name].get('after',[]) if dep in units]}
+            for name in sorted(selected)}
+        result['inventory']=[path for path in policy['knownTestInputs'] if
+            (lane in owners(path,policy) if unit is None else unit in unit_owners(path,lane,policy))]
+        return json.dumps(result,sort_keys=True,separators=(',',':')).encode()
+    return cached(('policy-inputs',id(policy),lane,unit),compute)
+
+
+def source_policy(sha):
+    return cached(('source-policy',str(ROOT),sha),lambda:json.loads(git('show',f'{sha}:{POLICY}')))
+
+
 def fingerprint(sha, lane, policy, unit=None):
     def compute():
-        digest=hashlib.sha256()
+        digest=hashlib.sha256(policy_inputs(lane,policy,unit)+b'\0')
         for entry in tree(sha):
             if not entry: continue
             path=entry.split(b'\t',1)[1].decode('utf-8')
+            if path==POLICY: continue
             if (lane in owners(path,policy) if unit is None else unit in unit_owners(path,lane,policy)):
                 digest.update(entry+b'\0')
         return digest.hexdigest()
@@ -133,8 +164,13 @@ def fingerprint(sha, lane, policy, unit=None):
 
 def definition(sha):
     """Trust the complete evidence producer, selector and workflow definitions."""
-    return cached(('definition',str(ROOT),sha), lambda: hashlib.sha256(git(
-        'ls-tree','-r','-z',sha,'automation/ci','.github/workflows','automation/test_ci.sh')).hexdigest())
+    # The policy's relevant commands, inventory and inputs are authenticated in
+    # each fingerprint. Keep every executable evidence producer/workflow here.
+    def compute():
+        entries=git('ls-tree','-r','-z',sha,'automation/ci','.github/workflows','automation/test_ci.sh').split(b'\0')
+        return hashlib.sha256(b'\0'.join(entry for entry in entries if entry and
+            entry.split(b'\t',1)[1].decode()!=POLICY)).hexdigest()
+    return cached(('definition',str(ROOT),sha),compute)
 
 
 def toolchain(lane, contract):
@@ -201,8 +237,11 @@ def verify_execution(receipt, run, job, lane, current, repository_id, contract, 
     evidence=receipt['execution']
     source=evidence['checkoutSha']
     ensure_commit(source)
-    expected=set(contract['jobs'][lane]['steps'])
+    original=source_policy(source)
+    expected=set(original['jobs'][lane]['steps'])
     rows=receipt['units']
+    if unit is None and evidence['inputSha256']!=current:
+        raise ValueError('Aggregate inputs changed')
     if (evidence['schemaVersion'] != 2 or evidence['state'] != 'executed' or
             not receipt['complete'] or receipt['dirty'] or not receipt['inputsUnchanged'] or
             receipt['selectedJobs'] != [lane] or evidence['repositoryId'] != repository_id or
@@ -211,14 +250,15 @@ def verify_execution(receipt, run, job, lane, current, repository_id, contract, 
             evidence['event'] != run['event'] or evidence['workflow'] != run['path'] or
             evidence['definition'] != trusted or definition(source) != trusted or
             evidence['tree'] != git('rev-parse',source+'^{tree}').decode().strip() or
+            evidence['toolchain'] != toolchain(lane,original) or
             evidence['toolchain'] != toolchain(lane,contract) or
             not all(evidence['toolchain'].get(k) for k in ('RUNNER_OS','RUNNER_ARCH','ImageOS','ImageVersion')) or
-            evidence['inventory'] != contract['knownTestInputs'] or
-            evidence['inputSha256'] != fingerprint(source,lane,policy) or set(rows) != expected or
+            evidence['inventory'] != original['knownTestInputs'] or
+            evidence['inputSha256'] != fingerprint(source,lane,original) or set(rows) != expected or
             not all(row['status']=='PASS' and row['state'] in ('executed','reused') for row in rows.values())):
         raise ValueError('Execution receipt does not attest these inputs')
     for name,row in rows.items():
-        if row['inputSha256']!=fingerprint(source,lane,policy,name):
+        if row['inputSha256']!=fingerprint(source,lane,original,name):
             raise ValueError('Incomplete aggregate unit fingerprints')
         if row['state']=='reused':
             origin=row['origin']
@@ -231,7 +271,7 @@ def verify_execution(receipt, run, job, lane, current, repository_id, contract, 
     for name in targets:
         row=rows[name]
         wanted=current if unit else fingerprint(source,lane,policy,name)
-        if row['state']!='executed' or row['inputSha256']!=wanted or fingerprint(source,lane,policy,name)!=wanted:
+        if row['state']!='executed' or row['inputSha256']!=wanted or fingerprint(source,lane,original,name)!=wanted:
             raise ValueError('Unit has no direct matching execution')
     cached(('checkout',source,run['id'],run['run_attempt']),lambda:validate_checkout(source,run))
     return source
@@ -310,7 +350,6 @@ def reusable(lane, sha, repository, contract, policy):
         # Old lane receipts never supply unit evidence. Mixed receipts supply
         # only directly executed rows, never the rows that they reused.
         if receipt.get('execution',{}).get('schemaVersion')!=2: continue
-        if set(receipt['units'])!=set(units): raise ValueError('Incomplete aggregate inventory')
         for unit in sorted(candidates):
             row=receipt.get('units',{}).get(unit,{})
             if row.get('state')!='executed' or row.get('inputSha256')!=current[unit]: continue

@@ -18,6 +18,29 @@ GROWTH_GUARD = ('python3 -m unittest automation.tests.test_repository_growth\n'
 
 
 class MirrorContractTest(unittest.TestCase):
+    def test_cms_browser_cache_tracks_binary_version_and_platform(self):
+        workflow=yaml.safe_load((ROOT/'.github/workflows/wix-checkout-compatibility.yml').read_text())
+        steps=workflow['jobs']['wix-checkout-compatibility']['steps']
+        command=next(step['run'] for step in steps if step.get('id')=='cms-browser-key')
+        cache=next(step for step in steps if step.get('name')=='Restore pinned CMS browsers')
+        self.assertEqual(cache['with']['key'],'${{ steps.cms-browser-key.outputs.key }}')
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);(root/'web_client').mkdir()
+            def key(app='1.0.0',browser='1.65.0',**platform):
+                (root/'web_client/package.json').write_text(json.dumps({'version':app,'devDependencies':{'playwright':browser}}))
+                output=root/'output';output.unlink(missing_ok=True)
+                result=subprocess.run(['bash','-e','-c',command],cwd=root,capture_output=True,
+                    env={**os.environ,'RUNNER_OS':'Linux','RUNNER_ARCH':'X64','ImageOS':'ubuntu24',
+                         'GITHUB_OUTPUT':str(output),**platform})
+                return result.returncode,output.read_text() if output.exists() else ''
+            original=key();self.assertEqual(original[0],0)
+            self.assertEqual(original,key(app='2.0.0'))
+            self.assertNotEqual(original,key(browser='1.66.0'))
+            self.assertNotEqual(original,key(ImageOS='ubuntu26'))
+            self.assertNotEqual(original,key(RUNNER_ARCH='ARM64'))
+            self.assertNotEqual(key(browser='^1.65.0')[0],0)
+            self.assertNotEqual(key(ImageOS='')[0],0)
+
     def test_selection_covers_provisioning_tests_and_execution_evidence(self):
         contract = json.loads((ROOT / 'automation/ci/checks.json').read_text())
         for name, lane in contract['jobs'].items():
