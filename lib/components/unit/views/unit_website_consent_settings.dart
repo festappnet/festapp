@@ -7,12 +7,26 @@ import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
 import '../db_units.dart';
+import '../complianz_policy_probe.dart';
 import '../unit_website_consent.dart';
 
 /// The saved Unit and server scope are the only authoring/export authority.
 class UnitWebsiteConsentSettings extends StatefulWidget {
+  final Future<String> Function(String)? detectPolicy;
+  final Future<UnitWebsiteConsent> Function(
+    String,
+    String,
+    String,
+    int,
+    String,
+  )?
+  confirmDetected;
   final int unitId;
   final List<String> websites;
+
+  /// Saved, currently approved origins supplied by the owning settings screen.
+  /// Unknown or unavailable approval must not start an external website probe.
+  final List<String> approvedWebsites;
   final bool saved;
   final Future<UnitWebsiteConsent> Function()? load;
   final Future<UnitWebsiteConsent> Function(
@@ -31,8 +45,11 @@ class UnitWebsiteConsentSettings extends StatefulWidget {
     super.key,
     required this.unitId,
     required this.websites,
+    this.approvedWebsites = const [],
     required this.saved,
     this.load,
+    this.detectPolicy,
+    this.confirmDetected,
     this.save,
     this.export,
     this.disable,
@@ -50,6 +67,58 @@ class _UnitWebsiteConsentSettingsState
   String _platform = 'wordpress', _provider = 'complianz';
   bool _busy = false, _failed = false, _coverage = false, _edited = false;
   String? _export;
+  bool _policyChanged = false;
+  late final _probe = ComplianzPolicyProbe(onChanged: _probeChanged);
+  int _scheduledProbe = 0;
+  bool get _detecting => _probe.status == ComplianzProbeStatus.loading;
+  bool get _detectionFailed =>
+      _probe.status == ComplianzProbeStatus.unavailable;
+  String? get _detectedPolicy => _probe.policyId;
+
+  bool get _canDetect =>
+      widget.saved &&
+      _origin != null &&
+      widget.websites.contains(_origin) &&
+      widget.approvedWebsites.contains(_origin) &&
+      _provider == 'complianz';
+
+  void _cancelDetection() {
+    ++_scheduledProbe;
+    _probe.cancel();
+  }
+
+  void _probeChanged() {
+    if (!mounted) return;
+    setState(() {
+      final detected = _detectedPolicy;
+      if (detected != null) {
+        _policy.text = detected;
+        if (detected != _binding?.providerConfig['policyId']) _edited = true;
+      }
+    });
+  }
+
+  Future<void> _detect() async {
+    if (!mounted || !_canDetect) return;
+    setState(() {
+      _coverage = false;
+      _export = null;
+    });
+    await _probe.detect(
+      _origin!,
+      widget.detectPolicy ??
+          (origin) => DbUnits.detectComplianzPolicy(widget.unitId, origin),
+    );
+  }
+
+  void _scheduleDetection() {
+    _cancelDetection();
+    final generation = _scheduledProbe;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && generation == _scheduledProbe) _detect();
+    });
+  }
+
   final _policy = TextEditingController();
   final _analytics = TextEditingController();
   final _marketing = TextEditingController();
@@ -63,6 +132,13 @@ class _UnitWebsiteConsentSettingsState
   @override
   void didUpdateWidget(covariant UnitWebsiteConsentSettings oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final wasApproved = oldWidget.approvedWebsites.contains(_origin);
+    final isApproved = widget.approvedWebsites.contains(_origin);
+    if (!widget.saved || !isApproved) {
+      _cancelDetection();
+    } else if (!wasApproved) {
+      _scheduleDetection();
+    }
     if (!widget.saved) {
       _coverage = false;
       _export = null;
@@ -87,6 +163,7 @@ class _UnitWebsiteConsentSettingsState
 
   @override
   void dispose() {
+    _cancelDetection();
     for (final controller in [_policy, _analytics, _marketing]) {
       controller.dispose();
     }
@@ -110,8 +187,9 @@ class _UnitWebsiteConsentSettingsState
     'cookieconsent' => _validCategories,
     _ => true,
   };
-  void _select(String origin) {
+  void _select(String origin, {bool detect = true}) {
     _origin = origin;
+    _policyChanged = false;
     final b = _binding;
     final c = b?.providerConfig ?? <String, dynamic>{};
     _platform = b?.platform ?? 'wordpress';
@@ -124,6 +202,11 @@ class _UnitWebsiteConsentSettingsState
     _coverage = false;
     _export = null;
     _edited = false;
+    if (detect) {
+      _scheduleDetection();
+    } else {
+      _cancelDetection();
+    }
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -173,28 +256,60 @@ class _UnitWebsiteConsentSettingsState
   Future<void> _save(bool confirm) => _run(() async {
     final config = _config;
     final version = _binding?.version ?? 0;
-    final data =
-        await (widget.save?.call(
-              _origin!,
-              _platform,
-              config,
-              version,
-              _data!.consentRevision,
-              confirm,
-            ) ??
-            DbUnits.saveWebsiteConsent(
-              widget.unitId,
-              _origin!,
-              _platform,
-              config,
-              version,
-              _data!.consentRevision,
-              confirm,
-            ));
+    UnitWebsiteConsent data;
+    try {
+      if (confirm && _provider == 'complianz' && _detectedPolicy != null) {
+        data =
+            await (widget.confirmDetected?.call(
+                  _origin!,
+                  _platform,
+                  _detectedPolicy!,
+                  version,
+                  _data!.consentRevision,
+                ) ??
+                DbUnits.confirmDetectedComplianz(
+                  widget.unitId,
+                  _origin!,
+                  _platform,
+                  _detectedPolicy!,
+                  version,
+                  _data!.consentRevision,
+                ));
+      } else {
+        data =
+            await (widget.save?.call(
+                  _origin!,
+                  _platform,
+                  config,
+                  version,
+                  _data!.consentRevision,
+                  confirm,
+                ) ??
+                DbUnits.saveWebsiteConsent(
+                  widget.unitId,
+                  _origin!,
+                  _platform,
+                  config,
+                  version,
+                  _data!.consentRevision,
+                  confirm,
+                ));
+      }
+    } on ComplianzPolicyChanged {
+      if (!mounted) return;
+      setState(() {
+        _policyChanged = true;
+        _edited = true;
+        _coverage = false;
+        _export = null;
+      });
+      await _detect();
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _data = data;
-      _select(_origin!);
+      _select(_origin!, detect: false);
     });
   });
   void _changed() => setState(() {
@@ -316,6 +431,7 @@ class _UnitWebsiteConsentSettingsState
                       _provider = 'complianz';
                     }
                     _changed();
+                    _scheduleDetection();
                   }
                 : null,
           ),
@@ -348,19 +464,51 @@ class _UnitWebsiteConsentSettingsState
                 ? (v) {
                     _provider = v!;
                     _changed();
+                    _scheduleDetection();
                   }
                 : null,
           ),
-          if (_provider == 'complianz')
-            _field(
-              _policy,
-              FormStrings.cmsPolicyId,
-              helper: FormStrings.cmsPolicyIdHelp,
-              error: (_edited || _coverage) && !_validPolicy
-                  ? FormStrings.cmsPolicyIdInvalid
-                  : null,
-              keyboardType: TextInputType.number,
+          if (_provider == 'complianz') ...[
+            if (_binding?.providerConfig['provider'] == 'complianz')
+              Text(
+                '${FormStrings.cmsPolicySaved}: ${_binding!.providerConfig['policyId']}',
+              ),
+            if (_policyChanged)
+              Semantics(
+                liveRegion: true,
+                child: Text(FormStrings.cmsPolicyChanged),
+              ),
+            if (_detecting)
+              Semantics(liveRegion: true, child: Text(CommonStrings.loading)),
+            if (_detectedPolicy != null) ...[
+              Text('${FormStrings.cmsPolicyId}: $_detectedPolicy'),
+              Text(FormStrings.cmsPolicyDetected),
+            ],
+            if (_detectionFailed)
+              Semantics(
+                liveRegion: true,
+                child: Text(FormStrings.cmsPolicyDetectionFailed),
+              ),
+            if (_detectedPolicy == null && !_detecting)
+              ExpansionTile(
+                title: Text(FormStrings.cmsPolicyManual),
+                children: [
+                  _field(
+                    _policy,
+                    FormStrings.cmsPolicyId,
+                    helper: FormStrings.cmsPolicyIdHelp,
+                    error: (_edited || _coverage) && !_validPolicy
+                        ? FormStrings.cmsPolicyIdInvalid
+                        : null,
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
+            TextButton(
+              onPressed: _canDetect && !_busy && !_detecting ? _detect : null,
+              child: Text(FormStrings.cmsPolicyReload),
             ),
+          ],
           if (_provider == 'cookieconsent')
             ExpansionTile(
               title: Text(FormStrings.cmsAdvancedCategories),
@@ -396,7 +544,7 @@ class _UnitWebsiteConsentSettingsState
               controlAffinity: ListTileControlAffinity.leading,
               value: _coverage,
               title: Text(FormStrings.cmsCoverage),
-              onChanged: allowed
+              onChanged: allowed && !_detecting
                   ? (v) => setState(() => _coverage = v == true)
                   : null,
             ),
@@ -438,21 +586,21 @@ class _UnitWebsiteConsentSettingsState
             children: [
               if (_needsConfirmation)
                 FilledButton(
-                  onPressed: allowed && _validConfig && _coverage
+                  onPressed: allowed && !_detecting && _validConfig && _coverage
                       ? () => _save(true)
                       : null,
                   child: Text(FormStrings.cmsConfirm),
                 ),
               if (_needsConfirmation && _canSaveDraft)
                 OutlinedButton(
-                  onPressed: allowed && _validConfig && _edited
+                  onPressed: allowed && !_detecting && _validConfig && _edited
                       ? () => _save(false)
                       : null,
                   child: Text(FormStrings.cmsSaveDraft),
                 ),
               if (!_needsConfirmation && _export == null)
                 FilledButton(
-                  onPressed: allowed
+                  onPressed: allowed && !_detecting
                       ? () => _run(() async {
                           final b = _binding!;
                           final data =
@@ -475,14 +623,14 @@ class _UnitWebsiteConsentSettingsState
               if (_edited && _binding != null)
                 TextButton(
                   onPressed: allowed
-                      ? () => setState(() => _select(_origin!))
+                      ? () => setState(() => _select(_origin!, detect: false))
                       : null,
                   child: Text(CommonStrings.discardChanges),
                 ),
               if (_binding != null &&
                   !{'draft', 'disabled'}.contains(_binding!.state))
                 TextButton(
-                  onPressed: allowed
+                  onPressed: allowed && !_detecting
                       ? () => _run(() async {
                           final b = _binding!;
                           final data =

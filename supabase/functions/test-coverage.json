@@ -73,6 +73,10 @@
         "qr.proof"
       ]
     },
+    "probe-complianz": {
+      "smokeTests": ["supabase/functions/probe-complianz/handler_test.ts"],
+      "behaviorTests": ["supabase/functions/probe-complianz/handler_test.ts", "supabase/functions/probe-complianz/policy_test.ts"]
+    },
     "fetch-http-data": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
