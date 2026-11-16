@@ -607,7 +607,9 @@ not continuously synchronized.
 
 Successful transfer shows the floating settings button. Saving there makes a
 local decision; Escape closes settings without saving. Link helpers preserve
-modifier clicks, downloads, explicit noopener/noreferrer and referrer policies.
+modifier clicks, downloads, noreferrer and referrer policies. A bare noopener
+does not opt out: browsers imply it for new tabs and CMS/SEO plugins (e.g. Rank
+Math) add it to every external link. Remove the marker to opt a link out.
 Without a referrer, opener or COOP-compatible connection, local consent remains
 available. The click handler can suppress GTM Just Links validation triggers;
 measure checkout with form events instead. See the

@@ -65,7 +65,18 @@ test('global source failure remains configured and retired callbacks are inert',
  assert.equal(r.read(scope).analytics,true);r.connect({read:()=>({processingRevision:'rev',analytics:true,marketing:true}),subscribe(){throw Error('broken')}});
  dispose();old();assert.equal(r.configured,true);assert.equal(r.read(scope),null);
 });
-for(const attrs of ['rel="noopener"','rel="noreferrer"','referrerpolicy="no-referrer"','target="_self"','href="https://evil.example/form/test"'])test('host preserves native navigation '+attrs,()=>{
+for(const rel of ['noopener','NoOpener nofollow','nofollow noopener external'])test('host bridges marked links despite injected rel '+rel,()=>{
+ const f=hostFixture();try{
+ const link=f.win.document.querySelector('a');let opened=null;f.win.open=(...args)=>{opened=args;return f.child};
+ // SEO plugins rewrite rel after the helper is installed; the click reads the live DOM.
+ link.setAttribute('rel',rel);
+ let prevented=false;f.win.document.addEventListener('click',e=>{prevented=e.defaultPrevented});f.click();
+ assert.equal(opened?.[0],'https://tickets.example/form/test');assert.match(opened[1],/^festapp-consent-link-[a-f0-9-]{36}$/);assert.equal(prevented,true);
+ assert.equal(link.getAttribute('rel'),rel,'rel is left untouched');
+ f.reply();assert.equal(f.replies.at(-1).data.type,'response');assert.equal(f.replies.at(-1).data.choice.analytics,true);
+ }finally{f.close()}
+});
+for(const attrs of ['rel="noopener noreferrer"','rel="NoReferrer"','rel="noreferrer"','referrerpolicy="no-referrer"','target="_self"','href="https://evil.example/form/test"'])test('host preserves native navigation '+attrs,()=>{
  const f=hostFixture();try{let opened=false;f.win.open=()=>{opened=true;return f.child};const [key,value]=attrs.split('=');f.win.document.querySelector('a').setAttribute(key,value.slice(1,-1));f.win.document.addEventListener('click',e=>e.preventDefault());f.click();assert.equal(opened,false)}finally{f.close()}
 });
 for(const options of [{legacy:true},{referrer:'https://evil.example'},{policy:{...policy,measurement_consent_bridge:false}}])test('unapproved links use ordinary local consent '+JSON.stringify(options),()=>{
