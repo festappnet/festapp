@@ -1,5 +1,7 @@
 # Zkrácení CI a webových releasů při zachování ověření
 
+Navazující optimalizace selectoru, Wix/SQL jednotek a evidence: [CI efficiency](ci-efficiency-plan-2026-11-16.md). Historické výsledky tohoto plánu zůstávají beze změny.
+
 Datum: 2026-11-13  
 Stav: Plán k implementaci; bez změn pipeline a bez publikace  
 Ověřování implementace: standard, protože jde o release gate a souběh úloh

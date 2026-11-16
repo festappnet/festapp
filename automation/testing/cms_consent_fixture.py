@@ -20,8 +20,10 @@ import time
 import uuid
 
 ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT/'automation/ci'))
+from telemetry import phase as timed_phase, emit
 parser=argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--base-port',type=int,default=61000)
+parser.add_argument('--base-port',type=int,default=int(os.environ.get('FESTAPP_CMS_FIXTURE_BASE_PORT','61000')))
 parser.add_argument('--keep',action='store_true',help='Keep only this owned environment after verification for diagnosis')
 args=parser.parse_args()
 base=args.base_port
@@ -48,10 +50,10 @@ source_inputs=input_digests()
 processes=[]
 started={'backend':False,'wordpress':False,'joomla':False}
 
-def run(command,cwd=ROOT,extra=None,capture=False):
- with log.open('a') as output:
+def run(command,cwd=ROOT,extra=None,capture=False,label='command'):
+ with timed_phase('cms.'+label), log.open('a') as output:
   result=subprocess.run([str(v) for v in command],cwd=cwd,env={**env,**(extra or {})},stdout=subprocess.PIPE if capture else output,stderr=output,text=True)
- if result.returncode:raise RuntimeError(f'{Path(str(command[0])).name} failed ({result.returncode}); private log: {log}')
+  if result.returncode:raise RuntimeError(f'{Path(str(command[0])).name} failed ({result.returncode}); private log: {log}')
  return result.stdout if capture else ''
 
 def start(command,cwd=ROOT):
@@ -114,21 +116,28 @@ try:
  config['config'].update({'WP_HOME':f'https://127.0.0.1:{base+31}','WP_SITEURL':f'https://127.0.0.1:{base+31}'})
  config['env']['tests']['config']={'WP_HOME':f'https://127.0.0.1:{base+36}','WP_SITEURL':f'https://127.0.0.1:{base+36}'}
  (wp/'.wp-env.json').write_text(json.dumps(config,indent=2)+'\n')
- run(['pnpm','install','--frozen-lockfile'],wp)
- run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps','chromium','firefox','webkit'])
+ # One verified frozen installation in the source package, reused by the
+ # copied environment's CLI. No node_modules copy and no shared CMS state.
+ run(['python3','automation/ci/run.py','install','integrations/wordpress'],label='dependencies')
+ env['FESTAPP_WP_ENV_CLI']=str(ROOT/'integrations/wordpress/node_modules/.bin/wp-env')
+ browser_cache=Path(os.environ.get('PLAYWRIGHT_BROWSERS_PATH',Path.home()/('Library/Caches/ms-playwright' if sys.platform=='darwin' else '.cache/ms-playwright')))
+ def cache_bytes():return sum(p.stat().st_size for p in browser_cache.rglob('*') if p.is_file()) if browser_cache.exists() else 0
+ cache_before=cache_bytes();browser_started=time.monotonic()
+ run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps','chromium','firefox','webkit'],label='browsers.install')
+ emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
  run(['python3','scripts/package.py'],wp);run(['python3','scripts/package.py'],joomla)
  phase('Starting fresh disposable backend, WordPress minimum/current and Joomla 5/6')
  run(['node','scripts/setup-backend.mjs'],wp)
  started['backend']=True
- run(['supabase','start','--workdir','.private/backend','--exclude','realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp)
- run(['bash','scripts/bootstrap-backend.sh'],wp)
+ run(['supabase','start','--workdir','.private/backend','--exclude','realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp,label='backend.start')
+ run(['bash','scripts/bootstrap-backend.sh'],wp,label='backend.bootstrap')
  sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
- started['wordpress']=True;run(['node','scripts/environment.mjs','start'],wp)
+ started['wordpress']=True;run(['node','scripts/environment.mjs','start'],wp,label='wordpress.start')
  products=json.loads((wp/'products.json').read_text())
  for cli in ['cli','tests-cli']:
   for p in products:run(['node','scripts/environment.mjs','run',cli,'wp','plugin','install',f'/var/www/html/wp-content/vo-artifacts/{p["slug"]}-{p["version"]}.zip','--activate','--force'],wp)
   run(['node','scripts/environment.mjs','run',cli,'wp','eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-installed.php'],wp)
- started['joomla']=True;run(['python3','scripts/environment.py','start'],joomla)
+ started['joomla']=True;run(['python3','scripts/environment.py','start'],joomla,label='joomla.start')
  jprefix=project+'-joomla'
  for major in [5,6]:
   for p in json.loads((joomla/'products.json').read_text()):
@@ -168,7 +177,7 @@ try:
   if platform=='wix':extra['FESTAPP_CMS_TEST_IFRAME']='1'
   if coop:extra['FESTAPP_CMS_EXPECT_COOP']='1'
   else:extra['FESTAPP_CMS_TEST_WITHDRAWAL']='1'
-  output=run(['node','web_client/scripts/test_cms_managed_consent_browser.mjs'],extra=extra,capture=True)
+  output=run(['node','web_client/scripts/test_cms_managed_consent_browser.mjs'],extra=extra,capture=True,label=f'case.{case_index}.{platform}.{engine}')
   lines=[line for line in output.splitlines() if line.startswith('PASS ')];assert lines,output
   for line in lines:phase(line)
   results.append({'platform':platform,'variant':variant,'engine':engine,'result':'passed','scenario':'blocked COOP fallback' if coop else 'grant/refusal/withdrawal/disable/stale export','boundary':'modeled CMP; modeled Wix Site mode'})
@@ -185,7 +194,7 @@ finally:
   cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['node','scripts/environment.mjs','destroy','--force'],wp,'wordpress'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
   for command,cwd,key in cleanup:
    if started[key]:
-    try:run(command,cwd)
+    try:run(command,cwd,label='cleanup.'+key)
     except Exception as error:print(f'Owned {key} cleanup failed: {error}',file=sys.stderr)
   if started['wordpress']:
    try:cleanup_partial_wordpress()

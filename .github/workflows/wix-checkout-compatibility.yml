@@ -42,20 +42,30 @@ jobs:
             integrations/wix/pnpm-lock.yaml
             web_client/pnpm-lock.yaml
       - uses: supabase/setup-cli@v3
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.cms == 'true'
         with:
           version: 2.111.0
       - name: Ensure disposable backend SQL client
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.cms == 'true'
         run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
+      - name: Restore pinned CMS browsers
+        if: steps.selection.outputs.cms == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: cms-browsers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('web_client/package.json', 'web_client/pnpm-lock.yaml', 'web_client/pnpm-workspace.yaml', 'web_client/scripts/native_browser.mjs', 'automation/testing/cms_consent_fixture.py') }}
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-        if: steps.selection.outputs.run == 'true'
         run: python3 automation/ci/run.py lane wix-checkout-compatibility
       - name: All lane tests executed
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.full == 'true'
         run: echo 'All lane tests executed'
+      - name: Some lane tests executed
+        if: steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'
+        run: echo 'Some lane tests executed'
+      - name: Lane coverage verified
+        run: echo 'Lane coverage verified'
       - name: Preserve canonical CI evidence
         if: always()
         uses: actions/upload-artifact@v7

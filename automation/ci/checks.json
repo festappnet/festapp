@@ -57,7 +57,9 @@
       "node": "24.22.1",
       "steps": [
         "wix-install",
-        "wix-contract"
+        "wix-quick",
+        "wix-adapters",
+        "wix-cms"
       ],
       "inputs": [
         "integrations/**",
@@ -69,7 +71,8 @@
         "supabase/**",
         "automation/baseline.py",
         "automation/baselines/**",
-        "assets/translations/**"
+        "assets/translations/**",
+        "automation/lib/**"
       ]
     },
     "navigation-interactions": {
@@ -182,7 +185,10 @@
         "seat-authorization",
         "seat-google-auth",
         "seat-measurement",
-        "seat-contract",
+        "seat-payments",
+        "seat-orders",
+        "seat-delivery",
+        "seat-services",
         "seat-notifications",
         "seat-browser"
       ],
@@ -203,7 +209,9 @@
         "packages/festapp_contracts/**",
         "integrations/make/**",
         "automation/hetzner-supabase/runtime/Caddyfile.integrations",
-        "assets/translations/**"
+        "assets/translations/**",
+        "automation/lib/**",
+        "test/fixtures/**"
       ]
     },
     "ticket-preview-and-delivery": {
@@ -321,29 +329,53 @@
     "wix-install": {
       "script": "python3 automation/ci/run.py install integrations/wix\npython3 automation/ci/run.py install integrations/wordpress\npython3 automation/ci/run.py install web_client\n",
       "after": [
+        "image-install",
+        "image-policy",
+        "image-preflight",
         "image-storage",
+        "web-install",
+        "web-startup",
+        "renderer-install",
         "deploy-contract",
+        "navigation-install",
         "navigation-contract",
-        "mcp-auth-contract",
+        "image-client-install",
+        "image-client-adapter",
+        "image-client-widgets",
         "image-client-browser",
+        "seat-install",
+        "seat-database",
+        "seat-authorization",
+        "seat-google-auth",
+        "seat-notifications",
         "seat-browser",
-        "ticket-client"
+        "ticket-edge",
+        "ticket-install",
+        "ticket-core",
+        "ticket-client",
+        "occasion-lifecycle",
+        "seat-measurement",
+        "web-measurement",
+        "mcp-auth-install",
+        "mcp-auth-contract",
+        "seat-upgrade",
+        "seat-runtime-contract",
+        "seat-payments",
+        "seat-orders",
+        "seat-delivery",
+        "seat-services"
       ],
       "resources": {
         "ramMiB": 256
-      }
-    },
-    "wix-contract": {
-      "script": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\nnode --test web_client/tests/forms/embed_appearance.test.js web_client/tests/components/help_embed_generator.test.js\npnpm --dir integrations/wordpress run test:dependencies\nbash automation/test_embed_adapters.sh\npython3 automation/testing/cms_consent_fixture.py\n",
-      "after": [
-        "wix-install"
-      ],
-      "resources": {
-        "ramMiB": 3000,
-        "sourceGeneration": 1,
-        "browser": 1,
-        "dbCluster": 1
-      }
+      },
+      "inputs": [
+        "integrations/wix/package.json",
+        "integrations/wix/pnpm*",
+        "integrations/wordpress/package.json",
+        "integrations/wordpress/pnpm*",
+        "web_client/package.json",
+        "web_client/pnpm*"
+      ]
     },
     "navigation-install": {
       "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
@@ -408,17 +440,44 @@
       "after": [],
       "resources": {
         "ramMiB": 256
-      }
+      },
+      "inputs": [
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/.npmrc"
+      ]
     },
     "seat-database": {
       "script": "python3 automation/ci/run.py inventory\npython3 automation/local_db/runtime.py prepare\n\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\n",
       "after": [
+        "seat-install",
         "seat-runtime-contract"
       ],
       "resources": {
         "ramMiB": 1000,
         "dbCluster": 2
-      }
+      },
+      "inputs": [
+        "database/**",
+        "supabase/migrations/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "automation/historical-sql-manifest.json",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/local_db_runtime.mjs",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "automation/tests/test_migration_compaction.py",
+        "automation/tests/migration_compaction.test.mjs",
+        "automation/tests/test_baseline_contract.py",
+        "automation/tests/test_historical_inputs.py"
+      ],
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-authorization": {
       "script": "export FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL=\"$DATABASE_URL\"\nnode --test automation/tests/authorization_read_phase.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-authorization-1",
@@ -438,17 +497,6 @@
       "resources": {
         "ramMiB": 900,
         "dbCluster": 1
-      }
-    },
-    "seat-contract": {
-      "script": "python3 automation/assemble-order-read-performance-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-1\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\npython3 automation/assemble-automatic-seating-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-2\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-3\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\nnode web_client/scripts/run_db_tests.js --group seat-contract-4\n\nnode web_client/scripts/run_db_tests.js --group seat-contract-5\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/mcp-tree-postgres.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/inventory-assignments-postgres.test.mjs\npython3 automation/assemble-barion-sandbox-migration.py --check\nFESTAPP_STRIPE_TEST_CONTAINER=\"supabase_db_${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" pnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_provider_upgrade.test.js tests/database/payment_method_policy_upgrade.test.js tests/database/barion_upgrade.test.js tests/database/stripe_concurrency.test.js\npnpm --dir web_client exec node --test tests/database/barion_concurrency.test.js\nBARION_DATABASE_URL=\"$DATABASE_URL\" deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read --allow-run=psql supabase/functions/_shared/barion/ supabase/functions/_shared/payments/ supabase/functions/_shared/stripe/\npnpm --dir web_client exec node --test ../automation/payments/sandbox_intent.test.mjs tests/forms/barion_connector.test.js tests/forms/payment_connector_registry.test.js tests/forms/card_payment_controller.test.js tests/forms/form_payment_options.test.js\npython3 automation/assemble-cash-reservations-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-contract-6\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\npython3 automation/assemble-payment-operations-migration.py --check\nnode --test database/tests/eshop/payment_operations_concurrency.test.mjs\n\npython3 automation/assemble-payment-method-policy-migration.py --check\npython3 automation/assemble-payment-policy-refinement-migration.py --check\npython3 automation/assemble-cash-policy-defaults-migration.py --check\npython3 automation/assemble-order-bank-setup-migration.py --check\npython3 -m unittest automation/tests/test_migration_forward_owners.py\npython3 automation/assemble-payment-policy-release-integration-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_policy_release_transition.test.js\n\npython3 automation/assemble-ticket-wallet-queue-migrations.py --check\nnode --test database/tests/occasion_setup/wallet_queue_concurrency.test.mjs\nnode --test database/tests/occasion_setup/wallet_queue_upgrade.test.mjs\n\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp run test:postgres\n\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\npython3 automation/assemble-apple-ticket-wallet-updates-migration.py --check\npython3 -m unittest automation/tests/test_apple_wallet_runtime.py\n\npython3 automation/assemble-order-item-terminology-migration.py --check\npnpm --dir web_client exec node --test tests/forms/order_item_terminology.test.js\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n",
-      "after": [
-        "seat-database"
-      ],
-      "resources": {
-        "ramMiB": 900,
-        "dbCluster": 2,
-        "sourceGeneration": 1
       }
     },
     "seat-notifications": {
@@ -563,7 +611,25 @@
       "resources": {
         "ramMiB": 1000,
         "dbCluster": 2
-      }
+      },
+      "inputs": [
+        "database/**",
+        "supabase/migrations/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "automation/historical-sql-manifest.json",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/local_db_runtime.mjs",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "automation/tests/test_migration_compaction.py",
+        "automation/tests/migration_compaction.test.mjs",
+        "automation/tests/test_baseline_contract.py",
+        "automation/tests/test_historical_inputs.py"
+      ]
     },
     "seat-runtime-contract": {
       "script": "FESTAPP_RUNTIME_INTEGRATION=1 python3 -m unittest discover -s automation/local_db -p test_runtime.py\n\nnode --test automation/tests/migration_compaction.test.mjs\npython3 -m unittest discover -s automation/tests -p test_migration_compaction.py\npython3 -m unittest discover -s automation/tests -p test_baseline_contract.py\npython3 -m unittest discover -s automation/tests -p test_historical_inputs.py\n",
@@ -574,75 +640,305 @@
         "dbCluster": 2,
         "sourceGeneration": 1,
         "ramMiB": 1000
-      }
+      },
+      "inputs": [
+        "database/**",
+        "supabase/migrations/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "automation/historical-sql-manifest.json",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/local_db_runtime.mjs",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "automation/tests/test_migration_compaction.py",
+        "automation/tests/migration_compaction.test.mjs",
+        "automation/tests/test_baseline_contract.py",
+        "automation/tests/test_historical_inputs.py"
+      ],
+      "requires": [
+        "seat-install"
+      ]
+    },
+    "wix-quick": {
+      "script": "pnpm --dir integrations/wix test\npnpm --dir integrations/wix build\nnode --test web_client/tests/core/embed.test.js web_client/tests/core/browser_storage.test.js web_client/tests/forms/reservation_capability_store.test.js web_client/tests/components/db_orders_command_identity.test.js web_client/tests/forms/ticket_order_identity.test.js web_client/tests/forms/order_result_uncertain.test.js web_client/tests/forms/payment_handoff.test.js web_client/tests/forms/order_result_qr.test.js\nnode --test web_client/tests/forms/embed_appearance.test.js web_client/tests/components/help_embed_generator.test.js\n",
+      "after": [
+        "wix-install"
+      ],
+      "resources": {
+        "ramMiB": 512,
+        "sourceGeneration": 1
+      },
+      "inputs": [
+        "integrations/**",
+        "automation/test_embed_adapters.sh",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "web_client/src/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "automation/testing/**",
+        "web_client/scripts/**",
+        "database/**",
+        "supabase/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "web_client/tests/**"
+      ]
+    },
+    "wix-adapters": {
+      "script": "pnpm --dir integrations/wordpress run test:dependencies\nbash automation/test_embed_adapters.sh\n",
+      "after": [
+        "wix-install"
+      ],
+      "resources": {
+        "ramMiB": 512
+      },
+      "inputs": [
+        "automation/test_embed_adapters.sh",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "web_client/src/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "automation/testing/**",
+        "web_client/scripts/**",
+        "database/**",
+        "supabase/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "web_client/tests/fixtures/**",
+        "integrations/wordpress/**",
+        "integrations/joomla/**",
+        "integrations/measurement/**",
+        "integrations/tests/**",
+        "integrations/wix/src/**",
+        "integrations/wix/package.json",
+        "integrations/wix/pnpm*"
+      ]
+    },
+    "wix-cms": {
+      "script": "python3 automation/testing/cms_consent_fixture.py\n",
+      "after": [
+        "wix-install"
+      ],
+      "resources": {
+        "ramMiB": 3000,
+        "browser": 1,
+        "dbCluster": 2
+      },
+      "inputs": [
+        "automation/test_embed_adapters.sh",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "web_client/src/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "automation/testing/**",
+        "web_client/scripts/**",
+        "database/**",
+        "supabase/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "web_client/tests/fixtures/**",
+        "integrations/wordpress/**",
+        "integrations/joomla/**",
+        "integrations/measurement/**",
+        "integrations/tests/**",
+        "integrations/wix/src/**",
+        "integrations/wix/package.json",
+        "integrations/wix/pnpm*"
+      ]
+    },
+    "seat-payments": {
+      "script": "python3 automation/assemble-barion-sandbox-migration.py --check\nFESTAPP_STRIPE_TEST_CONTAINER=\"supabase_db_${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" pnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_provider_upgrade.test.js tests/database/payment_method_policy_upgrade.test.js tests/database/barion_upgrade.test.js tests/database/stripe_concurrency.test.js\npnpm --dir web_client exec node --test tests/database/barion_concurrency.test.js\nBARION_DATABASE_URL=\"$DATABASE_URL\" deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read --allow-run=psql supabase/functions/_shared/barion/ supabase/functions/_shared/payments/ supabase/functions/_shared/stripe/\npnpm --dir web_client exec node --test ../automation/payments/sandbox_intent.test.mjs tests/forms/barion_connector.test.js tests/forms/payment_connector_registry.test.js tests/forms/card_payment_controller.test.js tests/forms/form_payment_options.test.js\npython3 automation/assemble-cash-reservations-migration.py --check\npython3 automation/assemble-payment-operations-migration.py --check\nnode --test database/tests/eshop/payment_operations_concurrency.test.mjs\npython3 automation/assemble-payment-method-policy-migration.py --check\npython3 automation/assemble-payment-policy-refinement-migration.py --check\npython3 automation/assemble-cash-policy-defaults-migration.py --check\npython3 -m unittest automation/tests/test_migration_forward_owners.py\npython3 automation/assemble-payment-policy-release-integration-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/payment_policy_release_transition.test.js\n",
+      "after": [
+        "seat-database"
+      ],
+      "resources": {
+        "ramMiB": 900,
+        "dbCluster": 2
+      },
+      "inputs": [
+        "database/functions/**",
+        "database/tests/helpers/**",
+        "database/tests/blueprint/fixtures.sql",
+        "supabase/**",
+        "automation/**",
+        "web_client/src/**",
+        "web_client/scripts/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "tools/festapp/**",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "web_client/tests/database/payment_provider_upgrade.test.js",
+        "web_client/tests/database/payment_method_policy_upgrade.test.js",
+        "web_client/tests/database/barion_upgrade.test.js",
+        "web_client/tests/database/stripe_concurrency.test.js",
+        "web_client/tests/database/barion_concurrency.test.js",
+        "web_client/tests/forms/barion_connector.test.js",
+        "web_client/tests/forms/payment_connector_registry.test.js",
+        "web_client/tests/forms/card_payment_controller.test.js",
+        "web_client/tests/forms/form_payment_options.test.js",
+        "database/tests/eshop/payment_operations_concurrency.test.mjs",
+        "web_client/tests/database/payment_policy_release_transition.test.js",
+        "database/tests/**/fixtures*",
+        "web_client/tests/fixtures/**",
+        "web_client/tests/database/disposable_database.js",
+        "web_client/tests/database/runtime_workspace.js",
+        "web_client/tests/database/*_fixture.js",
+        "test/fixtures/**"
+      ]
+    },
+    "seat-orders": {
+      "script": "python3 automation/assemble-order-read-performance-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-order-payments\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\npython3 automation/assemble-automatic-seating-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-order-seating\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-order-admin\n\n",
+      "after": [
+        "seat-database"
+      ],
+      "resources": {
+        "ramMiB": 900,
+        "dbCluster": 1
+      },
+      "inputs": [
+        "database/functions/**",
+        "database/tests/helpers/**",
+        "database/tests/blueprint/fixtures.sql",
+        "supabase/**",
+        "automation/**",
+        "web_client/src/**",
+        "web_client/scripts/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "tools/festapp/**",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "database/tests/eshop/payment_product_transition_concurrency.test.mjs",
+        "database/tests/blueprint/seating_concurrency.test.mjs",
+        "*database/tests/eshop/reminders/*",
+        "*database/tests/eshop/deposit/*",
+        "*required_ticket_spot_transport_test*",
+        "*required_seat_checkout_test*",
+        "*paid_then_manual_ticket_delivery_test*",
+        "*manual_paid_state_only_test*",
+        "*legacy_ticket_offer_test*",
+        "*blueprint/resource_admission_test*",
+        "*database/tests/eshop_orders/payment_lifecycle_*",
+        "*database/tests/eshop_orders/payment_product_transition_regression_test.sql*",
+        "*database/tests/eshop_orders/refund_*",
+        "*seating_context_test.sql*",
+        "*seating_assignment_test.sql*",
+        "*automatic_form_binding_test.sql*",
+        "*application_only_checkout_test.sql*",
+        "*database/tests/blueprint/canonical_storage_test.sql*",
+        "*database/tests/occasion_setup/copy_legacy_empty_blueprint_test.sql*",
+        "*database/tests/eshop/order_seating_test.sql*",
+        "*order_admin_detail_test.sql*",
+        "*order_admin_payment_details_test.sql*",
+        "database/tests/**/fixtures*",
+        "web_client/tests/fixtures/**",
+        "web_client/tests/database/disposable_database.js",
+        "web_client/tests/database/runtime_workspace.js",
+        "web_client/tests/database/*_fixture.js",
+        "test/fixtures/**"
+      ]
+    },
+    "seat-delivery": {
+      "script": "node web_client/scripts/run_db_tests.js --group seat-delivery-email\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\npython3 automation/assemble-ticket-wallet-queue-migrations.py --check\nnode --test database/tests/occasion_setup/wallet_queue_concurrency.test.mjs\nnode --test database/tests/occasion_setup/wallet_queue_upgrade.test.mjs\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\npython3 automation/assemble-apple-ticket-wallet-updates-migration.py --check\npython3 -m unittest automation/tests/test_apple_wallet_runtime.py\npython3 automation/assemble-order-item-terminology-migration.py --check\npnpm --dir web_client exec node --test tests/forms/order_item_terminology.test.js\n",
+      "after": [
+        "seat-database"
+      ],
+      "resources": {
+        "ramMiB": 900,
+        "dbCluster": 1
+      },
+      "inputs": [
+        "database/functions/**",
+        "database/tests/helpers/**",
+        "database/tests/blueprint/fixtures.sql",
+        "supabase/**",
+        "automation/**",
+        "web_client/src/**",
+        "web_client/scripts/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "tools/festapp/**",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "database/tests/occasion_setup/wallet_queue_concurrency.test.mjs",
+        "database/tests/occasion_setup/wallet_queue_upgrade.test.mjs",
+        "web_client/tests/forms/order_item_terminology.test.js",
+        "*order_email_service_role_permissions_test.sql*",
+        "*email_seating_service_access_test.sql*",
+        "*database/tests/emails/form_timezone_resolution_test.sql*",
+        "*database/tests/emails/waitlist_email_language_timezone_test.sql*",
+        "*database/tests/sale_opening_notifications/contracts_test.sql*",
+        "*database/tests/emails/delivered_tickets_resolve_confirmation_test.sql*",
+        "*database/tests/emails/order_email_bulk_reporting_test.sql*",
+        "*database/tests/order_item_terminology_test.sql*",
+        "database/tests/**/fixtures*",
+        "web_client/tests/fixtures/**",
+        "web_client/tests/database/disposable_database.js",
+        "web_client/tests/database/runtime_workspace.js",
+        "web_client/tests/database/*_fixture.js",
+        "test/fixtures/**"
+      ]
+    },
+    "seat-services": {
+      "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\npython3 automation/ci/run.py install tools/festapp\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs test/mcp-tree-postgres.test.mjs test/forms-postgres.test.mjs test/forms-settings-postgres.test.mjs test/inventory-assignments-postgres.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp run test:postgres\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n",
+      "after": [
+        "seat-database"
+      ],
+      "resources": {
+        "ramMiB": 900,
+        "dbCluster": 2,
+        "sourceGeneration": 1
+      },
+      "inputs": [
+        "database/functions/**",
+        "database/tests/helpers/**",
+        "database/tests/blueprint/fixtures.sql",
+        "supabase/**",
+        "automation/**",
+        "web_client/src/**",
+        "web_client/scripts/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "tools/festapp/**",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "database/tests/performance/sale_status_product_scope.sql",
+        "web_client/tests/database/retired_waitlist_registry.test.js",
+        "web_client/tests/database/sql_runner.test.js",
+        "database/tests/eshop_discounts/discount_codes_concurrency.test.mjs",
+        "web_client/tests/database/customer_order_changes_concurrency.test.js",
+        "web_client/tests/forms/customer_order_changes.test.js",
+        "*database/tests/occasion_setup*",
+        "*database/tests/payment_providers*",
+        "*database/tests/eshop_orders/customer_order_overview_test.sql*",
+        "*database/tests/eshop/bank_roundtrip_report_test.sql*",
+        "*database/tests/eshop/occasion_report_test.sql*",
+        "*database/tests/scanning/ball_order_test.sql*",
+        "*database/tests/scanning/authorization_test.sql*",
+        "*database/tests/customer_order_changes/*",
+        "*database/tests/eshop_discounts/*",
+        "*database/tests/eshop_forms/waitlist_count_setting_test.sql*",
+        "*database/tests/emails/order_change_summary_test.sql*",
+        "*database/tests/blueprint/form_bound_checkout_test.sql*",
+        "*database/tests/abuse/checkout_admission_test.sql*",
+        "database/tests/**/fixtures*",
+        "web_client/tests/fixtures/**",
+        "web_client/tests/database/disposable_database.js",
+        "web_client/tests/database/runtime_workspace.js",
+        "web_client/tests/database/*_fixture.js",
+        "test/fixtures/**"
+      ]
     }
   },
   "sqlGroups": {
-    "seat-contract-1": {
-      "filters": [
-        "database/tests/eshop/reminders/",
-        "database/tests/eshop/deposit/",
-        "required_ticket_spot_transport_test",
-        "required_seat_checkout_test",
-        "paid_then_manual_ticket_delivery_test",
-        "manual_paid_state_only_test",
-        "legacy_ticket_offer_test",
-        "blueprint/resource_admission_test",
-        "database/tests/eshop_orders/payment_lifecycle_",
-        "database/tests/eshop_orders/payment_product_transition_regression_test.sql",
-        "database/tests/eshop_orders/refund_"
-      ]
-    },
-    "seat-contract-2": {
-      "filters": [
-        "seating_context_test.sql",
-        "seating_assignment_test.sql",
-        "automatic_form_binding_test.sql",
-        "application_only_checkout_test.sql",
-        "database/tests/blueprint/canonical_storage_test.sql",
-        "database/tests/occasion_setup/copy_legacy_empty_blueprint_test.sql",
-        "database/tests/eshop/order_seating_test.sql"
-      ]
-    },
-    "seat-contract-3": {
-      "filters": [
-        "order_email_service_role_permissions_test.sql",
-        "email_seating_service_access_test.sql",
-        "database/tests/emails/form_timezone_resolution_test.sql",
-        "database/tests/emails/waitlist_email_language_timezone_test.sql",
-        "database/tests/sale_opening_notifications/contracts_test.sql",
-        "database/tests/emails/delivered_tickets_resolve_confirmation_test.sql",
-        "database/tests/emails/order_email_bulk_reporting_test.sql",
-        "database/tests/order_item_terminology_test.sql"
-      ]
-    },
-    "seat-contract-4": {
-      "filters": [
-        "order_admin_detail_test.sql",
-        "order_admin_payment_details_test.sql"
-      ]
-    },
-    "seat-contract-5": {
-      "filters": [
-        "database/tests/occasion_setup"
-      ]
-    },
-    "seat-contract-6": {
-      "filters": [
-        "database/tests/payment_providers",
-        "database/tests/eshop_orders/customer_order_overview_test.sql",
-        "database/tests/eshop/bank_roundtrip_report_test.sql",
-        "database/tests/eshop/occasion_report_test.sql",
-        "database/tests/scanning/ball_order_test.sql",
-        "database/tests/scanning/authorization_test.sql",
-        "database/tests/customer_order_changes/",
-        "database/tests/eshop_discounts/",
-        "database/tests/eshop_forms/waitlist_count_setting_test.sql",
-        "database/tests/emails/order_change_summary_test.sql",
-        "database/tests/blueprint/form_bound_checkout_test.sql",
-        "database/tests/abuse/checkout_admission_test.sql"
-      ]
-    },
     "seat-notifications-1": {
       "filters": [
         "notification_center",
@@ -672,6 +968,71 @@
       "filters": [
         "database/tests/people/",
         "database/tests/users/invitation_delivery_status_test.sql"
+      ]
+    },
+    "seat-order-payments": {
+      "filters": [
+        "database/tests/eshop/reminders/",
+        "database/tests/eshop/deposit/",
+        "required_ticket_spot_transport_test",
+        "required_seat_checkout_test",
+        "paid_then_manual_ticket_delivery_test",
+        "manual_paid_state_only_test",
+        "legacy_ticket_offer_test",
+        "blueprint/resource_admission_test",
+        "database/tests/eshop_orders/payment_lifecycle_",
+        "database/tests/eshop_orders/payment_product_transition_regression_test.sql",
+        "database/tests/eshop_orders/refund_"
+      ]
+    },
+    "seat-order-seating": {
+      "filters": [
+        "seating_context_test.sql",
+        "seating_assignment_test.sql",
+        "automatic_form_binding_test.sql",
+        "application_only_checkout_test.sql",
+        "database/tests/blueprint/canonical_storage_test.sql",
+        "database/tests/occasion_setup/copy_legacy_empty_blueprint_test.sql",
+        "database/tests/eshop/order_seating_test.sql"
+      ]
+    },
+    "seat-delivery-email": {
+      "filters": [
+        "order_email_service_role_permissions_test.sql",
+        "email_seating_service_access_test.sql",
+        "database/tests/emails/form_timezone_resolution_test.sql",
+        "database/tests/emails/waitlist_email_language_timezone_test.sql",
+        "database/tests/sale_opening_notifications/contracts_test.sql",
+        "database/tests/emails/delivered_tickets_resolve_confirmation_test.sql",
+        "database/tests/emails/order_email_bulk_reporting_test.sql",
+        "database/tests/order_item_terminology_test.sql"
+      ]
+    },
+    "seat-order-admin": {
+      "filters": [
+        "order_admin_detail_test.sql",
+        "order_admin_payment_details_test.sql"
+      ]
+    },
+    "seat-service-setup": {
+      "filters": [
+        "database/tests/occasion_setup"
+      ]
+    },
+    "seat-service-contracts": {
+      "filters": [
+        "database/tests/payment_providers",
+        "database/tests/eshop_orders/customer_order_overview_test.sql",
+        "database/tests/eshop/bank_roundtrip_report_test.sql",
+        "database/tests/eshop/occasion_report_test.sql",
+        "database/tests/scanning/ball_order_test.sql",
+        "database/tests/scanning/authorization_test.sql",
+        "database/tests/customer_order_changes/",
+        "database/tests/eshop_discounts/",
+        "database/tests/eshop_forms/waitlist_count_setting_test.sql",
+        "database/tests/emails/order_change_summary_test.sql",
+        "database/tests/blueprint/form_bound_checkout_test.sql",
+        "database/tests/abuse/checkout_admission_test.sql"
       ]
     }
   },
@@ -722,9 +1083,12 @@
     "seat-authorization",
     "seat-google-auth",
     "seat-measurement",
-    "seat-contract",
     "seat-notifications",
-    "seat-browser"
+    "seat-browser",
+    "seat-payments",
+    "seat-orders",
+    "seat-delivery",
+    "seat-services"
   ],
   "sqlInventory": {
     "knownTests": [
@@ -1785,6 +2149,16 @@
     "database/tests/users/profile_version_fanout_test.sql",
     "database/tests/users/reception_qr_login_test.sql",
     "database/tests/users/reset_user_password_permissions_test.sql",
+    "integrations/wix/tests/billing-dispatcher.test.js",
+    "integrations/wix/tests/billing-qualification.test.js",
+    "integrations/wix/tests/package.test.js",
+    "integrations/wix/tests/production-readonly-policy.test.js",
+    "integrations/wix/tests/release.test.js",
+    "integrations/wix/tests/reporting.test.js",
+    "integrations/wix/tests/sdk.test.js",
+    "integrations/wix/tests/widget.test.js",
+    "integrations/wordpress/test/dependency-compatibility.test.mjs",
+    "integrations/wordpress/tests/measurement-defaults.test.mjs",
     "supabase/functions/_shared/accountAssets_test.ts",
     "supabase/functions/_shared/accountDeletion_test.ts",
     "supabase/functions/_shared/adminNotificationEmail_test.ts",

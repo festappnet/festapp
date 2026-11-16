@@ -83,9 +83,9 @@ are comparable, unrelated `monotonicStart` values are not.
 
 `python3 automation/ci/run.py affected <paths...>` reports explicit affected job
 recommendations. Unknown paths/tests request the full set; new test files must
-have explicit inventory ownership. Executed release lanes always run every required unit; input reuse is admitted as described below.
+have explicit inventory ownership. Hosted lanes verify complete coverage of every required unit; direct unit evidence may discharge unchanged verification. Preparation dependencies execute with their selected consumers. Explicit local lanes always execute their full inventory.
 No source publication or production deployment is implied by these local tools.
-A dirty receipt is development evidence, not a release attestation. Measurements,
+A dirty receipt is development evidence, not a release attestation. The selector has a 20-second total evidence lookup budget and reports API calls, candidates and downloaded bytes; timeout conservatively executes tests. Baseline job/attempt timing is available through `python3 automation/ci/telemetry.py hosted-report festappnet/festapp <output.json>`, without dispatching runs. Measurements,
 limits and the retirement ledger are recorded in
 [`test-runtime-speedup-RESULT-2026-11-09.md`](docs/plans/test-runtime-speedup-RESULT-2026-11-09.md).
 
@@ -96,9 +96,7 @@ behavior. GitHub performs authoritative complete lane verification; a duplicate
 full local mirror is not required. `automation/test_ci.sh` remains an explicit
 full mirror for diagnosis, offline work and requested full verification. Before a
 web release, all eight jobs in `automation/ci/checks.json` must finish successfully
-in GitHub on the exact canonical `baseMainSha`. Each job either executes its
-complete lane or verifies identical inputs against actually executed, successful
-main or internal-PR CI execution artifacts no older than seven days. Reused
+in GitHub on the exact canonical `baseMainSha`. Each job covers every declared unit by execution or identical-input direct evidence from successful main or internal-PR artifacts no older than seven days. Mixed coverage is recorded explicitly in schema-2 receipts. Reused
 evidence is recorded in the job summary;
 it cannot refresh its own age. Missing evidence or an uncertain impact runs tests.
 A failed baseline is still a blocked release. A build or local receipt does not
@@ -106,8 +104,7 @@ replace this gate. See [CI input reuse](docs/architecture/ci_input_reuse.md).
 
 Draft pull requests do not start these expensive regression jobs. Switching to
 Ready for review runs every lane. Subsequent ready-PR updates and main pushes
-reuse only directly executed, artifact-verified identical inputs from main
-or internal PRs; changed or unknown inputs run their lanes. Manual workflow
+reuse only directly executed, artifact-verified identical units from main or internal PRs; changed units execute with their preparation dependencies. Unknown inputs select the full scope. Manual workflow
 dispatch, reruns and merge-queue checks always run full lanes.
 New PR updates cancel superseded runs of that PR, without cancelling main runs.
 The local mirror still executes explicitly selected lanes without GitHub reuse.
@@ -187,7 +184,7 @@ Use when modifying SQL functions or migrations.
 ./automation/bootstrap_local_db.sh --upgrade   # Real full supported-history replay
 node web_client/scripts/run_db_tests.js        # Acquire clone, run full SQL inventory, release
 node web_client/scripts/run_db_tests.js database/tests/path/to/test.sql
-node web_client/scripts/run_db_tests.js --group seat-contract-1 --list
+node web_client/scripts/run_db_tests.js --group seat-order-payments --list
 python3 automation/local_db/runtime.py exec -- node --test web_client/tests/database/retired_waitlist_registry.test.js
 ./automation/bootstrap_local_db.sh --status
 ./automation/bootstrap_local_db.sh --prune

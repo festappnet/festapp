@@ -1,0 +1,983 @@
+{
+  "scope": "local; elapsed seconds are not hosted runner or billed minutes",
+  "attempts": [
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261116T015418-374b316b5733/receipt.json",
+      "head": "2b9ca14268ce4d95e577a3ce2346bdd7684687fd",
+      "inputSha256": "ecce9354a63113225d43fc01162f389a7f074cd7d8b947382d1046a550927b91",
+      "complete": false,
+      "inputsUnchanged": false,
+      "seconds": 365.94118654198246,
+      "jobs": [
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "PASS"
+        },
+        {
+          "name": "seat-checkout",
+          "status": "FAIL"
+        }
+      ],
+      "units": {
+        "seat-install": {
+          "status": "PASS",
+          "seconds": 1.311845958000049,
+          "state": "executed"
+        },
+        "seat-upgrade": {
+          "status": "PASS",
+          "seconds": 11.150672707997728,
+          "state": "executed"
+        },
+        "seat-runtime-contract": {
+          "status": "PASS",
+          "seconds": 13.521317250007996,
+          "state": "executed"
+        },
+        "seat-database": {
+          "status": "PASS",
+          "seconds": 1.31066312501207,
+          "state": "executed"
+        },
+        "seat-authorization": {
+          "status": "PASS",
+          "seconds": 0.3549417089961935,
+          "state": "executed"
+        },
+        "seat-google-auth": {
+          "status": "PASS",
+          "seconds": 1.2629812079831026,
+          "state": "executed"
+        },
+        "seat-browser": {
+          "status": "PASS",
+          "seconds": 3.4150934999925084,
+          "state": "executed"
+        },
+        "wix-install": {
+          "status": "PASS",
+          "seconds": 2.306995791004738,
+          "state": "executed"
+        },
+        "occasion-lifecycle": {
+          "status": "PASS",
+          "seconds": 7.082712250004988,
+          "state": "executed"
+        },
+        "wix-quick": {
+          "status": "PASS",
+          "seconds": 10.120201624988113,
+          "state": "executed"
+        },
+        "wix-adapters": {
+          "status": "PASS",
+          "seconds": 1.4808851669949945,
+          "state": "executed"
+        },
+        "seat-notifications": {
+          "status": "PASS",
+          "seconds": 21.153155042004073,
+          "state": "executed"
+        },
+        "seat-measurement": {
+          "status": "PASS",
+          "seconds": 10.319411458011018,
+          "state": "executed"
+        },
+        "seat-orders": {
+          "status": "PASS",
+          "seconds": 7.809469333005836,
+          "state": "executed"
+        },
+        "wix-cms": {
+          "status": "PASS",
+          "seconds": 192.39659866702277,
+          "state": "executed"
+        },
+        "seat-payments": {
+          "status": "PASS",
+          "seconds": 15.021417332987767,
+          "state": "executed"
+        },
+        "seat-delivery": {
+          "status": "PASS",
+          "seconds": 4.508885374991223,
+          "state": "executed"
+        },
+        "seat-services": {
+          "status": "FAIL",
+          "seconds": 90.0292712499795,
+          "state": "executed"
+        }
+      },
+      "cmsPhases": [
+        {
+          "name": "cms.dependencies",
+          "seconds": 0.22779375000391155,
+          "success": true
+        },
+        {
+          "name": "cms.browsers.install",
+          "seconds": 0.5932971250149421,
+          "success": true
+        },
+        {
+          "name": "cms.backend.start",
+          "seconds": 22.767310916009592,
+          "success": true
+        },
+        {
+          "name": "cms.backend.bootstrap",
+          "seconds": 9.145789000001969,
+          "success": true
+        },
+        {
+          "name": "cms.wordpress.start",
+          "seconds": 50.379501249990426,
+          "success": true
+        },
+        {
+          "name": "cms.joomla.start",
+          "seconds": 7.260766457999125,
+          "success": true
+        },
+        {
+          "name": "cms.case.0.wordpress.chromium",
+          "seconds": 3.3125364999868907,
+          "success": true
+        },
+        {
+          "name": "cms.case.1.wordpress.firefox",
+          "seconds": 4.365001708007185,
+          "success": true
+        },
+        {
+          "name": "cms.case.2.wordpress.webkit",
+          "seconds": 3.5543075000168756,
+          "success": true
+        },
+        {
+          "name": "cms.case.3.wordpress.chromium",
+          "seconds": 2.927009500010172,
+          "success": true
+        },
+        {
+          "name": "cms.case.4.joomla.chromium",
+          "seconds": 2.544022917019902,
+          "success": true
+        },
+        {
+          "name": "cms.case.5.joomla.chromium",
+          "seconds": 2.5109669160156045,
+          "success": true
+        },
+        {
+          "name": "cms.case.6.wix.chromium",
+          "seconds": 23.13700637500733,
+          "success": true
+        },
+        {
+          "name": "cms.case.7.html.chromium",
+          "seconds": 2.6534041250124574,
+          "success": true
+        },
+        {
+          "name": "cms.case.8.joomla.chromium",
+          "seconds": 0.6697394579823595,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.joomla",
+          "seconds": 0.7021110830246471,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.wordpress",
+          "seconds": 23.64650224999059,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.backend",
+          "seconds": 10.859223125007702,
+          "success": true
+        }
+      ]
+    },
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261116T020214-5a6ec43cff48/receipt.json",
+      "head": "2b9ca14268ce4d95e577a3ce2346bdd7684687fd",
+      "inputSha256": "a97f8784df14026d00fb2210be8b555936be3febd4049c068c4ac89df271858c",
+      "complete": false,
+      "inputsUnchanged": false,
+      "seconds": 253.16213633300504,
+      "jobs": [
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "wix-install": {
+          "status": "PASS",
+          "seconds": 1.5564513750141487,
+          "state": "executed"
+        },
+        "wix-quick": {
+          "status": "PASS",
+          "seconds": 9.572222125018016,
+          "state": "executed"
+        },
+        "wix-adapters": {
+          "status": "PASS",
+          "seconds": 1.0544861249800306,
+          "state": "executed"
+        },
+        "wix-cms": {
+          "status": "PASS",
+          "seconds": 239.15639637500863,
+          "state": "executed"
+        }
+      },
+      "cmsPhases": [
+        {
+          "name": "cms.dependencies",
+          "seconds": 0.21711862500524148,
+          "success": true
+        },
+        {
+          "name": "cms.browsers.install",
+          "seconds": 44.51601599997957,
+          "success": true
+        },
+        {
+          "name": "cms.browsers.cache",
+          "seconds": 44.56329587500659,
+          "bytesBefore": 0,
+          "bytesAfter": 1745084993,
+          "binaryCache": "cold",
+          "networkTransferBytes": null
+        },
+        {
+          "name": "cms.backend.start",
+          "seconds": 22.913715790986316,
+          "success": true
+        },
+        {
+          "name": "cms.backend.bootstrap",
+          "seconds": 8.986111583013553,
+          "success": true
+        },
+        {
+          "name": "cms.wordpress.start",
+          "seconds": 46.83078691599076,
+          "success": true
+        },
+        {
+          "name": "cms.joomla.start",
+          "seconds": 8.27329875002033,
+          "success": true
+        },
+        {
+          "name": "cms.case.0.wordpress.chromium",
+          "seconds": 4.8171194170136005,
+          "success": true
+        },
+        {
+          "name": "cms.case.1.wordpress.firefox",
+          "seconds": 5.588125874986872,
+          "success": true
+        },
+        {
+          "name": "cms.case.2.wordpress.webkit",
+          "seconds": 7.841708207997726,
+          "success": true
+        },
+        {
+          "name": "cms.case.3.wordpress.chromium",
+          "seconds": 2.9387972919794265,
+          "success": true
+        },
+        {
+          "name": "cms.case.4.joomla.chromium",
+          "seconds": 3.467587166989688,
+          "success": true
+        },
+        {
+          "name": "cms.case.5.joomla.chromium",
+          "seconds": 2.52776545798406,
+          "success": true
+        },
+        {
+          "name": "cms.case.6.wix.chromium",
+          "seconds": 23.02940604201285,
+          "success": true
+        },
+        {
+          "name": "cms.case.7.html.chromium",
+          "seconds": 2.7673185000021476,
+          "success": true
+        },
+        {
+          "name": "cms.case.8.joomla.chromium",
+          "seconds": 0.6251204999862239,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.joomla",
+          "seconds": 0.7397592079942115,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.wordpress",
+          "seconds": 23.747223416983616,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.backend",
+          "seconds": 10.85819587498554,
+          "success": true
+        }
+      ]
+    },
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261116T020645-9a85d2b3bc67/receipt.json",
+      "head": "2b9ca14268ce4d95e577a3ce2346bdd7684687fd",
+      "inputSha256": "f6a6918fe7ff3b3233f31f8f55f9e037bd96d18687f1da01bda944d4ddb5d8be",
+      "complete": false,
+      "inputsUnchanged": true,
+      "seconds": 547.9992090830056,
+      "jobs": [
+        {
+          "name": "image-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "web-startup",
+          "status": "PASS"
+        },
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "FAIL"
+        },
+        {
+          "name": "navigation-interactions",
+          "status": "PASS"
+        },
+        {
+          "name": "server-policy",
+          "status": "PASS"
+        },
+        {
+          "name": "client-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "seat-checkout",
+          "status": "PASS"
+        },
+        {
+          "name": "ticket-preview-and-delivery",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "image-install": {
+          "status": "PASS",
+          "seconds": 0.6002397499978542,
+          "state": "executed"
+        },
+        "web-install": {
+          "status": "PASS",
+          "seconds": 0.8148978330136742,
+          "state": "executed"
+        },
+        "seat-install": {
+          "status": "PASS",
+          "seconds": 0.3256954580137972,
+          "state": "executed"
+        },
+        "navigation-install": {
+          "status": "PASS",
+          "seconds": 1.819364625000162,
+          "state": "executed"
+        },
+        "mcp-auth-install": {
+          "status": "PASS",
+          "seconds": 0.7798017919994891,
+          "state": "executed"
+        },
+        "image-policy": {
+          "status": "PASS",
+          "seconds": 2.4498423330078367,
+          "state": "executed"
+        },
+        "image-preflight": {
+          "status": "PASS",
+          "seconds": 0.2704185410111677,
+          "state": "executed"
+        },
+        "ticket-edge": {
+          "status": "PASS",
+          "seconds": 11.499937040993245,
+          "state": "executed"
+        },
+        "image-storage": {
+          "status": "PASS",
+          "seconds": 12.524649124999996,
+          "state": "executed"
+        },
+        "seat-upgrade": {
+          "status": "PASS",
+          "seconds": 11.52013133399305,
+          "state": "executed"
+        },
+        "web-startup": {
+          "status": "PASS",
+          "seconds": 26.510043374990346,
+          "state": "executed"
+        },
+        "mcp-auth-contract": {
+          "status": "PASS",
+          "seconds": 64.71119324999745,
+          "state": "executed"
+        },
+        "navigation-contract": {
+          "status": "PASS",
+          "seconds": 71.88962554099271,
+          "state": "executed"
+        },
+        "image-client-install": {
+          "status": "PASS",
+          "seconds": 1.9238427499949466,
+          "state": "executed"
+        },
+        "ticket-install": {
+          "status": "PASS",
+          "seconds": 1.3468781250121538,
+          "state": "executed"
+        },
+        "image-client-adapter": {
+          "status": "PASS",
+          "seconds": 5.964582166983746,
+          "state": "executed"
+        },
+        "ticket-core": {
+          "status": "PASS",
+          "seconds": 6.15895387501223,
+          "state": "executed"
+        },
+        "seat-runtime-contract": {
+          "status": "PASS",
+          "seconds": 14.379213125008391,
+          "state": "executed"
+        },
+        "seat-database": {
+          "status": "PASS",
+          "seconds": 1.3434016249957494,
+          "state": "executed"
+        },
+        "seat-authorization": {
+          "status": "PASS",
+          "seconds": 0.2995553749788087,
+          "state": "executed"
+        },
+        "seat-google-auth": {
+          "status": "PASS",
+          "seconds": 0.7159125420148484,
+          "state": "executed"
+        },
+        "seat-notifications": {
+          "status": "PASS",
+          "seconds": 17.617073500005063,
+          "state": "executed"
+        },
+        "occasion-lifecycle": {
+          "status": "PASS",
+          "seconds": 1.7476655000064056,
+          "state": "executed"
+        },
+        "web-measurement": {
+          "status": "PASS",
+          "seconds": 45.639243042009184,
+          "state": "executed"
+        },
+        "renderer-install": {
+          "status": "PASS",
+          "seconds": 0.6264245419879444,
+          "state": "executed"
+        },
+        "seat-browser": {
+          "status": "PASS",
+          "seconds": 2.680817374988692,
+          "state": "executed"
+        },
+        "seat-measurement": {
+          "status": "PASS",
+          "seconds": 8.191145707998658,
+          "state": "executed"
+        },
+        "deploy-contract": {
+          "status": "PASS",
+          "seconds": 12.577112999977544,
+          "state": "executed"
+        },
+        "seat-orders": {
+          "status": "PASS",
+          "seconds": 8.646223000017926,
+          "state": "executed"
+        },
+        "seat-delivery": {
+          "status": "PASS",
+          "seconds": 5.400658208003733,
+          "state": "executed"
+        },
+        "image-client-widgets": {
+          "status": "PASS",
+          "seconds": 19.293715375009924,
+          "state": "executed"
+        },
+        "seat-payments": {
+          "status": "PASS",
+          "seconds": 17.51265395799419,
+          "state": "executed"
+        },
+        "image-client-browser": {
+          "status": "PASS",
+          "seconds": 56.22890095898765,
+          "state": "executed"
+        },
+        "ticket-client": {
+          "status": "PASS",
+          "seconds": 75.78028862501378,
+          "state": "executed"
+        },
+        "seat-services": {
+          "status": "PASS",
+          "seconds": 133.16324591700686,
+          "state": "executed"
+        },
+        "wix-install": {
+          "status": "PASS",
+          "seconds": 1.564064124977449,
+          "state": "executed"
+        },
+        "wix-adapters": {
+          "status": "PASS",
+          "seconds": 1.2719947089790367,
+          "state": "executed"
+        },
+        "wix-quick": {
+          "status": "PASS",
+          "seconds": 9.391703582979972,
+          "state": "executed"
+        },
+        "wix-cms": {
+          "status": "FAIL",
+          "seconds": 216.6189359999844,
+          "state": "executed"
+        }
+      },
+      "cmsPhases": [
+        {
+          "name": "cms.dependencies",
+          "seconds": 0.22214208301738836,
+          "success": true
+        },
+        {
+          "name": "cms.browsers.install",
+          "seconds": 0.75805245898664,
+          "success": true
+        },
+        {
+          "name": "cms.browsers.cache",
+          "seconds": 0.8266291250183713,
+          "bytesBefore": 1745084993,
+          "bytesAfter": 1745084993,
+          "binaryCache": "warm",
+          "networkTransferBytes": null
+        },
+        {
+          "name": "cms.backend.start",
+          "seconds": 23.222143916995265,
+          "success": true
+        },
+        {
+          "name": "cms.backend.bootstrap",
+          "seconds": 8.915737375005847,
+          "success": true
+        },
+        {
+          "name": "cms.wordpress.start",
+          "seconds": 48.56544083397603,
+          "success": true
+        },
+        {
+          "name": "cms.joomla.start",
+          "seconds": 6.055178665992571,
+          "success": true
+        },
+        {
+          "name": "cms.case.0.wordpress.chromium",
+          "seconds": 3.3211231250024866,
+          "success": true
+        },
+        {
+          "name": "cms.case.1.wordpress.firefox",
+          "seconds": 4.354355291987304,
+          "success": true
+        },
+        {
+          "name": "cms.case.2.wordpress.webkit",
+          "seconds": 4.645079915993847,
+          "success": true
+        },
+        {
+          "name": "cms.case.3.wordpress.chromium",
+          "seconds": 2.921995083015645,
+          "success": true
+        },
+        {
+          "name": "cms.case.4.joomla.chromium",
+          "seconds": 3.479677958006505,
+          "success": true
+        },
+        {
+          "name": "cms.case.5.joomla.chromium",
+          "seconds": 2.927896500012139,
+          "success": true
+        },
+        {
+          "name": "cms.case.6.wix.chromium",
+          "seconds": 23.034653332986636,
+          "success": true
+        },
+        {
+          "name": "cms.case.7.html.chromium",
+          "seconds": 30.422708500002045,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.joomla",
+          "seconds": 0.6617205000075046,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.wordpress",
+          "seconds": 23.72152895797626,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.backend",
+          "seconds": 10.859344249998685,
+          "success": true
+        }
+      ]
+    },
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261116T021745-fdbe4bdfca09/receipt.json",
+      "head": "2b9ca14268ce4d95e577a3ce2346bdd7684687fd",
+      "inputSha256": "be3bc1b955acd885b201e1aa754d5200438285c7794dd3318165f2d3300001fb",
+      "complete": true,
+      "inputsUnchanged": true,
+      "seconds": 257.617779082997,
+      "jobs": [
+        {
+          "name": "client-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "image-client-install": {
+          "status": "PASS",
+          "seconds": 1.6645877079863567,
+          "state": "executed"
+        },
+        "image-client-adapter": {
+          "status": "PASS",
+          "seconds": 1.5770816660078708,
+          "state": "executed"
+        },
+        "image-client-widgets": {
+          "status": "PASS",
+          "seconds": 16.794816249981523,
+          "state": "executed"
+        },
+        "image-client-browser": {
+          "status": "PASS",
+          "seconds": 36.66587962501217,
+          "state": "executed"
+        },
+        "wix-install": {
+          "status": "PASS",
+          "seconds": 1.5793080829898827,
+          "state": "executed"
+        },
+        "wix-adapters": {
+          "status": "PASS",
+          "seconds": 1.2122437079960946,
+          "state": "executed"
+        },
+        "wix-quick": {
+          "status": "PASS",
+          "seconds": 9.429789749992779,
+          "state": "executed"
+        },
+        "wix-cms": {
+          "status": "PASS",
+          "seconds": 187.67751220799983,
+          "state": "executed"
+        }
+      },
+      "cmsPhases": [
+        {
+          "name": "cms.dependencies",
+          "seconds": 0.2104030420014169,
+          "success": true
+        },
+        {
+          "name": "cms.browsers.install",
+          "seconds": 0.7284262499888428,
+          "success": true
+        },
+        {
+          "name": "cms.browsers.cache",
+          "seconds": 0.7759317079908215,
+          "bytesBefore": 1745084993,
+          "bytesAfter": 1745084993,
+          "binaryCache": "warm",
+          "networkTransferBytes": null
+        },
+        {
+          "name": "cms.backend.start",
+          "seconds": 22.851139291014988,
+          "success": true
+        },
+        {
+          "name": "cms.backend.bootstrap",
+          "seconds": 8.661237834021449,
+          "success": true
+        },
+        {
+          "name": "cms.wordpress.start",
+          "seconds": 49.141807291976875,
+          "success": true
+        },
+        {
+          "name": "cms.joomla.start",
+          "seconds": 6.123290624993388,
+          "success": true
+        },
+        {
+          "name": "cms.case.0.wordpress.chromium",
+          "seconds": 3.310895792004885,
+          "success": true
+        },
+        {
+          "name": "cms.case.1.wordpress.firefox",
+          "seconds": 4.333422875002725,
+          "success": true
+        },
+        {
+          "name": "cms.case.2.wordpress.webkit",
+          "seconds": 3.3951628750073723,
+          "success": true
+        },
+        {
+          "name": "cms.case.3.wordpress.chromium",
+          "seconds": 2.8733799580077175,
+          "success": true
+        },
+        {
+          "name": "cms.case.4.joomla.chromium",
+          "seconds": 2.9668390000006184,
+          "success": true
+        },
+        {
+          "name": "cms.case.5.joomla.chromium",
+          "seconds": 2.5375100829987787,
+          "success": true
+        },
+        {
+          "name": "cms.case.6.wix.chromium",
+          "seconds": 23.04392158301198,
+          "success": true
+        },
+        {
+          "name": "cms.case.7.html.chromium",
+          "seconds": 2.684416167001473,
+          "success": true
+        },
+        {
+          "name": "cms.case.8.joomla.chromium",
+          "seconds": 0.5701034590019844,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.joomla",
+          "seconds": 0.6295235830184538,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.wordpress",
+          "seconds": 23.608167541009607,
+          "success": true
+        },
+        {
+          "name": "cms.cleanup.backend",
+          "seconds": 10.912471166986506,
+          "success": true
+        }
+      ]
+    },
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261116T060348-1a584808d16c/receipt.json",
+      "head": "6c2273ed9474d49583dce5d96900c4751cf0c03f",
+      "inputSha256": "176598f5ede9a26483c26e9363915b595b9f28efdbfa4bcbcdfca41680c135a4",
+      "complete": false,
+      "inputsUnchanged": true,
+      "seconds": 173.63967137498548,
+      "jobs": [
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "FAIL"
+        },
+        {
+          "name": "seat-checkout",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "seat-install": {
+          "status": "PASS",
+          "seconds": 0.7807533330051228,
+          "state": "executed"
+        },
+        "seat-upgrade": {
+          "status": "PASS",
+          "seconds": 11.390297125006327,
+          "state": "executed"
+        },
+        "seat-runtime-contract": {
+          "status": "PASS",
+          "seconds": 14.606718584022019,
+          "state": "executed"
+        },
+        "seat-database": {
+          "status": "PASS",
+          "seconds": 1.2663110000139568,
+          "state": "executed"
+        },
+        "seat-authorization": {
+          "status": "PASS",
+          "seconds": 0.36433875001966953,
+          "state": "executed"
+        },
+        "seat-google-auth": {
+          "status": "PASS",
+          "seconds": 0.7365191249991767,
+          "state": "executed"
+        },
+        "seat-browser": {
+          "status": "PASS",
+          "seconds": 2.9872221250261646,
+          "state": "executed"
+        },
+        "occasion-lifecycle": {
+          "status": "PASS",
+          "seconds": 1.887671708012931,
+          "state": "executed"
+        },
+        "seat-measurement": {
+          "status": "PASS",
+          "seconds": 7.458022250008071,
+          "state": "executed"
+        },
+        "seat-notifications": {
+          "status": "PASS",
+          "seconds": 17.741202042001532,
+          "state": "executed"
+        },
+        "seat-delivery": {
+          "status": "PASS",
+          "seconds": 4.941965584002901,
+          "state": "executed"
+        },
+        "seat-orders": {
+          "status": "PASS",
+          "seconds": 8.19247433298733,
+          "state": "executed"
+        },
+        "seat-payments": {
+          "status": "PASS",
+          "seconds": 14.35705154101015,
+          "state": "executed"
+        },
+        "seat-services": {
+          "status": "PASS",
+          "seconds": 88.33272562499042,
+          "state": "executed"
+        },
+        "wix-install": {
+          "status": "PASS",
+          "seconds": 1.5807490830193274,
+          "state": "executed"
+        },
+        "wix-adapters": {
+          "status": "PASS",
+          "seconds": 1.2293834580050316,
+          "state": "executed"
+        },
+        "wix-quick": {
+          "status": "PASS",
+          "seconds": 9.681308667000849,
+          "state": "executed"
+        },
+        "wix-cms": {
+          "status": "FAIL",
+          "seconds": 0.14653850000468083,
+          "state": "executed"
+        }
+      }
+    },
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261116T060719-ab8cc13e719f/receipt.json",
+      "head": "6c2273ed9474d49583dce5d96900c4751cf0c03f",
+      "inputSha256": "211fcbcfdeb27316e49046e2a666c733331d9ceb7565d189956e7de0374f3865",
+      "complete": true,
+      "inputsUnchanged": true,
+      "seconds": 211.6155405830068,
+      "jobs": [
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "PASS"
+        }
+      ],
+      "units": {
+        "wix-install": {
+          "status": "PASS",
+          "seconds": 1.5275844589923508,
+          "state": "executed"
+        },
+        "wix-adapters": {
+          "status": "PASS",
+          "seconds": 1.1217354169930331,
+          "state": "executed"
+        },
+        "wix-quick": {
+          "status": "PASS",
+          "seconds": 9.55650366601185,
+          "state": "executed"
+        },
+        "wix-cms": {
+          "status": "PASS",
+          "seconds": 198.86098791699624,
+          "state": "executed"
+        }
+      }
+    }
+  ]
+}

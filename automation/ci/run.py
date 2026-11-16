@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from telemetry import execution_identity, input_identity, phase, measured_process, run_directory, write_receipt, emit
-from selection import owners
+from selection import owners, unit_owners, fingerprint, verify_plan, lookup
 from scheduler import execute_dag
 from resources import flutter_slot
 from contextlib import nullcontext
@@ -86,7 +86,7 @@ def inventory():
     actual={str(path.relative_to(ROOT)) for path in (ROOT/'database/tests').rglob('*_test.sql')}
     expected=set(CONTRACT['sqlInventory']['knownTests'])
     paths=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard'],cwd=ROOT,text=True).splitlines()
-    current={path for path in paths if (ROOT/path).is_file() and path.startswith(('database/tests/','web_client/tests/','automation/tests/','supabase/functions/','test/','test_dart/','tools/festapp/test/')) and path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart'))}
+    current={path for path in paths if (ROOT/path).is_file() and path.startswith(('database/tests/','web_client/tests/','automation/tests/','supabase/functions/','test/','test_dart/','tools/festapp/test/','integrations/')) and path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart'))}
     recorded=set(CONTRACT['knownTestInputs'])
     if current!=recorded:
         raise ValueError('Test inventory ownership changed. New: '+str(sorted(current-recorded))+'; removed: '+str(sorted(recorded-current)))
@@ -124,13 +124,26 @@ def _execute(names, *, pinned=False, command_started=None):
     identity=input_identity(ROOT)
     receipt={**identity,'selectedJobs':names,'scope':'full' if set(names)==set(CONTRACT['jobs']) else 'partial',
              'complete':False,'jobs':[],'units':{},'hostStart':host_state(),'memoryMethod':'250ms sampled host process-tree RSS; Docker VM excluded. Container memory sampled separately.'}
+    plan=None
     if len(names)==1 and not pinned:
         receipt['execution']=execution_identity(ROOT,names[0],CONTRACT)
+        if os.environ.get('FESTAPP_CI_SELECTION_PATH'):
+            if os.environ.get('GITHUB_ACTIONS')!='true': raise ValueError('Hosted selection requires GitHub Actions')
+            plan=json.loads(Path(os.environ['FESTAPP_CI_SELECTION_PATH']).read_text())
+            sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
+            with lookup(): verify_plan(plan,names[0],sha,os.environ['GITHUB_REPOSITORY'],CONTRACT)
+        if receipt['execution'] and plan and plan['reuse']:
+            receipt['execution']['state']='executed' if plan['execute'] else 'reused'
+    receipt['schemaVersion']=2
     nodes={}
     if pinned:
         for version in {CONTRACT['jobs'][name]['node'] for name in names}:
             nodes[version]=subprocess.check_output(['pnpm',f'--package=node@{version}','dlx','node','-p','process.execPath'],cwd=ROOT,text=True).strip()
     units=selected_units(names)
+    all_units=units
+    reused={} if plan is None else {unit:{'status':'PASS','state':'reused','inputSha256':proof['inputSha256'],'origin':proof,'seconds':0} for unit,proof in plan['reuse'].items()}
+    if plan is not None:
+        units={unit:{**row,'after':[dep for dep in row['after'] if dep in plan['execute']]} for unit,row in units.items() if unit in plan['execute']}
     execution_started=time.monotonic()
     receipt['preparationSeconds']=execution_started-started
     receipt['preparationScope']='command preflight, Python environment and pinned Node resolution; hosted action provisioning is outside the lane'
@@ -167,12 +180,19 @@ def _execute(names, *, pinned=False, command_started=None):
         print(f'PASS {name}: {time.monotonic()-before:.1f}s',flush=True)
         return result
     runtime=None;runtime_module=None
-    if any(name.startswith('seat-') or name=='occasion-lifecycle' for name in units):
+    if any(name in CONTRACT.get('databaseUnits',[]) or name in ('seat-upgrade','seat-database','seat-runtime-contract') for name in units):
         sys.path.insert(0,str(ROOT/'automation/local_db'))
         import runtime as runtime_module
         runtime=runtime_module.Runtime()
     try:
         receipt['units']=execute_dag(units,CONTRACT['resources'],execute,workers=3)
+        with lookup(seconds=120):
+            for unit,row in receipt['units'].items():
+                row['state']='executed'
+                if receipt.get('execution'):
+                    row['inputSha256']=fingerprint(receipt['execution']['checkoutSha'],all_units[unit]['job'],CONTRACT,unit)
+        receipt['units'].update(reused)
+        if set(receipt['units'])!=set(all_units): raise ValueError('Incomplete lane coverage')
         for name in names:
             results=[receipt['units'][unit] for unit in CONTRACT['jobs'][name]['steps']]
             receipt['jobs'].append({'name':name,'status':'PASS' if all(row['status']=='PASS' for row in results) else 'FAIL'})
@@ -232,7 +252,10 @@ def main():
     if args.mode=='list':print('\n'.join(CONTRACT['jobs']));return
     if args.mode=='install':install(args.names[0]);return
     if args.mode=='inventory':inventory();return
-    if args.mode=='affected':print(json.dumps({'scope':'targeted-recommendation','jobs':affected(args.names),'paths':args.names,'broaderDbCommand':['bash','automation/test_all.sh','db'] if any(path.endswith('_test.sql') for path in args.names) else None}));return
+    if args.mode=='affected':
+        jobs=affected(args.names)
+        units={lane:sorted(set().union(*(unit_owners(path,lane,CONTRACT) for path in args.names))) for lane in jobs}
+        print(json.dumps({'scope':'targeted-recommendation','jobs':jobs,'units':units,'reason':'Fingerprint ownership; execution adds dependency closure; unknown inputs select full scope','paths':args.names,'broaderDbCommand':['bash','automation/test_all.sh','db'] if any(path.endswith('_test.sql') for path in args.names) else None}));return
     if args.mode=='step':step(args.names[0]);return
     names=args.names or list(CONTRACT['jobs'])
     for name in names:

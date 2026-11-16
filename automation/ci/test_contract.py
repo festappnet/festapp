@@ -40,12 +40,19 @@ class MirrorContractTest(unittest.TestCase):
                     self.assertEqual(steps[1]['run'].strip(), GROWTH_GUARD)
                     self.assertNotIn('if', steps[1])
                 self.assertEqual(steps[selection_index]['id'], 'selection')
-                self.assertEqual(steps[-2]['name'], 'All lane tests executed')
+                self.assertEqual(steps[-2]['name'], 'Lane coverage verified')
                 for step in steps[selection_index + 1:]:
                     if step.get('uses', '').startswith('actions/upload-artifact@'):
                         self.assertEqual(step['if'], 'always()')
                         continue
-                    self.assertEqual(step['if'], "steps.selection.outputs.run == 'true'")
+                    if step.get('name') in ('Run canonical regression DAG','Lane coverage verified'):
+                        self.assertNotIn('if',step)
+                    elif step.get('name')=='All lane tests executed':
+                        self.assertEqual(step['if'],"steps.selection.outputs.full == 'true'")
+                    elif step.get('name')=='Some lane tests executed':
+                        self.assertEqual(step['if'],"steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'")
+                    else:
+                        self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'"))
 
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
@@ -58,7 +65,7 @@ class MirrorContractTest(unittest.TestCase):
             for command in commands:
                 self.assertTrue(command=='python3 automation/ci/run.py lane '+name or
                     (name == 'server-policy' and command == GROWTH_GUARD) or any(marker in command for marker in
-                    ('automation/ci/selection.py ',"echo 'All lane tests executed'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh')),command)
+                    ('automation/ci/selection.py ',"echo 'All lane tests executed'","echo 'Some lane tests executed'","echo 'Lane coverage verified'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh')),command)
             self.assertFalse(any('run.py step ' in command for command in commands))
             node=[step['with']['node-version'] for step in steps if step.get('uses','').startswith('actions/setup-node@')]
             self.assertEqual(node,[lane['node']])
@@ -189,6 +196,46 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual(runner.affected(['integrations/wix/src/entry.js']),['wix-checkout-compatibility'])
 
 
+class UnitSplitContractTest(unittest.TestCase):
+    def test_installed_matrix_and_cluster_claims_are_retained(self):
+        contract=runner.CONTRACT
+        self.assertNotIn('wix-contract',contract['steps'])
+        self.assertNotIn('seat-contract',contract['steps'])
+        self.assertEqual(contract['steps']['wix-cms']['resources']['browser'],1)
+        self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'],2)
+        for name in ['seat-payments','seat-orders','seat-delivery','seat-services']:
+            self.assertIn(name,contract['databaseUnits'])
+        fixture=(ROOT/'automation/testing/cms_consent_fixture.py').read_text()
+        self.assertIn("('wordpress',31,'cli','firefox')",fixture)
+        self.assertIn("('wordpress',31,'cli','webkit')",fixture)
+        self.assertIn("coop=case_index==len(cases)-1",fixture)
+
+    def test_shared_sql_helpers_and_cross_client_fixtures_invalidate_consumers(self):
+        from selection import unit_owners
+        for path in ['web_client/tests/database/disposable_database.js',
+                     'web_client/tests/database/runtime_workspace.js',
+                     'web_client/tests/database/payment_upgrade_fixture.js',
+                     'automation/lib/migration_inputs.mjs',
+                     'automation/lib/historical_sql.mjs',
+                     'test/fixtures/order_item_terminology.json']:
+            for unit in ['seat-payments','seat-orders','seat-delivery','seat-services']:
+                self.assertIn(unit,unit_owners(path,'seat-checkout',runner.CONTRACT),(unit,path))
+        self.assertIn('wix-cms',unit_owners('automation/lib/migration_inputs.py',
+                                          'wix-checkout-compatibility',runner.CONTRACT))
+
+    def test_isolated_wix_test_avoids_cms_but_shared_contracts_invalidate_it(self):
+        from selection import unit_owners
+        lane='wix-checkout-compatibility';c=runner.CONTRACT
+        path=next(path for path in (ROOT/'integrations/wix').rglob('*.test.*') if 'node_modules' not in str(path)).relative_to(ROOT).as_posix()
+        units=unit_owners(path,lane,c)
+        self.assertIn('wix-quick',units)
+        self.assertNotIn('wix-cms',units)
+        for shared in ['integrations/measurement/consent-export.php','web_client/src/embed/channel.js',
+                       'web_client/pnpm-lock.yaml','supabase/functions/_shared/auth.ts','automation/testing/cms_consent_fixture.py',
+                       'database/functions/eshop_forms/shared.sql','new-unknown-file']:
+            self.assertIn('wix-cms',unit_owners(shared,lane,c),shared)
+
+
 class RunnerSafetyTest(unittest.TestCase):
     def test_seat_provisioning_overlaps_downloads_and_requires_both_successes(self):
         for browser_exit,image_exit,major in [(0,0,'15'),(17,0,'15'),(0,19,'17'),(17,19,'17')]:
@@ -254,6 +301,23 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
         self.assertTrue(receipt['complete'])
         self.assertGreaterEqual(receipt['preparationSeconds'],.1)
         self.assertGreaterEqual(receipt['seconds'],receipt['preparationSeconds']+receipt['executionSeconds'])
+
+    def test_all_reused_coverage_is_complete_without_executing_tools(self):
+        contract={'jobs':{'fixture':{'node':'fixture','steps':['unit']}},
+                  'steps':{'unit':{'script':'false','after':[],'resources':{}}},'resources':{}}
+        proof={'inputSha256':'same','source':'a'*40}
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);plan=root/'plan.json'
+            plan.write_text(json.dumps({'execute':[],'reuse':{'unit':proof}}))
+            with patch.object(runner,'CONTRACT',contract),patch.object(runner,'CACHE',root), \
+                 patch.object(runner,'input_identity',return_value={'inputSha256':'same'}), \
+                 patch.object(runner,'host_state',return_value={}),patch.object(runner,'execution_identity',return_value=None), \
+                 patch.object(runner,'verify_plan'),patch.object(runner.subprocess,'check_output',return_value='a'*40), \
+                 patch.dict(os.environ,{'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'fixture/repo','FESTAPP_CI_SELECTION_PATH':str(plan)}), \
+                 patch.object(runner,'measured_process') as execute:
+                receipt=runner.lane('fixture')
+                self.assertTrue(receipt['complete']);self.assertEqual(receipt['units']['unit']['state'],'reused')
+                execute.assert_not_called()
 
     def test_shell_failure_stops_following_commands(self):
         with tempfile.TemporaryDirectory() as directory:
