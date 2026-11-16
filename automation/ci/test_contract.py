@@ -75,7 +75,8 @@ class MirrorContractTest(unittest.TestCase):
                     elif step.get('name')=='Some lane tests executed':
                         self.assertEqual(step['if'],"steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'")
                     else:
-                        self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'"))
+                        self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'",
+                                                  "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'"))
 
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
@@ -137,6 +138,48 @@ class MirrorContractTest(unittest.TestCase):
         for name in ['seat-upgrade','seat-runtime-contract','seat-database','seat-payments','wix-cms']:
             self.assertEqual(contract['steps'][name]['resources']['dbCluster'],
                              contract['resources']['dbCluster'],name)
+
+    def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
+        steps=runner.CONTRACT['steps']
+        self.assertEqual(steps['ticket-client']['requires'],['ticket-install'])
+        self.assertEqual(steps['ticket-edge']['requires'],[])
+        self.assertEqual(steps['ticket-core']['requires'],[])
+        self.assertEqual(steps['seat-browser']['requires'],['seat-install'])
+        self.assertEqual(steps['seat-mcp-contracts']['requires'],['seat-install','seat-mcp-prepare'])
+        self.assertEqual(steps['seat-mcp-prepare']['requires'],['seat-install'])
+        # Full runs retain the canonical order and its independent proofs.
+        self.assertIn('seat-database',steps['seat-browser']['after'])
+        self.assertIn('seat-runtime-contract',steps['seat-database']['after'])
+        self.assertEqual(steps['ticket-client']['after'],['ticket-core'])
+
+    def test_runtime_provisioning_conditions_match_their_consumers(self):
+        workflow=yaml.safe_load((ROOT/'.github/workflows/seat-checkout-regressions.yml').read_text())
+        seat=workflow['jobs']['seat-checkout']['steps']
+        supabase=next(s for s in seat if s.get('uses','').startswith('supabase/setup-cli'))
+        self.assertEqual(supabase['if'],"steps.selection.outputs.sql == 'true'")
+        prepare=next(s for s in seat if s.get('name')=='Prepare isolated browser and database image')
+        self.assertEqual(prepare['env'],{'FESTAPP_CI_NEEDS_DATABASE':'${{ steps.selection.outputs.sql }}',
+                                        'FESTAPP_CI_NEEDS_BROWSER':'${{ steps.selection.outputs.browser }}'})
+        ticket=workflow['jobs']['ticket-preview-and-delivery']['steps']
+        sdk=next(s for s in ticket if s.get('uses','').startswith('subosito/flutter-action'))
+        self.assertEqual(sdk['if'],"steps.selection.outputs.flutter == 'true'")
+        node=next(s for s in ticket if s.get('uses','').startswith('actions/setup-node'))
+        self.assertEqual(node['if'],"steps.selection.outputs.run == 'true'")
+
+    def test_unselected_tools_are_not_downloaded_and_bad_flags_fail(self):
+        for database,browser,code in [('false','false',0),('true','false',0),('false','true',0),('unknown','false',2)]:
+            with self.subTest(database=database,browser=browser),tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp)
+                for name in ['automation/ci/prepare-seat.sh','automation/local_db/test-base.json']:
+                    target=root/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/name,target)
+                (root/'automation/ci/browser.sh').write_text('touch "$PROVISION_FIXTURE/browser.called"\n')
+                (root/'automation/local_db/images.py').write_text("import os,pathlib\n(pathlib.Path(os.environ['PROVISION_FIXTURE'])/'database.called').touch()\n")
+                result=subprocess.run(['bash','automation/ci/prepare-seat.sh'],cwd=root,
+                    env={**os.environ,'PROVISION_FIXTURE':str(root),'FESTAPP_CI_NEEDS_DATABASE':database,
+                         'FESTAPP_CI_NEEDS_BROWSER':browser},capture_output=True)
+                self.assertEqual(result.returncode,code,result.stderr.decode())
+                self.assertEqual((root/'database.called').exists(),database=='true' and code==0)
+                self.assertEqual((root/'browser.called').exists(),browser=='true' and code==0)
     def test_inventory_uses_worktree_files_instead_of_deleted_index_entries(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)

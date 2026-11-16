@@ -206,6 +206,15 @@ class ScopedPolicyTest(unittest.TestCase):
 
 
 class InventoryPreflightTest(unittest.TestCase):
+    def test_provisioning_follows_selected_executors(self):
+        flags=selection.provisioning_flags
+        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False))
+        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False))
+        self.assertTrue(flags(['ticket-core'],CONTRACT)['flutter'])
+        self.assertEqual(flags(['seat-mcp-contracts'],CONTRACT),dict(flutter=False,sql=True,browser=False))
+        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True))
+        with self.assertRaises(KeyError):flags(['unregistered-executor'],CONTRACT)
+
     def test_registration_failure_prevents_selection_and_reuse(self):
         with patch.object(sys,'argv',['selection.py','seat-checkout']), \
              patch.object(selection,'preflight_inventory',side_effect=ValueError('registration failed')), \
@@ -533,6 +542,24 @@ class ReusePolicyTest(unittest.TestCase):
         result=self.evaluate(fingerprint=digest,consume=True)
         self.assertEqual(result['execute'],['image-storage'])
         self.assertEqual(set(result['reuse']),set(self.contract['jobs']['image-contract']['steps'])-{'image-storage'})
+
+    def test_check_order_is_not_an_unnecessary_runtime_dependency(self):
+        import copy
+        step=self.contract['steps']['image-storage']
+        step['after']=['image-policy']
+        step['requires']=['image-install']
+        self.original_contract=copy.deepcopy(self.contract)
+        baseline=self.evaluate()
+        def digest(sha,lane,policy,unit=None):
+            return 'changed' if sha==SHA and unit=='image-storage' else 'same-inputs'
+        result=self.evaluate(fingerprint=digest,consume=True)
+        self.assertEqual(set(result['execute']),{'image-storage','image-install'})
+        self.assertIn('image-policy',result['reuse'])
+        result['execute'].remove('image-install')
+        result['reuse']['image-install']=baseline['reuse']['image-install']
+        with patch.object(selection,'definition',return_value='trusted'):
+            with self.assertRaisesRegex(ValueError,'Missing execution dependency'):
+                selection.verify_plan(result,'image-contract',SHA,'fixture/repo',self.contract)
 
     def test_budget_expiry_keeps_verified_units_and_executes_changed_remainder(self):
         self.contract['steps']['image-storage']['after']=[]

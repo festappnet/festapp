@@ -476,6 +476,15 @@ def decide(lane, event, action, ref, sha, repository, contract, policy, attempt=
         return {'run': True, 'reason': 'Reuse evidence unavailable; running tests'}
 
 
+def provisioning_flags(execute, contract):
+    rows=[contract['steps'][unit] for unit in execute]
+    return {'flutter':any(row.get('resources',{}).get('flutter') or
+                         'fvm flutter ' in row['script'] or 'fvm dart ' in row['script'] for row in rows),
+            'sql':any(unit in contract.get('databaseUnits',[]) or
+                      contract['steps'][unit].get('resources',{}).get('dbCluster') for unit in execute),
+            'browser':any(row.get('resources',{}).get('browser') for row in rows)}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('lane')
@@ -516,6 +525,8 @@ def main():
     if os.environ.get('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
             output.write(f'run={str(result["run"]).lower()}\nfull={str(len(result["execute"])==len(units)).lower()}\ncms={str("wix-cms" in result["execute"]).lower()}\n')
+            for name,value in provisioning_flags(result['execute'],contract).items():
+                output.write(f'{name}={str(bool(value)).lower()}\n')
     if os.environ.get('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
             output.write(f'Units: {len(result["execute"])} execute, {len(result["reuse"])} verified reuse.\n\n')

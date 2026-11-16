@@ -167,3 +167,17 @@ startup. Its 107.58 s is not accepted as a valid comparison. The source is now
 frozen for one clean repeat; require at least 15% improvement over 126.72 s,
 all cases/pass states unchanged, no increased RAM budget and preserved exclusive
 claims. Reject the three-slot change if this bounded repeat misses the threshold.
+
+A further consumed-input audit found an existing but unused distinction:
+`requires` is runtime preparation, while `after` also orders independent checks.
+Partial plans previously replayed upgrade/runtime-contract tests through `after`
+even when their direct execution evidence remained valid. The full DAG order
+is unchanged; SQL behavior units require their actual dependency install (MCP
+also its one API preparation), because canonical Runtime.acquire() calls prepare()
+before cloning a marked workspace. Ticket Deno/core units are independently
+self-preparing; Flutter client requires the root Flutter installation. All
+unchanged checks still require verified, unexpired exact-input execution proof.
+Missing proof executes the check. Provision Flutter, SQL and browser tools only
+when selected commands/resources need them; unknown/missing flags retain full
+preparation. Verify dependency omission is rejected and exercise a real standalone
+checkout browser workspace without the independent upgrade-test units.

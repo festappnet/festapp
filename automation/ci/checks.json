@@ -603,7 +603,11 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install",
+        "seat-mcp-prepare"
+      ]
     },
     "seat-mcp-contracts": {
       "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts\n",
@@ -631,7 +635,11 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install",
+        "seat-mcp-prepare"
+      ]
     },
     "seat-services": {
       "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
@@ -685,7 +693,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-authorization": {
       "script": "export FESTAPP_AUTHORIZATION_POLICY_DATABASE_URL=\"$DATABASE_URL\"\nnode --test automation/tests/authorization_read_phase.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-authorization-1",
@@ -717,7 +728,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-google-auth": {
       "script": "export GOOGLE_AUTH_DATABASE_URL=\"$DATABASE_URL\"\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts\n",
@@ -750,7 +764,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-notifications": {
       "script": "python3 automation/assemble-admin-notification-delivery-migration.py --check\npython3 automation/assemble-notification-settings-clarity-migration.py --check\npython3 automation/assemble-notification-settings-unit-groups-migration.py --check\nnode --test automation/tests/admin_notification_upgrade.test.mjs automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net supabase/functions/_shared/notificationDispatcher_test.ts supabase/functions/_shared/adminNotificationEmail_test.ts supabase/functions/_shared/adminNotificationSender_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
@@ -782,7 +799,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-browser": {
       "script": "pnpm --dir web_client run test:seat-checkout-browser --offline-recovery\n",
@@ -801,6 +821,9 @@
         "automation/**",
         "assets/translations/**",
         "packages/festapp_contracts/**"
+      ],
+      "requires": [
+        "seat-install"
       ]
     },
     "ticket-edge": {
@@ -821,7 +844,8 @@
         "assets/brand/**",
         "test/fixtures/**",
         "database/fixtures/**"
-      ]
+      ],
+      "requires": []
     },
     "ticket-install": {
       "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
@@ -858,7 +882,8 @@
         ".fvmrc",
         "automation/project.conf",
         "assets/email_templates/**"
-      ]
+      ],
+      "requires": []
     },
     "ticket-client": {
       "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
@@ -939,7 +964,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-measurement": {
       "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-websites-migration.py --check\npython3 automation/assemble-measurement-request-lifecycle-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-consent-scope-migration.py --check\npython3 automation/assemble-website-consent-bindings-migration.py --check\nnode --test database/tests/eshop_forms/website_consent_concurrency.test.mjs\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
@@ -952,7 +980,10 @@
       },
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "web-measurement": {
       "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/core/host_consent_export.test.js web_client/tests/core/host_wix_consent.test.js web_client/tests/core/host_provider_live_state.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
@@ -1184,7 +1215,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-orders": {
       "script": "python3 automation/assemble-order-read-performance-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-order-payments\nnode --test database/tests/eshop/payment_product_transition_concurrency.test.mjs\npython3 automation/assemble-seating-transition-migration.py --check\npython3 automation/assemble-automatic-seating-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-order-seating\nnode --test database/tests/blueprint/seating_concurrency.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-order-admin\n\n",
@@ -1238,7 +1272,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     },
     "seat-delivery": {
       "script": "node web_client/scripts/run_db_tests.js --group seat-delivery-email\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\npython3 automation/assemble-ticket-wallet-queue-migrations.py --check\nnode --test database/tests/occasion_setup/wallet_queue_concurrency.test.mjs\nnode --test database/tests/occasion_setup/wallet_queue_upgrade.test.mjs\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\npython3 automation/assemble-apple-ticket-wallet-updates-migration.py --check\npython3 -m unittest automation/tests/test_apple_wallet_runtime.py\npython3 automation/assemble-order-item-terminology-migration.py --check\npnpm --dir web_client exec node --test tests/forms/order_item_terminology.test.js\n",
@@ -1281,7 +1318,10 @@
       ],
       "inputProjections": {
         "web_client/package.json": "package-version"
-      }
+      },
+      "requires": [
+        "seat-install"
+      ]
     }
   },
   "sqlGroups": {
