@@ -3544,6 +3544,11 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.manage_information_authoring(bigint,bigint,bigint,text,jsonb,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {

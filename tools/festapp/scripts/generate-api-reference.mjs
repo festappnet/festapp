@@ -46,7 +46,7 @@ export function specification(endpoint, dataProfile, proofProfile = 'bearer') {
     const catalog = publicCatalog(dataProfile);
     const supported = catalog.filter(d => readiness(d,dataProfile,proofProfile).supported);
     const errors = Object.fromEntries([...new Set(Object.values(errorStatuses))].sort((a,b)=>a-b).map(status => [status, {
-        description: `RFC 9457 problem (${status}). On an uncertain write outcome retain the original commandId and payload.`,
+        description: `RFC 9457 problem (${status}). On an uncertain write outcome retain the original payload and commandId when the operation defines one; follow its retry contract.`,
         headers: { 'X-Request-Id': { $ref: '#/components/headers/RequestId' },
             ...(status === 401 || status === 403 ? { 'WWW-Authenticate': { schema: { type: 'string' }, description: 'Resource-specific OAuth challenge.' } } : {}),
             ...(status === 405 ? { Allow: { schema: { type: 'string', const: 'POST' }, description: 'Supported method.' } } : {}),
