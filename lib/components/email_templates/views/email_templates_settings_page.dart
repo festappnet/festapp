@@ -1,3 +1,4 @@
+import '../../forms/sale_opening_strings.dart';
 import '../../ticket_layout/ticket_delivery_strings.dart';
 import '../../ticket_layout/views/ticket_email_preview.dart';
 import '../../features/ticket_feature.dart';
@@ -631,6 +632,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   Widget _buildHtmlParent(BuildContext context) {
     // Get usage details from the email template (read-only info).
     final usageDetails = widget.template.getUsageDetails();
+    if (widget.template.code == 'sale_opening_opened' &&
+        _examples?.context?.ticketsEnabled == true) {
+      usageDetails['description'] = SaleOpeningStrings.explanation;
+    }
     return AppAlertDialog(
       onClose: _requestClose,
       title: Row(

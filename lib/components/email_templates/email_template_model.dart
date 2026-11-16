@@ -430,7 +430,7 @@ class EmailTemplateModel {
       case 'sale_opening_opened':
         return {
           'title': SaleOpeningStrings.title,
-          'description': SaleOpeningStrings.explanation,
+          'description': SaleOpeningStrings.text('explanationRegistration'),
         };
       case 'waitlist_confirmation':
         return {

@@ -34,3 +34,18 @@ Deno.test('capability origin and scope are checked; sources stay encrypted until
  assert.equal(prepared.subject,'<script>');
  assert.equal(prepared.html,'<p>&lt;script&gt;</p>');
 });
+
+Deno.test('opening copy distinguishes presales and applications in every supported language', () => {
+ for (const lang of Object.keys(saleOpeningCopy)) {
+  const tickets = saleOpeningSubstitutions(lang, 'Event', 'https://example.invalid', 'https://example.invalid');
+  const applications = saleOpeningSubstitutions(lang, 'Event', 'https://example.invalid', 'https://example.invalid', {hasTickets: false});
+  assert.notEqual(applications.sale_opening_subject, tickets.sale_opening_subject);
+  assert.notEqual(applications.sale_opening_action, tickets.sale_opening_action);
+  assert.notEqual(applications.sale_opening_disclaimer, tickets.sale_opening_disclaimer);
+ }
+ const tickets = saleOpeningSubstitutions('cs', 'Ples', 'https://example.invalid', 'https://example.invalid');
+ const applications = saleOpeningSubstitutions('cs', 'Tábor', 'https://example.invalid', 'https://example.invalid', {hasTickets: false});
+ assert.equal(tickets.sale_opening_subject, 'Předprodej byl spuštěn');
+ assert.equal(applications.sale_opening_subject, 'Přihlašování bylo spuštěno');
+ assert.doesNotMatch(applications.sale_opening_disclaimer, /nákup|vstupenk/);
+});
