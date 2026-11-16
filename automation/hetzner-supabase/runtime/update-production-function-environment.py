@@ -42,8 +42,15 @@ def validate_recreated(before, after, key, value):
     expected = environment(before)
     expected[key] = value
     require(environment(after) == expected, 'Recreated Functions environment differs from the exact one-key change.')
-    for field in ['Image', 'HostConfig']:
-        require(before[field] == after[field], 'Functions image or host configuration changed.')
+    require(before['Image'] == after['Image'], 'Functions image changed.')
+    hosts = [deepcopy(container['HostConfig']) for container in [before, after]]
+    # Compose may emit bind mounts in a different order when recreating a
+    # container. Preserve every binding, mode and duplicate; only order is inert.
+    # The effective Mounts projection is still compared independently below.
+    for host in hosts:
+        if isinstance(host.get('Binds'), list):
+            host['Binds'] = sorted(host['Binds'])
+    require(hosts[0] == hosts[1], 'Functions host configuration changed.')
     for field in ['Image', 'Cmd', 'Entrypoint', 'User', 'WorkingDir', 'Healthcheck']:
         require(before['Config'].get(field) == after['Config'].get(field), 'Functions execution configuration changed.')
     normalized = lambda container: sorted(container['Mounts'], key=lambda item: item['Destination'])

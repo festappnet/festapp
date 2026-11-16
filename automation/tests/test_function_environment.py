@@ -52,6 +52,19 @@ class FunctionEnvironmentTest(unittest.TestCase):
             else: changed['Config']['Env'].append('UNREVIEWED_SECRET=unreviewed')
             with self.assertRaises(RuntimeError): migration.validate_recreated(before, changed, key, value)
 
+    def test_recreation_ignores_bind_order_but_preserves_each_binding(self):
+        key, value, _, _, before, after = self.fixture()
+        bindings = ['/opt/functions:/home/deno/functions:ro', '/opt/cache:/home/deno/.cache:rw']
+        before['HostConfig']['Binds'] = bindings
+        after['HostConfig']['Binds'] = list(reversed(bindings))
+        migration.validate_recreated(before, after, key, value)
+        for changed_bindings in [bindings[:1], bindings + [bindings[0]],
+                                 [bindings[0].replace(':ro', ':rw'), bindings[1]]]:
+            changed = deepcopy(after)
+            changed['HostConfig']['Binds'] = changed_bindings
+            with self.assertRaises(RuntimeError):
+                migration.validate_recreated(before, changed, key, value)
+
     def migration_case(self, fail=False, drained=True):
         key, value, before_model, proposed, before, after = self.fixture()
         with tempfile.TemporaryDirectory(prefix='festapp-function-environment-') as directory:
