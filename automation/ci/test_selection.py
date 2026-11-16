@@ -49,6 +49,12 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
             self.assertTrue({'ticket-core','ticket-edge','ticket-install'}.isdisjoint(units))
         self.assertIn('ticket-core',selection.unit_owners('packages/festapp_core/lib/eshop/customer_label.dart',lane,CONTRACT))
         self.assertIn('ticket-edge',selection.unit_owners('supabase/functions/preview-ticket-layout/entrypoint_test.ts',lane,CONTRACT))
+        for path in ['test/fixtures/ticket_layout/background.png',
+                     'database/fixtures/demo_occasions/concert-layout.json',
+                     'assets/brand/apple-wallet/provenance.json']:
+            self.assertIn(lane,selection.owners(path,CONTRACT))
+            self.assertIn('ticket-edge',selection.unit_owners(path,lane,CONTRACT))
+        self.assertIn('ticket-core',selection.unit_owners('assets/email_templates/preview_examples.json',lane,CONTRACT))
         self.assertEqual(selection.unit_owners('unknown_shared/input.dat',lane,CONTRACT),set(CONTRACT['jobs'][lane]['steps']))
 
     def test_image_health_checker_has_only_actual_consumers(self):

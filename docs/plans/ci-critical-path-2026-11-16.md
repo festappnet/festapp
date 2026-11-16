@@ -127,3 +127,43 @@ Both canonical Flutter commands also passed with
 registrations, including skips. Existing standalone SDK/font/locale processes
 and compile-time defines are preserved. A broad reverse of pre-existing nested
 fixtures is not substituted for the isolation check of the newly combined roots.
+
+Main `9a8e156ab9c825c9514b27230e2517603a875a5b` was inventoried and integrated
+before publication. Its information SQL migration and added tests are preserved.
+The measurement SQL unit duplicated five files already auto-discovered by the
+complete MCP group. Their duplicate invocation and redundant install are removed;
+a contract now enforces the grouped owners. The new information assembler stays
+with its actual `mcp-auth-contract` owner. Latest-main validation follows.
+
+Final-main native mirror after duplicate removal: all 31 units PASS,
+`complete=true`, `inputsUnchanged=true`, 321.58 s, receipt
+`20261116T175301-b43213742746`. Source HEAD `4370fc42d` is the rebased
+implementation commit whose parent is canonical main `9a8e156ab`; dirty=true
+records the reviewed follow-up changes, not a different backend target.
+All 283 MCP tests passed (24 authorization + 259 contracts), zero skips/failures;
+all 657/228 Flutter registrations and nine CMS cases passed. Measurement dropped
+to 4.4 s after removing the five duplicate MCP file executions. Consumed-input
+review also retained external email examples, Wallet brand assets, and Deno's
+real database/layout/font fixtures in the relevant fingerprints.
+
+A bounded scheduler experiment follows the measured bottleneck: authorization,
+contracts and service units peaked at 404/670/541 MiB of sampled process RSS.
+Compare the same seat lane with two versus three admitted database units, keeping
+3500 MiB admission RAM, one local Flutter task and all cluster-wide/exclusive
+claims intact. This is a proposed extension to the initial two-slot constraint,
+not an unmeasured relaxation: reject it on case failures, excessive memory or no
+material wall-time benefit. No production/runtime capacity changes are in scope.
+
+Controlled two-slot baseline: canonical seat lane PASS, 17/17 units, same 283
+MCP cases with zero skips, 126.72 s total, receipt
+`20261116T180111-07028b8ee899`. Database-container peak sampled 464.4 MiB;
+per-unit peaks below their admission reservations. The candidate raises only
+DB admission to three within the existing three workers and 3500 MiB budget;
+all five prior full-cluster claims rise from two to three, preserving exclusion.
+
+The first three-slot exploratory run passed all cases but its global receipt
+reported changed inputs because the new test-contract guard was edited during
+startup. Its 107.58 s is not accepted as a valid comparison. The source is now
+frozen for one clean repeat; require at least 15% improvement over 126.72 s,
+all cases/pass states unchanged, no increased RAM budget and preserved exclusive
+claims. Reject the three-slot change if this bounded repeat misses the threshold.

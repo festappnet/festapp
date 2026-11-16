@@ -104,6 +104,7 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual([name for name, script in scripts.items()
                           if 'pnpm run typecheck && pnpm run test:unit' in script], ['image-policy'])
         self.assertNotIn('image-server-policy', scripts)
+
         self.assertEqual(runner.CONTRACT['steps']['mcp-auth-install']['after'], [])
         for name, lane in runner.CONTRACT['jobs'].items():
             for unit in lane['steps']:
@@ -120,6 +121,22 @@ class MirrorContractTest(unittest.TestCase):
         self.assertLess(builder.index('python3 automation/ci/release_gate.py'),
                         builder.index('rm -rf'))
 
+    def test_postgres_mcp_files_have_only_the_complete_grouped_execution_owner(self):
+        scripts={name:unit['script'] for name,unit in runner.CONTRACT['steps'].items()}
+        for name,script in scripts.items():
+            self.assertNotRegex(script,r'test/[\w-]+-postgres\.test\.mjs',name)
+        owners={name for name,script in scripts.items() if 'scripts/test-postgres.mjs ' in script}
+        self.assertEqual(owners,{'seat-mcp-authorization','seat-mcp-contracts'})
+        self.assertIn('test-postgres.mjs authorization',scripts['seat-mcp-authorization'])
+        self.assertIn('test-postgres.mjs contracts',scripts['seat-mcp-contracts'])
+        self.assertIn('assemble-information-authoring-migration.py --check',scripts['mcp-auth-contract'])
+
+    def test_cluster_mutators_reserve_the_complete_admission_capacity(self):
+        contract=runner.CONTRACT
+        self.assertEqual(contract['resources']['ramMiB'],3500)
+        for name in ['seat-upgrade','seat-runtime-contract','seat-database','seat-payments','wix-cms']:
+            self.assertEqual(contract['steps'][name]['resources']['dbCluster'],
+                             contract['resources']['dbCluster'],name)
     def test_inventory_uses_worktree_files_instead_of_deleted_index_entries(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
@@ -230,7 +247,7 @@ class UnitSplitContractTest(unittest.TestCase):
         self.assertNotIn('wix-contract',contract['steps'])
         self.assertNotIn('seat-contract',contract['steps'])
         self.assertEqual(contract['steps']['wix-cms']['resources']['browser'],1)
-        self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'],2)
+        self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'],contract['resources']['dbCluster'])
         for name in ['seat-payments','seat-orders','seat-delivery','seat-services']:
             self.assertIn(name,contract['databaseUnits'])
         fixture=(ROOT/'automation/testing/cms_consent_fixture.py').read_text()
