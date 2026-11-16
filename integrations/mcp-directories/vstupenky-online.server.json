@@ -1,0 +1,27 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "net.festapp/vstupenky-online",
+  "title": "vstupenky.online",
+  "description": "Set up events, seating and ticket prices, then manage orders, sales and check-in with AI.",
+  "version": "0.1.2",
+  "repository": {
+    "url": "https://github.com/festappnet/festapp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.vstupenky.online/mcp"
+    }
+  ],
+  "websiteUrl": "https://vstupenky.online",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/festappnet/festapp/a37389cc225a139725a935d014f1df10f091484e/integrations/chatgpt/assets/logo.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "1024x1024"
+      ]
+    }
+  ]
+}

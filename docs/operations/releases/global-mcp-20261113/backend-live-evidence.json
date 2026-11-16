@@ -1,0 +1,293 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-13T03:38:04.538101+00:00",
+  "source": {
+    "repository": "festappnet/festapp",
+    "branch": "main",
+    "sha": "a37389cc225a139725a935d014f1df10f091484e",
+    "exactSourcePublished": true
+  },
+  "releaseGate": {
+    "exactSha": "a37389cc225a139725a935d014f1df10f091484e",
+    "requiredCount": 8,
+    "allSuccess": true,
+    "checks": [
+      {
+        "name": "image-contract",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269408/job/131665402156"
+      },
+      {
+        "name": "web-startup",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269294/job/131665401534"
+      },
+      {
+        "name": "wix-checkout-compatibility",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269155/job/131665401309"
+      },
+      {
+        "name": "navigation-interactions",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269345/job/131665401815"
+      },
+      {
+        "name": "server-policy",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269141/job/131665401266"
+      },
+      {
+        "name": "client-contract",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269141/job/131665401564"
+      },
+      {
+        "name": "seat-checkout",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269302/job/131665794070"
+      },
+      {
+        "name": "ticket-preview-and-delivery",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43358269302/job/131665793805"
+      }
+    ]
+  },
+  "globalImage": {
+    "tag": "festapp-mcp-global:a37389cc225a139725a935d014f1df10f091484e-arm64",
+    "imageId": "sha256:e6c171dace2788670959a4f37edcf60947b7d87c4cc1fe05f985e94acb514199",
+    "manifestDigest": "sha256:e6c171dace2788670959a4f37edcf60947b7d87c4cc1fe05f985e94acb514199",
+    "ociRevision": "a37389cc225a139725a935d014f1df10f091484e",
+    "platform": "linux/arm64",
+    "nativeBuild": "Colima ARM64; exact git archive; tools/festapp/Dockerfile.remote",
+    "imageArchive": {
+      "path": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/promotion-a37389/image.tar",
+      "sha256": "aa62965fe76c7650a21e6cf0c3e335aa90699c99f7c60e4413d87fd1e18b5f01",
+      "sizeBytes": 121971712
+    },
+    "hostArchive": "/opt/festapp-mcp-global/releases/a37389cc225a139725a935d014f1df10f091484e/image.tar",
+    "runtimePackageEvidence": {
+      "noticePackages": 96,
+      "licenseDistribution": {
+        "MIT": 86,
+        "Apache-2.0": 4,
+        "ISC": 4,
+        "BSD-3-Clause": 1,
+        "0BSD": 1
+      },
+      "missingNotices": 0,
+      "noticeTextLines": 7858,
+      "thirdPartyNoticesJsonSha256": "1cb787558a1e9a769d7d10de6db58df5f479102b6956da5d91ab6d241d153088",
+      "thirdPartyNoticesTextSha256": "443019230f0cd8542f6233a9bd2e1d86037db98d1546f3285d7d4fc3ac0be406",
+      "licenseTreeFiles": 254,
+      "mplSourceTreeFiles": 43,
+      "rootLicenceSha256": "62327d99a7f43e756bf65296574cfe85fa2a3a2f161a7851d2b1871e99053e1e",
+      "typescriptProdPaths": 0,
+      "legacySdkProdPaths": 0
+    },
+    "isolatedSmoke": {
+      "syntheticDisposableLocalConfig": true,
+      "ephemeralSeparateIssuerKeysAndData": true,
+      "network": "none",
+      "containerUser": "node (UID 1000)",
+      "readOnlyRoot": false,
+      "healthz": 200,
+      "oauthAuthorizationServerMetadata": 200,
+      "protectedResourceMetadata": 200,
+      "docs": 200,
+      "privacy": 200,
+      "terms": 200,
+      "unauthenticatedMcpInitialize": 401,
+      "invalidTokenChallenge": true,
+      "backendOrCustomerDataAccess": false
+    },
+    "previousImage": {
+      "tag": "festapp-mcp-global:09cdd991fa30dd848324df586e188040931d3bd2-arm64",
+      "imageId": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b",
+      "manifestDigest": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b",
+      "ociRevision": "09cdd991fa30dd848324df586e188040931d3bd2",
+      "platform": "linux/arm64"
+    }
+  },
+  "selectedFunction": {
+    "sourceSha": "09cdd991fa30dd848324df586e188040931d3bd2",
+    "functions": [
+      "mcp-session-exchange"
+    ],
+    "archive": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/selected-function-bundles/09cdd991fa30-20261113T020204Z/functions.tar.gz",
+    "archiveSha256": "8397922127f3ca3136b79369600915262f86fac494a43c65639b06f7f2b1ff03",
+    "manifest": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/selected-function-bundles/09cdd991fa30-20261113T020204Z/manifest.json",
+    "manifestSha256": "6f319483a6c21e9c8f19cd5020066a2a0aa4e1438e78665968dc449fc49642db",
+    "liveBaseTreeSha256": "535536fdb9cc4a1c3ff3c9e76b00a3dd904f93721b2440133fa6b6c43f81cb4b",
+    "freshLiveInventoryMatches": true,
+    "sharedClosure": [
+      "supabase/functions/_shared/issueExistingUserSession.ts"
+    ],
+    "installedDenoLockMatched": true,
+    "runtimeWriterPolicySha256": "f1e46959a625f0f161f62a252791f92409ccf4133d22a91947172f3ae10d3ad8",
+    "installerSha256": "69edf88b26e0dcfbd2a0b9b18649704b76ea5eb167d9bdc24e1caf776552e26a",
+    "selectionHelperSha256": "4e883a421ea6247bade7879f6818bfac7f862d80c80521cf16ca128f786642e6",
+    "installedResult": "/var/lib/festapp-rehearsal-evidence/production-function-bundle-20261113T022309Z/result.json",
+    "retainedPreviousTree": "/opt/festapp-supabase/docker/volumes/functions.pre-production-20261113T022309Z",
+    "runtimeRestartedByInstaller": false,
+    "unselectedFunctionsAndSharedFilesPreserved": true,
+    "walletCodeOrMigrationChanged": false
+  },
+  "functionEnvironment": {
+    "changedKey": "FESTAPP_MCP_TENANTS_JSON",
+    "modelDiffKeys": [
+      "FESTAPP_MCP_TENANTS_JSON"
+    ],
+    "currentValueSha256": "8287fab2dc7b0d2be76adc74cb4b01afc36725c37ca67d36decef3722683e090",
+    "regionalEntryPreservedByteForByte": true,
+    "regionalTenant": "festapptickets",
+    "regionalOrganizationId": 3,
+    "globalEntriesAdded": [
+      {
+        "tenantId": "festapptickets",
+        "tenantOrigin": "https://vstupenky.online",
+        "organizationId": 3,
+        "issuer": "https://mcp.festapp.net"
+      },
+      {
+        "tenantId": "doobiscup",
+        "tenantOrigin": "https://biscup.festapp.net",
+        "organizationId": 5,
+        "issuer": "https://mcp.festapp.net"
+      }
+    ],
+    "secretValuesRecorded": false,
+    "functionsContainerId": "1b4b0e652bbf840c8b9b6f3d89af8572b13e90c6d6c325109a375b74281db1f7",
+    "activeEnvPath": "/opt/festapp-supabase/docker/.env",
+    "rollbackBackup": "/opt/festapp-supabase/docker/.env.before-functions-20261113T022315Z",
+    "updater": "/var/lib/festapp-rehearsal-evidence/global-mcp-20261113-preflight/update-production-function-environment.py",
+    "worker401Probe": "passed",
+    "imageMountCommandAndOtherEnvironmentUnchanged": true
+  },
+  "globalSidecar": {
+    "project": "festapp-mcp-global",
+    "container": "festapp-mcp-global-mcp-1",
+    "state": "running/healthy",
+    "imageId": "sha256:e6c171dace2788670959a4f37edcf60947b7d87c4cc1fe05f985e94acb514199",
+    "port": "127.0.0.1:3400",
+    "compose": "/opt/festapp-mcp-global/remote-compose.yml",
+    "config": "/opt/festapp-mcp-global/config/remote-config.json",
+    "configSha256": "341d85dc83d1b6f06e4aee5f0238c9920e76bd2009fd878f8c7cce16e8d9dd7f",
+    "secretsPath": "/opt/festapp-mcp-global/secrets/secrets.json",
+    "dataPath": "/opt/festapp-mcp-global/data",
+    "contexts": [
+      {
+        "tenantId": "festapptickets",
+        "organizationId": 3,
+        "origin": "https://vstupenky.online",
+        "activationSha256": "c964ba8e23a79e0a082a280d0a44fe3a424b5168eae0853f33d34c630b1cc31c",
+        "profileSha256": "40ca6bdd5461d29f4497b41d08c86494ee03e71d98ba7903d632348b3ba13c4e",
+        "displayName": "vstupenky.online"
+      },
+      {
+        "tenantId": "doobiscup",
+        "organizationId": 5,
+        "origin": "https://biscup.festapp.net",
+        "activationSha256": "37910cd71e9a1ec4d5136f720534dfc2a32ec4f8bcec8e1b92046ba69d500d95",
+        "profileSha256": "bd7e96c00da3c4535355a10e72db81cbc04e38e9b19fc4232edd988824d1df4f",
+        "displayName": "BISCUP"
+      }
+    ],
+    "localHealthDocsLegalOAuth401Probes": "passed",
+    "edgeContextSelectorNoAuthProbes": {
+      "org3OriginAndGlobalIssuer": 401,
+      "org5OriginAndGlobalIssuer": 401
+    },
+    "publicProxyAtCapture": "active; primary-owned Caddy route; TLS verified",
+    "sanitizedRecentLogSummary": {
+      "path": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/private/global-sidecar-auth-log-summary.json",
+      "recordCount": 1,
+      "eventCodes": [
+        "consent"
+      ],
+      "callbackOrAccountSwitchErrors": 0,
+      "rawValuesRetained": false
+    },
+    "imageTag": "festapp-mcp-global:a37389cc225a139725a935d014f1df10f091484e-arm64",
+    "ociRevision": "a37389cc225a139725a935d014f1df10f091484e",
+    "platform": "linux/arm64",
+    "containerId": "283edbe1d41c888b5ecd70675bc320fe8e6dc075cc68e6287d1c2af7f1d3a033",
+    "configChange": "only contexts[].name; vstupenky.online and BISCUP",
+    "secretsAndDataUnchanged": true,
+    "publicProbes": {
+      "healthz": 200,
+      "oauthAuthorizationServer": 200,
+      "protectedResourceMetadata": 200,
+      "docs": 200,
+      "privacy": 200,
+      "terms": 200,
+      "unauthenticatedMcpInitialize": 401,
+      "tlsVerifyResult": 0,
+      "formActionTargets": [
+        "https://vstupenky.online/settings/mcp-connect",
+        "https://biscup.festapp.net/settings/mcp-connect"
+      ],
+      "regionalHealth": 200
+    },
+    "rollback": {
+      "previousImageTag": "festapp-mcp-global:09cdd991fa30dd848324df586e188040931d3bd2-arm64",
+      "previousImageId": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b",
+      "previousConfigSha256": "a8eaab93680e78786a2585eafad6ea665620660af510d0c43defa499ffadd35d",
+      "previousConfigBackup": "/opt/festapp-mcp-global/releases/a37389cc225a139725a935d014f1df10f091484e/remote-config.previous.json",
+      "previousEnvBackup": "/opt/festapp-mcp-global/releases/a37389cc225a139725a935d014f1df10f091484e/global.env.previous",
+      "imageTar": "/opt/festapp-mcp-global/releases/a37389cc225a139725a935d014f1df10f091484e/image.tar"
+    }
+  },
+  "databaseAndMail": {
+    "canonicalHost": "festapp-supabase-rehearsal-01",
+    "database": "festapp_rehearsal_20260909220601",
+    "targetOrganizations": [
+      3,
+      5
+    ],
+    "emailPauseBeforeRelease": false,
+    "emailPauseAfterRelease": false,
+    "preparingOrSendingCount": 0,
+    "producerAccessOk": true,
+    "postActionBacklog": 0
+  },
+  "verificationAccount": {
+    "sanitizedReceipt": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/private/account-provisioning-sanitized-evidence.json",
+    "credentialLocatorId": "festapp-mcp-verifier-biscup-20261113",
+    "credentialStore": "macOS encrypted login Keychain",
+    "iCloudSync": "not verified",
+    "scope": {
+      "organizationId": 5,
+      "occasionLink": "biscup2025",
+      "isEditorView": true,
+      "isEditor": false,
+      "isManager": false,
+      "isEditorOrder": false,
+      "isEditorOrderView": false,
+      "isApprover": false,
+      "isReceptionist": false,
+      "isCleaningCrew": false,
+      "isCleaningBlocked": false,
+      "unitMembership": false
+    },
+    "realGoTrueLogin": true,
+    "signedOrg5OperatorAccessExact": true,
+    "signedProgramRead": true,
+    "foreignOrg3DeniedSqlstate": "42501",
+    "sessionPersisted": false
+  },
+  "rollbackLocators": {
+    "selectedFunctionPreviousTree": "/opt/festapp-supabase/docker/volumes/functions.pre-production-20261113T022309Z",
+    "functionsEnvironmentBackup": "/opt/festapp-supabase/docker/.env.before-functions-20261113T022315Z",
+    "globalSidecarProjectDirectory": "/opt/festapp-mcp-global",
+    "globalImageArchive": "/var/lib/festapp-rehearsal-evidence/global-mcp-20261113-global-transfer/image.tar.gz",
+    "globalCaddyPreChangeProtectedCopy": "/var/lib/festapp-rehearsal-evidence/global-mcp-20261113-global-transfer/Caddyfile.before",
+    "globalSidecarPreviousImageTag": "festapp-mcp-global:09cdd991fa30dd848324df586e188040931d3bd2-arm64",
+    "globalSidecarPreviousImageId": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b",
+    "globalSidecarPreviousConfig": "/opt/festapp-mcp-global/releases/a37389cc225a139725a935d014f1df10f091484e/remote-config.previous.json",
+    "globalSidecarPreviousEnv": "/opt/festapp-mcp-global/releases/a37389cc225a139725a935d014f1df10f091484e/global.env.previous",
+    "globalSidecarCandidateImageArchive": "/opt/festapp-mcp-global/releases/a37389cc225a139725a935d014f1df10f091484e/image.tar"
+  },
+  "noSecretValuesRecorded": true
+}

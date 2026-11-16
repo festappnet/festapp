@@ -1,3 +1,7 @@
+import 'package:fstapp/components/features/feature.dart';
+import 'package:fstapp/components/occasion/occasion_link_model.dart';
+import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:async';
 
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
@@ -38,6 +42,16 @@ Map<String, dynamic> delivery(
 
 void main() {
   WidgetEnvironmentFixture.register();
+  setUp(() {
+    final previous = RightsService.occasionLinkModelNotifier.value;
+    RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+      occasion: OccasionModel(
+        id: 7, isOpen: true, isHidden: false, isPromoted: false,
+        features: [SimpleFeature(code: 'ticket', isEnabled: true)],
+      ),
+    );
+    addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
+  });
   late WidgetEnvironmentFixture environment;
   setUpAll(() async {
     environment = WidgetEnvironmentFixture(
@@ -134,6 +148,17 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('application context uses confirmation actions', (tester) async {
+    RightsService.currentOccasion()!.features.single.isEnabled = false;
+    await open(tester, [], state: 'sent');
+    expect(find.text('Odeslat potvrzení'), findsOneWidget);
+    expect(find.text('Odeslat vstupenky'), findsNothing);
+    await tester.enterText(find.byType(TextField), 'customer@example.cz');
+    await tester.pumpAndSettle();
+    expect(find.text('Uložit a odeslat potvrzení'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final view in [
     (

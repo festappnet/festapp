@@ -15,13 +15,14 @@ const owns = (g, userId, clientId, profileBinding) => g && g.userId === userId &
 // Only legacy records lack createdAt; their historical duration was seven days.
 const creationTime = grant => grant.createdAt ??
     grant.expiresAt - (grant.durationDays ?? DEFAULT_CONNECTION_DURATION_DAYS) * DAY_SECONDS * 1000;
-export function activeConnections(storage, userId, clientId, profileBinding) {
-    return storage.values('Delegation').filter(g => owns(g, userId, clientId, profileBinding) && connectionActive(g))
+export function activeConnections(storage, userId, clientId, profileBinding, {resource,legacyResource} = {}) {
+    return storage.values('Delegation').filter(g => owns(g, userId, clientId, profileBinding) && connectionActive(g) &&
+        (!resource || (g.resource ?? legacyResource) === resource))
         .sort((a, b) => creationTime(b) - creationTime(a) || a.id.localeCompare(b.id))
         .map(g => ({ id: g.id, name: g.name || null, expiresAt: new Date(connectionDeadline(g)).toISOString(),
             access: accessSelection(g.access), permissions: g.permissions ?? [], defaultEligible: g.lifecycle === 'issued' || Boolean(g.clientConnectedAt) }));
 }
-export function verifyConnectionChoice(raw, storage, userId, clientId, profileBinding) {
+export function verifyConnectionChoice(raw, storage, userId, clientId, profileBinding, resourcePolicy = {}) {
     if (raw === undefined) return { durationDays: DEFAULT_CONNECTION_DURATION_DAYS }; // Legacy requests always create an independent connection.
     const parsed = connectionChoice.safeParse(raw);
     check(parsed.success, 'FORBIDDEN');
@@ -30,11 +31,12 @@ export function verifyConnectionChoice(raw, storage, userId, clientId, profileBi
     if (mode === 'replace') {
         check(typeof connectionId === 'string', 'FORBIDDEN');
         const old = storage.get('Delegation', connectionId);
-        check(owns(old, userId, clientId, profileBinding) && connectionActive(old), 'FORBIDDEN');
+        check(owns(old, userId, clientId, profileBinding) && connectionActive(old) &&
+            (!resourcePolicy.resource || (old.resource ?? resourcePolicy.legacyResource) === resourcePolicy.resource), 'FORBIDDEN');
         inheritedName = old.name;
     } else {
         check(connectionId === undefined, 'FORBIDDEN');
-        if (activeConnections(storage, userId, clientId, profileBinding).length) check(Boolean(name), 'FORBIDDEN');
+        if (activeConnections(storage, userId, clientId, profileBinding, resourcePolicy).length) check(Boolean(name), 'FORBIDDEN');
     }
     return { durationDays, name: name || inheritedName || undefined, replaces: mode === 'replace' ? connectionId : undefined };
 }

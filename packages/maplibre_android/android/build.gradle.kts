@@ -1,5 +1,6 @@
 plugins {
     id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 group = "com.github.josxha.maplibre"
@@ -14,6 +15,9 @@ allprojects {
 
 apply(plugin = "com.android.library")
 
+val flutterCompileSdk = (extensions.getByName("flutter") as groovy.lang.GroovyObject)
+    .getProperty("compileSdkVersion") as Int
+
 android {
     // Keeping the classes from being removed by proguard.
     defaultConfig {
@@ -27,7 +31,7 @@ android {
 
     namespace = "com.github.josxha.maplibre"
 
-    compileSdk = 35
+    compileSdk = flutterCompileSdk
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

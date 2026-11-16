@@ -34,6 +34,7 @@ BEGIN
     AND eshop.order_product_ticket."order" = order_id
     AND eshop.tickets.state IN ('ordered','expired','paid');
 
+    PERFORM public.enqueue_order_wallet_internal(order_id);
     PERFORM public.notification_center_order_state_internal(order_id);
     RETURN jsonb_build_object('code',200,'message','Update successful');
 END $$;

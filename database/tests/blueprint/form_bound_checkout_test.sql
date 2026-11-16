@@ -6,6 +6,9 @@ DECLARE f jsonb; req jsonb; r jsonb; pool bigint; ctx bigint; resource bigint; a
  secret uuid:=gen_random_uuid(); payload jsonb; node uuid;
 BEGIN
  f:=public.blueprint_test_fixture_internal();req:=f->'request';
+ -- Checkout uses the current explicit organization payment policy.
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES((req->>'organization')::bigint,'bank');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES((req->>'organization')::bigint,'bank',true);
  PERFORM set_config('request.jwt.claim.sub',f->>'actor',true);
  INSERT INTO eshop.products(occasion,product_type,title,price,currency_code)
  SELECT occasion,product_type,'Blueprint standing',50,'CZK' FROM eshop.products WHERE id=(f->>'product')::bigint RETURNING id INTO standing;
@@ -22,7 +25,7 @@ BEGIN
  DELETE FROM public.form_fields WHERE form=(f->>'form')::bigint;
  INSERT INTO eshop.bank_accounts(title,account_number,type,is_fetch_enabled,supported_currencies) VALUES('Test only','123456/0100','FIO',false,ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account,priority) SELECT unit,bank,1 FROM public.occasions WHERE id=(f->>'occasion')::bigint;
- UPDATE public.forms SET bank_account=bank WHERE id=(f->>'form')::bigint;
+ UPDATE public.forms SET bank_account=bank,data=coalesce(data,'{}')||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=(f->>'form')::bigint;
  SELECT id INTO seat FROM eshop.spots WHERE blueprint=(f->>'blueprint')::bigint ORDER BY id LIMIT 1;
  -- A held seat in another blueprint of the same occasion is still unrelated.
  INSERT INTO eshop.blueprints(occasion,organization,title,layout) SELECT occasion,organization,'Other blueprint',layout FROM eshop.blueprints WHERE id=(f->>'blueprint')::bigint RETURNING id INTO foreign_bp;
@@ -47,8 +50,11 @@ BEGIN
  PERFORM public.assert_eq(r->>'code','200','assigned seat reserves without form product fields');
  payload:=jsonb_set(payload,'{ticket}',jsonb_build_array(jsonb_build_object('spot',seat,'fields','[]'::jsonb),jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',standing)))));
  r:=public.finalize_ticket_order_internal_v1(order_id,payload);
- PERFORM public.assert_eq(r->>'code','200','real mixed seat and standing checkout without form product fields');
+ PERFORM public.assert_eq(r->>'code','200','real mixed seat and standing checkout without form product fields: '||r::text);
  PERFORM public.assert_eq((SELECT price FROM eshop.orders WHERE id=order_id),150::numeric,'canonical product prices used');
+ PERFORM public.assert_eq((SELECT h.data->'tickets' FROM eshop.orders_history h WHERE h."order"=order_id ORDER BY h.id LIMIT 1),
+  (SELECT data->'tickets' FROM eshop.orders WHERE id=order_id),'Creation history stores the same canonical seating snapshot as the order');
+ PERFORM public.assert_eq(public.get_order_change_summary_v1(order_id)->>'hasChanges','false','A newly finalized mixed seating order has no invented confirmation changes');
  PERFORM public.assert_true((SELECT order_product_ticket IS NOT NULL FROM eshop.spots WHERE id=seat),'checkout persists the assigned seat');
  PERFORM public.assert_eq((SELECT count(*)::int FROM eshop.spots WHERE inventory_context=ctx AND order_product_ticket IS NOT NULL),1,'checkout allocates standing supply');
 END $$;

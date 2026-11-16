@@ -129,17 +129,34 @@ class _EmbedDialog extends StatefulWidget {
 class _EmbedDialogState extends State<_EmbedDialog> {
   bool automatic = true;
   bool hostDataLayer = true;
+  bool importEnabled = false;
+  final _consentExport = TextEditingController();
+  @override
+  void dispose() {
+    _consentExport.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final code = formEmbedCode(
-      tenantUrl: AppConfig.webLink,
-      savedLink: widget.savedLink,
-      title: FormStrings.embedTitle,
-      fallbackLabel: FormStrings.embedFallback,
-      automatic: automatic,
-      hostDataLayer: hostDataLayer,
-    );
+    final importValid =
+        parseFormConsentExport(
+          _consentExport.text,
+          AppConfig.webLink.replaceFirst(RegExp(r'/+$'), ''),
+        ) !=
+        null;
+    final valid = !importEnabled || importValid;
+    final code = valid
+        ? formEmbedCode(
+            tenantUrl: AppConfig.webLink,
+            savedLink: widget.savedLink,
+            title: FormStrings.embedTitle,
+            fallbackLabel: FormStrings.embedFallback,
+            automatic: automatic,
+            hostDataLayer: hostDataLayer,
+            consentExport: importEnabled ? _consentExport.text : null,
+          )
+        : null;
     return AppAlertDialog(
       title: Text(FormStrings.embedAction),
       content: SizedBox(
@@ -191,11 +208,40 @@ class _EmbedDialogState extends State<_EmbedDialog> {
                 },
               ),
               const SizedBox(height: 12),
-              SelectableText(code),
-              Align(
-                alignment: Alignment.centerRight,
-                child: CopyButton(value: code),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                key: const ValueKey('embed-consent-import'),
+                title: Text(FormStrings.cmsEnableImport),
+                value: importEnabled,
+                onChanged: (value) =>
+                    setState(() => importEnabled = value == true),
               ),
+              if (importEnabled) ...[
+                TextField(
+                  key: const ValueKey('embed-consent-export'),
+                  controller: _consentExport,
+                  minLines: 3,
+                  maxLines: 6,
+                  maxLength: 16384,
+                  decoration: InputDecoration(
+                    labelText: FormStrings.cmsImportLabel,
+                    helperText: FormStrings.cmsHtmlImportHelp,
+                    helperMaxLines: 6,
+                    errorText: importValid
+                        ? null
+                        : FormStrings.cmsImportInvalid,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (code != null) SelectableText(code),
+              if (code != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: CopyButton(value: code),
+                ),
             ],
           ),
         ),

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 /// Localized strings for the scan flows (ticket and entry scanning).
@@ -8,7 +9,7 @@ class ScanStrings {
   static String get enterScanCode =>
       'FeatureTicket.enterScanCode'.tr(); // "Enter Scan Code"
   static String get confirmTicket =>
-      'FeatureTicket.confirmTicket'.tr(); // "Confirm Ticket"
+      OrderItemStrings.text('FeatureTicket.confirmTicket'); // "Confirm Ticket"
   static String get scanCameraInstruction =>
       'FeatureTicket.scanCameraInstruction'.tr(); // "Point the camera at the attendee's code for an entry verification."
   static String get resetPassword =>

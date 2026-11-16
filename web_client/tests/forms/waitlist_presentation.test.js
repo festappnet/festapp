@@ -31,6 +31,45 @@ const initialDom = dom();
 const { OrderPreview } = await import('../../src/components/forms/order_preview.js');
 initialDom.window.close();
 
+test('served waitlist and customer self-service catalogs match canonical translations in every supported locale', () => {
+    for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
+        const canonical = JSON.parse(readFileSync(new URL(`../../../assets/translations/${locale}.json`, import.meta.url)));
+        const served = JSON.parse(readFileSync(new URL(`../../public/assets/translations/${locale}.json`, import.meta.url)));
+        for (const namespace of ['Waitlist', 'CustomerSelfService', 'FeatureCustomerSelfService']) {
+            assert.deepEqual(served[namespace], canonical[namespace], `${locale}.${namespace}`);
+        }
+        assert.match(served.Waitlist.countSummary, /\{count\}/, locale);
+    }
+});
+
+test('waitlist count has a localized fallback and preserves translated placeholder order', () => {
+    const translations = LocalizationService.translations;
+    const d = dom();
+    try {
+        for (const [summary, expected] of [
+            [undefined, `${translations.Waitlist.count}: 4`],
+            ['Waitlist.countSummary', `${translations.Waitlist.count}: 4`],
+            ['4', `${translations.Waitlist.count}: 4`],
+            ['{count} people waiting', '4 people waiting'],
+        ]) {
+            LocalizationService.translations = { ...translations,
+                Waitlist: { ...translations.Waitlist, countSummary: summary } };
+            const model = new FormModel({ registrationMode: 'waitlist', fields,
+                capacity: { waitingPeople: 4, offeredPlaces: 0 } });
+            const current = new FormSession(model);
+            const host = document.querySelector('main');
+            FormRenderer.render(host, current, model, false, {});
+            renderWaitlistControls({ host, currentSession: current }, model);
+            const count = host.querySelector('.waitlist-count');
+            assert.equal(count.textContent, expected);
+            assert.equal(count.querySelector('strong').textContent, '4');
+        }
+    } finally {
+        LocalizationService.translations = translations;
+        d.window.close();
+    }
+});
+
 test('regular occupancy includes waiting registrations; waitlist mode hides occupancy', () => {
     const d = dom();
     for (const registrationMode of ['regular', 'waitlist']) {
@@ -46,6 +85,32 @@ test('regular occupancy includes waiting registrations; waitlist mode hides occu
     }
     d.window.close();
 });
+test('public waitlist notice shows the current people count by default and respects settings', () => {
+    const d = dom();
+    const host = document.querySelector('main');
+    for (const [data, registrationMode, offerBundle, capacity, expected] of [
+        [{}, 'waitlist', null, { waitingPeople: 4, offeredPlaces: 2 }, 'Aktuální počet náhradníků: 6'],
+        [{}, 'waitlist', null, { waitingPeople: 0, offeredPlaces: 0 }, 'Aktuální počet náhradníků: 0'],
+        [{ waitlist: { show_count: false } }, 'waitlist', null, { waitingPeople: 4, offeredPlaces: 2 }, null],
+        [{ waitlist: { show_count: true } }, 'waitlist', null, { waitingPeople: 3, offeredPlaces: 0 }, 'Aktuální počet náhradníků: 3'],
+        [{}, 'regular', null, { waitingPeople: 4, offeredPlaces: 2 }, null],
+        [{}, 'waitlist', null, null, null],
+        [{}, 'waitlist', null, {}, null],
+    ]) {
+        const model = new FormModel({ registrationMode, fields, data, capacity, offerBundle });
+        const current = new FormSession(model);
+        FormRenderer.render(host, current, model, false, {});
+        renderWaitlistControls({ host, currentSession: current }, model);
+        const count = host.querySelector('.form-registration-status .waitlist-count');
+        assert.equal(count?.textContent ?? null, expected);
+        if (expected) {
+            assert.ok(count.previousElementSibling.classList.contains('waitlist-intro'));
+            assert.equal(count.querySelector('strong.waitlist-count-number').textContent, expected.split(': ')[1]);
+        }
+    }
+    d.window.close();
+});
+
 test('occupancy includes active offer holds and reflects release without changing server mode', () => {
     const d = dom(); const host = document.querySelector('main');
     for (const offeredPlaces of [1, 0]) {

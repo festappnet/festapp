@@ -1,25 +1,33 @@
 DO $$
-DECLARE org bigint; un bigint; oc bigint; fid bigint; bank bigint; pt bigint; prod bigint;
+DECLARE org bigint; un bigint; oc bigint; fid bigint; bank bigint; eur_bank bigint; pt bigint; prod bigint;
  node_id uuid:=gen_random_uuid();
  bp bigint; seat bigint; email_field bigint; name_field bigint; surname_field bigint;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Browser seat regression') RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO public.units(title,organization) VALUES('Browser seat regression',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,unit,organization,link,start_time,end_time,features)
  VALUES('Browser seat regression',un,org,gen_random_uuid()::text,now(),now()+interval '1 day','[{"code":"blueprint","is_enabled":true}]'::jsonb) RETURNING id INTO oc;
  INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies)
  VALUES('Regression bank','FIO','123/0100',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
+ INSERT INTO eshop.bank_accounts(title,type,account_number,supported_currencies)
+ VALUES('Regression EUR bank','FIO','CZ6508000000192000145399',ARRAY['EUR']) RETURNING id INTO eur_bank;
+ INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,eur_bank);
  INSERT INTO eshop.blueprints(title,organization,occasion)
  VALUES('Regression seats',org,oc) RETURNING id INTO bp;
  INSERT INTO public.forms(title,occasion,link,is_open,blueprint,bank_account)
- VALUES('Browser seat regression',oc,'seat-checkout-regression',true,bp,bank) RETURNING id INTO fid;
+ VALUES('Browser seat regression',oc,'seat-checkout-regression',true,bp,NULL) RETURNING id INTO fid;
+ UPDATE public.forms SET data=coalesce(data,'{}'::jsonb)||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=fid;
  -- Direct fixture inserts must participate in the same URL reservation contract.
  PERFORM public.reserve_public_link_internal('occasion',oc,(SELECT link FROM public.occasions WHERE id=oc),true);
  PERFORM public.reserve_public_link_internal('form',fid,'seat-checkout-regression',true);
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('Admission','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion,is_hidden)
  VALUES('Admission',pt,150,'CZK',oc,false) RETURNING id INTO prod;
+ -- Each currency has its own receiving account, as on the live public form.
+ INSERT INTO eshop.products(title,product_type,price,currency_code,occasion,is_hidden)
+ VALUES('Admission EUR',pt,6,'EUR',oc,false);
  INSERT INTO public.form_fields(form,type,title,is_required,is_hidden,is_ticket_field,"order")
  VALUES(fid,'email','E-mail',true,false,false,0) RETURNING id INTO email_field;
  INSERT INTO public.form_fields(form,type,title,is_required,is_hidden,is_ticket_field,"order")
@@ -43,6 +51,6 @@ BEGIN
   'selectionUnits','[]'::jsonb) WHERE id=bp;
  PERFORM public.validate_blueprint_layout_internal((SELECT layout FROM eshop.blueprints WHERE id=bp));
  INSERT INTO eshop.blueprint_seat_bindings(blueprint,node_id,spot) VALUES(bp,node_id,seat);
- PERFORM set_config('festapp.browser_fixture',jsonb_build_object('form',fid,'seat',seat,'node',node_id,'email',email_field,'name',name_field,'surname',surname_field)::text,true);
+ PERFORM set_config('festapp.browser_fixture',jsonb_build_object('form',fid,'bank',bank,'seat',seat,'node',node_id,'email',email_field,'name',name_field,'surname',surname_field)::text,true);
 END $$;
 SELECT current_setting('festapp.browser_fixture')::jsonb AS fixture;

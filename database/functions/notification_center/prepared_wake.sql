@@ -29,7 +29,24 @@ BEGIN
  -- are never delayed by this scheduler optimization.
  IF EXISTS(SELECT 1 FROM public.notification_center_events WHERE projected_revision<attention_revision)
   OR EXISTS(SELECT 1 FROM public.notification_center_projection_scopes WHERE next_check_at<=clock_timestamp() AND NOT quarantined)
-  OR EXISTS(SELECT 1 FROM public.notification_center_views) THEN
+  OR EXISTS(SELECT 1 FROM public.notification_center_views)
+  OR EXISTS(SELECT 1 FROM public.notification_center_user_state u
+   JOIN public.notification_center_email_profiles p USING(recipient)
+   JOIN public.notification_center_organizations a USING(organization)
+   WHERE u.email_scanned_sequence<u.last_delivery_sequence AND a.email_collection_started_at IS NOT NULL)
+  OR EXISTS(SELECT 1 FROM public.notification_center_user_state u
+   JOIN public.notification_center_organizations a USING(organization)
+   JOIN public.user_info ui ON ui.id=u.recipient
+   JOIN public.notification_center_deliveries d ON d.organization=u.organization AND d.recipient=u.recipient AND d.sequence>u.email_scanned_sequence
+   JOIN public.notification_center_events e ON e.id=d.event_id
+   WHERE u.email_scanned_sequence<u.last_delivery_sequence AND a.email_collection_started_at IS NOT NULL
+    AND e.occurred_at>=a.email_collection_started_at AND public.notification_center_email_required_kind_internal(e.kind)
+    AND NOT EXISTS(SELECT 1 FROM public.notification_center_email_profiles p WHERE p.recipient=u.recipient))
+  OR EXISTS(SELECT 1 FROM public.notification_center_email_dispatches d
+   WHERE d.state='collecting' AND d.due_at<=clock_timestamp() AND d.next_attempt_at<=clock_timestamp()
+    AND EXISTS(SELECT 1 FROM public.notification_center_email_profiles p WHERE p.recipient=d.recipient)
+    AND NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.recipient_user=d.recipient AND m.message_kind='admin_notification_digest'
+      AND m.workflow_state IN ('blocked','pending','preparing','sending','retry_wait','unknown'))) THEN
   PERFORM public.notification_center_prepared_wake();
  END IF;
 END $$;

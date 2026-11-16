@@ -90,10 +90,10 @@ Prefer explicit RPC/service boundaries whose callers and transaction semantics
 are visible in code. A temporary operational trigger is allowed only when its
 removal is part of the same release workflow and is verified immediately after
 the replacement client or RPC is deployed. Never leave a compatibility merge
-trigger behind after cutover. Narrow technical triggers that maintain purely
-mechanical metadata such as `updated_at` or audit timestamps are allowed; they
-must not encode domain decisions, permissions, patch semantics, or workflow
-transitions.
+trigger behind after cutover. Only narrow technical triggers that maintain mechanical last-updated metadata
+(`updated_at` / `last_updated`) are allowed. No other persistent application
+trigger may encode domain decisions, permissions, invalidation, patch semantics
+or workflow transitions.
 
 ## Critical: Canonical Main and Tenant Overlays
 
@@ -124,14 +124,18 @@ Organization (tenant/domain) > Unit (real-world org) > Occasion (event instance)
   `PopScope` guards. `StandardDialog` is the compact content adapter. Native
   date/time pickers and public song/game views keep their specialized controls.
 - **Localization**: `*_strings.dart` files with static getters (`CommonStrings.save`) not `"key".tr()`
+  `assets/translations/` owns every locale. The six public web catalogs are relative file links to that owner; keep them as references. Vite serves/copies those same bytes in development and production.
 - **Number display**: Group digits only from absolute 10000; smaller values have no grouping separator. Keep locale decimal/currency conventions and monetary precision. Dart uses `festapp_core/formatting.dart`; web and Edge Functions use `supabase/functions/_shared/numberFormatting.ts` (web re-export in `utils/formatters.js`). Exact server decimals use `formatExactDisplayNumber`. Stored values, identifiers and editable input formats remain canonical.
 - **Date/time display**: Use locale-aware Intl skeletons (`DateFormat.yMd`, `jm`, `jms`, etc.) with the interface locale. `main` keeps `Intl.defaultLocale` in sync for context-free presentation helpers. Grid values stay canonical for sorting and editor/RPC round trips; localize their display with `LocaleDateTime` formatters. Explicit patterns belong only to stored/wire formats or internal picker controller values, never user-facing labels or tooltips.
 - **Routing**: `auto_route`, `app_router.gr.dart` is generated — don't edit
 - **Permissions**: Check `RightsService` before showing admin/editor UI
 - **No `dart:io`** in shared UI code (breaks web). Exception: `map/` uses it for platform-specific offline maps
-- **Config**: `automation/project.conf` → `apply_config.sh` propagates to all targets
+- **Config**: `automation/project.conf` → `apply_config.sh` propagates tenant settings.
+  `automation/release/software-version.conf` on main owns the shared software
+  version/build for web, iOS, Android and every tenant. `VERSION` in tenant
+  configurations is a generated projection, never a separate release counter.
 - **Offline runtime ownership**: The root worker atomically installs only `webCoreResources`. Flutter entry/handoff explicitly requests `FESTAPP_QUERY_BUILD_VERSION` with `runtime: flutter`, preparing `flutterCoreResources` atomically before startup/cutover. Public queries and repair use `runtime: web` and never fetch Flutter. One versioned cache and existing client pinning/pruning remain authoritative; known resources stay lazy. See `automation/lib/pwa_shell_manifest.mjs` and `runtime/worker_shell.js`.
-- **Public embed runtime**: Production `/form/:slug` and `/order` embeds are webclient-only. `web_client/src/runtime/page_context.js` owns classification; the generated inline bootstrap and `runtime_state.js` own starting/ready/failed and navigation deduplication. `update_policy.js` gates every recovery effect; `update_controller.js` is bundled into the existing `web/festapp_update_prompt.js`. `embed/protocol.js` and `channel.js` own shared protocol 1 and peer validation; layout, measurement, theme and host price projection remain separate. Run both `scripts/build_embed.mjs --check` and `scripts/build_runtime.mjs --check` from web_client. See [embed contract](../integrations/embedded-checkout.md).
+- **Public embed runtime**: Production `/form/:slug` and `/order` embeds are webclient-only. `web_client/src/runtime/page_context.js` owns classification; the generated inline bootstrap and `runtime_state.js` own starting/ready/failed and navigation deduplication. `update_policy.js` gates every recovery effect; `update_controller.js` is bundled into the existing `web/festapp_update_prompt.js`. It also observes installed service-worker updates directly, independently of page load and manifest polling; polling and explicit acceptance share one bounded manifest read, notification uses the existing banner, while activation and navigation remain owned by the same update policy and cutover path. `embed/protocol.js` and `channel.js` own shared protocol 1 and peer validation; layout, measurement, theme and host price projection remain separate. Run both `scripts/build_embed.mjs --check` and `scripts/build_runtime.mjs --check` from web_client. See [embed contract](../integrations/embedded-checkout.md).
 - **Web client**: Page components extend `base/component.js` with `init()`/`render()`/`clear()` lifecycle; smaller widgets (dialogs, fabs) don't
 - **App HTML formatting**: `HtmlSaveCoordinator.prepare` canonicalizes app content before persistence through `normalizeHtmlContentStyles`. Resolve pasted CSS/semantic contradictions there (for example Google Docs' `<b style="font-weight:normal">` becomes neutral markup). Readers preserve stored formatting; web DOMPurify remains a security boundary, not a second formatting owner. Existing stored content needs a save or an explicitly scoped data repair to become canonical.
 
@@ -269,6 +273,16 @@ There is no standalone package/style URL downloader or renderer rollback flag.
 See [offline map tooling](../../automation/offline-map/README.md).
 
 ## Payment provider connectors
+
+Payment product permission is organization -> unit -> form through the canonical
+`payment_providers/method_policy.sql` resolver. Missing policy fails closed.
+Sales permission is separate from operation support, RBAC, readiness and financial
+facts. Preserve original-payment recovery/refund observation after closing sales.
+Bank authoring/statements require stored linked unit scope; order history never
+offers unrelated admin accounts. Collection/queue actions bind current purpose,
+source and policy/template epoch; acquire the shared policy fence before money
+or queue locks. Template/policy writers use the exclusive fence. The payment
+provider ownership document below defines the migration and retained boundaries.
 
 Online payments use a shared engine and explicit provider registries across SQL,
 Edge Functions, Dart and the web client. Stripe is an installed connector. See

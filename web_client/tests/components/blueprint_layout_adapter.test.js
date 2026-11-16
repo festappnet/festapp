@@ -7,6 +7,7 @@ import { JSDOM } from 'jsdom';
 import { BlueprintLayoutAdapter } from '../../src/components/blueprint/blueprint_layout_adapter.js';
 import { FormSession } from '../../src/components/forms/form_session.js';
 import { DbForms } from '../../src/components/forms/db_forms.js';
+import { mount } from '@festapp/venue-layout';
 const dom = new JSDOM('<html><body></body></html>', {url:'http://localhost'});
 globalThis.window = dom.window; globalThis.document = dom.window.document;
 const data = () => ({layout:{nodes:[{id:'a',kind:'seat'},{id:'b',kind:'seat'}],selectionUnits:[{id:'unit',nodeIds:['a','b']}]},
@@ -114,23 +115,23 @@ test('unassigned available seat is empty while protected live state survives mis
     const source=data();source.products=[];source.spots[1].state='used';
     const adapter=new BlueprintLayoutAdapter(source,{session:{}});
     assert.equal(adapter.seatModel('a').state,'empty');
-    assert.equal(adapter.seatPresentation.a.status,'unavailable');
+    assert.equal(adapter.seatPresentation.a.status,'occupied');
     assert.equal(adapter.seatPresentation.a.selectable,false);
     assert.equal(adapter.seatModel('b').state,'used');
     assert.equal(adapter.seatPresentation.b.status,'occupied');
 });
 
 test('public status palette renders blocked seats like ordered seats', () => {
-    const cases = [['available','#267329FF'],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#0000001F'],['empty','#267329FF']];
+    const cases = [['available',undefined],['selected_by_me','#267329FF'],['selected','#00000042'],['ordered','#0000001F'],['used','#412673FF'],['black','#0000001F'],['empty','#267329FF']];
     for (const [state, fill] of cases) {
         const fixture = data(); fixture.spots[0].state = state;
         if (state === 'black') fixture.seatBindings[0].blocked = true;
         if (state === 'empty') fixture.seatBindings[0].productId = null;
         const item = new BlueprintLayoutAdapter(fixture).seatPresentation.a;
         assert.equal(item.fill, fill, state);
-        assert.equal(item.stateMarker, state === 'used' ? 'none' : 'auto');
+        assert.equal(item.stateMarker, state === 'used' ? 'check' : 'auto', state);
         assert.equal(item.selected, state === 'selected_by_me');
-        if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'unavailable'); }
+        if (state === 'empty') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
         if (state === 'black') { assert.equal(item.selectable, false); assert.equal(item.status, 'occupied'); }
     }
 });
@@ -331,4 +332,80 @@ test('standing availability disables sold out and unbound areas with an explanat
     assert.ok(adapter.capacityPresentation.unbound.tooltip);
     assert.equal(adapter.capacityPresentation.sold.selectable,false);
     assert.ok(adapter.capacityPresentation.sold.tooltip);
+});
+
+
+test('reservation scene keeps document and individual seat colors with canonical unavailable markers', () => {
+    const corpus = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-roundtrip.json', import.meta.url), 'utf8'));
+    const {document, resources} = corpus.public;
+    const seat = document.nodes.find(node => node.kind === 'seat');
+    assert.ok(seat);
+    for (const fill of ['#D9B788FF', '#DBEAFEFF']) {
+        const authored = {...document, nodes: document.nodes.map(node => node.id === seat.id ? {...node, style: {...node.style, fill}} : node)};
+        const source = data();
+        source.layout = authored; source.layoutResources = resources;
+        source.seatBindings[0].nodeId = seat.id;
+        const neutral = JSON.parse(globalThis.VenueLayoutKernel.compileScene(JSON.stringify(authored), JSON.stringify(resources), '{}'));
+        const seatFills = Object.fromEntries(neutral.items.filter(item => item.kind === 'seat').map(item => [item.id, item.fill]));
+        const adapter = new BlueprintLayoutAdapter(source, {seatFills});
+        const render = () => JSON.parse(globalThis.VenueLayoutKernel.compileScene(JSON.stringify(authored), JSON.stringify(resources), JSON.stringify({[seat.id]: adapter.seatPresentation[seat.id]})));
+        assert.equal(render().items.find(item => item.id === seat.id).fill, fill);
+        adapter.models.get(seat.id).state = 'selected_by_me';
+        const selected = render().items;
+        assert.equal(selected.find(item => item.id === seat.id).fill, fill);
+        assert.ok(selected.some(item => item.nodeId === seat.id && item.kind === 'state'));
+        assert.equal(adapter.seatPresentation[seat.id].selected, true);
+        for (const state of ['selected', 'ordered', 'used', 'taken', 'black', 'empty']) {
+            adapter.models.get(seat.id).state = state;
+            assert.equal(adapter.seatPresentation[seat.id].selectable, false, state);
+            const marker = render().items.find(item => item.nodeId === seat.id && item.kind === 'state');
+            assert.ok(marker, state);
+            assert.equal(marker.stroke, ['used', 'taken'].includes(state) ? '#FFFFFFFF' : '#444444FF', state);
+            assert.equal(marker.path.length, ['used', 'taken'].includes(state) ? 3 : 4, state);
+        }
+    }
+});
+
+test('seat color stays authored throughout pending selection, release and rejection', async t => {
+    const corpus = JSON.parse(fs.readFileSync(new URL('../../../test/fixtures/blueprint/canonical-text-sql-roundtrip.json', import.meta.url), 'utf8'));
+    const seat = corpus.public.document.nodes.find(node => node.kind === 'seat');
+    const fill = '#6030EEFF';
+    const layout = {...corpus.public.document, nodes: corpus.public.document.nodes.map(node => node.id === seat.id ? {...node, style: {...node.style, fill}} : node)};
+    const source = data();
+    source.layout = layout; source.layoutResources = corpus.public.resources;
+    source.seatBindings[0].nodeId = seat.id;
+    let finish;
+    const adapter = new BlueprintLayoutAdapter(source, {
+        seatFills: {[seat.id]: fill},
+        session: {toggleSpotUnit: () => new Promise(resolve => { finish = resolve; })},
+    });
+    const host = document.createElement('div');
+    document.body.append(host);
+    const previousScreenCTM = dom.window.SVGElement.prototype.getScreenCTM;
+    dom.window.SVGElement.prototype.getScreenCTM = () => null;
+    t.after(() => { dom.window.SVGElement.prototype.getScreenCTM = previousScreenCTM; });
+    const viewer = mount(host, adapter.options());
+    adapter.onPresentationChanged = seatPresentation => viewer.update({seatPresentation});
+    t.after(() => { adapter.dispose(); viewer.dispose(); host.remove(); });
+    const assertScene = selected => {
+        assert.equal(viewer.scene.items.find(item => item.id === seat.id).fill, fill);
+        assert.equal(viewer.selected.has(seat.id), selected);
+        assert.equal(viewer.scene.items.some(item => item.nodeId === seat.id && item.kind === 'state'), selected || viewer.pending.has(seat.id));
+    };
+    const toggle = () => viewer.list.querySelector(`[data-node-id="${seat.id}"]`).onclick();
+    assertScene(false);
+    for (const selecting of [true, false]) {
+        const pending = toggle();
+        assert.equal(viewer.pending.has(seat.id), true);
+        assertScene(selecting);
+        finish({});
+        await pending;
+        assertScene(selecting);
+    }
+    adapter.session.toggleSpotUnit = () => new Promise((_, reject) => { finish = reject; });
+    const rejected = toggle();
+    assertScene(true);
+    finish(new Error('Seat no longer available'));
+    await rejected;
+    assertScene(false);
 });

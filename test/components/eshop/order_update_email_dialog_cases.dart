@@ -8,6 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/views/order_update_email_dialog.dart';
 import 'package:fstapp/components/eshop/views/product_changes_preview.dart';
+import 'package:fstapp/components/eshop/views/product_info_panel.dart';
+import 'package:fstapp/components/eshop/db_eshop.dart';
+import 'package:fstapp/components/eshop/models/order_model.dart';
+import 'package:fstapp/components/eshop/models/ticket_model.dart';
 
 class _Translations extends AssetLoader {
   @override
@@ -169,4 +173,80 @@ void main() {
     final data = fixture()..['cancelledTickets'] = [];
     expect(OrderChangeSummary.fromJson(data).hasChangesOutside(2), isFalse);
   });
+  testWidgets('seat changes retain both seat labels in the update preview', (
+    tester,
+  ) async {
+    final data = fixture();
+    data['cancelledTickets'] = [];
+    data['productChanges'] = [
+      {
+        'id': 2,
+        'ticket_symbol': 'SP26',
+        'added': [],
+        'removed': [],
+        'changed': [
+          {
+            'from': {
+              'id': 7,
+              'title': 'Místo',
+              'price': 100,
+              'spot_title': '7F',
+            },
+            'to': {'id': 7, 'title': 'Místo', 'price': 100, 'spot_title': '6G'},
+          },
+        ],
+      },
+    ];
+    data['referenceTotal'] = 100;
+    data['currentTotal'] = 100;
+    await pumpPreview(tester, data);
+    expect(find.textContaining('7F', findRichText: true), findsOneWidget);
+    expect(find.textContaining('6G', findRichText: true), findsOneWidget);
+    expect(find.text('Změna celkové ceny'), findsNothing);
+  });
+
+  testWidgets(
+    'persisted product change exposes the existing update email action',
+    (tester) async {
+      await EasyLocalization.ensureInitialized();
+      var tapped = false;
+      await tester.pumpWidget(
+        EasyLocalization(
+          supportedLocales: const [Locale('cs')],
+          path: 'unused',
+          startLocale: const Locale('cs'),
+          assetLoader: _Translations(),
+          child: Builder(
+            builder: (context) => MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              locale: context.locale,
+              localizationsDelegates: [
+                ...context.localizationDelegates,
+                ...GlobalMaterialLocalizations.delegates,
+              ],
+              supportedLocales: context.supportedLocales,
+              home: Scaffold(
+                body: ProductInfoPanel(
+                  order: OrderModel(
+                    state: 'sent',
+                    price: 150,
+                    data: {'email': 'host@example.invalid'},
+                  ),
+                  paymentInfo: null,
+                  ticket: TicketModel(ticketSymbol: 'SP26'),
+                  orderHistory: OrderHistoryInfo(isNewerVersionAvailable: true),
+                  onSendUpdate: () => tapped = true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.email_outlined), findsOneWidget);
+      expect(tapped, isFalse);
+      await tester.tap(find.byIcon(Icons.email_outlined));
+      expect(tapped, isTrue);
+    },
+  );
 }

@@ -1,0 +1,88 @@
+{
+  "verification": "canonical local CI mirror",
+  "status": "all_eight_jobs_passed",
+  "runs": [
+    {
+      "run": "20261113T175601-52cc7fc5eb64",
+      "head": "e73947f83884ac7b5a310020afee48bac86b3b03",
+      "inputSha256": "20a7561b5152b00fa63049cc36172b3236a339a3dad56b958ebe555c49a905e1",
+      "complete": false,
+      "inputsUnchanged": false,
+      "successfulJobs": [
+        {
+          "name": "image-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "web-startup",
+          "status": "PASS"
+        },
+        {
+          "name": "navigation-interactions",
+          "status": "PASS"
+        },
+        {
+          "name": "client-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "ticket-preview-and-delivery",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "run": "20261113T180208-9939d52599d6",
+      "head": "e73947f83884ac7b5a310020afee48bac86b3b03",
+      "inputSha256": "637a39c641eeb7b30e714b01adaeaa8425d180b80ed1401b5463db08ba96ba5f",
+      "complete": true,
+      "inputsUnchanged": true,
+      "successfulJobs": [
+        {
+          "name": "wix-checkout-compatibility",
+          "status": "PASS"
+        },
+        {
+          "name": "server-policy",
+          "status": "PASS"
+        },
+        {
+          "name": "seat-checkout",
+          "status": "PASS"
+        }
+      ]
+    },
+    {
+      "run": "20261113T180618-4bd68e30f1d9",
+      "head": "b1a68a8506ea8ae91aa5b9508b55189f09722bef",
+      "inputSha256": "444057b1ccd314a7773dd645de436fd8d8a0268b81125af91ed6eb992459f4b2",
+      "complete": true,
+      "inputsUnchanged": true,
+      "successfulJobs": [
+        {
+          "name": "navigation-interactions",
+          "status": "PASS"
+        },
+        {
+          "name": "client-contract",
+          "status": "PASS"
+        },
+        {
+          "name": "ticket-preview-and-delivery",
+          "status": "PASS"
+        }
+      ]
+    }
+  ],
+  "jobEvidence": {
+    "image-contract": "20261113T175601-52cc7fc5eb64",
+    "web-startup": "20261113T175601-52cc7fc5eb64",
+    "navigation-interactions": "20261113T180618-4bd68e30f1d9",
+    "client-contract": "20261113T180618-4bd68e30f1d9",
+    "ticket-preview-and-delivery": "20261113T180618-4bd68e30f1d9",
+    "wix-checkout-compatibility": "20261113T180208-9939d52599d6",
+    "server-policy": "20261113T180208-9939d52599d6",
+    "seat-checkout": "20261113T180208-9939d52599d6"
+  },
+  "explanation": "First run found stale prepared Make projection hash and historical ACL catalog identity. Both fixed; all affected jobs reran on stable inputs. A subsequent upstream occasion-settings commit was rebased and all three canonically selected affected jobs reran successfully. Remaining job-covered inputs did not change. Exact merged-main GitHub release gate is still required before deployment."
+}

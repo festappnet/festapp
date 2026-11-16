@@ -32,7 +32,13 @@ export class GoogleAuthService {
         }
         return data;
     }
-    static identityStatus() { return this.request('start', { operation: 'identity_status' }); }
+    static async identityStatus() {
+        try { return await this.request('start', { operation: 'identity_status' }); }
+        catch (error) {
+            if (error.message === 'provider_unavailable') return { enabled: false };
+            throw error;
+        }
+    }
     static async capability() {
         try { return (await this.request('start', { operation: 'capability' })).enabled === true; } catch { return false; }
     }

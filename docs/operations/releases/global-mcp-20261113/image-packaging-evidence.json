@@ -1,0 +1,68 @@
+{
+  "candidateSourceSha": "09cdd991fa30dd848324df586e188040931d3bd2",
+  "stagedContext": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/build-contexts/09cdd991fa30dd848324df586e188040931d3bd2",
+  "imageTag": "festapp-mcp-global:09cdd991fa30dd848324df586e188040931d3bd2-arm64",
+  "imageId": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b",
+  "manifestDigest": "sha256:ca875a34632db6e80442d7a156312b5cb216e727feb4068b78e11ab83c762f9b",
+  "platform": "linux/arm64",
+  "revisionLabel": "09cdd991fa30dd848324df586e188040931d3bd2",
+  "baseImage": "node:24.22.1-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c",
+  "layers": 18,
+  "archive": {
+    "path": "/Users/miakh/Library/Caches/festapp/global-mcp-20261113/images/festapp-mcp-global-09cdd991fa30-arm64.tar.gz",
+    "sha256": "44a11bea0a5b4a139e7203e888be07409a45210fb207187d8d49474a48ab0004",
+    "sizeBytes": 121240458
+  },
+  "localDockerSmoke": {
+    "network": "none",
+    "containerUser": "1000:1000",
+    "rootFilesystemReadOnly": true,
+    "contexts": [
+      "festapptickets/org3",
+      "doobiscup/org5"
+    ],
+    "configParse": "passed",
+    "healthz": 200,
+    "oauthAuthorizationServerMetadata": 200,
+    "protectedResourceMetadata": 200,
+    "unauthenticatedMcpInitialize": 401,
+    "bearerChallenge": "invalid_token present",
+    "syntheticSecretsAndDataRemoved": true
+  },
+  "packaging": {
+    "thirdPartyNoticePackages": 96,
+    "licenseDistribution": {
+      "MIT": 86,
+      "Apache-2.0": 4,
+      "ISC": 4,
+      "BSD-3-Clause": 1,
+      "0BSD": 1
+    },
+    "missingNotices": 0,
+    "thirdPartyNoticeLines": 7858,
+    "thirdPartyNoticesTxtSha256": "443019230f0cd8542f6233a9bd2e1d86037db98d1546f3285d7d4fc3ac0be406",
+    "thirdPartyNoticesJsonSha256": "1cb787558a1e9a769d7d10de6db58df5f479102b6956da5d91ab6d241d153088",
+    "rootLicenceSha256": "62327d99a7f43e756bf65296574cfe85fa2a3a2f161a7851d2b1871e99053e1e",
+    "licenseTreeFiles": 254,
+    "mplSourceTreeFiles": 43,
+    "mplSourcePackages": 4,
+    "mplLicenseFiles": 4,
+    "legacySdkProdPaths": 0,
+    "typescriptProdPaths": 0
+  },
+  "arm64NativeEvidence": {
+    "canvasSbomPath": "arm64-licenses/canvas-1.0.11/sbom-linux-arm64-gnu.cdx.json",
+    "canvasSbomSha256": "19ba0c193ca252822e955a7a08ee701a3b20cacbb84134b3378f17a4813a09b2",
+    "canvasPackageTarballSha256": "de222c2b77fd298a09d35547bc9e56ba2c268f5ae6673caa28b6cc21b94076cb",
+    "canvasBinarySha256": "e55ef6d796e99e7fe7e4b917dfb5ff02f647bf0242018dcc550ea4eeba414533",
+    "canvasBinaryMatchesSbomProvenance": true,
+    "canvasSbomComponents": 106,
+    "canvasComponentsWithHashes": 93,
+    "keyringNoticePath": "arm64-licenses/keyring-2.1.2/LICENSE.third-party-linux-arm64-gnu.md",
+    "keyringNoticeSha256": "7e31f56ddc47a7e8c30974772c4bfa1562f275c375dd29e783419396065dfa37",
+    "keyringPackageTarballSha256": "d15365537f71e4e75b06f65d4d839cbc11d86dbdd547faa7d146124fff47080d",
+    "imageCanvasBinarySha256": "e55ef6d796e99e7fe7e4b917dfb5ff02f647bf0242018dcc550ea4eeba414533",
+    "imageKeyringBinarySha256": "ffc7534f4c121ca739a80927b7942261859de42e740f2f9c2ea1fe60ae5d7183",
+    "arm64LicenseSource": "existing verified native tarball/SBOM/notice evidence; image package versions match"
+  }
+}

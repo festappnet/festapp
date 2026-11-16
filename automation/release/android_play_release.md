@@ -10,13 +10,17 @@ all apps, but this repository wrapper remains locked to the manifest package.
 $env:FESTAPP_RELEASE_MANIFEST = 'C:\path\to\private-release-listing\config.json'
 $env:FESTAPP_CANONICAL_CUTOVER_RELEASE = '1' # required for the self-hosted cutover build
 .\automation\release\android_release.ps1 -Preflight
-.\automation\release\android_release.ps1 -Build
 ```
 
 The original upload keystore is configured only through ignored
-`android/key.properties`. Local tooling can prepare or build a candidate, but it
+`android/key.properties`. Local tooling can run preflight, but it
 cannot inspect or mutate Google Play. Every Play API call and production upload
 runs exclusively through the repository's GitHub-hosted Linux gateway.
+
+The version name and code come from main-owned
+`automation/release/software-version.conf`, shared with web and iOS. Upgrade a
+tenant to that main generation before dispatch; package-specific version bumps
+are forbidden. The local `-Build` operation is rejected.
 
 The read-only check creates a temporary Google Play edit because track reads are
 edit-scoped, then always deletes/discards it. It never commits a release.
@@ -28,10 +32,32 @@ listing mutations.
 ## GitHub-hosted batches
 
 `Android candidate batch` is the canonical remote build entry point. Dispatch it
-from `main` with a JSON array of one to thirty tenant IDs. A cache-warming Linux
-job writes the shared Gradle dependency cache once; up to five isolated tenant
-jobs then read it concurrently. Flutter's SDK and Pub package caches are also
-enabled. No Android build job runs on macOS or a personal workstation.
+from `main` with a JSON array of one to thirty tenant IDs. Up to five isolated
+tenant jobs run on Linux. No Android build runs on a personal workstation.
+
+The `reuse_build_cache` dispatch option defaults to `true`. A warm-up job seeds
+shared Gradle state, then tenant jobs restore and update the same cache family.
+Gradle task output caching is enabled; Gradle validates each task's actual inputs,
+including tenant-specific resources and configuration. CargoKit's generic Rust
+compilation directories and public Cargo registry are cached separately across tenants. Native builds use committed Cargo lockfiles with `--locked`. Their key covers
+tracked native sources, dependency lockfile, Flutter/Gradle/NDK configuration,
+runner image, Rust compiler and all app Gradle settings except namespace and
+application ID. Signing inputs and final AAB/APK output directories are excluded.
+
+Cache entries restore from the newest compatible prefix. The first selected
+tenant is the sole writer for each batch; all tenants can read. Gradle warm state
+is saved only on a cold cache, and the writer updates compilation state even if
+later packaging fails. Complete native state is saved after successful builds
+only when a compatible native snapshot does not already exist. This avoids
+duplicating multi-gigabyte Gradle state for every matrix member. A cache-service failure permits a cold build. The workflow
+summary records the restored Gradle/native keys; a key match is evidence of reuse,
+not a measured speedup. Flutter SDK and Pub caches remain enabled independently.
+
+For an explicit cold diagnostic build, dispatch `reuse_build_cache=false`. This
+skips the shared warm-up, restore and save operations. Cache reuse never replaces
+the final package, version, signing and source verification or the encrypted
+candidate/production artifact flow. Sharing intermediates does not authorize a
+release of another tenant.
 
 Each tenant uses GitHub environments named `android-build-<tenant>` and
 `android-production-<tenant>`. Build environments contain

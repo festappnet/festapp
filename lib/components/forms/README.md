@@ -115,6 +115,10 @@ application-only forms with ticket issuance disabled. It and its parent cannot
 be removed, hidden or demoted to an ordinary group. At least one visible variant
 must remain; names and prices stay editable. The editor protects these controls
 locally, and SQL rechecks the invariant atomically for form and catalog saves.
+Form creation and both copy commands validate this invariant before returning.
+Copies canonicalize hidden primary child selectors to visible and omit empty
+hidden primary selectors. Seat-selection mode already suppresses these selectors
+in both clients; persisted visibility must not encode that presentation choice.
 Catalog mutations lock the affected forms before products so concurrent variant
 deletions cannot each remove the other's last remaining option.
 
@@ -446,3 +450,31 @@ measurement transport and `EmbedTheme`; the public step, price and scroll
 helpers retain their existing callers. `FormMeasurementSession` remains the
 measurement policy owner. The host projects the existing price widget and
 never computes an order total. Flutter has no embed presentation variant.
+
+## Discount quote at checkout
+
+The `discount_codes` occasion feature reveals the collapsed discount entry in
+Flutter and the public web client. Missing/off is also denied by SQL. Clients
+only display `quote_order_discount` totals and lines, then send its opaque
+fingerprint in the existing order payload; they do not calculate a percentage
+or reserve a use. Selection, price, code revision or policy changes require
+another review. The web controller deliberately retains a stale fingerprint
+until explicit removal/revalidation so a skipped preview cannot silently charge
+an undiscounted price. Successful acceptance clears the draft code; another
+waitlist acceptance must enter it explicitly.
+
+The customer's existing email overview link shows the granted code and original
+sale breakdown, including after feature suspension. A cancelled order labels
+that breakdown as historical and displays its current payment balance separately.
+Commerce review/payment events project SQL net lines, and SQL conversion facts
+use those same sold amounts. No code is added to analytics. Financial semantics,
+refunds and immutable snapshots are owned by the
+[Eshop contract](../eshop/README.md#discount-codes-and-sold-prices).
+
+
+Unknown discounted submission outcomes expose an explicit retry action. It
+resends the frozen original payload and retains the existing command/client
+identity, without a new quote or reservation preflight. Missing pending identity
+or a changed principal fails closed instead of allocating a replacement UUID.
+Flutter also freezes the confirmed quote outside the review builder; invalidating
+a form draft cannot remove a discount from an already confirmed request.

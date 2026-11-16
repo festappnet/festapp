@@ -7,8 +7,7 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_health (
   token_present boolean,
   warning_code text,
   warning_since timestamptz,
-  incident_id uuid,
-  notified_at timestamptz
+  incident_id uuid
 );
 ALTER TABLE eshop.bank_sync_health ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON eshop.bank_sync_health FROM PUBLIC,anon,authenticated,service_role;
@@ -148,54 +147,12 @@ BEGIN
     INTO v_new_incident FROM eshop.bank_sync_health WHERE connection_id=p_connection_id;
   UPDATE eshop.bank_sync_health SET warning_code=v_code,
     warning_since=CASE WHEN v_code IS NULL THEN NULL WHEN v_new_incident THEN now() ELSE COALESCE(warning_since,now()) END,
-    incident_id=CASE WHEN v_code IS NULL THEN NULL WHEN v_new_incident THEN gen_random_uuid() ELSE COALESCE(incident_id,gen_random_uuid()) END,
-    notified_at=CASE WHEN v_code IS NULL OR v_new_incident THEN NULL ELSE notified_at END WHERE connection_id=p_connection_id;
+    incident_id=CASE WHEN v_code IS NULL THEN NULL WHEN v_new_incident THEN gen_random_uuid() ELSE COALESCE(incident_id,gen_random_uuid()) END WHERE connection_id=p_connection_id;
+  PERFORM public.notification_center_bank_incident_internal(p_connection_id);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean,bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.record_bank_sync_health(bigint,bigint,timestamptz,text,boolean,boolean,boolean,bigint) TO service_role;
-
-CREATE OR REPLACE FUNCTION public.enqueue_bank_sync_health_alerts(p_organization_id bigint)
-RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE r record; a record; v_count integer:=0; v_sent integer; v_message jsonb;
-BEGIN
-  PERFORM public.require_service_role();
-  FOR r IN SELECT h.*,c.bank_account_id,b.title FROM eshop.bank_sync_health h
-    JOIN eshop.bank_sync_connections c ON c.id=h.connection_id JOIN eshop.bank_accounts b ON b.id=c.bank_account_id
-    WHERE h.notified_at IS NULL AND public.bank_sync_alert_ready(c.id)
-      AND EXISTS (SELECT 1 FROM eshop.unit_bank_accounts ub JOIN public.units u ON u.id=ub.unit
-        WHERE u.organization=p_organization_id AND (ub.bank_account=c.bank_account_id OR ub.bank_account IN
-          (SELECT x.bank_account_id FROM eshop.bank_sync_account_aliases x WHERE x.connection_id=c.id)))
-    ORDER BY h.warning_since FOR UPDATE OF h SKIP LOCKED
-  LOOP
-    v_sent:=0;
-    -- Different identities/aliases can share one mailbox. Pick one authorized
-    -- recipient deterministically, retaining the delivery address for validity.
-    FOR a IN SELECT DISTINCT ON (lower(btrim(x.email))) x.* FROM (
-      SELECT ui.id,public.get_user_delivery_email(ui.id) AS email,
-        COALESCE(ui.data->>'locale','cs') AS language
-      FROM eshop.bank_account_users bau JOIN public.user_info ui ON ui.id=bau."user"
-      WHERE bau.is_admin AND (bau.bank_account=r.bank_account_id OR bau.bank_account IN
-        (SELECT x.bank_account_id FROM eshop.bank_sync_account_aliases x WHERE x.connection_id=r.connection_id))
-      ) x WHERE NULLIF(btrim(x.email),'') IS NOT NULL ORDER BY lower(btrim(x.email)),x.id
-    LOOP
-      IF a.email IS NULL THEN CONTINUE; END IF;
-      v_message:=public.enqueue_email('custom',jsonb_build_object('organization',p_organization_id,'recipient_user',a.id),a.email,
-        jsonb_build_object('connection_id',r.connection_id,'incident_id',r.incident_id,'warning_code',r.warning_code,
-          'account_title',r.title,'language',a.language,'warning_since',r.warning_since,
-          'last_success_at',(SELECT bank_pull_at FROM eshop.bank_sync_connections WHERE id=r.connection_id)),
-        'bank-sync:'||r.connection_id||':'||r.incident_id||':'||md5(lower(btrim(a.email))),'BANK_SYNC_WARNING',now(),now()+interval '1 day');
-      UPDATE public.email_messages SET tracking_policy='disabled' WHERE message_id=(v_message->>'message_id')::uuid;
-      v_sent:=v_sent+1;
-    END LOOP;
-    IF v_sent>0 THEN UPDATE eshop.bank_sync_health SET notified_at=now() WHERE connection_id=r.connection_id; END IF;
-    v_count:=v_count+v_sent;
-  END LOOP;
-  RETURN v_count;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.enqueue_bank_sync_health_alerts(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.enqueue_bank_sync_health_alerts(bigint) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.configure_bank_sync_health_monitor(p_organization_id bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
@@ -219,6 +176,7 @@ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions
 BEGIN
   PERFORM public.require_service_role();
   DELETE FROM eshop.bank_sync_health WHERE connection_id=p_connection_id;
+  PERFORM public.notification_center_bank_incident_internal(p_connection_id);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.reset_bank_sync_control_health(bigint) FROM PUBLIC,anon,authenticated;

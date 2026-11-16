@@ -1,6 +1,8 @@
 /** Functional delegation contract shared by issuer and tenant consent UI.
  * Adding a scope never expands an already issued grant or token. */
 export const MCP_PERMISSIONS = Object.freeze({
+    'festapp:webhooks:read': {label:'webhooksRead',operations:['webhooks.list','webhooks.deliveries'],requires:['festapp:orders:read']},
+    'festapp:webhooks:write': {label:'webhooksWrite',operations:['webhooks.create','webhooks.update','webhooks.delete','webhooks.test','webhooks.redeliver','webhooks.rotate_secret'],requires:['festapp:webhooks:read']},
     'festapp:history:delete': {label:'historyDelete',operations:['history.delete'],requires:['festapp:order-history:read']},
     'festapp:orders:delete': {label:'ordersDelete',operations:['orders.deletion.inspect','orders.delete'],requires:['festapp:orders:read']},
     'festapp:lifecycle:read': {label:'lifecycleRead',operations:['lifecycle.inspect','lifecycle.pending','occasions.setup.inspect'],requires:[]},
@@ -91,6 +93,8 @@ export const READ_SCOPE = 'festapp:ticket-layouts:read';
 export const CREATE_SCOPE = 'festapp:occasions:create';
 export const DOMAIN_SCOPES = Object.freeze([READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES]);
 export const READ_OPERATIONS = Object.freeze(['context.inspect', 'access.inspect', 'ticket_layouts.inspect']);
+export const DELEGATED_OPERATIONS = Object.freeze([...new Set([...READ_OPERATIONS, 'occasions.create',
+    ...Object.values(MCP_PERMISSIONS).flatMap(permission => permission.operations)])]);
 export function scopesForOperation(operation) {
     if (READ_OPERATIONS.includes(operation)) return [READ_SCOPE];
     if (operation === 'occasions.create') return [READ_SCOPE, CREATE_SCOPE];
@@ -105,4 +109,13 @@ export function scopesForOperation(operation) {
 export function validPermissions(permissions) {
     return Array.isArray(permissions) && permissions.every(p => Object.hasOwn(MCP_PERMISSIONS, p) &&
         MCP_PERMISSIONS[p].requires.every(required => permissions.includes(required)));
+}
+
+// Consent presets narrow the client's request. Account authorization remains
+// owned by the shared domain operations; presets never add a permission.
+export const MCP_CONSENT_MODES = Object.freeze(['requested', 'read-only', 'basic']);
+export function permissionsForConsent(requested, mode = 'requested') {
+    if (!MCP_CONSENT_MODES.includes(mode) || !validPermissions(requested))
+        throw new Error('INVALID_CONSENT_MODE');
+    return requested.filter(scope => mode === 'requested' || (mode === 'read-only' && scope.endsWith(':read')));
 }

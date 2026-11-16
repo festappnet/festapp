@@ -91,6 +91,10 @@ void main() {
             body: OrderPreviewScreen(
               formHolder: h,
               totalPrice: 100,
+              payments: {
+                'available': ['bank'],
+                'bank': {'available': true},
+              },
               onSendPressed: () => sent++,
             ),
           ),

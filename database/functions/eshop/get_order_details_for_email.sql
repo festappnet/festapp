@@ -1,6 +1,7 @@
 CREATE OR REPLACE FUNCTION public.get_order_details_for_email(p_order_id bigint)
 RETURNS jsonb
-STABLE
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
 SET search_path = public, extensions AS $$
 DECLARE
     result_data jsonb;
@@ -15,14 +16,12 @@ BEGIN
     SELECT jsonb_build_object(
         'order', to_jsonb(o.*) || jsonb_build_object('data', o.data || jsonb_build_object(
           'tickets', public.order_tickets_with_seating_internal(o.id,o.data->'tickets'))),
-        'occasion', to_jsonb(occ.*)||jsonb_build_object('locale',coalesce((SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=occ.organization),'cs')),
+        'occasion', to_jsonb(occ)||jsonb_build_object('locale',coalesce((SELECT data->>'DEFAULT_LANGUAGE' FROM public.organizations WHERE id=occ.organization),'cs')),
         -- Same statement snapshot as the ticket feature used by delivery.
         'wallet', jsonb_build_object(
           'feature',(SELECT f FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'),
-          'fingerprint',coalesce(((SELECT f->>'is_enabled' FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'))::boolean,false)::text
-            ||'/'||public.ticket_wallet_enabled((SELECT f FROM jsonb_array_elements(occ.features) f WHERE f->>'code'='ticket'))::text
-            ||'/'||public.ticket_wallet_ready(occ.organization)::text),
-        'payment_info', to_jsonb(pi.*),
+          'fingerprint',public.ticket_wallet_fingerprint(occ.id)),
+        'payment_info', to_jsonb(pi.*)||jsonb_build_object('collectionAction',public.payment_collection_action_internal(o.id),'providerPayment',CASE WHEN public.payment_method_is_online_internal(pi.payment_method) THEN public.provider_order_payment_projection_internal(o.id) END),
         'bank_account', CASE
             WHEN upper(o.currency_code) = 'EUR'
               AND ba.id IS NOT NULL
@@ -100,4 +99,8 @@ BEGIN
     RETURN jsonb_build_object('code', 200, 'data', result_data);
 
 END;
-$$ LANGUAGE plpgsql;
+$$;
+-- The worker is the external consumer. Already-authorized definer commands
+-- (contact repair) share this read owner without granting it to clients.
+REVOKE ALL ON FUNCTION public.get_order_details_for_email(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_order_details_for_email(bigint) TO service_role;

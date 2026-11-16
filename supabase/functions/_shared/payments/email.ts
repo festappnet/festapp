@@ -64,8 +64,8 @@ export function paymentConfirmationBalance(
   url.hash = "pay=" + secrets!.payToken;
   return `<p>${
     cs
-      ? "Objednávka čeká na platbu kartou. Částka k úhradě:"
-      : "Your order awaits card payment. Amount due:"
+      ? "Objednávka čeká na platbu. Částka k úhradě:"
+      : "Your order awaits payment. Amount due:"
   } <strong>${escape(amount)}</strong>. ${
     cs ? "Platnost rezervace do" : "Reservation valid until"
   } ${escape(deadline)}.</p><p><a href="${escape(url.toString())}">${

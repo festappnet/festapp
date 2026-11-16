@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:fstapp/services/launch_url_service.dart';
 import 'package:fstapp/components/mcp/mcp_connection_page.dart';
-import 'package:fstapp/components/navigation/platform_route_parser.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/navigation/retained_draft_guard.dart';
 import 'package:fstapp/components/navigation/navigation_paths.dart';
@@ -50,16 +49,6 @@ import 'components/information/game/game_page.dart';
 // deployment replaces a chunk that the older runtime has not cached yet.
 @AutoRouterConfig(replaceInRouteName: 'Page,Route', deferredLoading: false)
 class AppRouter extends RootStackRouter {
-  @override
-  DefaultRouteParser defaultRouteParser({
-    bool includePrefixMatches = !kIsWeb,
-    DeepLinkTransformer? deepLinkTransformer,
-  }) => PlatformRouteParser(
-    matcher,
-    includePrefixMatches: includePrefixMatches,
-    deepLinkTransformer: deepLinkTransformer,
-  );
-
   static const String LINK = "occasionLink";
   static const String linkFormatted = "{$LINK}";
 

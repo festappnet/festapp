@@ -1,0 +1,7 @@
+{
+  "header": "-- Group notification preferences by canonical organizer units and combine order/waiting-list controls. Existing per-kind preferences, authorization and cursor order are preserved.",
+  "sources": [
+    "notification_center/prepared_views.sql",
+    "notification_center/email_preferences.sql"
+  ]
+}

@@ -1,7 +1,9 @@
 {
   "baselineManifest": "supabase/baseline/manifest.json",
   "operationsManifest": "automation/canonical-operation-sources.json",
+  "additionalSources": ["eshop_forms/website_consent_bindings.sql"],
   "retainedSignatures": [
+    "public.uses_ticket_terminology_internal(jsonb)",
     "public.record_account_deletion_sync_v1(uuid,bigint)",
     "public.advance_group_profile_heads_internal_v1(bigint,uuid[])",
     "public.import_profiles_client_sync_v1(bigint,uuid,jsonb,jsonb)",
@@ -107,7 +109,32 @@
     "public.operator_order_summary_internal_v1(bigint)",
     "public.operator_order_snapshot_internal_v1(bigint,boolean)",
     "public.get_operator_order_summaries_v1(bigint,bigint,bigint,integer,bigint,text,text,bigint)",
-    "public.merge_form_payments_internal(jsonb,jsonb)"
+    "public.merge_form_payments_internal(jsonb,jsonb)",
+    "public.can_manage_customer_order_policy(bigint,boolean)",
+    "public.normalize_customer_order_policy_internal(jsonb)",
+    "public.save_customer_order_policy_internal(bigint,jsonb)",
+    "public.customer_order_policy_internal(bigint)",
+    "public.customer_order_operation_enabled_internal(bigint,text)",
+    "public.update_order_responses_domain_internal(bigint,jsonb)",
+    "public.update_order_detail_responses_domain_internal(bigint,bigint,jsonb,jsonb)",
+    "public.cancel_online_order_admission_internal(bigint,text)",
+    "public.prepare_order_refund_internal(bigint,text,numeric,uuid,jsonb,bigint[])",
+    "public.validate_customer_cancellation_reason_internal(jsonb,text)",
+    "public.authorize_customer_change_internal(text,uuid)",
+    "public.assert_ticket_required_products_internal(bigint,bigint[])",
+    "public.customer_change_read_scope_internal(text,bigint)",
+    "public.customer_order_change_requests_internal(bigint,boolean)",
+    "public.customer_order_actions_internal(bigint)",
+    "public.preview_customer_order_change_internal(bigint,text,jsonb,boolean)",
+    "public.publish_customer_order_request_internal(uuid)",
+    "public.customer_order_change_gateway(text,text,bigint,text,jsonb,uuid,text,jsonb,text)",
+    "public.command_customer_order_request(uuid,text,uuid,timestamp with time zone,text)",
+    "public.apply_customer_order_change_internal(bigint,text,jsonb,jsonb,uuid,uuid)",
+    "public.customer_order_feature_enabled_internal(bigint)",
+    "public.admit_order_mutation_scope_internal(bigint,bigint,text)",
+    "public.admit_order_mutation_v1(bigint,bigint)",
+    "public.cancel_ticket_selection_domain_internal(bigint[],boolean)",
+    "public.lock_customer_order_change_internal(bigint)"
   ],
   "retiredSignatures": [
     "public.advance_group_profile_heads_internal_v1(bigint,uuid[])",
@@ -151,6 +178,14 @@
     "public.update_order_data_to_sent(bigint)",
     "public.update_ticket_products_ws(bigint,bigint[])",
     "public.update_user(uuid,bigint,jsonb)",
-    "public.upsert_event_user(integer,uuid)"
+    "public.upsert_event_user(integer,uuid)",
+    "public.finish_ticket_wallet(bigint,uuid,boolean)",
+    "public.remap_customer_move_answers_internal(jsonb,bigint,bigint,jsonb,boolean)",
+    "public.customer_move_preview_internal(bigint,bigint)",
+    "public.customer_move_targets_internal(bigint)",
+    "public.move_customer_order_domain_internal(bigint,bigint)",
+    "public.order_term_occasion_internal(bigint)",
+    "public.refresh_order_wallet_term_domain_internal(bigint)",
+    "public.lock_customer_order_change_internal(bigint,bigint)"
   ]
 }

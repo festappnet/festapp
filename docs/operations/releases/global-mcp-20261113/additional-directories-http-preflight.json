@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-11-13T07:11:03.885Z",
+  "records": [
+    {
+      "name": "Festapp",
+      "url": "https://mcp.festapp.net/mcp",
+      "initializeStatus": 401,
+      "oauthChallenge": true,
+      "badgeUrl": "https://glama.ai/mcp/connectors/net.festapp/festapp/badges/score.svg",
+      "badgeStatus": 200,
+      "badgeContentType": "image/svg+xml"
+    },
+    {
+      "name": "vstupenky.online",
+      "url": "https://mcp.vstupenky.online/mcp",
+      "initializeStatus": 401,
+      "oauthChallenge": true,
+      "badgeUrl": "https://glama.ai/mcp/connectors/net.festapp/vstupenky-online/badges/score.svg",
+      "badgeStatus": 200,
+      "badgeContentType": "image/svg+xml"
+    }
+  ]
+}

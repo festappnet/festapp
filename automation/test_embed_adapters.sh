@@ -24,23 +24,36 @@ for cms in ('wordpress','joomla'):
     (fixture/'tests').mkdir(exist_ok=True)
 shutil.copy2(source/'integrations/wordpress/tests/measurement-defaults.test.mjs',target/'integrations/wordpress/tests/measurement-defaults.test.mjs')
 shutil.copy2(source/'integrations/joomla/tests/measurement-defaults.php',target/'integrations/joomla/tests/measurement-defaults.php')
+(target/'integrations/measurement').mkdir()
+shutil.copy2(source/'integrations/measurement/consent-export.php',target/'integrations/measurement/consent-export.php')
 (target/'integrations/tests').mkdir()
 shutil.copy2(source/'integrations/tests/embed-appearance-contract.php',target/'integrations/tests/embed-appearance-contract.php')
+shutil.copy2(source/'integrations/tests/consent-export-contract.php',target/'integrations/tests/consent-export-contract.php')
+shutil.copy2(source/'integrations/tests/consent-export-mixed-load.php',target/'integrations/tests/consent-export-mixed-load.php')
 FIXTURE
 cd "$adapter_contract_root"
 python3 integrations/wordpress/scripts/package.py
 python3 integrations/joomla/scripts/package.py
 node --test integrations/wordpress/tests/measurement-defaults.test.mjs
 # Stream only fixture sources: this works with isolated macOS Docker file sharing.
-tar -cf - \
+COPYFILE_DISABLE=1 tar -cf - \
+  integrations/measurement/consent-export.php \
+  integrations/tests/consent-export-contract.php \
+  integrations/tests/consent-export-mixed-load.php \
   integrations/tests/embed-appearance-contract.php \
   integrations/joomla/tests/measurement-defaults.php \
   integrations/joomla/build/mod_vstupenky_online/src/Field/MeasurementField.php \
   integrations/joomla/build/mod_festapp_tickets/src/Field/MeasurementField.php \
+  integrations/wordpress/vstupenky-online/includes/consent.php \
+  integrations/wordpress/vstupenky-online/includes/consent-export.php \
   integrations/wordpress/vstupenky-online/includes/embed.php \
+  integrations/wordpress/festapp-tickets/includes/consent.php \
+  integrations/wordpress/festapp-tickets/includes/consent-export.php \
   integrations/wordpress/festapp-tickets/includes/embed.php \
+  integrations/joomla/build/mod_vstupenky_online/src/Helper/consent-export.php \
+  integrations/joomla/build/mod_festapp_tickets/src/Helper/consent-export.php \
   integrations/joomla/build/mod_vstupenky_online/src/Helper/EmbedHelper.php \
   integrations/joomla/build/mod_festapp_tickets/src/Helper/EmbedHelper.php |
   docker run --rm --network none -i \
     php@sha256:d8784155c4d37986be9ddd7a8950df7e78998cc48e35472cd69e2b9371424a65 \
-    sh -eu -c 'mkdir /work; tar -xf - -C /work; php /work/integrations/tests/embed-appearance-contract.php; php /work/integrations/joomla/tests/measurement-defaults.php'
+    sh -eu -c 'mkdir /work; tar -xf - -C /work; php /work/integrations/tests/consent-export-mixed-load.php; php /work/integrations/tests/consent-export-contract.php; php /work/integrations/tests/consent-export-contract.php --wordpress; php /work/integrations/tests/embed-appearance-contract.php; php /work/integrations/joomla/tests/measurement-defaults.php'

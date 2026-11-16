@@ -254,6 +254,8 @@ class EmailTemplateModel {
       balanceReasoningSub,
       orderCommunicationSub,
       paymentDetailsSub,
+      EmailTemplateSub(code: 'paymentAction', description: EmailTemplatesStrings.subPaymentAction, defaultValue: ''),
+      EmailTemplateSub(code: 'paymentMethodName', description: EmailTemplatesStrings.subPaymentMethodName, defaultValue: ''),
       remainingTimeSub,
       confirmationUrlSub,
       expiresAtSub,
@@ -428,7 +430,7 @@ class EmailTemplateModel {
       case 'sale_opening_opened':
         return {
           'title': SaleOpeningStrings.title,
-          'description': SaleOpeningStrings.explanation,
+          'description': SaleOpeningStrings.text('explanationRegistration'),
         };
       case 'waitlist_confirmation':
         return {

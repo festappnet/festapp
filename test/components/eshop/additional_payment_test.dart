@@ -1,6 +1,8 @@
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/eshop/payment_operation_strings.dart';
+import 'package:fstapp/components/payments/payment_policy_settings.dart';
+import 'package:fstapp/components/payments/payment_policy.dart';
 import 'package:fstapp/data_services/client_sync/client_command_identity.dart';
 import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/models/payment_operation_context.dart';
@@ -55,10 +57,47 @@ void main() {
   final previousPaths = PathProviderPlatform.instance;
   late Completer<void> recorded;
   var paymentOutcome = 'success';
+  Map<String, dynamic> checkoutOutcome = {'code': 200};
+  final checkouts = <Map<String, dynamic>>[];
   Completer<void>? transactionsGate;
   var transactionsFail = false, transactionsReads = 0, contextReads = 0;
   String? instructionsError;
   var legacyRefund = false;
+  var policyFailure = false;
+  Map<String, dynamic>? policyMethods;
+  final policyPreviews = <Map<String, dynamic>>[];
+  var delayPolicy = false;
+  final policyPending = <int, Completer<http.Response>>{};
+  http.Response policyResponse(int? unit) => http.Response(
+    jsonEncode({
+      'organizationId': 1,
+      'unitId': unit,
+      'revision': 1,
+      'preferredMethod': 'stripe',
+      'methods':
+          policyMethods ??
+          {
+            'stripe': {
+              'id': 'stripe',
+              'ready': false,
+              'mode': 'inherit',
+              'organizationEnabled': true,
+              'policyEnabled': unit == 9,
+              'inheritedFrom': 'organization',
+              'configured': false,
+              'canConfigure': unit == 9,
+            },
+          },
+    }),
+    200,
+    request: http.Request(
+      'POST',
+      Uri.parse(
+        'https://fixture.invalid/rest/v1/rpc/get_payment_method_policy',
+      ),
+    ),
+    headers: {'content-type': 'application/json'},
+  );
   setUpAll(() async {
     storage = await Directory.systemTemp.createTemp('festapp-cash-widget-');
     PathProviderPlatform.instance = _CashDocuments(storage.path);
@@ -75,6 +114,53 @@ void main() {
       httpClient: MockClient((request) async {
         final endpoint = request.url.path.split('/').last;
         final payload = jsonDecode(request.body) as Map<String, dynamic>;
+        if (endpoint == 'send-ticket-order') {
+          checkouts.add(payload);
+          return http.Response(
+            jsonEncode(checkoutOutcome),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (endpoint == 'get_payment_method_policy') {
+          final unit = payload['p_unit'] as int?;
+          if (delayPolicy)
+            return (policyPending[unit!] = Completer<http.Response>()).future;
+          if (policyFailure)
+            return http.Response(
+              '{"message":"denied"}',
+              403,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          return policyResponse(unit);
+        }
+        if (endpoint == 'preview_payment_method_policy') {
+          policyPreviews.add(
+            Map<String, dynamic>.from(payload['input_data'] as Map),
+          );
+          return http.Response(
+            jsonEncode({
+              'confirmation': List.filled(64, 'a').join(),
+              'impact': {
+                'openCollections': 0,
+                'pendingRequests': 0,
+                'issuedReferences': 0,
+                'pendingBankInstructions': 0,
+                'obligations': 0,
+                'providerIntents': {
+                  'undispatched': 0,
+                  'dispatched': 0,
+                  'unknown': 0,
+                },
+              },
+            }),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         if (endpoint == 'get_transactions_for_order') {
           expect(payload['order_id'], 5);
           transactionsReads++;
@@ -105,6 +191,7 @@ void main() {
                     ]
                   : [],
               'paymentOperations': {
+                'invalidIdentity': false,
                 'available': legacyRefund ? '440.00' : '0',
                 'currency': 'CZK',
                 'methods': [
@@ -149,6 +236,7 @@ void main() {
             jsonEncode({
               'code': 200,
               'context': {
+                'invalidIdentity': false,
                 'methods': [
                   {
                     'id': 'cash',
@@ -194,6 +282,25 @@ void main() {
       }),
     );
   });
+  test(
+    'checkout capacity rejection releases only a definitive rejected intent',
+    () async {
+      for (final definitive in [false, true]) {
+        final payload = {'form': 'capacity-$definitive', 'ticket': <dynamic>[]};
+        checkoutOutcome = {
+          'code': 429,
+          if (definitive) 'errorCode': 'ABUSE_LIMIT_EXCEEDED',
+        };
+        expect((await DbOrders.sendTicketOrder(payload)).data['code'], 429);
+        checkoutOutcome = {'code': 200};
+        await DbOrders.sendTicketOrder(payload);
+        final first = checkouts[checkouts.length - 2];
+        final retry = checkouts.last;
+        expect(first['commandId'] == retry['commandId'], !definitive);
+      }
+    },
+  );
+
   tearDownAll(() async {
     await Supabase.instance.dispose();
     await StorageHelper.closeDatabase('default.db');
@@ -202,6 +309,11 @@ void main() {
   });
   setUp(() {
     payments.clear();
+    policyFailure = false;
+    policyMethods = null;
+    policyPreviews.clear();
+    delayPolicy = false;
+    policyPending.clear();
     paymentOutcome = 'success';
     transactionsGate = null;
     transactionsFail = false;
@@ -285,6 +397,199 @@ void main() {
       greaterThanOrEqualTo(grid.columns.first.width - 1),
     );
   }
+
+  Future<void> policy(WidgetTester tester, int? unit) async {
+    await _environment.pumpWidget(
+      tester,
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: PaymentPolicySettings(
+            key: const ValueKey('policy'),
+            organizationId: 1,
+            unitId: unit,
+            onConfigure: (_) {},
+            configureMethods: const {'stripe'},
+          ),
+        ),
+      ),
+    );
+  }
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'payment policy retry recovers denied load and exposes supported onboarding',
+    (tester) async {
+      policyFailure = true;
+      await policy(tester, 9);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.refresh), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsNothing);
+      policyFailure = false;
+      await tester.tap(find.byIcon(Icons.refresh));
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.star), findsNothing);
+      expect(find.byType(TextButton), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'payment policy discards late responses after unit switch',
+    (tester) async {
+      delayPolicy = true;
+      final selected = ValueNotifier<int>(9);
+      addTearDown(selected.dispose);
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: ValueListenableBuilder<int>(
+              valueListenable: selected,
+              builder: (_, unit, __) => PaymentPolicySettings(
+                key: const ValueKey('policy'),
+                organizationId: 1,
+                unitId: unit,
+                onConfigure: (_) {},
+                configureMethods: const {'stripe'},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      selected.value = 10;
+      await tester.pump();
+      await tester.pump();
+      policyPending[10]!.complete(policyResponse(10));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextButton), findsNothing);
+      policyPending[9]!.complete(policyResponse(9));
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(TextButton),
+        findsNothing,
+        reason: 'unit A cannot restore its onboarding in unit B',
+      );
+      expect(find.byIcon(Icons.star), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  Map<String, dynamic> method(
+    String id, {
+    bool allowed = true,
+    bool enabled = true,
+  }) => {
+    'id': id,
+    'ready': enabled,
+    'mode': enabled ? 'inherit' : 'disabled',
+    'organizationEnabled': allowed,
+    'policyEnabled': allowed && enabled,
+    'inheritedFrom': enabled ? 'organization' : 'unit',
+    'configured': enabled,
+    'canConfigure': allowed && enabled,
+  };
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'organizer hides tenant-blocked providers and keeps cash read only',
+    (tester) async {
+      policyMethods = {
+        'cash': method('cash'),
+        'bank': method('bank', allowed: false),
+        'stripe': method('stripe', enabled: false),
+        'barion': method('barion', allowed: false),
+      };
+      await policy(tester, 9);
+      await tester.pumpAndSettle();
+      expect(find.text('Hotovost'), findsOneWidget);
+      expect(find.byKey(const ValueKey('payment-policy-bank')), findsNothing);
+      expect(find.byKey(const ValueKey('payment-policy-barion')), findsNothing);
+      expect(find.byType(DropdownButton<PaymentPolicyMode>), findsNothing);
+      final cash = tester.widget<Switch>(
+        find.byKey(const ValueKey('payment-policy-cash')),
+      );
+      expect(cash.value, isTrue);
+      expect(cash.onChanged, isNull);
+      final stripe = tester.widget<Switch>(
+        find.byKey(const ValueKey('payment-policy-stripe')),
+      );
+      expect(stripe.value, isFalse);
+      expect(stripe.onChanged, isNotNull);
+      expect(find.byType(TextButton), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'organizer restores inheritance and disabling still requires explicit confirmation',
+    (tester) async {
+      for (final enabled in [false, true]) {
+        policyMethods = {'stripe': method('stripe', enabled: enabled)};
+        // Construct a new policy state for each initial server snapshot.
+        await _environment.pumpWidget(tester, const SizedBox.shrink());
+        await policy(tester, 9);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('payment-policy-stripe')));
+        await tester.pumpAndSettle();
+        expect(policyPreviews.last, {
+          'organizationId': 1,
+          'unitId': 9,
+          'method': 'stripe',
+          'mode': enabled ? 'disabled' : 'inherit',
+        });
+        await tester.tap(find.text(CommonStrings.cancel));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<Switch>(
+                find.byKey(const ValueKey('payment-policy-stripe')),
+              )
+              .value,
+          enabled,
+        );
+      }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'tenant retains disabled connector controls and localized Barion on narrow screens',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      policyMethods = {
+        'cash': method('cash'),
+        'barion': method('barion', allowed: false),
+      };
+      await policy(tester, null);
+      await tester.pumpAndSettle();
+      expect(find.text('Platební brána Barion'), findsOneWidget);
+      final barion = tester.widget<Switch>(
+        find.byKey(const ValueKey('payment-policy-barion')),
+      );
+      expect(barion.value, isFalse);
+      expect(barion.onChanged, isNotNull);
+      expect(
+        tester
+            .widget<Switch>(find.byKey(const ValueKey('payment-policy-cash')))
+            .onChanged,
+        isNotNull,
+      );
+      await tester.tap(find.byKey(const ValueKey('payment-policy-barion')));
+      await tester.pumpAndSettle();
+      expect(policyPreviews.last['mode'], 'enabled');
+      await tester.tap(find.text(CommonStrings.cancel));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   Finder plus() => find.widgetWithIcon(IconButton, Icons.add_circle_outline);
   OrderModel paidOrder(String state, {Set<String>? actions}) {

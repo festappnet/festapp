@@ -1,11 +1,14 @@
+> This remains the contract of the connector currently in Make review.
+> The prepared [unified API migration](API-AFTER-REVIEW.md) is deferred until that review is accepted.
+
 # vstupenky.online read API
 
 This is the API used by the official first-party Make connector. It adapts the same Festapp operation catalog, authorization and order-summary projection as the remote MCP service. No separate order, payment or permission implementation exists in the connector.
 
 Service origin: `https://mcp.vstupenky.online`
 OpenAPI 3.1: https://mcp.vstupenky.online/make/v1
-[Generated canonical operation schemas](src/generated/schemas.json)
-[Connection setup and user guide](SETUP.md)
+[Generated canonical operation schemas](https://github.com/festappnet/festapp/blob/c02cdad38b673ae341e3add82edb494becc9ae6f/integrations/make/src/generated/schemas.json)
+[Connection setup and user guide](https://github.com/festappnet/festapp/blob/c02cdad38b673ae341e3add82edb494becc9ae6f/integrations/make/SETUP.md)
 
 ## Authentication
 

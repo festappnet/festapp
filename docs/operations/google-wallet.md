@@ -8,10 +8,11 @@ No application trigger, separate ticket lifecycle or email queue is introduced.
 
 ## Activation boundary
 
-This implementation does not authorize a production migration, deployment,
-source publication or tenant selection. The issuer is in demo mode; see the
-[registration receipt](google-wallet-registration-2026-11-10.md).
-A local API success and a saved demo card are distinct from public availability.
+Google approved publishing on 2026-11-12. Wallet is activated for the explicitly
+selected `vstupenky.online` organization only. The original
+[registration receipt](google-wallet-registration-2026-11-10.md) describes the
+earlier demo stage. Each additional tenant still needs its own readiness and
+authorized rollout; shared issuer access alone does not activate it.
 
 After a separately authorized release, use the canonical release gate, approved
 backend access/restart process and one explicitly selected tenant. Configure:
@@ -43,11 +44,44 @@ must use the official artwork with a text fallback. Confirm the gateway replaces
 client-supplied forwarding headers before relying on the per-source limiter.
 The capability limiter remains effective independently of source headers.
 
+## Portal branding and email previews
+
+The stored ticket's organization owns its Wallet brand. `organizations.data.APP_NAME`
+is the existing canonical display name, `DEFAULT_URL` is its canonical portal
+URL, and `WALLET_LOGO_URL` selects an immutable public platform logo on the image
+Worker. Configure these values per organization, not on the shared Functions
+environment and not by guessing a brand from a hostname or numeric tenant ID.
+For the regional portal use `vstupenky.online`; the global portal uses
+`Festapp Tickets`. A shared Google issuer can retain both brands on distinct
+ticket classes. Changing branding never changes the class/object identity or QR.
+The platform logo is the default ahead of an inherited event logo. Explicit
+Wallet appearance overrides, including removal, still apply; event artwork,
+colors and the native QR retain their separate roles. `DEFAULT_LANGUAGE` supplies the
+default email and badge language when no message-specific language is present.
+
+The forward `20261112233000_ticket_wallet_branding.sql` projects branding and
+read-only preview availability. Assemble/check it with
+`automation/assemble-ticket-wallet-branding-migration.py`; earlier migration
+bytes remain immutable. Setting a logo does not enable Wallet publishing.
+
+Real delivery and server-rendered draft previews use the same Wallet email
+section. Native template/ticket previews use the same localized copy and
+unmodified official badge assets, including PDF-only delivery. Preview actions
+are inert and never mint a capability, call Google or create an email intent.
+The per-ticket action area offers each independently ready provider, including
+Apple Wallet. Public labels and supported artwork locales come from the shared
+Wallet presentation module; an unavailable localized image uses translated text
+instead of substituting English artwork into another language.
+
 ## Claims, rate and recovery
 
 `ticket-wallet` accepts only explicit POST with one 256-bit fragment capability.
 GET never creates a Class or Object. The page removes the fragment before other
 resources run, holds it only in memory and is excluded from public analytics.
+Opening the email link automatically submits that capability by POST and
+continues to the validated Google Save URL without a second click. The page
+remains visible for missing or unavailable tickets, an explicit retry after a
+temporary failure, or a used-ticket warning that requires explicit continuation.
 Every resolution rechecks ticket, event, order and online payment state. The
 preference controls future offers; it never revokes already issued links or passes.
 `begin_email_send` discards only unstarted snapshots when the current preference
@@ -62,14 +96,31 @@ conditional on that lease. A late external response cannot be made atomic with
 SQL; subsequent reconciliation repairs remote state. Failed attempts retain the
 same identity and back off from 15 seconds to one hour.
 
-The worker processes all registered objects by `next_attempt,ticket_id`, including
-failed, deleted and inactive tickets. Each healthy pass is due again after three
-minutes; each invocation processes at most 25 claims for up to 45 seconds. Issuer
-requests share an 8 requests/second SQL reservation across tenant rows. Before
-activation, measure `ticket_wallet_health()` and prove the selected issuer's
-volume fits the five-minute healthy reconciliation target; scale invocation
-frequency/batch work within Google's quota when required. A static batch size
-alone is not evidence of the target at production volume.
+The locally prepared change queue replaces periodic full writes. Canonical domain
+commands atomically increment requested work; claims capture a version, and an
+acknowledgement applies only that captured version. Class and object have distinct
+leases; object synchronization never writes its shared class. Issuance prepares
+class work through the same owner before claiming an object. Integrations can be
+paused without dropping changes, and tenant claims rotate using the last claimed_at stored on their work rows.
+
+The new worker processes at most 200 claims for 45 seconds per invocation. The
+prepared control-plane upgrade changes the single existing schedule to 10 seconds;
+SQL issuer reservation remains 8 requests/second. Daily repair compares managed
+remote fields and writes actual drift; time boundaries enqueue the same work.
+Scheduling, leases and retry state live only in ticket_wallet_work. See the
+[implementation plan](../plans/ticket-wallet-change-queue-plan-2026-11-13.md)
+and [local execution record](../plans/ticket-wallet-change-queue-RESULT-2026-11-13.md).
+The queue migrations and the single 10-second scheduler were deployed for
+`vstupenky.online` (organization 3) on 2026-11-13 from canonical source
+`e05a9b68d50f8e898c1fe390239d1b7251a8fbd4`. The existing pass identity was
+preserved, the worker and email queue resumed, and live product save/readback
+with an idempotent replay succeeded.
+
+Measured synthetic burst limits are approximately 4 object updates/second under
+continuous dispatch: 1,000 cards take at least 251 seconds; 10,000 take at least
+2,501 seconds. The 60-second p95 objective does not hold for either bulk burst.
+Real SQL fanout measurements are separate from simulated provider latency; no
+production cards or mass Google requests were used.
 
 A timeout after a remote write is retried with the same object identity. Expired
 leases can be reclaimed; stale owners cannot complete or begin another request.

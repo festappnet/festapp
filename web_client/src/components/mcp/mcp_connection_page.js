@@ -1,5 +1,5 @@
 import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, CONNECTION_IDLE_SECONDS, DAY_SECONDS, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
-import { MCP_PERMISSIONS, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
+import { MCP_PERMISSIONS, MCP_CONSENT_MODES, permissionsForConsent, validPermissions } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { ACCOUNT_CONNECTIONS_PATH } from '../users/account_connections_links.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
@@ -47,13 +47,16 @@ export class McpConnectionPage {
         this.generation = 0;
         this.busy = false;
         this.state = 'loading';
+        this.permissionMode = 'requested';
     }
 
     text(key, args = {}) { return LocalizationService.tr(`McpConnection.${key}`, args); }
 
-    async call(operation) {
+    async call(operation, mfa) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
-            body: { request: this.request, operation, ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: this.details?.requestedPermissions ?? [], ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
+            headers: new URL(this.browser.location.href).searchParams.has('issuer')
+                ? { 'X-Festapp-Mcp-Issuer': new URL(this.browser.location.href).searchParams.get('issuer') } : {},
+            body: { request: this.request, operation, ...(mfa ? { mfa } : {}), ...(operation === 'approve' ? { access: this.connection || Array.isArray(this.details?.requestedPermissions) ? { consentVersion: 2, selection: this.access, permissions: permissionsForConsent(this.details?.requestedPermissions ?? [], this.permissionMode), ...(this.details?.api ? {apiReview:{...this.details.api,version:1}} : {}), ...(this.connection ? { connection: this.connection } : {}) } : this.access } : {}) },
         });
         if (error || data?.error || !data) throw new Error('Connection failed');
         return data;
@@ -62,8 +65,10 @@ export class McpConnectionPage {
     get access() {
         if (!this.selectedUnits.size) return { type: 'occasions', occasionIds: [...this.selected] };
         return { type: 'selection', units: [...this.selectedUnits].map(([unitId, canCreateOccasions]) =>
-            ({ unitId, canCreateOccasions })), occasionIds: [...this.selected] };
+            ({ unitId, canCreateOccasions: canCreateOccasions && this.canRequestCreate })), occasionIds: [...this.selected] };
     }
+
+    get canRequestCreate() { return this.permissionMode === 'requested' && this.details?.canRequestCreate === true; }
 
     get canApprove() {
         if (this.connection && (!['new', 'replace'].includes(this.connection.mode) || !CONNECTION_DURATION_DAYS.includes(this.connection.durationDays) || this.connection.name.length > 80 || /[\u0000-\u001f\u007f]/u.test(this.connection.name) ||
@@ -71,7 +76,7 @@ export class McpConnectionPage {
             (this.connection.mode === 'new' && this.details.connections?.length && !this.connection.name.trim()))) return false;
         const ids = new Set((this.details?.occasions || []).map(o => o.id));
         const units = this.details?.units || [];
-        if (!validPermissions(this.details?.requestedPermissions ?? [])) return false;
+        if (!MCP_CONSENT_MODES.includes(this.permissionMode) || !validPermissions(this.details?.requestedPermissions ?? [])) return false;
         return this.selected.size + this.selectedUnits.size > 0 && this.selected.size <= 100 && this.selectedUnits.size <= 100 &&
             [...this.selected].every(id => ids.has(id)) && [...this.selectedUnits].every(([id, create]) =>
                 units.some(u => u.id === id && (!create || (this.details.canRequestCreate && u.canCreateOccasions))));
@@ -96,6 +101,16 @@ export class McpConnectionPage {
             this.user = data.session?.user;
             if (!this.user) this.state = 'login';
             else {
+                this.mfaFactor = this.user.factors?.find(f => f.status === 'verified' && f.factor_type === 'totp');
+                if (this.user.factors?.some(f => f.status === 'verified')) {
+                    const assurance = await this.client.auth.mfa.getAuthenticatorAssuranceLevel();
+                    if (assurance.error) throw assurance.error;
+                    if (assurance.data.currentLevel !== 'aal2') {
+                        this.state = this.mfaFactor ? 'mfaLogin' : 'mfaUnsupported';
+                        this.render();
+                        return;
+                    }
+                }
                 const details = await this.call('details');
                 if (generation !== this.generation) return;
                 this.details = details;
@@ -117,16 +132,21 @@ export class McpConnectionPage {
                 const permissions = this.details.requestedPermissions ?? [];
                 if (!Array.isArray(permissions) || permissions.some(p => !Object.hasOwn(MCP_PERMISSIONS, p))) throw new Error('Invalid permissions');
                 if (!validPermissions(permissions)) throw new Error('Invalid permissions');
-                // OAuth scopes remain an internal client contract. One approval
-                // delegates the requested functions; live SQL still owns user rights.
+                // Human-readable presets only narrow the requested scopes;
+                // live SQL still owns current account rights.
                 this.state = 'consent';
             }
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
         this.render();
     }
 
-    async finish(operation) {
+    async finish(operation, mfa) {
         if (this.busy || (operation === 'approve' && (this.state !== 'consent' || !this.canApprove))) return;
+        if (operation === 'approve' && this.mfaFactor && !mfa) {
+            this.state = 'mfaApproval';
+            this.render();
+            return;
+        }
         const generation = this.generation;
         // Create synchronously from the approval gesture, then sever the opener.
         const callback = operation === 'approve' && this.details?.applicationType === 'native'
@@ -136,7 +156,7 @@ export class McpConnectionPage {
         this.render();
         let dispatched = false;
         try {
-            const result = await this.call(operation);
+            const result = await this.call(operation, mfa);
             if (generation !== this.generation) { callback?.close(); return; }
             const destination = this.resume(result.resumeUrl, result.issuer);
             if (!callback) {
@@ -203,16 +223,30 @@ export class McpConnectionPage {
         add('h1', this.text(this.state === 'connected' ? 'connected' : 'heading'));
         if (this.state === 'consent') {
             add('h2', this.details.client);
+            if(this.details.api){add('p',`API: ${this.details.api.resource}`);add('p',`Data: ${this.details.api.dataProfile}`);}
             if (this.details.regionalPortal) {
                 const { name: portal, platform } = this.details.regionalPortal;
                 add('p', this.text('regionalPlatform', { portal, platform }));
             }
             add('p', this.user.email?.replace(new RegExp(`^${AppConfig.organization}\\+`), '') || '');
+            if (this.details.requestedPermissions?.length || this.details.canRequestCreate) {
+                const label = add('label', this.text('permissionMode'));
+                const mode = add('select', '', label); mode.name = 'permissionMode'; mode.disabled = this.busy;
+                for (const value of MCP_CONSENT_MODES) {
+                    const option = add('option', this.text(`permissionMode_${value}`), mode);
+                    option.value = value; option.selected = this.permissionMode === value;
+                }
+                add('p', this.text(`permissionHint_${this.permissionMode}`));
+                mode.addEventListener('change', () => {
+                    this.permissionMode = mode.value; this.render();
+                    this.container.querySelector('[name="permissionMode"]')?.focus();
+                });
+            }
             if (this.connection) {
                 const choices = this.details.connections;
                 const durationLabel = add('label', this.text('durationLabel'));
                 const duration = add('select', '', durationLabel); duration.name = 'durationDays'; duration.disabled = this.busy;
-                for (const days of CONNECTION_DURATION_DAYS) {
+                for (const days of CONNECTION_DURATION_DAYS.filter(days=>days<=(this.details.maxConsentDays??365))) {
                     const option = add('option', this.text(`duration${days}`), duration); option.value = String(days);
                     option.selected = this.connection.durationDays === days;
                 }
@@ -316,7 +350,7 @@ export class McpConnectionPage {
                 header.className = 'mcp-organizer-header';
                 const heading = add('h3', '', header);
                 const whole = this.selectedUnits.has(id);
-                const creates = whole ? this.selectedUnits.get(id) : this.details.canRequestCreate === true && group.unit?.canCreateOccasions === true;
+                const creates = this.canRequestCreate && (whole ? this.selectedUnits.get(id) : group.unit?.canCreateOccasions === true);
                 const parent = checkbox(title([id, group]), whole, () => {
                     if (whole) this.selectedUnits.delete(id);
                     else {
@@ -372,10 +406,58 @@ export class McpConnectionPage {
             summary.className = 'mcp-access-summary';
             add('h2', this.text('accessSummary'), summary);
             add('p', this.text('sameRights'), summary);
+            const effectivePermissions = permissionsForConsent(this.details.requestedPermissions ?? [], this.permissionMode);
+            if (effectivePermissions.length) {
+                const list = add('ul', '', summary);
+                for (const scope of effectivePermissions) add('li', this.text(MCP_PERMISSIONS[scope].label), list);
+            }
             const selectionSummary = add('p', this.text(this.selectedUnits.size || this.selected.size ? 'selectionSummary' : 'selectionRequired', { organizers: this.selectedUnits.size, occasions: this.selected.size }));
             selectionSummary.className = 'mcp-selection-summary';
             add('p', this.text('duration', { appName: AppConfig.appName }));
             button(this.busy ? 'connecting' : 'approve', () => this.finish('approve'), !this.canApprove);
+            button('cancel', () => this.finish('cancel'));
+        } else if (['mfaLogin', 'mfaApproval'].includes(this.state)) {
+            add('p', this.text(this.state === 'mfaLogin' ? 'mfaLoginHint' : 'mfaApprovalHint'));
+            const form = add('form', '');
+            const label = add('label', this.text('mfaCode'), form);
+            const input = document.createElement('input');
+            input.type = 'password';
+            input.inputMode = 'numeric';
+            input.autocomplete = 'one-time-code';
+            input.pattern = '[0-9]{6}';
+            input.maxLength = 6;
+            input.required = true;
+            input.disabled = this.busy;
+            label.appendChild(input);
+            const submit = add('button', this.text('mfaVerify'), form);
+            submit.type = 'submit';
+            submit.dataset.primary = '';
+            submit.disabled = this.busy;
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                if (this.busy || !form.reportValidity()) return;
+                const code = input.value;
+                input.value = '';
+                if (this.state === 'mfaApproval') {
+                    this.state = 'consent';
+                    await this.finish('approve', { factorId: this.mfaFactor.id, code });
+                    return;
+                }
+                this.busy = true;
+                this.render();
+                try {
+                    const result = await this.client.auth.mfa.challengeAndVerify({ factorId: this.mfaFactor.id, code });
+                    if (result.error) throw result.error;
+                    this.busy = false;
+                    await this.init();
+                } catch {
+                    this.busy = false;
+                    this.state = 'mfaLogin';
+                    this.mfaFailed = true;
+                    this.render();
+                }
+            });
+            if (this.mfaFailed) add('p', this.text('mfaFailed')).setAttribute('role', 'alert');
             button('cancel', () => this.finish('cancel'));
         } else if (this.state === 'login') {
             add('p', this.text('loginHint'));

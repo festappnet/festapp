@@ -1,6 +1,4 @@
-DROP FUNCTION IF EXISTS public.get_my_admin_bank_accounts();
-
-CREATE FUNCTION public.get_my_admin_bank_accounts()
+CREATE OR REPLACE FUNCTION public.get_linkable_bank_accounts(p_unit_id bigint)
 RETURNS TABLE (
     id bigint,
     account_number text,
@@ -21,6 +19,7 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 BEGIN
+    IF public.is_demo_unit(p_unit_id) OR NOT public.can_manage_unit_bank_accounts(p_unit_id) OR NOT coalesce(public.payment_method_policy_enabled_internal(p_unit_id,'bank'),false) THEN RAISE insufficient_privilege; END IF;
     RETURN QUERY
     SELECT
         ba.id,
@@ -30,8 +29,7 @@ BEGIN
         ba.creditor_name,
         ba.type,
         NULL::text as token_masked,
-        CASE WHEN public.can_manage_bank_account(ba.id) THEN
-          (public.get_bank_sync_connection(ba.id)->>'token_expiry_at')::timestamptz END as token_expiry_date,
+        NULL::timestamptz as token_expiry_date,
         ba.supported_currencies,
         ARRAY(
             SELECT u.title
@@ -39,10 +37,9 @@ BEGIN
             JOIN public.units u ON uba.unit = u.id
             WHERE uba.bank_account = ba.id
         ) as linked_units,
-        ba.last_fetch_time,
-        ba.last_fio_fetch_time,
-        CASE WHEN public.can_manage_bank_account(ba.id) THEN
-          public.get_bank_sync_connection(ba.id) END AS bank_sync
+        NULL::timestamptz as last_fetch_time,
+        NULL::timestamptz as last_fio_fetch_time,
+        NULL::jsonb AS bank_sync
     FROM eshop.bank_accounts ba
     JOIN eshop.bank_account_users bau ON ba.id = bau.bank_account
     WHERE bau."user" = auth.uid() AND bau.is_admin = true
@@ -51,5 +48,5 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_my_admin_bank_accounts() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_my_admin_bank_accounts() TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.get_linkable_bank_accounts(bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_linkable_bank_accounts(bigint) TO authenticated, service_role;

@@ -22,6 +22,24 @@ final class Dispatcher extends AbstractModuleDispatcher
                 if (!$assets->assetExists('script', $handle)) {
                     $assets->registerScript($handle, '@@ORIGIN@@/embed.js', ['version' => false], ['defer' => true]);
                 }
+                $asset = $assets->getAsset('script', $handle);
+                $config = EmbedHelper::consent($data['params']->toArray());
+                if ($config !== null && !$asset->getOption('festappConsentConflict', false)) {
+                    $encoded = json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+                    $previous = $asset->getOption('festappConsentConfig');
+                    if ($previous !== null && $previous !== $encoded) {
+                        // Multiple incompatible imports cannot authorize a transfer.
+                        $asset->setOption('festappConsentConflict', true);
+                        $asset->setAttribute('data-festapp-consent', '');
+                        $asset->setAttribute('data-cookieconsent', null);
+                    } else {
+                        $asset->setOption('festappConsentConfig', $encoded);
+                        $asset->setAttribute('data-festapp-consent', $encoded);
+                        if ($config['providerConfig']['provider'] === 'cookiebot') {
+                            $asset->setAttribute('data-cookieconsent', 'ignore');
+                        }
+                    }
+                }
                 $assets->useScript($handle);
             }
             $data['embed'] = EmbedHelper::render($data['params']->toArray());

@@ -24,8 +24,15 @@ try {
   return f;
  };
  const ensureBank=async f=>{
-  const account=(await a.query("insert into eshop.bank_accounts(title,type,supported_currencies) values('Synthetic blueprint concurrency','FIO',array['CZK']) returning id")).rows[0].id;
+  await a.query(`insert into eshop.organization_payment_method_policies(organization_id,method,enabled)
+    select organization,'bank',true from public.occasions where id=$1
+    on conflict(organization_id,method) do update set enabled=true`,[f.occasion]);
+  const account=(await a.query("insert into eshop.bank_accounts(title,type,account_number,supported_currencies) values('Synthetic blueprint concurrency','FIO','771234/2010',array['CZK']) returning id")).rows[0].id;
   await a.query('insert into eshop.unit_bank_accounts(unit,bank_account) select unit,$1 from public.occasions where id=$2',[account,f.occasion]);
+  await a.query(`update public.forms set data=jsonb_set(coalesce(data,'{}'::jsonb),'{payments}',
+    coalesce(data->'payments','{}'::jsonb)||'{"bankEnabled":true,"cashEnabled":false}'::jsonb) where id=$1`,[f.form]);
+  const availability=(await a.query('select public.form_payment_availability_internal($1) value',[f.form])).rows[0].value;
+  assert.deepEqual(availability.available,['bank'],'bank finalization fixture must offer exactly its intended payment method');
  };
  const assign=async f=>{
   const order=(await a.query('select public.allocate_ticket_order_identity_internal($1) id',[f.form])).rows[0].id;

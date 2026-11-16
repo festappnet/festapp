@@ -1,3 +1,5 @@
+import 'customer_order_requests.dart';
+
 import 'package:festapp_core/payments.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -61,7 +63,7 @@ const orderDetailTabs = [
 List<String> get orderDetailTabLabels => [
   OrderDetailStrings.text('prehled'),
   OrderDetailStrings.text(
-    FeatureService.isFeatureEnabled(FeatureConstants.ticket)
+    FeatureService.usesTicketTerminology()
         ? 'vstupenky_a_mista'
         : 'applications_places',
   ),
@@ -77,6 +79,7 @@ class OrderDetailView extends StatefulWidget {
     required this.tab,
     required this.onTab,
     required this.onClose,
+    this.onEscape,
     required this.onChanged,
     this.onPrevious,
     this.onNext,
@@ -92,6 +95,7 @@ class OrderDetailView extends StatefulWidget {
   final String tab;
   final ValueChanged<String> onTab;
   final Future<void> Function() onClose;
+  final Future<void> Function()? onEscape;
   final bool outsideFilter;
   final int formCount;
   final Future<void> Function() onChanged;
@@ -323,8 +327,10 @@ class _OrderDetailViewState extends State<OrderDetailView>
     isCard: paymentConnectors.containsHosted(d.order['payment_method']),
     onOverdueTap: () => widget.onTab('payments'),
   );
+  bool get _usesTicketTerminology => FeatureService.usesTicketTerminology();
+
   bool get _issuesTickets =>
-      FeatureService.isFeatureEnabled(FeatureConstants.ticket) &&
+      _usesTicketTerminology &&
       d.fields
               .where((f) => f.type == FormMetadata.fieldTypeTicket)
               .firstOrNull
@@ -337,7 +343,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
         .firstOrNull;
     final maximum =
         int.tryParse('${container?.data?[FormMetadata.maxTickets] ?? 1}') ?? 1;
-    return !_issuesTickets && maximum == 1 && d.tickets.length == 1;
+    return !_usesTicketTerminology && maximum == 1 && d.tickets.length == 1;
   }
 
   bool _canEditProducts(Map<String, dynamic> ticket) =>
@@ -371,7 +377,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
 
   String get _contentsCount {
     final entries = OrderDetailStrings.count(
-      _issuesTickets ? 'tickets_count' : 'applications_count',
+      _usesTicketTerminology ? 'tickets_count' : 'applications_count',
       d.tickets.length,
     );
     // Capacity admissions do not imply an assigned seat on a floor plan.
@@ -440,13 +446,13 @@ class _OrderDetailViewState extends State<OrderDetailView>
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: const EdgeInsets.only(left: 16, bottom: 8),
                 leading: Icon(
-                  _issuesTickets
+                  _usesTicketTerminology
                       ? Icons.confirmation_number_outlined
                       : Icons.assignment_outlined,
                 ),
                 title: Text(
                   ticket['ticket_symbol']?.toString() ??
-                      '${OrderDetailStrings.text(_issuesTickets ? 'ticket' : 'application')} ${ticket['id']}',
+                      '${OrderDetailStrings.text(_usesTicketTerminology ? 'ticket' : 'application')} ${ticket['id']}',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 children: [_orderedProducts(ticket)],
@@ -585,6 +591,15 @@ class _OrderDetailViewState extends State<OrderDetailView>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _financial(),
+        CustomerOrderRequests(
+          requests: (d.json['customerRequests'] as List? ?? const [])
+              .map((r) => Map<String, dynamic>.from(r as Map))
+              .toList(),
+          canWrite: d.canWrite,
+          onChanged: () async {
+            await c.load();
+          },
+        ),
         for (final issue in issues.take(2))
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -707,7 +722,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
     children: [
       Text(
         OrderDetailStrings.count(
-          _issuesTickets ? 'tickets_count' : 'applications_count',
+          _usesTicketTerminology ? 'tickets_count' : 'applications_count',
           d.tickets.length,
         ),
         style: Theme.of(context).textTheme.titleMedium,
@@ -760,7 +775,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                 vertical: 4,
               ),
               leading: Icon(
-                _issuesTickets
+                _usesTicketTerminology
                     ? Icons.confirmation_number_outlined
                     : Icons.person_outline,
                 color: _ticketSelected(ticket['id'] as int)
@@ -773,7 +788,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
               title: Text(
                 [
                   ticket['ticket_symbol'] ??
-                      '${OrderDetailStrings.text(_issuesTickets ? 'ticket' : 'application')} ${ticket['id']}',
+                      '${OrderDetailStrings.text(_usesTicketTerminology ? 'ticket' : 'application')} ${ticket['id']}',
                 ].where((s) => s.isNotEmpty).join(' · '),
                 style: Theme.of(context).textTheme.titleSmall,
               ),
@@ -786,7 +801,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                       : ticket['state'] == 'waitlisted'
                       ? OrderDetailStrings.text('ceka_na_misto')
                       : OrderDetailStrings.text(
-                          _issuesTickets
+                          _usesTicketTerminology
                               ? 'dosud_nepouzita'
                               : 'application_active',
                         ),
@@ -867,7 +882,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                                   builder: (dialogContext) => AppAlertDialog(
                                     title: Text(
                                       OrderDetailStrings.text(
-                                        _issuesTickets
+                                        _usesTicketTerminology
                                             ? 'cancel_ticket_question'
                                             : 'cancel_application_question',
                                       ),
@@ -890,7 +905,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                                             Navigator.pop(dialogContext, true),
                                         child: Text(
                                           OrderDetailStrings.text(
-                                            _issuesTickets
+                                            _usesTicketTerminology
                                                 ? 'cancel_ticket'
                                                 : 'cancel_application',
                                           ),
@@ -913,7 +928,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                             ),
                             child: Text(
                               OrderDetailStrings.text(
-                                _issuesTickets
+                                _usesTicketTerminology
                                     ? 'cancel_ticket'
                                     : 'cancel_application',
                               ),
@@ -1081,7 +1096,8 @@ class _OrderDetailViewState extends State<OrderDetailView>
         child: Actions(
           actions: {
             _CloseOrderDetailIntent: CallbackAction<_CloseOrderDetailIntent>(
-              onInvoke: (_) => c.busy ? null : widget.onClose(),
+              onInvoke: (_) =>
+                  c.busy ? null : (widget.onEscape ?? widget.onClose)(),
             ),
           },
           child: Material(
@@ -1363,7 +1379,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                         Tab(
                           text: i == 1
                               ? OrderDetailStrings.text(
-                                  _issuesTickets
+                                  _usesTicketTerminology
                                       ? 'vstupenky_a_mista'
                                       : 'applications_places',
                                 )

@@ -128,7 +128,12 @@ void main() {
         FormStrings.enterOptionValue,
       );
       await tester.enterText(option, 'Morning');
-      await tester.tap(find.byIcon(Icons.add).first);
+      final optionRow = find
+          .ancestor(of: option, matching: find.byType(Row))
+          .first;
+      await tester.tap(
+        find.descendant(of: optionRow, matching: find.byIcon(Icons.add)),
+      );
       await tester.pumpAndSettle();
       expect(field.options.single.title, 'Morning');
       expect(

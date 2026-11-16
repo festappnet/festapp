@@ -10,6 +10,9 @@ CREATE OR REPLACE FUNCTION public.email_admission_class_v1(m public.email_messag
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; commitment boolean:=false;
 BEGIN
+ IF m.message_kind='admin_notification_digest' AND m.organization IS NULL AND m.recipient_user IS NOT NULL
+  AND EXISTS(SELECT 1 FROM public.notification_center_email_dispatches d WHERE d.id=m.notification_dispatch_id AND d.recipient=m.recipient_user) THEN RETURN 'notification'; END IF;
+
  IF m.message_kind IN ('order_tickets','order_payment_notice','order_storno') AND m.order_id IS NOT NULL THEN
   SELECT * INTO o FROM eshop.orders WHERE id=m.order_id;
   commitment:=((m.message_kind IN ('order_tickets','order_payment_notice') AND o.state IN ('paid','sent')) OR (m.message_kind='order_storno' AND o.state='storno')) AND o.occasion=m.occasion AND o.email_payment_version=m.source_version
@@ -28,6 +31,30 @@ DECLARE m public.email_messages; policy jsonb; scopes jsonb; costs jsonb; r json
  is_auth boolean; unit_count bigint; org_count bigint; unit_bytes bigint; org_bytes bigint; growth bigint:=0; policies jsonb;
 BEGIN
  SELECT * INTO STRICT m FROM public.email_messages WHERE id=p_message;
+
+ IF public.email_admission_class_v1(m)='notification' THEN
+  scopes:=jsonb_build_object('global','all','recipient',m.recipient_user::text);
+  PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.payload',NULL,NULL),scopes,
+   jsonb_build_object('email.payload.bytes',octet_length(m.data::text)+coalesce(octet_length(m.prepared::text),0)));
+  policy:=public.abuse_effective_rules_v1('email.notification.backlog',NULL,NULL);
+  FOR r IN SELECT value FROM jsonb_array_elements(policy->'rules') ORDER BY value->>'rule_key' LOOP
+   PERFORM pg_advisory_xact_lock(hashtextextended('abuse:'||(r->>'rule_key')||':'||(scopes->>(r->>'scope_kind')),0));
+  END LOOP;
+  SELECT count(*) FILTER(WHERE recipient_user=m.recipient_user),count(*),
+   coalesce(sum(octet_length(data::text)+coalesce(octet_length(prepared::text),0)) FILTER(WHERE recipient_user=m.recipient_user),0),
+   coalesce(sum(octet_length(data::text)+coalesce(octet_length(prepared::text),0)),0)
+  INTO unit_count,org_count,unit_bytes,org_bytes FROM public.email_messages
+  WHERE message_kind='admin_notification_digest' AND workflow_state IN ('pending','blocked','preparing','sending','retry_wait','unknown');
+  PERFORM public.abuse_charge_v1(policy,scopes,jsonb_build_object(
+   'email.notification.backlog.recipient',unit_count,'email.notification.backlog.global',org_count,
+   'email.notification.backlog.recipient.bytes',unit_bytes,'email.notification.backlog.global.bytes',org_bytes));
+  IF NOT p_recheck THEN
+   PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.notification',NULL,NULL),scopes);
+
+  END IF;
+  UPDATE public.email_messages SET admission_class='notification',priority=80 WHERE id=m.id;
+  RETURN;
+ END IF;
  policies:=public.abuse_policy_bundle_v1(ARRAY['email.payload','email.actor','email.backlog','email.auth.backlog','email.auth','email.ordinary'],m.unit,m.organization);
  IF m.unit IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.units WHERE id=m.unit AND organization=m.organization) THEN
   RAISE invalid_parameter_value USING MESSAGE='email_scope_mismatch'; END IF;

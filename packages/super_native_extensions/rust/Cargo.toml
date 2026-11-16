@@ -19,7 +19,7 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 log = "0.4"
-simple_logger = "2.1"
+simple_logger = "5.2"
 async-trait = "0.1"
 rand = "0.8.5"
 url = "2.2.2"
@@ -176,6 +176,8 @@ gtk = { version = "0.17.1" }
 mime_guess = "2.0.4"
 
 [patch.crates-io]
+# RUSTSEC-2024-0429 backport; preserve the GTK 0.17 API/ABI family.
+glib = { git = "https://github.com/festappnet/gtk-rs-core.git", rev = "5893f66e6385c2235982db0b2482aa86b46ea097" }
 # Until the PR gets upstreamed
 mime_guess = { git = "https://github.com/knopp/mime_guess.git", branch = "super_native_extensions" }
 

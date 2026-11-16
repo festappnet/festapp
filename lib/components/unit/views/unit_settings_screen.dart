@@ -1,13 +1,16 @@
+import 'package:collection/collection.dart';
+
+import '../../payments/payment_policy_settings.dart';
+
 import 'package:festapp_core/communication_tone.dart';
 
 import 'unit_measurement_settings.dart';
+import 'unit_website_consent_settings.dart';
 import '../unit_measurement_approval.dart';
 
 import 'package:fstapp/services/exception_handler.dart';
 
 import 'package:fstapp/components/forms/email_validation.dart';
-import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 
 import '../verification/verification_strings.dart';
@@ -31,8 +34,7 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
-import 'package:fstapp/components/stripe_payments/stripe_connection_strings.dart';
+import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/router_service.dart';
 
@@ -53,7 +55,6 @@ class UnitSettingsScreen extends StatefulWidget {
 class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
-  bool _isUpdatingStripeFeature = false;
   bool _isLoading = true;
   bool _canEdit = false;
   late UnitModel _unit;
@@ -155,32 +156,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
   }
 
-  Future<void> _setStripeFeature(bool enabled) async {
-    final unitId = _unit.id;
-    if (unitId == null ||
-        !StripeFeature.canActivate ||
-        RightsService.currentUnit()?.id != unitId)
-      return;
-    setState(() => _isUpdatingStripeFeature = true);
-    try {
-      await Supabase.instance.client.rpc(
-        'set_stripe_unit_feature',
-        params: {'p_unit': unitId, 'p_enabled': enabled},
-      );
-      await RightsService.refreshAfterAuthorizationChange();
-      if (mounted) widget.onUnitUpdated();
-    } catch (_) {
-      if (mounted)
-        ToastHelper.Show(
-          context,
-          'Nastavení Stripe se nepodařilo uložit.',
-          severity: ToastSeverity.NotOk,
-        );
-    } finally {
-      if (mounted) setState(() => _isUpdatingStripeFeature = false);
-    }
-  }
-
   Future<void> _loadVersionInfo() async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     if (mounted) {
@@ -214,6 +189,28 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     if (mounted && _organizationMeasurementEnabled) {
       await _loadMeasurementApproval();
     }
+  }
+
+  bool get _measurementSaved {
+    final d = _unit.data ?? <String, dynamic>{};
+    return !_isSaving &&
+        _measurementEnabled == (d['measurement_enabled'] == true) &&
+        _measurementConsentBridge ==
+            (d['measurement_consent_bridge'] == true) &&
+        _measurementGtmController.text.trim() ==
+            (d['measurement_gtm_container'] ?? '') &&
+        _measurementScriptsController.text ==
+            (d['measurement_scripts'] ?? '') &&
+        _measurementPrivacyUrlController.text.trim() ==
+            (d['measurement_privacy_url'] ?? '') &&
+        _measurementConsentTitleController.text == _initialConsentTitle &&
+        _measurementConsentTextController.text == _initialConsentText &&
+        const ListEquality<String>().equals(
+          UnitMeasurementSettings.parseWebsites(
+            _measurementWebsitesController.text,
+          ),
+          List<String>.from(d['measurement_websites'] ?? const []),
+        );
   }
 
   Future<void> _loadMeasurementApproval() async {
@@ -360,7 +357,29 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         )) {
       return;
     }
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final invalidFields = _formKey.currentState?.validateGranularly();
+    if (invalidFields == null) return;
+    if (invalidFields.isNotEmpty) {
+      // Both sections and the nested advanced fields remain registered while
+      // collapsed. Reveal every invalid field's ancestors before scrolling.
+      final sections = <ExpansibleController>{};
+      for (final field in invalidFields) {
+        field.context.visitAncestorElements((element) {
+          final controller = ExpansibleController.maybeOf(element);
+          if (controller != null) sections.add(controller);
+          return true;
+        });
+      }
+      for (final section in sections) {
+        section.expand();
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final field = invalidFields.first;
+        if (field.mounted) Scrollable.ensureVisible(field.context);
+      });
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -772,41 +791,81 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                           ),
                         if (_organizationMeasurementEnabled) ...[
                           const SizedBox(height: 32),
-                          UnitMeasurementSettings(
-                            consentBridge: _measurementConsentBridge,
-                            onConsentBridgeChanged: (value) => setState(
-                              () => _measurementConsentBridge = value,
+                          ExpansionTile(
+                            key: const PageStorageKey(
+                              'unit-measurement-settings',
                             ),
-                            websitesController: _measurementWebsitesController,
-                            approval: _measurementApproval,
-                            loadingApproval: _isLoadingMeasurementApproval,
-                            approvalLoadFailed: _measurementApprovalLoadFailed,
-                            onRetryApproval: _loadMeasurementApproval,
-                            requestingApproval: _isRequestingMeasurement,
-                            onRequestApproval: _requestMeasurementApproval,
-                            enabled: _measurementEnabled,
-                            consentLayout: _measurementConsentLayout,
-                            hasStoredTitle: _storedConsentTitle != null,
-                            hasStoredText: _storedConsentText != null,
-                            onRestore: (controller) =>
-                                _restoredConsent.add(controller),
-                            consentTitleController:
-                                _measurementConsentTitleController,
-                            consentTextController:
-                                _measurementConsentTextController,
-                            onConsentLayoutChanged: (value) => setState(
-                              () => _measurementConsentLayout = value,
+                            maintainState: true,
+                            expansionAnimationStyle: AnimationStyle.noAnimation,
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: const EdgeInsets.only(
+                              top: 8,
+                              bottom: 16,
                             ),
-                            canEdit:
-                                _canEdit &&
-                                !_isSaving &&
-                                !_isRequestingMeasurement,
-                            privacyUrlController:
-                                _measurementPrivacyUrlController,
-                            gtmController: _measurementGtmController,
-                            scriptsController: _measurementScriptsController,
-                            onEnabledChanged: (value) =>
-                                setState(() => _measurementEnabled = value),
+                            title: Text(FormStrings.measurementTitle),
+                            subtitle: Text(
+                              _measurementEnabled
+                                  ? UnitSettingsStrings
+                                        .measurementSummaryEnabled
+                                  : UnitSettingsStrings
+                                        .measurementSummaryDisabled,
+                            ),
+                            children: [
+                              UnitMeasurementSettings(
+                                websiteConsentBuilder:
+                                    _canEdit && _unit.id != null
+                                    ? () => UnitWebsiteConsentSettings(
+                                        key: ValueKey(
+                                          'website-consent-${_unit.id}',
+                                        ),
+                                        unitId: _unit.id!,
+                                        websites:
+                                            UnitMeasurementSettings.parseWebsites(
+                                              _measurementWebsitesController
+                                                  .text,
+                                            ),
+                                        saved: _measurementSaved,
+                                      )
+                                    : null,
+                                consentBridge: _measurementConsentBridge,
+                                onConsentBridgeChanged: (value) => setState(
+                                  () => _measurementConsentBridge = value,
+                                ),
+                                websitesController:
+                                    _measurementWebsitesController,
+                                approval: _measurementApproval,
+                                loadingApproval: _isLoadingMeasurementApproval,
+                                approvalLoadFailed:
+                                    _measurementApprovalLoadFailed,
+                                onRetryApproval: _loadMeasurementApproval,
+                                requestingApproval: _isRequestingMeasurement,
+                                onRequestApproval: _requestMeasurementApproval,
+                                enabled: _measurementEnabled,
+                                consentLayout: _measurementConsentLayout,
+                                hasStoredTitle: _storedConsentTitle != null,
+                                hasStoredText: _storedConsentText != null,
+                                onRestore: (controller) =>
+                                    _restoredConsent.add(controller),
+                                consentTitleController:
+                                    _measurementConsentTitleController,
+                                consentTextController:
+                                    _measurementConsentTextController,
+                                onConsentLayoutChanged: (value) => setState(
+                                  () => _measurementConsentLayout = value,
+                                ),
+                                canEdit:
+                                    _canEdit &&
+                                    !_isSaving &&
+                                    !_isRequestingMeasurement,
+                                privacyUrlController:
+                                    _measurementPrivacyUrlController,
+                                gtmController: _measurementGtmController,
+                                scriptsController:
+                                    _measurementScriptsController,
+                                onEnabledChanged: (value) =>
+                                    setState(() => _measurementEnabled = value),
+                              ),
+                            ],
                           ),
                         ],
                         const SizedBox(height: 24),
@@ -851,46 +910,41 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                       ),
                     ),
                   if (!_isLoading) ...[
-                    const SizedBox(height: 24),
-                    const SizedBox(height: 24),
-                    if (_canEdit)
-                      ListTile(
-                        leading: const Icon(Icons.account_balance),
-                        title: Text(BankAccountStrings.bankAccountsTitle),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          context.tabsRouter.navigate(
-                            const UnitBankAccountsNavigationRoute(),
-                          );
-                        },
-                      ),
-                    const SizedBox(height: 48),
-                    if (StripeFeature.canActivate &&
-                        RightsService.currentUnit()?.id == _unit.id)
+                    const SizedBox(height: 16),
+                    if (_canEdit &&
+                        _unit.id != null &&
+                        _unit.organization != null)
                       ExpansionTile(
-                        title: const Text('Skryté funkce'),
+                        key: const PageStorageKey('unit-payment-settings'),
+                        maintainState: true,
+                        tilePadding: EdgeInsets.zero,
+                        childrenPadding: const EdgeInsets.only(bottom: 16),
+                        title: Text(PaymentMethodStrings.text('policyTitle')),
+                        subtitle: Text(
+                          PaymentMethodStrings.text('policyUnitSummary'),
+                        ),
                         children: [
-                          SwitchListTile(
-                            title: const Text('Platby kartou přes Stripe'),
-                            subtitle: const Text(
-                              'Zpřístupní nastavení pouze této organizaci. Ostré platby se tím nezapnou.',
-                            ),
-                            value: StripeFeature.visible,
-                            onChanged: _isUpdatingStripeFeature
-                                ? null
-                                : _setStripeFeature,
+                          PaymentPolicySettings(
+                            organizationId: _unit.organization!,
+                            unitId: _unit.id,
+                            showHeading: false,
+                            configureMethods: const {'bank', 'stripe'},
+                            onConfigure: (method) {
+                              if (method == 'bank') {
+                                context.tabsRouter.navigate(
+                                  const UnitBankAccountsNavigationRoute(),
+                                );
+                              }
+                              if (method == 'stripe') {
+                                context.tabsRouter.navigate(
+                                  const UnitCardPaymentsRoute(),
+                                );
+                              }
+                            },
                           ),
                         ],
                       ),
-                    if (StripeFeature.visible && StripeFeature.canManage)
-                      ListTile(
-                        leading: const Icon(Icons.credit_card),
-                        title: Text(StripeConnectionStrings.title),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.tabsRouter.navigate(
-                          const UnitCardPaymentsRoute(),
-                        ),
-                      ),
+                    const SizedBox(height: 24),
                     if (_canEdit)
                       Center(
                         child: Tooltip(

@@ -87,15 +87,16 @@ BEGIN
  -- preview creates an order, reference or payment attempt.
  payment_metadata:=public.normalize_form_metadata_internal(d.data#>'{formDraft,data}');
  payment_metadata:=payment_metadata||jsonb_build_object('payments',public.normalize_setup_payments_internal(d.data)->'payments');
- payment_method:=CASE WHEN payment_metadata#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' ELSE 'bank' END;
+ payment_method:=CASE WHEN payment_metadata#>'{payments,cashEnabled}'='true'::jsonb THEN 'cash' WHEN payment_metadata#>'{payments,bankEnabled}'='true'::jsonb THEN 'bank' ELSE coalesce((SELECT k FROM jsonb_object_keys(coalesce(payment_metadata#>'{payments,providerConnections}','{}')) k ORDER BY k LIMIT 1),public.resolve_payment_method_policy_internal(d.organization,d.unit)->>'preferredMethod') END;
  payment_duration:=coalesce(nullif(d.data#>>'{formDraft,deadline_duration_seconds}','')::numeric,
    nullif(d.data->>'deadline','')::numeric*86400)::bigint;
  payment_policy:=public.resolve_payment_policy_internal(payment_metadata,payment_duration,
    (SELECT elem FROM jsonb_array_elements(coalesce(o.features,'[]')) elem WHERE elem->>'code'='form'),payment_method);
  SELECT jsonb_build_object('account_number',b.account_number,'account_number_human_readable',coalesce(nullif(b.account_number_human_readable,''),b.account_number))
  INTO payment_info FROM eshop.unit_bank_accounts u JOIN eshop.bank_accounts b ON b.id=u.bank_account
- WHERE u.unit=d.unit AND b.id::text=d.data->>'bankAccountId' AND b.type<>'CASH' AND payment_method='bank';
+ WHERE u.unit=d.unit AND b.id::text=d.data->>'bankAccountId' AND b.type<>'CASH' AND payment_method='bank' AND public.payment_method_policy_enabled_internal(d.unit,'bank');
  payment_info:=coalesce(payment_info,'{}')||jsonb_build_object('payment_method',payment_method,
+   'collectionAction',jsonb_build_object('method',payment_method,'purpose','collect_payment','allowed',payment_method='bank' AND payment_metadata#>'{payments,bankEnabled}'='true'::jsonb AND payment_info IS NOT NULL AND public.payment_method_policy_enabled_internal(d.unit,'bank')),
    'data',jsonb_build_object('payment_policy',payment_policy-'durationSeconds'),
    'deadline',CASE WHEN payment_policy->>'mode'='custom' THEN statement_timestamp()+make_interval(secs=>(payment_policy->>'durationSeconds')::bigint) END);
  RETURN jsonb_build_object('messageType',p_message_type,'deliveryMode',coalesce(p_delivery_mode,public.ticket_delivery_mode(feature)),
@@ -111,6 +112,9 @@ BEGIN
   'ticketsEnabled',coalesce((feature->>'is_enabled')::boolean,p_occasion IS NULL) AND (p_occasion IS NOT NULL OR coalesce((d.data->>'formEnabled')::boolean,true) AND EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f WHERE f->>'type'='ticket' AND NOT coalesce((f->>'is_hidden')::boolean,false))),
   'walletEnabled',coalesce(p_wallet_enabled,public.ticket_wallet_enabled(feature)),
   'walletReady',public.ticket_wallet_ready(d.organization),
+  'walletProviders',coalesce((SELECT jsonb_build_object('google',publishing_ready,'apple',apple_publishing_ready) FROM eshop.ticket_wallet_integrations WHERE organization=d.organization AND NOT paused),'{}'::jsonb),
+  'walletCollectionEnabled',coalesce((SELECT collection_enabled FROM eshop.ticket_wallet_integrations WHERE organization=d.organization),false),
+  'lang',(SELECT coalesce(data->>'DEFAULT_LANGUAGE','cs') FROM public.organizations WHERE id=d.organization),
   'sampleProducts',coalesce((SELECT jsonb_agg(p) FROM jsonb_array_elements(coalesce(d.data#>'{formDraft,fields}','[]')) f CROSS JOIN LATERAL (SELECT p FROM jsonb_array_elements(coalesce(f#>'{product_type_data,products}','[]')) p WHERE NOT coalesce((p->>'is_hidden')::boolean,false) LIMIT 1) products(p) WHERE NOT coalesce((f->>'is_hidden')::boolean,false)),'[]'::jsonb),
   'has_custom_template',coalesce((overrides ? selected_code) OR (resolved->'template'->>'occasion') IS NOT NULL
     OR (resolved->'template'->>'unit') IS NOT NULL OR (resolved->'template'->>'organization') IS NOT NULL,false));

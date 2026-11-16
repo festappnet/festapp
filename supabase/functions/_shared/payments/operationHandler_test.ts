@@ -2,11 +2,13 @@ import { strict as assert } from 'node:assert';
 import { decoratePaymentOperation, paymentOperationHandler, presentRefundInstructions } from './operationHandler.ts';
 const instruction = {recipientIban: 'CZ6508000000192000145399', recipientName: 'Jana Nováková',
   sourceAccount: 'CZ5855000000001265098001', amount: '300.25', currency: 'CZK', reference: '12345'};
+const requestSource = {method:'bank',verification:'bank_event',purpose:'bank_refund_instruction',instructionAllowed:true,status:'pending',sourceMethod:'bank',sourceOrderId:42,sourcePaymentId:55};
+const readonlySource = {method:'bank',verification:'bank_event',purpose:'bank_refund_instruction',allowed:true,sourceMethod:'bank',sourceOrderId:42,sourcePaymentId:55};
 Deno.test('refund SPD targets recipient and retains original VS; reopen uses identical payload', () => {
   const a = presentRefundInstructions(instruction);
   assert(String(a.payload).includes('ACC:'+instruction.recipientIban));
   assert(String(a.payload).includes('X-VS:12345')); assert(!String(a.payload).includes(instruction.sourceAccount));
-  const reopened = decoratePaymentOperation({requests: [{instructions: instruction}]});
+  const reopened = decoratePaymentOperation({sourceOrderId:42, requests: [{...requestSource,instructions: instruction}]});
   assert.equal((reopened.requests as {instructions: {payload: string}}[])[0].instructions.payload, a.payload);
 });
 Deno.test('refund EUR uses existing RF and validates recipient, unsupported codec has no pretend QR', () => {
@@ -38,7 +40,7 @@ Deno.test('only proven SQL rollback releases the command; transport loss and pos
   assert.equal((await sql.json()).mutationNotApplied,true);
   const lost = await paymentOperationHandler(request(), {authenticate: async () => true,rpc: async () => {throw new TypeError('network unavailable');}});
   assert.equal((await lost.json()).mutationNotApplied,false);
-  const committed = await paymentOperationHandler(request(), {authenticate: async () => true,rpc: async () => ({code:200,request: {instructions: {...instruction,recipientIban:'invalid'}}})});
+  const committed = await paymentOperationHandler(request(), {authenticate: async () => true,rpc: async () => ({code:200,request: {...requestSource,instructions: {...instruction,recipientIban:'invalid'}}})});
   assert.equal(committed.status,409);assert.equal((await committed.json()).mutationNotApplied,false);
 });
 Deno.test('bank QR uses a read-only RPC without command identity or refund writes', async () => {
@@ -50,11 +52,20 @@ Deno.test('bank QR uses a read-only RPC without command identity or refund write
       calls++;
       assert.equal(name, 'get_bank_refund_instructions');
       assert.deepEqual(args, {input_data: input});
-      return {code: 200, instructions: instruction};
+      return {code: 200, instructions: {...instruction,...readonlySource}};
     }});
   assert.equal(calls, 1); assert.equal(response.status, 200);
   const result = await response.json();
   assert.equal(result.request, undefined);
   assert(String(result.instructions.payload).includes('ACC:'+instruction.recipientIban));
   assert(String(result.instructions.payload).includes('X-VS:12345'));
+});
+
+Deno.test('unattested, disabled and cross-source instruction projections cannot render QR', () => {
+ for (const invalid of [instruction, {...instruction,...readonlySource,allowed:false}, {...instruction,...readonlySource,sourceMethod:'stripe'}, {...instruction,...readonlySource,sourceOrderId:43}]) {
+  assert.equal(decoratePaymentOperation({instructions:invalid},42).instructions,undefined);
+ }
+ for (const invalid of [{...requestSource,instructionAllowed:false},{...requestSource,sourceMethod:'orchard'},{...requestSource,sourceOrderId:43},{...requestSource,status:'cancelled'}]) {
+  assert.equal((decoratePaymentOperation({request:{...invalid,instructions:instruction}},42).request as Record<string,unknown>).instructions,undefined);
+ }
 });

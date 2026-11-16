@@ -43,6 +43,22 @@ void main() {
       }
     }
   });
+  test('opening authoring uses application wording from production snapshots', () {
+    final opening = records.where((r) => r.templateCode == 'sale_opening_opened');
+    expect(opening, isNotEmpty);
+    for (final record in opening) {
+      final applications = record.withContext(const EmailPreviewContext(
+        occasionTitle: 'Letní tábor', ticketsEnabled: false));
+      final tickets = record.withContext(const EmailPreviewContext(
+        occasionTitle: 'Letní tábor', ticketsEnabled: true));
+      expect(applications.values['occasionTitle'], 'Letní tábor');
+      for (final code in ['sale_opening_subject', 'sale_opening_heading',
+        'sale_opening_action', 'sale_opening_disclaimer']) {
+        expect(applications.values[code], isNot(tickets.values[code]));
+      }
+      expect(applications.values.values.join(), isNot(contains('{{preview_')));
+    }
+  });
   const context = EmailPreviewContext(
     occasionTitle: 'Ples ve Lhotě',
     deadline: '10. 11. 2026',
@@ -97,6 +113,13 @@ void main() {
       );
       final html = adjusted.values['paymentDetails']!;
       final text = html.replaceAll(RegExp(r'<[^>]*>'), '');
+      if (original.contextDefaults['preview_payment_method'] != 'bank' ||
+          original.contextDefaults['preview_collection_allowed'] != 'true') {
+        expect(adjusted.values['accountNumber'], isEmpty);
+        expect(adjusted.values['iban'], isEmpty);
+        expect(text, isNot(contains(account.accountNumber)));
+        continue;
+      }
       expect(text, contains(account.accountNumber));
       expect(text, contains(account.iban));
       expect(text, isNot(contains('0000000000/0000')));

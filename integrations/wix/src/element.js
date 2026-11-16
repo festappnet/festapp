@@ -1,20 +1,11 @@
+import {ensureHelper,elementConsent,createWebsiteConsentAdapter} from './consent.js';
 import {DEFAULT_TITLE, HELP_URL, SERVICE_ORIGIN, TAG_NAME, formUrl} from './config.js';
-
-function ensureHelper(document) {
-  if (document.defaultView.__festappEmbedV1 || [...document.scripts].some(script => script.src === `${SERVICE_ORIGIN}/embed.js`)) return;
-  const script = document.createElement('script');
-  script.src = `${SERVICE_ORIGIN}/embed.js`;
-  script.async = true;
-  // Keep the failed request from blocking a later widget/render retry. The
-  // checkout iframe and direct link remain usable; do not reload either here.
-  script.addEventListener('error', () => script.remove(), {once: true});
-  document.head.append(script);
-}
 
 // Light DOM is intentional: canonical /embed.js discovers declared iframes
 // in document, owns resize/scroll and isolates instances itself.
 export function registerTicketElement(win, getViewMode, attribution) {
   if (win.customElements.get(TAG_NAME)) return;
+  const consentAdapter=createWebsiteConsentAdapter(win);
   class TicketElement extends win.HTMLElement {
     constructor() {
       super();
@@ -23,7 +14,7 @@ export function registerTicketElement(win, getViewMode, attribution) {
         catch { this.attributionFailed=true; }
       }
     }
-    static observedAttributes = ['form-url', 'form-title', 'measurement'];
+    static observedAttributes = ['form-url', 'form-title', 'measurement', 'consent-export', 'consent-enabled'];
     connectedCallback() {
       const generation = this.generation = (this.generation || 0) + 1;
       this.mode = null;
@@ -44,6 +35,7 @@ export function registerTicketElement(win, getViewMode, attribution) {
       this.frame = null;
       this.originForm = null;
       this.checkoutOrigin = null;
+      consentAdapter.sync();
     }
     attributeChangedCallback() { if (this.isConnected) this.render(); }
     placeholder(message) {
@@ -75,6 +67,7 @@ export function registerTicketElement(win, getViewMode, attribution) {
       return this.checkoutOrigin ? `${url}?checkout_origin=${encodeURIComponent(this.checkoutOrigin)}` : url;
     }
     render() {
+      consentAdapter.sync();
       this.style.display = 'block';
       const url = formUrl(this.getAttribute('form-url'));
       if (this.mode !== 'Site') {
@@ -131,6 +124,9 @@ export function registerTicketElement(win, getViewMode, attribution) {
       this.frame.toggleAttribute('data-festapp-datalayer', this.getAttribute('measurement') === 'host');
       this.frame.title = this.getAttribute('form-title')?.trim().slice(0, 200) || DEFAULT_TITLE;
       this.fallback.href = this.directUrl(url);
+      const imported=elementConsent(this);
+      this.fallback.toggleAttribute('data-festapp-consent-link',!!imported);
+      this.fallback.rel=imported ? '' : 'noopener noreferrer';
       ensureHelper(this.ownerDocument);
     }
   }

@@ -31,6 +31,12 @@ void main() {
                     compact: true,
                     states: const [BlueprintSeatState.available],
                     onHover: (state) => hovered = state))));
+    Finder marker(BlueprintSeatState state, IconData icon) => find.descendant(
+        of: find.byKey(ValueKey('blueprint-legend-hover-${state.name}')),
+        matching: find.byIcon(icon));
+    expect(marker(BlueprintSeatState.used, Icons.check), findsOneWidget);
+    expect(marker(BlueprintSeatState.blocked, Icons.lock_outline), findsOneWidget);
+    expect(marker(BlueprintSeatState.ordered, Icons.close), findsOneWidget);
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await mouse.addPointer(location: const Offset(799, 599));
     await mouse.moveTo(tester.getCenter(
@@ -101,7 +107,8 @@ void main() {
             expect(find.text(description), findsOneWidget);
           }
         }
-        expect(find.byIcon(Icons.check), findsOneWidget);
+        expect(find.byIcon(Icons.check), findsNWidgets(2));
+        expect(find.byIcon(Icons.lock_outline), findsOneWidget);
         expect(find.byIcon(Icons.close), findsOneWidget);
         expect(find.textContaining('FeatureBlueprint.'), findsNothing);
         expect(tester.takeException(), isNull);

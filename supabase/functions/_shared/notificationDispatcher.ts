@@ -30,7 +30,14 @@ export async function drainNotifications(
   { now = Date.now, milliseconds = 10000, maxCalls = 200 } = {},
 ) {
   const started = now();
-  let calls = 0, delivered = 0, prepared = 0, views = 0, idle = false;
+  let calls = 0,
+    delivered = 0,
+    prepared = 0,
+    views = 0,
+    collected = 0,
+    enqueued = 0,
+    emailFailures = 0,
+    idle = false;
   while (calls < maxCalls && now() - started < milliseconds) {
     const counts: number[] = [];
     for (
@@ -49,10 +56,32 @@ export async function drainNotifications(
     delivered += counts[0];
     prepared += counts[1];
     views += counts[2];
+    // Separate RPCs commit independently of feed projection and of each other.
+    // An email failure never undoes delivery/read preparation.
+    let emailWork = 0;
+    for (
+      const name of [
+        "collect_notification_center_emails",
+        "enqueue_notification_center_emails",
+      ]
+    ) {
+      try {
+        const count = await rpc(name, { p_limit: 100 });
+        if (
+          typeof count !== "number" || !Number.isSafeInteger(count) ||
+          count < 0 || count > 100
+        ) throw new Error("notification_invalid_email_receipt");
+        if (name === "collect_notification_center_emails") collected += count;
+        else enqueued += count;
+        emailWork += count;
+      } catch {
+        emailFailures++;
+      }
+    }
     calls++;
     // No work in this pass does not certify an empty queue: deferred, backing-off
     // and quarantined records remain durable and visible in SQL diagnostics.
-    if (counts.every((count) => count === 0)) {
+    if (counts.every((count) => count === 0) && emailWork === 0) {
       idle = true;
       break;
     }
@@ -62,6 +91,9 @@ export async function drainNotifications(
     delivered,
     prepared,
     views,
+    collected,
+    enqueued,
+    emailFailures,
     calls,
     idle,
     elapsedMs: now() - started,

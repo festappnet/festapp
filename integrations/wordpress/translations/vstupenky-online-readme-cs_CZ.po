@@ -1,0 +1,226 @@
+# Czech directory translation for vstupenky.online. GPL-2.0-or-later.
+
+msgid ""
+msgstr "Project-Id-Version: vstupenky.online 1.0.8 directory\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: cs_CZ\nPlural-Forms: nplurals=3; plural=(n == 1) ? 0 : ((n >= 2 && n <= 4) ? 1 : 2);\n"
+
+msgid "A Czech interface for plugin setup and the block editor."
+msgstr "České rozhraní pro nastavení doplňku a editor bloků."
+
+msgid "A descriptive form title for screen readers."
+msgstr "Popisný titulek formuláře pro čtečky obrazovky."
+
+msgid "A native Gutenberg block and a shortcode using the same saved form URL."
+msgstr "Nativní blok Gutenberg a shortcode využívající stejný odkaz uloženého formuláře."
+
+msgid "Add an explicit measurement destination with conversion-sharing disclosure; retain Unit mode for existing embeds."
+msgstr "Přidání výslovné volby cíle měření s vysvětlením sdílení údajů při konverzi; zachování režimu jednotky pro existující vložení."
+
+msgid "All PHP, JavaScript and CSS sources ship unminified in this plugin. JavaScript uses WordPress-provided editor dependencies. No compilation or bundled React is required. The external /embed.js source and protocol are maintained by the service, independently of this plugin."
+msgstr "Všechny zdrojové soubory PHP, JavaScriptu a CSS jsou součástí doplňku v neminifikované podobě. JavaScript využívá editorové závislosti poskytované WordPressem. Není potřeba kompilace ani přibalený React. Zdrojový kód a protokol externího /embed.js spravuje služba nezávisle na tomto doplňku."
+
+msgid "Allow https://vstupenky.online in frame-src and, for the helper, script-src. Do not add an unverified iframe sandbox. Use fixed mode or the standalone link if necessary. Never automatically repeat a purchase after an uncertain result; check with the organizer first."
+msgstr "Povolte https://vstupenky.online v direktivě frame-src a pro pomocný skript také v script-src. Nepřidávejte neověřené omezení iframe sandbox. Podle potřeby použijte pevnou výšku nebo samostatný odkaz. Pokud výsledek nákupu není jistý, nákup automaticky neopakujte. Nejprve se obraťte na pořadatele."
+
+msgid "Appearance and mobile layout"
+msgstr "Vzhled a zobrazení na mobilu"
+
+msgid "Automatic height follows the form content. Fixed and fallback height can be set between 240 and 4000 pixels. Both modes use the service helper; a standalone form link remains available if the helper is blocked."
+msgstr "Automatická výška se přizpůsobuje obsahu formuláře. Pevnou a výchozí výšku lze nastavit v rozmezí 240 až 4000 pixelů. Oba režimy využívají pomocný skript služby; pokud je blokovaný, zůstává dostupný samostatný odkaz na formulář."
+
+msgid "Can I manage orders in WordPress?"
+msgstr "Mohu spravovat objednávky ve WordPressu?"
+
+msgid "Can I sell tickets with assigned seats?"
+msgstr "Mohu prodávat vstupenky s výběrem sedadel?"
+
+msgid "Clearly identify the WordPress appearance option as a local override of the app appearance."
+msgstr "Upřesnění, že nastavení vzhledu ve WordPressu místně přepisuje nastavení vzhledu z aplikace."
+
+msgid "Click Get started in the plugin list, or open Settings &gt; vstupenky.online, and read the three setup steps and service/privacy disclosure."
+msgstr "V seznamu doplňků klikněte na Začít nebo otevřete Nastavení &gt; vstupenky.online. Přečtěte si tři kroky nastavení a informace o službě a ochraně soukromí."
+
+msgid "Configure appearance per block or shortcode through the shared embed contract."
+msgstr "Nastavení vzhledu pro jednotlivé bloky a shortcode prostřednictvím sdíleného rozhraní pro vkládání formulářů."
+
+msgid "Control embedded appearance only through the saved form setting; remove local overrides."
+msgstr "Řízení vzhledu vloženého formuláře výhradně uloženým nastavením formuláře; odstranění místních přepsání."
+
+msgid "Copy its public URL, add the vstupenky.online block to WordPress and paste the URL. A shortcode is available if you do not use the block editor."
+msgstr "Zkopírujte jeho veřejnou adresu, přidejte do WordPressu blok vstupenky.online a adresu vložte. Pokud nepoužíváte editor bloků, máte k dispozici shortcode."
+
+msgid "Create your event in vstupenky.online and save a public ticket or registration form."
+msgstr "Vytvořte akci ve vstupenky.online a uložte veřejný prodejní nebo registrační formulář."
+
+msgid "Declare the minimum supported WordPress major release consistently."
+msgstr "Sjednocení údaje o nejnižší podporované hlavní verzi WordPressu."
+
+msgid "Do I need WooCommerce?"
+msgstr "Potřebuji WooCommerce?"
+
+msgid "Documentation and Czech translation updates. Existing forms, measurement settings and purchase behavior are unchanged."
+msgstr "Aktualizace dokumentace a českých překladů. Existující formuláře, nastavení měření i průběh nákupu zůstávají zachované."
+
+msgid "Documentation and support"
+msgstr "Návody a podpora"
+
+msgid "Does a visitor need a WordPress account?"
+msgstr "Potřebuje návštěvník účet ve WordPressu?"
+
+msgid "Example:"
+msgstr "Příklad:"
+
+msgid "External service and privacy"
+msgstr "Externí služba a ochrana soukromí"
+
+msgid "Features"
+msgstr "Funkce"
+
+msgid "Fixed height:"
+msgstr "Pevná výška:"
+
+msgid "Get started in three steps"
+msgstr "Začněte ve třech krocích"
+
+msgid "Gutenberg block and shortcode"
+msgstr "Blok Gutenberg a shortcode"
+
+msgid "Gutenberg block controls without remote administration."
+msgstr "Nastavení bloku Gutenberg bez vzdálené administrace."
+
+msgid "Improve ticket sales and event registration documentation and Czech translations."
+msgstr "Vylepšení návodu pro prodej vstupenek a registrace na akce a českých překladů."
+
+msgid "In WordPress, open Plugins &gt; Add New, search for vstupenky.online, click Install Now and activate the plugin. You can also upload the plugin ZIP manually."
+msgstr "Ve WordPressu otevřete Pluginy > Instalace pluginů, vyhledejte vstupenky.online, klikněte na Instalovat a doplněk aktivujte. Můžete také ručně nahrát ZIP doplňku."
+
+msgid "Is the plugin free?"
+msgstr "Je doplněk zdarma?"
+
+msgid "Link the service offer directly to the canonical homepage."
+msgstr "Odkaz na nabídku služby vede přímo na její kanonickou domovskou stránku."
+
+msgid "Local onboarding and service disclosure."
+msgstr "Průvodce nastavením a informace o službě."
+
+msgid "Local setup help is available under Settings &gt; vstupenky.online and through the Get started link in the plugin list. You do not need to paste administration links or sign in to the service inside the WordPress editor."
+msgstr "Průvodce najdete v nabídce Nastavení > vstupenky.online a pod odkazem Začít v seznamu pluginů. Do editoru WordPressu nevkládejte administrační odkazy ani se v něm nepřihlašujte do služby."
+
+msgid "Multiple forms on one page and a standalone link to open each form separately."
+msgstr "Více formulářů na jedné stránce a samostatný odkaz pro otevření každého z nich."
+
+msgid "New blocks and the shortcode examples use Website dataLayer, recommended for websites with their own GTM and consent banner. Existing blocks and shortcodes without a measurement setting retain the Festapp Unit runtime. Use measurement=\"unit\" to select Unit mode; missing or invalid values also retain Unit mode."
+msgstr "Nové bloky a příklady shortcode používají webový dataLayer, doporučený pro weby s vlastním GTM a souhlasovou lištou. Existující bloky a shortcode bez volby měření zachovávají runtime jednotky Festapp. Režim jednotky zvolíte pomocí measurement=\"unit\"; zachová se také při chybějící nebo neplatné hodnotě."
+
+msgid "No. Sign in to vstupenky.online to manage events and orders."
+msgstr "Ne. Akce a objednávky spravujete po přihlášení do vstupenky.online."
+
+msgid "No. The plugin embeds the public vstupenky.online form directly using its Gutenberg block or shortcode. No WooCommerce installation or service API keys are required."
+msgstr "Ne. Doplněk vloží veřejný formulář vstupenky.online přímo pomocí bloku Gutenberg nebo shortcode. Instalace WooCommerce ani klíče API služby nejsou potřeba."
+
+msgid "No. The public form runs in the service iframe. Event-specific requirements are controlled by the service."
+msgstr "Ne. Veřejný formulář se zobrazuje ve vloženém rámci služby. Případné požadavky konkrétní akce určuje služba."
+
+msgid "On a published page with a configured form, the visitor's browser connects to https://vstupenky.online to load /form/saved-slug?embed=1. Both height modes also load https://vstupenky.online/embed.js once per page. This connection shares the visitor's IP address, browser information and any referrer allowed by the site's policy. The visitor enters purchase data directly into the service iframe. The helper exchanges resize/viewport/scroll, optional bounded presentation/font settings and displayed ticket counts/prices with the form. In Unit measurement mode, customer contacts and transaction identifiers remain outside the host page. Explicitly selecting Website dataLayer forwards approved measurement events, including conversion email, phone and transaction identifiers, to page scripts. Payment instructions, authentication secrets and order submissions are never forwarded."
+msgstr "Na zveřejněné stránce s nastaveným formulářem se prohlížeč návštěvníka připojí k https://vstupenky.online a načte /form/saved-slug?embed=1. Oba režimy výšky zároveň jednou za stránku načítají https://vstupenky.online/embed.js. Službě se tím předává IP adresa návštěvníka, údaje o prohlížeči a případný odkazující web podle pravidel stránky. Údaje k nákupu zadává návštěvník přímo do vloženého formuláře služby. Pomocný skript si s formulářem vyměňuje údaje o změně velikosti, viditelné oblasti a posouvání, volitelné omezené nastavení vzhledu a písem a zobrazené počty vstupenek a ceny. V režimu měření jednotky se kontakty zákazníků a identifikátory transakcí hostitelskému webu nepředávají. Výslovná volba webového dataLayeru předává schválené události měření, včetně e-mailu, telefonu a identifikátorů transakcí při konverzi, skriptům stránky. Platební pokyny, přihlašovací tajemství ani odeslané objednávky se nikdy nepředávají."
+
+msgid "Optional measurement"
+msgstr "Volitelné měření"
+
+msgid "Optional measurement integration for websites with their own GTM and consent banner."
+msgstr "Volitelné propojení měření pro weby s vlastním GTM a souhlasovou lištou."
+
+msgid "Paste the exact saved public form URL on https://vstupenky.online. Query parameters, fragments, personal order links and administration URLs are not accepted."
+msgstr "Vložte přesnou veřejnou adresu uloženého formuláře na https://vstupenky.online. Parametry adresy, fragmenty, osobní odkazy na objednávky ani adresy administrace nejsou povolené."
+
+msgid "Prevent a dark iframe canvas before the shared helper loads."
+msgstr "Zamezení tmavému pozadí vloženého formuláře před načtením společného pomocného skriptu."
+
+msgid "Preview the form on desktop and mobile, then publish your page."
+msgstr "Zkontrolujte formulář na počítači i mobilu a stránku zveřejněte."
+
+msgid "Preview the published page, including mobile layout and the standalone link."
+msgstr "Zkontrolujte zveřejněnou stránku, včetně mobilního zobrazení a samostatného odkazu na formulář."
+
+msgid "Published form with a standalone fallback link."
+msgstr "Zveřejněný formulář se samostatným záložním odkazem."
+
+msgid "Responsive embeds with automatic height or a fixed height you choose."
+msgstr "Responzivní vložení s automatickou nebo Vámi zvolenou pevnou výškou."
+
+msgid "Save a form in your organizer account, copy its public URL, add the block or shortcode and publish."
+msgstr "Uložte formulář ve svém účtu pořadatele, zkopírujte jeho veřejnou adresu, vložte blok nebo shortcode a stránku zveřejněte."
+
+msgid "Seat selection in the embedded form."
+msgstr "Výběr míst ve vloženém formuláři."
+
+msgid "Sell event tickets and collect registrations directly on your WordPress website with an embedded vstupenky.online form. Add the Gutenberg block to a page or post, or use a shortcode with your saved public form URL."
+msgstr "Prodávejte vstupenky a přijímejte registrace na akce přímo na svém webu ve WordPressu pomocí vloženého formuláře vstupenky.online. Přidejte blok Gutenberg do stránky nebo příspěvku, případně použijte shortcode s veřejným odkazem uloženého formuláře."
+
+msgid "Sell tickets and collect event registrations with vstupenky.online forms. Add a Gutenberg block or shortcode to your WordPress site."
+msgstr "Prodávejte vstupenky a přijímejte registrace na akce pomocí formulářů vstupenky.online. Vložte je na svůj web blokem Gutenberg nebo shortcodem."
+
+msgid "Service: https://vstupenky.online/\nTerms: https://vstupenky.online/terms/\nPrivacy: https://vstupenky.online/privacy/\nPrivacy choices: https://vstupenky.online/privacy/choices/\nSupport: https://vstupenky.online/support/\nContact: info@festapp.net"
+msgstr "Služba: https://vstupenky.online/\nPodmínky: https://vstupenky.online/terms/\nOchrana soukromí: https://vstupenky.online/privacy/\nVolby soukromí: https://vstupenky.online/privacy/choices/\nPodpora: https://vstupenky.online/support/\nKontakt: info@festapp.net"
+
+msgid "Setup guide: https://vstupenky.online/napoveda/wordpress/\nOrganizer help: https://vstupenky.online/napoveda/\nService and organizer pricing: https://vstupenky.online/\nSupport: https://vstupenky.online/support/"
+msgstr "Návod k nastavení: https://vstupenky.online/napoveda/wordpress/\nNápověda pro pořadatele: https://vstupenky.online/napoveda/\nSlužba a ceník pro pořadatele: https://vstupenky.online/\nPodpora: https://vstupenky.online/support/"
+
+msgid "Source"
+msgstr "Zdrojový kód"
+
+msgid "The embedded form follows the event configuration in vstupenky.online, including ticket types, available capacity and any configured seating plan. Event management, order processing, payments, ticket delivery and admission remain in the external service."
+msgstr "Vložený formulář respektuje nastavení akce ve vstupenky.online, včetně druhů vstupenek, volné kapacity a případného plánku sálu. Správa akce, objednávek, plateb, odesílání vstupenek a odbavení zůstávají ve službě."
+
+msgid "The free plugin connects WordPress to the Czech vstupenky.online service. An organizer account and a saved, published form are required. No WooCommerce or service API keys are needed. The external service has its own organizer pricing and terms; see https://vstupenky.online/ for its current offer. WordPress does not process service fees."
+msgstr "Bezplatný doplněk propojí WordPress s českou službou vstupenky.online. Potřebujete účet pořadatele a uložený, zveřejněný formulář. WooCommerce ani přístupové klíče API služby nejsou potřeba. Služba má vlastní ceník a podmínky pro pořadatele; aktuální nabídku najdete na https://vstupenky.online/. WordPress poplatky za službu nezpracovává."
+
+msgid "The measurement setting selects a destination; it does not enable tracking or grant consent. Both modes require an approved website origin and enabled measurement in Festapp. Unit mode reads website Consent Mode only after the organizer enables Use consent from my website banner in Festapp and confirms that the banner covers the embedded form."
+msgstr "Volba měření určuje cíl; sama nezapíná sledování ani neuděluje souhlas. Oba režimy vyžadují schválenou doménu webu a povolené měření ve Festappu. Režim jednotky čte Consent Mode webu pouze poté, co pořadatel ve Festappu zapne Přebírat souhlas z lišty mého webu a potvrdí, že lišta pokrývá vložený formulář."
+
+msgid "The plugin does not implement a payment gateway. Payment methods depend on the organizer's configuration and the service. Verify the complete purchase flow for your event and browser, including any card gateway or bank-app handoff, before opening sales."
+msgstr "Doplněk neimplementuje vlastní platební bránu. Způsoby platby závisí na nastavení pořadatele a služby. Před spuštěním prodeje ověřte celý nákup pro svou akci a prohlížeč, včetně případné platební brány nebo přechodu do bankovní aplikace."
+
+msgid "The plugin owns no tables, options or remote orders, and performs no remote writes on activation, deactivation or uninstall. Service orders remain. Deactivation can expose raw shortcode text; remove the block/shortcode or replace it with a normal public link."
+msgstr "Doplněk nevytváří vlastní databázové tabulky ani globální nastavení a nezakládá vzdálené objednávky. Při aktivaci, deaktivaci ani odinstalaci neprovádí zápisy do služby. Objednávky ve službě zůstávají zachované. Po deaktivaci se může na stránce zobrazit nezpracovaný shortcode. Blok nebo shortcode odstraňte nebo nahraďte běžným veřejným odkazem."
+
+msgid "The service may use its configured backend, assets, storage and payment providers. Review its privacy information and the needs of your own website before publishing; this plugin does not claim that the service is cookie-free. The plugin installs no tracking tags; in Website dataLayer mode the website owns its tags and consent handling. Unit mode uses the configured Festapp runtime and requires the organizer's explicit consent-bridge setting before reading website Consent Mode. The external service has its own privacy practices, described in its privacy policy. Optional website appearance loads the website font URLs inside the service iframe. Activation, local help and editing do not fetch the remote form. WordPress stores the public URL and presentation attributes, not customer orders, organizer passwords or service API keys. No server-side HTTP request is made by the plugin."
+msgstr "Služba může využívat své nastavené zázemí, soubory, úložiště a poskytovatele plateb. Před zveřejněním ověřte její informace o soukromí a potřeby svého webu; doplněk netvrdí, že služba nepoužívá cookies. Doplněk neinstaluje měřicí značky; v režimu webového dataLayeru spravuje značky a souhlasy provozovatel webu. Režim jednotky využívá nastavený runtime Festapp a před čtením Consent Mode webu vyžaduje výslovné zapnutí přebírání souhlasu pořadatelem. Služba má vlastní pravidla ochrany soukromí popsaná v zásadách ochrany osobních údajů. Při volitelném převzetí vzhledu se adresy písem webu načítají uvnitř vloženého formuláře služby. Aktivace, místní nápověda ani editor vzdálený formulář nenačítají. WordPress ukládá veřejnou adresu a nastavení zobrazení, nikoli objednávky zákazníků, hesla pořadatelů nebo klíče API služby. Doplněk neprovádí žádné serverové HTTP požadavky."
+
+msgid "Ticket sales and event registration forms on WordPress pages and posts."
+msgstr "Prodejní a registrační formuláře na stránkách a v příspěvcích WordPressu."
+
+msgid "Tickets, registrations and seating plans"
+msgstr "Vstupenky, registrace a plánky sálu"
+
+msgid "To match your website, open the form appearance settings in vstupenky.online, choose Match website appearance and save the form. The setting applies to every embed on subsequent page loads without replacing the block or shortcode. WordPress cannot override it. The seating plan keeps its own appearance."
+msgstr "Pro převzetí vzhledu webu otevřete nastavení vzhledu formuláře ve vstupenky.online, vyberte Převzít vzhled webu a formulář uložte. Volba se při dalším načtení použije pro všechna vložení, aniž byste měnili blok nebo shortcode. WordPress ji nemůže přepsat. Plánek sálu si zachovává vlastní vzhled."
+
+msgid "Two forms on a mobile-width page (Chrome, not Safari)."
+msgstr "Dva formuláře na stránce v mobilním zobrazení (Chrome, nikoli Safari)."
+
+msgid "Use the exact saved public form URL on https://vstupenky.online. Other domains, personal links, fragments, query parameters and administration URLs are rejected. Development origins require explicit local WordPress configuration and cannot be supplied in block attributes."
+msgstr "Použijte přesnou veřejnou adresu uloženého formuláře na https://vstupenky.online. Jiné domény, osobní odkazy, fragmenty, parametry adresy a adresy administrace nejsou povolené. Vývojové adresy vyžadují výslovné místní nastavení WordPressu a nelze je zadat do atributů bloku."
+
+msgid "Use the same workflow for balls, concerts, theatre performances, festivals, workshops and conferences. Create the event and its ticket or registration form in vstupenky.online, then display that form on your own website."
+msgstr "Stejný postup využijete pro plesy, koncerty, divadelní představení, festivaly, workshopy i konference. Akci a její prodejní nebo registrační formulář vytvořte ve vstupenky.online a následně jej zobrazte na vlastním webu."
+
+msgid "Website appearance controlled centrally in the saved form settings."
+msgstr "Vzhled webu řízený centrálně v nastavení uloženého formuláře."
+
+msgid "What happens on deactivation or deletion?"
+msgstr "Co se stane po deaktivaci nebo odstranění doplňku?"
+
+msgid "What if my site's security policy blocks embedding?"
+msgstr "Co když bezpečnostní pravidla mého webu blokují vložení formuláře?"
+
+msgid "Why was my URL rejected?"
+msgstr "Proč byla moje adresa odmítnuta?"
+
+msgid "Yes, when your event form includes a seating plan configured in vstupenky.online. The embedded form displays the service's seat selection and availability."
+msgstr "Ano, pokud má formulář Vaší akce nastavený plánek sálu ve vstupenky.online. Vložený formulář zobrazí výběr sedadel a jejich dostupnost ze služby."
+
+msgid "Yes. The WordPress plugin is free. The vstupenky.online service has separate organizer pricing and terms, available at https://vstupenky.online/. An organizer account is required."
+msgstr "Ano. Doplněk pro WordPress je zdarma. Služba vstupenky.online má vlastní ceník a podmínky pro pořadatele na https://vstupenky.online/. Potřebujete účet pořadatele."
+
+msgid "vstupenky.online"
+msgstr "vstupenky.online"

@@ -36,7 +36,8 @@ REVOKE ALL ON FUNCTION public.sync_sale_opening_settings_internal(bigint,jsonb) 
 
 CREATE OR REPLACE FUNCTION public.sale_opening_has_tickets_internal(p_form bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT EXISTS(SELECT 1 FROM public.form_fields WHERE form=p_form AND type='ticket' AND NOT is_hidden);
+ SELECT coalesce((SELECT public.uses_ticket_terminology_internal(o.features)
+  FROM public.forms f JOIN public.occasions o ON o.id=f.occasion WHERE f.id=p_form),false);
 $$;
 REVOKE ALL ON FUNCTION public.sale_opening_has_tickets_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

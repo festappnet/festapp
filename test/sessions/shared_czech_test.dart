@@ -1,3 +1,9 @@
+import '../components/occasion_settings/occasion_settings_layout_cases.dart'
+    as occasion_settings_layout;
+import '../components/occasion_settings/occasion_features_grid_cases.dart'
+    as occasion_features_grid;
+import '../components/eshop/payment_grid_actions_cases.dart'
+    as payment_grid_actions;
 import '../components/occasion/occasion_sale_cases.dart' as occasion_sale;
 import '../components/occasion/occasion_setup_copy_cases.dart'
     as occasion_setup_copy;
@@ -48,6 +54,8 @@ import 'czech_catalog_1_cases.dart' as suite2;
 
 void main() {
   registerClientSuites({
+    'occasion_settings_layout': occasion_settings_layout.main,
+    'occasion_features_grid': occasion_features_grid.main,
     'occasion_sale': occasion_sale.main,
     'occasion_setup_copy': occasion_setup_copy.main,
     'demo_occasion_banner': demo_occasion_banner.main,
@@ -68,6 +76,7 @@ void main() {
     'czech_catalog_3': suite0.main,
     'czech_catalog_2': suite1.main,
     'czech_catalog_1': suite2.main,
+    'payment_grid_actions': payment_grid_actions.main,
     'blueprint_layout_ui': blueprintLayoutUi.main,
     'blueprint_background_picker': blueprint_background_picker.main,
     'blueprint_layout_host': blueprintHost.main,

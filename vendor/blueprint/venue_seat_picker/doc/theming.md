@@ -61,3 +61,10 @@ Remote loading follows the platform's network and CORS rules.
 `boundaryMargin` controls how far a zoomed venue can be panned beyond its own
 edges. It defaults to Flutter's unbounded behavior for compatibility; use a
 finite value when the venue should remain near the viewport.
+
+### Occupied seat symbols
+
+`SeatPresentation.stateMarker` accepts `auto`, `none`, `check` and `lock`.
+The latter two draw white symbols for occupied seats without selecting them,
+changing their fill or enabling interaction. The host owns their meaning.
+Selection and pending feedback retain precedence over an occupied symbol.

@@ -4,6 +4,10 @@ DO $$
 DECLARE f jsonb; tid bigint; p jsonb; r jsonb; replay jsonb; cmd uuid:=gen_random_uuid(); snapshot jsonb; finance jsonb; c jsonb; m jsonb; s bigint; iid bigint; ticket bigint;
 BEGIN
  f:=public.seating_test_fixture_internal();tid:=(f->>'blueprint')::bigint;
+ ticket:=(f#>>'{mappings,0,ticketId}')::bigint;
+ INSERT INTO eshop.ticket_wallet_objects(ticket_id,organization,occasion,issuer,environment,object_id,class_id)
+ SELECT ticket,organization,id,'1234','assignment','1234.assignment-'||ticket,'1234.assignment-class-'||id FROM public.occasions WHERE id=(f->>'occasion')::bigint;
+ PERFORM public.enqueue_ticket_wallet_internal(ARRAY[ticket]);
  SELECT jsonb_agg(to_jsonb(o) ORDER BY o.id) INTO snapshot FROM eshop.orders o WHERE occasion=(f->>'occasion')::bigint;
  UPDATE eshop.products SET price=999,title='Changed catalog' WHERE id=(f->>'product')::bigint;
  SET LOCAL ROLE authenticated;
@@ -19,6 +23,7 @@ BEGIN
  PERFORM public.assert_eq((c#>>'{counts,unassigned}')::int,0,'no outstanding seats');
  PERFORM public.assert_eq((c#>>'{counts,waiting}')::int,1,'waiting remains');
  RESET ROLE;
+ PERFORM public.assert_eq((SELECT requested FROM eshop.ticket_wallet_work WHERE kind='object' AND ticket_id=ticket),2::bigint,'assignment enqueues exactly once; receipt replay does not enqueue');
  PERFORM public.assert_eq((SELECT jsonb_agg(to_jsonb(o) ORDER BY o.id) FROM eshop.orders o WHERE occasion=(f->>'occasion')::bigint),snapshot,'entire commercial order snapshots unchanged');
  PERFORM public.apply_allocations((SELECT "order" FROM eshop.order_product_ticket WHERE id=(f#>>'{mappings,0,admissionItemId}')::bigint));
  s:=(f#>>'{mappings,0,targetSpotId}')::bigint;iid:=(f#>>'{mappings,0,admissionItemId}')::bigint;ticket:=(f#>>'{mappings,0,ticketId}')::bigint;
@@ -40,6 +45,7 @@ BEGIN
  PERFORM public.assert_eq(r->>'status','applied','explicit release');
  RESET ROLE;
  PERFORM public.assert_true((SELECT order_product_ticket IS NULL FROM eshop.spots WHERE id=s),'released exact seat');
+ PERFORM public.assert_eq((SELECT requested FROM eshop.ticket_wallet_work WHERE kind='object' AND ticket_id=ticket),3::bigint,'release enqueues existing card');
 END $$;
 DO $$
 DECLARE f jsonb; tr bigint; p jsonb; r jsonb; mappings jsonb; first_pair jsonb; second_pair jsonb; second_form bigint; second_order bigint; spots bigint[]; unit uuid:=gen_random_uuid(); pool bigint; ctx bigint; iid bigint; oid bigint;

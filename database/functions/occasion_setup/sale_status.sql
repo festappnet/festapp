@@ -15,7 +15,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
  )
  SELECT coalesce(jsonb_agg(jsonb_build_object(
   'id',f.id,'is_open',f.is_open,
-  'has_tickets',EXISTS(SELECT 1 FROM public.form_fields ticket_field WHERE ticket_field.form=f.id AND ticket_field.type='ticket' AND NOT coalesce(ticket_field.is_hidden,false)),
+  'has_tickets',public.uses_ticket_terminology_internal((SELECT features FROM public.occasions WHERE id=p_occasion)),
   'is_preparation',coalesce((f.effective_data#>>'{schedule,sale_preparation}')::boolean,false),
   'start_time',nullif(coalesce(f.effective_data#>>'{schedule,start_time}',f.effective_data->>'start_time'),''),
   'end_time',nullif(coalesce(f.effective_data#>>'{schedule,end_time}',f.effective_data->>'end_time'),''),

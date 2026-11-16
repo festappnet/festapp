@@ -22,7 +22,11 @@
       "změnit cenu",
       "kapacita",
       "vyprodáno",
-      "zásoby"
+      "zásoby",
+      "slevové kódy",
+      "kupón",
+      "procentní sleva",
+      "pevná sleva"
     ],
     "seating": [
       "místenky",
@@ -155,6 +159,27 @@
       "MCP možnosti",
       "prompty",
       "oprávnění agenta"
+    ],
+    "webhooks": [
+      "webhook",
+      "webhooky",
+      "API",
+      "nová objednávka",
+      "automatizace",
+      "podpis zprávy",
+      "vlastní aplikace"
+    ],
+    "customer-self-service": [
+      "samoobsluha",
+      "storno",
+      "schválit storno",
+      "povinný důvod",
+      "refundace",
+      "přesun termínu",
+      "změna údajů",
+      "storno jedné vstupenky",
+      "místenka",
+      "vybrané vstupenky"
     ]
   },
   "en": {
@@ -176,7 +201,11 @@
       "change a price",
       "capacity",
       "sold out",
-      "stock"
+      "stock",
+      "discount codes",
+      "coupon",
+      "percentage discount",
+      "fixed discount"
     ],
     "seating": [
       "assigned seating",
@@ -293,6 +322,25 @@
       "MCP capabilities",
       "prompts",
       "agent permissions"
+    ],
+    "webhooks": [
+      "webhook",
+      "API",
+      "new order",
+      "automation",
+      "message signature",
+      "custom application"
+    ],
+    "customer-self-service": [
+      "self service",
+      "cancellation approval",
+      "required reason",
+      "refund",
+      "term move",
+      "change details",
+      "cancel one ticket",
+      "reserved seat",
+      "selected tickets"
     ]
   }
 }

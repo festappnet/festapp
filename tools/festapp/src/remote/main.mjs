@@ -2,9 +2,10 @@
 import { readFile, open, lstat } from 'node:fs/promises';
 import { resolve, isAbsolute, dirname } from 'node:path';
 import { generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
-import { parseRemoteConfig } from './config.mjs';
+import { parseRemoteConfig, remoteContexts } from './config.mjs';
 import { privateRoot } from '../context/profile.mjs';
 import { safeError, check } from '../errors.mjs';
+import { migrateLayoutIntents } from './migrate-layout-intents.mjs';
 import { openRemoteStorage } from './storage.mjs';
 import { createRemoteApp } from './server.mjs';
 import { inspectorConfiguration } from './inspector.mjs';
@@ -29,7 +30,44 @@ try {
     } else if (args[0] === 'check' && args.length === 2) {
         const c = parseRemoteConfig(JSON.parse(await readFile(args[1], 'utf8')));
         process.stdout.write(JSON.stringify({ ok: true, issuer: c.issuer, resource: c.resource,
-            tenant: c.profile.tenantId, clients: c.clients.length }) + '\n');
+            tenants: remoteContexts(c).map(context => context.profile.tenantId), clients: c.clients.length }) + '\n');
+    } else if (args[0] === 'rekey-storage' && args.length === 7 && args[1] === '--from-secrets' && args[3] === '--to-secrets' && args[5] === '--data') {
+        check([args[2],args[4],args[6]].every(isAbsolute),'INVALID_INPUT');
+        const root=resolve(args[6]);
+        const readProtected=async file=>{
+            check(!file.startsWith(root+'/')&&file!==root,'SEPARATE_SECRET_STORAGE_REQUIRED');
+            const stat=await lstat(file);
+            check(stat.isFile()&&!stat.isSymbolicLink()&&!(stat.mode&0o077)&&(!process.getuid||stat.uid===process.getuid()),'INSECURE_SECRET_FILE');
+            const value=JSON.parse(await readFile(file,'utf8'));
+            check(value.schemaVersion===1&&/^[A-Za-z0-9_-]{43}$/.test(value.storageKey),'INVALID_STORAGE_KEY');return value;
+        };
+        const old=await readProtected(resolve(args[2])),next=await readProtected(resolve(args[4]));
+        const withoutStorage=({storageKey,...rest})=>rest;
+        check(JSON.stringify(withoutStorage(old))===JSON.stringify(withoutStorage(next)),'STORAGE_ONLY_ROTATION_REQUIRED');
+        const storage=await openRemoteStorage(root,Buffer.from(old.storageKey,'base64url'));
+        try { process.stdout.write(JSON.stringify({ok:true,...storage.rekey(Buffer.from(next.storageKey,'base64url')),usePreparedSecrets:true})+'\n'); }
+        finally {await storage.close();}
+    } else if (args[0] === 'migrate-layout-intents' && args.length === 6 && args[2] === '--secrets' && args[4] === '--data') {
+        const config=parseRemoteConfig(JSON.parse(await readFile(args[1],'utf8')));
+        const secretPath=resolve(args[3]),root=resolve(args[5]);
+        check(!secretPath.startsWith(root+'/')&&secretPath!==root,'SEPARATE_SECRET_STORAGE_REQUIRED');
+        const stat=await lstat(secretPath);
+        check(stat.isFile()&&!stat.isSymbolicLink()&&!(stat.mode&0o077)&&(!process.getuid||stat.uid===process.getuid()),'INSECURE_SECRET_FILE');
+        const secrets=JSON.parse(await readFile(secretPath,'utf8'));
+        check(secrets.schemaVersion===1&&/^[A-Za-z0-9_-]{43}$/.test(secrets.storageKey),'INVALID_STORAGE_KEY');
+        const storage=await openRemoteStorage(root,Buffer.from(secrets.storageKey,'base64url'));
+        try { process.stdout.write(JSON.stringify({ok:true,...await migrateLayoutIntents(config,storage)})+'\n'); }
+        finally {await storage.close();}
+    } else if (args[0] === 'recover-restored-state' && args.length === 5 && args[1] === '--secrets' && args[3] === '--data') {
+        const secretPath = resolve(args[2]), root = resolve(args[4]);
+        check(!secretPath.startsWith(root + '/') && secretPath !== root, 'SEPARATE_SECRET_STORAGE_REQUIRED');
+        const stat = await lstat(secretPath);
+        check(stat.isFile() && !stat.isSymbolicLink() && !(stat.mode & 0o077) && (!process.getuid || stat.uid === process.getuid()), 'INSECURE_SECRET_FILE');
+        const secrets = JSON.parse(await readFile(secretPath, 'utf8'));
+        check(secrets.schemaVersion === 1 && /^[A-Za-z0-9_-]{43}$/.test(secrets.storageKey), 'INVALID_STORAGE_KEY');
+        const storage = await openRemoteStorage(root, Buffer.from(secrets.storageKey, 'base64url'));
+        try { process.stdout.write(JSON.stringify({ ok: true, ...storage.invalidateRestoredState(), reconsentRequired: true }) + '\n'); }
+        finally { await storage.close(); }
     } else {
         check(args.length === 8 && args[0] === 'serve' && args[2] === '--secrets' &&
             args[4] === '--data' && args[6] === '--port', 'INVALID_COMMAND');
@@ -44,19 +82,20 @@ try {
         check(secrets.schemaVersion === 1 && /^[A-Za-z0-9_-]{43}$/.test(secrets.storageKey), 'INVALID_STORAGE_KEY');
         const storage = await openRemoteStorage(root, Buffer.from(secrets.storageKey, 'base64url'));
         try {
-            const { app } = createRemoteApp(config, storage, { ...secrets,
+            const { app, webhooks } = createRemoteApp(config, storage, { ...secrets,
                 audit: record => process.stderr.write(JSON.stringify(record) + '\n') });
-            const listener = app.listen(port, '127.0.0.1', () => process.stderr.write('Festapp MCP listening on loopback\n'));
+            const listener = app.listen(port, '127.0.0.1', () => { webhooks.start(); process.stderr.write('Festapp MCP listening on loopback\n'); });
             let closing = false;
             const close = () => {
                 if (closing) return;
                 closing = true;
                 const timer = setTimeout(() => listener.closeAllConnections(), 30000);
                 timer.unref();
-                listener.close(async () => { clearTimeout(timer); await storage.close(); });
+                const workerClosed = webhooks.close();
+                listener.close(async () => { clearTimeout(timer); await workerClosed; await storage.close(); });
             };
             process.once('SIGINT', close); process.once('SIGTERM', close);
-            listener.on('error', async () => { await storage.close(); process.exitCode = 1; });
+            listener.on('error', async () => { await webhooks.close(); await storage.close(); process.exitCode = 1; });
         } catch (e) { await storage.close(); throw e; }
     }
 } catch (error) {

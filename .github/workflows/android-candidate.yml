@@ -8,6 +8,12 @@ on:
         required: true
         type: string
 
+      reuse_build_cache:
+        description: 'Reuse shared Gradle and native compilation artifacts across tenants'
+        required: true
+        type: boolean
+        default: true
+
 permissions:
   contents: read
 
@@ -21,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      cache_writer: ${{ steps.plan.outputs.cache_writer }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,36 +42,71 @@ jobs:
           printf '%s' "$TARGETS_JSON" > "$input"
           matrix="$(node automation/release/android_ci_plan.mjs candidate "$input")"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "cache_writer=$(jq -r ' .include[0].tenant ' <<<"$matrix")" >> "$GITHUB_OUTPUT"
 
   warm-gradle-cache:
     needs: plan
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Shared build cache disabled
+        if: ${{ !inputs.reuse_build_cache }}
+        run: echo 'Shared build caches disabled; tenant build will run cold.'
       - uses: actions/checkout@v7
+        if: inputs.reuse_build_cache
       - uses: actions/setup-java@v6
+        if: inputs.reuse_build_cache
         with:
           distribution: temurin
           java-version: '17'
       - id: flutter-version
+        if: inputs.reuse_build_cache
         run: echo "version=$(node automation/flutter_version.mjs)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
+        if: inputs.reuse_build_cache
         with:
           flutter-version: ${{ steps.flutter-version.outputs.version }}
           channel: stable
           cache: true
       - name: Populate the shared Gradle dependency cache
+        if: inputs.reuse_build_cache
         uses: gradle/actions/setup-gradle@v6
         with:
-          cache-provider: basic
-          cache-read-only: false
+          cache-provider: external
+      - id: warm-cache-keys
+        continue-on-error: true
+        if: inputs.reuse_build_cache
+        env:
+          FESTAPP_CACHE_RUSTC_VERSION: not-built
+        run: node automation/release/android_build_cache.mjs >> "$GITHUB_OUTPUT"
+      - name: Restore shared Gradle build state
+        id: warm-cache
+        if: ${{ inputs.reuse_build_cache && steps.warm-cache-keys.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.warm-cache-keys.outputs.gradle }}-${{ github.run_id }}-warm
+          restore-keys: ${{ steps.warm-cache-keys.outputs.gradle }}-
       - shell: bash
+        if: inputs.reuse_build_cache
         run: |
           set -euo pipefail
           node automation/configure_fonts.js . --assets-only
           flutter pub get --enforce-lockfile
           printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > android/local.properties
           (cd android && ./gradlew dependencies --no-daemon --build-cache)
+      - name: Save shared Gradle warm state
+        if: ${{ always() && inputs.reuse_build_cache && steps.warm-cache-keys.outcome == 'success' && steps.warm-cache.outputs.cache-matched-key == '' }}
+        continue-on-error: true
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.warm-cache-keys.outputs.gradle }}-${{ github.run_id }}-warm
   build:
     needs: [plan, warm-gradle-cache]
     runs-on: ubuntu-latest
@@ -85,6 +127,8 @@ jobs:
         run: |
           set -euo pipefail
           cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+          cp automation/release/project_version.mjs "$RUNNER_TEMP/project_version.mjs"
+          cp automation/release/android_build_cache.mjs "$RUNNER_TEMP/android_build_cache.mjs"
           cp android/gradlew "$RUNNER_TEMP/gradlew"
           cp android/gradle/wrapper/gradle-wrapper.jar "$RUNNER_TEMP/gradle-wrapper.jar"
       - name: Check out immutable tenant source
@@ -93,11 +137,17 @@ jobs:
           ref: ${{ matrix.sourceSha }}
           fetch-depth: 0
           clean: true
-      - name: Install the Windows-authoritative Gradle wrapper from trusted main
+      - name: Install the main-owned Gradle wrapper from trusted main
         shell: bash
         run: |
           install -m 0755 "$RUNNER_TEMP/gradlew" android/gradlew
           install -m 0644 "$RUNNER_TEMP/gradle-wrapper.jar" android/gradle/wrapper/gradle-wrapper.jar
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.24.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22.23.4'
       - name: Prove source is still the current production branch head
         env:
           BRANCH: ${{ matrix.branch }}
@@ -125,11 +175,47 @@ jobs:
           flutter-version: ${{ steps.flutter-version.outputs.version }}
           channel: stable
           cache: true
-      - name: Restore the shared Gradle dependency cache
+      - name: Restore and update the tenant Gradle cache
         uses: gradle/actions/setup-gradle@v6
         with:
-          cache-provider: basic
-          cache-read-only: true
+          cache-provider: external
+      - name: Compute shared build cache keys
+        id: build-cache-keys
+        continue-on-error: true
+        if: inputs.reuse_build_cache
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! rustup run stable rustc --version >/dev/null 2>&1; then
+            rustup toolchain install stable --profile minimal
+          fi
+          export FESTAPP_CACHE_RUSTC_VERSION="$(rustup run stable rustc -vV)"
+          printf 'RUSTC=%s\n' "$(rustup which --toolchain stable rustc)" >> "$GITHUB_ENV"
+          printf 'RUSTDOC=%s\n' "$(rustup which --toolchain stable rustdoc)" >> "$GITHUB_ENV"
+          node "$RUNNER_TEMP/android_build_cache.mjs" >> "$GITHUB_OUTPUT"
+      - name: Restore shared Gradle compilation state
+        id: gradle-cache
+        if: ${{ inputs.reuse_build_cache && steps.build-cache-keys.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.build-cache-keys.outputs.gradle }}-${{ github.run_id }}-${{ matrix.tenant }}
+          restore-keys: ${{ steps.build-cache-keys.outputs.gradle }}-
+      - name: Restore shared native compilation artifacts
+        id: native-cache
+        if: ${{ inputs.reuse_build_cache && steps.build-cache-keys.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            build/super_native_extensions/build
+            build/irondash_engine_context/build
+            ~/.cargo/registry
+          key: ${{ steps.build-cache-keys.outputs.native }}-${{ github.run_id }}-${{ matrix.tenant }}
+          restore-keys: ${{ steps.build-cache-keys.outputs.native }}-
       - name: Materialize private tenant and signing inputs
         env:
           RELEASE_MANIFEST_JSON: ${{ secrets.RELEASE_MANIFEST_JSON }}
@@ -163,9 +249,47 @@ jobs:
           test "${GITHUB_ACTIONS:-}" = true
           node automation/configure_fonts.js . --assets-only
           flutter pub get --enforce-lockfile
+          printf 'flutter.sdk=%s\n' "$FLUTTER_ROOT" > android/local.properties
+          (cd android && ./gradlew checkReleaseAarMetadata --no-daemon --build-cache)
           version_json="$(node automation/release/project_version.mjs --json)"
           flutter build appbundle --release --build-name "$(jq -r .version <<<"$version_json")" \
             --build-number "$(jq -r .build <<<"$version_json")"
+      - name: Inspect reusable native outputs
+        id: native-cache-state
+        if: ${{ always() && inputs.reuse_build_cache && steps.build-cache-keys.outcome == 'success' }}
+        shell: bash
+        run: |
+          if [ -d build/super_native_extensions/build ] || [ -d build/irondash_engine_context/build ]; then
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Save shared native compilation artifacts
+        if: ${{ success() && inputs.reuse_build_cache && matrix.tenant == needs.plan.outputs.cache_writer && steps.native-cache-state.outputs.available == 'true' && steps.native-cache.outputs.cache-matched-key == '' }}
+        continue-on-error: true
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            build/super_native_extensions/build
+            build/irondash_engine_context/build
+            ~/.cargo/registry
+          key: ${{ steps.build-cache-keys.outputs.native }}-${{ github.run_id }}-${{ matrix.tenant }}
+      - name: Save shared Gradle compilation state
+        if: ${{ always() && inputs.reuse_build_cache && matrix.tenant == needs.plan.outputs.cache_writer && steps.build-cache-keys.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.build-cache-keys.outputs.gradle }}-${{ github.run_id }}-${{ matrix.tenant }}
+      - name: Report build cache reuse
+        if: always()
+        env:
+          REUSE_ENABLED: ${{ inputs.reuse_build_cache }}
+          GRADLE_MATCH: ${{ steps.gradle-cache.outputs.cache-matched-key }}
+          NATIVE_MATCH: ${{ steps.native-cache.outputs.cache-matched-key }}
+        run: |
+          printf '### Shared build cache\nEnabled: %s\n\nGradle restored: `%s`\n\nNative restored: `%s`\n' \
+            "$REUSE_ENABLED" "${GRADLE_MATCH:-miss}" "${NATIVE_MATCH:-miss}" >> "$GITHUB_STEP_SUMMARY"
       - name: Encrypt the raw build output for validation recovery
         env:
           ARTIFACT_PASSPHRASE: ${{ secrets.ANDROID_ARTIFACT_PASSPHRASE }}

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:material_ui/material_ui.dart';
@@ -7,8 +8,6 @@ import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/components/scan/scan_page.dart';
 import 'package:fstapp/services/dialog_helper.dart';
-
-import 'dart:math';
 
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/scan/scan_strings.dart';
@@ -30,34 +29,21 @@ class TicketCodeHelper {
     );
   }
 
-  static String generateRandomCode(int length) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    Random rnd = Random();
-    return String.fromCharCodes(
-      Iterable.generate(
-        length,
-        (_) => chars.codeUnitAt(rnd.nextInt(chars.length)),
-      ),
-    );
-  }
-
   static Future<bool> showScanTicketCode(
     BuildContext context,
     String titleMessage,
     String formLink,
   ) async {
-    String? getCode = await DbTickets.getScanCode(formLink);
-    if (getCode == null) {
-      getCode = generateRandomCode(5);
-      await DbTickets.updateScanCode(formLink, getCode);
+    final occasionId = RightsService.currentOccasionId();
+    final source = RouterService.getCurrentBrowserUri();
+    String generatedCode = await DbTickets.getOrCreateScanCode(formLink);
+    if (!context.mounted || occasionId != RightsService.currentOccasionId()) {
+      return false;
     }
-    String generatedCode = getCode;
     bool result = false;
     String linkBase = "${AppConfig.webLink}/${ScanPage.ROUTE}/";
     String fullLink = linkBase + generatedCode;
 
-    final occasionId = RightsService.currentOccasionId();
-    final source = RouterService.getCurrentBrowserUri();
     final returnPath =
         '${source.path}${source.hasQuery ? '?${source.query}' : ''}${source.hasFragment ? '#${source.fragment}' : ''}';
     Future<bool> openScanner(String path) {
@@ -81,8 +67,9 @@ class TicketCodeHelper {
                 OrdersStrings.generateNewCodeWarning,
               );
               if (confirm) {
-                String newCode = generateRandomCode(5);
-                await DbTickets.updateScanCode(formLink, newCode);
+                final newCode =
+                    await DbTickets.getOrCreateScanCode(formLink, rotate: true);
+                if (!context.mounted) return;
                 setState(() {
                   generatedCode = newCode;
                   fullLink = "$linkBase$newCode";
@@ -106,7 +93,7 @@ class TicketCodeHelper {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        OrdersStrings.provideScanLinkInstruction,
+                        OrderItemStrings.provideScanLinkInstruction,
                         style: TextStyle(fontSize: 15),
                       ),
                       const SizedBox(height: 28),

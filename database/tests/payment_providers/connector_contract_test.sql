@@ -34,6 +34,8 @@ BEGIN
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM set_config('request.jwt.claim.sub','',true);
  INSERT INTO public.organizations(title,data) VALUES('Connector contract','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id INTO org;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'other_gateway');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'other_gateway',true);
  INSERT INTO public.units(title,organization) VALUES('Connector organizer',org) RETURNING id INTO u;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
   VALUES('Connector order',org,u,'connector-'||extensions.gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
@@ -41,6 +43,7 @@ BEGIN
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Tickets','spot') RETURNING id INTO pt;
  INSERT INTO eshop.products(product_type,occasion,title,price,currency_code,is_hidden) VALUES(pt,occ,'Ticket',123.45,'CZK',false) RETURNING id INTO product;
  INSERT INTO public.form_fields(form,product_type,type) VALUES(f,pt,'product_type');
+ INSERT INTO eshop.payment_template_reviews(occasion_id,revision,reviewed_by) VALUES(occ,public.payment_template_audit_internal(occ)->>'revision',extensions.gen_random_uuid());
  payload:=jsonb_build_object('form',(SELECT key FROM public.forms WHERE id=f),'email','connector@example.test','payment_method','other_gateway',
   'otherPaymentSource','{"test":"sealed"}'::jsonb,'ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',product)))));
  result:=public.create_ticket_order_client_sync_v1(payload,command,client);

@@ -57,7 +57,7 @@ services:
       - admin_tunnel_token
     logging: *logging
   studio:
-    image: supabase/studio:2026.08.03-sha-022b374@sha256:cb20b9a2b8fbb4f47a616c959dfdbde75668603c38d5ddd018e3f25a9f009937
+    image: supabase/studio:2026.11.02-sha-a05e7ec@sha256:6fede89ed2397566843f4913d575b062df7180e06dc434744c9cfed0c5a46d53
     entrypoint:
       - /bin/sh
       - /opt/festapp-studio/entrypoint.sh
@@ -70,7 +70,7 @@ services:
       - ./studio-customization/logout.js:/opt/festapp-studio/logout.js:ro
     logging: *logging
   api-gw:
-    image: envoyproxy/envoy:v1.39.0@sha256:5edd669228659835ac243e3ffa5c08a65e92bb267d56da5c28317dbcf5a70292
+    image: envoyproxy/envoy:v1.39.6@sha256:eebc293321d015af3ce65cb2424d0a7aaab417a7101f2a4e57d514b7826789ba
     ports: !override
       - "127.0.0.1:8000:8000"
       - "127.0.0.1:8443:8443"
@@ -80,20 +80,23 @@ services:
       GOTRUE_RATE_LIMIT_HEADER: X-Festapp-Client-IP
       GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_ENABLED: "true"
       GOTRUE_HOOK_PASSWORD_VERIFICATION_ATTEMPT_URI: pg-functions://postgres/public/password_verification_attempt_v1
-    image: supabase/gotrue:v2.189.0@sha256:cce6c1d00352f22ee7634066012830f69636c157017ea166634c48dbb58eefb7
+    image: supabase/gotrue:v2.197.0@sha256:3439d5affb9e96395d1348521f4c675eea7096d8d76d18d4e31fcc08df802116
     logging: *logging
   rest:
-    image: postgrest/postgrest:v14.12@sha256:844785450d6b046ee97f1c67ea37e3ff6b4ed7ee3570b1b91c03f66f032c4805
+    image: postgrest/postgrest:v14.18@sha256:dfa6464b877fa7b1b0be85740f6ce6985144b509a6edb5f09c5ee67e687e8c1f
     logging: *logging
   realtime:
-    image: supabase/realtime:v2.102.3@sha256:11651eb260639365adfd8d886ac1bfba9b069440cf92cc29f400f3b4a6554cb9
+    image: supabase/realtime:v2.148.3@sha256:b9595f81031fb95b78a6d34d365e31c2e946c8e9abc204c9f8efa9c97de506ca
     logging: *logging
   meta:
-    image: supabase/postgres-meta:v0.96.6@sha256:abbb468e4e5a14b5b4edd29caf1fa1d98ee606da89fed3bfc653a6f85985401a
+    image: supabase/postgres-meta:v0.100.0@sha256:e3e00f3d8315884717b9751cbf47888a0359c640097d96abff987de37a0edf81
     logging: *logging
   functions:
-    image: supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7
+    mem_limit: 2147483648
+    command: !override [start, --user-worker-request-idle-timeout, "150000", --main-service, /home/deno/functions/main]
+    image: supabase/edge-runtime:v1.77.9@sha256:37da62f867b8d7e636e9d62c65497ecaa9f05bfa37bc70c2dc9ccb06461ff982
     environment:
+      DENO_TLS_CA_STORE: system,mozilla
       FESTAPP_MCP_TENANTS_JSON: ${FESTAPP_MCP_TENANTS_JSON:-[]}
       FESTAPP_TRUSTED_IP_HEADER: X-Festapp-Client-IP
       GOOGLE_AUTH_TRUSTED_IP_HEADER: X-Festapp-Client-IP
@@ -128,10 +131,10 @@ services:
       ASSET_CLEANUP_SERVICE_SECRET: ${ASSET_CLEANUP_SERVICE_SECRET:?configure the dedicated account asset cleanup capability}
     logging: *logging
   db:
-    image: supabase/postgres:17.6.1.136@sha256:a9946f08d31e8eb1149229c94e5c26603a9233116807cbbd93d75179cbac516a
+    image: supabase/postgres:17.12.0.000@sha256:6c056e9a0f81d423c1a81fdf4e6587c16efd3f63960897371dab8ae2694a4714
     logging: *logging
   supavisor:
-    image: supabase/supavisor:2.9.5@sha256:1dd306835b0215909cf76371a7a20be71268bbc97619f7133b882c5e9a7392e8
+    image: supabase/supavisor:2.9.13@sha256:98861660eb5f2ef229c383b0cf1532c7937705c60513d2edf0c0cd1523d61437
     ports: !reset []
     logging: *logging
 

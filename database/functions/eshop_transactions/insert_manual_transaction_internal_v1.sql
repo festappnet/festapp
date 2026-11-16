@@ -12,6 +12,9 @@ DECLARE
     v_order eshop.orders;
     v_unit bigint;
 BEGIN
+    PERFORM public.payment_policy_fence_internal(u.organization) FROM public.units u WHERE u.id=p_unit_id;
+    IF p_purpose<>'correct_record' AND NOT coalesce(public.payment_method_policy_enabled_internal(p_unit_id,'cash'),false) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
+    IF p_payment_info_id IS NOT NULL AND EXISTS(SELECT 1 FROM eshop.payment_info pi WHERE pi.id=p_payment_info_id AND public.payment_method_is_online_internal(pi.payment_method)) THEN RAISE EXCEPTION 'PAYMENT_SOURCE_MISMATCH'; END IF;
     -- Check permissions (must be Unit Manager)
     PERFORM public.check_is_manager_on_unit(p_unit_id);
     IF p_amount IS NULL OR p_amount=0 OR p_amount::text IN ('NaN','Infinity','-Infinity') OR p_amount*100<>trunc(p_amount*100)

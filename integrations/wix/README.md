@@ -3,7 +3,7 @@
 Current continuation: [Partner Billed execution prompt](../../docs/plans/wix-partner-billing-EXECUTION-PROMPT-2026-10-28.md)
 and [authoritative plan](../../docs/plans/wix-partner-billing-plan-2026-10-28.md).
 
-Current public App Market listing (read-only verified 2026-11-06): https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online . Native app version2.2.0 is PUBLISHED; central-appearance runtime0.1.2 hosting and the refreshed public gallery are deployed and verified; see `evidence/hosting-central-appearance-20261106.json` and `evidence/market-listing-update-20261106.json`. The custom element registry exposes no appearance-property schema to delete; old per-instance values are inert. See `evidence/central-registry-20261106.json`.
+Current public App Market listing (read-only verified 2026-11-06): https://www.wix.com/app-market/michael-bujnovsk%C3%BD-vstupenky-online . Native app version2.2.0 is PUBLISHED. The [live hosted manifest](https://festapp-wix.pages.dev/manifest.json) is authoritative for the separately deployed runtime version and asset hashes. The November 6 central-appearance runtime0.1.2 hosting and gallery publication remain recorded; see `evidence/hosting-central-appearance-20261106.json` and `evidence/market-listing-update-20261106.json`. The custom element registry exposes no appearance-property schema to delete; old per-instance values are inert. See `evidence/central-registry-20261106.json`.
 
 Repository entry point: [all platform integrations](../README.md).
 
@@ -57,6 +57,14 @@ This is a self-managed **Site Widget (Custom Element)** with an editor settings
 panel. It loads the existing public checkout and service-owned `/embed.js`.
 Orders, prices, reservations, payments and confirmation stay in the canonical
 vstupenky.online service. There is no second checkout or Wix customer-data store.
+
+## Runtime 0.1.3
+
+Adds an explicit measurement destination in the native settings panel. New
+widgets default to website measurement; saved widgets without a value retain
+Unit mode. The panel discloses conversion contact and transaction-identifier
+sharing. Hosted asset publication and native live verification are separate
+release steps; the dated receipts above remain historical.
 
 ## What is ready
 
@@ -202,3 +210,27 @@ Jediný vlastník je uložené `forms.data.design.embed_inherit_style`. Oprávn�
 Níže uvedené dřívější publikační důkazy dokládají své historické verze, ne nový centrální kontrakt.
 
 New widget settings select Website measurement, recommended for websites with their own GTM and consent banner. Existing widgets with a saved form URL and no measurement property retain Unit mode. The persisted `measurement` property accepts `host` or `unit`; missing and invalid values render Unit mode. Website mode exposes approved conversion contacts and transaction identifiers to page scripts and still requires an approved website origin in Festapp.
+
+## Managed cookie choice import
+
+Source runtime 0.1.4 adds the same schema-1 configuration used by WordPress,
+Joomla and generic HTML. In Festapp, save **Organizer settings > Measurement >
+My websites**, select Wix and the banner, explicitly confirm coverage and copy
+the export. In the widget settings paste it into **Konfigurace exportovaná z
+Festappu** and turn on **Přenos voleb cookies**. Existing widgets keep transfer off.
+The hosted runtime must be updated before these new settings are available.
+
+Native Wix transfer requires an explicit saved policy and a valid creation date
+within the organizer's archived cutoff/age mapping. Defaults, missing data or
+unavailable native API fall back to the form's own choice. Cookiebot and
+CookieConsent exports use the existing common adapters. Multiple incompatible
+imports on one page fail closed. Only the widget's own fallback link participates;
+manual links and their security attributes remain intact. Import acceptance is
+local; the form checks current server approval and binding version. Cookie choices
+do not preserve analytics visitor identity. The existing native authentication,
+signed checkout provenance and billing boundaries remain independent.
+
+Native SDK tests model the host API. Separate read-only live visitor checks on
+the recorded development site verified cookie deletion and reset in another tab;
+those checks did not publish the app, modify site settings or place an order.
+See the [canonical transfer contract](../../docs/integrations/form-datalayer.md#managed-cms-consent-configuration-schema-1).

@@ -150,7 +150,9 @@ def upgrade_local(database_url, root=ROOT):
             sources[path.name] = path
         forward = [sources[name] for name in sorted(sources)]
         (kit / 'supabase/config.toml').write_text('project_id = "festapp-local-upgrade"\n')
-        first_active = min((path.name for path in forward if path.name[:14] > config.get('coveredThrough', '00000000000000')), default=None)
+        first_active = min((path.name for path in forward
+                            if path.name[:14] > config.get('coveredThrough', '00000000000000')
+                            and path.name[:14] not in recorded), default=None)
         added = set()
 
         def migrate(before=None):
@@ -163,8 +165,9 @@ def upgrade_local(database_url, root=ROOT):
                 shutil.copy2(path, destination)
                 if path.name == first_active and config.get('forwardMigrationRole') == 'supabase_admin':
                     # The folded security history left this session role active.
-                    # Preserve that execution boundary for a clean baseline,
-                    # without rewriting the repository's immutable SQL inputs.
+                    # Restore it on the first pending migration, including a
+                    # checkpoint tail: the CLI skips already recorded files.
+                    # Keep the repository's immutable SQL inputs unchanged.
                     destination.write_text('SET ROLE supabase_admin;\n' + path.read_text())
                 added.add(path.name)
             # The local extension-owning admin also runs trusted maintenance

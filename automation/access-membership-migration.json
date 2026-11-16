@@ -1,0 +1,30 @@
+{
+  "migration": "20261111010000_access_membership.sql",
+  "sources": [
+    "people/access_schema.sql",
+    "people/access_policy.sql",
+    "people/scope.sql",
+    "units/begin_unit_client_mutation_v1.sql",
+    "people/unit_membership.sql",
+    "users/update_user.sql",
+    "users/update_unit_user.sql",
+    "people/unit_user_command.sql",
+    "users/save_profile_client_sync_v1.sql",
+    "users/create_occasion_user_client_sync_v1.sql",
+    "users/add_user_to_unit.sql",
+    "people/access_management.sql",
+    "people/access_invitations.sql",
+    "users/save_occasion_user_for_edit.sql",
+    "users/unit_access_deletion.sql",
+    "groups/remove_occasion_user_domain.sql",
+    "occasion_setup/invitations.sql",
+    "users/get_occasion_users_for_edit.sql",
+    "emails/email_domain.sql",
+    "emails/email_queue.sql",
+    "others/email_variable_contract.sql",
+    "people/access_templates.sql",
+    "user_permissions/context_capabilities.sql",
+    "user_permissions/email_operations.sql",
+    "people/access_contraction.sql"
+  ]
+}

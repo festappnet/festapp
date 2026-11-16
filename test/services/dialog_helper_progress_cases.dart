@@ -65,10 +65,17 @@ void main() {
       context = value;
       return const Scaffold(body: Text('Editor'));
     })));
+    final write = Completer<void>();
     final pending = ProgressDialogs.showProgressDialogAsync(context, 'Save', 1,
-        futures: [() async {}]);
+        futures: [() => write.future]);
+    await tester.pump();
+    expect(find.text('Save'), findsOneWidget);
+    expect(find.text(CommonStrings.processingCompletedTitle), findsNothing);
+    write.complete();
     await tester.pumpAndSettle();
     expect(await pending, isTrue);
+    expect(find.text('Save'), findsNothing);
+    expect(find.text(CommonStrings.processingCompletedTitle), findsOneWidget);
     await tester.tap(find.text(CommonStrings.ok));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);

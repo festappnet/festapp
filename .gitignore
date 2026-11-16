@@ -235,3 +235,15 @@ automation/release/platform_updates/node_modules/
 
 # Generated from the pinned QR engine package before web builds.
 /web_client/public/web-assets/zxing-reader-*.wasm
+
+/web/help/
+/web_client/public/help/
+
+# Generated public API projections and immutable release materialization.
+/tools/festapp/contracts/api-v1/
+
+# Reproducible native security dependencies; never commit Cargo build output.
+!/packages/super_native_extensions/rust/Cargo.lock
+!/automation/native-security/Cargo.lock
+/packages/super_native_extensions/rust/target/
+/automation/native-security/target/

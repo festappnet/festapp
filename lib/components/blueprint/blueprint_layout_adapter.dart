@@ -44,10 +44,12 @@ class BlueprintLayoutAdapter {
     ];
   }
 
+  VenueLayoutDocument? _document;
   Map<int, ProductModel> products = {};
   Map<String, Map<String, dynamic>> areaAvailability = {};
   Map<int, BlueprintObjectModel> spots = {};
   void refresh(BlueprintModel source) {
+    _document = source.layoutSnapshot?.document;
     areaAvailability = Map.from(source.areaAvailability);
     products = {
       for (final p in source.products ?? <ProductModel>[])
@@ -106,6 +108,7 @@ class BlueprintLayoutAdapter {
         hasProduct: facts['hasProduct'] == true,
       ),
       label: facts['title']?.toString() ?? '',
+      productAvailable: facts['hasProduct'] == true,
     );
   }
 
@@ -131,37 +134,53 @@ class BlueprintLayoutAdapter {
       'fill': blueprintSeatStateFills[BlueprintSeatState.ordered]!,
       'status': 'occupied',
       'state': BlueprintSeatState.ordered.name,
+      'stateMarker': 'auto',
       'selectable': false,
       'selected': false,
     };
   }
 
   /// Public presentation deliberately excludes all order/customer metadata.
-  Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding) =>
-      _presentationForState(
-        state(binding),
-        label: binding.title,
-        productTitle: product(binding)?.title,
-        productAvailable: product(binding)?.isAvailable == true,
-      );
+  Map<String, dynamic> publicPresentation(BlueprintSeatBinding binding,
+      {VenueLayoutDocument? document}) {
+    final resolvedDocument = document ?? _document;
+    final node = resolvedDocument?.nodes
+        .where((n) => n.id == binding.nodeId)
+        .firstOrNull;
+    return _presentationForState(
+      state(binding),
+      label: binding.title,
+      productTitle: product(binding)?.title,
+      productAvailable: product(binding)?.isAvailable == true,
+      authoredFill: node == null
+          ? null
+          : resolveNodeAppearance(resolvedDocument!, node).values['fill']
+              as String?,
+    );
+  }
 
   static Map<String, dynamic> _presentationForState(
     BlueprintSeatState state, {
     required String label,
     String? productTitle,
     bool productAvailable = false,
+    String? authoredFill,
   }) => {
-    'stateMarker': state == BlueprintSeatState.used ? 'none' : 'auto',
-    'label': label,
-    'fill': blueprintSeatStateFills[state]!,
-    'status': switch (state) {
-      BlueprintSeatState.ordered || BlueprintSeatState.used => 'occupied',
-      BlueprintSeatState.selected => 'reserved',
-      BlueprintSeatState.selectedByMe => 'available',
-      BlueprintSeatState.blocked => 'blocked',
-      BlueprintSeatState.empty => 'unavailable',
-      _ => 'available',
+    'stateMarker': switch (state) {
+      BlueprintSeatState.used => 'check',
+      BlueprintSeatState.blocked => 'lock',
+      _ => 'auto',
     },
+    'label': label,
+    // Explicit authored fill also survives optimistic selection in the renderer.
+    'fill': state == BlueprintSeatState.selectedByMe ||
+            (state == BlueprintSeatState.available && productAvailable)
+        ? authoredFill ?? blueprintSeatStateFills[state]!
+        : blueprintSeatStateFills[state]!,
+    'status': state == BlueprintSeatState.selectedByMe ||
+            (state == BlueprintSeatState.available && productAvailable)
+        ? 'available'
+        : 'occupied',
     'selectable':
         state == BlueprintSeatState.selectedByMe ||
         (state == BlueprintSeatState.available && productAvailable),

@@ -1,4 +1,7 @@
+import { grantEndpoint, clientForResource } from './endpoints.mjs';
+import { contextConfig } from './config.mjs';
 import { clientPolicy } from './client-policy.mjs';
+import { authorizeApiAuthentication } from '../auth/operation-policy.mjs';
 import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { rejectLegacyLock } from '../auth/process-lock.mjs';
 import { join } from 'node:path';
@@ -7,7 +10,7 @@ import { digest } from '../context/profile.mjs';
 import { check, OperationError } from '../errors.mjs';
 import { authChallenge } from '../mcp/protocol.mjs';
 import { operatorAccess, accessSelection, canCreateWithAccess } from '../operations/access.mjs';
-import { READ_OPERATIONS, READ_SCOPE, CREATE_SCOPE, MCP_PERMISSIONS, scopesForOperation, clientAllowsScopes } from './config.mjs';
+import { DELEGATED_OPERATIONS, READ_SCOPE, CREATE_SCOPE, scopesForOperation, clientAllowsScopes } from './config.mjs';
 
 export function boundOwner(config, storage, binding, options = {}) {
     return new SessionOwner(Object.freeze({ ...config.profile, binding }), {
@@ -24,17 +27,23 @@ export class DelegatedOwner {
         this.config = config;
         this.storage = storage;
         this.token = token;
+        this.expectedResource = options.expectedResource ?? config.resource;
+        this.transport = options.transport ?? 'mcp';
         this.orderSummaryOnly = clientPolicy(config, token.clientId)?.dataProfile === 'order-summary';
         const grant = this.current();
-        this.session = boundOwner(config, storage, grant.binding, options);
+        this.config = contextConfig(config, grant.profileBinding);
+        this.session = boundOwner(this.config, storage, grant.binding, options);
         this.profile = this.session.profile;
+        this.layoutProfile = this.config.profile;
         this.root = storage.root;
-        this.allowedOperations = [...READ_OPERATIONS, 'occasions.create',
-            ...Object.values(MCP_PERMISSIONS).flatMap(p => p.operations)].filter(id => this.permitsOperation(id, grant));
+        this.allowedOperations = DELEGATED_OPERATIONS.filter(id => this.permitsOperation(id, grant));
         this.securitySchemes = [{ type: 'oauth2', scopes: [READ_SCOPE] }];
     }
     permitsOperation(id, grant = this.current()) {
         const scopes = scopesForOperation(id);
+        const client = clientPolicy(this.config, this.token.clientId);
+        if (grant.operationAllowlist && !grant.operationAllowlist.includes(id)) return false;
+        if (client?.allowedOperations && !client.allowedOperations.includes(id)) return false;
         return clientAllowsScopes(this.config, this.token.clientId, scopes) && scopes.every(s =>
             this.token.scope?.split(' ').includes(s) && (s === READ_SCOPE ||
                 (s === CREATE_SCOPE ? canCreateWithAccess(grant.access) : grant.permissions?.includes(s))));
@@ -46,18 +55,24 @@ export class DelegatedOwner {
     }
     challengeFor(code, id) {
         if (['AUTHENTICATION_REQUIRED', 'MFA_REQUIRED'].includes(code))
-            return authChallenge(this.config, { error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
+            return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
         if (code === 'INSUFFICIENT_SCOPE' && clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)))
-            return authChallenge(this.config, { error: 'insufficient_scope', description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id) });
+            return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'insufficient_scope', description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id) });
     }
     current() {
         const t = this.token;
         const grant = this.storage.get('Delegation', t.grantId);
         check(connectionActive(grant) && grant.userId === t.accountId &&
             clientPolicy(this.config, grant.clientId) &&
-            grant.clientId === t.clientId && grant.profileBinding === this.config.profile.binding &&
+            grant.clientId === t.clientId &&
+            (!grant.dataProfile || grant.dataProfile === clientPolicy(this.config, t.clientId)?.dataProfile) &&
+            (!this.session || (this.session.profile.binding === grant.binding && this.config.profile.binding === grant.profileBinding)) &&
+            connectionContext(this.config, grant) &&
             t.exp * 1000 > Date.now() &&
-            t.aud === this.config.resource && t.scope?.split(' ').includes(READ_SCOPE) &&
+            t.aud === this.expectedResource &&
+            grantEndpoint(this.config, grant).resource === this.expectedResource &&
+            (grant.proofProfile ?? 'bearer') === (t.jkt ? 'dpop' : 'bearer') &&
+            clientForResource(this.config, t.clientId, this.expectedResource) && t.scope?.split(' ').includes(READ_SCOPE) &&
             clientAllowsScopes(this.config, t.clientId, [READ_SCOPE]), 'AUTHENTICATION_REQUIRED');
         return grant;
     }
@@ -108,15 +123,26 @@ export class DelegatedOwner {
     }
     async authorized(action) {
         const grant = this.current();
-        try { return await this.session.authorized(async (client, context) => {
+        const isLayout = this.operationId?.startsWith('ticket_layouts.');
+        const execute = () => this.session.authorized(async (client, context) => {
             check(context.userId === grant.userId, 'FORBIDDEN');
             this.current();
-            const result = await action(client, context);
+            if (this.transport === 'api' && this.operationId) authorizeApiAuthentication(this.operationId, {
+                token: this.token, client: clientPolicy(this.config, this.token.clientId),
+                userId: context.userId, authentication: context.authentication,
+            });
+            const result = await action(client, isLayout ? { ...context, profile: this.layoutProfile } : context);
             // Read revocation discards an in-flight private result before return.
             this.current();
             if (this.operationId) check(this.permitsOperation(this.operationId), 'INSUFFICIENT_SCOPE');
             return result;
-        }); } catch (error) {
+        });
+        try {
+            // Reconnects share artwork recovery state, while credentials retain
+            // their independent per-connection locks and refresh tokens.
+            return await (isLayout ? this.storage.runSessionExclusive(
+                digest(JSON.stringify(['layout', this.layoutProfile.binding, grant.userId])), execute) : execute());
+        } catch (error) {
             const current = this.storage.get('Delegation', this.token.grantId);
             if (!connectionActive(current) || this.token.exp * 1000 <= Date.now())
                 error = new OperationError('AUTHENTICATION_REQUIRED');
@@ -129,3 +155,13 @@ export class DelegatedOwner {
 
 export const connectionBinding = (profile, interaction) =>
     digest(JSON.stringify(['remote', profile.binding, interaction]));
+
+/** OAuth credentials and requests share this immutable connection identity check.
+ * Historical regional grants keep their supported stored binding. Global grants
+ * always carry an interaction and may never adopt those historical sessions. */
+export function connectionContext(config, grant) {
+    const selected = contextConfig(config, grant?.profileBinding);
+    check(grant.interactionId ? grant.binding === connectionBinding(selected.profile, grant.interactionId)
+        : !config.contexts, 'AUTHENTICATION_REQUIRED');
+    return selected;
+}

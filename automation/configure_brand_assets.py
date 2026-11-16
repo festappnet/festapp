@@ -27,10 +27,10 @@ def svg_adapter(source):
             f'<image width="{width}" height="{height}" href="data:image/png;base64,{image}"/>'
             '</svg>\n').encode()
 
-if args.loading_style not in ('spinner', 'vstupenky-outline'):
+if args.loading_style not in ('spinner', 'brand-outline'):
     raise ValueError('Unsupported loading style')
 normal, dark = svg_adapter(args.logo), svg_adapter(args.dark_logo)
-if args.loading_style == 'vstupenky-outline':
+if args.loading_style == 'brand-outline':
     if not args.animation or not args.dark_animation:
         raise ValueError('The outline loader requires light and dark animation sources')
     animation, dark_animation = svg_adapter(args.animation), svg_adapter(args.dark_animation)
@@ -47,7 +47,7 @@ outputs = {
     'web_client/public/loading-animation.svg': dark_animation,
     'web_client/public/loading-animation-light.svg': animation,
 }
-if args.loading_style == 'vstupenky-outline':
+if args.icon_dir == 'assets/brand/vstupenky-online/web-icons':
     brand = root / 'assets/brand/vstupenky-online'
     outputs['web_client/public/brand-wordmark-stacked.svg'] = (brand / 'vstupenky-online-wordmark-dark.svg').read_bytes()
     wordmark = ET.parse(brand / 'vstupenky-online-wordmark-dark.svg').getroot()
@@ -61,6 +61,11 @@ if args.loading_style == 'vstupenky-outline':
     domain.set('transform', 'translate(610 -166)')
     outputs['web_client/public/brand-wordmark.svg'] = ET.tostring(wordmark)
     outputs['web_client/public/brand-symbol.svg'] = (brand / 'vstupenky-online-symbol-dark.svg').read_bytes()
+elif args.icon_dir == 'assets/brand/festapp-tickets/web-icons':
+    brand = root / 'assets/brand/festapp-tickets'
+    outputs['web_client/public/brand-wordmark-stacked.svg'] = (brand / 'festapp-tickets-wordmark-stacked-header-dark.svg').read_bytes()
+    outputs['web_client/public/brand-wordmark.svg'] = (brand / 'festapp-tickets-wordmark-horizontal-dark.svg').read_bytes()
+    outputs['web_client/public/brand-symbol.svg'] = (brand / 'festapp-tickets-symbol-dark.svg').read_bytes()
 else:
     outputs['web_client/public/brand-wordmark-stacked.svg'] = dark
     outputs['web_client/public/brand-wordmark.svg'] = dark
@@ -73,7 +78,7 @@ for name in ('favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png',
         if args.icon_dir:
             outputs['web/' + name] = data
         outputs['web_client/public/' + name] = data
-        if args.icon_dir and name == 'favicon.ico':
+        if name == 'favicon.ico':
             outputs['web_client/favicon.ico'] = data
     elif args.icon_dir:
         raise ValueError('Missing configured icon: ' + name)

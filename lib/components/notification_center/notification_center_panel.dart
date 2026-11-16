@@ -32,6 +32,198 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
   double _feedOffset = 0;
   final _settingsScroll = ScrollController();
 
+  List<Widget> _emailControls(BuildContext context) {
+    final c = widget.controller;
+    final settings = c.emailSettings;
+    final catalog = Map<String, dynamic>.from(
+      settings['catalog'] as Map? ?? {},
+    );
+    final requiredKinds = (settings['requiredKinds'] as List? ?? [])
+        .whereType<String>()
+        .where(catalog.containsKey)
+        .toSet();
+    catalog.removeWhere((kind, _) => requiredKinds.contains(kind));
+    final hasOptionalKinds = catalog.isNotEmpty;
+    final enabled = settings['stopped'] == false;
+    final busy = c.emailSaving || c.settingsLoading;
+    final windowSeconds = settings['windowSeconds'];
+    if ((settings['catalog'] as Map? ?? {}).isEmpty || windowSeconds is! num) {
+      return [];
+    }
+    final effective = Map<String, dynamic>.from(
+      settings['kinds'] as Map? ?? {},
+    );
+    final kinds = <String, bool>{
+      for (final kind in catalog.keys)
+        kind: (effective[kind] as Map?)?['enabled'] == true,
+    };
+    Future<void> save({bool? stopped, Map<String, bool>? next}) async {
+      final success = await c.saveEmailSettings(
+        stopped: stopped ?? settings['stopped'] != false,
+        locale: context.locale.languageCode,
+        kinds: next ?? kinds,
+      );
+      if (!success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(NotificationCenterStrings.text('saveFailed'))),
+        );
+      }
+    }
+
+    String s(String key) => NotificationCenterStrings.text(key);
+    return [
+      if (hasOptionalKinds)
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(s('emailEnabled')),
+          subtitle: Text(
+            NotificationCenterStrings.emailHelp(windowSeconds.toInt()),
+          ),
+          value: enabled,
+          onChanged: busy ? null : (value) => save(stopped: !value),
+        ),
+      if (hasOptionalKinds) ...[
+        const SizedBox(height: 8),
+        _settingsHelp(context, s('emailScopeHelp')),
+        if (!enabled) ...[
+          const SizedBox(height: 8),
+          _settingsHelp(context, s('emailDisabledHelp')),
+        ],
+        const SizedBox(height: 8),
+      ],
+      for (final category in catalog.values.toSet())
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(s('emailCategories.$category')),
+          tristate: true,
+          value:
+              catalog.entries
+                  .where((entry) => entry.value == category)
+                  .every((entry) => kinds[entry.key] == true)
+              ? true
+              : catalog.entries
+                    .where((entry) => entry.value == category)
+                    .every((entry) => kinds[entry.key] != true)
+              ? false
+              : null,
+          onChanged: busy || !enabled
+              ? null
+              : (value) => save(
+                  next: {
+                    ...kinds,
+                    for (final entry in catalog.entries.where(
+                      (entry) => entry.value == category,
+                    ))
+                      entry.key: value == true,
+                  },
+                ),
+        ),
+      if (requiredKinds.isNotEmpty) ...[
+        if (hasOptionalKinds) const Divider(height: 32),
+        _settingsHeading(context, s('emailRequiredTitle')),
+        const SizedBox(height: 8),
+        _settingsHelp(context, s('emailRequiredHelp')),
+        const SizedBox(height: 8),
+        for (final kind in requiredKinds)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text(s('requiredKinds.$kind'))),
+              ],
+            ),
+          ),
+      ],
+      if (const {
+        'no_address',
+        'dead',
+        'suppressed',
+      }.contains(settings['state']))
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: _settingsNotice(
+            context,
+            s('emailIssues.${settings['state']}'),
+          ),
+        ),
+      const Divider(height: 32),
+    ];
+  }
+
+  Widget _settingsHeading(BuildContext context, String text) => Semantics(
+    header: true,
+    child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+  );
+
+  Widget _settingsHelp(BuildContext context, String text) => Text(
+    text,
+    style: Theme.of(context).textTheme.bodyMedium
+        ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+  );
+
+  Widget _settingsNotice(BuildContext context, String text) => Semantics(
+    liveRegion: true,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.info_outline,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text)),
+      ],
+    ),
+  );
+
+  List<Widget> _occasionControls(BuildContext context) {
+    final c = widget.controller;
+    final groups = <int?, List<Map<String, dynamic>>>{};
+    for (final occasion in c.occasions) {
+      (groups[occasion['unit'] as int?] ??= []).add(occasion);
+    }
+    return [
+      for (final group in groups.values) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: 16, bottom: 4),
+          child: Semantics(
+            header: true,
+            child: Text(
+              (group.first['unitTitle'] as String?)?.trim().isNotEmpty == true
+                  ? group.first['unitTitle'] as String
+                  : s('unassignedUnit'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+        ),
+        for (final occasion in group)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(occasion['title']?.toString() ?? ''),
+            subtitle: Text(s('muted')),
+            value: occasion['muted'] == true,
+            onChanged: occasion['saving'] == true || c.settingsLoading
+                ? null
+                : (value) async {
+                    final success = await c.mute(occasion, value);
+                    if (!success && context.mounted) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(s('saveFailed'))));
+                    }
+                  },
+          ),
+      ],
+    ];
+  }
+
   @override
   void dispose() {
     _feedScroll.dispose();
@@ -62,10 +254,10 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                 ),
                 child: AppDialogHeader(
                   title: Text(
-                    NotificationCenterStrings.title,
+                    settings ? s('settings') : NotificationCenterStrings.title,
                     textAlign: TextAlign.start,
-                    style: const TextStyle(
-                      fontSize: 28,
+                    style: TextStyle(
+                      fontSize: settings ? 22 : 28,
                       height: 1.15,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0,
@@ -83,11 +275,15 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                           unawaited(c.loadSettings());
                         } else {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && !settings && _feedScroll.hasClients) {
-                              _feedScroll.jumpTo(_feedOffset.clamp(
-                                0.0,
-                                _feedScroll.position.maxScrollExtent,
-                              ));
+                            if (mounted &&
+                                !settings &&
+                                _feedScroll.hasClients) {
+                              _feedScroll.jumpTo(
+                                _feedOffset.clamp(
+                                  0.0,
+                                  _feedScroll.position.maxScrollExtent,
+                                ),
+                              );
                             }
                           });
                         }
@@ -102,8 +298,21 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           const Divider(height: 1),
           SizedBox(
             height: 4,
-            child: c.loading || c.preparing || c.settingsLoading
-                ? const LinearProgressIndicator()
+            child:
+                c.loading ||
+                    c.preparing ||
+                    c.settingsLoading ||
+                    c.emailSaving ||
+                    c.occasions.any((occasion) => occasion['saving'] == true)
+                ? LinearProgressIndicator(
+                    semanticsLabel:
+                        c.emailSaving ||
+                            c.occasions.any(
+                              (occasion) => occasion['saving'] == true,
+                            )
+                        ? CommonStrings.saving
+                        : null,
+                  )
                 : null,
           ),
           Flexible(
@@ -114,26 +323,32 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
                     primary: false,
                     padding: const EdgeInsets.all(16),
                     children: [
-                      Text(s('muteHelp')),
-                      const SizedBox(height: 16),
-                      if (c.settingsFailed) Text(s('loadFailed')),
-                      for (final occasion in c.occasions)
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(occasion['title']?.toString() ?? ''),
-                          subtitle: Text(s('muted')),
-                          value: occasion['muted'] == true,
-                          onChanged: occasion['saving'] == true
-                              ? null
-                              : (value) async {
-                                  final success = await c.mute(occasion, value);
-                                  if (!success && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(s('saveFailed'))),
-                                    );
-                                  }
-                                },
+                      if (c.settingsFailed) ...[
+                        _settingsNotice(context, s('loadFailed')),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton(
+                            onPressed: c.settingsLoading
+                                ? null
+                                : () => c.loadSettings(),
+                            child: Text(CommonStrings.retry),
+                          ),
                         ),
+                        const SizedBox(height: 16),
+                      ],
+                      ..._emailControls(context),
+                      _settingsHeading(context, s('muteTitle')),
+                      const SizedBox(height: 8),
+                      _settingsHelp(context, s('muteHelp')),
+                      const SizedBox(height: 8),
+                      if (c.occasions.isEmpty &&
+                          !c.settingsLoading &&
+                          !c.settingsFailed)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Text(s('muteEmpty')),
+                        ),
+                      ..._occasionControls(context),
                       if (c.settingsCursor != null)
                         TextButton(
                           onPressed: c.settingsLoading
@@ -311,11 +526,7 @@ class _NotificationCenterPanelState extends State<NotificationCenterPanel> {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.sizeOf(context).height * .85,
           ),
-          child: SizedBox(
-            width: 440,
-            height: size.height * .85,
-            child: body,
-          ),
+          child: SizedBox(width: 440, height: size.height * .85, child: body),
         ),
       );
     },

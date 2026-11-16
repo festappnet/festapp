@@ -61,6 +61,7 @@ BEGIN
   INSERT INTO eshop.stripe_event_inbox(connection_id,event_id,body_sha256,event_type,provider_created_at,committed_at,receipt)
    VALUES(c.id,p_event->>'id',p_event->>'bodyHash',p_event->>'type',to_timestamp((p_event->>'created')::bigint),clock_timestamp(),result);
  END IF;
+ PERFORM public.notification_center_provider_connection_internal('stripe',c.id);
  RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.commit_stripe_connection_status_internal(uuid,uuid,jsonb,jsonb) FROM PUBLIC,anon,authenticated;
@@ -73,6 +74,7 @@ BEGIN
  UPDATE eshop.stripe_connections SET status_failures=least(status_failures+1,1000),status_lease=NULL,status_lease_expires_at=NULL,
   next_check_at=clock_timestamp()+make_interval(secs=>least(3600,30*power(2,least(status_failures,7)))::integer)
  WHERE id=p_connection AND status_lease=p_lease AND p_lease IS NOT NULL;
+ IF FOUND THEN PERFORM public.notification_center_provider_connection_internal('stripe',p_connection); END IF;
 END $$;
 REVOKE ALL ON FUNCTION public.fail_stripe_connection_status_internal(uuid,uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.fail_stripe_connection_status_internal(uuid,uuid) TO service_role;

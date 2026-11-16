@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/forms/card_payment_strings.dart';
 import 'package:fstapp/components/stripe_payments/card_refund_decision_api.dart';
@@ -207,7 +208,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
 
     final customerName = _bundle?.order.data != null
         ? "${_bundle!.order.data!["name"] ?? ""} ${_bundle!.order.data!["surname"] ?? ""}"
-        : OrdersStrings.dialogTitleFallback;
+        : OrderItemStrings.dialogTitleFallback;
 
     // Combine order symbol and customer name for the title
     final dialogTitle =

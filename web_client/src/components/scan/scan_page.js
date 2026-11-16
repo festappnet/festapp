@@ -1,5 +1,5 @@
 import { formatDisplayNumber } from '../../utils/formatters.js';
-import { scannerReturnPath } from './scanner_navigation.js';
+import { scannerReturnPath, scannerInputHistoryState } from './scanner_navigation.js';
 import { Component } from '../base/component.js';
 import { ScannerApi } from '../../services/scanner_api.js';
 import { ScannerStore, offlineGrantValid, isTerminal } from '../../services/scanner_store.js';
@@ -7,14 +7,14 @@ import { ScannerSync } from '../../services/scanner_sync.js';
 import { ScannerController, ticketPayload } from './scanner_controller.js';
 import { ScannerInput } from './scanner_input.js';
 import { scanResult } from './scan_result.js';
-import { tr, reasonText, escape as e } from './scan_strings.js';
+import { tr as scanText, reasonText as scanReasonText, escape as e } from './scan_strings.js';
 import { AppConfig } from '../../app_config.js';
 import { ThemeService } from '../../services/theme_service.js';
 import './scan.css';
 import { icon } from './scan_icons.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { ScannerFeedback } from './scanner_feedback.js';
-import {scannerSearchPreview} from './scanner_presentation.js';
+import {scannerSearchPreview,refreshScannerUsedTimes} from './scanner_presentation.js';
 export class ScanPage extends Component {
     constructor(host, { client, store = new ScannerStore(), backend = null } = {}) {
         super(host); this.client = client; this.store = store;
@@ -22,13 +22,18 @@ export class ScanPage extends Component {
         this.sound=new ScannerFeedback();this.feedbackStates=new WeakMap();
         this.mode = 'camera'; this.rows = []; this.history = []; this.summaryAt = 0; this.online = navigator.onLine; this.disposed = false;
     }
+    get hasTickets() { return this.row?.session?.hasTickets ?? true; }
+    tr(key, args) { return scanText(key, args, this.hasTickets); }
+    reasonText(reason) { return scanReasonText(reason, this.hasTickets); }
+    get isOnline() { return this.online && !this.transportOffline; }
     get canSearchTickets() { return Boolean(this.row?.session.capabilities.search_tickets); }
     get canSearchUsers() { return AppConfig.isAppSupported && Boolean(this.row?.session.capabilities.search_users); }
     async init(route) {
         this.onGesture=event=>{if(event.target.closest?.('[data-sound]'))return;this.sound.unlock().then(()=>this.updateSoundControl());};
         this.host.addEventListener('pointerdown',this.onGesture,true);this.host.addEventListener('keydown',this.onGesture,true);
         let returnStorage; try { returnStorage=window.sessionStorage; } catch {}
-        this.returnPath = scannerReturnPath({location:window.location,referrer:document.referrer,returnTo:route.returnTo,storage:returnStorage});
+        this.returnNavigation = {location:{href:window.location.href},referrer:document.referrer,returnTo:route.returnTo,storage:returnStorage};
+        this.returnPath = '/';
         this.route = route; document.querySelector('meta[name=referrer]')?.remove();
         const meta = document.createElement('meta'); meta.name = 'referrer'; meta.content = 'no-referrer'; document.head.append(meta);
         this.referrerMeta = meta;
@@ -38,16 +43,20 @@ export class ScanPage extends Component {
         } catch { this.storageAvailable = false; this.store = null; }
         this.api = new ScannerApi(this.client);
         this.input = new ScannerInput(code => this.loadCodes([code]),{accepts:ticketPayload,onError:reason=>{this.cameraUnavailable=true;this.error=reason;this.render();}});
-        this.onNetwork = async () => { this.online = navigator.onLine; this.render(); if (this.online) await this.recover(); };
+        this.onNetwork = async () => { if (!navigator.onLine) this.online=false; this.summaryAt=0; this.render(); await this.recover(); };
         this.onVisible = () => { if (document.visibilityState === 'visible') this.recover(); };
         window.festappScannerCanReload=()=>!['persisting','awaiting_server'].includes(this.controller?.state);
         this.onUnload = event => { if (this.controller?.state==='persisting' || this.history.some(r => !isTerminal(r.state))) { event.preventDefault(); event.returnValue = ''; } };
         window.addEventListener('online', this.onNetwork); window.addEventListener('offline', this.onNetwork);
         document.addEventListener('visibilitychange', this.onVisible); window.addEventListener('beforeunload', this.onUnload);
-        this.interval = setInterval(() => { if (document.visibilityState === 'visible' && this.row && navigator.onLine) this.recover(); }, 15000);
+        this.interval = setInterval(() => {
+            if(document.visibilityState !== 'visible')return;
+            refreshScannerUsedTimes(this.host, Date.now(), this.hasTickets);
+            if(this.row)this.recover();
+        }, 15000);
         this.render();
-        if (route.code) await this.open({ p_scan_code: route.code, p_device_name: tr('device') });
-        else if (route.occasion) await this.open({ p_occasion: Number(route.occasion), p_device_name: tr('device') });
+        if (route.code) await this.open({ p_scan_code: route.code, p_device_name: this.tr('device') });
+        else if (route.occasion) await this.open({ p_occasion: Number(route.occasion), p_device_name: this.tr('device') });
         else {
             const active = await this.store?.get('preferences', `active:${JSON.stringify(this.backend)}`);
             const row = active && this.rows.find(r => r.key === active.partition && !r.locked);
@@ -60,6 +69,7 @@ export class ScanPage extends Component {
         this.opening = true; this.error = null; this.render();
         try {
             const session = await this.api.open(params);
+            this.online=true;this.transportOffline=false;
             if(this.client.scannerBackendContext)this.backend=this.client.scannerBackendContext;
             this.row = this.store ? await this.store.saveSession(session, this.backend) : { session, partition: null };
             this.entryDraft = null;
@@ -73,6 +83,7 @@ export class ScanPage extends Component {
         }
     }
     async select(row) {
+        this.returnPath = scannerReturnPath({...this.returnNavigation,session:row.session,backend:this.backend});
         clearTimeout(this.searchTimer);this.searchTimer=null;this.searchPending=false;
         this.searchGeneration=(this.searchGeneration||0)+1;this.searchResults=[];this.searchQuery='';this.searchError=null;this.searchScope='tickets';this.presentedTicketKey=null;this.searchOpen=this.mode==='manual';
         this.disposeControllers();this.sync?.stop(); this.summaryAt=0; this.row = row; this.api.session = row.session;
@@ -89,14 +100,14 @@ export class ScanPage extends Component {
             for(const c of this.controllers())await c.refreshOperation(); this.render();
         } }) : null;
         this.controller = this.createController();
-        this.render(); await this.recover();
+        this.render(); if (this.online) await this.recover();
         if (this.store && row.session.capabilities.offline) navigator.serviceWorker?.ready?.then(()=>{if(!this.disposed&&this.row===row&&!this.snapshot){this.lastSnapshotAttempt=0;this.recover();}}).catch(()=>{});
         if (this.route.page === 'settings') await this.showSettings();
     }
     controllers() { return this.controller?[this.controller]:[]; }
     disposeControllers() { for(const c of this.controllers())c.dispose(); }
     createController() {
-        return new ScannerController({ api: this.api, store: this.store, row:this.row, sync: this.sync, online:()=>navigator.onLine&&!this.transportOffline, onChange: c => {
+        return new ScannerController({ api: this.api, store: this.store, row:this.row, sync: this.sync, online:()=>this.isOnline, onChange: c => {
             if(c.operation){const index=this.history.findIndex(r=>r.key===c.operation.key);if(index<0)this.history.push(c.operation);else this.history[index]=c.operation;}
             if (c.ticket?.source==='offline') this.transportOffline=true; if (!c.store) this.storageAvailable=false; this.render();
             if(c.state!=='ready'){this.input?.suppress?.(c.ticket?.symbol);this.input?.pause({keepStream:true});}
@@ -118,31 +129,68 @@ export class ScanPage extends Component {
         const view=this.host.ownerDocument.defaultView;
         if(!this.onInputHistory){
             this.inputHistoryPath=view.location.pathname;
+            this.historyLevel=view.history.state?.scannerLevel;
             this.onInputHistory=event=>this.handleInputHistory(event);
             view.addEventListener('popstate',this.onInputHistory);
         }
         return view;
     }
+    prepareInputHistory() {
+        const view=this.inputHistory();
+        if(!scannerInputHistoryState(view.history.state)){
+            // Reserve the two levels during the camera/search gesture. Creating
+            // entries on automatic detections after Back makes browser UI skip
+            // the whole scanner (history.back() does not expose that behavior).
+            view.history.replaceState({scannerInput:'camera',scannerLevel:'camera'},'',view.location.href);
+            view.history.pushState({scannerInput:'camera',scannerLevel:'workspace'},'',view.location.href);
+            this.historyLevel='workspace';
+        }
+        return view;
+    }
+    moveInputHistory(target) {
+        const view=this.prepareInputHistory();
+        if(target)this.historyTarget=target;
+        if(this.historyTravel || !this.historyTarget)return;
+        const {level,state={scannerInput:'camera'}}=this.historyTarget;
+        if(view.history.state?.scannerLevel===level){
+            view.history.replaceState({...state,scannerLevel:level},'',view.location.href);
+        }else{
+            this.historyTravel=level;
+            view.history.go(level==='camera'?-1:1);
+        }
+    }
     handleInputHistory(event) {
-        const view=this.host.ownerDocument.defaultView,mode=event.state?.scannerInput;
+        const view=this.host.ownerDocument.defaultView,state=event.state,mode=state?.scannerInput;
         if(this.disposed || view.location.pathname!==this.inputHistoryPath || !['camera','manual'].includes(mode))return false;
         this.handledInputHistory ??= new WeakSet();
         if(this.handledInputHistory.has(event))return true;
         this.handledInputHistory.add(event);
-        const returning=mode==='camera' && !event.state?.scannerReview && this.controller && (this.mode==='manual' || this.controller?.state!=='ready');
-        const changed=returning?this.returnToCamera({fromHistory:true}):mode===this.mode || this.setInputMode(mode,{fromHistory:true});
-        if(!changed)view.history.pushState({scannerInput:this.mode,scannerReview:!this.searchOpen && this.controller?.state!=='ready'},'',view.location.href);
+        event.stopImmediatePropagation();
+        const previous=this.historyLevel,level=state.scannerLevel || (state.scannerReview || mode==='manual'?'workspace':'camera');
+        this.historyLevel=level;
+        if(this.historyTravel===level){
+            this.historyTravel=null;this.moveInputHistory();return true;
+        }
+        this.historyTarget=null;
+        if(level==='camera'){
+            if(this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state))){
+                this.moveInputHistory({level:'workspace',state:{scannerInput:this.mode,scannerReview:!this.searchOpen}});
+            }else if(this.controller && (this.mode==='manual' || this.controller.state!=='ready')){
+                this.returnToCamera({fromHistory:true});
+            }else if(previous==='workspace'){
+                // The reserved workspace was still showing the full camera.
+                // One Back from that camera must leave, without an empty stop.
+                view.history.back();
+            }
+        }else if(mode!==this.mode){
+            this.setInputMode(mode,{fromHistory:true});
+        }
         return true;
     }
     setInputMode(mode,{fromHistory=false}={}) {
         if(this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state)))return false;
-        const previous=this.mode,view=this.inputHistory();
-        if(!fromHistory && mode!==previous){
-            if(mode==='manual'){
-                if(view.history.state?.scannerReview)view.history.replaceState({scannerInput:'manual'},'',view.location.href);
-                else {view.history.replaceState({scannerInput:'camera'},'',view.location.href);view.history.pushState({scannerInput:'manual'},'',view.location.href);}
-            }else if(view.history.state?.scannerInput==='manual')view.history.back();
-        }
+        if(mode==='camera' && !fromHistory)return this.returnToCamera();
+        if(mode==='manual' && !fromHistory)this.moveInputHistory({level:'workspace',state:{scannerInput:'manual'}});
         clearTimeout(this.advanceTimer);this.advanceTimer=null;this.advanceKey=null;
         if(mode==='camera'){clearTimeout(this.searchTimer);this.searchTimer=null;this.searchPending=false;this.searchGeneration=(this.searchGeneration||0)+1;}
         this.mode=mode;this.searchOpen=mode==='manual';
@@ -153,40 +201,36 @@ export class ScanPage extends Component {
         return true;
     }
     reviewHistory() {
-        const view=this.inputHistory();
-        const state={scannerInput:this.mode,scannerReview:true};
-        if(view.history.state?.scannerInput==='manual' || view.history.state?.scannerReview)view.history.replaceState(state,'',view.location.href);
-        else {view.history.replaceState({scannerInput:'camera'},'',view.location.href);view.history.pushState(state,'',view.location.href);}
+        this.moveInputHistory({level:'workspace',state:{scannerInput:this.mode,scannerReview:true}});
     }
-    returnToCamera(options={}) { return this.nextScan('camera',options); }
+    returnToCamera(options={}) { return this.nextScan('camera',{...options,keepSuppression:true}); }
     loadSelectedTicket(reference) {
         this.reviewHistory();this.searchOpen=false;
         return this.controller.loadTicket(reference);
     }
 
-    nextScan(mode=this.cameraWasStarted&&!this.cameraUnavailable?'camera':this.mode,{auto=false,fromHistory=false}={}) {
+    nextScan(mode=this.cameraWasStarted&&!this.cameraUnavailable?'camera':this.mode,{auto=false,fromHistory=false,keepSuppression=false}={}) {
         if(!this.controller || this.controllers().some(c=>['persisting','looking_up','awaiting_server'].includes(c.state)))return false;
-        const view=this.inputHistory();
-        if(!fromHistory && mode==='camera' && (view.history.state?.scannerInput==='manual' || view.history.state?.scannerReview))view.history.back();
+        if(!fromHistory && mode==='camera')this.moveInputHistory({level:'camera'});
         clearTimeout(this.advanceTimer);this.advanceTimer=null;
         if(mode==='manual')this.input.stop();
         clearTimeout(this.searchTimer);this.searchTimer=null;this.searchPending=false;this.searchGeneration=(this.searchGeneration||0)+1;
         if(auto && mode==='manual'){this.searchQuery='';this.searchResults=[];const field=this.host.querySelector('[name=query]');if(field)field.value='';}
         this.mode=mode;this.searchOpen=mode==='manual';this.renderedController=null;
         this.controller.scanSymbol=null;this.controller.unpaidConfirmed=false;this.controller.next();
-        if(!auto)this.input.allowSame?.();
+        if(!auto && !keepSuppression)this.input.allowSame?.();
         this.input.paused=false;this.render();
         if(this.mode==='camera'){if(this.input.stream)this.updateCameraState();else if(!auto||this.cameraWasStarted)this.startCamera();}else this.host.querySelector('[name=query]')?.focus();
         return true;
     }
     resultHtml(c) {
-        return scanResult(c,this.storageAvailable && !this.authBlocked && !this.row.locked);
+        return scanResult(c,this.storageAvailable && !this.authBlocked && !this.row.locked,this.hasTickets);
     }
     async recover() {
-        if (!this.row || !navigator.onLine || this.disposed) return;
+        if (!this.row || this.disposed) return;
         try {
             await this.sync?.run();
-            if (Date.now() - this.summaryAt >= 15000) { this.summaryAt=Date.now(); this.summary = await this.api.summary(); this.transportOffline=false; this.summaryAt = Date.now(); if (this.store) await this.store.put('preferences', { key: `${this.row.partition}:summary`, data: this.summary }); }
+            if (Date.now() - this.summaryAt >= 15000) { this.summaryAt=Date.now(); this.summary = await this.api.summary(); this.online=true;this.transportOffline=false; this.summaryAt = Date.now(); if (this.store) await this.store.put('preferences', { key: `${this.row.partition}:summary`, data: this.summary }); }
             // A prepared device keeps refreshing even when the event later grows.
             // Initial automatic preparation needs a known count of the complete snapshot.
             const ticketCount=this.summary?.snapshot_ticket_count;
@@ -195,7 +239,7 @@ export class ScanPage extends Component {
                 this.refreshingSnapshot = true;this.lastSnapshotAttempt=Date.now();
                 this.backgroundPreparation=this.prepare({automatic:true}).catch(()=>{}).finally(()=>{this.refreshingSnapshot=false;});
             }
-        } catch (err) { if ([401,403].includes(err.code)) {this.authBlocked = true;this.row.locked=true;await this.store?.lockSession(this.row.partition);} }
+        } catch (err) { if ([401,403].includes(err.code)) {this.authBlocked = true;this.row.locked=true;await this.store?.lockSession(this.row.partition);} else if(err.code===0){this.online=false;this.transportOffline=true;} }
         if (!this.summary && this.store) this.summary = (await this.store.get('preferences', `${this.row.partition}:summary`))?.data;
         this.render();
     }
@@ -224,15 +268,17 @@ export class ScanPage extends Component {
         const conflicts = this.history.filter(r => r.state === 'conflict' && !r.resolved).length;
         const total=Math.max(0,Number(sum?.eligible_total)||0), used=Math.max(0,Number(sum?.used_current)||0);
         const percent=total ? Math.min(100,Math.round(used/total*100)) : 0;
-        const needsSync=pending>0 || conflicts>0 || !navigator.onLine || this.transportOffline;
+        const needsSync=pending>0 || conflicts>0 || !this.isOnline;
         const canPrepare=session?.settings?.offline?.enabled;
-        return `<main class="scan-shell ${session ? '' : 'scan-entry-shell'}"><header class="scan-header"><a class="scan-home" href="${e(this.returnPath || '/')}" aria-label="${tr(this.returnPath && this.returnPath!=='/'?'back':'home')}">${icon('back')}</a><h1>${e(session?.title || tr('scan'))}</h1>${session ? `<details class="scan-menu"><summary>${icon('settings')}<span>${tr('options')}</span></summary><div class="scan-menu-panel"><p class="scan-menu-title">${tr('scanner_tools')}</p>${session ? `<nav aria-label="${tr('scan')}">${this.route.page!=='scan'?`<a href="/scan">${icon('camera')}${tr('back_to_camera')}</a>`:''}<a href="/scan/history" ${this.route.page==='history'?'aria-current="page"':''}>${icon('history')}${tr('history')}</a>${session?.capabilities.settings?`<a href="/scan/settings">${icon('settings')}${tr('display_settings')}</a>`:''}${needsSync?`<a href="/scan/offline">${icon('offline')}${tr('sync_status')}</a>`:''}</nav>` : ''}<button data-theme>${icon('theme')}${tr('theme')}</button>${session ? `<button data-sound>${icon('sound')}${tr(this.sound?.ready?'sound_on':'sound_enable')}</button>` : ''}${canPrepare?`<details class="scan-advanced"><summary>${tr('more_options')}</summary>${canPrepare?`<a href="/scan/offline">${tr('prepare_offline_short')}</a>`:''}</details>`:''}</div></details>` : `<button data-theme aria-label="${tr('theme')}" title="${tr('theme')}">${icon('theme')}</button>`}</header>
-        <div class="scan-status" role="status"><span class="scan-connection ${navigator.onLine && !this.transportOffline ? 'is-online' : 'is-offline'}"><span class="scan-dot"></span>${tr(navigator.onLine && !this.transportOffline ? 'online' : 'offline')}</span>${sum ? `<span class="scan-count">${tr('used')}: <strong>${formatDisplayNumber(sum.used_current, LocalizationService.currentLocale)} <span>/ ${formatDisplayNumber(sum.eligible_total, LocalizationService.currentLocale)}</span></strong><span class="scan-percent">${percent} %</span></span>` : ''}${pending ? `<span class="scan-pending-count">${tr('pending_count')}: ${pending}</span>` : ''}${conflicts ? `<span class="scan-conflict-count">${tr('conflicts')}: ${conflicts}</span>` : ''}${sum ? `<div class="scan-progress" role="progressbar" aria-label="${tr('used')}" aria-valuemin="0" aria-valuemax="${total||1}" aria-valuenow="${Math.min(used,total)}" aria-valuetext="${used} / ${total} (${percent} %)"><span style="width:${percent}%"></span></div>` : ''}</div>
-        ${session && (!navigator.onLine || this.transportOffline) ? `<p class="scan-offline-notice"><a href="/scan/offline">${tr(this.snapshot?'offline_saved_short':'offline_unprepared_short')}</a></p>` : ''}
-        ${!this.storageAvailable ? `<p class="scan-warning" role="alert">${tr('storage_failed')}</p>` : ''}
-        ${this.authBlocked ? `<p class="scan-warning">${tr('blocked_auth')}</p>` : ''}
+        const backToCamera=session && (this.route.page!=='scan' || this.mode==='manual' || this.controller && this.controller.state!=='ready');
+        const backPath=backToCamera?'/scan':this.returnPath || '/';
+        return `<main class="scan-shell ${session ? '' : 'scan-entry-shell'}"><header class="scan-header">${session?.capabilities.settings?`<a class="scan-home" href="${e(backPath)}" aria-label="${this.tr(this.returnPath && this.returnPath!=='/'?'back':'home')}">${icon('back')}</a>`:''}<h1>${e(session?.title || this.tr('scan'))}</h1>${session ? `<details class="scan-menu"><summary>${icon('settings')}<span>${this.tr('options')}</span></summary><div class="scan-menu-panel"><p class="scan-menu-title">${this.tr('scanner_tools')}</p>${session ? `<nav aria-label="${this.tr('scan')}">${this.route.page!=='scan'?`<a href="/scan">${icon('camera')}${this.tr('back_to_camera')}</a>`:''}<a href="/scan/history" ${this.route.page==='history'?'aria-current="page"':''}>${icon('history')}${this.tr('history')}</a>${session?.capabilities.settings?`<a href="/scan/settings">${icon('settings')}${this.tr('display_settings')}</a>`:''}${needsSync?`<a href="/scan/offline">${icon('offline')}${this.tr('sync_status')}</a>`:''}</nav>` : ''}<button data-theme>${icon('theme')}${this.tr('theme')}</button>${session ? `<button data-sound>${icon('sound')}${this.tr(this.sound?.ready?'sound_on':'sound_enable')}</button>` : ''}${canPrepare?`<details class="scan-advanced"><summary>${this.tr('more_options')}</summary>${canPrepare?`<a href="/scan/offline">${this.tr('prepare_offline_short')}</a>`:''}</details>`:''}</div></details>` : `<button data-theme aria-label="${this.tr('theme')}" title="${this.tr('theme')}">${icon('theme')}</button>`}</header>
+        <div class="scan-status" role="status"><span class="scan-connection ${this.isOnline ? 'is-online' : 'is-offline'}"><span class="scan-dot"></span>${this.tr(this.isOnline ? 'online' : 'offline')}</span>${sum ? `<span class="scan-count">${this.tr('used')}: <strong>${formatDisplayNumber(sum.used_current, LocalizationService.currentLocale)} <span>/ ${formatDisplayNumber(sum.eligible_total, LocalizationService.currentLocale)}</span></strong><span class="scan-percent">${percent} %</span></span>` : ''}${pending ? `<span class="scan-pending-count">${this.tr('pending_count')}: ${pending}</span>` : ''}${conflicts ? `<span class="scan-conflict-count">${this.tr('conflicts')}: ${conflicts}</span>` : ''}${sum ? `<div class="scan-progress" role="progressbar" aria-label="${this.tr('used')}" aria-valuemin="0" aria-valuemax="${total||1}" aria-valuenow="${Math.min(used,total)}" aria-valuetext="${used} / ${total} (${percent} %)"><span style="width:${percent}%"></span></div>` : ''}</div>
+        ${session && (!this.isOnline) ? `<p class="scan-offline-notice"><a href="/scan/offline">${this.tr(this.snapshot?'offline_saved_short':'offline_unprepared_short')}</a></p>` : ''}
+        ${!this.storageAvailable ? `<p class="scan-warning" role="alert">${this.tr('storage_failed')}</p>` : ''}
+        ${this.authBlocked ? `<p class="scan-warning">${this.tr('blocked_auth')}</p>` : ''}
         ${this.message ? `<p role="status">${e(this.message)}</p>` : ''}
-        ${this.error && this.row ? `<p class="scan-warning" role="alert">${e(reasonText(this.error))}</p>` : ''}
+        ${this.error && this.row ? `<p class="scan-warning" role="alert">${e(this.reasonText(this.error))}</p>` : ''}
         ${content}</main>`;
     }
     render() {
@@ -252,14 +298,14 @@ export class ScanPage extends Component {
         if (!liveVideo) this.input?.stop();
         let content;
         if (!this.row) content = this.entryHtml();
-        else if (this.route.page === 'history') content = `<section class="scan-settings"><h2>${tr('this_device')}</h2>${this.row.session.capabilities.event_history?`<button data-event-history>${tr('event_history')}</button>`:''}${this.historyHtml()}${this.eventHistory?`<h3>${tr('event_history')}</h3><ul class="scan-list">${this.eventHistory.map(r=>`<li>${e(reasonText(r.receipt.reason))} #${r.receipt.ticket_id} · ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</li>`).join('')}</ul><button data-event-more>${tr('search_more')}</button>`:''}</section>`;
-        else if (this.route.page === 'offline') content = `<section class="scan-settings"><h2>${tr('offline')}</h2><p>${tr('valid_until')}: ${e(new Date(this.row.session.offline_until).toLocaleString(LocalizationService.currentLocale))}</p>
-        ${this.snapshot ? `<p>${tr('prepared')}: ${this.snapshot.ticket_count} ${tr('tickets')} · ${e(new Date(this.snapshot.server_time).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
-        <button data-prepare ${this.preparing || !this.store || !navigator.onLine ? 'disabled' : ''}>${tr('prepare')}</button><button data-retry>${tr('retry')}</button><p>${tr('logout_note')}</p><button data-lock>${tr('logout')}</button>
-        <p>${tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${tr('pending_count')} / ${tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
+        else if (this.route.page === 'history') content = `<section class="scan-settings"><h2>${this.tr('this_device')}</h2>${this.row.session.capabilities.event_history?`<button data-event-history>${this.tr('event_history')}</button>`:''}${this.historyHtml()}${this.eventHistory?`<h3>${this.tr('event_history')}</h3><ul class="scan-list">${this.eventHistory.map(r=>`<li>${e(this.reasonText(r.receipt.reason))} #${r.receipt.ticket_id} · ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</li>`).join('')}</ul><button data-event-more>${this.tr('search_more')}</button>`:''}</section>`;
+        else if (this.route.page === 'offline') content = `<section class="scan-settings"><h2>${this.tr('offline')}</h2><p>${this.tr('valid_until')}: ${e(new Date(this.row.session.offline_until).toLocaleString(LocalizationService.currentLocale))}</p>
+        ${this.snapshot ? `<p>${this.tr('prepared')}: ${this.snapshot.ticket_count} ${this.tr('tickets')} · ${e(new Date(this.snapshot.server_time).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
+        <button data-prepare ${this.preparing || !this.store || !this.isOnline ? 'disabled' : ''}>${this.tr('prepare')}</button><button data-retry>${this.tr('retry')}</button><p>${this.tr('logout_note')}</p><button data-lock>${this.tr('logout')}</button>
+        <p>${this.tr('sync_latency')}: ${Math.round(this.lastSyncLatency||0)} ms · ${this.tr('oldest_pending')}: ${e(this.history.filter(r=>!isTerminal(r.state)).map(r=>r.payload.captured_at).sort()[0] || '-')}</p><h3>${this.tr('pending_count')} / ${this.tr('conflicts')}</h3>${this.historyHtml(true)}</section>`;
         else content = `<div class="scan-layout ${this.mode==='manual' && !reviewing?'manual-ready':''} ${this.mode==='camera'?'camera-mode':''} ${this.mode==='camera' && c?.state==='ready'?'camera-ready':''} ${reviewing ? 'has-result' : ''}"><section class="scan-input">
-        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${tr('camera_ready')}</strong><p>${tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="scan-camera-live"><span class="scan-dot"></span>${tr('camera_live')}</span></div><p class="scan-camera-hint">${tr('camera_aim')}</p><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${tr('manual_entry')}</button><details class="scan-camera-options"><summary>${tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${tr('camera_stop')}</button><button data-torch hidden>${tr('torch')}</button></div><p>${tr('camera_help_text')}</p></div></details></div>` : `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.canSearchTickets && this.canSearchUsers ? `<label>${tr('search_scope')}<select data-search-scope><option value="tickets">${tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${tr('users')}</option></select></label>`:''}<label>${tr(this.searchScope==='users' && this.canSearchUsers?'user_search':this.canSearchTickets?'search_input':'symbol')}<input name="query" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="200" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${tr('search_more')}</button>` : ''}${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button>`:''}`}</section>
-        ${this.mode==='manual' && reviewing?`<div class="scan-review-navigation"><button data-mode="camera">${icon('camera')}${tr('back_to_camera')}</button><button data-next-mode="manual" ${navigationBusy?'disabled':''}>${icon('manual')}${tr('search')}</button></div>`:''}<section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${!this.searchOpen && c ? this.resultHtml(c) : ''}</section></div>`;
+        ${this.mode==='camera' ? `<div class="scan-camera" data-active="false"><video aria-label="${this.tr('camera')}"></video><div class="scan-camera-idle">${icon('camera')}<strong>${this.tr('camera_ready')}</strong><p>${this.tr('camera_privacy')}</p><button class="scan-primary" data-camera>${icon('camera')}${this.tr('camera_start')}</button></div><div class="scan-viewfinder" aria-hidden="true"><i></i><i></i><i></i><i></i></div><span class="scan-camera-live"><span class="scan-dot"></span>${this.tr('camera_live')}</span></div><p class="scan-camera-hint">${this.tr('camera_aim')}</p><div class="scan-camera-footer"><button class="scan-manual-link" data-mode="manual">${this.tr('manual_entry')}</button><details class="scan-camera-options"><summary>${this.tr('camera_controls')}</summary><div class="scan-camera-popover"><div class="scan-camera-tools"><button data-switch>${icon('switch')}${this.tr('camera_switch')}</button><button data-camera-stop>${icon('stop')}${this.tr('camera_stop')}</button><button data-torch hidden>${this.tr('torch')}</button></div><p>${this.tr('camera_help_text')}</p></div></details></div>` : `<form data-search novalidate aria-busy="${Boolean(this.searchPending)}">${this.canSearchTickets && this.canSearchUsers ? `<label>${this.tr('search_scope')}<select data-search-scope><option value="tickets">${this.tr('tickets')}</option><option value="users" ${this.searchScope==='users'?'selected':''}>${this.tr('users')}</option></select></label>`:''}<label>${this.tr(this.searchScope==='users' && this.canSearchUsers?'user_search':this.canSearchTickets?'search_input':'symbol')}<input name="query" type="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="200" aria-invalid="${Boolean(this.searchError)}" ${this.searchError?'aria-describedby="scan-search-error"':''}></label><p class="scan-field-error" id="scan-search-error" role="alert" ${this.searchError?'':'hidden'}>${e(this.searchError?this.reasonText(this.searchError):'')}</p></form><p class="scan-search-context">${this.tr('search_current_event')}: ${e(this.row.session.title)}</p><ul class="scan-list scan-search-results">${(this.searchResults||[]).map((t,index)=>`<li><button data-search-ticket="${index}">${scannerSearchPreview(t,this.hasTickets)}</button></li>`).join('')}</ul>${this.searchResults?.length===30 ? `<button data-search-more>${this.tr('search_more')}</button>` : ''}${c?.state==='ready'?`<button class="scan-manual-link" data-mode="camera">${icon('camera')}${this.tr('back_to_camera')}</button>`:''}`}</section>
+        ${this.mode==='manual' && reviewing?`<div class="scan-review-navigation"><button data-mode="camera">${icon('camera')}${this.tr('back_to_camera')}</button><button data-next-mode="manual" ${navigationBusy?'disabled':''}>${icon('manual')}${this.tr('search')}</button></div>`:''}<section class="scan-detail" aria-live="polite" aria-busy="${['looking_up','persisting','awaiting_server'].includes(c?.state)}">${!this.searchOpen && c ? this.resultHtml(c) : ''}</section></div>`;
         // Recovery updates the shell counters without recreating the review surface.
         // Keep native disclosure state, focused controls and the actual scrolling node.
         const template=document.createElement('template');
@@ -321,26 +367,26 @@ export class ScanPage extends Component {
     }
     entryHtml() {
         const invalidCode = this.error === 'invalid_scan_code';
-        const error = this.error ? `<div class="scan-entry-error" id="scan-entry-error" role="alert" tabindex="-1">${icon('alert')}<div><strong>${e(reasonText(this.error))}</strong>${invalidCode ? `<p>${tr('entry_code_retry')}</p>` : ''}</div></div>` : '';
+        const error = this.error ? `<div class="scan-entry-error" id="scan-entry-error" role="alert" tabindex="-1">${icon('alert')}<div><strong>${e(this.reasonText(this.error))}</strong>${invalidCode ? `<p>${this.tr('entry_code_retry')}</p>` : ''}</div></div>` : '';
         return `<section class="scan-entry" aria-labelledby="scan-entry-title">
-            <h2 id="scan-entry-title">${tr('open')}</h2><p class="scan-entry-intro">${tr('entry_intro')}</p>
+            <h2 id="scan-entry-title">${this.tr('open')}</h2><p class="scan-entry-intro">${this.tr('entry_intro')}</p>
             <form data-open aria-busy="${Boolean(this.opening)}">
-                <div class="scan-entry-field"><label for="scan-entry-code">${tr('scan_code')}</label>
+                <div class="scan-entry-field"><label for="scan-entry-code">${this.tr('scan_code')}</label>
                 <input id="scan-entry-code" name="code" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="100" value="${e(this.entryDraft?.code || '')}" aria-invalid="${invalidCode}" aria-describedby="scan-code-hint${invalidCode?' scan-entry-error':''}" ${this.opening?'readonly':''}>
-                ${invalidCode ? error : ''}<p class="scan-entry-hint" id="scan-code-hint">${tr('entry_code_hint')}</p></div>
-                <div class="scan-entry-field"><label for="scan-entry-device">${tr('device')}</label>
-                <input id="scan-entry-device" name="device" autocomplete="off" required maxlength="80" value="${e(this.entryDraft?.device ?? tr('this_device'))}" aria-describedby="scan-device-hint" ${this.opening?'readonly':''}>
-                <p class="scan-entry-hint" id="scan-device-hint">${tr('entry_device_hint')}</p></div>
+                ${invalidCode ? error : ''}<p class="scan-entry-hint" id="scan-code-hint">${this.tr('entry_code_hint')}</p></div>
+                <div class="scan-entry-field"><label for="scan-entry-device">${this.tr('device')}</label>
+                <input id="scan-entry-device" name="device" autocomplete="off" required maxlength="80" value="${e(this.entryDraft?.device ?? this.tr('this_device'))}" aria-describedby="scan-device-hint" ${this.opening?'readonly':''}>
+                <p class="scan-entry-hint" id="scan-device-hint">${this.tr('entry_device_hint')}</p></div>
                 ${!invalidCode ? error : ''}
-                ${!navigator.onLine ? `<p class="scan-entry-network" role="status">${tr('entry_offline')}</p>` : ''}
-                <button class="scan-primary" ${this.opening || !navigator.onLine?'disabled':''}>${this.opening?tr('entry_opening'):tr('open')}${icon(this.opening?'clock':'arrow')}</button>
+                ${!navigator.onLine ? `<p class="scan-entry-network" role="status">${this.tr('entry_offline')}</p>` : ''}
+                <button class="scan-primary" ${this.opening || !navigator.onLine?'disabled':''}>${this.opening?this.tr('entry_opening'):this.tr('open')}${icon(this.opening?'clock':'arrow')}</button>
             </form>
-        </section>${this.rows.length ? `<section class="scan-saved" aria-labelledby="scan-saved-title"><h2 id="scan-saved-title">${tr('saved_sessions')}</h2><p class="scan-entry-hint">${tr('entry_saved_hint')}</p><div class="scan-saved-list">${this.rows.map((r,i)=>`<button data-session="${i}" ${this.opening?'disabled':''}><span><strong>${e(r.session.title)}</strong><span class="scan-saved-device">${e(r.session.device_name)}</span>${r.locked ? `<span class="scan-saved-locked">${tr('blocked_auth')}</span>` : ''}</span>${icon('arrow')}</button>`).join('')}</div></section>` : ''}`;
+        </section>${this.rows.length ? `<section class="scan-saved" aria-labelledby="scan-saved-title"><h2 id="scan-saved-title">${this.tr('saved_sessions')}</h2><p class="scan-entry-hint">${this.tr('entry_saved_hint')}</p><div class="scan-saved-list">${this.rows.map((r,i)=>`<button data-session="${i}" ${this.opening?'disabled':''}><span><strong>${e(r.session.title)}</strong><span class="scan-saved-device">${e(r.session.device_name)}</span>${r.locked ? `<span class="scan-saved-locked">${this.tr('blocked_auth')}</span>` : ''}</span>${icon('arrow')}</button>`).join('')}</div></section>` : ''}`;
     }
     historyHtml(onlyOpen = false) {
         const rows = this.history.filter(r => !onlyOpen || !isTerminal(r.state) || r.state==='conflict').sort((a,b)=>b.payload.captured_at.localeCompare(a.payload.captured_at));
-        return `<ul class="scan-list">${rows.length ? rows.map(r=>`<li><strong>${tr(r.state)==r.state ? reasonText(r.receipt?.reason) : tr(r.state)}</strong> #${r.payload.ticket_id}<p>${tr(r.payload.snapshot_id ? 'source_offline' : 'source_online')}</p><p>${tr('captured_at')}: ${e(new Date(r.payload.captured_at).toLocaleString(LocalizationService.currentLocale))}</p>${r.receipt ? `<p>${tr('committed_at')}: ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
-        ${r.state==='conflict' && this.row.session.capabilities.settings && !r.resolved ? `<form data-resolve="${r.key}"><label>${tr('resolution_reason')}<input name="reason" required minlength="3" maxlength="1000"></label><button>${tr('resolve')}</button></form>` : ''}</li>`).join('') : `<li>${tr('no_history')}</li>`}</ul>`;
+        return `<ul class="scan-list">${rows.length ? rows.map(r=>`<li><strong>${this.tr(r.state)==r.state ? this.reasonText(r.receipt?.reason) : this.tr(r.state)}</strong> #${r.payload.ticket_id}<p>${this.tr(r.payload.snapshot_id ? 'source_offline' : 'source_online')}</p><p>${this.tr('captured_at')}: ${e(new Date(r.payload.captured_at).toLocaleString(LocalizationService.currentLocale))}</p>${r.receipt ? `<p>${this.tr('committed_at')}: ${e(new Date(r.receipt.committed_at).toLocaleString(LocalizationService.currentLocale))}</p>` : ''}
+        ${r.state==='conflict' && this.row.session.capabilities.settings && !r.resolved ? `<form data-resolve="${r.key}"><label>${this.tr('resolution_reason')}<input name="reason" required minlength="3" maxlength="1000"></label><button>${this.tr('resolve')}</button></form>` : ''}</li>`).join('') : `<li>${this.tr('no_history')}</li>`}</ul>`;
     }
     bind() {
         const one = (s,f) => { const el=this.host.querySelector(s); if(el) el.onclick=f; };
@@ -377,7 +423,7 @@ export class ScanPage extends Component {
             };
         });
         one('[data-confirm]',()=>this.controller.confirm(Boolean(this.host.querySelector('[data-unpaid]')?.checked)));
-        const reset=this.host.querySelector('[data-reset]'); if(reset) reset.onsubmit=async ev=>{ev.preventDefault();try {await this.api.call('reset_scanner_password',{p_ticket:this.controller.ticket.ticket_id,p_password:reset.elements.password.value});reset.reset();this.error=null;this.message=tr('password_reset_done');this.render();}catch(err){reset.reset();this.error=err.message;this.render();}};
+        const reset=this.host.querySelector('[data-reset]'); if(reset) reset.onsubmit=async ev=>{ev.preventDefault();try {await this.api.call('reset_scanner_password',{p_ticket:this.controller.ticket.ticket_id,p_password:reset.elements.password.value});reset.reset();this.error=null;this.message=this.tr('password_reset_done');this.render();}catch(err){reset.reset();this.error=err.message;this.render();}};
         const unpaid=this.host.querySelector('[data-unpaid]'); if(unpaid){unpaid.checked=Boolean(this.controller.unpaidConfirmed);this.host.querySelector('[data-confirm]').disabled=!unpaid.checked;unpaid.onchange=()=>{this.controller.unpaidConfirmed=unpaid.checked;this.host.querySelector('[data-confirm]').disabled=!unpaid.checked;};}
         one('[data-next]',()=>this.nextScan());
         one('[data-next-mode]',()=>this.setInputMode('manual'));
@@ -409,12 +455,12 @@ export class ScanPage extends Component {
     }
     updateSoundControl() {
         const button=this.host.querySelector('[data-sound]');if(!button)return;
-        button.innerHTML=icon('sound')+tr(this.sound.ready?'sound_on':this.sound.enabled?'sound_enable':'sound_off');
+        button.innerHTML=icon('sound')+this.tr(this.sound.ready?'sound_on':this.sound.enabled?'sound_enable':'sound_off');
         button.setAttribute('aria-pressed',String(this.sound.ready));
     }
     updateCameraState() {
         const camera=this.host.querySelector('.scan-camera');
-        if(camera){camera.dataset.active=String(Boolean(this.input.stream));camera.dataset.paused=String(Boolean(this.input.paused));const hint=this.host.querySelector('.scan-camera-hint');if(hint)hint.textContent=tr(this.input.paused?'camera_review':'camera_aim');}
+        if(camera){camera.dataset.active=String(Boolean(this.input.stream));camera.dataset.paused=String(Boolean(this.input.paused));const hint=this.host.querySelector('.scan-camera-hint');if(hint)hint.textContent=this.tr(this.input.paused?'camera_review':'camera_aim');}
         const start=this.host.querySelector('[data-camera]');if(start){start.disabled=Boolean(this.cameraStarting);start.setAttribute('aria-busy',String(Boolean(this.cameraStarting)));}
         const torch=this.host.querySelector('[data-torch]');
         if(torch)torch.hidden=!this.input.stream?.getVideoTracks()[0]?.getCapabilities?.().torch;
@@ -425,6 +471,7 @@ export class ScanPage extends Component {
     startCamera() {
         if(this.cameraStarting)return this.cameraStarting.promise;
         const video=this.host.querySelector('video');if(!video)return;
+        this.prepareInputHistory();
         const attempt={};this.cameraStarting=attempt;this.error=null;
         attempt.promise=(async()=>{
             try {
@@ -476,7 +523,7 @@ export class ScanPage extends Component {
         try {
             if(query.length<2 || query.length>100)throw new Error('invalid_query');
             let results;
-            if (!navigator.onLine) {
+            if (!this.isOnline) {
                 if (scope==='users' || !offlineGrantValid(row)) throw new Error('offline_grant_expired');
                 const normalized=query.toLocaleLowerCase();
                 results=(await this.store.list('tickets',row.partition)).map(r=>r.ticket).filter(t=>t.ticket_id>after && `${t.holder_name || ''} ${t.purchaser_name || ''} ${t.purchaser_email || ''} ${t.batch_title || ''} ${t.symbol || ''}`.toLocaleLowerCase().includes(normalized)).slice(0,30);

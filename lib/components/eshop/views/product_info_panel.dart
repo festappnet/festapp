@@ -28,11 +28,10 @@ class ProductInfoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalPaid = paymentInfo?.paid ?? 0;
     final orderPrice = order.price ?? 0;
-    final provider = paymentInfo?.isProvider ?? order.isProviderPayment;
     String amount(double value) => Utilities.formatPrice(context, value,
-        decimalDigits: provider ? 2 : 0,
+        decimalDigits: OrderModel.decimalDigitsForAmount(value),
         currencyCode:
-            provider ? (paymentInfo?.currencyCode ?? order.currencyCode) : null);
+            paymentInfo?.currencyCode ?? order.currencyCode);
     final isFullyPaid = totalPaid >= orderPrice && orderPrice > 0;
 
     return Column(

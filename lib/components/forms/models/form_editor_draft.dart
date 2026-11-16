@@ -9,6 +9,8 @@ import 'form_bundle.dart';
 /// freeze is the sole boundary that assembles a complete immutable definition.
 class FormEditorDraft {
   FormDefinition definition;
+  bool customerPolicyDirty = false;
+  Map<String, dynamic>? paymentMethodPolicy;
   int aggregateVersion;
   Map<String, int> _productVersions = {};
   Map<String, int> _productTypeVersions = {};
@@ -19,17 +21,19 @@ class FormEditorDraft {
   );
   void captureProductCatalog(Iterable<ProductTypeModel> types) {
     for (final type in types) {
-      if (type.id != null)
+      if (type.id != null) {
         _productTypeVersions.putIfAbsent(
           type.id.toString(),
           () => type.aggregateVersion,
         );
+      }
       for (final product in type.products ?? const <ProductModel>[]) {
-        if (product.id != null)
+        if (product.id != null) {
           _productVersions.putIfAbsent(
             product.id.toString(),
             () => product.aggregateVersion,
           );
+        }
       }
     }
   }
@@ -148,9 +152,20 @@ class FormEditorDraft {
       ..remove('account_number')
       ..remove('secret')
       ..remove('payments');
+    // A disabled bank service must not clear or reselect the stored recipient.
+    // The server keeps that historical binding until an authorized repair.
+    if (paymentMethodPolicy != null &&
+        (paymentMethodPolicy!['methods'] as Map?)?['bank']?['policyEnabled'] !=
+            true) {
+      result.remove('bank_account');
+    }
     result['settings'] = FormMetadata.authoringSettingsSnapshot(
       result.remove('data') as Map<String, dynamic>?,
     );
+    if (customerPolicyDirty) {
+      result['customer_self_service'] =
+          definition.customerSelfService?['policy'] ?? <String, dynamic>{};
+    }
     result['expected_aggregate_version'] = aggregateVersion;
     result['expected_product_versions'] = Map<String, int>.from(
       _productVersions,

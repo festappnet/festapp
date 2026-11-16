@@ -12,6 +12,7 @@ AS $$
 DECLARE
     v_user_id uuid;
 BEGIN
+    PERFORM public.require_bank_authoring_scope_internal(p_bank_account_id,NULL);
     -- Security Check: Caller must be an Admin of the bank account
     IF NOT public.can_manage_bank_account(p_bank_account_id) THEN
         RAISE EXCEPTION 'Permission denied: Only bank account admins can manage users.' USING ERRCODE='42501';

@@ -1,5 +1,7 @@
+import {discountSummaryHtml} from './discount_summary.js';
+import {renderCustomerOrderChanges} from './customer_order_changes.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
-import { formatDisplayNumber } from '../../utils/formatters.js';
+import { formatDisplayNumber, formatPrice } from '../../utils/formatters.js';
 import { renderCardPaymentStatus, formatCardMoney } from './card_payment_status.js';
 import { renderOverviewProducts, renderOverviewCustomer, renderOverviewAnswers, renderOverviewChanges } from './order_overview_details.js';
 import { PublicOrderStrings } from './public_order_strings.js';
@@ -39,7 +41,7 @@ function renderOrderState(host, order, includeReference = true, hasTickets = fal
     if (isCardPaymentMethod(payment?.method)) {
         const statusHost = line(host, 'section', '');
         if (includeReference) line(statusHost, 'p', `${overviewText('orderReference')} ${order.symbol}`);
-        renderCardPaymentStatus(statusHost, { ...payment, currency: order.currency }, { onRefresh });
+        renderCardPaymentStatus(statusHost, { ...payment, currency: order.currency }, { onRefresh, hasTickets });
         return statusHost;
     }
     const state = order.state === 'storno' ? 'cancelled' : payment?.status || order.state;
@@ -135,7 +137,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
             if (person.label) line(content, 'p', person.label);
             renderOverviewAnswers(content, person.answers, `ticket:${person.id}`);
             const items = (order?.items || []).filter(item => String(item.ticketId) === String(person.id));
-            if (items.length) renderOverviewProducts(content, items, order.currency, money);
+            if (items.length) renderOverviewProducts(content, items, order.currency, order.discount ? (value, currency) => formatPrice(value, currency, 2, LocalizationService.currentLocale) : money, {originalPrices: Boolean(order.discount)});
         }
     };
     const pendingPeople = data.people.filter(person => !data.orders.some(order => String(order.id) === String(person.currentOrderId)));
@@ -147,8 +149,20 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
         const card = section(host, `${overviewText('orderDetails')} ${order.symbol}`, 'order-overview-card');
         renderOverviewCustomer(card, order.answers, `order:${order.id}`);
         renderAdmissions(card, data.people.filter(person => String(person.currentOrderId) === String(order.id)), order);
-        const total = line(card, 'dl', ''); total.className = 'overview-order-total';
-        fact(total, overviewText('total'), (isCardPaymentMethod(order.payment?.method) ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
+        if (order.discount) {
+            const historical = order.state === 'storno' || Math.round(Number(order.total) * 100) !== Math.round(Number(order.discount.net) * 100);
+            const discountHost = line(card, 'div', '');
+            if (historical) line(discountHost, 'p', LocalizationService.tr('DiscountCodes.originalSale'));
+            const summary = line(discountHost, 'div', '');
+            summary.innerHTML = discountSummaryHtml(order.discount);
+            if (historical) {
+                const total = line(card, 'dl', ''); total.className = 'overview-order-total';
+                fact(total, overviewText('total'), money(order.total, order.currency));
+            }
+        } else {
+            const total = line(card, 'dl', ''); total.className = 'overview-order-total';
+            fact(total, overviewText('total'), (isCardPaymentMethod(order.payment?.method) ? formatCardMoney(order.total, order.currency) ?? overviewText('unknown') : money(order.total, order.currency)));
+        }
         const payment = order.payment;
         if (!isCardPaymentMethod(payment?.method) && payment) {
             if (payment.totalOutstanding > 0 || payment.returned > 0 || payment.overpaid > 0 || payment.pending > 0) {
@@ -229,6 +243,9 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
 }
 
 export function stopOrderOverview(host) {
+    delete host._customerChangeSession;
+    delete host._customerChangeScope;
+    delete host.dataset.customerEditing;
     host._overviewRefreshCleanup?.();
     host._overviewGeneration = (host._overviewGeneration || 0) + 1;
 }
@@ -247,6 +264,9 @@ function scheduleOverviewRefresh(host, refresh) {
 }
 
 export async function loadOrderOverview(host, commands, scope, onContinue, offerInPage = false, background = false, onIdentity = () => {}) {
+    const changeScope = `${scope?.orderId ?? ''}:${scope?.token ?? ''}`;
+    if (host._customerChangeScope && host._customerChangeScope !== changeScope) { delete host._customerChangeSession; delete host.dataset.customerEditing; }
+    host._customerChangeScope = changeScope;
     host._overviewRefreshCleanup?.();
     const generation = (host._overviewGeneration || 0) + 1; host._overviewGeneration = generation;
     host.classList.add('order-overview');
@@ -267,7 +287,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         const snapshot = JSON.stringify({ ...data, serverTime: null });
         // Keep expanded details and keyboard focus stable when nothing changed.
         // A focused control may be in use: defer replacing it until the next poll.
-        if (snapshot !== host._overviewSnapshot && (!background || !host.contains(host.ownerDocument.activeElement))) {
+        if (snapshot !== host._overviewSnapshot && (!background || (!host.contains(host.ownerDocument.activeElement) && host.dataset.customerEditing !== 'true'))) {
             const opened = new Map([...host.querySelectorAll('details[data-overview-key]')].map(detail => [detail.dataset.overviewKey, detail.open]));
             renderOrderOverview(host, data,
                 onContinue && data.offers.some(o => o.pendingPlaces > 0) ? onContinue : null, offerInPage,
@@ -280,6 +300,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
                     document.body.appendChild(link); link.click(); link.remove();
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                 }, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
+            renderCustomerOrderChanges(host, data, scope, commands.client, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
             host.querySelectorAll('details[data-overview-key]').forEach(detail => { if (opened.has(detail.dataset.overviewKey)) detail.open = opened.get(detail.dataset.overviewKey); });
             host._overviewSnapshot = snapshot;
         }

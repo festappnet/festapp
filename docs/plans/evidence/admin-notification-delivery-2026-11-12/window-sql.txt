@@ -1,0 +1,31 @@
+Found 5 test file(s) to execute.
+>>> Setup: Resetting Sequences (Global)...
+>>> Setup Complete.
+
+
+▶ Running: database/tests/canonical_mutation_source_parity_test.sql
+
+▶ Running: database/tests/notification_center/email_window_policy_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_send_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_delivery_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_budget_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (150 ms): database/tests/notification_center/admin_email_send_test.sql
+  ✔ PASSED (278 ms): database/tests/canonical_mutation_source_parity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (472 ms): database/tests/notification_center/admin_email_delivery_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (772 ms): database/tests/notification_center/admin_email_budget_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (811 ms): database/tests/notification_center/email_window_policy_test.sql
+
+==================================================
+SUMMARY: 5 Passed, 0 Failed
+==================================================

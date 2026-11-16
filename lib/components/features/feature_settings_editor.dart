@@ -1,6 +1,11 @@
+import '../ticket_layout/ticket_layout_service.dart';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_settings.dart';
+
 import 'feature.dart';
+import 'feature_constants.dart';
+import 'features_strings.dart';
 import 'ticket_feature.dart';
 import 'editors/companion_feature_editor.dart';
 import 'companion_feature.dart';
@@ -23,17 +28,27 @@ import 'services_feature.dart';
 import 'editors/workshop_feature_editor.dart';
 import 'workshop_feature.dart';
 
-Widget buildFeatureSettingsEditor(BuildContext context, Feature feature,
-    {required int occasionId,
-    Future<void> Function(TicketFeature)? onSaveTicket,
-    bool readOnly = false}) {
+Widget buildFeatureSettingsEditor(
+  BuildContext context,
+  Feature feature, {
+  required int occasionId,
+  Future<void> Function(TicketFeature)? onSaveTicket,
+  TicketLayoutService? ticketLayoutService,
+  bool readOnly = false,
+}) {
+  if (feature.code == FeatureConstants.customerSelfService) {
+    // Rules belong to individual forms, not the occasion feature draft.
+    return Text(FeaturesStrings.customerSelfServiceDescription);
+  }
   if (feature is TicketFeature) {
     return TicketSettings(
-        key: ValueKey(feature.layout),
-        feature: feature,
-        occasionId: occasionId,
-        readOnly: readOnly,
-        onSave: onSaveTicket);
+      key: ValueKey(feature.layout),
+      feature: feature,
+      occasionId: occasionId,
+      readOnly: readOnly,
+      onSave: onSaveTicket,
+      service: ticketLayoutService,
+    );
   }
   if (feature is CompanionsFeature) return feature.buildSettingsEditor(context);
   if (feature is ContractFeature) return feature.buildSettingsEditor(context);

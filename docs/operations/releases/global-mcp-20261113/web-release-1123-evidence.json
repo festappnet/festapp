@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "tenantId": "festapptickets",
+  "release": {
+    "version": "0.20.598+1123",
+    "mainSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+    "tenantSha": "e6f652544a9e6f6e0e71d95e86ce34aee02fed07",
+    "previousTenantSha": "2fc497c48f1d3aa9132a1e5a6e870c7741c80aec"
+  },
+  "gates": {
+    "githubReleaseGate": {
+      "result": "pass",
+      "requiredJobsPassed": 8,
+      "sourceSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5"
+    },
+    "tenantDriftCheck": {
+      "result": "pass",
+      "policySourceSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5"
+    },
+    "previousProductionTipAncestor": {
+      "result": "pass",
+      "sha": "2fc497c48f1d3aa9132a1e5a6e870c7741c80aec"
+    },
+    "releaseManifestContract": {
+      "result": "pass",
+      "source": "existing protected tenant release input",
+      "valuesIncluded": false
+    },
+    "localBuild": {
+      "result": "pass",
+      "flutter": "3.47.7",
+      "target": "cloudflare",
+      "startedAtUtc": "2026-11-13T06:28:05Z",
+      "durationSeconds": 132.71
+    },
+    "artifactReceipt": {
+      "seal": "pass",
+      "verify": "pass",
+      "fileCount": 777,
+      "totalRecordedBytes": 170439273,
+      "outputsSha256": "0b745dd464509590cc57022fc3ef1e3231e769b0f1d95a70e7d95b7e2146f8be",
+      "receiptSha256": "7224a7cd039ab646d2682916183c470f1ff115febe1e7fe053b0d5fe9a932bbf"
+    },
+    "directDeployment": {
+      "result": "pass",
+      "executor": "automation/deploy_direct.sh",
+      "branch": "prod/festapptickets",
+      "deploymentId": "d87fc7aa-ae99-4da7-88d3-fe54141cbce2",
+      "startedAtUtc": "2026-11-13T06:30:46Z",
+      "durationSeconds": 25.61
+    },
+    "liveProbes": {
+      "result": "pass",
+      "consecutiveProbeCount": 3,
+      "startedAtUtc": "2026-11-13T06:31:11Z",
+      "durationSeconds": 19.64,
+      "checks": [
+        "version",
+        "build identity",
+        "legal routes"
+      ]
+    },
+    "publicMcpPermissionModeArtifact": {
+      "result": "pass",
+      "url": "https://vstupenky.online/web-assets/mcp_connection_page-BvxuLwZz.js",
+      "verifiedBehavior": "default permissionMode=requested"
+    },
+    "managementUI": {
+      "result": "pass",
+      "verification": "fresh post-deploy browser check reported by delegated browser agent",
+      "note": "A transient blank navigation and dynamic-import failure were observed around the rollout. Final fresh normal navigation and the subsequent real consent flow succeeded; a CDN-specific cause was not established."
+    }
+  },
+  "public": {
+    "liveUrl": "https://vstupenky.online",
+    "versionManifestUrl": "https://vstupenky.online/festapp-version.json",
+    "deploymentArtifactUrl": "https://d87fc7aa.vstupenkyonline.pages.dev"
+  },
+  "rollback": {
+    "previousVersion": "0.20.598+1122",
+    "previousTenantSha": "2fc497c48f1d3aa9132a1e5a6e870c7741c80aec",
+    "previousDeploymentId": "44f525d6-5627-4379-b50f-619ae351ffef",
+    "previousDeploymentUrl": "https://44f525d6.vstupenkyonline.pages.dev",
+    "receiptPath": "/Users/miakh/Library/Caches/festapp/releases/festapptickets-1123/rollback-receipt.json"
+  },
+  "scope": {
+    "otherTenantsTouched": false,
+    "backendDatabaseOrFunctionsChanged": false
+  }
+}

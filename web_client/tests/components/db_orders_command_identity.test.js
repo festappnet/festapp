@@ -137,3 +137,25 @@ test('a refreshed Wix proof preserves the exact request after a lost order respo
     assert.notEqual(bodies[2].commandId,bodies[0].commandId);
     assert.equal(bodies[2].orderDetails.checkoutOrigin,nextProof);
 });
+
+
+test('capacity rejection releases the intent while opaque throttling retains it', async t => {
+    let result;
+    const bodies = [];
+    t.mock.method(SupabaseService, 'getClient', () => ({
+        auth: {getSession: async () => ({data: {session: null}, error: null})},
+        functions: {invoke: async (_, {body}) => {
+            bodies.push(body);
+            return {data: result, error: null};
+        }},
+    }));
+    for (const definitive of [false, true]) {
+        const payload = {form: `capacity-retry-${definitive}`, ticket: []};
+        result = {code: 429, ...(definitive ? {errorCode: 'ABUSE_LIMIT_EXCEEDED'} : {})};
+        assert.equal((await DbOrders.sendOrder(payload)).code, 429);
+        result = {code: 200};
+        await DbOrders.sendOrder(payload);
+        const [first, retry] = bodies.slice(-2);
+        assert.equal(first.commandId === retry.commandId, !definitive);
+    }
+});

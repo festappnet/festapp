@@ -24,11 +24,11 @@
     "category": "administration",
     "slug": "nastaveni-akce",
     "title": "Jak změnit nastavení vytvořené akce",
-    "seoTitle": "Nastavení akce: změna názvu, termínu a zveřejnění",
-    "description": "Upravte již vytvořenou akci v administraci: název, termín, místo, zveřejnění a funkce. Odlište nastavení akce od prodejního formuláře.",
+    "seoTitle": "Nastavení akce: termín, místo, viditelnost a kontakty",
+    "description": "Upravte vytvořenou akci: název, termín, místo, obrázek, popis, viditelnost, e-mail pro odpovědi a časové pásmo. Změny uložte a ověřte.",
     "label": "Nastavení hotové akce",
     "workflow": "administration",
-    "preview": "cs/setup/dates"
+    "preview": "cs/administration/event-settings-overview"
   },
   {
     "id": "form",
@@ -189,6 +189,16 @@
     "preview": "cs/ai-agenti/login"
   },
   {
+    "id": "webhooks",
+    "category": "integrations",
+    "slug": "webhooky",
+    "title": "Jak nastavit webhooky pro nové objednávky",
+    "seoTitle": "Webhooky: propojení objednávek s vlastní aplikací",
+    "description": "Nastavte odběr nových objednávek, ověřte podpis zprávy a otestujte doručení. Postup pro vývojáře s generovanou API referencí a příkladem přijímače.",
+    "label": "Webhooky a vlastní aplikace",
+    "preview": "cs/forms/editor"
+  },
+  {
     "id": "orders",
     "category": "orders",
     "slug": "objednavky",
@@ -241,5 +251,15 @@
     "id": "troubleshooting",
     "category": "troubleshooting",
     "preview": "cs/forms/summary-mobile"
+  },
+  {
+    "id": "customer-self-service",
+    "category": "orders",
+    "slug": "zakaznicka-samoobsluha",
+    "title": "Zákaznická samoobsluha objednávky",
+    "seoTitle": "Zákaznická samoobsluha objednávky",
+    "description": "Pravidla storna celé objednávky nebo vybraných vstupenek, schvalování, důvodů a vracení peněz.",
+    "label": "Zákaznická samoobsluha objednávky",
+    "preview": "cs/customer-self-service/desktop"
   }
 ]

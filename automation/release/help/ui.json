@@ -67,6 +67,12 @@
       "organization": "Nastavení pořadatele: bankovní účty mimo průvodce založením.",
       "check-in": "Webový skener: postup pro obsluhu u vstupu.",
       "scanner-settings": "Webový skener: společné nastavení akce pro pořadatele a editory."
+    },
+    "apiReference": {
+      "title": "API dokumentace",
+      "description": "Propojte vlastní aplikaci nebo automatizaci. Automaticky generovaná reference obsahuje přihlášení přes OAuth, požadovaná oprávnění, vstupy, odpovědi a příklady.",
+      "open": "Otevřít úplnou referenci API (DPoP)",
+      "schema": "Otevřít OpenAPI JSON"
     }
   },
   "en": {
@@ -137,6 +143,12 @@
       "organization": "Organizer settings: bank accounts outside the event wizard.",
       "check-in": "Web scanner: the door staff workflow.",
       "scanner-settings": "Web scanner: shared event settings for organizers and editors."
+    },
+    "apiReference": {
+      "title": "API documentation",
+      "description": "Connect your own application or automation. The generated reference covers OAuth sign-in, required permissions, inputs, responses and examples.",
+      "open": "Open the full API reference (DPoP)",
+      "schema": "View OpenAPI JSON"
     }
   }
 }

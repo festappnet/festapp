@@ -93,5 +93,35 @@ BEGIN
  PERFORM assert_eq(result->>'hasChanges','true','Stored price-only change is visible');
  PERFORM assert_eq(jsonb_array_length(result->'productChanges'),0,'Price-only change invents no product edits');
  PERFORM assert_eq(has_function_privilege('authenticated','public.get_order_change_summary_v1(bigint)','EXECUTE'),false,'Internal summary is not a public customer-data RPC');
+ -- A discounted sale stays unchanged when optional placement metadata is enriched.
+ original:=jsonb_build_object('discount',jsonb_build_object('code','TEST30','base',100,'discount',30,'net',70),
+  'tickets',jsonb_build_array(jsonb_build_object('id',t2,'products',jsonb_build_array(jsonb_build_object(
+   'id',99,'title','Vstupné','currency_code','CZK','price',70,'base_price',100,'discount_amount',30,'spot_title','')))));
+ UPDATE eshop.orders_history SET data=original||'{"is_sent_to_customer":true}',price=70 WHERE "order"=o;
+ current_data:=jsonb_set(original,'{tickets,0,products,0,spot_group_title}','""');
+ current_data:=jsonb_set(current_data,'{tickets,0,products,0,is_standing}','false');
+ UPDATE eshop.orders SET data=current_data,price=70 WHERE id=o;
+ result:=public.get_order_change_summary_v1(o);
+ PERFORM assert_eq(result->>'hasChanges','false','Empty placement metadata must not invent an outdated discounted confirmation');
+ PERFORM assert_eq(public.get_products_for_ticket(t2)#>>'{data,order_history,is_newer_version_available}','false','Ticket editor does not warn after an unchanged discounted sale');
+ -- Legacy sale already identified the seat, but did not store its group label.
+ original:=jsonb_set(original,'{tickets,0,products,0,spot_title}','"1E"');
+ UPDATE eshop.orders_history SET data=original||'{"is_sent_to_customer":true}' WHERE "order"=o;
+ current_data:=jsonb_set(original,'{tickets,0,products,0,spot_group_title}','"1"');
+ UPDATE eshop.orders SET data=current_data WHERE id=o;
+ PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','false','Enriching an unrecorded group label is not evidence of a changed seat');
+ PERFORM assert_eq(public.get_products_for_ticket(t2)#>>'{data,order_history,is_newer_version_available}','false','Legacy discounted ticket editor remains current after group enrichment');
+ UPDATE eshop.orders SET data=jsonb_set(current_data,'{tickets,0,products,0,spot_title}','"1F"') WHERE id=o;
+ PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','true','A known seat number change still requires an update without a historical group');
+ -- A recorded null/empty value is a known ungrouped placement, not an absent legacy field.
+ UPDATE eshop.orders_history SET data=jsonb_set(original,'{tickets,0,products,0,spot_group_title}','null')||'{"is_sent_to_customer":true}' WHERE "order"=o;
+ UPDATE eshop.orders SET data=current_data WHERE id=o;
+ PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','true','Adding a group to a recorded ungrouped seat remains a change');
+ UPDATE eshop.orders_history SET data=jsonb_set(original,'{tickets,0,products,0,spot_group_title}','""')||'{"is_sent_to_customer":true}' WHERE "order"=o;
+ PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','true','A recorded empty group is still a known ungrouped baseline');
+ -- Once recorded, group changes are comparable and remain actionable.
+ UPDATE eshop.orders_history SET data=current_data||'{"is_sent_to_customer":true}' WHERE "order"=o;
+ UPDATE eshop.orders SET data=jsonb_set(current_data,'{tickets,0,products,0,spot_group_title}','"Balkon"') WHERE id=o;
+ PERFORM assert_eq(public.get_order_change_summary_v1(o)->>'hasChanges','true','A real placement change still requires an update');
 END $$;
 ROLLBACK;

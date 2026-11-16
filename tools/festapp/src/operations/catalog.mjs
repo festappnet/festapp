@@ -1,3 +1,4 @@
+import {webhookDescriptors,webhookDataSchemas,invokeWebhookOperation} from './webhooks.mjs';
 import { inventoryAssignmentDescriptors, inventoryAssignmentDataSchemas, invokeInventoryAssignmentOperation } from './inventory-assignments.mjs';
 import {lifecycleDescriptors,lifecycleDataSchemas,invokeLifecycleOperation} from './lifecycle.mjs';
 import {agendaDescriptors,agendaDataSchemas,invokeAgendaOperation} from './agenda.mjs';
@@ -55,6 +56,7 @@ const projection = z
     })
     .strict();
 const dataSchemas = {
+    ...webhookDataSchemas,
     ...lifecycleDataSchemas,
     ...agendaDataSchemas,
     ...financeDataSchemas,
@@ -160,7 +162,7 @@ const resultSchema = (id, schema = dataSchemas[id]) =>
             .optional(),
         meta: metaSchema,
     });
-const delegatedDescriptors = [...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
+const delegatedDescriptors = [...webhookDescriptors, ...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
 const descriptors = [
     ...delegatedDescriptors.map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.', input: z.strictObject({}), domainReadOnly: true },
@@ -188,6 +190,7 @@ const descriptors = [
     },
     {
         id: 'ticket_layouts.preview',
+        costClass: 'document',
         name: 'festapp_ticket_layouts_preview',
         description:
             'Explicitly render an unsaved synthetic ticket using the canonical PDF renderer. Returns a viewable PNG and an expiring PDF resource. Consumes preview quota; never saves artwork or sends mail.',
@@ -322,7 +325,7 @@ export class Operations {
         check(data && !data.error);
         return data;
     }
-    async invoke(id, raw) {
+    async invoke(id, raw, { onAccepted } = {}) {
         const meta = {
             contractVersion: 1,
             requestId: randomUUID(),
@@ -349,6 +352,7 @@ export class Operations {
             return await this.owner.authorized(async (client, context) => {
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);
+                onAccepted?.();
                 let data;
                 if (id === 'context.inspect') {
                     data = {
@@ -374,6 +378,7 @@ export class Operations {
                     }
                 }
                 else if (id === 'access.inspect') data = this.owner.listAccess ? await this.owner.listAccess(client) : await operatorAccess(client, this.owner.profile);
+                else if (webhookDataSchemas[id]) data = await invokeWebhookOperation(this.owner, client, id, args);
                 else if (lifecycleDataSchemas[id]) data = await invokeLifecycleOperation(this.owner, client, id, args);
                 else if (agendaDataSchemas[id]) data = await invokeAgendaOperation(this.owner, client, id, args);
                 else if (financeDataSchemas[id]) data = await invokeFinanceOperation(this.owner, client, id, args);
@@ -502,7 +507,7 @@ export class Operations {
                         scenario: args.scenario,
                     };
                     const fingerprint = fingerprintDraft(
-                        this.owner.profile.binding,
+                        (this.owner.layoutProfile ?? this.owner.profile).binding,
                         saveRequest,
                     );
                     saveRequest.draftFingerprint = fingerprint;

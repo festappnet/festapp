@@ -8,7 +8,7 @@ cd /opt/festapp-supabase/docker
 exec 9>.festapp-runtime-upgrade.lock
 flock -n 9 || { echo 'another runtime operation is active' >&2; exit 1; }
 [[ "$(sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' .env)" == "$TARGET_DATABASE" ]] || { echo 'database mismatch' >&2; exit 1; }
-[[ "$(docker exec supabase-db psql -X -U postgres -d "$TARGET_DATABASE" -Atqc "SELECT to_regprocedure('public.wake_notification_center()') IS NOT NULL AND to_regprocedure('public.maintain_notification_center(integer)') IS NOT NULL")" == t ]] || exit 1
+[[ "$(docker exec supabase-db psql -X -U postgres -d "$TARGET_DATABASE" -Atqc "SELECT to_regprocedure('public.wake_notification_center()') IS NOT NULL AND to_regprocedure('public.maintain_notification_center(integer)') IS NOT NULL AND to_regprocedure('public.collect_notification_center_emails(integer)') IS NOT NULL AND to_regprocedure('public.enqueue_notification_center_emails(integer)') IS NOT NULL AND to_regprocedure('public.enqueue_bank_sync_health_alerts(bigint)') IS NULL")" == t ]] || exit 1
 # pg_cron lives in the control database; preserve every unrelated existing job.
 docker exec -i supabase-db psql -X -U postgres -d postgres -q -v ON_ERROR_STOP=1 -v target_database="$TARGET_DATABASE" <<'SQL'
 BEGIN;

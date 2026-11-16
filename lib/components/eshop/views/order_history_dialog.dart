@@ -8,6 +8,7 @@ import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:intl/intl.dart';
 
+import '../../discount_codes/discount_strings.dart';
 import '../models/orders_history_model.dart';
 import '../orders_strings.dart';
 import 'order_state_display.dart';
@@ -213,6 +214,25 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
                 ),
                 alignTop: true,
               ),
+            if (item.data?['discount'] case final Map discount) ...[
+              const Divider(height: 24),
+              _buildInfoRow(
+                DiscountStrings.text('code'),
+                Text(discount['code']?.toString() ?? ''),
+              ),
+              for (final key in ['base', 'discount'])
+                _buildInfoRow(
+                  DiscountStrings.text(key),
+                  Text(
+                    Utilities.formatPrice(
+                      context,
+                      (discount[key] as num).toDouble(),
+                      currencyCode: discount['currency'] as String?,
+                      decimalDigits: 2,
+                    ),
+                  ),
+                ),
+            ],
             if (item.price != null) ...[
               const Divider(height: 24),
               Row(

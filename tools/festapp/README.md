@@ -224,67 +224,7 @@ or one whole organizer. Explicitly consented organizer grants can also create
 hidden occasions with sales closed through the canonical command. Hosted artwork
 writes, preview and issued-ticket actions remain separate waves.
 
-## Hosted OAuth: general clients and the public ChatGPT connection
-
-General operator clients can request the complete implemented operation catalog,
-including event creation, forms, seating, products, people and settings. There
-is no default eight-permission or read-only ceiling. Actual access is the
-intersection of requested scopes, explicit consent, selected resources and the
-ordinary user's live SQL rights. Organizer-only actions still require organizer
-consent; event consent cannot grant authority over another event or organizer.
-The generated [operation reference](../../automation/release/help/mcp-reference.json)
-and its permission contract are authoritative, not a separate transport allowlist.
-The public ChatGPT client below intentionally retains its distinct restricted
-order-summary profile.
-
-### Official Inspector web UI
-
-Generate both the native issuer registration and the Inspector configuration
-from the selected, reviewed private remote configuration:
-
-```sh
-pnpm --dir tools/festapp exec node src/remote/main.mjs client inspector /absolute/private/remote-config.json --origin http://127.0.0.1:6274
-```
-
-This prints configuration only. It does not register a client, authenticate,
-change a profile or invoke any operation. Apply the returned `registration`
-through the protected configuration workflow, preserving existing clients and
-keys, validate it with `remote/main.mjs check`, then restart only the standalone
-MCP sidecar. Import the returned `inspector` configuration into Inspector.
-The registration has the operator profile and no artificial functional ceiling;
-the requested scopes follow the shared permission catalog.
-
-Start Inspector with `BROWSER=none pnpm dlx @modelcontextprotocol/inspector@2.14.0`
-and open its UI using the exact `127.0.0.1` origin. Its web callback is always
-`<origin>/oauth/callback`; the displayed redirect value is read-only. A Codex
-registration ending in `/callback` is a different client and cannot substitute
-for this registration. Do not disable callback checks, PKCE or browser protections.
-Choose only the intended test resources and functions in consent. Declining
-requested functions completes a narrower connection; it must not restart consent.
-For uncertain writes, keep the same command UUID and payload. A stale version
-requires reloading and a new decision, not blind retries.
-
-### Client ID Metadata Documents
-
-The issuer also supports opt-in trusted native CIMD through the pinned
-oidc-provider implementation. Add `clientMetadataDocuments` to the protected
-remote configuration with `allowedOrigins` (exact trusted HTTPS origins) and an
-explicit `dataProfile` (`operator` for trusted private general clients).
-Omitting `allowedScopes` permits the full implemented catalog; an explicit
-ceiling is appropriate only for a deliberately restricted integration.
-
-Only metadata from these origins is fetched. The provider validates document
-identity, caches metadata, prevents redirects and performs its SSRF checks.
-Admitted clients must be public native applications with literal-loopback HTTP
-callbacks, authorization-code/optional-refresh grants and no shared secret.
-Metadata never chooses a Festapp profile or expands rights. Removing the trusted
-origin or narrowing its scope policy is checked on existing token use too.
-CIMD is advertised only when configured. Unconfigured issuers remain static;
-open dynamic registration stays disabled. Remote web metadata clients require
-a separate callback/CSP policy and are not enabled by this native trust setting.
-See [authorization policy](../../docs/architecture/operations/remote-mcp-auth.md).
-
-### Public ChatGPT connection
+## Hosted OAuth pilot: connect in a browser
 
 The live regional endpoint is `https://mcp.vstupenky.online/mcp`. The former
 `mcp.festapp.net` endpoint is retired with HTTP 410. The regional cutover and
@@ -351,6 +291,23 @@ but is exempt from IP quotas. Public quotas are fixed 60-second windows (240/IP,
 bounded sidecar, leaving the existing API release separate. Only one process
 may own its SQLite volume. SIGKILL releases the separate kernel lock automatically;
 never delete or replace SQLite lock anchors. Close storage only after requests drain.
+
+Public API JSON and HTML are ignored build outputs. After a frozen package
+install, run `pnpm --dir tools/festapp run api:prepare` before API tests or
+packaging. Ordinary `api:generate` writes only the eight current projections;
+preparation materializes the pinned release archive and those current immutable
+URLs, then builds the offline HTML. `api:check` verifies the released baseline
+and never skips unavailable or corrupt archive inputs. The archive locator and
+SHA256 are in `api-contract-archive.json`; release approval remains in
+`api-release-baseline.json`. Set `FESTAPP_API_CONTRACT_ARCHIVE` to a verified
+local archive for offline preparation. Runtime requests serve local bytes.
+
+The Docker build generates its artifacts in a separate stage without Git or
+host build outputs. Pass `--build-arg FESTAPP_SOURCE_SHA=$(git rev-parse HEAD)`
+when building `Dockerfile.remote` from the repository root. Provenance lives in
+the manifest; changing implementation bytes alone does not change contract
+identity. Make explicitly prepares its current projection. Help uses the same
+authored facade metadata as the API, without a dependency on generated files.
 
 Order-summary clients use only `get_operator_order_summaries_v1`: SQL returns
 safe facts directly, without customer data or revisions. Exact symbols are
@@ -475,3 +432,54 @@ identical-command replay, persisted readback, a non-default event time zone,
 the saved public link, scope denial and independent connection revocation.
 This uses synthetic task data with cron and external email disabled. It does not
 establish public ChatGPT acceptance or authorize production changes.
+
+## Delegated integrations API (local implementation)
+
+The existing hosted process now owns `/integrations/v1` for the global Festapp
+and regional vstupenky.online facades. Configuration schema 3 requires explicit
+client transport/resource/operation/scope/proof policy and endpoint bindings.
+Schema 2 upgrades only to its historical MCP/Make boundary. New API connections
+never adopt old Make/MCP tokens. Public addresses are prepared, not deployed.
+
+Run `pnpm run api:generate`, `pnpm run api:check`, `pnpm run api:docs` using the
+pinned package manager. Full offline reference artifacts are under
+`contracts/api-v1/{global-api,regional-api}/docs/index.html`, with summary
+variants in `profiles/order-summary/docs/`. API and docs ship in the same image.
+`api:compatibility` intentionally blocks initial publication until an approved
+released baseline is sealed. A generated file is not evidence of publication.
+
+API and MCP use `DELEGATED_OPERATIONS` and the same `Operations` executor,
+input/output validation, SQL authorization, preview/version checks and receipts.
+The operator contract exposes 174 operations for Bearer clients and all 196 for
+registered DPoP + PAR clients. The 22 sensitive operations additionally require
+GoTrue-verified AAL2 authentication no older than 300 seconds; refreshing tokens
+does not renew that authentication time. The first-party consent upgrades a
+separate delegated session using the account's verified TOTP factor, preserving
+the browser's independent refresh credential. API bodies cannot assert MFA.
+
+Consent defaults to seven days; explicit client policy may allow 30/90/365 days
+with the fixed deadline and 30-day idle limit. Exact spent-token replay evidence
+is packed into capped encrypted buckets in the existing store. No service
+credentials grant exists. Registration ceilings never grant account roles or
+expand existing connections; the user must explicitly approve the requested scopes.
+
+Artwork recovery is shared across API/MCP connections of the same actor and
+canonical tenant. Preserve the full original `saveRequest`: repeating it retains
+the same SQL command identity even when an outward reply was lost after commit.
+Pending/resume handles unresolved upstream responses. Before upgrading a hosted
+store, stop its runtime and run `migrate-layout-intents CONFIG --secrets SECRETS
+--data DATA` with the remote CLI. This offline migration preserves legacy UUIDs
+and baselines and fails closed for unknown owners or conflicting pending intents.
+There is no request-time legacy-store fallback.
+
+Make generation consumes the public regional summary contract and preserves
+`festapp-make`, its callback and scope ceiling. It requires a new connection to
+`https://mcp.festapp.net` for `https://api.vstupenky.online/integrations`.
+The bounded migration example `examples/unified-api-migration-config.json` keeps
+the original MCP resource and legacy transport on the same registered Make client
+while issuing distinct new regional API grants. It does not copy credentials
+between issuers or upgrade old grants. Keep any original issuer/store intact
+until real consumers reconsent; do not relabel its audience.
+Keep the current Make connector and connections unchanged until the existing review is accepted. API rollout does not authorize Make publication or cutover. See the
+[cutover ledger](../../docs/plans/festapp-unified-api-DELETION-LEDGER-2026-11-13.md)
+and [authorization recovery](../../docs/operations/festapp-api-auth-recovery.md).

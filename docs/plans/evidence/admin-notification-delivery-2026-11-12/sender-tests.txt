@@ -1,0 +1,10 @@
+Check supabase/functions/_shared/adminNotificationEmail_test.ts
+Check supabase/functions/_shared/adminNotificationSender_test.ts
+running 2 tests from ./supabase/functions/_shared/adminNotificationEmail_test.ts
+digest renders escaped authorized contributions, separate currencies and safe tenant links without RPC ... ok (13ms)
+renderer obtains one authorized SQL context with explicit recipient and never loads item DTOs ... ok (38ms)
+running 1 test from ./supabase/functions/_shared/adminNotificationSender_test.ts
+recipient digest uses the sole sender without tenant tags or engagement tracking; unknown never retries blindly ... ok (624µs)
+
+ok | 3 passed | 0 failed (81ms)
+

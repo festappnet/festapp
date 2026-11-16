@@ -3,8 +3,21 @@
 -- pg_catalog; all business inputs are passed as bound parameters.
 CREATE OR REPLACE FUNCTION public.payment_provider_call_internal(p_provider text,p_operation text,p_args jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE handler_name name; result jsonb;
+DECLARE handler_name name; result jsonb; policy_unit bigint; policy_org bigint;
 BEGIN
+ IF p_operation IN ('form_availability','initialize_payment','validate_form','setup_recipients','form_editor_fields','unit_fields','unit_feature') THEN
+  IF p_args ? 'formId' THEN SELECT oc.unit,oc.organization INTO policy_unit,policy_org FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion WHERE f.id=(p_args->>'formId')::bigint;
+  ELSIF p_args ? 'unitId' THEN SELECT id,organization INTO policy_unit,policy_org FROM public.units WHERE id=(p_args->>'unitId')::bigint;
+  END IF;
+  IF policy_unit IS NOT NULL AND NOT coalesce(public.payment_method_policy_enabled_internal(policy_unit,p_provider),false) THEN
+   IF p_operation='form_availability' THEN RETURN jsonb_build_object('providerId',p_provider,'configured',false,'available',false,'recipient',NULL,'supportedSurfaces','[]'::jsonb,
+    'reason',jsonb_build_object('code',public.resolve_payment_method_policy_internal(policy_org,policy_unit)#>>ARRAY['methods',p_provider,'reason']));
+   ELSIF p_operation='setup_recipients' THEN RETURN '[]'::jsonb;
+   ELSIF p_operation='unit_feature' THEN RETURN 'false'::jsonb;
+   ELSIF p_operation IN ('form_editor_fields','unit_fields') THEN RETURN '{}'::jsonb;
+   ELSE RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
+  END IF;
+ END IF;
  SELECT f.proname INTO handler_name FROM eshop.payment_providers r
  JOIN pg_catalog.pg_proc f ON f.oid=r.handler
  JOIN pg_catalog.pg_namespace n ON n.oid=f.pronamespace
@@ -35,6 +48,7 @@ BEGIN
  IF NOT public.payment_method_is_online_internal(method) THEN RETURN NULL; END IF;
  result:=public.payment_provider_call_internal(method,'projection',jsonb_build_object('orderId',p_order));
  IF result->>'method' IS DISTINCT FROM method THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_IDENTITY_MISMATCH'; END IF;
+ IF public.payment_collection_action_internal(p_order)->'allowed' IS DISTINCT FROM 'true'::jsonb THEN result:=result||jsonb_build_object('allowedActions','["refresh"]'::jsonb); END IF;
  RETURN result;
 END $$;
 CREATE OR REPLACE FUNCTION public.attach_provider_order_source_internal(p_order bigint,p_command uuid,p_input jsonb)
@@ -115,7 +129,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN current:='{"available":false,"reason":{"code":"provider_unavailable"}}'; END;
   fields:=fields||jsonb_build_object(r.provider_key,current);
  END LOOP;
- RETURN jsonb_build_object('payment_providers',features,'providerFields',fields)
+ RETURN jsonb_build_object('payment_method_policy',(SELECT public.resolve_payment_method_policy_internal(organization,id) FROM public.units WHERE id=p_unit),'payment_providers',features,'providerFields',fields)
   ||CASE WHEN fields ? 'stripe' THEN jsonb_build_object('stripe_preview_enabled',fields#>'{stripe,stripe_preview_enabled}') ELSE '{}'::jsonb END;
 END $$;
 CREATE OR REPLACE FUNCTION public.payment_sale_policy_internal()
@@ -124,9 +138,10 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,ext
 $$;
 CREATE OR REPLACE FUNCTION public.form_payment_availability_internal(p_form bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
-DECLARE r record; current jsonb; providers jsonb:='{}'; available jsonb:='[]'; config jsonb; bank boolean; cash boolean; configured boolean; enabled boolean;
+DECLARE r record; current jsonb; providers jsonb:='{}'; available jsonb:='[]'; config jsonb; bank boolean; cash boolean; configured boolean; enabled boolean; collection_ready boolean; template_audit jsonb; form_unit bigint; form_occasion bigint;
 BEGIN
- SELECT data->'payments' INTO config FROM public.forms WHERE id=p_form;
+ SELECT f.data->'payments',oc.unit,oc.id INTO config,form_unit,form_occasion FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion WHERE f.id=p_form;
+ IF form_occasion IS NOT NULL THEN template_audit:=public.payment_template_audit_internal(form_occasion); END IF;
  current:=public.payment_provider_call_internal('bank','form_availability',jsonb_build_object('formId',p_form));
  bank:=coalesce((current->>'available')::boolean,false);
  current:=public.payment_provider_call_internal('cash','form_availability',jsonb_build_object('formId',p_form));
@@ -142,12 +157,20 @@ BEGIN
     OR jsonb_typeof(current->'available') IS DISTINCT FROM 'boolean' OR jsonb_typeof(current->'configured') IS DISTINCT FROM 'boolean'
     OR jsonb_typeof(current->'supportedSurfaces') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'PAYMENT_PROVIDER_PROJECTION_INVALID'; END IF;
    enabled:=configured AND current->'available'='true'::jsonb AND current->'configured'='true'::jsonb;
-   current:=current||jsonb_build_object('available',enabled,'configured',configured,'policy',public.payment_sale_policy_internal());
+   -- Public sale discovery may intentionally be closed for an operator-only
+   -- sandbox. Its connector must explicitly attest its private collection gate.
+   collection_ready:=configured AND current->'configured'='true'::jsonb AND coalesce(current->'collectionAvailable',current->'available')='true'::jsonb;
+   IF template_audit->'compatible' IS DISTINCT FROM 'true'::jsonb OR
+    (NOT coalesce(public.payment_method_policy_enabled_internal(form_unit,'bank'),false) AND template_audit->'reviewed' IS DISTINCT FROM 'true'::jsonb) THEN
+    enabled:=false; collection_ready:=false; current:=current||jsonb_build_object('reason',jsonb_build_object('code','payment_template_review_required'));
+   END IF;
+   current:=current||jsonb_build_object('available',enabled,'collectionAvailable',coalesce(collection_ready,false),'configured',configured,'policy',public.payment_sale_policy_internal());
   EXCEPTION WHEN OTHERS THEN
    current:=jsonb_build_object('providerId',r.provider_key,'configured',configured,'available',false,
     'reason',jsonb_build_object('code',CASE WHEN configured THEN 'provider_unavailable' ELSE 'not_configured' END),
     'supportedSurfaces','[]'::jsonb,'recipient',NULL,'policy',public.payment_sale_policy_internal());
-   enabled:=false;
+   enabled:=false; collection_ready:=false;
+   current:=current||jsonb_build_object('collectionAvailable',false);
   END;
   providers:=providers||jsonb_build_object(r.provider_key,current);
   IF enabled THEN available:=available||jsonb_build_array(r.provider_key); END IF;
@@ -169,6 +192,9 @@ BEGIN
   WHERE k NOT IN ('bankEnabled','providerConnections','cashEnabled','cashInstructions') AND NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE legacy_connection_field=k))
   OR (config ? 'bankEnabled' AND jsonb_typeof(config->'bankEnabled')<>'boolean') THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INVALID'; END IF;
  config:=public.merge_form_payments_internal(config,NULL);
+ IF EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion WHERE f.id=p_form AND (
+  (config->'bankEnabled'='true'::jsonb AND NOT public.payment_method_policy_enabled_internal(oc.unit,'bank')) OR
+  (config->'cashEnabled'='true'::jsonb AND NOT public.payment_method_policy_enabled_internal(oc.unit,'cash')))) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
  IF config->'cashEnabled'='true'::jsonb AND EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
    JOIN eshop.external_services e ON e.unit=o.unit AND e.type='FAKTUROID' WHERE f.id=p_form) THEN
   RAISE EXCEPTION 'CASH_FAKTUROID_UNSUPPORTED: Cash reservations cannot use mandatory Fakturoid invoicing'; END IF;
@@ -185,6 +211,9 @@ BEGIN
   AND EXISTS(SELECT 1 FROM public.forms f JOIN public.form_fields ff ON ff.form=f.id JOIN eshop.products p ON p.product_type=ff.product_type
    WHERE f.id=p_form AND f.is_open AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false) AND p.price>0) THEN
   RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INCOMPLETE'; END IF;
+ IF EXISTS(SELECT 1 FROM public.forms f JOIN public.form_fields ff ON ff.form=f.id JOIN eshop.products p ON p.product_type=ff.product_type
+  WHERE f.id=p_form AND f.is_open AND NOT coalesce(ff.is_hidden,false) AND NOT coalesce(p.is_hidden,false) AND p.price>0)
+  AND jsonb_array_length(public.form_payment_availability_internal(p_form)->'available')=0 THEN RAISE EXCEPTION 'PAYMENT_CONFIGURATION_INCOMPLETE'; END IF;
  FOR r IN SELECT provider_key FROM eshop.payment_providers WHERE hosted_checkout LOOP
   IF public.payment_provider_connection_internal(config,r.provider_key) IS NOT NULL THEN
    PERFORM public.payment_provider_call_internal(r.provider_key,'validate_form',jsonb_build_object('formId',p_form));

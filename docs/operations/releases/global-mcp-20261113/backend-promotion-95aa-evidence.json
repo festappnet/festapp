@@ -1,0 +1,76 @@
+{
+  "capturedAt": "2026-11-13T06:29:53Z",
+  "sourceRevision": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+  "releaseGate": {
+    "result": "PASS",
+    "requiredJobs": [
+      {"name":"web-startup","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861849/job/131725261036"},
+      {"name":"seat-checkout","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861791/job/131725260747"},
+      {"name":"image-contract","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861854/job/131725260622"},
+      {"name":"client-contract","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861724/job/131725260580"},
+      {"name":"ticket-preview-and-delivery","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861791/job/131725260426"},
+      {"name":"wix-checkout-compatibility","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861819/job/131725260335"},
+      {"name":"server-policy","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861724/job/131725260231"},
+      {"name":"navigation-interactions","conclusion":"success","url":"https://github.com/festappnet/festapp/actions/runs/43376861730/job/131725260082"}
+    ]
+  },
+  "artifact": {
+    "platform": "linux/arm64",
+    "imageTag": "festapp-mcp-global:95aa06a21898ee5a4eee09ec79f3543b86a1e8a5-arm64",
+    "imageId": "sha256:d132e8c74d832f43f5c86fe7a20f5cb2b5df29ed71ec3eabdd2c81812b302603",
+    "revisionLabel": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+    "archivePath": "/opt/festapp-mcp-global/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/image.tar",
+    "archiveSha256": "a60be526b81a1f2d7279f21b33d599eed67445e7fffc765930369ebf5319fc58",
+    "isolatedCanonicalRuntimeSmoke": "PASS"
+  },
+  "promotions": {
+    "regional": {
+      "container": "festapp-mcp-mcp-1",
+      "containerId": "2aa3da922cb7570baee81bfb19087f6f09fcfacb8f22ec1bdc957e0987b2a1b0",
+      "port": 3399,
+      "issuer": "https://mcp.vstupenky.online",
+      "status": "running",
+      "health": "healthy",
+      "imageId": "sha256:d132e8c74d832f43f5c86fe7a20f5cb2b5df29ed71ec3eabdd2c81812b302603",
+      "envPath": "/opt/festapp-mcp/compose.env",
+      "envSha256": "a03f2f534b216803d1db2fcb5886daf23664bb1f7cf21138be5785d03bb79281",
+      "envChange": "only FESTAPP_MCP_IMAGE; exact byte comparison against backup after replacing that value passed",
+      "envBackup": "/opt/festapp-mcp/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/regional.env.previous",
+      "configPath": "/opt/festapp-mcp/config.regional.json",
+      "configSha256": "683fc54c845a667de04c8346ac7e2f205ad51e561a5fdae7401f29c141e95f37",
+      "configUnchanged": true,
+      "configBackup": "/opt/festapp-mcp/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/regional-config.previous.json",
+      "secretsAndState": "device/inode/mode/owner/size match pre-promotion snapshot",
+      "composeConfigValidation": "PASS",
+      "public": {"root":200,"docs":200,"privacy":200,"terms":200,"healthz":200,"authorizationServerMetadata":200,"protectedResourceMetadata":200,"cimdSupported":true,"dynamicRegistrationEndpoint":"absent","unauthenticatedMcpPost":401,"challenge":"expected resource metadata and ticket-layouts:read"}
+    },
+    "global": {
+      "container": "festapp-mcp-global-mcp-1",
+      "containerId": "55158842706dcc2e48641dd9a6dc1cb9cee1043bd7b0f03a97f3829b1a1daed5",
+      "port": 3400,
+      "issuer": "https://mcp.festapp.net",
+      "status": "running",
+      "health": "healthy",
+      "imageId": "sha256:d132e8c74d832f43f5c86fe7a20f5cb2b5df29ed71ec3eabdd2c81812b302603",
+      "envPath": "/opt/festapp-mcp-global/.env",
+      "envSha256": "e5898c11bb8c85d096fd225a0c4d4bfb2b8fa9e794d3d1116ce9c07173818846",
+      "envChange": "only FESTAPP_MCP_IMAGE; exact byte comparison against backup after replacing that value passed",
+      "envBackup": "/opt/festapp-mcp-global/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/prepromotion/global.env.previous",
+      "configPath": "/opt/festapp-mcp-global/config/remote-config.json",
+      "configSha256": "3a46179a0f474d28f6c87eb3a4a951dc561fb7c009f6b5bcb31a8242ee837c96",
+      "configUnchanged": true,
+      "configBackup": "/opt/festapp-mcp-global/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/prepromotion/global-config.previous.json",
+      "secretsAndState": "device/inode/mode/owner/size match pre-promotion snapshot",
+      "composeConfigValidation": "PASS",
+      "public": {"root":200,"docs":200,"privacy":200,"terms":200,"healthz":200,"authorizationServerMetadata":200,"protectedResourceMetadata":200,"cimdSupported":true,"dynamicRegistrationEndpoint":"absent","unauthenticatedMcpPost":401,"challenge":"expected resource metadata and ticket-layouts:read"}
+    }
+  },
+  "rollback": {
+    "scope": "restore only each service's FESTAPP_MCP_IMAGE from its listed env backup and recreate only that service with its existing compose project; do not change config, keys, state or other services",
+    "regionalEnvBackup": "/opt/festapp-mcp/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/regional.env.previous",
+    "globalEnvBackup": "/opt/festapp-mcp-global/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/prepromotion/global.env.previous",
+    "prePromotionSnapshot": "/opt/festapp-mcp-global/releases/95aa06a21898ee5a4eee09ec79f3543b86a1e8a5/prepromotion/prepromotion-snapshot.json",
+    "performed": false
+  },
+  "tenantWebRelease": "separately owned by web_release_1123; no tenant mutation performed by this agent"
+}

@@ -43,6 +43,8 @@ BEGIN
       organizations.data - 'ONESIGNAL_REST_API_KEY',
       organizations.title, organizations.phone_prefixes;
 
+    PERFORM public.enqueue_wallet_scope_internal(NULL,organization_id);
+
     -- Project the organization switch onto operator-provisioned clients in the
     -- same transaction. Unprovisioned platforms must never become available.
     IF update_organization_admin.data ? 'IS_GOOGLE_LOGIN_ENABLED' THEN

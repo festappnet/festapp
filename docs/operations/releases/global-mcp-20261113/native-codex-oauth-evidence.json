@@ -1,0 +1,20 @@
+{
+  "timeUtc": "2026-11-13T03:10:31.006109+00:00",
+  "issuer": "https://mcp.vstupenky.online",
+  "clientId": "festapp-codex",
+  "registration": "static",
+  "requestedScopes": [
+    "openid",
+    "offline_access",
+    "festapp:ticket-layouts:read",
+    "festapp:orders:read"
+  ],
+  "context": "regional",
+  "connectionLabel": "Festapp MCP live verification regional Codex 20261113",
+  "durationDays": 7,
+  "selectedOccasionCount": 1,
+  "taskIsolatedCodexHome": true,
+  "nativeCodexOAuth": "PASS",
+  "nativeCodexToolCalls": "not tested",
+  "globalSdkReads": "separate evidence"
+}

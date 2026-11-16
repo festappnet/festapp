@@ -2,7 +2,7 @@
   "checks": [
     {
       "joomla_major": 5,
-      "new_module_id": 125,
+      "new_module_id": 126,
       "article_id": 3,
       "baseline_restored": true,
       "cases": [
@@ -67,7 +67,7 @@
     },
     {
       "joomla_major": 6,
-      "new_module_id": 125,
+      "new_module_id": 126,
       "article_id": 3,
       "baseline_restored": true,
       "cases": [

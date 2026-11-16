@@ -51,7 +51,7 @@ void main() {
             key: const ValueKey('preview'),
             child: MaterialApp(
                 debugShowCheckedModeBanner: false,
-                theme: ThemeConfig.theme(brightness: Brightness.dark),
+                theme: ThemeConfig.theme(brightness: Brightness.light),
                 builder: DependencyMaterialBridge.wrapBuilder((context, child) => MediaQuery(
                     data: MediaQuery.of(context)
                         .copyWith(textScaler: TextScaler.linear(scale)),
@@ -165,7 +165,8 @@ void main() {
     final switches =
         tester.widgetList<SwitchListTile>(find.byType(SwitchListTile)).toList();
     expect(switches.first.onChanged, isNull);
-    expect(switches.last.onChanged, isNull);
+    expect(tester.widget<SwitchListTile>(find.widgetWithText(
+        SwitchListTile, WaitlistStrings.enabled)).onChanged, isNull);
     await tester.enterText(find.byType(TextFormField).first, '79');
     await tester.tap(find.text(WaitlistStrings.applySettings));
     await tester.pumpAndSettle();
@@ -368,6 +369,37 @@ void main() {
       expect(capacity.remainingPublic, 0);
     }
   });
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'waitlist count defaults on and persists without disabling registrations',
+    (tester) async {
+      final form = FormEditorDraft(
+        participantCapacity: 10,
+        waitlistEnabled: true,
+        data: {'unrelated': 'preserved'},
+      );
+      expect(form.definition.showWaitlistCount, isTrue);
+      await open(tester, form);
+      final toggle = find.widgetWithText(
+        SwitchListTile,
+        WaitlistStrings.showCount,
+      );
+      expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+      await tester.ensureVisible(toggle);
+      await tester.tap(toggle);
+      await tester.tap(find.text(WaitlistStrings.applySettings));
+      await tester.pumpAndSettle();
+      expect(form.definition.waitlistEnabled, isTrue);
+      expect(form.definition.showWaitlistCount, isFalse);
+      expect(form.definition.data?['unrelated'], 'preserved');
+      expect((form.toEditedJson()['settings'] as Map)['waitlist'], {
+        'show_count': false,
+      });
+      final loaded = FormDefinition.fromJson(form.definition.toJson());
+      expect(loaded.showWaitlistCount, isFalse);
+    },
+  );
 
   testWidgetsWithEnvironment(() => _environment, 'visual review artifact',
       (tester) async {

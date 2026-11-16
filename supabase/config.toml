@@ -390,3 +390,9 @@ verify_jwt = false
 
 [functions.payment-operation]
 verify_jwt = false
+
+[functions.apple-wallet]
+verify_jwt = false
+
+[functions.customer-order-changes]
+verify_jwt = false

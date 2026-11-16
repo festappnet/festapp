@@ -1,0 +1,15 @@
+✔ legacy drain gate rolls back pending cancellation while unknown exists, then retains accepted audit (98.636292ms)
+✔ recipient profile serializes two collectors, cursor commit and lost enqueue response (220.801166ms)
+✔ collect commit survives an enqueue failure; concurrent close and new delivery lose no membership (155.770291ms)
+✔ two send workers obtain one permit; replay cannot cross the same attempt twice (167.3845ms)
+✔ first required profile enrollment skips an uncommitted creator and survives rollback (74.398083ms)
+✔ connector episode creation serializes across workers and rollback cannot duplicate an alert (182.328208ms)
+✔ Barion recovery claims serialize and stale ingest cannot replay financial effects (184.531417ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1345.350875

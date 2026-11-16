@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -65,7 +66,7 @@ void main() {
       expect(find.text(OrdersStrings.waveAvailabilityKeepHint), findsOneWidget);
       await tester.tap(find.byTooltip(OrdersStrings.waveAvailabilityHelpTitle));
       await tester.pumpAndSettle();
-      expect(find.text(OrdersStrings.waveAvailabilityHelp), findsOneWidget);
+      expect(find.text(OrderItemStrings.waveAvailabilityHelp), findsOneWidget);
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       await tester.tap(find.byType(DropdownButtonFormField<int>));
@@ -80,7 +81,7 @@ void main() {
       final hints = [
         OrdersStrings.waveAvailabilityKeepHint,
         OrdersStrings.waveAvailabilityShowHint,
-        OrdersStrings.waveAvailabilityHideHint
+        OrderItemStrings.waveAvailabilityHideHint
       ];
       expect(find.text(hints[choice]), findsOneWidget);
       await tester.ensureVisible(find.text(CommonStrings.save));

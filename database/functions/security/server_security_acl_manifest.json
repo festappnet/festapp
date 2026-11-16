@@ -19,7 +19,10 @@
     "get_notification_center_overview",
     "get_notification_center_daily_overview",
     "mark_notification_center_item_read",
-    "enqueue_occasion_setup_invitation"
+    "enqueue_occasion_setup_invitation",
+    "claim_notification_center_bank_health",
+    "complete_notification_center_bank_health",
+    "enqueue_bank_sync_health_alerts"
   ],
   "sync_tables": [
     "external_sync_sources",
@@ -1011,16 +1014,6 @@
       "anon": true,
       "authenticated": true,
       "service_role": false
-    },
-    "public.claim_notification_center_bank_health(integer)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": true
-    },
-    "public.complete_notification_center_bank_health(bigint,uuid,timestamp with time zone,text,timestamp with time zone)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": true
     },
     "public.project_notification_center(integer)": {
       "anon": false,
@@ -2795,7 +2788,7 @@
     "public.update_order_detail_responses(bigint,bigint,jsonb,jsonb)": {
       "anon": false,
       "authenticated": true,
-      "service_role": true
+      "service_role": false
     },
     "public.sale_opening_notification_command(text,jsonb)": {
       "anon": false,
@@ -3022,11 +3015,6 @@
       "authenticated": true,
       "service_role": false
     },
-    "public.get_bank_transaction_history(bigint)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
     "public.get_form_by_link(jsonb)": {
       "anon": true,
       "authenticated": true,
@@ -3103,11 +3091,6 @@
       "service_role": true
     },
     "public.reserve_ticket_wallet_request(bigint,uuid)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": true
-    },
-    "public.finish_ticket_wallet(bigint,uuid,boolean)": {
       "anon": false,
       "authenticated": false,
       "service_role": true
@@ -3311,6 +3294,256 @@
       "anon": true,
       "authenticated": true,
       "service_role": true
+    },
+    "public.can_manage_payment_method_policy(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_payment_method_policy(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.preview_payment_method_policy(jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.command_payment_method_policy(jsonb,uuid,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_payment_template_audit(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.review_payment_templates(bigint,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_bank_transaction_history(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_linkable_bank_accounts(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_order_details_for_email(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_my_admin_bank_accounts()": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_bank_transaction_history(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_or_create_scan_code(text,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.save_notification_center_email_settings(bigint,bigint,bigint,boolean,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.activate_notification_center_emails(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_notification_center_email_context(uuid,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.collect_notification_center_emails(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.enqueue_notification_center_emails(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_notification_center_email_health()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.maintain_ticket_wallet(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.pause_ticket_wallet(bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_ticket_wallet(bigint,uuid,boolean,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.save_notification_center_email_settings(bigint,bigint,boolean,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.refresh_apple_ticket_wallet_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.register_apple_ticket_wallet(text,text,text,text,text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_apple_ticket_wallet(text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.register_apple_wallet_device(text,text,text,text,text,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.list_apple_wallet_updates(text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.claim_apple_ticket_wallet()": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.apple_wallet_push_targets(bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_apple_wallet_push(bigint,uuid,text,bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_apple_ticket_wallet(bigint,uuid,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.allow_apple_wallet_request(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ticket_wallet_state_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.prepare_ticket_wallet_collection(uuid,bigint[],text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.ticket_wallet_scope_internal(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_ticket_wallet_projections(text,bigint[],text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.can_manage_webhooks(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.integration_webhook_api_v1(bigint,text,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.get_unit_website_consent_bindings(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.disable_unit_website_consent_binding(uuid,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.export_unit_website_consent_binding(uuid,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_manage_discount_codes(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": true
+    },
+    "public.quote_order_discount(jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.save_discount_code(bigint,jsonb,bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.list_discount_codes(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_manage_customer_order_policy(bigint,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.update_order_responses(bigint,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.customer_order_change_gateway(text,text,bigint,text,jsonb,uuid,text,jsonb,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.command_customer_order_request(uuid,text,uuid,timestamp with time zone,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3350,7 +3583,22 @@
     "database/functions/payment_providers/refund_dispatch.sql",
     "database/functions/payment_providers/operations.sql",
     "database/functions/user_permissions/payment_operations.sql",
-    "database/functions/occasion_setup/email_preview.sql"
+    "database/functions/occasion_setup/email_preview.sql",
+    "database/functions/payment_providers/released_bank_readers.sql",
+    "database/functions/scanning/access_codes.sql",
+    "database/functions/notification_center/email_preferences.sql",
+    "database/functions/notification_center/email_context.sql",
+    "database/functions/notification_center/email_delivery.sql",
+    "database/functions/ticket_wallet/maintenance.sql",
+    "database/functions/ticket_wallet/control.sql",
+    "database/functions/ticket_wallet/apple_updates.sql",
+    "database/functions/ticket_wallet/collections.sql",
+    "database/functions/eshop_forms/website_consent_bindings.sql",
+    "database/functions/user_permissions/customer_order_changes.sql",
+    "database/functions/eshop_orders/update_order_responses.sql",
+    "database/functions/eshop_orders/update_order_detail_responses.sql",
+    "database/functions/customer_order_changes/commands.sql",
+    "database/functions/customer_order_changes/staff.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

@@ -10,12 +10,10 @@ class OrderPaymentBankOptions extends StatelessWidget {
     super.key,
     required this.actions,
     this.onPair,
-    this.onHistory,
     this.onConfigure,
   });
   final OrderPaymentActions actions;
   final VoidCallback? onPair, onConfigure;
-  final ValueChanged<PaymentHistoryAccount>? onHistory;
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -26,15 +24,7 @@ class OrderPaymentBankOptions extends StatelessWidget {
           icon: const Icon(Icons.account_balance),
           label: Text(OrdersStrings.findAndLinkTransaction),
         ),
-      for (final account in actions.historyAccounts)
-        TextButton.icon(
-          onPressed: onHistory == null ? null : () => onHistory!(account),
-          icon: const Icon(Icons.history),
-          label: Text(
-            '${PaymentMethodStrings.text('bankHistory')}: ${account.title}',
-          ),
-        ),
-      if (actions.bankState == 'absent' && actions.historyAccounts.isEmpty) ...[
+      if (actions.showBankSetup) ...[
         Text(PaymentMethodStrings.text('bankSetupRequired')),
         if (actions.canConfigureBank)
           TextButton(
@@ -42,10 +32,7 @@ class OrderPaymentBankOptions extends StatelessWidget {
             child: Text(PaymentMethodStrings.text('configureBank')),
           ),
       ],
-      if (actions.bankState == 'restricted' ||
-          (actions.bankState == 'configured' &&
-              actions.pairingAccountId == null &&
-              actions.historyAccounts.isEmpty))
+      if (actions.showBankAccess)
         Text(PaymentMethodStrings.text('bankAccessRequired')),
     ],
   );

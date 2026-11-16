@@ -27,7 +27,8 @@ const outputArg = process.argv.indexOf('--output');
 const target = outputArg < 0 ? path.join(root, 'web/organizers-page') : path.resolve(process.argv[outputArg + 1]);
 const index = path.join(root, 'web_client/index.html');
 let catalogOutput;
-if (fs.existsSync(index)) {
+// Final bundle rendering must not mutate the source snapshot being sealed.
+if (fs.existsSync(index) && !process.argv.includes('--built-index')) {
   const canonical = new URL(enabled ? '/events' : '/', value('WEB_LINK')).href;
 const html = fs.readFileSync(index, 'utf8')
     .replace(/(<link[^>]*rel="canonical"[^>]*href=")[^"]*/i, (_, prefix) => prefix + canonical)
@@ -41,6 +42,14 @@ const html = fs.readFileSync(index, 'utf8')
       .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, () => `<script type="application/ld+json">${jsonScript({
         '@context':'https://schema.org', '@type':'WebSite', name:seo.siteName, url:new URL('/', value('WEB_LINK')).href,
       })}</script>`);
+  }
+  if (enabled && seo) {
+    // Keep the published app icon in unbuilt source metadata.
+    catalog = catalog.replace(/<meta\b[^>]*(?:name|property)=["'](?:(?:og|twitter):image(?::(?:width|height|alt))?|og:locale|og:site_name)["'][^>]*>\s*/gi, '');
+    const image = escape(new URL('/android-chrome-512x512.png', context.origin).href);
+    const tags = `<meta property="og:image" content="${image}"><meta property="og:image:width" content="512"><meta property="og:image:height" content="512"><meta property="og:image:alt" content="${escape(seo.siteName)}">`
+      + `<meta name="twitter:image" content="${image}"><meta name="twitter:image:alt" content="${escape(seo.siteName)}"><meta property="og:locale" content="${escape(projection.ogLocale)}"><meta property="og:site_name" content="${escape(seo.siteName)}">`;
+    catalog = catalog.replace('</head>', tags + '</head>');
   }
   catalogOutput = catalog.replace(/<html lang="[^"]*"/, `<html lang="${context.locale ?? 'cs'}"`);
 }
@@ -120,14 +129,12 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
     }));
   });
   const illustrated = page.id === 'home' && projection.homeStyle === 'illustrated';
-  let body = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8') : template;
+  let body = illustrated ? expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8')) : template;
   const pageCss = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.css'), 'utf8') : css;
   if (projection.locale === 'cs') {
     body=body.replace(/<a href="#(?:vstupenka|vyber-mist|odbaveni)">[\s\S]*?<\/a>/g,'');
-    const reference=body.match(/<section id="reference"[\s\S]*?<\/section>/)?.[0] ?? '';
-    body=body.replace(reference,'').replace(/<section class="steps wrap reveal"[\s\S]*?<\/section>/,'').replace(/<section class="technical-options wrap"[\s\S]*?<\/section>/,'');
+    body=body.replace(/<section class="steps wrap reveal"[\s\S]*?<\/section>/,'').replace(/<section class="technical-options wrap"[\s\S]*?<\/section>/,'');
     body=body.replace(/<details><summary>{{PAGE_(?:CAN_GUESTS_CHOOSE_SPECIFIC_SEATS|WHAT_CAN_I_CUSTOMIZE|HOW_DO_I_CHECK_TICKETS_AT_THE_DOOR)}}<\/summary>[\s\S]*?<\/details>/g,'');
-    body=body.replace('<section class="payments',reference+'<section class="payments');
   }
 
   if (!projection.references?.length) body = body.replace(/<section id="reference"[\s\S]*?<\/section>/, "");

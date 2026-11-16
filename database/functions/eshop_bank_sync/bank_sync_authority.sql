@@ -51,6 +51,7 @@ BEGIN
     (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id);
   UPDATE eshop.bank_sync_connections SET state='connected',legacy_blocked_at=COALESCE(legacy_blocked_at,now())
     WHERE id=p_connection_id AND manifest_sha256=p_manifest_sha256;
+  PERFORM public.notification_center_bank_incident_internal(p_connection_id);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.activate_bank_sync_connection(bigint,text) FROM PUBLIC,anon,authenticated;

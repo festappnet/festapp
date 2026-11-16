@@ -28,6 +28,8 @@ BEGIN
     LIMIT 1;
 
     PERFORM public.check_is_editor_order_on_occasion(occasion_id);
+  PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.occasions oc WHERE oc.id=occasion_id;
+  IF NOT coalesce((SELECT public.payment_method_policy_enabled_internal(oc.unit,'bank') FROM public.occasions oc WHERE oc.id=occasion_id),false) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
 
     PERFORM public.apply_transaction_pairing(
       p_transaction_id, p_payment_info_id, 'manual_attach', 'user'

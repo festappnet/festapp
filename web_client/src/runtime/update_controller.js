@@ -80,13 +80,25 @@ export function initFestappUpdatePrompt() {
   // The manifest can reach an edge before the matching executable shell. A
   // worker version handshake proves that the coherent shell was installed.
   async function networkBuildVersion() {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    let timeout;
     try {
-      const response = await fetch('/festapp-version.json?refresh=' + Date.now(), {
-        cache: 'no-store', headers: { 'cache-control': 'no-cache' }
-      });
-      return response.ok ? (await response.json()).version : null;
+      const read = async () => {
+        const response = await fetch('/festapp-version.json?refresh=' + Date.now(), {
+          cache: 'no-store', headers: {'cache-control': 'no-cache', pragma: 'no-cache'},
+          ...(controller ? {signal: controller.signal} : {}),
+        });
+        return response.ok ? (await response.json()).version : null;
+      };
+      // Bound both headers and body. A stuck request must neither lock all
+      // later checks nor prevent accepting an already installed generation.
+      return await Promise.race([read(), new Promise(resolve => {
+        timeout = window.setTimeout(() => { controller?.abort(); resolve(null); }, 10000);
+      })]);
     } catch (_) {
       return null;
+    } finally {
+      window.clearTimeout(timeout);
     }
   }
 
@@ -111,6 +123,52 @@ export function initFestappUpdatePrompt() {
         finish(false);
       }
     });
+  }
+
+  // A waiting worker is already proof of a downloaded update. Observe its
+  // lifecycle directly: window.load, focus and manifest polling may be delayed
+  // or never finish while an otherwise usable Flutter page remains open.
+  function observeInstalledUpdates() {
+    const serviceWorker = navigator.serviceWorker;
+    if (!serviceWorker) return;
+    const registrations = new Set();
+    const workers = new WeakSet();
+    async function offer(worker) {
+      if (worker?.state !== 'installed' || publicWeb() ||
+          window.__FESTAPP_APP_READY__ !== true || !allowed('background')) return;
+      // The installed web shell supplies identity without downloading Flutter
+      // or depending on another version-manifest request. Explicit acceptance
+      // still prepares and verifies the complete Flutter shell before cutover.
+      try {
+        const version = await queryWorkerBuildVersion(worker, 'web', window);
+        if (worker.state === 'installed' && version && version !== currentVersion &&
+            allowed('background')) showUpdateBanner(version, 'new-version');
+      } catch (error) {
+        console.warn('Festapp installed update check failed:', error);
+      }
+    }
+    function watch(worker) {
+      if (!worker) return;
+      if (!workers.has(worker)) {
+        workers.add(worker);
+        worker.addEventListener?.('statechange', () => { void offer(worker); });
+      }
+      void offer(worker);
+    }
+    function observe(registration) {
+      if (!registration) return;
+      if (!registrations.has(registration)) {
+        registrations.add(registration);
+        registration.addEventListener?.('updatefound', () => watch(registration.installing));
+      }
+      watch(registration.waiting);
+      watch(registration.installing);
+    }
+    serviceWorker.getRegistration('/').then(registration => {
+      if (registration) observe(registration);
+      else return serviceWorker.ready?.then(observe);
+    }).catch(() => {});
+    window.addEventListener('festapp-app-ready', () => registrations.forEach(observe));
   }
 
   function queryWorkerVersion(worker) {
@@ -415,24 +473,8 @@ export function initFestappUpdatePrompt() {
     checkInFlight = true;
 
     try {
-      const response = await fetch('/festapp-version.json?t=' + Date.now(), {
-        cache: 'no-store',
-        headers: {
-          'cache-control': 'no-cache',
-          'pragma': 'no-cache'
-        }
-      });
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-      if (!allowed(reason)) return;
-      const latestVersion = data && data.version;
-      if (!latestVersion) {
-        return;
-      }
+      const latestVersion = await networkBuildVersion();
+      if (!allowed(reason) || !latestVersion) return;
       lastVersionCheckAt = Date.now();
       if (latestVersion === currentVersion) {
         // A network navigation can already serve the new HTML while the tab is
@@ -528,6 +570,7 @@ export function initFestappUpdatePrompt() {
     sessionStorage.removeItem(startupRecoveryStorageKey);
     reportClientVersion();
   });
+  observeInstalledUpdates();
   window.addEventListener('load', function() {
     // Self-heal first: if a stale build is cached this triggers a one-time
     // hard reload, so skip the (now moot) passive version check for this load.

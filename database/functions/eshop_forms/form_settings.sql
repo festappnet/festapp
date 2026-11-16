@@ -7,6 +7,7 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  "payments":["bankEnabled","stripeConnectionId","providerConnections","cashEnabled","cashInstructions"],
  "payment_deadline":["mode"],
  "analytics":["enabled"],
+ "waitlist":["show_count"],
  "design":["embed_inherit_style","is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style","presale_header"],
  "sale_opening_notifications":["enabled","collection_paused"],
  "schedule":["start_time","end_time","enable_countdown","countdown_title"]}'::jsonb;
@@ -54,7 +55,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE result jsonb:='{}'; d jsonb:=public.normalize_form_metadata_internal(p_data); spec record; k text; section jsonb;
 BEGIN
  FOR spec IN SELECT * FROM jsonb_each(public.form_settings_keys_internal()) LOOP
-  IF spec.key IN ('payments','sale_opening_notifications','analytics') AND NOT d ? spec.key THEN CONTINUE; END IF;
+  IF spec.key IN ('payments','sale_opening_notifications','analytics','waitlist') AND NOT d ? spec.key THEN CONTINUE; END IF;
   IF spec.value='null'::jsonb OR NOT d ? spec.key OR d->spec.key='null'::jsonb THEN
    result:=result||jsonb_build_object(spec.key,coalesce(d->spec.key,'null'::jsonb));
   ELSE
@@ -113,7 +114,7 @@ BEGIN
    k:=field.key;v:=field.value;path:=entry.key||'.'||k;
    IF NOT (spec->entry.key) ? k THEN RAISE invalid_parameter_value USING MESSAGE='unsupported form setting: '||path; END IF;
    IF v='null'::jsonb THEN section:=section-k;CONTINUE; END IF;
-   IF path IN ('analytics.enabled','payments.bankEnabled','design.embed_inherit_style','design.is_card_design','schedule.enable_countdown','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
+   IF path IN ('waitlist.show_count','analytics.enabled','payments.bankEnabled','design.embed_inherit_style','design.is_card_design','schedule.enable_countdown','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
    ELSIF path='payments.providerConnections' THEN
     IF jsonb_typeof(v)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid provider connections'; END IF;

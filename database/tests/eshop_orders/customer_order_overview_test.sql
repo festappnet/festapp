@@ -13,6 +13,8 @@ CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE pl
 DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint; prod bigint; bank bigint; actor uuid; suffix text:=gen_random_uuid()::text;
 BEGIN
  INSERT INTO organizations(title) VALUES('Waitlist regression '||suffix) RETURNING id INTO org;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'bank');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO units(title,organization) VALUES('Waitlist regression',org) RETURNING id INTO un;
  INSERT INTO occasions(title,unit,organization,link,start_time,end_time) VALUES('Waitlist regression',un,org,suffix,now(),now()+interval '1 day') RETURNING id INTO oc;
  INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END) RETURNING id,key INTO f,fk;
@@ -20,6 +22,7 @@ BEGIN
  PERFORM public.reserve_public_link_internal('form',f,suffix,true);
  INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Regression bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
+ UPDATE public.forms SET bank_account=bank,data=coalesce(data,'{}')||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=f;
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('spot','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion) VALUES('Admission',pt,100,'CZK',oc) RETURNING id INTO prod;
  INSERT INTO form_fields(form,product_type,type) VALUES(f,pt,'product_type');
@@ -138,7 +141,9 @@ BEGIN
  PERFORM assert_eq(r->>'code','200'::text,'aborted empty split preserves read');
  PERFORM assert_eq(jsonb_array_length(r->'orders'),2,'aborted child omitted');
 
- PERFORM assert_true(NOT r::text LIKE '%ticket_symbol%' AND NOT r ? 'data' AND NOT r ? 'allowedActions','allowlist only');
+ PERFORM assert_true(NOT r::text LIKE '%ticket_symbol%' AND NOT r ? 'data' AND NOT r ? 'changeToken' AND NOT r ? 'capabilities','allowlist only');
+ PERFORM assert_false(EXISTS(SELECT 1 FROM jsonb_array_elements(r->'allowedActions') a WHERE a->'enabled'='true'::jsonb),'feature-off overview grants no customer operation');
+ PERFORM assert_eq(r->'changeRequests','[]'::jsonb,'existing read scope has no unrelated requests');
  BEGIN PERFORM public.resolve_customer_order_access_v1(offer_token,oid,(w->>'id')::uuid,gen_random_uuid(),delivery); RAISE EXCEPTION 'terminal bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='terminal bootstrap' THEN RAISE; END IF; END;
  BEGIN PERFORM public.resolve_customer_order_access_v1(manage,oid,NULL,gen_random_uuid(),delivery); RAISE EXCEPTION 'completed manage bootstrap'; EXCEPTION WHEN OTHERS THEN IF SQLERRM='completed manage bootstrap' THEN RAISE; END IF; END;
  PERFORM assert_eq(public.get_order_email_overview_source_v1(child,current_setting('festapp.test_overview_email'),gen_random_uuid())->'source',source->'source','split child email reuses root token');
@@ -206,6 +211,9 @@ BEGIN
  PERFORM assert_eq((r->>'dueNow')::numeric,300::numeric,'deposit due first');
  UPDATE eshop.payment_info SET currency_code='EUR',creditor_reference=public.generate_creditor_reference(variable_symbol) WHERE id=pid;
  UPDATE eshop.orders SET currency_code='EUR' WHERE id=child;
+ -- This currency variant must include the original ledger's currency identity.
+ UPDATE eshop.transactions SET currency='EUR' WHERE payment_info=pid;
+ UPDATE eshop.bank_accounts SET supported_currencies=ARRAY['CZK','EUR'] WHERE id=(SELECT bank_account FROM eshop.payment_info WHERE id=pid);
  r:=public.customer_order_payment_internal(child);
  PERFORM assert_eq(r->>'referenceKind','RF'::text,'EUR uses RF');
  PERFORM assert_eq(r->>'reference',(SELECT creditor_reference FROM eshop.payment_info WHERE id=pid),'existing reference fact');
@@ -214,6 +222,7 @@ BEGIN
  UPDATE eshop.payment_info SET currency_code='CZK' WHERE id=pid;
  PERFORM assert_eq(public.customer_order_payment_internal(child)->>'status','unknown'::text,'currency mismatch is unknown');
  UPDATE eshop.orders SET currency_code='CZK' WHERE id=child;
+ UPDATE eshop.transactions SET currency='CZK' WHERE payment_info=pid;
  UPDATE eshop.payment_info SET paid=1200,returned=100 WHERE id=pid;
  r:=public.customer_order_payment_internal(child);
  PERFORM assert_eq((r->>'received')::numeric,1200::numeric,'gross receipt stays separate from returns');

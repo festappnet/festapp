@@ -102,28 +102,14 @@ function render( $attributes ) {
 	$height = false !== $height && $height >= 240 && $height <= 4000 ? $height : 800;
 	$auto   = ! isset( $attributes['mode'] ) || 'fixed' !== $attributes['mode'];
 	wp_enqueue_style( 'festapp-tickets' );
-	$handle = 'festapp-tickets-helper-' . substr( md5( $valid['origin'] ), 0, 12 );
-	// Secondary loops enqueue before wp_footer prints. Service owns revalidation.
-	// phpcs:disable WordPress.WP.EnqueuedResourceParameters.MissingVersion -- Service-owned protocol with revalidation.
-	wp_enqueue_script(
-		$handle,
-		$valid['origin'] . '/embed.js',
-		array(),
-		null,
-		array(
-			'in_footer' => true,
-			'strategy'  => 'defer',
-		)
-	);
-	// phpcs:enable WordPress.WP.EnqueuedResourceParameters.MissingVersion
+	enqueue_helper( $valid['origin'] );
 	return sprintf(
-		'<div class="festapp-tickets" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0;color-scheme:light dark" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
+		'<div class="festapp-tickets" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0;color-scheme:light dark" loading="lazy"></iframe><p>%s</p></div>',
 		' data-festapp-embed' . ( ! $auto ? ' data-festapp-height="fixed"' : '' )
 			. ( isset( $attributes['measurement'] ) && 'host' === $attributes['measurement'] ? ' data-festapp-datalayer' : '' ),
 		esc_url( $valid['url'] . '?embed=1' ),
 		esc_attr( $title ),
 		$height,
-		esc_url( $valid['url'] ),
-		esc_html__( 'Open the form in a new tab', 'festapp-tickets' )
+		form_link_html( $valid, __( 'Open the form in a new tab', 'festapp-tickets' ) )
 	);
 }

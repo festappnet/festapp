@@ -95,7 +95,9 @@ const emailTemplateVariables = <String, List<String>>{
     "variableSymbol",
     "deadline",
     "balanceReasoning",
-    "fullOrder"
+    "fullOrder",
+    "paymentAction",
+    "paymentMethodName"
   ],
   "TICKET_ORDER_UPDATE": [
     "orderCommunication",
@@ -105,7 +107,9 @@ const emailTemplateVariables = <String, List<String>>{
     "occasionTitle",
     "fullOrder",
     "changeOverview",
-    "balanceReasoning"
+    "balanceReasoning",
+    "paymentAction",
+    "paymentMethodName"
   ],
   "TICKET_ORDER_PAYMENT_DONE": [
     "orderCommunication",
@@ -116,7 +120,9 @@ const emailTemplateVariables = <String, List<String>>{
     "occasionTitle",
     "fullOrder",
     "balanceReasoning",
-    "amount"
+    "amount",
+    "paymentAction",
+    "paymentMethodName"
   ],
   "TICKET_ORDER_REMINDER": [
     "orderCommunication",
@@ -129,7 +135,9 @@ const emailTemplateVariables = <String, List<String>>{
     "amount",
     "deadline",
     "paymentDetails",
-    "remainingTime"
+    "remainingTime",
+    "paymentAction",
+    "paymentMethodName"
   ],
   "TICKET_ORDER_STORNO": [
     "orderCommunication",
@@ -137,7 +145,9 @@ const emailTemplateVariables = <String, List<String>>{
     "order_overview_button",
     "orderSymbol",
     "occasionTitle",
-    "amount"
+    "amount",
+    "paymentAction",
+    "paymentMethodName"
   ],
   "TEAM_INVITATION": [
     "appName",
@@ -206,7 +216,9 @@ const emailVariableKinds = <String, EmailValueKind>{
   'invitationUrl': EmailValueKind.url,
   'occasionAdminUrl': EmailValueKind.url,
   'roleLabel': EmailValueKind.text,
+  'paymentAction': EmailValueKind.richBlock,
+  'paymentMethodName': EmailValueKind.text,
 };
-const nonRepeatableEmailVariables = <String>{'balanceReasoning', 'changeOverview', 'fullOrder', 'orderCommunication', 'paymentDetails', 'tickets'};
-const htmlEmailVariables = <String>{'appLinks', 'balanceReasoning', 'changeOverview', 'fullOrder', 'manage_waitlist_button', 'offer_button', 'orderCommunication', 'order_overview_button', 'paymentDetails', 'platformLinks', 'sale_opening_action', 'sale_opening_unsubscribe', 'tickets'};
+const nonRepeatableEmailVariables = <String>{'balanceReasoning', 'changeOverview', 'fullOrder', 'orderCommunication', 'paymentDetails', 'tickets', 'paymentAction'};
+const htmlEmailVariables = <String>{'appLinks', 'balanceReasoning', 'changeOverview', 'fullOrder', 'manage_waitlist_button', 'offer_button', 'orderCommunication', 'order_overview_button', 'paymentDetails', 'platformLinks', 'sale_opening_action', 'sale_opening_unsubscribe', 'tickets', 'paymentAction'};
 const bodyBlockEmailVariables = <String>{'waitlist_confirmation_explanation', 'waitlist_confirmation_heading', 'waitlist_offer_heading', 'waitlist_offer_instructions', 'waitlist_offer_instructions_single'};

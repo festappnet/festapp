@@ -136,7 +136,12 @@ SET search_path = public, extensions
          END IF;
 
          UPDATE public.occasions
-            SET updated_at  = now,
+            SET customer_self_service_epoch=customer_self_service_epoch+CASE
+                  WHEN (SELECT coalesce(jsonb_agg(f ORDER BY f::text),'[]'::jsonb) FROM jsonb_array_elements(coalesce(old_features,'[]')) f WHERE f->>'code'='customer_self_service')
+                    IS DISTINCT FROM
+                    (SELECT coalesce(jsonb_agg(f ORDER BY f::text),'[]'::jsonb) FROM jsonb_array_elements(processed_features) f WHERE f->>'code'='customer_self_service')
+                  THEN 1 ELSE 0 END,
+                updated_at  = now,
                 title       = COALESCE(input_data->>'title', title),
                 description = COALESCE(input_data->>'description', description),
                 link        = public.reserve_public_link_internal('occasion',occ_id,input_data->>'link',false),
@@ -259,6 +264,7 @@ SET search_path = public, extensions
          PERFORM public.enqueue_paid_order_tickets(v_email_order.id);
        END LOOP;
      END IF;
+     PERFORM public.enqueue_wallet_scope_internal(occ_id);
      -- Check if the blueprint feature is enabled in the final, saved state
      IF jsonb_path_exists(updated_occ.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)') THEN
          -- Prepare a plan even when all forms use capacity/waitlisting.

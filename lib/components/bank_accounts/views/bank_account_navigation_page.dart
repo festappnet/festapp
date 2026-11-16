@@ -1,6 +1,8 @@
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
+
 import '../../eshop/orders_strings.dart';
+
 import 'package:fstapp/app_router.gr.dart';
 
 import 'bank_accounts_load_scope.dart';
@@ -43,44 +45,45 @@ class _BankAccountsNavigationViewState
   int? _loadedUnitId;
   @override
   Widget build(BuildContext context) => AutoRouter(
-        builder: (context, navigator) {
-          final unit = UnitAdministrationScope.of(context).unit;
-          final hasDetail =
-              context.router.current.name == BankAccountDetailRoute.name;
-          if (_loadedUnitId != unit.id) {
-            _loadedUnitId = unit.id;
-            _accounts = null;
-          }
-          if (_hadDetail && !hasDetail) {
-            _listRevision++;
-            _accounts = null;
-          }
-          _hadDetail = hasDetail;
-          return BankAccountsLoadScope(
-            load: (refresh) {
-              if (refresh) _accounts = null;
-              return _accounts ??= (widget.loadAccounts ??
-                  DbBankAccounts.current.getBankAccountsForUnit)(
-                unit.id!,
-              );
-            },
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                KeyedSubtree(
-                    key: ValueKey(_listRevision),
-                    child: Builder(
-                        builder: (context) =>
-                            widget.listBuilder?.call(context) ??
-                            UnitBankAccountsScreen(unitId: unit.id!))),
-                // The empty native list route must not intercept its underlay's
-                // edit/add buttons. Detail routes keep their normal pointer handling.
-                IgnorePointer(ignoring: !hasDetail, child: navigator),
-              ],
-            ),
-          );
+    builder: (context, navigator) {
+      final unit = UnitAdministrationScope.of(context).unit;
+      final hasDetail =
+          context.router.current.name == BankAccountDetailRoute.name;
+      if (_loadedUnitId != unit.id) {
+        _loadedUnitId = unit.id;
+        _accounts = null;
+      }
+      if (_hadDetail && !hasDetail) {
+        _listRevision++;
+        _accounts = null;
+      }
+      _hadDetail = hasDetail;
+      return BankAccountsLoadScope(
+        load: (refresh) {
+          if (refresh) _accounts = null;
+          return _accounts ??=
+              (widget.loadAccounts ??
+              DbBankAccounts.current.getBankAccountsForUnit)(unit.id!);
         },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            KeyedSubtree(
+              key: ValueKey(_listRevision),
+              child: Builder(
+                builder: (context) =>
+                    widget.listBuilder?.call(context) ??
+                    UnitBankAccountsScreen(unitId: unit.id!),
+              ),
+            ),
+            // The empty native list route must not intercept its underlay's
+            // edit/add buttons. Detail routes keep their normal pointer handling.
+            IgnorePointer(ignoring: !hasDetail, child: navigator),
+          ],
+        ),
       );
+    },
+  );
 }
 
 // The list stays underneath the routed dialog, including on a direct deep link.
@@ -141,7 +144,7 @@ class _BankAccountDetailPageState extends State<BankAccountDetailPage> {
       final accounts = await (widget.loadAccounts != null
           ? widget.loadAccounts!(id)
           : scope?.load(false) ??
-              DbBankAccounts.current.getBankAccountsForUnit(id));
+                DbBankAccounts.current.getBankAccountsForUnit(id));
       if (!mounted || generation != _generation) return;
       BankAccountModel? account;
       for (final candidate in accounts) {
@@ -182,7 +185,9 @@ class _BankAccountDetailPageState extends State<BankAccountDetailPage> {
               account: _account!,
               onUpdated: (account) => setState(() => _account = account),
               readOnly: !RightsService.hasBankCapability(
-                  _account!.id, AuthorizationCapabilities.bankAccountsWrite),
+                _account!.id,
+                AuthorizationCapabilities.bankAccountsWrite,
+              ),
               routed: true,
             ),
     );
@@ -193,8 +198,10 @@ class _BankAccountDetailPageState extends State<BankAccountDetailPage> {
 @RoutePage()
 class BankAccountConnectionSettingsPage extends StatefulWidget {
   final String accountId;
-  const BankAccountConnectionSettingsPage(
-      {super.key, @pathParam required this.accountId});
+  const BankAccountConnectionSettingsPage({
+    super.key,
+    @pathParam required this.accountId,
+  });
   @override
   State<BankAccountConnectionSettingsPage> createState() =>
       _BankAccountConnectionSettingsPageState();
@@ -208,6 +215,7 @@ class _BankAccountConnectionSettingsPageState
   @override
   void initState() {
     super.initState();
+    RightsService.occasionLinkModelNotifier.addListener(_rightsChanged);
     _load();
   }
 
@@ -215,6 +223,14 @@ class _BankAccountConnectionSettingsPageState
   void didUpdateWidget(BankAccountConnectionSettingsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.accountId != widget.accountId) _load();
+  }
+
+  void _rightsChanged() => _load();
+  @override
+  void dispose() {
+    _generation++;
+    RightsService.occasionLinkModelNotifier.removeListener(_rightsChanged);
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -226,13 +242,28 @@ class _BankAccountConnectionSettingsPageState
     try {
       final id = int.tryParse(widget.accountId);
       if (id == null || id <= 0) throw const FormatException('invalid_account');
-      final accounts = await DbBankAccounts.current.getMyAdminBankAccounts();
+      final unitId = RightsService.currentUnit()?.id;
+      if (unitId == null ||
+          !RightsService.hasCapability(
+            AuthorizationCapabilities.bankAccountsUnitManage,
+          ))
+        throw StateError('PAYMENT_BANK_SCOPE_UNAVAILABLE');
+      final accounts = await DbBankAccounts.current.getBankAccountsForUnit(
+        unitId,
+      );
+      if (unitId != RightsService.currentUnit()?.id ||
+          !RightsService.hasCapability(
+            AuthorizationCapabilities.bankAccountsUnitManage,
+          ))
+        throw StateError('PAYMENT_BANK_SCOPE_CHANGED');
       BankAccountModel? account;
       for (final candidate in accounts) {
         // The server RPC returns only accounts administered by this user.
         if (candidate.id == id &&
             RightsService.hasBankCapability(
-                id, AuthorizationCapabilities.bankSyncManage)) {
+              id,
+              AuthorizationCapabilities.bankSyncManage,
+            )) {
           account = candidate.copyWith(isAdmin: true);
         }
       }
@@ -249,13 +280,17 @@ class _BankAccountConnectionSettingsPageState
   @override
   Widget build(BuildContext context) => _account != null
       ? BankAccountSettingsScreen.connection(
-          key: ValueKey(_account!.id), account: _account!)
+          key: ValueKey(_account!.id),
+          account: _account!,
+        )
       : Scaffold(
-          appBar:
-              AppBar(title: Text(BankAccountStrings.bankAccountSettingsTitle)),
+          appBar: AppBar(
+            title: Text(BankAccountStrings.bankAccountSettingsTitle),
+          ),
           body: Center(
-              child: _failed
-                  ? Text(OrdersStrings.bankSyncWarningSettingsUnavailable)
-                  : const CircularProgressIndicator()),
+            child: _failed
+                ? Text(OrdersStrings.bankSyncWarningSettingsUnavailable)
+                : const CircularProgressIndicator(),
+          ),
         );
 }

@@ -37,6 +37,21 @@ function admin_page() {
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Tickets on your website', 'vstupenky-online' ); ?></h1>
+		<h2><?php esc_html_e( 'Cookie choice transfer', 'vstupenky-online' ); ?></h2>
+		<p><?php esc_html_e( 'In Festapp, open Organizer settings > Measurement > My websites. Confirm coverage there and copy the export here. Cookie choice transfer does not preserve analytics visitor identity.', 'vstupenky-online' ); ?></p>
+		<?php
+		$consent = consent_settings();
+		settings_errors( 'vstupenky-online_consent' );
+		?>
+		<form method="post" action="options.php">
+		<?php settings_fields( 'vstupenky-online_consent' ); ?>
+		<label><input type="checkbox" name="vstupenky-online_consent[enabled]" value="1" <?php checked( ! empty( $consent['enabled'] ) ); ?> /> <?php esc_html_e( 'Enable imported configuration', 'vstupenky-online' ); ?></label>
+		<p><label for="festapp-consent-export"><?php esc_html_e( 'Configuration exported from Festapp', 'vstupenky-online' ); ?></label></p>
+		<textarea id="festapp-consent-export" name="vstupenky-online_consent[export]" rows="8" class="large-text code" maxlength="16384"><?php echo esc_textarea( $consent['export'] ?? '' ); ?></textarea>
+		<p><?php echo esc_html( consent_config() ? __( 'Import accepted locally. The form verifies current server approval.', 'vstupenky-online' ) : __( 'Transfer is off or the export is invalid. Checkout remains available.', 'vstupenky-online' ) ); ?></p>
+		<?php submit_button(); ?>
+		</form>
+
 		<p><?php esc_html_e( 'Embed a form from your vstupenky.online account. Manage events, orders and admission in the service.', 'vstupenky-online' ); ?></p>
 		<div class="card">
 		<h2><?php esc_html_e( '1. Prepare your form', 'vstupenky-online' ); ?></h2>

@@ -1,0 +1,6 @@
+{
+  "clientId": "festapp-make",
+  "callback": "https://www.make.com/oauth/cb/app",
+  "dataProfile": "order-summary",
+  "limits": { "maxPages": 50, "totalInputCap": 3200, "defaultTotal": 10, "rpcSampleLimit": 500 }
+}

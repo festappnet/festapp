@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-11-13T06:49:59Z",
+  "method": "read-only SQLite inspection in each running MCP container as UID 1000; encrypted records decrypted in process; sanitized fields only",
+  "identifiersOrBearerValuesStored": false,
+  "global": {
+    "initialSnapshot": "glama-health-global-initial.json",
+    "postRefreshSnapshot": "glama-health-global-post-refresh.json",
+    "initialCapturedAt": "2026-11-13T06:39:57.376Z",
+    "postCapturedAt": "2026-11-13T06:48:29.242Z",
+    "sameSingleUnrevokedGrantAndSelection": true,
+    "selection": "one occasion, zero units, empty permissions array",
+    "scope": "festapp:ticket-layouts:read",
+    "scopeUnchanged": true,
+    "initialAccessExpiry": "2026-11-13T06:43:42Z",
+    "refreshedAccessIssuedAt": "2026-11-13T06:48:00Z",
+    "accessIssuedAfterInitialExpiry": true,
+    "initialActiveRefreshIssuedAt": "2026-11-13T06:38:42Z",
+    "postActiveRefreshIssuedAt": "2026-11-13T06:48:00Z",
+    "refreshTokenRotated": true,
+    "initialRefreshTokenMarkedConsumedPost": true
+  },
+  "regional": {
+    "initialSnapshot": "glama-health-regional-initial.json",
+    "postRefreshSnapshot": "glama-health-regional-post-refresh.json",
+    "initialCapturedAt": "2026-11-13T06:41:52.864Z",
+    "postCapturedAt": "2026-11-13T06:48:30.578Z",
+    "sameSingleUnrevokedGrantAndSelection": true,
+    "selection": "one occasion, zero units, empty permissions array",
+    "scope": "festapp:ticket-layouts:read",
+    "scopeUnchanged": true,
+    "initialAccessExpiry": "2026-11-13T06:46:13Z",
+    "refreshedAccessIssuedAt": "2026-11-13T06:48:07Z",
+    "accessIssuedAfterInitialExpiry": true,
+    "initialActiveRefreshIssuedAt": "2026-11-13T06:41:13Z",
+    "postActiveRefreshIssuedAt": "2026-11-13T06:48:07Z",
+    "refreshTokenRotated": true,
+    "initialRefreshTokenMarkedConsumedPost": true
+  }
+}

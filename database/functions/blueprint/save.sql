@@ -107,6 +107,13 @@ BEGIN
  FOR c IN SELECT * FROM jsonb_array_elements(coalesce(p_blueprint->'groupProductChanges','[]')) LOOP
   IF NOT c ? 'productId' THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_INCOMPLETE_GROUP_CHANGE',DETAIL=c::text; END IF;
   node:=(c->>'groupNodeId')::uuid; product_id:=(c->>'productId')::bigint;
+  -- The client includes baseline group defaults as null tombstones after their
+  -- nodes are removed. Only a default owned by this blueprint may be removed.
+  IF product_id IS NULL AND NOT (node_index ? node::text)
+   AND EXISTS(SELECT 1 FROM eshop.blueprint_group_products WHERE blueprint=b.id AND group_node=node) THEN
+   DELETE FROM eshop.blueprint_group_products WHERE blueprint=b.id AND group_node=node;
+   CONTINUE;
+  END IF;
   IF coalesce(node_index->node::text->>'kind','') NOT IN ('table','group','furniture')
    OR (product_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM eshop.products WHERE id=product_id AND occasion=b.occasion)) THEN
    RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='BLUEPRINT_INVALID_GROUP_PRODUCT',DETAIL=c::text; END IF;
@@ -151,6 +158,7 @@ BEGIN
  PERFORM public.sync_form_blueprint_internal(id) FROM public.forms WHERE occasion=b.occasion ORDER BY id;
  PERFORM public.assert_form_seating_source_internal(id) FROM public.forms WHERE occasion=b.occasion;
  PERFORM public.notification_center_blueprint_capacity_internal(b.id);
+ PERFORM public.enqueue_wallet_scope_internal(b.occasion);
  RETURN result;
 END $$;
 REVOKE ALL ON FUNCTION public.save_blueprint_layout_impl_internal(jsonb,boolean) FROM PUBLIC,anon,authenticated,service_role;

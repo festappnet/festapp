@@ -33,6 +33,7 @@ BEGIN
     RAISE EXCEPTION 'Invalid email authoring occasion hierarchy' USING ERRCODE = '22023';
   END IF;
 
+  IF NOT coalesce(public.payment_method_policy_enabled_internal(p_unit_id,'bank'),false) THEN RETURN '{"linkedAccounts":[],"formAccountIds":[]}'::jsonb; END IF;
   SELECT COALESCE(jsonb_agg(jsonb_build_object(
     'priority', uba.priority,
     'bank_accounts', jsonb_build_object(

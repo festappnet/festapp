@@ -2,6 +2,7 @@
 services:
   mcp:
     image: ${FESTAPP_MCP_IMAGE:?use the reviewed immutable image digest}
+    command: [node, --max-old-space-size=192, tools/festapp/src/remote/main.mjs, serve, /run/festapp/config.json, --secrets, /run/festapp/secrets.json, --data, /var/lib/festapp-mcp, --port, "${FESTAPP_MCP_PORT:-3399}"]
     network_mode: host
     user: "1000:1000"
     restart: unless-stopped
@@ -19,7 +20,7 @@ services:
       - ${FESTAPP_MCP_SECRETS:?separate protected issuer keys}:/run/festapp/secrets.json:ro
       - ${FESTAPP_MCP_DATA:?private single-process state volume}:/var/lib/festapp-mcp
     healthcheck:
-      test: [CMD, node, -e, "const c=JSON.parse(require('node:fs').readFileSync('/run/festapp/config.json','utf8'));require('node:http').get({hostname:'127.0.0.1',port:3399,path:'/healthz',headers:{host:new URL(c.issuer).host,'x-forwarded-proto':'https'}},r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      test: [CMD, node, -e, "const c=JSON.parse(require('node:fs').readFileSync('/run/festapp/config.json','utf8'));require('node:http').get({hostname:'127.0.0.1',port:${FESTAPP_MCP_PORT:-3399},path:'/healthz',headers:{host:new URL(c.issuer).host,'x-forwarded-proto':'https'}},r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 30s
       timeout: 5s
       retries: 3

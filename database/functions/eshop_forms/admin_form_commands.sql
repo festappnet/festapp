@@ -26,7 +26,7 @@ BEGIN
   WHEN 'save' THEN ARRAY['payment_selection_intent','id','expected_aggregate_version','expected_product_versions','expected_product_type_versions',
    'title','header','header_off','is_open','blueprint','bank_account','deadline_duration_seconds',
    'participant_capacity','waitlist_enabled','show_remaining_capacity','waitlist_offer_duration_seconds',
-   'form_fields','deleted_field_ids','deleted_product_ids','settings']
+   'form_fields','deleted_field_ids','deleted_product_ids','settings','customer_self_service']
   WHEN 'duplicate' THEN ARRAY['source_form_id','source_occasion_id','source_unit_id','locale']
   WHEN 'delete' THEN ARRAY['id','expected_aggregate_version']
  END;

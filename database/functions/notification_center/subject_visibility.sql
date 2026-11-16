@@ -3,7 +3,7 @@
 CREATE OR REPLACE FUNCTION public.notification_center_order_activity_internal(p_org bigint,p_kind text,p_data jsonb)
 RETURNS boolean LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 BEGIN
- IF p_kind IN ('order_created','order_cancelled','waitlist_registered','offer_accepted','offer_declined','offer_expired') THEN RETURN true; END IF;
+ IF p_kind IN ('order_created','order_cancelled','order_payment_received','payment_problem','waitlist_registered','offer_accepted','offer_declined','offer_expired') THEN RETURN true; END IF;
  IF p_kind='email_problem' THEN
   RETURN EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.orders o ON o.id=m.order_id
    JOIN public.occasions oc ON oc.id=o.occasion AND oc.organization=m.organization

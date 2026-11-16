@@ -45,27 +45,38 @@ Future<void> showTicketCancellationUpdates(
       ],
     );
   }
-  for (final order in outcome.updatedOrders) {
-    if (!context.mounted) return;
-    if (order.email.trim().isEmpty) continue;
-    // Resolve a surviving ticket through existing order/detail RPCs so the
-    // preview uses the same sent-history baseline as product editing.
+  if (!context.mounted) return;
+  await showOrderUpdateEmails(
+    context,
+    outcome.updatedOrders
+        .where((order) => order.email.trim().isNotEmpty)
+        .map((order) => order.id),
+  );
+}
+
+/// Uses current order details and the canonical sent-history comparison.
+/// Returns accepted order updates so a caller can suppress duplicate offers
+/// while asynchronous delivery history catches up.
+Future<Set<int>> showOrderUpdateEmails(
+  BuildContext context,
+  Iterable<int> orderIds, {
+  bool onlyIfChanged = false,
+}) async {
+  final dispatchedOrderIds = <int>{};
+  for (final orderId in orderIds.toSet()) {
+    if (!context.mounted) return dispatchedOrderIds;
     final bundle = await ExceptionHandler.guard<TicketDetailsBundle?>(
       context,
       defaultErrorMessage: OrdersStrings.sendEmailFailed,
-      futureFunction: () async {
-        final history = await DbOrders.getOrderHistory(order.id);
-        final tickets = history.order.data?['tickets'] as List? ?? [];
-        if (tickets.isEmpty) return null;
-        return DbEshop.getProductsForTicket(
-          (tickets.first as Map<String, dynamic>)['id'] as int,
-        );
-      },
+      futureFunction: () => loadOrderUpdateEmail(orderId),
     );
     if (bundle == null || !context.mounted) continue;
+    final email = bundle.order.data?['email'] as String? ?? '';
+    if (email.trim().isEmpty || (onlyIfChanged && !bundle.changes.hasChanges))
+      continue;
     final send = await showOrderUpdateEmailDialog(
       context,
-      email: order.email,
+      email: email,
       changes: bundle.changes,
       ticketId: bundle.ticket.id!,
       balance: (bundle.order.price ?? 0) - (bundle.paymentInfo?.paid ?? 0),
@@ -77,12 +88,23 @@ Future<void> showTicketCancellationUpdates(
       1,
       futures: [
         () async {
-          await DbEshop.sendTicketOrderUpdateEmail(order.id);
+          await DbEshop.sendTicketOrderUpdateEmail(orderId);
         },
       ],
     );
+    if (sent) dispatchedOrderIds.add(orderId);
     if (context.mounted && sent) {
       ToastHelper.Show(context, OrdersStrings.sendEmailSuccess);
     }
   }
+  return dispatchedOrderIds;
+}
+
+/// Resolve a surviving ticket and the authoritative customer email baseline.
+Future<TicketDetailsBundle?> loadOrderUpdateEmail(int orderId) async {
+  final history = await DbOrders.getOrderHistory(orderId);
+  final tickets = history.order.data?['tickets'] as List? ?? [];
+  if (tickets.isEmpty) return null;
+  return DbEshop.getProductsForTicket(
+      (tickets.first as Map<String, dynamic>)['id'] as int);
 }

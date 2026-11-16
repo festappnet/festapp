@@ -5,6 +5,8 @@ create or replace function public.delete_entity_email_template(p_entity_type tex
 SET search_path = public, extensions
 as
 $$
+declare
+    v_changed bigint;
 begin
     if p_entity_type = 'occasion' then
         if public.can_write_occasion_email_templates(p_entity_id) IS NOT TRUE then
@@ -35,5 +37,9 @@ begin
     else
         raise exception 'Invalid entity type: %', p_entity_type;
     end if;
+    GET DIAGNOSTICS v_changed=ROW_COUNT;
+    IF v_changed>0 THEN
+      PERFORM public.payment_template_write_scope_internal(jsonb_build_object(p_entity_type,p_entity_id),true);
+    END IF;
 end;
 $$;

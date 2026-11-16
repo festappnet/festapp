@@ -205,6 +205,27 @@ test('general consent uses current user rights without a functional checklist',a
  f.container.querySelector('[data-occasion="99"]').click();await f.page.finish('approve');
  assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'occasions',occasionIds:[99]},permissions:MCP_SCOPES});
 });
+test('basic consent narrows a full request and removes organizer creation without changing selected resources', async () => {
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Glama',units:[{id:4,title:'Pořadatel',canCreateOccasions:true}],occasions:[{id:99,title:'Ples',unitId:4}],canRequestCreate:true,requestedPermissions:MCP_SCOPES}:{resumeUrl:resume,issuer}})});
+ await f.page.init();
+ f.container.querySelector('[data-unit="4"]').click();
+ assert.equal(f.page.access.units[0].canCreateOccasions,true);
+ const mode=f.container.querySelector('[name="permissionMode"]');
+ mode.value='basic';mode.dispatchEvent(new dom.window.Event('change'));
+ assert.equal(f.page.access.units[0].canCreateOccasions,false);
+ assert.equal(f.page.canApprove,true);
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access,{consentVersion:2,selection:{type:'selection',units:[{unitId:4,canCreateOccasions:false}],occasionIds:[]},permissions:[]});
+});
+test('read-only consent excludes writes while retaining requested reads and their dependencies', async () => {
+ const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',occasions:[{id:99,title:'Ples'}],requestedPermissions:MCP_SCOPES}:{resumeUrl:resume,issuer}})});
+ await f.page.init();f.container.querySelector('[data-occasion="99"]').click();
+ const mode=f.container.querySelector('[name="permissionMode"]');
+ mode.value='read-only';mode.dispatchEvent(new dom.window.Event('change'));
+ await f.page.finish('approve');
+ assert.deepEqual(f.calls.at(-1).access.permissions,MCP_SCOPES.filter(scope=>scope.endsWith(':read')));
+ assert.doesNotMatch(f.container.textContent,/festapp:/);
+});
 test('organizer selection includes its available creation rights without another toggle',async()=>{
  const f=fixture({invoke:body=>({data:body.operation==='details'?{client:'Inspector',units:[{id:4,title:'Testovací organizace',canCreateOccasions:true}],occasions:[{id:99,title:'Ples',unitId:4}],canRequestCreate:true,requestedPermissions:[]}:{resumeUrl:resume,issuer}})});
  await f.page.init();f.container.querySelector('[data-unit="4"]').click();
@@ -422,4 +443,41 @@ test('unused legacy connections require an explicit choice and eligible default 
     await f.page.init();
     assert.equal(f.page.connection.connectionId, 'issued');
     assert.match(f.container.textContent, /30 dnech bez obnovy tokenu/);
+});
+
+test('global issuer selector stays on the protected broker transport', async () => {
+    const { McpConnectionPage } = await import('../../src/components/mcp/mcp_connection_page.js');
+    const calls = [];
+    const page = new McpConnectionPage(null, {
+        browser: { location: { href: 'https://vstupenky.online/settings/mcp-connect?request=' + 'a'.repeat(43) + '&issuer=https%3A%2F%2Fmcp.festapp.net' } },
+        client: { functions: { invoke: async (_name, request) => { calls.push(request); return { data: {} }; } } },
+    });
+    await page.call('details');
+    assert.equal(calls[0].headers['X-Festapp-Mcp-Issuer'], 'https://mcp.festapp.net');
+    assert.equal(calls[0].body.organizationId, undefined);
+});
+
+test('API consent displays the exact resource/profile and sends the acknowledgement with approved scope',async()=>{
+ const api={resource:'https://api.vstupenky.online/integrations',dataProfile:'order-summary'};
+ const f=fixture({occasions:[{id:99,title:'Ples'}],invoke:body=>({data:body.operation==='details'?{client:'Make',applicationType:'web',occasions:[{id:99,title:'Ples'}],requestedPermissions:[],api}:body.operation==='status'?{status:'connected'}:{resumeUrl:resume,issuer}})});
+ await f.page.init();assert(f.container.textContent.includes(api.resource));assert(f.container.textContent.includes(api.dataProfile));
+ f.page.selected.add(99);await f.page.call('approve');assert.deepEqual(f.calls.at(-1).access.apiReview,{...api,version:1});
+});
+
+test('MFA approval keeps the code transient and preserves the displayed consent', async () => {
+    const f = fixture(); await f.page.init(); f.page.selected.add(99);
+    f.page.mfaFactor = {id: 'owned-factor'};
+    await f.page.finish('approve');
+    assert.equal(f.page.state, 'mfaApproval');
+    assert.equal(f.calls.length, 1);
+    const input = f.container.querySelector('input[autocomplete="one-time-code"]');
+    assert(input); assert.equal(input.type, 'password');
+    input.value = '123456';
+    f.container.querySelector('form').dispatchEvent(new window.Event('submit', {bubbles: true, cancelable: true}));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(input.value, '');
+    assert.deepEqual(f.calls.at(-1).mfa, {factorId: 'owned-factor', code: '123456'});
+    assert.deepEqual(f.calls.at(-1).access, {type: 'occasions', occasionIds: [99]});
+    assert(!f.container.textContent.includes('123456'));
+    assert.equal(f.page.mfaCode, undefined);
 });

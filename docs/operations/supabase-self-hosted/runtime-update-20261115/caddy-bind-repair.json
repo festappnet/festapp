@@ -1,0 +1,10 @@
+{
+  "status": "pass",
+  "at": "2026-11-15T04:14:03.326126+00:00",
+  "image_preserved": "sha256:1172d4213087d3fc30bafc7ff2c2896180eb0c41ff7f75f315568fb36cabdcba",
+  "environment_command_entrypoint_mounts_preserved": true,
+  "retained_original_container": "festapp-caddy-pre-bind-repair-20261115",
+  "active_bind_matches_host": true,
+  "public_503_retry_after_no_store": true,
+  "elapsed_seconds": 1.04
+}

@@ -1,7 +1,8 @@
+import { OrderItemStrings } from '../eshop/order_item_strings.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { formatDisplayNumber } from '../../utils/formatters.js';
 import { LocalizationService } from '../../services/localization_service.js';
-export const cardPaymentText = key => LocalizationService.tr(`CardPayments.${key}`);
+export const cardPaymentText = (key, options) => OrderItemStrings.text(`CardPayments.${key}`, options);
 const states = new Set(['preparing', 'open', 'pending', 'declined', 'paid', 'expired', 'action_required', 'refund_pending', 'partially_refunded', 'refunded', 'disputed']);
 const payable = new Set(['open', 'declined', 'preparing']);
 export function formatCardMoney(value, currency, locale = LocalizationService.currentLocale) {
@@ -20,7 +21,8 @@ export function canContinueCardPayment(payment) {
 /** Presentation only. A safe read DTO never supplies a write capability or Checkout URL.
  * An authorized owner may supply onPay separately, using its privately-held pay scope.
  */
-export function renderCardPaymentStatus(host, payment, { onPay, onRefresh, locale = LocalizationService.currentLocale } = {}) {
+export function renderCardPaymentStatus(host, payment, { onPay, onRefresh, locale = LocalizationService.currentLocale, hasTickets } = {}) {
+    const text = key => cardPaymentText(key, { hasTickets });
     host.replaceChildren();
     host.classList.add('card-payment-status');
     host.style.cssText = 'display:flex;flex-direction:column;gap:16px;min-width:0;overflow-wrap:anywhere;text-align:start';
@@ -42,25 +44,25 @@ export function renderCardPaymentStatus(host, payment, { onPay, onRefresh, local
     host.append(style);
     const line = (tag, value) => { const el = document.createElement(tag); el.textContent = value; host.append(el); return el; };
     const state = cardPaymentState(payment);
-    line('h3', cardPaymentText('title'));
-    const status = line('p', cardPaymentText(state)); status.setAttribute('role', 'status'); status.setAttribute('aria-atomic', 'true');
+    line('h3', text('title'));
+    const status = line('p', text(state)); status.setAttribute('role', 'status'); status.setAttribute('aria-atomic', 'true');
     const money = value => formatCardMoney(value, payment.currency, locale);
     for (const key of ['amount', 'received', 'returned']) {
         const formatted = money(payment?.[key]);
-        if (formatted != null) line('p', `${cardPaymentText(key)}: ${formatted}`);
+        if (formatted != null) line('p', `${text(key)}: ${formatted}`);
     }
     if (payment?.reservationExpiresAt && ['open', 'declined'].includes(state)) {
         const date = new Date(payment.reservationExpiresAt);
-        if (!Number.isNaN(date.getTime())) line('p', `${cardPaymentText('reservation')}: ${date.toLocaleString(locale)}`);
+        if (!Number.isNaN(date.getTime())) line('p', `${text('reservation')}: ${date.toLocaleString(locale)}`);
     }
-    if (payment?.admissionState === 'hold' && state !== 'disputed') line('p', cardPaymentText('admissionHold'));
+    if (payment?.admissionState === 'hold' && state !== 'disputed') line('p', text('admissionHold'));
     const deliveryLine = state === 'paid' ? line('p', '') : null;
     const updateDelivery = delivery => {
-        if (deliveryLine) deliveryLine.textContent = cardPaymentText(['failed', 'suppressed', 'dead', 'invalid_email'].includes(delivery) ? 'emailFailed' : ['accepted', 'delivered'].includes(delivery) ? 'emailAccepted' : delivery === 'not_requested' ? 'emailNotRequested' : 'emailPending');
+        if (deliveryLine) deliveryLine.textContent = text(['failed', 'suppressed', 'dead', 'invalid_email'].includes(delivery) ? 'emailFailed' : ['accepted', 'delivered'].includes(delivery) ? 'emailAccepted' : delivery === 'not_requested' ? 'emailNotRequested' : 'emailPending');
     };
     updateDelivery(payment?.deliveryState);
     const button = (label, action) => {
-        const el = line('button', cardPaymentText(label)); el.type = 'button';
+        const el = line('button', text(label)); el.type = 'button';
         el.dataset.paymentAction=label;
         el.className = 'btn btn-outline-secondary';
         el.style.cssText = 'min-height:44px;white-space:normal;overflow-wrap:anywhere';
@@ -68,14 +70,14 @@ export function renderCardPaymentStatus(host, payment, { onPay, onRefresh, local
             el.disabled = true;
             let uncertain = false;
             try { await action(); }
-            catch { uncertain = label === 'continuePayment'; status.textContent = cardPaymentText('unknown'); }
+            catch { uncertain = label === 'continuePayment'; status.textContent = text('unknown'); }
             finally { if (el.isConnected && !uncertain) el.disabled = false; }
         };
     };
     if (canContinueCardPayment(payment)) {
         if (typeof onPay === 'function') button('continuePayment', onPay);
-        else line('p', cardPaymentText('protectedPaymentLink'));
-    } else if (payable.has(state)) line('p', cardPaymentText('protectedPaymentLink'));
+        else line('p', text('protectedPaymentLink'));
+    } else if (payable.has(state)) line('p', text('protectedPaymentLink'));
     if (typeof onRefresh === 'function') button('refresh', onRefresh);
     return { updateDelivery };
 }

@@ -11,7 +11,9 @@ const order = z.strictObject({
     customer: z.strictObject({ name: text, surname: text, email: text }),
     ticketCount: z.number().int().nonnegative(), price: text, currency: text,
     allowedActions: z.array(z.string()),
-    payment: z.strictObject({ policy: z.json().nullable().optional(), method: text, amount: text, paid: text, returned: text, variableSymbol: text, deadline: text }).nullable(),
+    // The canonical SQL snapshot also carries UI-only net/pending fields.
+    // Project the documented operator payment boundary for every adapter.
+    payment: z.object({ policy: z.json().nullable().optional(), method: text, amount: text, paid: text, returned: text, variableSymbol: text, deadline: text }).nullable(),
     note: text.optional(), responses: z.array(z.record(z.string(), z.json())).optional(),
     formFields: z.array(z.strictObject({ id: orderId, title: text, type: text })).optional(),
     tickets: z.array(z.strictObject({ id: orderId, state: z.string(), products: z.array(z.strictObject({ id: orderId, title: text, price: text, currentPrice: text })) })).optional(),
@@ -59,6 +61,18 @@ export async function invokeOrderOperation(owner, client, operation, args) {
     if (rpc !== 'manage_operator_order_v1') {
         const schema = owner.orderSummaryOnly && ['orders.list','orders.inspect'].includes(operation) ? publicOrderPage : orderDataSchemas[operation];
         const result = schema.parse(data);
+        if (operation === 'orders.inspect') {
+            check(result.orders.length > 0, 'NOT_FOUND_OR_INACCESSIBLE');
+            check(result.orders.length === 1 && result.orders[0].id === args.orderId && result.orders[0].occasionId === args.occasionId);
+        }
+        if (operation === 'orders.list') {
+            let previous = args.before ?? Infinity;
+            for (const row of result.orders) {
+                check(Number.isSafeInteger(row.id) && row.id > 0 && row.id < previous && row.occasionId === args.occasionId);
+                previous = row.id;
+            }
+            check(result.nextCursor === null || result.orders.length > 0 && result.nextCursor === previous);
+        }
         if (result.orders && owner.permitsOperation) {
             // SQL labels express state eligibility; delegated scopes further
             // constrain them. Unknown labels never become executable actions.

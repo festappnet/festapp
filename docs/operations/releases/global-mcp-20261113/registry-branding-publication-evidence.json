@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-11-13T05:09:26.759602+00:00",
+  "sourceSha": "4dc92219abac059b645df9702c44706670514ecc",
+  "authoritativeMainSha": "4dc92219abac059b645df9702c44706670514ecc",
+  "sourceWorktreeClean": true,
+  "registry": "https://registry.modelcontextprotocol.io",
+  "publisher": {
+    "cli": "mcp-publisher-safe",
+    "sourceCommit": "115f85225c9fac5281d8a2dc8551cf49b004d2f9",
+    "authentication": "DNS Ed25519; expired short-lived token reauthenticated using Keychain private key through MCP_PRIVATE_KEY child environment",
+    "privateKeyPrintedOrPassedAsArgv": false,
+    "publishExitCodes": [
+      0,
+      0
+    ]
+  },
+  "records": [
+    {
+      "name": "net.festapp/festapp",
+      "version": "0.1.1",
+      "title": "Festapp",
+      "websiteUrl": "https://festapp.net",
+      "description": "Manage authorized Festapp events, programs, attendees and Festapp Tickets with explicit consent.",
+      "remote": {
+        "type": "streamable-http",
+        "url": "https://mcp.festapp.net/mcp"
+      },
+      "icon": {
+        "src": "https://raw.githubusercontent.com/festappnet/festapp/a37389cc225a139725a935d014f1df10f091484e/assets/icons/fstappicon.png",
+        "mimeType": "image/png",
+        "size": "1024x1024",
+        "sha256": "86822c91bee60c07681848b616cdef3a9aa1200c2150b5acbb640b1b443208aa"
+      },
+      "manifestSha256": "16d3fedb925eb02439ec75a620ee2b702fe269f817ee56be01b816de169c402a",
+      "safeCliValidate": "passed",
+      "safeCliPublish": "passed",
+      "publicReadback": "exact"
+    },
+    {
+      "name": "net.festapp/vstupenky-online",
+      "version": "0.1.1",
+      "title": "vstupenky.online",
+      "websiteUrl": "https://vstupenky.online",
+      "description": "Manage authorized events, ticket sales, seating, orders and check-in on vstupenky.online.",
+      "remote": {
+        "type": "streamable-http",
+        "url": "https://mcp.vstupenky.online/mcp"
+      },
+      "icon": {
+        "src": "https://raw.githubusercontent.com/festappnet/festapp/a37389cc225a139725a935d014f1df10f091484e/integrations/chatgpt/assets/logo.png",
+        "mimeType": "image/png",
+        "size": "1024x1024",
+        "sha256": "95aee7b98f64c8faedd8078c085aa64d194af1971c994bc8fd64c42bf1dd2bbc"
+      },
+      "manifestSha256": "9b9860b1989fc4c2e2a14d3bb8b04ee2e964f16c247bdde64fc8a2af5fa4ddd4",
+      "safeCliValidate": "passed",
+      "safeCliPublish": "passed",
+      "publicReadback": "exact"
+    }
+  ],
+  "publicRegistryReadback": {
+    "latestQuery": "https://registry.modelcontextprotocol.io/v0.1/servers?search=net.festapp%2F&version=latest&limit=100",
+    "latestIdentityCount": 2,
+    "latestIdentities": [
+      {
+        "name": "net.festapp/festapp",
+        "version": "0.1.1"
+      },
+      {
+        "name": "net.festapp/vstupenky-online",
+        "version": "0.1.1"
+      }
+    ],
+    "previousVersionHistories": {
+      "net.festapp/festapp": [
+        "0.1.0",
+        "0.1.1"
+      ],
+      "net.festapp/vstupenky-online": [
+        "0.1.0",
+        "0.1.1"
+      ]
+    },
+    "duplicateIdentitiesCreated": false
+  },
+  "githubChecks": {
+    "exactSha": "4dc92219abac059b645df9702c44706670514ecc",
+    "requiredCount": 8,
+    "allSuccess": true,
+    "items": [
+      {
+        "name": "web-startup",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265206/job/131700942134"
+      },
+      {
+        "name": "seat-checkout",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265174/job/131700941803"
+      },
+      {
+        "name": "server-policy",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265153/job/131700941789"
+      },
+      {
+        "name": "wix-checkout-compatibility",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265260/job/131700941546"
+      },
+      {
+        "name": "client-contract",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265153/job/131700941529"
+      },
+      {
+        "name": "image-contract",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265162/job/131700941501"
+      },
+      {
+        "name": "ticket-preview-and-delivery",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265174/job/131700941412"
+      },
+      {
+        "name": "navigation-interactions",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/festappnet/festapp/actions/runs/43369265189/job/131700941401"
+      }
+    ]
+  },
+  "runtimeOrDeploymentChanges": false,
+  "supportEmailSent": false,
+  "noSecretValuesRecorded": true
+}

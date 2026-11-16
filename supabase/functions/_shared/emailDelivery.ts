@@ -137,10 +137,18 @@ export async function renderEmail(
     body = first < 0 ? body + ticketBlock : body.slice(0, first) + ticketBlock +
       body.slice(first + marker.length).replaceAll(marker, "");
   }
+  const paymentAction = String(input.substitutions.paymentAction ?? "");
+  const paymentValues: Record<string, unknown> = {...input.substitutions, paymentAction: "<!--festapp-payment-action-->"};
+  if (paymentAction && (body.includes("{{paymentAction}}") || resolved?.wrapper?.html?.includes("{{paymentAction}}"))) {
+    for (const key of ["balanceReasoning", "paymentDetails"]) {
+      if (typeof paymentValues[key] === 'string') paymentValues[key] = paymentValues[key].replaceAll(paymentAction, '');
+    }
+  }
   const html = styleEmailPlainValues(completeEmailContent(
-    substituteEmailHtml(body, input.substitutions),
+    substituteEmailHtml(body, paymentValues),
     input.requiredLinks ?? [],
     resolved?.wrapper?.html,
+    paymentAction,
   ));
   return {
     from: input.from ?? _DEFAULT_EMAIL,

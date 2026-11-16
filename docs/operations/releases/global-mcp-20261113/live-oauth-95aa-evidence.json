@@ -1,0 +1,128 @@
+{
+  "source": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+  "records": [
+    {
+      "at": "2026-11-13T06:30:26.897Z",
+      "event": "oauth_connected",
+      "label": "final95-ticketing",
+      "purpose": "ticketing",
+      "issuer": "https://mcp.festapp.net",
+      "tenant": "festapptickets",
+      "modern": "2026-07-28 modern (pinned)",
+      "legacy": "2025-11-25",
+      "accessibleOccasions": 1,
+      "tools": 6
+    },
+    {
+      "at": "2026-11-13T06:30:51.607Z",
+      "event": "scenario_passed",
+      "label": "final95-ticketing",
+      "tool": "festapp_orders_report",
+      "canonicalResultDigest": "202550bc7a0e84aa56b251714efeb074b374e1cb94e8fd2522923bf6c07cb98d",
+      "readOnly": true
+    },
+    {
+      "at": "2026-11-13T06:30:51.783Z",
+      "event": "request_context_boundaries_passed",
+      "label": "final95-ticketing",
+      "forgedOrganizationDenied": true,
+      "foreignOriginStatus": 403
+    },
+    {
+      "at": "2026-11-13T06:30:51.983Z",
+      "event": "audience_isolation_passed",
+      "label": "final95-ticketing",
+      "globalTokenRegionalStatus": 401
+    },
+    {
+      "at": "2026-11-13T06:30:53.578Z",
+      "event": "refresh_passed",
+      "label": "final95-ticketing",
+      "rotated": true,
+      "authenticatedReadAfterRefresh": true
+    },
+    {
+      "at": "2026-11-13T06:31:18.188Z",
+      "event": "oauth_connected",
+      "label": "final95-biscup",
+      "purpose": "program",
+      "issuer": "https://mcp.festapp.net",
+      "tenant": "doobiscup",
+      "modern": "2026-07-28 modern (pinned)",
+      "legacy": "2025-11-25",
+      "accessibleOccasions": 1,
+      "tools": 8
+    },
+    {
+      "at": "2026-11-13T06:31:32.057Z",
+      "event": "scenario_passed",
+      "label": "final95-biscup",
+      "tool": "festapp_events_list",
+      "canonicalResultDigest": "064718173686c721075c7133c7847ed9c8fb9992d6818da587dbec99bea2ebc9",
+      "readOnly": true
+    },
+    {
+      "at": "2026-11-13T06:31:32.205Z",
+      "event": "request_context_boundaries_passed",
+      "label": "final95-biscup",
+      "forgedOrganizationDenied": true,
+      "foreignOriginStatus": 403
+    },
+    {
+      "at": "2026-11-13T06:31:32.355Z",
+      "event": "audience_isolation_passed",
+      "label": "final95-biscup",
+      "globalTokenRegionalStatus": 401
+    },
+    {
+      "at": "2026-11-13T06:31:34.078Z",
+      "event": "cross_tenant_occasion_denied",
+      "label": "final95-ticketing",
+      "otherLabel": "final95-biscup",
+      "tool": "festapp_orders_report"
+    },
+    {
+      "at": "2026-11-13T06:31:35.296Z",
+      "event": "cross_tenant_occasion_denied",
+      "label": "final95-biscup",
+      "otherLabel": "final95-ticketing",
+      "tool": "festapp_events_list"
+    },
+    {
+      "at": "2026-11-13T06:31:37.070Z",
+      "event": "refresh_passed",
+      "label": "final95-biscup",
+      "rotated": true,
+      "authenticatedReadAfterRefresh": true
+    },
+    {
+      "at": "2026-11-13T06:36:25.899Z",
+      "event": "ui_revocation_passed",
+      "label": "final95-ticketing",
+      "accessStatus": 401,
+      "refreshStatus": 400
+    },
+    {
+      "at": "2026-11-13T06:36:27.502Z",
+      "event": "refresh_passed",
+      "label": "final95-biscup",
+      "rotated": true,
+      "authenticatedReadAfterRefresh": true
+    },
+    {
+      "at": "2026-11-13T06:36:29.491Z",
+      "event": "scenario_passed",
+      "label": "final95-biscup",
+      "tool": "festapp_events_list",
+      "canonicalResultDigest": "064718173686c721075c7133c7847ed9c8fb9992d6818da587dbec99bea2ebc9",
+      "readOnly": true
+    },
+    {
+      "at": "2026-11-13T06:37:38.481Z",
+      "event": "ui_revocation_passed",
+      "label": "final95-biscup",
+      "accessStatus": 401,
+      "refreshStatus": 400
+    }
+  ]
+}

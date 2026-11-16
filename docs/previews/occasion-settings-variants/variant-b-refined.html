@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nastavení akce - rozpracovaná varianta B</title>
+<style>
+  :root { color-scheme: light; font: 15px Arial, sans-serif; color: #24344b; background: #eef1f5; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 22px; }
+  h1 { font-size: 23px; margin: 0 0 9px; }
+  p { line-height: 1.5; }
+  .reviewbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 18px 0; }
+  .reviewbar p { margin: 0 auto 0 0; color: #526176; }
+  button, a { font: inherit; }
+  button { padding: 11px 15px; border: 1px solid #bac6d5; border-radius: 6px; background: white; color: #294467; cursor: pointer; }
+  button[aria-pressed="true"] { background: #263e61; color: white; border-color: #263e61; }
+  :focus-visible { outline: 3px solid #5180be; outline-offset: 3px; }
+  a { color: #275a9b; text-underline-offset: 3px; }
+  .stage { display: flex; justify-content: center; }
+  iframe { width: 100%; height: 900px; border: 1px solid #bcc8d6; border-radius: 8px; background: white; }
+  iframe.phone { width: 390px; flex: 0 0 390px; height: 844px; }
+  .notes { max-width: 1050px; font-size: 14px; color: #526176; margin-top: 22px; }
+  summary { cursor: pointer; padding: 10px 0; font-weight: bold; }
+  @media(max-width: 650px) { body { padding: 12px; } h1 { font-size: 20px; } .stage { overflow: auto; justify-content: flex-start; } }
+</style>
+</head>
+<body>
+<h1>Varianta B: souvislé nastavení s mřížkou funkcí</h1>
+<div class="reviewbar">
+  <p>Interaktivní návrh. Změny zůstávají pouze v tomto náhledu.</p>
+  <button data-size="desktop" aria-pressed="true">Počítač</button>
+  <button data-size="phone" aria-pressed="false">Telefon · 390 px</button>
+  <a href="index.html">Porovnat A / B / C</a>
+</div>
+<div class="stage"><iframe id="frame" title="Rozpracovaný návrh nastavení akce"></iframe></div>
+<div class="notes">
+  <details>
+    <summary>Proč takto a co lze vyzkoušet</summary>
+    <p>Na počítači má mřížka až tři sloupce. Editor se otevře pod celým řádkem vybrané funkce, nikdy uvnitř malé dlaždice. Na telefonu jsou funkce v jednom sloupci a editor přímo pod vybranou funkcí. Zavření vrací fokus k jejímu tlačítku. Zkuste Formulář, Vstupenku, vyhledání „připomínky“, prázdný výsledek a přepnutí na telefon s otevřeným editorem.</p>
+    <p>Formulář ukazuje existující výchozí splatnost, připomínky a externí režim. Vstupenka ukazuje doručování, peněženku, předgenerování a vstup do samostatného editoru rozložení. Rozložení vstupenky má vlastní stávající ukládání; zbytek akce má jednu dolní lištu. Žádný server, upload, skutečné uložení ani platební operace zde neběží. V aplikaci se znovu použijí současné editory HTML, obrázků, funkcí, doručování a vzhledu peněženky včetně jejich práv, validací a podmíněných polí. Povinné funkce zůstanou nevypínatelné a náhled použije stávající kartu akce.</p>
+    <p>Principy: <a href="https://www.eventbrite.com/help/en-us/articles/551351/how-to-create-an-event/" target="_blank" rel="noopener">Eventbrite - veřejný obsah akce</a>, <a href="https://help.tickettailor.com/en/articles/2748053-how-to-set-up-a-waitlist-for-your-event" target="_blank" rel="noopener">Ticket Tailor - postupné odkrývání podrobností</a>, <a href="https://shopify.dev/docs/apps/design/user-experience/forms" target="_blank" rel="noopener">Shopify - sekce a společné ukládání</a>. Mřížka a mobilní kompozice jsou vlastní návrh pro Festapp. <a href="proposal.md">Podrobnosti a zachování funkcí</a>.</p>
+  </details>
+</div>
+
+<template id="app">
+<style>
+:root { color-scheme: light; font: 14px Arial, sans-serif; color: #26364d; background: #f5f7fa; accent-color: #315b91; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; min-height: 42px; padding: 10px 15px; border: 1px solid #b5c2d3; border-radius: 5px; color: #294c7b; background: white; }
+button:hover { background: #edf2f8; }
+button:disabled { cursor: default; color: #6b788a; background: #f0f3f6; border-color: #cbd4e0; }
+:focus-visible { outline: 3px solid #7098ce; outline-offset: 3px; }
+::selection { background: #d3e4fa; }
+input, select, textarea { color: #26364d; caret-color: #315b91; width: 100%; min-width: 0; min-height: 44px; border: 1px solid #a9b8cb; background: white; padding: 11px 12px; border-radius: 5px; }
+input[type="checkbox"] { width: 19px; min-height: 19px; height: 19px; flex-shrink: 0; }
+textarea { resize: vertical; line-height: 1.6; min-height: 155px; }
+label.field { display: block; margin: 0 0 19px; }
+label.field > span { display: block; font-weight: 600; margin-bottom: 8px; }
+small { display: block; font-size: 12px; line-height: 1.5; color: #56667c; margin-top: 6px; }
+h1 { font-size: 23px; margin: 0 0 6px; }
+h2 { font-size: 21px; margin: 0 0 9px; }
+h3 { font-size: 16px; margin: 22px 0 13px; }
+p { line-height: 1.55; }
+svg { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.shell { height: 100vh; display: flex; flex-direction: column; }
+.topbar { background: #223654; color: white; min-height: 53px; display: flex; align-items: center; gap: 25px; padding: 12px 28px; }
+.topbar strong { font-size: 18px; }
+.topbar span { color: #dde5f0; }
+.topbar .user { margin-left: auto; font-size: 12px; }
+.pagehead { padding: 19px 30px 0; background: white; border-bottom: 1px solid #d4dde8; }
+.crumb { color: #5c6c80; font-size: 12px; margin-bottom: 8px; }
+.tabs { display: flex; gap: 26px; margin-top: 18px; font-size: 13px; min-height: 33px; }
+.tabs strong { border-bottom: 2px solid #315b91; color: #315b91; }
+.scroll { flex: 1; min-height: 0; overflow: auto; scroll-behavior: auto; scroll-padding-block: 20px; }
+.jumpbar { flex-shrink: 0; background: #f5f7fa; border-bottom: 1px solid #d7dfea; padding: 10px 30px; display: flex; gap: 8px; }
+.jumpbar button { border-color: transparent; background: transparent; min-height: 36px; padding: 7px 12px; font-size: 13px; }
+.jumpbar button:hover { background: #e5ecf5; }
+.document { max-width: 1210px; margin: auto; padding: 30px 40px 50px; }
+.chapter { margin: 0; border-bottom: 1px solid #d4dde8; padding: 0 0 32px; scroll-margin-top: 0; }
+.chapter + .chapter { padding-top: 31px; }
+.chapter > summary { display: none; }
+.chapter:not([open]) > .chapter-body { display: block; }
+.subtitle { margin: 0 0 24px; color: #5b6a7e; max-width: 76ch; }
+.basics { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 30px; }
+.dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compact-disclosure > summary { cursor: pointer; min-height: 38px; padding: 6px 0 12px; color: #375b8b; font-size: 13px; }
+.compact-disclosure[open] > summary { margin-bottom: 8px; }
+.appearance { display: grid; grid-template-columns: minmax(0,1fr) 305px; gap: 32px; }
+.upload { display: flex; align-items: center; gap: 18px; margin-bottom: 23px; }
+.image-sample { width: 115px; height: 80px; flex-shrink: 0; background: #e6ebf2; border: 1px dashed #aebbcf; display: flex; justify-content: center; align-items: center; color: #596f8b; }
+.image-sample svg { width: 30px; height: 30px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions button { font-size: 13px; }
+.toolbar { display: flex; gap: 6px; border: 1px solid #a9b8cb; border-bottom: 0; border-radius: 5px 5px 0 0; padding: 6px 10px; background: #f3f5f8; }
+.toolbar span { min-width: 28px; padding: 5px 3px; color: #53647c; }
+.editor-text { border-radius: 0 0 5px 5px; }
+.previewbox { border: 1px solid #c8d3e1; border-radius: 8px; overflow: hidden; background: white; }
+.preview-cover { height: 144px; display: flex; align-items: center; justify-content: center; background: #e6ebf2; color: #5d6f86; text-align: center; padding: 20px; }
+.preview-copy { padding: 17px; }
+.preview-copy strong { display: block; font-size: 17px; line-height: 1.4; }
+.preview-copy p { font-size: 13px; margin: 10px 0 0; }
+.preview-disclosure > summary { display: none; }
+.preview-disclosure:not([open]) > div { display: block; }
+.visibility { margin-top: 28px; }
+.visibility-list { display: grid; grid-template-columns: repeat(3,1fr); gap: 25px; }
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; }
+.check input { margin: 1px 0 0; }
+.check strong { display: block; font-size: 14px; }
+.check small { margin-top: 6px; }
+.featuretools { display: flex; gap: 18px; align-items: center; margin: 25px 0 22px; }
+.featuretools label { width: 390px; max-width: 100%; }
+.featuretools .scope { color: #5c6d82; font-size: 12px; margin-left: auto; }
+.groupheading { display: flex; align-items: baseline; gap: 9px; margin: 23px 0 14px; }
+.groupheading h3 { margin: 0; }
+.groupheading span { color: #596b82; font-size: 12px; }
+.featuregrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; }
+.featuretile { padding: 17px; border: 1px solid #c6d1e0; border-radius: 8px; background: white; display: flex; flex-direction: column; min-width: 0; }
+.featuretile.selected { border-color: #4e78ad; background: #f0f5fc; }
+.featuretitle { display: flex; gap: 10px; align-items: center; }
+.featuretitle h4 { margin: 0; font-size: 15px; }
+.featuretile p { font-size: 12px; color: #5a6a7f; margin: 10px 0 15px; flex: 1; }
+.tilebottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.state { color: #346247; font-size: 12px; white-space: nowrap; }
+.state.off { color: #667489; }
+.tilebottom button { min-height: 37px; padding: 7px 10px; font-size: 12px; }
+.available > summary { cursor: pointer; padding: 22px 0 17px; font-size: 16px; font-weight: 600; }
+.empty { padding: 23px; background: #edf1f6; border-radius: 6px; }
+.featureeditor { grid-column: 1 / -1; min-width: 0; background: #fff; border: 1px solid #97aecb; border-radius: 8px; padding: 25px; scroll-margin-top: 0; }
+.editorhead { display: flex; align-items: flex-start; gap: 15px; border-bottom: 1px solid #d7e0ec; padding-bottom: 16px; margin-bottom: 20px; }
+.editorhead h3 { margin: 0 0 6px; font-size: 19px; }
+.editorhead p { color: #5b6a80; margin: 0; font-size: 13px; }
+.editorhead button { margin-left: auto; flex-shrink: 0; font-size: 12px; }
+.editorcolumns { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 28px; }
+.help { color: #5b6c81; font-size: 12px; max-width: 75ch; }
+.inline-note { padding: 13px 15px; background: #eef3f9; color: #506580; border-radius: 5px; font-size: 13px; line-height: 1.5; margin: 15px 0; }
+.feature-content { border: 0; padding: 0; margin: 0; min-width: 0; }
+.detail-actions { margin-top: 22px; border-top: 1px solid #dbe2ec; padding-top: 18px; }
+.ticket-preview { border: 1px dashed #aabbd0; padding: 26px; background: #f6f8fb; margin-bottom: 15px; }
+.ticket-preview strong { display: block; margin: 8px 0; }
+.ticket-preview .ticket-code { font-size: 12px; color: #586d88; }
+.advanced-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.link { color: #315b91; overflow-wrap: anywhere; font-size: 12px; }
+.danger { padding-top: 28px; }
+.danger h3 { color: #8c3d46; margin-top: 0; }
+.danger p { font-size: 13px; color: #596a80; }
+.savebar { background: white; border-top: 1px solid #c8d3e1; padding: 12px 30px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.savebar .save-status { color: #576a82; font-size: 12px; margin-right: auto; line-height: 1.5; }
+button.primary { background: #2d507f; color: white; border-color: #2d507f; }
+button.primary:hover { background: #24436e; }
+.notice { padding: 11px 14px; background: #edf3fb; color: #415d81; margin: 0 0 22px; font-size: 12px; line-height: 1.5; border-radius: 5px; }
+[hidden] { display: none !important; }
+@media(min-width:701px) and (max-width:1000px) { .featuregrid { grid-template-columns: repeat(2,minmax(0,1fr)); } .document { padding-left: 25px; padding-right: 25px; } .appearance { grid-template-columns: minmax(0,1fr) 260px; } }
+@media(max-width:700px) {
+  .topbar { padding: 12px 17px; gap: 18px; min-height: 48px; }
+  .topbar .user { display: none; }
+  .pagehead { padding: 16px 18px 0; }
+  h1 { font-size: 21px; }
+  .tabs { gap: 22px; font-size: 12px; }
+  .tabs .optional { display: none; }
+  .jumpbar { display: none; }
+  .scroll { scroll-padding-block: 12px; }
+  .document { padding: 15px 18px 35px; }
+  .notice { margin: 0 0 4px; font-size: 11px; }
+  .chapter, .chapter + .chapter { padding: 0; scroll-margin-top: 0; }
+  .chapter > summary { display: list-item; padding: 20px 0; font-size: 16px; font-weight: 600; cursor: pointer; }
+  .chapter > summary small { font-weight: 400; margin-top: 7px; }
+  .chapter > .chapter-body { padding: 2px 0 26px; }
+  .chapter:not([open]) > .chapter-body { display: none; }
+  .chapter-body > h2 { display: none; }
+  .subtitle { margin-bottom: 21px; font-size: 13px; }
+  .basics, .appearance, .visibility-list, .advanced-grid, .editorcolumns { grid-template-columns: 1fr; gap: 0; }
+  .dates { gap: 10px; }
+  .dates input { font-size: 12px; padding: 11px 8px; }
+  .upload { align-items: flex-start; gap: 13px; }
+  .image-sample { width: 75px; height: 75px; }
+  .upload .actions { gap: 6px; }
+  .upload button { padding: 9px 10px; }
+  .preview-disclosure > summary { display: list-item; cursor: pointer; color: #315b91; min-height: 44px; padding: 15px 0; }
+  .preview-disclosure:not([open]) > div { display: none; }
+  .visibility { margin-top: 20px; }
+  .visibility-list .check { border-bottom: 1px solid #dce3ed; padding: 15px 0; }
+  .featuretools { display: block; margin-top: 18px; }
+  .featuretools label { width: 100%; }
+  .featuretools .scope { margin-top: 10px; }
+  .featuregrid { grid-template-columns: minmax(0,1fr); gap: 10px; }
+  .featuretile { padding: 15px; }
+  .featuretile p { margin: 9px 0 12px; font-size: 13px; }
+  .tilebottom button { min-height: 44px; padding: 9px 13px; font-size: 13px; }
+  .featureeditor { padding: 18px 15px; scroll-margin-top: 0; }
+  .editorhead { flex-wrap: wrap; gap: 12px; }
+  .editorhead button { margin: 0; min-height: 44px; }
+  .editorhead h3 { font-size: 18px; }
+  .editorcolumns > div + div { margin-top: 15px; }
+  .savebar { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+  .savebar .save-status { width: 100%; margin: 0; font-size: 11px; }
+  .savebar button { flex: 1; }
+}
+</style>
+<div class="shell">
+  <header class="topbar"><strong>Festapp</strong><span>Správa akcí</span><span class="user">Jana Novotná</span></header>
+  <div class="pagehead">
+    <div class="crumb">Společenský ples U Lípy</div><h1>Nastavení akce</h1>
+    <div class="tabs"><span>Přehled</span><span>Formuláře</span><span class="optional">Objednávky</span><strong>Nastavení</strong></div>
+  </div>
+  <nav class="jumpbar" aria-label="Přejít na část nastavení">
+      <button data-jump="basic">Údaje o akci</button><button data-jump="appearance">Vzhled a viditelnost</button><button data-jump="features">Funkce</button><button data-jump="advanced">Pokročilé</button>
+  </nav>
+  <main class="scroll">
+    <div class="document">
+      <p class="notice">Ukázková akce s podporou aplikace. Úpravy jsou pouze místní; žádné skutečné uložení ani publikování.</p>
+      <details class="chapter" id="basic" open>
+        <summary>Údaje o akci<small>Název, místo a termín konání</small></summary>
+        <section class="chapter-body">
+          <h2>Údaje o akci</h2><p class="subtitle">Základní informace, podle kterých návštěvníci akci poznají.</p>
+          <div class="basics">
+            <div>
+              <label class="field"><span>Název akce</span><input id="event-title" value="Společenský ples U Lípy"></label>
+              <label class="field"><span>Místo konání</span><input id="event-place" value="Kulturní dům U Lípy, Brno"></label>
+            </div>
+            <div>
+              <div class="dates">
+                <label class="field"><span>Začátek</span><input value="20. 2. 2027, 19:00" aria-describedby="date-help"></label>
+                <label class="field"><span>Konec</span><input value="21. 2. 2027, 02:00" aria-describedby="date-help"></label>
+              </div>
+              <details class="compact-disclosure"><summary>Časové pásmo: Europe/Prague</summary><label class="field"><span>Časové pásmo</span><select><option>Europe/Prague</option><option>Europe/London</option></select></label></details>
+              <small id="date-help">Datum a čas v místním pásmu akce.</small>
+            </div>
+          </div>
+        </section>
+      </details>
+      <details class="chapter" id="appearance">
+        <summary>Vzhled a viditelnost<small>Obrázek, popis, veřejnost a zobrazení akce</small></summary>
+        <section class="chapter-body">
+          <h2>Vzhled a viditelnost</h2><p class="subtitle">Upravte veřejný obsah akce a zkontrolujte, jak se představí návštěvníkům.</p>
+          <div class="appearance">
+            <div>
+              <h3 style="margin-top:0">Úvodní obrázek</h3>
+              <div class="upload">
+                <div class="image-sample" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 4-6 5 7"/></svg></div>
+                <div><div class="actions"><button disabled>Vybrat obrázek</button><button disabled>Odebrat</button></div><small>Výběr a ořez obrázku nejsou v tomto náhledu aktivní.</small></div>
+              </div>
+              <label class="field"><span>Popis akce</span><div class="toolbar" aria-hidden="true"><span><b>B</b></span><span><i>I</i></span><span>Odkaz</span><span>Seznam</span></div><textarea class="editor-text">Přijďte si užít společenský večer s živou hudbou a tancem. Sál otevíráme v 18:30, slavnostní zahájení proběhne v 19:00.</textarea><small>Ukázka textu. Formátování zde není aktivní.</small></label>
+            </div>
+            <aside>
+              <details class="preview-disclosure"><summary>Zobrazit náhled karty akce</summary><div><h3 style="margin-top:0">Náhled karty akce</h3><div class="previewbox"><div class="preview-cover">Místo pro skutečný obrázek akce</div><div class="preview-copy"><strong id="preview-title">Společenský ples U Lípy</strong><p>20. února 2027 · 19:00</p><p id="preview-place">Kulturní dům U Lípy, Brno</p></div></div><small>Ilustrační náhled karty akce.</small></div></details>
+            </aside>
+          </div>
+          <div class="visibility"><h3>Viditelnost akce</h3><div class="visibility-list">
+            <label class="check"><input type="checkbox" checked><span><strong>Veřejná akce</strong><small>Zpřístupní veřejnosti detaily akce, například program a informace.</small></span></label>
+            <label class="check"><input type="checkbox"><span><strong>Skrýt v seznamech</strong><small>Akce se nezobrazí v přehledech. Dostupnost formuláře se nastavuje samostatně.</small></span></label>
+            <label class="check"><input type="checkbox" disabled><span><strong>Propagovat akci</strong><small>Nejprve vložte skutečný obrázek. Poté lze akci zvýraznit v seznamech.</small></span></label>
+          </div></div>
+        </section>
+      </details>
+      <details class="chapter" id="features">
+        <summary>Funkce akce<small>Formulář, vstupenka, program a další možnosti</small></summary>
+        <section class="chapter-body">
+          <h2>Funkce akce</h2><p class="subtitle">Vyberte funkci, kterou chcete nastavit. Podrobnosti se otevřou přímo pod jejím řádkem.</p>
+          <div class="featuretools"><label><span class="help">Hledat v názvech a popisech</span><input id="feature-search" type="search" placeholder="Například vstupenka, mapa, připomínky"></label><span class="scope">Ukázka varianty s podporou aplikace</span></div>
+          <div id="enabled-group"><div class="groupheading"><h3>Zapnuté funkce</h3><span id="enabled-count"></span></div><div class="featuregrid" id="enabled-grid"></div></div>
+          <details class="available" id="available-group"><summary>Další funkce <span id="available-count"></span></summary><div class="featuregrid" id="available-grid"></div></details>
+          <p class="empty" id="empty-results" hidden>Žádná funkce neodpovídá hledání. <button id="clear-search">Vymazat hledání</button></p>
+          <small>Otevřením a zavřením nastavení se nic neukládá.</small>
+        </section>
+      </details>
+      <details class="chapter" id="advanced">
+        <summary>Pokročilé<small>Odkaz akce a e-mail pro odpovědi</small></summary>
+        <section class="chapter-body">
+          <h2>Pokročilé</h2><p class="subtitle">Méně časté volby. Časové pásmo najdete u termínu akce.</p>
+          <div class="advanced-grid"><div><label class="field"><span>Odkaz akce</span><input value="spolecensky-ples-u-lipy"></label><p class="link">Uložený odkaz: /spolecensky-ples-u-lipy</p><div class="actions"><button disabled>Kopírovat uložený odkaz</button><button disabled>Historie odkazů</button></div><small>Kopíruje se uložená adresa. Dřívější odkazy zůstávají platné.</small></div><div><label class="field"><span>E-mail pro odpovědi</span><input type="email" placeholder="Výchozí: poradatele@example.cz"><small>Pokud pole nevyplníte, použije se adresa pořadatele. Sem přijdou odpovědi na automatické e-maily.</small></label></div></div>
+        </section>
+      </details>
+      <section class="danger"><h3>Smazání akce</h3><p>Akci s objednávkami, včetně stornovaných, nelze smazat.</p><button disabled>Smazat akci</button></section>
+    </div>
+  </main>
+  <footer class="savebar"><span class="save-status" role="status">Návrh bez připojení k serveru</span><button id="discard">Zahodit místní změny</button><button id="save" class="primary">Uložit změny</button></footer>
+</div>
+</template>
+<script>
+function prototypeApp(initialTarget) {
+  const $ = selector => document.querySelector(selector);
+  const icons = {
+    form: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/>',
+    ticket: '<path d="M3 7h18v4a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4Z"/><path d="M15 7v3m0 3v2m0 2v1"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18m-13 4h3m3 0h3m-9 4h3"/>',
+    map: '<path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2Zm6-2v16m6-14v16"/>',
+    users: '<circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m1-17a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v3"/>',
+    settings: '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="white"/><circle cx="16" cy="12" r="2" fill="white"/><circle cx="10" cy="18" r="2" fill="white"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>',
+    money: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h1m10 0h1"/>'
+  };
+  const data = [
+    ['form','Formulář','Výchozí splatnost, připomínky a externí rezervace.','form',true],
+    ['ticket','Vstupenka','Doručování, vzhled a předgenerované vstupenky.','ticket',true],
+    ['blueprint','Plán míst','Povolí funkci plánu a práce s místy.','grid',true],
+    ['schedule','Program','Zobrazení a typ programu akce.','calendar',true],
+    ['map','Mapa','Mapa akce a výchozí zobrazení.','map',true],
+    ['workshops','Workshopy','Nastavení přihlašování na workshopy.','users',true],
+    ['deposit','Záloha','Reálná záloha nebo informativní doplatek.','money',false],
+    ['songbook','Zpěvník','Zpřístupnění zpěvníku účastníkům.','form',false],
+    ['game','Hra','Zapnutí herních funkcí akce.','grid',false],
+    ['mySchedule','Můj program','Vlastní program účastníka.','calendar',false],
+    ['services','Pobyt','Nastavení služeb a pobytu.','settings',false],
+    ['groups','Skupiny','Skupiny účastníků akce.','users',false],
+    ['entry','Vstupní kód','Zpřístupnění funkce vstupního kódu.','ticket',false],
+    ['timetable','Rozvrh','Zapnutí rozvrhu akce.','calendar',false],
+    ['volunteers','Dobrovolníci','Funkce pro práci s dobrovolníky.','users',false],
+    ['companions','Doprovod','Počet doprovázejících a možnosti přiřazení.','users',false],
+    ['import','Import','Nastavení importu dat akce.','form',false],
+    ['contract','Smlouva','Smlouvy pro účastníky akce.','form',false],
+    ['search','Vyhledávání','Vyhledávání v obsahu aplikace.','settings',false],
+    ['feedback','Zpětná vazba','Hodnocení a zpětná vazba k programu.','form',false],
+    ['notifications','Upozornění na program','Programová oznámení pro účastníky.','mail',false],
+    ['counseling','Poradenství','Možnosti poradenství na akci.','users',false],
+    ['cleaning','Úklid','Zapnutí funkce pro organizaci úklidu.','settings',false],
+    ['reception','Recepce','Zapnutí funkce recepce akce.','users',false]
+  ].map(([id,title,description,icon,enabled])=>({id,title,description,icon,enabled}));
+  const editors = new Map();
+  let selected = null;
+  let lastColumns = 0;
+  const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]}</svg>`;
+  const field = (name,value,type='text') => `<label class="field"><span>${name}</span><input type="${type}" value="${value}"></label>`;
+  const check = (name,help,checked=true,id='') => `<label class="check"><input type="checkbox" ${checked?'checked':''} ${id?`id="${id}"`:''}><span><strong>${name}</strong><small>${help}</small></span></label>`;
+  function status(text='Místní změny v náhledu · zatím neuloženo') { $('.save-status').textContent=text; }
+
+  function renderGrid() {
+    if (selected) editors.get(selected)?.remove();
+    const query = $('#feature-search').value.trim().toLocaleLowerCase('cs');
+    const visible = data.filter(f=>(f.title+' '+f.description).toLocaleLowerCase('cs').includes(query));
+    for (const enabled of [true,false]) {
+      const list = visible.filter(f=>f.enabled===enabled);
+      const grid = $(enabled?'#enabled-grid':'#available-grid');
+      grid.innerHTML=list.map(f=>`<article class="featuretile ${f.id===selected?'selected':''}" data-feature="${f.id}"><div class="featuretitle">${icon(f.icon)}<h4>${f.title}</h4></div><p>${f.description}</p><div class="tilebottom"><span class="state ${f.enabled?'':'off'}">${f.enabled?'Zapnuto':'Vypnuto'}</span><button data-configure="${f.id}" aria-expanded="${f.id===selected}" aria-label="Nastavit funkci ${f.title}">Nastavit</button></div></article>`).join('');
+      $(enabled?'#enabled-count':'#available-count').textContent=`(${list.length})`;
+      $(enabled?'#enabled-group':'#available-group').hidden=list.length===0;
+    }
+    if(query) $('#available-group').open=true;
+    $('#empty-results').hidden=visible.length>0;
+    document.querySelectorAll('[data-configure]').forEach(button=>button.onclick=()=>openEditor(button.dataset.configure));
+    if(selected && visible.some(f=>f.id===selected)) placeEditor();
+    else if(selected) selected=null;
+  }
+  function closeEditor(returnFocus=true) {
+    const old=selected;
+    if(old) editors.get(old)?.remove();
+    selected=null;
+    renderGrid();
+    if(returnFocus && old) {
+      const button=document.querySelector(`[data-configure="${old}"]`);
+      button?.focus({preventScroll:true});
+      button?.closest('.featuretile').scrollIntoView({block:'nearest'});
+    }
+  }
+  function placeEditor() {
+    if(!selected) return;
+    const tile=document.querySelector(`[data-feature="${selected}"]`);
+    if(!tile) return;
+    const grid=tile.parentElement;
+    const cols=getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+    lastColumns=cols;
+    const tiles=[...grid.querySelectorAll('.featuretile')];
+    const i=tiles.indexOf(tile);
+    const rowEnd=Math.min(Math.floor(i/cols)*cols+cols-1,tiles.length-1);
+    tiles[rowEnd].after(editors.get(selected));
+  }
+  function openEditor(id) {
+    $('#features').open=true;
+    if(selected===id) { closeEditor(); return; }
+    if(selected) editors.get(selected)?.remove();
+    selected=id;
+    if(!editors.has(id)) editors.set(id,makeEditor(data.find(f=>f.id===id)));
+    renderGrid();
+    const editor=editors.get(id);
+    editor.scrollIntoView({block:'start'});
+    editor.querySelector('h3').focus({preventScroll:true});
+  }
+  function makeEditor(feature) {
+    const panel=document.createElement('section');
+    panel.className='featureeditor';
+    panel.setAttribute('aria-label',`Nastavení funkce ${feature.title}`);
+    let content='';
+    if(feature.id==='form') content=`<div class="editorcolumns"><div><h3>Rezervace</h3>${check('Použít externí formulář','Přepne mezi interní rezervací a externím odkazem.',false,'external-form')}<div id="external-fields" hidden>${field('Odkaz na rezervaci','https://example.cz/ples')}${field('Zobrazená cena','350 Kč')}<p class="help">Externí cena je informativní text. Tento návrh nevytváří platební operaci.</p></div><details class="compact-disclosure"><summary>Text rezervačního tlačítka</summary>${field('Text tlačítka','Koupit vstupenky')}</details><p class="help">Dostupnost a obsah konkrétního formuláře nastavíte u daného formuláře.</p></div><div id="internal-fields"><h3>Výchozí splatnost a připomínky</h3><label class="field"><span>Režim splatnosti</span><select id="deadline-mode"><option value="custom">Vlastní lhůta</option><option value="none">Bez splatnosti</option></select></label><div id="deadline-days">${field('Lhůta splatnosti ve dnech','7','number')}</div>${check('Připomínat nezaplacené objednávky','Připomínky neuhrazených objednávek podle nastaveného intervalu.',true,'reminder-enabled')}<div id="reminder-days">${field('Interval připomínek ve dnech','1','number')}</div><p class="help">Výchozí hodnoty pro formuláře této akce. Jednotlivé formuláře mohou mít vlastní nastavení.</p></div></div>`;
+    else if(feature.id==='ticket') content=`<div class="editorcolumns"><div><h3>Doručování vstupenek</h3><label class="field"><span>Způsob doručení</span><select disabled><option>Ukázka režimu s PDF</option></select><small>Výběr způsobu doručení není v této ukázce aktivní.</small></label>${check('Vstupenka v mobilní peněžence','Nabídne účastníkům uložení vstupenky do mobilní peněženky.',false)}<details class="compact-disclosure"><summary>Vzhled mobilní peněženky</summary><p class="help">Úprava vzhledu peněženky není součástí této ukázky.</p></details>${check('Předgenerované vstupenky','Povolí předgenerované vstupenky pro tuto akci.',false)}<button disabled>Nastavení zobrazení při kontrole</button><small>Jen s oprávněním spravovat nastavení kontroly.</small></div><div><h3>Vzhled PDF vstupenky</h3><div class="ticket-preview"><small>Ilustrace místa pro skutečný náhled</small><strong>Společenský ples U Lípy</strong><p>20. 2. 2027 · 19:00<br>Kulturní dům U Lípy</p><div class="ticket-code">Náhled bez platného vstupního kódu</div></div><button id="layout-entry">Upravit rozložení vstupenky</button><p class="inline-note" id="layout-note" hidden>Editor rozložení není v této ukázce aktivní. Rozložení vstupenky se ukládá samostatně; rozpracované změny akce zůstanou zachované.</p><small>Rozložení, pozadí a barvy upravíte v samostatném editoru vstupenky.</small><details class="compact-disclosure"><summary>Náhled doručovacího e-mailu</summary><p class="help">Náhled e-mailu není v této ukázce aktivní.</p></details></div></div>`;
+    else if(feature.id==='deposit') content=`<div class="editorcolumns"><div><label class="field"><span>Režim zálohy</span><select><option>Reálná záloha</option><option>Informativní doplatek</option></select></label><p class="help">Reálná záloha souvisí s platbou. Informativní doplatek je pouze zobrazený údaj a nemění placenou částku.</p></div><div><label class="field"><span>Termín doplatku</span><select><option>Počet dní před akcí</option><option>Na místě</option></select></label>${field('Počet dní před akcí','7','number')}</div></div><p class="help">Ukázka vybraných voleb zálohy.</p>`;
+    else {
+      const specialized=['schedule','map','workshops','services','companions','import','contract','counseling'].includes(feature.id);
+      content=specialized?`<p class="inline-note">Podrobné nastavení funkce ${feature.title} není součástí této ukázky.</p>`:`<p class="help">Tato funkce má zapnutí / vypnutí bez dalšího specializovaného editoru.</p>`;
+    }
+    panel.innerHTML=`<div class="editorhead"><div><h3 tabindex="-1">${feature.title}</h3><p>${feature.description}</p></div><button data-close>Zavřít nastavení</button></div><label class="check"><input type="checkbox" data-enable ${feature.enabled?'checked':''}><span><strong>Funkce zapnuta</strong></span></label><fieldset class="feature-content" ${feature.enabled?'':'disabled'}>${content}</fieldset><div class="detail-actions"><button data-close>Zpět na přehled funkcí</button><small>Zavření ponechá rozpracované změny. Celou akci uložíte dolní lištou.</small></div>`;
+    panel.querySelectorAll('[data-close]').forEach(button=>button.onclick=()=>closeEditor());
+    panel.querySelector('[data-enable]').onchange=event=>{
+      feature.enabled=event.target.checked;
+      panel.querySelector('.feature-content').disabled=!feature.enabled;
+      if(!feature.enabled) $('#available-group').open=true;
+      renderGrid();
+      panel.scrollIntoView({block:'start'});
+      panel.querySelector('[data-enable]').focus({preventScroll:true});
+      status();
+    };
+    if(feature.id==='form') {
+      const update=()=>{
+        const external=panel.querySelector('#external-form').checked;
+        panel.querySelector('#external-fields').hidden=!external;
+        panel.querySelector('#internal-fields').hidden=external;
+        const deadline=panel.querySelector('#deadline-mode').value!=='none';
+        panel.querySelector('#deadline-days').hidden=!deadline;
+        panel.querySelector('#reminder-days').hidden=!deadline||!panel.querySelector('#reminder-enabled').checked;
+      };
+      ['external-form','deadline-mode','reminder-enabled'].forEach(id=>panel.querySelector('#'+id).addEventListener('change',update));
+    }
+    panel.querySelector('#layout-entry')?.addEventListener('click',()=>panel.querySelector('#layout-note').hidden=false);
+    return panel;
+  }
+  $('#feature-search').oninput=()=>renderGrid();
+  $('#clear-search').onclick=()=>{ $('#feature-search').value=''; renderGrid(); $('#feature-search').focus(); };
+  document.querySelectorAll('[data-jump]').forEach(button=>button.onclick=()=>{
+    const section=document.getElementById(button.dataset.jump); section.open=true; section.scrollIntoView({block:'start'});
+  });
+  document.addEventListener('input',event=>{
+    if(event.target.id==='feature-search') return;
+    status();
+    if(event.target.id==='event-title') $('#preview-title').textContent=event.target.value;
+    if(event.target.id==='event-place') $('#preview-place').textContent=event.target.value;
+  });
+  document.addEventListener('change',event=>{ if(event.target.matches('select,input')) status(); });
+  $('#save').onclick=()=>status('Pouze návrh: nic nebylo uloženo na server. Místní změny zůstávají zobrazené.');
+  $('#discard').onclick=()=>window.parent.postMessage({type:'reset-festapp-preview'},'*');
+  window.addEventListener('resize',()=>{
+    if(selected) {
+      const tile=document.querySelector(`[data-feature="${selected}"]`);
+      if(tile && getComputedStyle(tile.parentElement).gridTemplateColumns.split(' ').length!==lastColumns) placeEditor();
+    }
+  });
+  renderGrid();
+  if(initialTarget) {
+    const target=document.getElementById(initialTarget);
+    if(target) { target.open=true; requestAnimationFrame(()=>target.scrollIntoView({block:'start'})); }
+  }
+}
+const frame=document.getElementById('frame');
+const initialTarget=['basic','appearance','features','advanced'].includes(location.hash.slice(1))?location.hash.slice(1):'';
+const previewSource='<!doctype html><html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+document.getElementById('app').innerHTML+'<script>('+prototypeApp.toString()+')('+JSON.stringify(initialTarget)+')<\/script></html>';
+frame.srcdoc=previewSource;
+window.addEventListener('message',event=>{
+  if(event.source===frame.contentWindow && event.data?.type==='reset-festapp-preview') frame.srcdoc=previewSource;
+});
+document.querySelectorAll('[data-size]').forEach(button=>button.onclick=()=>{
+  document.querySelectorAll('[data-size]').forEach(other=>other.setAttribute('aria-pressed',String(other===button)));
+  frame.classList.toggle('phone',button.dataset.size==='phone');
+});
+</script>
+</body>
+</html>

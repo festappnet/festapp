@@ -1,3 +1,4 @@
+import { bankCollectionAllowed } from "../_shared/orderEmailPresentation.ts";
 import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { confirmedNetPayment, reminderBalanceReasoning, depositReminderBalanceReasoning } from "../_shared/orderEmailPresentation.ts";
@@ -45,6 +46,7 @@ export async function getTicketOrderReminderTemplate(
   // 2. Get the communication tone
   const tone = resolveCommunicationTone(form_data?.communication_tone);
 
+  if (!bankCollectionAllowed(payment_info)) throw new Error('payment_reminder_action_unavailable');
   const currency = order.currency_code || "CZK";
   const iban = formatIBAN(bank_account.account_number);
 
@@ -65,8 +67,9 @@ export async function getTicketOrderReminderTemplate(
     );
 
     // Generate Payment QR Code for remaining amount
-    try {
+    if (['CZK','EUR'].includes(currency)) try {
       const qrPaymentData = {
+        payment_method: payment_info.payment_method, collectionAction: payment_info.collectionAction,
         amount: remainingAmount,
         currency_code: currency,
         account_number: bank_account.account_number,
@@ -148,8 +151,9 @@ export async function getTicketOrderReminderTemplate(
     );
 
     // Generate Payment QR Code
-    try {
+    if (['CZK','EUR'].includes(currency)) try {
       const qrPaymentData = {
+        payment_method: payment_info.payment_method, collectionAction: payment_info.collectionAction,
         amount: balance,
         currency_code: currency,
         account_number: bank_account.account_number,

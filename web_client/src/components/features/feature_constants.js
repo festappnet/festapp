@@ -1,6 +1,8 @@
 export class FeatureConstants {
+    static customerSelfService = "customer_self_service";
     static form = "form";
     static ticket = "ticket";
+    static discountCodes = "discount_codes";
     static blueprint = "blueprint";
     static workshops = "workshops";
     static map = "map";

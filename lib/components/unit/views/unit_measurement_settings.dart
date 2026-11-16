@@ -15,6 +15,7 @@ import '../unit_measurement_approval.dart';
 class UnitMeasurementSettings extends StatelessWidget {
   final TextEditingController? websitesController;
   final bool enabled;
+  final Widget Function()? websiteConsentBuilder;
   final bool consentBridge;
   final ValueChanged<bool>? onConsentBridgeChanged;
   final String consentLayout;
@@ -39,6 +40,7 @@ class UnitMeasurementSettings extends StatelessWidget {
   const UnitMeasurementSettings({
     super.key,
     required this.enabled,
+    this.websiteConsentBuilder,
     this.websitesController,
     this.consentBridge = false,
     this.onConsentBridgeChanged,
@@ -170,6 +172,8 @@ class UnitMeasurementSettings extends StatelessWidget {
             validator: validateWebsites,
           ),
           for (final site in sites) Text('$site: ${websiteStatus(site)}'),
+          if (canEdit && websiteConsentBuilder != null)
+            websiteConsentBuilder!(),
         ],
         if (enabled && loadingApproval) ...[
           const SizedBox(height: 8),

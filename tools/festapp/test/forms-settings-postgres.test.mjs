@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {options,setup,executor,create,formPatch,save,denied} from './form-fixtures.mjs';
-const defaultPayments={bankEnabled:true,cashEnabled:false,cashInstructions:'',providerConnections:{}};
+const defaultPayments={bankEnabled:false,cashEnabled:false,cashInstructions:'',providerConnections:{}};
 const stored=async(db,id)=>(await db.query('select data from forms where id=$1',[id])).rows[0].data;
 
 test('settings executor preserves unrelated metadata and shares UI snapshots, original versions and frozen retries',options,async t=>{
@@ -29,7 +29,7 @@ test('null resets known overrides to inheritance without deleting lifecycle or o
  assert.deepEqual(result.data.authoring.form.data,{private_owner:7,schedule:{sale_preparation:true},design:{paper_texture:'pattern'},variable_symbol:{type:'random',preferred_digits:5},payments:defaultPayments});
  await db.query('RESET ROLE');assert.equal((await db.query('select get_effective_form_data($1) value',[made.formId])).rows[0].value.communication_tone,'informal');
  // Opening still belongs to the lifecycle owner; a settings reset cannot restore preparation.
- const opened=await save(db,f,formPatch(result.data.authoring,{is_open:true,settings:{schedule:null}}));assert.equal(opened.code,200,JSON.stringify(opened));assert.equal(opened.data.authoring.form.data.schedule.sale_preparation,false);
+ const opened=await save(db,f,formPatch(result.data.authoring,{is_open:true,payment_selection_intent:'replace',settings:{schedule:null,payment_deadline:{mode:'none'},payments:{bankEnabled:false,cashEnabled:true,cashInstructions:'U vstupu',providerConnections:{}}}}));assert.equal(opened.code,200,JSON.stringify(opened));assert.equal(opened.data.authoring.form.data.schedule.sale_preparation,false);
 });
 
 test('invalid SQL settings reject atomically before title/field mutation and cannot patch private lifecycle metadata',options,async t=>{
@@ -43,8 +43,8 @@ test('invalid SQL settings reject atomically before title/field mutation and can
 test('released metadata boundary normalizes historical data and uses the same settings validation as the new patch',options,async t=>{
  const{db,f}=await setup(t);const made=await create(db,f);const metadata={private_owner:9,is_reminder_enabled:false,communication_tone:'informal',design:{primary_color:'#112233',paper_texture:'pattern'}};
  await db.query('SET LOCAL ROLE authenticated');const legacy=async p=>(await db.query('select update_form_client_sync_v1($1,$2) value',[{occasion:f.occasion,...p},randomUUID()])).rows[0].value;
- const result=await legacy(formPatch(made.authoring,{data:[null,metadata]}));assert.equal(result.code,200,JSON.stringify(result));assert.deepEqual(result.data.authoring.form.data,{...metadata,design:{...metadata.design,presale_header:'event_and_date'},payments:defaultPayments});
- await denied(db,'select update_form_client_sync_v1($1,$2)',[{occasion:f.occasion,...formPatch(result.data.authoring,{data:{...metadata,reminder_interval_seconds:-1},title:'Must rollback'})},randomUUID()],'22023');assert.deepEqual(await stored(db,made.formId),{...metadata,design:{...metadata.design,presale_header:'event_and_date'},payments:defaultPayments});
+ const result=await legacy(formPatch(made.authoring,{data:[null,metadata]}));assert.equal(result.code,200,JSON.stringify(result));assert.deepEqual(result.data.authoring.form.data,{...metadata,design:{...metadata.design,presale_header:'event_and_date'},payments:{bankEnabled:true}});
+ await denied(db,'select update_form_client_sync_v1($1,$2)',[{occasion:f.occasion,...formPatch(result.data.authoring,{data:{...metadata,reminder_interval_seconds:-1},title:'Must rollback'})},randomUUID()],'22023');assert.deepEqual(await stored(db,made.formId),{...metadata,design:{...metadata.design,presale_header:'event_and_date'},payments:{bankEnabled:true}});
  await denied(db,'select update_form_client_sync_v1($1,$2)',[{occasion:f.occasion,...formPatch(result.data.authoring,{data:metadata,settings:{communication_tone:'formal'}})},randomUUID()],'22023');
  const saved=await save(db,f,formPatch(result.data.authoring,{settings:{communication_tone:'formal'}}));assert.equal(saved.code,200);assert.equal(saved.data.authoring.form.data.private_owner,9);
 });
@@ -59,7 +59,7 @@ test('payment options use the UI bank projection and form-author predicate; fore
 });
 
 test('existing Stripe selection validates actual recipient scope and compatibility, preserves runtime restrictions and never allocates a payment',options,async t=>{
- const{db,f}=await setup(t);const made=await create(db,f);const conn=randomUUID();await db.query(`update organizations set data=coalesce(data,'{}')||'{"DEFAULT_URL":"https://forms.example.invalid"}' where id=$1`,[f.org]);
+ const{db,f}=await setup(t);const made=await create(db,f);const conn=randomUUID();await db.query("insert into eshop.organization_payment_method_policies(organization_id,method,enabled) values($1,'stripe',true)",[f.org]);await db.query(`update organizations set data=coalesce(data,'{}')||'{"DEFAULT_URL":"https://forms.example.invalid"}' where id=$1`,[f.org]);
  await db.query("insert into eshop.stripe_connections(id,organization_id,unit_id,account_id,livemode,state,model_verified,paused,charges_enabled,card_payments_active,business_name) values($1,$2,$3,$4,true,'connected',true,false,true,true,'Synthetic recipient')",[conn,f.org,f.unit,'acct_'+conn.replaceAll('-','')]);
  const otherUnit=(await db.query("insert into units(title,organization) values('Other recipient unit',$1) returning id",[f.org])).rows[0].id;const other=randomUUID();await db.query("insert into eshop.stripe_connections(id,organization_id,unit_id,account_id,livemode,state,model_verified) values($1,$2,$3,$4,true,'connected',true)",[other,f.org,otherUnit,'acct_'+other.replaceAll('-','')]);
  const counts=async()=> (await db.query('select (select count(*) from eshop.payment_info) payments,(select count(*) from eshop.payment_reference_reservations) refs')).rows[0];const before=await counts();
@@ -80,7 +80,7 @@ test('payment null resets share the canonical merge owner and the real MCP save 
  assert.deepEqual(await merge(null),payments,'SQL NULL is an internal preservation request');
  const patch=async value=>(await db.query('select apply_form_settings_internal($1,$2) value',[{payments,private_owner:7},{payments:value}])).rows[0].value;
  assert.deepEqual(await patch(null),{payments:defaultPayments,private_owner:7});
- assert.deepEqual(await patch({bankEnabled:null,providerConnections:connections}),{payments:{bankEnabled:true,cashEnabled:false,cashInstructions:'',providerConnections:connections},private_owner:7});
+ assert.deepEqual(await patch({bankEnabled:null,providerConnections:connections}),{payments:{bankEnabled:false,cashEnabled:false,cashInstructions:'',providerConnections:connections},private_owner:7});
  assert.deepEqual(await patch({providerConnections:null}),{payments:{bankEnabled:false,cashEnabled:false,cashInstructions:'',providerConnections:{}},private_owner:7});
  assert.deepEqual(await merge({bankEnabled:true}),{bankEnabled:true,cashEnabled:false,cashInstructions:'',providerConnections:{barion:connections.barion}},'released Stripe-only omission preserves other providers');
  const made=await create(db,f);await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);
@@ -178,7 +178,7 @@ test('form appearance partial writes preserve unrelated design and reset to syst
 test('MCP sale-opening settings use the actual campaign owner and keep workflow state server-owned',options,async t=>{
  const {db,f}=await setup(t);const made=await create(db,f);await db.query('SET LOCAL ROLE authenticated');
  const ex=executor(db,f);
- const enabled=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(made.authoring,{is_open:true,settings:{schedule:{start_time:'2030-01-15T18:00:00+01:00',end_time:'2030-02-20T12:00:00+01:00'},sale_opening_notifications:{enabled:true,collection_paused:false}}})});
+ const enabled=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(made.authoring,{is_open:true,payment_selection_intent:'replace',settings:{payment_deadline:{mode:'none'},payments:{bankEnabled:false,cashEnabled:true,cashInstructions:'U vstupu',providerConnections:{}},schedule:{start_time:'2030-01-15T18:00:00+01:00',end_time:'2030-02-20T12:00:00+01:00'},sale_opening_notifications:{enabled:true,collection_paused:false}}})});
  assert.equal(enabled.ok,true,JSON.stringify(enabled));assert.equal(enabled.data.authoring.form.data.sale_opening_notifications.enabled,true);
  await db.query('RESET ROLE');
  const campaign=(await db.query('select id,phase from sale_opening_campaigns where form_id=$1',[made.formId])).rows[0];assert.equal(campaign.phase,'armed');
@@ -253,4 +253,25 @@ test('measurement save separates request, platform policy, historical receipt an
  const reset=await invoke(off.data.authoring,{enabled:null});assert.equal(reset.ok,true,JSON.stringify(reset));assert.equal(reset.data.current_measurement_status.requested_enabled,false);
  const cleared=await invoke(reset.data.authoring,null);assert.equal(cleared.ok,true,JSON.stringify(cleared));assert.equal(cleared.data.authoring.form.data.analytics,undefined);
  await denied(db,"insert into analytics.organization_policy(organization,enabled,revision,operator,reason) values($1,true,1,'bad','bad')",[f.org+1]);
+});
+
+
+test('Global MCP form creation, copy and payment options have no bank fallback before hosted onboarding',options,async t=>{
+ const {db,f}=await setup(t);
+ await db.query("update eshop.organization_payment_method_policies set enabled=false where organization_id=$1",[f.org]);
+ await db.query("insert into eshop.organization_payment_method_policies(organization_id,method,enabled) values($1,'stripe',true) on conflict(organization_id,method) do update set enabled=true",[f.org]);
+ await db.query("update eshop.payment_method_policy_scopes set preferred_method='stripe' where organization_id=$1",[f.org]);
+ const made=await create(db,f,'Global registrace');
+ assert.equal(made.authoring.form.data.payments.bankEnabled,false);
+ const bank=(await db.query("insert into eshop.bank_accounts(title,type,account_number) values('Historický účet','FIO','123456/0800') returning id")).rows[0].id;
+ await db.query('insert into eshop.unit_bank_accounts(unit,bank_account) values($1,$2)',[f.unit,bank]);
+ const opts=await executor(db,f).ops.invoke('forms.paymentOptions',{occasionId:f.occasion,formId:made.formId,livemode:true});
+ assert.equal(opts.ok,true,JSON.stringify(opts));assert.deepEqual(opts.data.bankAccounts,[]);
+ assert.deepEqual(opts.data.availability.available,[]);
+ assert.equal(opts.data.paymentMethodPolicy.preferredMethod,'stripe');
+ assert.equal(opts.data.paymentMethodPolicy.methods.bank.policyEnabled,false);
+ const target=Number((await db.query('select id from occasions where organization=$1 and id<>$2',[f.org,f.occasion])).rows[0].id);
+ const copy=(await db.query("select manage_form($1,$2,$3,'duplicate',$4,$5) value",[target,f.org,f.unit,{source_form_id:made.formId,source_occasion_id:f.occasion,source_unit_id:f.unit,locale:'en'},randomUUID()])).rows[0].value;
+ assert.equal(copy.code,200,JSON.stringify(copy));
+ assert.equal(copy.data.authoring.form.data.payments.bankEnabled,false);
 });

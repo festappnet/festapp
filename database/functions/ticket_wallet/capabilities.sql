@@ -3,14 +3,14 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extension
 DECLARE m public.email_messages; o public.occasions; f jsonb; c eshop.ticket_wallet_capabilities; i eshop.ticket_wallet_integrations;
 BEGIN
  PERFORM public.require_service_role();
- IF p_hash IS NOT NULL AND EXISTS(SELECT 1 FROM eshop.ticket_wallet_audit WHERE token_hash=p_hash) THEN RETURN NULL; END IF;
+ IF p_hash IS NOT NULL AND (EXISTS(SELECT 1 FROM eshop.ticket_wallet_audit WHERE token_hash=p_hash) OR EXISTS(SELECT 1 FROM eshop.ticket_wallet_collections WHERE token_hash=p_hash)) THEN RETURN NULL; END IF;
  SELECT * INTO m FROM public.email_messages WHERE message_id=p_message;
  IF m.message_kind IS DISTINCT FROM 'order_tickets' OR NOT public.email_intent_valid(m)
  OR NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE ticket=p_ticket AND "order"=m.order_id) THEN
   RAISE insufficient_privilege USING MESSAGE='Wallet unavailable'; END IF;
- SELECT * INTO o FROM public.occasions WHERE id=m.occasion;
+ SELECT oc.* INTO o FROM public.occasions oc JOIN eshop.orders ord ON ord.occasion=oc.id WHERE ord.id=m.order_id AND oc.id=m.occasion AND oc.organization=m.organization;
  SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
- SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=m.organization AND publishing_ready;
+ SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=m.organization AND (publishing_ready OR apple_publishing_ready);
  IF NOT coalesce((f->>'is_enabled')::boolean,false) OR NOT public.ticket_wallet_enabled(f) OR i.organization IS NULL
  OR nullif(btrim(o.title),'') IS NULL OR (o.data->>'timezone' IS NOT NULL AND NOT EXISTS(SELECT 1 FROM pg_timezone_names WHERE name=o.data->>'timezone'))
  OR o.end_time IS NULL OR o.start_time IS NULL OR o.end_time+interval '7 days'<=now() THEN RETURN NULL; END IF;
@@ -22,6 +22,7 @@ BEGIN
  IF c.reissue_after IS NOT NULL AND m.created_at>c.reissue_after AND p_hash IS NOT NULL AND p_sealed IS NOT NULL THEN
   UPDATE eshop.ticket_wallet_capabilities SET token_hash=p_hash,sealed=p_sealed,recipient=m.recipient,message_id=m.message_id,
    revoked_at=NULL,reissue_after=NULL,event_end_at=o.end_time,expires_at=o.end_time+interval '7 days' WHERE ticket_id=p_ticket RETURNING * INTO c;
+  PERFORM public.enqueue_ticket_wallet_internal(ARRAY[p_ticket]);
  END IF;
  IF c.ticket_id IS NULL AND p_hash IS NOT NULL AND p_sealed IS NOT NULL THEN
   INSERT INTO eshop.ticket_wallet_capabilities(ticket_id,organization,occasion,order_id,token_hash,sealed,recipient,message_id,expires_at,event_end_at)
@@ -32,12 +33,13 @@ BEGIN
  OR c.organization<>m.organization OR c.occasion<>m.occasion OR c.order_id<>m.order_id) THEN RETURN NULL; END IF;
  RETURN jsonb_build_object('organization',m.organization,'occasion',m.occasion,'ticketId',p_ticket,'issuer',i.issuer,
  'environment',i.environment,'webOrigin',i.web_origin,'badgeUrls',i.badge_urls,
- 'source',CASE WHEN c.ticket_id IS NOT NULL THEN jsonb_build_object('sealed',c.sealed,'tokenHash',c.token_hash,'generation',c.generation) END);
+ 'providers',jsonb_build_object('google',i.publishing_ready,'apple',i.apple_publishing_ready),
+ 'collectionEnabled',i.collection_enabled,'source',CASE WHEN c.ticket_id IS NOT NULL THEN jsonb_build_object('sealed',c.sealed,'tokenHash',c.token_hash,'generation',c.generation) END);
 END $$;
 
 CREATE OR REPLACE FUNCTION public.resolve_ticket_wallet(p_hash text,p_source text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE c eshop.ticket_wallet_capabilities; i eshop.ticket_wallet_integrations; n integer; k text;
+DECLARE n integer; k text;
 BEGIN
  PERFORM public.require_service_role();
  IF p_hash !~ '^[a-f0-9]{64}$' OR p_source !~ '^[a-f0-9]{64}$' THEN RETURN NULL; END IF;
@@ -48,13 +50,7 @@ BEGIN
   window_at=CASE WHEN ticket_wallet_limits.window_at<now()-interval '1 minute' THEN now() ELSE ticket_wallet_limits.window_at END RETURNING attempts INTO n;
   IF n>20 THEN RETURN NULL; END IF;
  END LOOP;
- PERFORM public.refresh_ticket_wallet_term_internal((SELECT ticket_id FROM eshop.ticket_wallet_capabilities WHERE token_hash=p_hash));
- SELECT * INTO c FROM eshop.ticket_wallet_capabilities WHERE token_hash=p_hash AND revoked_at IS NULL AND expires_at>now();
- IF c.ticket_id IS NULL THEN RETURN NULL; END IF;
- SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=c.organization;
- IF i.organization IS NULL THEN RETURN NULL; END IF;
- RETURN jsonb_build_object('ticketId',c.ticket_id,'organization',c.organization,'occasion',c.occasion,'issuer',i.issuer,'environment',i.environment,
- 'webOrigin',i.web_origin,'projection',public.ticket_wallet_projection_internal(c.ticket_id));
+ RETURN public.ticket_wallet_scope_internal(p_hash);
 END $$;
 
 -- Explicit support operation. A new generation always requires a fresh valid email intent.
@@ -74,7 +70,7 @@ BEGIN
    recipient='',message_id='00000000-0000-0000-0000-000000000000',expires_at=now() WHERE ticket_id=p_ticket;
  END IF;
  INSERT INTO eshop.ticket_wallet_audit(ticket_id,generation,token_hash,actor,action) VALUES(p_ticket,c.generation,c.token_hash,auth.uid(),p_action);
- -- Periodic reconciliation observes the new capability state without reversing object/capability lock order.
+ PERFORM public.enqueue_ticket_wallet_internal(ARRAY[p_ticket]);
 END $$;
 REVOKE ALL ON FUNCTION public.prepare_ticket_wallet(uuid,bigint,text,jsonb),public.resolve_ticket_wallet(text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.prepare_ticket_wallet(uuid,bigint,text,jsonb),public.resolve_ticket_wallet(text,text) TO service_role;

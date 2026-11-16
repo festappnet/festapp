@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "rounds": 105119,
+  "virtualDays": 364.99652777777777,
+  "intervalSeconds": 300,
+  "limiter": "unchanged budgets; monotonic fixture clock advances with the virtual wall clock",
+  "elapsedSeconds": 899.9078568750001,
+  "peakRecords": 266,
+  "peakReplayBytes": 1036571,
+  "peakRss": 202997760,
+  "finalBeforeReplay": {
+    "replayBytes": 966798,
+    "capacity": 20000,
+    "replayLimits": {
+      "buckets": 256,
+      "compressedBytes": 131072,
+      "decodedBytes": 2097152
+    },
+    "records": 266,
+    "byModel": {
+      "AccessToken": 1,
+      "Backend": 1,
+      "Binding": 1,
+      "Delegation": 1,
+      "Grant": 1,
+      "Metadata": 4,
+      "RefreshReplay": 256,
+      "RefreshToken": 1
+    }
+  },
+  "reuseRevokedFamily": true,
+  "node": "v24.20.0",
+  "durability": "SQLite synchronous FULL, actual provider HTTP; native process",
+  "limits": "192 MiB Node heap; encrypted replay buckets capped at 32 MiB compressed, 2 MiB decoded per lookup",
+  "qualificationScope": "Actual provider9.12.2 HTTP plus refresh-replay-v1 encrypted FULL SQLite core. Run preceded additive rekey/telemetry/Make migration updates; unchanged replay algorithm evidence retained, final wrapper/regression and CI tests rerun.",
+  "virtualClock": true,
+  "notProductionOrFinalImagePerformanceMeasurement": true
+}

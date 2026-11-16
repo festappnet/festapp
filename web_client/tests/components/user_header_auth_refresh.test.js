@@ -102,6 +102,7 @@ test('same initial session keeps its pending context request without a duplicate
 
 for (const { webLink, personalNavigation } of [
     { webLink: 'https://vstupenky.online', personalNavigation: true },
+    { webLink: 'https://tickets.festapp.net', personalNavigation: true },
     { webLink: 'https://slunovrat.festapp.net', personalNavigation: false },
 ]) test(`switching users clears old rights immediately on ${webLink}`, async t => {
     const previousWebLink = AppConfig.webLink;

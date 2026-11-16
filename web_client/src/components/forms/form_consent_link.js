@@ -66,7 +66,9 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
     Object.defineProperty(stop, 'pending', {get:() => requested && active && !connected});
     try {
         prepareConsentLink(win);
-        peer = peers.get(win); scope = consentScope(policy);
+        peer = peers.get(win);
+        origin = new URL(win.document.referrer).origin;
+        scope = consentScope(policy, origin);
         if (!scope || !isConsentLinkWindow(win) || win.parent !== win || !peer || policy.measurement_consent_bridge !== true || hasChoice()) { stop(); return stop; }
         origin = new URL(win.document.referrer).origin;
         if (!isConsentLinkOrigin(origin, isLocalConsentLink(win)) || !policy.approved_hosts?.includes(origin)) { stop(); return stop; }

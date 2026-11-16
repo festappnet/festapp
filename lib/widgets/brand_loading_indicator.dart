@@ -6,13 +6,19 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 part 'brand_loading_paths.dart';
+part 'brand_loading_global_paths.dart';
 
 /// Product-level loading. Small action spinners keep their existing controls.
 /// Other tenants retain their own brand and the normal progress indicator.
 class BrandLoadingIndicator extends StatefulWidget {
   final double width;
+  final String webLink;
 
-  const BrandLoadingIndicator({super.key, this.width = 240});
+  const BrandLoadingIndicator({
+    super.key,
+    this.width = 240,
+    this.webLink = AppConfig.webLink,
+  });
 
   @override
   State<BrandLoadingIndicator> createState() => _BrandLoadingIndicatorState();
@@ -21,21 +27,25 @@ class BrandLoadingIndicator extends StatefulWidget {
 class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
     with SingleTickerProviderStateMixin {
   bool _pulsing = false;
+  _BrandLoadingArtwork get _artwork =>
+      Uri.parse(widget.webLink).host == 'tickets.festapp.net'
+      ? _globalBrandArtwork
+      : _regionalBrandArtwork;
   late final _controller = AnimationController(
     vsync: this,
-    duration: _brandCycle,
+    duration: _artwork.cycle,
   )..addStatusListener(_onStatus);
 
   void _onStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed || _pulsing) return;
     setState(() => _pulsing = true);
-    _controller.repeat(period: _brandPulseCycle, min: 0, max: 1);
+    _controller.repeat(period: _artwork.pulseCycle, min: 0, max: 1);
   }
 
   void _animate() {
     if (_controller.isAnimating) return;
     if (_pulsing) {
-      _controller.repeat(period: _brandPulseCycle);
+      _controller.repeat(period: _artwork.pulseCycle);
     } else {
       _controller.forward();
     }
@@ -44,12 +54,27 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (AppConfig.loadingStyle != 'vstupenky-outline' ||
+    if (AppConfig.loadingStyle != 'brand-outline' ||
         MediaQuery.disableAnimationsOf(context) ||
         !TickerMode.valuesOf(context).enabled) {
       _controller.stop();
     } else {
       _animate();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant BrandLoadingIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.webLink != widget.webLink) {
+      _controller.stop();
+      _controller.duration = _artwork.cycle;
+      _controller.reset();
+      _pulsing = false;
+      if (AppConfig.loadingStyle == 'brand-outline' &&
+          !MediaQuery.disableAnimationsOf(context) &&
+          TickerMode.valuesOf(context).enabled)
+        _animate();
     }
   }
 
@@ -61,7 +86,7 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
 
   @override
   Widget build(BuildContext context) {
-    if (AppConfig.loadingStyle != 'vstupenky-outline') {
+    if (AppConfig.loadingStyle != 'brand-outline') {
       return const CircularProgressIndicator();
     }
     return Semantics(
@@ -70,13 +95,14 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: widget.width,
-            maxHeight: widget.width / _brandViewBox.size.aspectRatio,
+            maxHeight: widget.width / _artwork.viewBox.size.aspectRatio,
           ),
           child: AspectRatio(
-            aspectRatio: _brandViewBox.size.aspectRatio,
+            aspectRatio: _artwork.viewBox.size.aspectRatio,
             child: CustomPaint(
               painter: _BrandLoadingPainter(
                 animation: _controller,
+                artwork: _artwork,
                 pulsing: _pulsing,
                 reducedMotion: MediaQuery.disableAnimationsOf(context),
                 ink: Theme.of(context).brightness == Brightness.dark
@@ -90,6 +116,36 @@ class _BrandLoadingIndicatorState extends State<BrandLoadingIndicator>
     );
   }
 }
+
+class _BrandLoadingArtwork {
+  final Duration cycle;
+  final Duration pulseCycle;
+  final double pulseMinOpacity;
+  final Rect viewBox;
+  final List<_LogoPart> parts;
+  const _BrandLoadingArtwork({
+    required this.cycle,
+    required this.pulseCycle,
+    required this.pulseMinOpacity,
+    required this.viewBox,
+    required this.parts,
+  });
+}
+
+final _regionalBrandArtwork = _BrandLoadingArtwork(
+  cycle: _brandCycle,
+  pulseCycle: _brandPulseCycle,
+  pulseMinOpacity: _brandPulseMinOpacity,
+  viewBox: _brandViewBox,
+  parts: _brandLogoParts,
+);
+final _globalBrandArtwork = _BrandLoadingArtwork(
+  cycle: _globalBrandCycle,
+  pulseCycle: _globalBrandPulseCycle,
+  pulseMinOpacity: _globalBrandPulseMinOpacity,
+  viewBox: _globalBrandViewBox,
+  parts: _globalBrandLogoParts,
+);
 
 class _LogoPart {
   final List<_StrokePath> strokes;
@@ -129,12 +185,14 @@ class _StrokePath {
 
 class _BrandLoadingPainter extends CustomPainter {
   final Animation<double> animation;
+  final _BrandLoadingArtwork artwork;
   final bool pulsing;
   final bool reducedMotion;
   final Color ink;
 
   _BrandLoadingPainter({
     required this.animation,
+    required this.artwork,
     required this.pulsing,
     required this.reducedMotion,
     required this.ink,
@@ -155,26 +213,26 @@ class _BrandLoadingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
     final scale = math.min(
-      size.width / _brandViewBox.width,
-      size.height / _brandViewBox.height,
+      size.width / artwork.viewBox.width,
+      size.height / artwork.viewBox.height,
     );
     canvas.save();
     canvas.translate(
-      (size.width - _brandViewBox.width * scale) / 2,
-      (size.height - _brandViewBox.height * scale) / 2,
+      (size.width - artwork.viewBox.width * scale) / 2,
+      (size.height - artwork.viewBox.height * scale) / 2,
     );
     canvas.scale(scale);
-    canvas.translate(-_brandViewBox.left, -_brandViewBox.top);
+    canvas.translate(-artwork.viewBox.left, -artwork.viewBox.top);
     final phase = pulsing ? 1.0 : animation.value;
     final pulseProgress = animation.value < 0.5
         ? animation.value * 2
         : (1 - animation.value) * 2;
     final pulseOpacity = pulsing && !reducedMotion
         ? 1 -
-              (1 - _brandPulseMinOpacity) *
+              (1 - artwork.pulseMinOpacity) *
                   Curves.easeInOut.transform(pulseProgress)
         : 1.0;
-    for (final part in _brandLogoParts) {
+    for (final part in artwork.parts) {
       final color = part.blue ? const Color(0xff80bdf2) : ink;
       final opacity =
           (reducedMotion ? 1.0 : _opacity(part.fill, phase)) * pulseOpacity;
@@ -186,7 +244,7 @@ class _BrandLoadingPainter extends CustomPainter {
       }
     }
     if (!reducedMotion) {
-      for (final part in _brandLogoParts) {
+      for (final part in artwork.parts) {
         final opacity = _opacity(part.outline, phase);
         if (opacity <= 0) continue;
         final progress =
@@ -228,6 +286,7 @@ class _BrandLoadingPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _BrandLoadingPainter oldDelegate) =>
       oldDelegate.animation != animation ||
+      oldDelegate.artwork != artwork ||
       oldDelegate.pulsing != pulsing ||
       oldDelegate.reducedMotion != reducedMotion ||
       oldDelegate.ink != ink;

@@ -1,3 +1,4 @@
+import { bankCollectionAllowed } from "../_shared/orderEmailPresentation.ts";
 import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
@@ -47,11 +48,12 @@ export async function getTicketOrderPaidTemplate(
     totalAmount, amountPaid, currency, occasion.features || [], lang, tone, payment_info,
   );
 
-  if (isBankPaymentInfo(payment_info) && !(amountPaid >= totalAmount)) {
+  if (bankCollectionAllowed(payment_info) && ['CZK','EUR'].includes(payment_info.currency_code) && !(amountPaid >= totalAmount)) {
     const remainingAmount = totalAmount - amountPaid;
     // QR code for remaining amount
     try {
       const qrPaymentData = {
+        payment_method: payment_info.payment_method, collectionAction: payment_info.collectionAction,
         amount: remainingAmount,
         currency_code: currency,
         account_number: bank_account.account_number,

@@ -3,21 +3,40 @@ import {JSDOM} from 'jsdom';
 const {ScanPage}=await import('../../src/components/scan/scan_page.js');
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {scannerReturnPath,safeScannerReturn} from '../../src/components/scan/scanner_navigation.js';
+import {scannerReturnPath,safeScannerReturn,scannerInputHistoryState} from '../../src/components/scan/scanner_navigation.js';
 const origin='https://vstupenky.online';
-const tickets='/PlesAKH2025-copy-ad8a55ba/reservations/tickets';
-test('scanner returns to its ticket list after the scan secret is removed and after reload',()=>{
- const entries=new Map(),storage={getItem:k=>entries.get(k),setItem:(k,v)=>entries.set(k,v)};
- assert.equal(scannerReturnPath({location:{href:origin+'/scan/SECRET?returnTo='+encodeURIComponent(tickets)},storage}),tickets);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan'},storage}),tickets);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan/settings'},returnTo:tickets,storage}),tickets);
+const country={occasion_id:32316,organization_id:3,occasion_link:'skautskyples2026-copy-ae6d7140'};
+const original={occasion_id:13,organization_id:3,occasion_link:'skautskyples2025'};
+const tickets='/'+country.occasion_link+'/reservations/tickets';
+const location=path=>({href:origin+path});
+const memory=()=>{const entries=new Map();return {getItem:k=>entries.get(k),setItem:(k,v)=>entries.set(k,v)};};
+test('return destination survives secret removal and reload within the same occasion',()=>{
+ const storage=memory();
+ assert.equal(scannerReturnPath({location:location('/scan/SECRET?returnTo='+encodeURIComponent(tickets)),storage,session:country}),tickets);
+ assert.equal(scannerReturnPath({location:location('/scan/settings'),storage,session:country}),tickets);
 });
-test('scanner return paths reject other origins and scanner loops, and work without storage',()=>{
+test('direct Country code ignores original event storage, referrer and explicit returnTo',()=>{
+ const storage=memory();
+ const foreign='/'+original.occasion_link+'/reservations/tickets';
+ storage.setItem('festapp-scanner-return',foreign);
+ scannerReturnPath({location:location('/scan'),returnTo:foreign,storage,session:original});
+ for(const input of [{},{returnTo:foreign},{referrer:origin+foreign}])
+  assert.equal(scannerReturnPath({location:location('/scan/SECRET'),storage,session:country,...input}),'/'+country.occasion_link);
+ assert.equal(scannerReturnPath({location:location('/scan'),storage,session:original}),foreign);
+});
+test('return paths are isolated across backends and require authenticated occasion metadata',()=>{
+ const storage=memory();
+ scannerReturnPath({location:location('/scan'),returnTo:tickets,storage,session:country,backend:{origin:'https://api.example',generation:1}});
+ assert.equal(scannerReturnPath({location:location('/scan'),storage,session:country,backend:{origin:'https://api.example',generation:2}}),'/'+country.occasion_link);
+ assert.equal(scannerReturnPath({location:location('/scan'),returnTo:tickets,storage}),'/');
+ assert.equal(scannerReturnPath({location:location('/scan'),returnTo:tickets,storage,session:{occasion_id:32316}}),'/');
+});
+test('rejects foreign origins, scanner loops and event prefix lookalikes; works without storage',()=>{
  for(const value of ['https://evil.invalid','//evil.invalid','/scan','/scan/settings','/login-qr'])assert.equal(safeScannerReturn(value,origin),null);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan'},referrer:origin+tickets,storage:{getItem(){throw Error();},setItem(){throw Error();}}}),tickets);
- assert.equal(scannerReturnPath({location:{href:origin+'/scan'}}),'/');
+ for(const value of ['/'+country.occasion_link+'-other/reservations','/'+country.occasion_link+'%2fother/reservations'])
+  assert.equal(scannerReturnPath({location:location('/scan'),returnTo:value,session:country}),'/'+country.occasion_link);
+ assert.equal(scannerReturnPath({location:location('/scan'),referrer:origin+tickets,session:country,storage:{getItem(){throw Error();},setItem(){throw Error();}}}),tickets);
 });
-
 
 function navigationPage(t,{loaded=true}={}) {
  const dom=new JSDOM('<div id="scanner"></div>',{url:'https://vstupenky.online/scan'});
@@ -25,7 +44,7 @@ function navigationPage(t,{loaded=true}={}) {
  globalThis.document=dom.window.document;Object.defineProperty(globalThis,'window',{configurable:true,value:dom.window});Object.defineProperty(globalThis,'navigator',{configurable:true,value:{onLine:true}});
  const page=new ScanPage(document.getElementById('scanner'),{client:{},store:{list:async()=>[]}});
  page.route={page:'scan'};page.mode='camera';page.storageAvailable=true;page.returnPath=tickets;
- page.row={partition:'current-event',session:{title:'Ples',capabilities:{search_tickets:true},settings:{fields:[]}}};
+ page.row={partition:'current-event',session:{title:'Ples',capabilities:{search_tickets:true,settings:true},settings:{fields:[]}}};
  page.input={pause(){this.paused=true;},stop(){},allowSame(){},suppress(){}};
  page.startCamera=async()=>{page.input.paused=page.controller.state!=='ready';};
  page.api={lookup:async symbol=>({ticket_id:1,symbol,holder_name:'Anna Novotná',state:'sent',source:'online',products:[],fields:[],admission_allowed:true})};
@@ -59,9 +78,10 @@ test('browser Back/Forward stays inside scanner and does not reach the app route
  assert.equal(page.mode,'camera');assert.equal(routerCalls,0);
  dom.window.history.forward();await new Promise(resolve=>setTimeout(resolve,30));
  assert.equal(page.mode,'manual');assert.equal(document.activeElement,page.host.querySelector('[name=query]'));assert.equal(routerCalls,0);
+ const pushes=t.mock.method(dom.window.history,'pushState');
  page.controller.state='awaiting_server';page.searchOpen=false;page.render();
  dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
- assert.equal(page.mode,'manual','history navigation cannot interrupt persisting/server confirmation');assert.equal(dom.window.history.state.scannerInput,'manual');assert.equal(dom.window.history.length,2,'router and component process the same blocked Back only once');
+ assert.equal(page.mode,'manual','history navigation cannot interrupt persisting/server confirmation');assert.equal(dom.window.history.state.scannerInput,'manual');assert.equal(dom.window.history.length,2,'router and component process the same blocked Back only once');assert.equal(pushes.mock.callCount(),0,'busy Back restores the existing workspace without creating skippable history');
 });
 
 test('new ticket arrival animates once per lookup, not on recovery, and respects reduced motion',async t=>{
@@ -94,7 +114,72 @@ test('header Back from a scanned ticket shows camera alone',async t=>{
 });
 
 
-test('Back on scanner entry without a session remains a normal exit link',t=>{
- const {page,dom}=navigationPage(t,{loaded:false});page.row=null;page.disposeControllers();page.controller=null;page.render();
- const back=new dom.window.MouseEvent('click',{bubbles:true,cancelable:true});page.host.querySelector('.scan-home').dispatchEvent(back);assert.equal(back.defaultPrevented,false);
+test('scanner entry without a session has no back arrow',t=>{
+ const {page}=navigationPage(t,{loaded:false});page.row=null;page.disposeControllers();page.controller=null;page.render();
+ assert.equal(page.host.querySelector('.scan-home'),null);
+});
+
+for(const mode of ['camera','manual'])test(`anonymous scanner has no administration arrow in ${mode} mode`,t=>{
+ const {page}=navigationPage(t,{loaded:false});
+ page.row.session.capabilities.settings=false;
+ page.returnPath='/skautsky-ples/reservations/tickets';
+ page.setInputMode(mode);
+ assert.equal(page.host.querySelector('.scan-home'),null);
+ assert.equal(page.host.querySelector('a[href="/scan/settings"]'),null);
+ assert.equal(page.host.querySelector('a[href*="/reservations/"]'),null);
+ page.controller.state='result';page.render();
+ assert.equal(page.host.querySelector('.scan-home'),null);
+});
+
+
+test('automatic scans after Back reuse the workspace entry without a new pushState',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});
+ await page.loadCodes(['FIRST']);
+ const push=t.mock.method(dom.window.history,'pushState');
+ for(let cycle=0;cycle<3;cycle++){
+  dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
+  assert.equal(page.controller.state,'ready');assert.equal(page.mode,'camera');
+  await page.loadCodes(['NEXT-'+cycle]);await new Promise(resolve=>setTimeout(resolve,30));
+  assert.equal(page.controller.state,'result');assert.equal(dom.window.location.pathname,'/scan');
+ }
+ assert.equal(push.mock.callCount(),0,'async camera detection cannot create skippable browser history after a traversal');
+});
+
+
+test('Back from the initial full camera skips its empty reserved workspace',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});
+ dom.window.history.replaceState(null,'',tickets);dom.window.history.pushState(null,'','/scan');
+ page.prepareInputHistory();dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,60));
+ assert.equal(dom.window.location.pathname,tickets);
+});
+
+test('Back keeps a held QR suppressed; removing and presenting it again allows a new scan',async t=>{
+ const {page,dom}=navigationPage(t,{loaded:false});
+ const {ScannerInput}=await import('../../src/components/scan/scanner_input.js');
+ page.input=new ScannerInput(code=>page.loadCodes([code]));t.after(()=>page.input.dispose());
+ const frame=[{value:'HELD'}];page.input.dispatchCodes(frame);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(page.controller.state,'result');
+ dom.window.history.back();await new Promise(resolve=>setTimeout(resolve,30));
+ page.input.dispatchCodes(frame);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(page.controller.state,'ready','the same visible QR must not instantly reopen after Back');
+ page.input.dispatchCodes([]);page.input.dispatchCodes(frame);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(page.controller.state,'result','the same ticket works again after it leaves the camera');
+});
+
+test('scanner route normalization preserves only the owned camera/workspace state',()=>{
+ assert.deepEqual(scannerInputHistoryState({scannerInput:'camera',scannerLevel:'camera',secret:'discard'}),{scannerInput:'camera',scannerLevel:'camera'});
+ assert.deepEqual(scannerInputHistoryState({scannerInput:'manual',scannerLevel:'workspace',scannerReview:true}),{scannerInput:'manual',scannerLevel:'workspace',scannerReview:true});
+ for(const state of [null,{}, {scannerInput:'camera'}, {scannerInput:'camera',scannerLevel:'other'}])assert.equal(scannerInputHistoryState(state),null);
+});
+
+
+test('the real router keeps the reserved scanner levels across reload normalization',async t=>{
+ const {dom}=navigationPage(t,{loaded:false});
+ const {RouterService}=await import('../../src/services/router_service.js');
+ const original=RouterService._lastPath;t.after(()=>{RouterService._lastPath=original;});
+ const mounted=t.mock.method(RouterService,'mountScanner',async()=>{});
+ dom.window.history.replaceState({scannerInput:'camera',scannerLevel:'camera',secret:'discard'},'', '/scan');
+ assert.equal(await RouterService.handleInitialLoad(),true);
+ assert.deepEqual(dom.window.history.state,{scannerInput:'camera',scannerLevel:'camera'});
+ assert.equal(mounted.mock.calls[0].arguments[0].page,'scan');
 });

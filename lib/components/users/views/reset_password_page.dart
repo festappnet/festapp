@@ -3,6 +3,7 @@ import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/users/password_change_flow.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
 import 'package:fstapp/router_service.dart';
+import 'package:fstapp/app_router.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -56,7 +57,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
     switch (result) {
       case PasswordChangeResult.changedAndSignedIn:
-        RouterService.goBackOrInitial(context);
+        // Email entries can sit above an unrelated page in browser history.
+        // Replace the spent token route with the canonical signed-in landing.
+        await RouterService.pushReplacementFull(
+          context, AppRouter.getDefaultLink());
         final visibleContext = RouterService.router.navigatorKey.currentContext;
         if (visibleContext != null) {
           await ToastHelper.Show(visibleContext, UserStrings.passwordChanged);

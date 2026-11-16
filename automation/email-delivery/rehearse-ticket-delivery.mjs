@@ -40,7 +40,8 @@ try {
   for (const mode of ['pdf_attachment', 'inline_qr', 'both']) {
     const org = await scalar("INSERT INTO public.organizations(title) VALUES('Ticket delivery rehearsal') RETURNING id");
     const unit = await scalar("INSERT INTO public.units(title,organization) VALUES('Rehearsal',$1) RETURNING id", [org]);
-    const hidden = await scalar("INSERT INTO public.occasions_hidden(secret) VALUES('ticket-email-local-rehearsal') RETURNING id");
+    const scanCode = `ticket-email-local-rehearsal-${mode}`;
+    const hidden = await scalar('INSERT INTO public.occasions_hidden(secret) VALUES($1) RETURNING id', [scanCode]);
     const occasion = await scalar("INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time,is_order_synchronization_enabled,features,occasion_hidden) VALUES('Ticket & QR rehearsal',$1,$2,gen_random_uuid()::text,now(),now()+interval '1 day',true,$3,$4) RETURNING id", [org, unit, JSON.stringify([{ code: 'ticket', is_enabled: true, delivery_mode: mode }]), hidden]);
     const productType = await scalar("INSERT INTO eshop.product_types(occasion,title,type) VALUES($1,'Admission','select_one') RETURNING id", [occasion]);
     const product = await scalar("INSERT INTO eshop.products(occasion,product_type,title,price,currency_code) VALUES($1,$2,'Admission',100,'CZK') RETURNING id", [occasion, productType]);
@@ -68,8 +69,8 @@ try {
     await db.query("SELECT public.finish_email_attempt($1,$2,'accepted',$3)", [row.attempt_id, row.lease_token, sent.provider]);
     await db.query('SELECT public.apply_email_post_actions($1)', [row.message_id]);
     assert(await scalar('SELECT state FROM eshop.orders WHERE id=$1', [order]) === 'sent', 'Order post-action failed');
-    const firstScan = await scalar("SELECT public.update_ticket_to_used($1,'ticket-email-local-rehearsal')", [ticketIds[0]]);
-    const secondScan = await scalar("SELECT public.update_ticket_to_used($1,'ticket-email-local-rehearsal')", [ticketIds[0]]);
+    const firstScan = await scalar("SELECT public.update_ticket_to_used($1,$2)", [ticketIds[0], scanCode]);
+    const secondScan = await scalar("SELECT public.update_ticket_to_used($1,$2)", [ticketIds[0], scanCode]);
     assert(firstScan.code === 200 && secondScan.code === 409, 'Email/PDF identity did not share admission state');
     // A second message cancelled after preparation must never reach the provider.
     await db.query("UPDATE public.email_capacity SET next_send_at=now()");

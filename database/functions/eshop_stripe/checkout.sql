@@ -8,6 +8,7 @@ BEGIN
  SELECT * INTO cap FROM eshop.stripe_capabilities WHERE token_hash=encode(extensions.digest(p_token,'sha256'),'hex')
   AND scope='order_pay' AND revoked_at IS NULL AND expires_at>clock_timestamp();
  IF NOT FOUND THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
+ PERFORM public.payment_policy_fence_internal(oc.organization) FROM eshop.orders ord JOIN public.occasions oc ON oc.id=ord.occasion WHERE ord.id=cap.order_id;
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[cap.order_id]);
  PERFORM public.authorize_stripe_capability_internal(p_token,'order_pay',cap.order_id);
  SELECT * INTO STRICT o FROM eshop.orders WHERE id=cap.order_id;
@@ -17,7 +18,8 @@ BEGIN
  IF a.livemode IS DISTINCT FROM p_livemode OR pi.payment_method<>'stripe' OR pi.stripe_connection_id<>a.connection_id
   OR pi.amount*100<>a.amount_minor OR pi.currency_code<>a.currency OR o.currency_code<>a.currency
   OR coalesce(pi.paid_externally,0)<>0 THEN RAISE EXCEPTION 'STRIPE_ORDER_SNAPSHOT_INVALID'; END IF;
- projection:=public.stripe_order_payment_projection_internal(o.id);
+ projection:=public.provider_order_payment_projection_internal(o.id);
+ IF public.payment_collection_action_internal(o.id)->'allowed' IS DISTINCT FROM 'true'::jsonb THEN RETURN jsonb_build_object('disposition','read','payment',projection); END IF;
  IF projection->>'status' NOT IN ('open','preparing') THEN RETURN jsonb_build_object('disposition','read','payment',projection); END IF;
  IF o.price*100<>a.amount_minor THEN RAISE EXCEPTION 'STRIPE_ORDER_SNAPSHOT_INVALID'; END IF;
  IF a.lease_expires_at>clock_timestamp() OR a.reservation_expires_at<=clock_timestamp() THEN
@@ -86,7 +88,7 @@ BEGIN
   AND c.scope='return_read' AND c.revoked_at IS NULL AND c.expires_at>clock_timestamp()
   AND EXISTS(SELECT 1 FROM eshop.stripe_checkout_attempts WHERE id=c.attempt_id AND livemode=p_livemode);
  IF NOT FOUND THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- RETURN public.stripe_order_payment_projection_internal(cap.order_id)-'allowedActions'||jsonb_build_object('allowedActions',jsonb_build_array('refresh'));
+ RETURN public.provider_order_payment_projection_internal(cap.order_id)-'allowedActions'||jsonb_build_object('allowedActions',jsonb_build_array('refresh'));
 END $$;
 REVOKE ALL ON FUNCTION public.read_stripe_return_internal(text,boolean) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.read_stripe_return_internal(text,boolean) TO service_role;
@@ -101,7 +103,7 @@ BEGIN
   AND c.scope='order_pay' AND c.revoked_at IS NULL AND c.expires_at>clock_timestamp()
   AND EXISTS(SELECT 1 FROM eshop.stripe_checkout_attempts WHERE order_id=c.order_id AND livemode=p_livemode);
  IF NOT FOUND THEN RAISE EXCEPTION 'INVALID_CAPABILITY'; END IF;
- RETURN public.stripe_order_payment_projection_internal(cap.order_id);
+ RETURN public.provider_order_payment_projection_internal(cap.order_id);
 END $$;
 REVOKE ALL ON FUNCTION public.read_stripe_pay_status_internal(text,boolean) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.read_stripe_pay_status_internal(text,boolean) TO service_role;

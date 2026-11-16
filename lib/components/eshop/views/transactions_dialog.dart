@@ -11,14 +11,12 @@ import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/styles/styles_config.dart';
 import 'package:fstapp/theme_config.dart';
-import 'package:fstapp/components/eshop/views/search_transactions_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 
 import 'payment_operation_flow.dart';
 import '../models/payment_operation_context.dart';
 import '../payment_operation_strings.dart';
-import 'order_payment_bank_options.dart';
 import '../models/order_payment_actions.dart';
 import '../models/order_model.dart';
 
@@ -47,6 +45,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   PaymentOperationContext _operations = const PaymentOperationContext();
   PaymentInfoModel? _payment;
   bool _isLoading = true;
+  bool _ledgerComplete = false;
   String? _orderState;
   OrderPaymentActions _actions = const OrderPaymentActions();
   bool get _canEdit =>
@@ -71,9 +70,13 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
     );
     if (!mounted) return;
     if (transactionObject != null) {
-      transactionObject.transactions.sort((a, b) => b.date!.compareTo(a.date!));
+      transactionObject.transactions.sort(
+        (a, b) =>
+            (b.date ?? DateTime(1970)).compareTo(a.date ?? DateTime(1970)),
+      );
       setState(() {
         _transactions = transactionObject.transactions;
+        _ledgerComplete = transactionObject.ledgerComplete;
         _payment = transactionObject.paymentInfo;
         _orderState = transactionObject.orderState;
         _actions = transactionObject.actions;
@@ -88,7 +91,10 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   }
 
   Future<void> _paymentOperation({bool refund = false}) async {
-    if (!(refund ? _operations.canRefund : _operations.canRecord)) return;
+    if (!(refund
+        ? (_operations.canRefund || _operations.canViewHistory)
+        : _operations.canRecord))
+      return;
     final changed = await showOrderPaymentOperationDialog(
       context,
       orderId: widget.orderId,
@@ -172,7 +178,9 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                         child: Text(OrdersStrings.addPayment),
                       ),
                       ElevatedButton(
-                        onPressed: _operations.canRefund
+                        onPressed:
+                            (_operations.canRefund ||
+                                _operations.canViewHistory)
                             ? () => _paymentOperation(refund: true)
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -190,7 +198,11 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                   ),
                 ),
               ),
-              if (_payment != null)
+              if (!_ledgerComplete || _operations.invalidIdentity)
+                Text(PaymentOperationStrings.text('ledgerIncomplete')),
+              if (_payment != null &&
+                  _ledgerComplete &&
+                  !_operations.invalidIdentity)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Wrap(
@@ -206,20 +218,6 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                     ],
                   ),
                 ),
-              OrderPaymentBankOptions(
-                actions: OrderPaymentActions(
-                  historyAccounts: _actions.historyAccounts,
-                  bankState: 'configured',
-                ),
-                onHistory: (account) => showDialog(
-                  context: context,
-                  builder: (_) => SearchTransactionsDialog(
-                    paymentInfoId: _payment?.id,
-                    bankAccount: account.id,
-                    readOnly: true,
-                  ),
-                ),
-              ),
               if (widget.showPaymentReference &&
                   _payment != null &&
                   _payment!.variableSymbol != null)
@@ -338,9 +336,9 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                     ),
                   ),
                 ),
-              if (_transactions.isEmpty)
+              if (_transactions.isEmpty && _ledgerComplete)
                 Text(OrdersStrings.noTransactionsFound)
-              else
+              else if (_transactions.isNotEmpty)
                 Padding(
                   padding: EdgeInsets.zero,
                   child: ConstrainedBox(
@@ -386,15 +384,17 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                                                         .spaceBetween,
                                                 children: [
                                                   Text(
-                                                    Utilities.formatPrice(
-                                                      context,
-                                                      transaction.amount!,
-                                                      currencyCode:
-                                                          transaction
-                                                              .currency ??
-                                                          "N/A",
-                                                      decimalDigits: 2,
-                                                    ),
+                                                    transaction.amount == null
+                                                        ? '${PaymentOperationStrings.text('dispute')}: ${transaction.status ?? ""}'
+                                                        : Utilities.formatPrice(
+                                                            context,
+                                                            transaction.amount!,
+                                                            currencyCode:
+                                                                transaction
+                                                                    .currency ??
+                                                                "N/A",
+                                                            decimalDigits: 2,
+                                                          ),
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold,

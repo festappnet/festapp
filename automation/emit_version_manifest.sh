@@ -18,16 +18,16 @@
 # build (see automation/tests/update_prompt.test.sh).
 #
 # Usage: emit_version_manifest.sh <build_web_dir> [version]
-#   version defaults to VERSION= in automation/project.conf.
+#   version defaults to automation/release/software-version.conf.
 # ==============================================================================
 set -e
 
 BUILD_DIR="${1:-build/web}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-VERSION="${2:-$(grep -m1 '^VERSION=' "$SCRIPT_DIR/project.conf" | cut -d= -f2 | tr -d '[:space:]')}"
+VERSION="${2:-$(node "$SCRIPT_DIR/release/project_version.mjs" --full)}"
 
 if [ -z "${VERSION}" ]; then
-    echo "emit_version_manifest: VERSION empty (pass as \$2 or set it in project.conf)" >&2
+    echo "emit_version_manifest: VERSION empty (pass as \$2 or set the canonical software version)" >&2
     exit 1
 fi
 
@@ -66,6 +66,14 @@ const main = stampImports(fs.readFileSync(path.join(buildDir, 'main.dart.js'), '
 fs.writeFileSync(path.join(buildDir, 'main.dart.js'), main);
 fs.writeFileSync(path.join(buildDir, versionedMain), main);
 
+// Renderer JS and WASM form one ABI. A query parameter cannot isolate them
+// from an older service worker which matches cached paths with ignoreSearch.
+// Move the complete engine directory under this release's immutable pathname.
+const rendererDirectory = `canvaskit.${version.replaceAll('+', '-')}`;
+const hasRenderer = fs.existsSync(path.join(buildDir, 'canvaskit'));
+if (hasRenderer) {
+  fs.renameSync(path.join(buildDir, 'canvaskit'), path.join(buildDir, rendererDirectory));
+}
 for (const relative of ['index.html', 'flutter_bootstrap.js']) {
   const file = path.join(buildDir, relative);
   if (!fs.existsSync(file)) {
@@ -77,6 +85,16 @@ for (const relative of ['index.html', 'flutter_bootstrap.js']) {
     throw new Error(`emit_version_manifest: ${relative} lacks ${marker}`);
   }
   let stamped = source.replaceAll(marker, `"mainJsPath":"${versionedMain}"`);
+  if (hasRenderer) {
+    const loader = '_flutter.loader.load({';
+    if (!stamped.includes(loader)) {
+      throw new Error(`emit_version_manifest: ${relative} lacks the Flutter loader call`);
+    }
+    stamped = stamped.replaceAll(loader,
+      `${loader}config:{canvasKitBaseUrl:${JSON.stringify(rendererDirectory + '/')}},`);
+    stamped = stamped.replaceAll('.initializeEngine({',
+      `.initializeEngine({canvasKitBaseUrl:${JSON.stringify(rendererDirectory + '/')},`);
+  }
   if (relative === 'index.html') {
     // Existing Chrome HTTP caches can predate today's no-store headers.
     // The document must not execute a previous generation's recovery code.

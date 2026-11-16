@@ -9,6 +9,11 @@ DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint;
  suffix text:=gen_random_uuid()::text;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Payment lifecycle '||suffix) RETURNING id INTO org;
+ -- Explicit test-only compatibility with the reconstructed pre-policy upgrade clone.
+ IF to_regclass('eshop.organization_payment_method_policies') IS NOT NULL THEN
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'bank');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) SELECT org,provider_key,provider_key IN ('bank','cash','stripe') FROM eshop.payment_providers;
+ END IF;
  INSERT INTO public.units(title,organization) VALUES('Payment lifecycle',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time,features,is_order_synchronization_enabled)
  VALUES('Payment lifecycle',org,un,suffix,now(),now()+interval '30 days',
@@ -30,6 +35,7 @@ BEGIN
  VALUES('Admission',pt,oc,1000,'CZK',false,
   CASE WHEN p_deposit IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('deposit',jsonb_build_object('amount',p_deposit)) END)
  RETURNING id INTO prod;
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=f;
  INSERT INTO public.form_fields(form,type,product_type,is_ticket_field) VALUES(f,'product_type',pt,true);
  SET LOCAL ROLE authenticated;
  result:=public.create_ticket_order_client_sync_v1(jsonb_build_object(

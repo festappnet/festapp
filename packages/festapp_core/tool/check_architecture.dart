@@ -26,9 +26,17 @@ class ArchitectureGuard {
   final _visited = <String>{};
   late final Directory core = Directory('${root.path}/packages/festapp_core');
   late final Map<String, Uri> packages = _packages();
-  static const modules = {'sync', 'forms', 'eshop', 'program', 'map', 'time', 'payments'};
+  static const modules = {
+    'sync',
+    'forms',
+    'eshop',
+    'program',
+    'map',
+    'time',
+    'payments',
+  };
   static const edges = {
-    'forms': {'eshop', 'json_values', 'payments'},
+    'forms': {'eshop', 'json_values', 'payments', 'communication_tone'},
     'program': {'map', 'json_values', 'time'},
     'eshop': {'json_values', 'time', 'formatting'},
     'email_templates': {'formatting'},
@@ -187,7 +195,13 @@ List<String> checkRegistrationEffects(File file, CompilationUnit unit) {
 }
 
 /// A cases file is executable coverage only through one registered entrypoint.
-List<String> checkCaseRegistration(Directory root, {Directory? testRoot}) {
+List<String> checkCaseRegistration(
+  Directory root, {
+  Directory? testRoot,
+  List<File>? entrypoints,
+  Set<String>? registeredCases,
+  Set<String> externallyRegistered = const {},
+}) {
   final errors = <String>[];
   final test = testRoot ?? Directory('${root.path}/test');
   final files = test
@@ -211,6 +225,11 @@ List<String> checkCaseRegistration(Directory root, {Directory? testRoot}) {
       if (value != null &&
           !value.startsWith('package:') &&
           value.endsWith('_test.dart') &&
+          (entrypoints == null ||
+              entrypoints.any(
+                (entry) =>
+                    entry.path == File.fromUri(file.uri.resolve(value)).path,
+              )) &&
           !directive.combinators.any(
             (combinator) =>
                 combinator is ShowCombinator &&
@@ -222,7 +241,11 @@ List<String> checkCaseRegistration(Directory root, {Directory? testRoot}) {
           'A discoverable test must not also be imported: $value in ${file.path}',
         );
       }
-      if (value == null || !value.endsWith('_cases.dart')) continue;
+      if (value == null ||
+          Uri.parse(value).hasScheme ||
+          !(value.endsWith('_cases.dart') ||
+              entrypoints != null && value.endsWith('_test.dart')))
+        continue;
       // A helper-only import is not an executable registration. The global
       // cases inventory still requires its actual main to be registered once.
       if (directive.combinators.any(
@@ -267,14 +290,64 @@ List<String> checkCaseRegistration(Directory root, {Directory? testRoot}) {
     }
   }
 
-  for (final file in files.where((f) => f.path.endsWith('_test.dart'))) {
+  for (final file
+      in entrypoints ??
+          files.where((f) => f.path.endsWith('_test.dart')).toList()) {
+    if (entrypoints != null && file.path.endsWith('_cases.dart')) {
+      counts.update(file.path, (n) => n + 1, ifAbsent: () => 1);
+    }
     walk(file, {});
   }
-  for (final file in files.where((f) => f.path.endsWith('_cases.dart'))) {
-    if (counts[file.path] != 1)
+  registeredCases?.addAll(counts.keys);
+  for (final path
+      in entrypoints == null
+          ? files
+                .where((f) => f.path.endsWith('_cases.dart'))
+                .map((f) => f.path)
+          : counts.keys) {
+    if (counts[path] != 1 &&
+        !(counts[path] == null && externallyRegistered.contains(path)))
       errors.add(
-        'Case must be registered exactly once: ${file.path} (${counts[file.path] ?? 0})',
+        'Case must be registered exactly once: $path (${counts[path] ?? 0})',
       );
+  }
+  return errors;
+}
+
+/// Each explicit CI command is an independent discovery graph. Shared cases
+/// may run in several lanes, but must be registered once within each command.
+List<String> checkCiCaseRegistration(
+  Directory root,
+  Set<String> registeredCases,
+) {
+  final config = File('${root.path}/automation/ci/checks.json');
+  if (!config.existsSync()) return [];
+  final steps = (jsonDecode(config.readAsStringSync()) as Map)['steps'] as Map;
+  final errors = <String>[];
+  final paths = RegExp(
+    r'(?:^|\s)((?:test|automation/testing)/[\w./-]+\.dart)(?=\s|$)',
+  );
+  for (final step in steps.values.cast<Map>()) {
+    for (final line in (step['script'] as String? ?? '').split('\n')) {
+      if (!line.contains('fvm flutter test ')) continue;
+      final entries = paths
+          .allMatches(line)
+          .map((match) => File('${root.path}/${match[1]}'))
+          .toList();
+      if (entries.isEmpty) {
+        errors.add(
+          'CI Flutter command has no explicit test entrypoints: $line',
+        );
+        continue;
+      }
+      errors.addAll(
+        checkCaseRegistration(
+          root,
+          entrypoints: entries,
+          registeredCases: registeredCases,
+        ),
+      );
+    }
   }
   return errors;
 }
@@ -458,8 +531,10 @@ List<String> checkFeatureModelBoundaries(Directory root) {
 void main(List<String> args) {
   final root = Directory(args.single).absolute;
   final guard = ArchitectureGuard(root)..check();
+  final ciCases = <String>{};
   final errors = [
     ...guard.errors,
+    ...checkCiCaseRegistration(root, ciCases),
     ...checkVisualThemeBoundary(root),
     ...checkFeatureModelBoundaries(root),
     ...checkGridContractBoundaries(root),
@@ -471,7 +546,11 @@ void main(List<String> args) {
       Directory('${root.path}/test_dart'),
     ])
       if (testRoot.existsSync())
-        ...checkCaseRegistration(root, testRoot: testRoot),
+        ...checkCaseRegistration(
+          root,
+          testRoot: testRoot,
+          externallyRegistered: ciCases,
+        ),
   ];
   if (errors.isNotEmpty) {
     stderr.writeln(errors.join('\n'));

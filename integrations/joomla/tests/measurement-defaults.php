@@ -11,7 +11,8 @@ namespace Joomla\CMS\Form\Field {
 namespace {
     define('_JEXEC', 1);
     foreach (['mod_vstupenky_online'=>'VstupenkyOnline','mod_festapp_tickets'=>'FestappTickets'] as $element=>$namespace) {
-        require __DIR__ . '/../build/' . $element . '/src/Field/MeasurementField.php';
+        $modules = getenv('FESTAPP_JOOMLA_MODULE_ROOT') ?: __DIR__ . '/../build';
+        require $modules . '/' . $element . '/src/Field/MeasurementField.php';
         $class = 'Festapp\\Module\\' . $namespace . '\\Site\\Field\\MeasurementField';
         foreach ([[0,null,'host'],[42,null,'unit'],[0,'unit','unit'],[0,'host','host']] as [$id,$submitted,$expected]) {
             $field = new $class;
@@ -23,5 +24,5 @@ namespace {
             if ($field->render() !== $expected) { throw new \RuntimeException('Incorrect measurement default'); }
         }
     }
-    echo "PASS: new modules host, saved modules without parameter unit\n";
+    echo json_encode(['assertions'=>8, 'source'=>'installed module', 'new_modules'=>'host', 'legacy_modules'=>'unit']), "\n";
 }

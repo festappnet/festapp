@@ -6,7 +6,7 @@ const read = file => readFileSync(new URL(file, import.meta.url), 'utf8');
 const template = read('../cloudflare_build.sh').match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource);
 const scanner = read('../../web_client/src/services/scanner_routes.js').replaceAll('export function', 'function');
 const policy = read('../../web_client/src/services/public_occasion_routes.js').replaceAll('export function', 'function');
-const manifest = {profiles:{help:{policy:"default-src 'self'"}},documents:{'napoveda/index.html':{profile:'help'},'napoveda/objednavky/index.html':{profile:'help'}}};
+const manifest = {profiles:{help:{policy:"default-src 'self'"}},documents:{'napoveda/index.html':{profile:'help'},'napoveda/objednavky/index.html':{profile:'help'},'help/index.html':{profile:'help'},'help/orders/index.html':{profile:'help'}}};
 
 test('cached help navigations receive the real document in both tenant modes', async()=>{
  for(const supported of [true,false]) {
@@ -14,7 +14,7 @@ test('cached help navigations receive the real document in both tenant modes', a
    .replace('// PUBLIC_OCCASION_ROUTE_POLICY',policy)
    .replace('const CSP_MANIFEST = { profiles: {}, documents: {} };','const CSP_MANIFEST = '+JSON.stringify(manifest)+';');
   const {default:worker} = await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-  for(const path of ['/napoveda/','/napoveda/objednavky/']) for(const headers of [{'if-none-match':'"cached-help"'},{'if-modified-since':'Sat, 24 Oct 2026 12:00:00 GMT'}]) {
+  for(const path of ['/napoveda/','/napoveda/objednavky/','/help/','/help/orders/']) for(const headers of [{'if-none-match':'"cached-help"'},{'if-modified-since':'Sat, 24 Oct 2026 12:00:00 GMT'}]) {
    const env={ASSETS:{fetch:async request=>{
     assert.equal(new URL(request.url).pathname,path);
     if(request.headers.has('if-none-match')||request.headers.has('if-modified-since')) return new Response(null,{status:304});

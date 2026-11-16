@@ -3,12 +3,17 @@ import 'package:easy_localization/easy_localization.dart';
 class NotificationCenterStrings {
   static String text(String key) => 'NotificationCenter.$key'.tr();
   static String get title => text('title');
+  static String emailHelp(int windowSeconds) =>
+      'NotificationCenter.emailHelp'.tr(
+        namedArgs: {'minutes': '${Duration(seconds: windowSeconds).inMinutes}'},
+      );
   static String kind(String kind) =>
       const {
         'occasion_joined',
         'event_capacity_full',
         'form_opened',
         'form_closed',
+        'customer_order_request',
         'order_created',
         'waitlist_registered',
         'order_cancelled',
@@ -20,6 +25,9 @@ class NotificationCenterStrings {
         'capacity_reopened',
         'bank_problem',
         'email_problem',
+        'payment_problem',
+        'provider_problem',
+        'order_payment_received',
       }.contains(kind)
       ? text('kinds.$kind')
       : title;
@@ -67,6 +75,9 @@ class NotificationCenterStrings {
         'bank_sync_retry_required',
         'transport_unavailable',
         'stale_health',
+        'provider_restricted',
+        'provider_access_revoked',
+        'provider_unavailable',
       }.contains(value)
       ? text('reasons.$value')
       : text('needsAttention');

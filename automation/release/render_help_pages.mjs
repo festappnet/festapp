@@ -1,6 +1,6 @@
 import writeIfChanged from '../lib/write_if_changed.cjs';
 import {publicRuntime} from './organizers/public_runtime.mjs';
-import { helpActionWebPath } from '../../web_client/src/services/help_action_routes.js';
+import { helpActionWebPath, publicHelpRoot } from '../../web_client/src/services/help_action_routes.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -14,17 +14,27 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const arg = name => {const i = process.argv.indexOf(name); return i < 0 ? null : process.argv[i + 1];};
 const config = fs.readFileSync(path.resolve(arg('--config') || path.join(root, 'automation/project.conf')), 'utf8');
 const value = key => (config.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1] || '').trim().replace(/^(['"])(.*)\1$/, '$2');
-const locale = arg('--locale') || 'cs';
+const configuredLocale = value('WEB_SUPPORTED_LANGUAGES').split(',')[0] || 'cs';
+const locale = arg('--locale') || configuredLocale;
 const preview = process.argv.includes('--preview');
+const profile = value('WEB_ORGANIZER_CONTENT_PROFILE');
+const enabled = value('WEB_ORGANIZER_LANDING_ENABLED') === 'true' && ['vstupenky-cs', 'festapp-en'].includes(profile);
+const outputRoot = path.resolve(arg('--output-root') || path.join(root, 'web_client/public'));
+if (!enabled) {
+  if (arg('--output')) fs.rmSync(path.resolve(arg('--output')), {recursive:true, force:true});
+  else for (const language of ['cs','en']) fs.rmSync(path.join(outputRoot, publicHelpRoot(language).slice(1,-1)), {recursive:true, force:true});
+  console.log('Public help disabled for this tenant.');
+  process.exit(0);
+}
 if (!['cs', 'en'].includes(locale)) throw new Error('Unknown help locale');
-if (locale !== 'cs' && (!preview || !arg('--output'))) throw new Error('English help is preview-only until localized screenshot capture is complete');
-const enabled = value('WEB_ORGANIZER_LANDING_ENABLED') === 'true' && new URL(value('WEB_LINK')).hostname === 'vstupenky.online';
+if (!preview && locale !== configuredLocale) throw new Error('Help locale differs from the selected tenant');
 // Authored help is versioned; the single local output is disposable build input.
-const destination = path.resolve(arg('--output') || path.join(root, 'web_client/public/napoveda'));
+const helpRoot = publicHelpRoot(locale);
+const destination = path.resolve(arg('--output') || path.join(outputRoot,helpRoot.slice(1,-1)));
+// A tenant switch cannot ship stale guides from another locale.
+if (!arg('--output')) for (const other of ['cs','en'].map(publicHelpRoot).filter(path=>path!==helpRoot)) fs.rmSync(path.join(outputRoot,other.slice(1,-1)),{recursive:true,force:true});
 let target = destination;
-if (path.basename(target) !== 'napoveda') throw new Error('Help output must be a napoveda directory');
-if (!enabled) fs.rmSync(target, {recursive:true, force:true});
-if (!enabled) {console.log('Public help disabled for this tenant.'); process.exit(0);}
+if (path.basename(target) !== helpRoot.slice(1,-1)) throw new Error('Help output must match the selected locale directory');
 target = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-help-'));
 process.on('exit', () => fs.rmSync(target,{recursive:true,force:true}));
 const directory = path.join(root, 'automation/release/help');
@@ -34,21 +44,46 @@ const ui = JSON.parse(fs.readFileSync(path.join(directory, 'ui.json'), 'utf8'))[
 const site = JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers', locale === 'cs' ? 'content.json' : 'content.en.json'), 'utf8')).publicProjection;
 const brand = locale === 'cs' ? (value('APP_NAME') || 'vstupenky.online') : 'Festapp Tickets';
 const origin = new URL(value('WEB_LINK')).origin;
-const helpRoot = '/napoveda/';
+// Shared authored endpoint metadata also serves builds without generated API files.
+const apiEndpoint = profile === 'vstupenky-cs' ? 'regional-api' : 'global-api';
+const apiFacade = JSON.parse(fs.readFileSync(path.join(root,'packages/festapp_contracts/api-facades.json'),'utf8'))
+  .find(endpoint => endpoint.endpointId === apiEndpoint);
+if (!apiFacade) throw new Error('Missing canonical API facade');
+const apiBase = new URL('proofs/dpop/',apiFacade.publicBase+'/');
+const apiReferenceUrl = new URL('docs/',apiBase).href;
+const apiSchemaUrl = new URL('openapi.json',apiBase).href;
+
+
 const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const socialImage = new URL(site.seo.image, origin).href;
+const socialMeta = `<meta property="og:locale" content="${escape(site.ogLocale)}"><meta property="og:image" content="${escape(socialImage)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${escape(site.seo.imageAlt)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${escape(socialImage)}"><meta name="twitter:image:alt" content="${escape(site.seo.imageAlt)}">`;
 const digest = data => createHash('sha256').update(data).digest('hex').slice(0,12);
 const read = file => fs.readFileSync(path.join(directory,file), 'utf8');
 const runtime=publicRuntime(root,{builtIndex:arg('--built-index'),entry:'src/marketing/help.js',assetRoot:helpRoot+'assets/'});
 const assets = {...runtime.assets};
+// Ship the runnable source directly so the guide cannot retain a stale copy.
+if (pages.some(page => page.id === 'webhooks')) {
+  assets['webhook-receiver.mjs'] = fs.readFileSync(path.join(root,'tools/festapp/examples/webhook-receiver.mjs'));
+}
+if(preview && locale==='en')for(const[name,source]of Object.entries({
+ 'brand-logo.svg':'header-dark','brand-logo-light.svg':'header',
+ 'brand-symbol.svg':'symbol-dark','brand-wordmark.svg':'wordmark-dark','brand-wordmark-stacked.svg':'wordmark-dark',
+}))assets[name]=fs.readFileSync(path.join(root,'assets/brand/festapp-tickets','festapp-tickets-'+source+'.svg'));
+
 const measurementPreset = fs.readFileSync(path.join(root,'integrations/measurement/festapp-host-gtm.json'));
 const measurementPresetName = `festapp-host-gtm.${digest(measurementPreset)}.json`;
 assets[measurementPresetName] = measurementPreset;
 const measurementPresetUrl = helpRoot+'assets/'+measurementPresetName;
-const mcpReference = readMcpReference(root);
+const hasMcpGuides=pages.some(page=>['ai-agents','mcp-reference'].includes(page.id));
+const mcpReference = hasMcpGuides ? readMcpReference(root) : null;
 const mcpPrompts = JSON.parse(read('mcp-prompts.json'));
-assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
+if(hasMcpGuides)assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
 const wordpressPublished = JSON.parse(read('download.json')).directoryStatus === 'published';
-const media = JSON.parse(read('media.json')).filter(item => item.locale === locale && (wordpressPublished || !/\/wordpress\/(?:01-get-started|02-block-editor)$/.test(item.id)));
+const usedMediaIds = new Set([
+ ...pages.flatMap(page=>[page.preview,...[...fs.readFileSync(path.join(source,(page.slug||'index')+'.html'),'utf8').matchAll(/\{\{(?:MEDIA|PREVIEW):([a-z0-9/-]+)\}\}/g)].map(match=>match[1])]),
+ ...JSON.parse(read('categories.json')).map(category=>category[locale].preview),
+].filter(Boolean));
+const media = JSON.parse(read('media.json')).filter(item => item.locale === locale && usedMediaIds.has(item.id) && (locale !== 'en' || !/^en\/(?:wordpress|joomla|wix)\//.test(item.id)) && (wordpressPublished || !/\/wordpress\/(?:01-get-started|02-block-editor)$/.test(item.id)));
 const mediaWorkflows = new Map(media.map(item => [item.id,item.workflow]));
 const previewImages = new Map();
 const figures = new Map(media.map(item => {
@@ -57,6 +92,7 @@ const figures = new Map(media.map(item => {
   const valid = item.sourceAsset ? /^web\/organizers-media\/(?:en\/)?[a-z0-9-]+\.(?:png|jpg|webp)$/ : /^[a-z0-9/-]+\.(?:png|jpg|webp)$/;
   if (!valid.test(relative)) throw new Error('Invalid help media path');
   const data = fs.readFileSync(path.join(item.sourceAsset ? root : path.join(directory,'media'),relative));
+  if (!preview && locale==='en' && (!item.sha256 || !item.reviewedAt)) throw new Error(`English help screenshot has not been reviewed: ${item.id}`);
   if (item.sha256 && createHash('sha256').update(data).digest('hex') !== item.sha256) throw new Error(`Help screenshot requires review: ${item.id}`);
   const name = `${item.id.replaceAll('/','-')}.${digest(data)}${path.extname(relative)}`;
   assets[name] = data;
@@ -110,6 +146,7 @@ const videoLink = id => {
 const bodies = new Map();
 for (const page of pages) {
   let body = fs.readFileSync(path.join(source,`${page.slug || 'index'}.html`),'utf8')
+    .replaceAll('{{API_REFERENCE}}',escape(apiReferenceUrl)).replaceAll('{{API_OPENAPI}}',escape(apiSchemaUrl))
     .replaceAll('{{MEASUREMENT_PRESET}}',measurementPresetUrl).replace('{{EMBED_GENERATOR}}',generator).replace('{{GUIDE_DIRECTORY}}',guideDirectory)
     .replace('{{MCP_REFERENCE}}', () => renderMcpReference(mcpReference,locale))
     .replace('{{MCP_PROMPTS}}', () => renderMcpPrompts(mcpReference,mcpPrompts,locale))
@@ -120,7 +157,7 @@ for (const page of pages) {
       if (page.workflow === 'administration' && mediaWorkflows.get(id) === 'wizard') throw new Error(`Wizard screenshot in administration guide: ${id}`);
       if (!figures.has(id)) throw new Error(`Missing ${locale} help screenshot: ${id}`);
       return figures.get(id);
-    }).replaceAll('{{HELP_ROOT}}',helpRoot).replaceAll('{{HELP_ASSETS}}',helpRoot+'assets/').replaceAll('{{FORM_ORIGIN}}',escape(origin));
+    }).replaceAll('{{HELP_ROOT}}',helpRoot).replaceAll('{{HELP_ASSETS}}',helpRoot+'assets/').replaceAll('{{FORM_ORIGIN}}',escape(origin)).replaceAll('{{CONTACT_EMAIL}}',escape(site.contact));
   if (body.includes('{{')) throw new Error(`Unresolved help content token: ${page.id}`);
   if (page.workflow) {
     const context = ui.workflows[page.workflow];
@@ -129,9 +166,12 @@ for (const page of pages) {
   }
   bodies.set(page.id, body);
 }
-for (const category of categoryPages) bodies.set(category.id, `<p class="lead">${escape(category.description)}</p><p>${escape(category.intro)}</p><h2 id="guides">${escape(ui.categoryGuides)}</h2>${articleList(category.category)}<h2 id="related">${escape(ui.categoryRelated)}</h2><ul>${categoryPages.filter(other => other.id !== category.id).map(other => `<li><a href="${href(other)}">${escape(other.label)}</a></li>`).join('')}</ul>`);
+const apiReferenceBlock = `<section aria-labelledby="api"><h2 id="api">${escape(ui.apiReference.title)}</h2><p>${escape(ui.apiReference.description)}</p><p><a class="help-step-action" href="${escape(apiReferenceUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escape(ui.apiReference.open+' ('+ui.opensNewTab+')')}">${escape(ui.apiReference.open)}</a></p><p><a href="${escape(apiSchemaUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escape(ui.apiReference.schema+' ('+ui.opensNewTab+')')}">${escape(ui.apiReference.schema)}</a></p></section>`;
+for (const category of categoryPages) bodies.set(category.id, `<p class="lead">${escape(category.description)}</p><p>${escape(category.intro)}</p>${category.category === 'integrations' ? apiReferenceBlock : ''}<h2 id="guides">${escape(ui.categoryGuides)}</h2>${articleList(category.category)}<h2 id="related">${escape(ui.categoryRelated)}</h2><ul>${categoryPages.filter(other => other.id !== category.id).map(other => `<li><a href="${href(other)}">${escape(other.label)}</a></li>`).join('')}</ul>`);
 const aliases = JSON.parse(read('search_terms.json'))[locale];
 const entries = pages.filter(page => page.category).map(page => ({id:page.id,title:page.title,description:page.description,url:href(page),category:page.category,categoryLabel:categoryFor(page).label,aliases:aliases[page.id] || [],sections:articleSections(bodies.get(page.id))}));
+const apiCategory = categoryPages.find(category=>category.category==='integrations');
+entries.push({id:'api-reference',title:ui.apiReference.title,description:ui.apiReference.description,url:href(apiCategory)+'#api',category:'integrations',categoryLabel:apiCategory.label,aliases:['API','OpenAPI','Swagger','OAuth','DPoP'],sections:[]});
 const searchData = {entries,locale,ui,helpRoot,supportUrl:origin+'/support/'};
 const searchScript = 'globalThis.FestappHelpSearchData='+JSON.stringify(searchData).replace(/</g,'\\u003c')+';\n'+read('search_engine.js')+'\n'+read('search_ui.js');
 const searchName = `search.${digest(searchScript)}.js`; assets[searchName] = searchScript;
@@ -151,7 +191,7 @@ for (const page of allPages) {
   ]};
   const json = JSON.stringify(structured).replace(/</g,'\\u003c');
   const breadcrumb = crumbs.map((crumb,i) => i === crumbs.length-1 ? `<span aria-current="page">${escape(crumb.name)}</span>` : `<a href="${escape(new URL(crumb.item).pathname)}">${escape(crumb.name)}</a>`).join(' / ');
-  const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">${publicThemeHead}<meta name="referrer" content="no-referrer"><title>${escape(page.seoTitle)} | ${escape(brand)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${preview ? 'noindex,nofollow' : 'index,follow'}">${preview ? '' : `<link rel="canonical" href="${canonical}">`}<meta property="og:type" content="${collection ? 'website' : 'article'}"><meta property="og:title" content="${escape(page.seoTitle)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${canonical}"><meta property="og:site_name" content="${escape(brand)}"><link rel="icon" href="/favicon.ico">${themeLinks}<link rel="stylesheet" href="${helpRoot}assets/${cssName}"><script type="application/ld+json">${json}</script><script src="${helpRoot}assets/${searchName}" defer></script><script src="${helpRoot}assets/${jsName}" defer></script><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="help">${publicThemeBody}<a class="skip-link" href="#main">${escape(ui.skip)}</a>${shell.header}${searchChrome}
+  const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">${publicThemeHead}<meta name="referrer" content="no-referrer"><title>${escape(page.seoTitle)} | ${escape(brand)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${preview ? 'noindex,nofollow' : 'index,follow'}">${preview ? '' : `<link rel="canonical" href="${canonical}">`}<meta property="og:type" content="${collection ? 'website' : 'article'}"><meta property="og:title" content="${escape(page.seoTitle)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${canonical}"><meta property="og:site_name" content="${escape(brand)}">${socialMeta}<meta name="twitter:title" content="${escape(page.seoTitle)} | ${escape(brand)}"><meta name="twitter:description" content="${escape(page.description)}"><link rel="icon" href="/favicon.ico">${themeLinks}<link rel="stylesheet" href="${helpRoot}assets/${cssName}"><script type="application/ld+json">${json}</script><script src="${helpRoot}assets/${searchName}" defer></script><script src="${helpRoot}assets/${jsName}" defer></script><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="help">${publicThemeBody}<a class="skip-link" href="#main">${escape(ui.skip)}</a>${shell.header}${searchChrome}
 <div class="help-layout"><aside class="help-sidebar"><p>${escape(ui.categoryNav)}</p><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></aside><details class="help-mobile-menu"><summary>${escape(ui.mobileGuides)}</summary><nav aria-label="${escape(ui.guides)}">${navigation(page)}</nav></details>
 <main id="main" class="help-main"><nav class="breadcrumb" aria-label="${escape(ui.breadcrumb)}">${breadcrumb}</nav><h1>${escape(page.title)}</h1><div data-help-browse>${page.slug && toc ? `<details class="guide-toc"><summary>${escape(ui.onThisPage)}</summary><ul>${toc}</ul></details>` : ''}${body}<div class="guide-related"><p>${escape(ui.related)}</p>${category && !page.collection ? `<a href="${href(category)}">${escape(category.label)}</a>` : ''}<a href="${helpRoot}">${escape(ui.allGuides)}</a><a href="/support/">${escape(ui.support)}</a></div></div></main></div>${shell.footer}${accountScript}</body></html>\n`;
   const folder = path.join(target,page.slug); fs.mkdirSync(folder,{recursive:true}); writeIfChanged.writeFileSync(path.join(folder,'index.html'),html);
@@ -163,7 +203,7 @@ console.log(`Rendered ${allPages.length} ${locale} help pages.`);
 if (!arg('--output') || arg('--built-index')) {
   const sitemap = arg('--built-index') ? path.join(path.dirname(destination),'sitemap.xml') : path.join(root,'web_client/public/sitemap.xml');
   if (fs.existsSync(sitemap)) {
-    const original = fs.readFileSync(sitemap,'utf8').replace(/\s*<url><loc>https:\/\/[^<]+\/napoveda\/[^<]*<\/loc><\/url>/g,'');
+    const original = fs.readFileSync(sitemap,'utf8').replace(/\s*<url><loc>https:\/\/[^<]+\/(?:napoveda|help)\/[^<]*<\/loc><\/url>/g,'');
     const entries = allPages.map(page => `  <url><loc>${origin}${href(page)}</loc></url>`).join('\n');
     writeIfChanged.writeFileSync(sitemap,original.replace('</urlset>',entries+'\n</urlset>'));
   }

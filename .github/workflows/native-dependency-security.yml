@@ -1,0 +1,43 @@
+name: Native dependency security
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/super_native_extensions/rust/**'
+      - 'automation/native-security/**'
+      - '.github/workflows/native-dependency-security.yml'
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'packages/super_native_extensions/rust/**'
+      - 'automation/native-security/**'
+      - '.github/workflows/native-dependency-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native-dependency-security:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native development dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgtk-3-dev pkg-config
+          rustup toolchain install stable --profile minimal
+      - name: Verify immutable dependency sources
+        run: python3 automation/native-security/check.py
+      - name: Compile the real Linux plugin dependency graph
+        run: cargo +stable check --locked --manifest-path packages/super_native_extensions/rust/Cargo.toml
+      - name: Exercise the affected iterator operations with optimization
+        run: cargo +stable run --release --locked --manifest-path automation/native-security/Cargo.toml

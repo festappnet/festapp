@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "format": "festapp-assets",
+  "run_id": "20261115T043506Z",
+  "created_at": "2026-11-15T04:57:05Z",
+  "source_host": "festapp-supabase-rehearsal-01",
+  "source_database": "festapp_rehearsal_20260909220601",
+  "encrypted": true,
+  "plaintext_artifacts_written": false,
+  "storage_extended_attributes": false,
+  "capture_points": {
+    "database": {
+      "started_at": "2026-11-15T04:35:06Z",
+      "completed_at": "2026-11-15T04:35:28Z"
+    },
+    "assets": {
+      "started_at": "2026-11-15T04:35:29Z",
+      "completed_at": "2026-11-15T04:57:03Z"
+    },
+    "atomic": false
+  },
+  "consistency": "online-operational-backup-not-promotion-rpo0",
+  "destination": {
+    "provider": "cloudflare-r2",
+    "bucket": "festapp-supabase-backups",
+    "prefix": "backups/festapp-supabase-rehearsal-01/20261115T043506Z",
+    "independent_failure_domain": true
+  },
+  "retention_days": 14,
+  "weekly_copies": 4,
+  "artifacts": {
+    "postgres.dump.age": {
+      "sha256": "c798cee672497f0dc022e90ae2fe24402dca74f16fe68c3ed445d8b83fcbf443",
+      "bytes": 212698943
+    },
+    "globals.sql.age": {
+      "sha256": "8c4c55804e29f2efd266d519aefe58b682862c4b17cc251908a312bfb56a50f1",
+      "bytes": 8407
+    },
+    "runtime.tar.age": {
+      "sha256": "9ad224c3155a6b429d3ce7076ba466687baefe152faf8e84fce7841c0d943212",
+      "bytes": 13807080
+    },
+    "r2-images.tar.age": {
+      "sha256": "5e6d84f984b0fd5d5fcb7cfc7965aef56f42b76c9ff40301eb873c55a68bb1b9",
+      "bytes": 1681327048
+    }
+  },
+  "uploaded_at": "2026-11-15T04:57:40Z",
+  "off_host_verified": true,
+  "production_cutover_authorized": false
+}

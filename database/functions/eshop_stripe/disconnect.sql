@@ -86,6 +86,7 @@ BEGIN
   status_lease=NULL,status_lease_expires_at=NULL,checked_at=clock_timestamp(),next_check_at=clock_timestamp()+interval '1 day' WHERE id=intent.connection_id;
  UPDATE eshop.stripe_disconnect_intents SET state='completed',result=v_result,completed_at=clock_timestamp() WHERE id=intent.id;
  INSERT INTO eshop.stripe_connection_audit(connection_id,actor,action) VALUES(intent.connection_id,intent.actor,'revoked');
+ PERFORM public.notification_center_provider_connection_internal('stripe',intent.connection_id);
  RETURN v_result;
 END $$;
 REVOKE ALL ON FUNCTION public.finish_stripe_disconnect_internal(uuid,boolean) FROM PUBLIC,anon,authenticated;

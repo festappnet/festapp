@@ -1,12 +1,9 @@
-# vstupenky.online pro Joomla 1.0.4
+# vstupenky.online pro Joomla 1.0.6
 
-Vzhled všech vložení nově řídí jedno uložené nastavení formuláře ve vstupenky.online. Lokální přepínač v modulu je odstraněný. Změna se projeví při příštím načtení webu bez výměny kódu; rozpracovaná objednávka se nepřepíná.
+Vydání přidává import volby souhlasu z nastavení pořadatele ve Festappu. Ve Festappu otevřete **Nastavení pořadatele > Měření > Moje weby**, potvrďte pokrytí formuláře souhlasovou lištou a zkopírujte export do vlastního modulu. Import je oddělený od jeho zapnutí, které je ve výchozím stavu vypnuté. Při změně konfigurace export znovu vytvořte a v modulu jím nahraďte předchozí hodnotu.
 
-- Odkaz, přístupný název, režim výšky a stávající objednávky zůstávají zachované. Staré lokální nastavení vzhledu se již nepoužívá.
-- V modulu je odkaz na Formuláře. Vyberte formulář, otevřete Vzhled a změnu uložte.
-- Helper funguje při automatické i pevné výšce. Plánek sálu si zachovává vlastní vzhled.
-- Ověřeno Joomla 5.4/PHP 8.3 a Joomla 6.1/PHP 8.4, včetně skutečné instalace a updateru.
+Stav v administraci potvrzuje pouze místní přijetí konfigurace. Veřejný formulář při použití ověřuje aktuální schválení na serveru; starší export nemůže obnovit odvolanou verzi. Přenos voleb souhlasu nezachovává identitu návštěvníka v analytice. Volba se vztahuje pouze na odkazy vytvořené tímto modulem a jeho záložní odkaz.
 
-[Návod](https://vstupenky.online/napoveda/joomla/) | [Podpora](https://vstupenky.online/support/) | [Podmínky](https://vstupenky.online/terms/) | [Soukromí](https://vstupenky.online/privacy/)
+Podporována je Joomla 5.4 a 6.1 s PHP 8.3 nebo novějším. Modul nainstalujte nebo aktualizujte přes **Systém > Instalace > Rozšíření**; uložená nastavení se při aktualizaci zachovají.
 
-Vydání obsahuje českou distribuci. Aktualizace již zveřejněného záznamu v Joomla Extensions Directory je samostatný katalogový krok.
+[Návod](https://vstupenky.online/napoveda/joomla/) | [Podpora](https://vstupenky.online/support/)

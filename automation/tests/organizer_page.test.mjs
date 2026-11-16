@@ -57,6 +57,9 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(!JSON.stringify(graph).match(/aggregateRating|priceCurrency|SearchAction|FAQPage/));
   const catalog = readFileSync(join(root, 'web_client/index.html'), 'utf8');
   assert.ok(catalog.includes(`<title>${seo.catalogTitle}</title>`));
+  assert.match(catalog, /property="og:image" content="https:\/\/vstupenky\.online\/android-chrome-512x512\.png"/);
+  assert.match(catalog, /property="og:image:width" content="512"/);
+  assert.doesNotMatch(catalog, /(?:property|name)="(?:og|twitter):image" content="[^"]*organizers-social\.png"/);
   assert.ok(catalog.includes('href="https://vstupenky.online/events"'));
   assert.ok(!catalog.includes('SearchAction'));
   assert.ok(!catalog.includes('class="catalog-navigation"'), 'generated catalogue must not duplicate shared header navigation');
@@ -96,8 +99,10 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   mkdirSync(join(root,'web_client/assets/translations'),{recursive:true});
   const bundleOutput = join(root, 'bundle/organizers-page');
   cpSync(join(root,'web/organizers-media'),join(root,'bundle/organizers-media'),{recursive:true});
+  const sourceCatalog = readFileSync(join(root, 'web_client/index.html'), 'utf8');
   const build = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config, '--built-index', builtIndex, '--output', bundleOutput], { encoding: 'utf8' });
   assert.equal(build.status, 0, build.stderr);
+  assert.equal(readFileSync(join(root, 'web_client/index.html'), 'utf8'), sourceCatalog, 'built rendering must preserve the source bytes captured by the build receipt');
   const bundled = readFileSync(bundleOutput, 'utf8');
   const runtimeRoot = bundled.match(/src="(\/organizers-assets\/[a-f0-9]+\/)runtime\/landing-test.js"/)?.[1];
   assert.ok(runtimeRoot, 'homepage uses the canonical versioned public runtime, avoiding cached app-chunk failures');
@@ -208,6 +213,15 @@ test('English illustrated home ships English examples, one regional link and fai
   assert.match(html,/classic-ball-en\.png/);
   assert.match(html,/hamlet-ticket-en\.png/);
   assert.match(html,/info@festapp\.net/);
+  const canonicalBooking=JSON.parse(readFileSync(new URL('../release/organizers/content.json',import.meta.url),'utf8')).publicProjection.bookingUrl;
+  const globalBooking=JSON.parse(readFileSync(new URL('../release/organizers/content.en.json',import.meta.url),'utf8')).publicProjection.bookingUrl;
+  assert.equal(globalBooking,canonicalBooking,'global demo uses the canonical booking flow');
+  assert.equal((html.match(new RegExp('href="'+canonicalBooking+'"','g'))??[]).length,3,'demo is available in hero, support and footer');
+  assert.match(html,/href="\/help\/"/,'global guides are reachable from the homepage');
+  assert.match(html,/<header class="site-header auth-pending"/,'illustrated home exposes the shared account-header mount');
+  assert.match(html,/class="header-signin" href="\/login"/,'sign-in remains reachable before account hydration');
+  assert.doesNotMatch(html,/href="#how-it-works"/,'Help owns guidance; duplicate scroll actions are removed');
+
   assert.match(html,/href="\/events\?create=1"/);
   assert.ok(!html.includes('tickets.fesup.net'));
   assert.ok(!html.includes('{{'));
@@ -218,4 +232,31 @@ test('English illustrated home ships English examples, one regional link and fai
   assert.notEqual(failed.status,0);
   assert.match(failed.stderr,/Missing\/foreign marketing media/);
   assert.equal(readFileSync(output,'utf8'),html,'invalid media cannot overwrite a previously rendered page');
+});
+
+
+test('illustrated branding preserves the canonical account header layout', () => {
+  const css = readFileSync(new URL('../release/organizers/illustrated-home.css', import.meta.url), 'utf8');
+  const allowed = new Set(['background', 'color', 'border-color', 'border-bottom-color', 'box-shadow']);
+  let themedRules = 0;
+  for (const [, selectors, declarations] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!selectors.includes('user-header[data-marketing]')) continue;
+    themedRules++;
+    for (const declaration of declarations.split(';').filter(value => value.trim())) {
+      const property = declaration.slice(0, declaration.indexOf(':')).trim();
+      assert.ok(allowed.has(property), `Account header layout must stay shared: ${property}`);
+    }
+  }
+  assert.ok(themedRules > 0);
+});
+
+
+test('cinematic document scrollbar stays visible and matches its dark canvas', () => {
+  const css = readFileSync(new URL('../release/organizers/illustrated-home.css', import.meta.url), 'utf8');
+  const rootRule = css.match(/html:has\(body\[data-cinematic="true"\]\)\s*\{([^}]*)\}/)?.[1];
+  assert.ok(rootRule, 'Only the illustrated document owns its scrollbar theme');
+  assert.match(css, /html:has\(body\[data-cinematic="true"\]\),body\[data-cinematic="true"\]\s*\{[^}]*scrollbar-width:thin;/);
+  assert.match(css, /scrollbar-color:#[a-f0-9]+ var\(--night\)/);
+  assert.match(rootRule, /background:var\(--night\)!important/);
+  assert.doesNotMatch(rootRule, /overflow[^;]*hidden|scrollbar-width:none/);
 });

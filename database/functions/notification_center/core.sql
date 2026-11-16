@@ -22,6 +22,10 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,exte
  AND (
  CASE WHEN p_event.kind IN ('event_capacity_full','occasion_joined') THEN
  public.notification_center_app_admin_internal(p_event.organization,p_event.occasion,p_user)
+ WHEN p_event.kind='provider_problem' THEN
+ public.payment_provider_unit_manager_internal((p_event.data->>'unitId')::bigint,p_user)
+ AND NOT public.is_demo_unit((p_event.data->>'unitId')::bigint)
+ AND EXISTS(SELECT 1 FROM public.units un WHERE un.id=(p_event.data->>'unitId')::bigint AND un.organization=p_event.organization)
  WHEN p_event.kind='email_problem' THEN
  EXISTS(SELECT 1 FROM public.organization_users WHERE organization=p_event.organization AND "user"=p_user AND is_admin) OR (p_event.occasion IS NOT NULL AND EXISTS(SELECT 1 FROM public.occasion_users ou JOIN public.occasions oc ON oc.id=ou.occasion WHERE oc.organization=p_event.organization AND oc.id=p_event.occasion AND ou."user"=p_user AND ou.is_editor_order_view AND NOT public.is_demo_occasion(oc.id)))
  WHEN p_event.kind='bank_problem' THEN (EXISTS(SELECT 1 FROM eshop.bank_sync_connections c JOIN eshop.bank_account_users bu ON bu.bank_account=c.bank_account_id OR bu.bank_account IN(SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id)
@@ -69,6 +73,8 @@ BEGIN
  SELECT * INTO e FROM public.notification_center_events WHERE id=p_event;
  IF NOT FOUND THEN RETURN; END IF;
  FOR u IN SELECT "user" FROM public.organization_users WHERE organization=e.organization AND is_admin
+ UNION SELECT um."user" FROM public.unit_users um JOIN public.units un ON un.id=um.unit
+ WHERE e.kind='provider_problem' AND un.organization=e.organization AND um.unit=(e.data->>'unitId')::bigint AND um.is_manager
  UNION SELECT ou."user" FROM public.occasion_users ou JOIN public.occasions oc ON oc.id=ou.occasion WHERE oc.organization=e.organization AND (ou.is_editor_order_view OR public.participant_contacts_read_rule(ou.is_editor,ou.is_manager,false))
  UNION SELECT bu."user" FROM eshop.bank_account_users bu JOIN eshop.unit_bank_accounts uba ON uba.bank_account=bu.bank_account
  JOIN public.units un ON un.id=uba.unit WHERE un.organization=e.organization AND bu.is_admin LOOP

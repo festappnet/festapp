@@ -37,6 +37,17 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.form_measurement_unit_data_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
+-- One semantic notice owner for admin exports and public form policy.
+CREATE OR REPLACE FUNCTION public.unit_measurement_consent_scope_internal(p_unit bigint)
+RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT jsonb_build_object('organization',u.organization,'unit',u.id,'consentRevision',md5(jsonb_build_array(1,u.organization,u.id,u.data->'measurement_gtm_container',
+   u.data->'measurement_scripts',u.data->'measurement_privacy_url',u.data->'measurement_consent_title',
+   u.data->'measurement_consent_text',coalesce(u.data->'measurement_consent_version','1'::jsonb),
+   r.runtime_profile,r.collector_origins,jsonb_build_array('analytics','marketing'))::text))
+ FROM public.units u LEFT JOIN analytics.unit_runtime r ON r.unit=u.id WHERE u.id=p_unit;
+$$;
+REVOKE ALL ON FUNCTION public.unit_measurement_consent_scope_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 -- consent_required denotes the required notice/choice controls, not an execution gate.
 -- required_purposes describes reported choices; neither purpose must be granted to run.
 -- Single status owner. Configuration belongs to Unit; forms contain only intent.
@@ -88,10 +99,8 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
   -- Stable notice/processing scope, independent of runtime deployment and approved hosts.
   -- Changes behind an unchanged GTM ID/privacy URL require a consent-version increment.
-  'consent_revision',md5(jsonb_build_array(1,o.organization,u.id,u.data->'measurement_gtm_container',
-   u.data->'measurement_scripts',u.data->'measurement_privacy_url',u.data->'measurement_consent_title',
-   u.data->'measurement_consent_text',coalesce(u.data->'measurement_consent_version','1'::jsonb),
-   r.runtime_profile,r.collector_origins,jsonb_build_array('analytics','marketing'))::text),
+  'consent_revision',public.unit_measurement_consent_scope_internal(u.id)->>'consentRevision',
+  'website_consent_bindings',public.website_consent_bindings_policy_internal(u.id),
   'measurement_protocol',3,'form_link',f.link,'profile',r.runtime_profile,'required_purposes',jsonb_build_array('analytics','marketing'),
   'enhanced_conversions_unavailable',false,
   -- Append the opt-in only when enabled to preserve existing saved choices.
@@ -101,7 +110,9 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
    org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')
    ||CASE WHEN u.data->'measurement_consent_bridge'='true'::jsonb THEN jsonb_build_array(true) ELSE '[]'::jsonb END
    ||CASE WHEN nullif(u.data->>'measurement_consent_title','') IS NOT NULL OR nullif(u.data->>'measurement_consent_text','') IS NOT NULL
-     THEN jsonb_build_array(u.data->'measurement_consent_title',u.data->'measurement_consent_text') ELSE '[]'::jsonb END)::text),
+     THEN jsonb_build_array(u.data->'measurement_consent_title',u.data->'measurement_consent_text') ELSE '[]'::jsonb END
+   ||CASE WHEN public.website_consent_bindings_policy_internal(u.id) <> '[]'::jsonb
+     THEN jsonb_build_array(public.website_consent_bindings_policy_internal(u.id)) ELSE '[]'::jsonb END)::text),
   'configuration_revision',md5(jsonb_build_array(u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_enabled',org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')::text),
   'runtime_revision',coalesce(r.revision,0),'policy_revision',s->'policy_revision','valid_for_seconds',60,'consent_required',true)

@@ -1,0 +1,148 @@
+{
+  "baseMainSha": "a21a6f604781b98a7d20dd3a078b0bd20294a164",
+  "scope": "local only, uncommitted",
+  "productionPerformed": false,
+  "evidence": [
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/receipt.json",
+      "receiptSha256": "ae9d3d08e627591079bcf02ea2494de332d2cd6e9df7a0976d1fef283be53899",
+      "job": "seat-checkout",
+      "status": "PASS",
+      "wholeReceiptComplete": true,
+      "wholeReceiptInputsUnchanged": true,
+      "units": {
+        "seat-install": {
+          "status": "PASS",
+          "seconds": 1.3479593749943888,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-install.log"
+        },
+        "seat-upgrade": {
+          "status": "PASS",
+          "seconds": 18.68297504200018,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-upgrade.log"
+        },
+        "seat-runtime-contract": {
+          "status": "PASS",
+          "seconds": 22.370139999999083,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-runtime-contract.log"
+        },
+        "seat-database": {
+          "status": "PASS",
+          "seconds": 1.2451204169919947,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-database.log"
+        },
+        "seat-authorization": {
+          "status": "PASS",
+          "seconds": 0.5729916250129463,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-authorization.log"
+        },
+        "seat-google-auth": {
+          "status": "PASS",
+          "seconds": 1.2155574170028558,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-google-auth.log"
+        },
+        "seat-browser": {
+          "status": "PASS",
+          "seconds": 4.448368833996938,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-browser.log"
+        },
+        "occasion-lifecycle": {
+          "status": "PASS",
+          "seconds": 2.9228446670022095,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/occasion-lifecycle.log"
+        },
+        "seat-measurement": {
+          "status": "PASS",
+          "seconds": 11.804417417006334,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-measurement.log"
+        },
+        "seat-notifications": {
+          "status": "PASS",
+          "seconds": 31.0489727499953,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-notifications.log"
+        },
+        "seat-contract": {
+          "status": "PASS",
+          "seconds": 62.66886112499924,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T012414-3ebcdf7db4eb/seat-contract.log"
+        }
+      }
+    },
+    {
+      "receipt": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T010515-531bd4f5192d/receipt.json",
+      "receiptSha256": "ad199ea290fde0f9ffd916f0598a1dfd8dd86264a7cc66347e05fe083fdf9e44",
+      "job": "ticket-preview-and-delivery",
+      "status": "PASS",
+      "wholeReceiptComplete": false,
+      "wholeReceiptInputsUnchanged": false,
+      "units": {
+        "ticket-edge": {
+          "status": "PASS",
+          "seconds": 12.189123582997127,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T010515-531bd4f5192d/ticket-edge.log"
+        },
+        "ticket-install": {
+          "status": "PASS",
+          "seconds": 249.0699942499923,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T010515-531bd4f5192d/ticket-install.log"
+        },
+        "ticket-core": {
+          "status": "PASS",
+          "seconds": 7.865344332996756,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T010515-531bd4f5192d/ticket-core.log"
+        },
+        "ticket-client": {
+          "status": "PASS",
+          "seconds": 135.06162245800078,
+          "log": "/Users/miakh/Library/Caches/festapp-ci/runs/20261113T010515-531bd4f5192d/ticket-client.log"
+        }
+      }
+    }
+  ],
+  "reuseNote": "The earlier combined receipt is incomplete and has inputsUnchanged=false because SQL and its checker changed during that run. Its ticket job passed; none of the declared ticket lane inputs changed afterward. Only the affected seat lane was rerun. These are local receipts, not hosted main release attestations.",
+  "queueConcurrencyTests": 5,
+  "queueUpgradeTests": 1,
+  "walletEdgeTests": 19,
+  "publicationPreflight": {
+    "baseMainSha": "ca626067fd56e1bdfd0354c08fe5c73483b98516",
+    "upstreamCommitsInspected": 4,
+    "rebaseConflicts": false,
+    "sqlFixtures": {
+      "passed": 6,
+      "failed": 0
+    },
+    "concurrencyUpgradeTests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    "sourceTests": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 1
+    },
+    "runtimeTests": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 5
+    },
+    "logs": {
+      "sql": {
+        "path": "/tmp/wallet-pr-sql.log",
+        "sha256": "f2955b5fbfc03ed7253a87e1efdd77dd1fd8dce2d0ff409fc5bffb875878a92f"
+      },
+      "concurrency": {
+        "path": "/tmp/wallet-pr-concurrency.log",
+        "sha256": "4754bf00c1342dcdf7d6f3e729153924490a2cbe3d340ac54bb475fb827fb599"
+      },
+      "sources": {
+        "path": "/tmp/wallet-pr-source-checks.log",
+        "sha256": "0efa0d4bbe1ba102e42f22b3fd43d3492c99224721aa22dc7176c415719a7b50"
+      },
+      "runtime": {
+        "path": "/tmp/wallet-pr-runtime.log",
+        "sha256": "78754ab5d49c0ec81c483776aa262f45ccf598ec1b31a0bc13f0a60679537335"
+      }
+    }
+  }
+}

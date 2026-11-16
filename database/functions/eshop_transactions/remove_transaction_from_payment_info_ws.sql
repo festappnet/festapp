@@ -21,6 +21,8 @@ BEGIN
   IF NOT public.can_manage_bank_account((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id)) THEN
     RAISE insufficient_privilege USING MESSAGE='Source bank transaction write access denied'; END IF;
   PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
+  PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.occasions oc WHERE oc.id=v_occasion_id;
+  IF NOT coalesce((SELECT public.payment_method_policy_enabled_internal(oc.unit,'bank') FROM public.occasions oc WHERE oc.id=v_occasion_id),false) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
   IF NOT EXISTS (SELECT 1 FROM eshop.transactions t
     WHERE t.id = p_transaction_id AND t.payment_info = p_payment_info_id) THEN
     RAISE EXCEPTION 'TRANSACTION_PAIRING_MISMATCH';

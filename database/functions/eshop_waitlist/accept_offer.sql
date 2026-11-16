@@ -90,7 +90,7 @@ BEGIN
   RAISE EXCEPTION 'Invalid participant ticket binding'; END IF;
  PERFORM public.validate_waitlist_answers_internal(fid,input,input->'ticket',false);
  UPDATE eshop.order_product_ticket SET "order"=target WHERE "order"=o.id AND ticket=ANY(ids);
- result:=public.finalize_ticket_order_internal_v1(target,public.strip_payment_sources_internal(input),true);
+ result:=public.finalize_ticket_order_internal_v1(target,(public.strip_payment_sources_internal(input)-'discount_command_id')||jsonb_build_object('discount_command_id',p_command),true);
  IF coalesce((result->>'code')::integer,500)<>200 THEN RAISE EXCEPTION '%',result::text; END IF;
  UPDATE eshop.waitlist_offer_slots SET outcome='accepted',resulting_order_id=target,updated_at=clock_timestamp() WHERE id=ANY(selected_slots);
  PERFORM public.attach_provider_order_source_internal(target,p_command,input);

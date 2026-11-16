@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 import '../forms/form_strings.dart';
@@ -106,6 +107,8 @@ class EmailTemplatesStrings {
       'EmailTemplates.subs.changeOverview'.tr();
   static String get subBalanceReasoning =>
       'EmailTemplates.subs.balanceReasoning'.tr();
+  static String get subPaymentAction => 'EmailTemplates.subs.paymentAction'.tr();
+  static String get subPaymentMethodName => 'EmailTemplates.subs.paymentMethodName'.tr();
   static String get subPaymentDetails =>
       'EmailTemplates.subs.paymentDetails'.tr();
   static String get subRemainingTime =>
@@ -156,7 +159,7 @@ class EmailTemplatesStrings {
   static String get usageTicketOrderPaymentDoneTitle =>
       'EmailTemplates.usage.ticketOrderPaymentDone_title'.tr();
   static String get usageTicketOrderPaymentDoneDescription =>
-      'EmailTemplates.usage.ticketOrderPaymentDone_description'.tr();
+      OrderItemStrings.text('EmailTemplates.usage.ticketOrderPaymentDone_description');
 
   // TICKET_ORDER_PAYMENT_REMINDER
   static String get usageTicketOrderPaymentReminderTitle =>

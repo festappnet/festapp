@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {helpActionWorkerSource} from './lib/help_action_worker_source.mjs';
 
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -33,6 +34,7 @@ const flutterEntry = manifest.flutterEntry;
 const webClientEntry = manifest.webClientEntry;
 const cacheName = `festapp-app-shell-${version}`;
 const source = `'use strict';
+${helpActionWorkerSource}
 
 const BUILD_VERSION = ${JSON.stringify(version)};
 const CACHE_NAME = ${JSON.stringify(cacheName)};
@@ -605,6 +607,11 @@ async function recoverCurrentExecutable(request, cache, allowNewerBootstrap) {
   }
 }
 
+function isOnlineAccountDocument(pathname) {
+  return ['/google-auth', '/app/google-auth', '/settings/mcp-connect',
+    '/settings/connections', '/wallet', '/wallet/'].includes(pathname);
+}
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -663,7 +670,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Public help belongs to the live website, including code and downloads.
-  if (url.pathname.startsWith('/organizers-assets/') || url.pathname === '/napoveda' || url.pathname.startsWith('/napoveda/')) {
+  if (url.pathname.startsWith('/organizers-assets/') || publicHelpRootFromPath(url.pathname)) {
     event.respondWith(fetch(request));
     return;
   }
@@ -704,10 +711,9 @@ self.addEventListener('fetch', (event) => {
 
   // Google handoffs are online proofs. Never cache them or substitute a
   // different platform's shell, even when an older shell is available offline.
-  if (url.pathname === '/google-auth' || url.pathname === '/app/google-auth' ||
-      url.pathname === '/settings/mcp-connect' || url.pathname === '/settings/connections' ||
+  if (isOnlineAccountDocument(url.pathname) ||
       new RegExp('^/(?:app/)?payments/[a-z][a-z0-9_-]{0,31}/(?:pay|return)$').test(url.pathname) ||
-      ['/wallet','/wallet/','/stripe/connect/callback','/app/stripe/connect/callback','/stripe/pay','/app/stripe/pay','/stripe/return','/app/stripe/return'].includes(url.pathname)) {
+      ['/stripe/connect/callback','/app/stripe/connect/callback','/stripe/pay','/app/stripe/pay','/stripe/return','/app/stripe/return'].includes(url.pathname)) {
     const callbackClient = event.resultingClientId || event.clientId;
     if (request.mode === 'navigate' && callbackClient) {
       clientCacheNames.delete(callbackClient);
@@ -741,20 +747,21 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith((async () => {
-    // The online homepage can be newer than this installed app shell. Its
-    // account header imports shared chunks too, not just landing-*.js. Keep
+    // Online documents can be newer than this installed app shell. Their
+    // account surfaces import shared chunks too, not just landing-*.js. Keep
     // that entire graph outside version pinning and stale-module recovery.
     // Resolve the actual client on each fetch so worker restarts are safe.
     if (url.pathname.startsWith('/web-assets/') && event.clientId) {
       const client = await self.clients.get(event.clientId);
       const page = client ? new URL(client.url) : null;
-      const helpPage = page?.pathname === '/napoveda' || page?.pathname.startsWith('/napoveda/');
+      const helpPage = publicHelpRootFromPath(page?.pathname);
+      const onlineAccountPage = isOnlineAccountDocument(page?.pathname);
       const homePage = ORGANIZER_HOMEPAGE && (page?.pathname === '/' || Boolean(MARKETING_ROUTES[page?.pathname?.replace(/\\/$/, '')])) &&
         !page.searchParams.has('q') && !page.searchParams.has('create') && !page.hash.startsWith('#/');
-      if (page?.origin === self.location.origin && (helpPage || homePage)) {
+      if (page?.origin === self.location.origin && (helpPage || homePage || onlineAccountPage)) {
         try { return await fetch(request); }
         catch (_) {
-          if (helpPage) return Response.error();
+          if (helpPage || onlineAccountPage) return Response.error();
           // Offline / falls back to this worker's cached catalogue document.
           const cache = await caches.open(CACHE_NAME);
           return (await cache.match(request, { ignoreSearch: true })) || Response.error();
@@ -850,7 +857,10 @@ self.addEventListener('fetch', (event) => {
     // quick while preserving offline access for resources the user has used.
     let response;
     try {
-      response = await fetch(request);
+      // A new CacheStorage generation must not import stale HTTP-cache bytes
+      // from a previous deployment (including subsetted icon/font assets).
+      response = await fetch(request, PRECACHE_PATHS.has(url.pathname)
+        ? { cache: 'no-store' } : undefined);
     } catch (_) {
       return Response.error();
     }

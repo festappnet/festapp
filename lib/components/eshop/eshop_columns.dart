@@ -966,7 +966,7 @@ class EshopColumns {
         EshopColumnIds.TICKET_CONFIRM: (Map<String, dynamic> data) => [
               TrinaColumn(
                 enableAutoEditing: false,
-                title: OrdersStrings.ticketUsage,
+                title: OrderItemStrings.ticketUsage,
                 field: EshopColumnIds.TICKET_CONFIRM,
                 type: TrinaColumnType.text(),
                 width: 200,
@@ -1109,12 +1109,14 @@ class EshopColumns {
 
                 Widget action(bool refund) {
                   final enabled =
-                      (refund ? operations?.canRefund : operations?.canRecord) ==
+                      (refund ? ((operations?.canRefund ?? false) || (operations?.canViewHistory ?? false)) : operations?.canRecord) ==
                       true;
                   return SizedBox(
                     width: 32,
                     child: IconButton(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
+                      color: ctx.stateManager.style.cellTextStyle.color,
+                      disabledColor: ctx.stateManager.style.cellTextStyle.color?.withValues(alpha: .38),
                       tooltip: refund
                           ? PaymentOperationStrings.text('refund')
                           : OrdersStrings.addPayment,

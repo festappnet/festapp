@@ -9,7 +9,7 @@ const root=path.resolve(import.meta.dirname,'../..');
 test('compiled help owns fresh bundle sitemap and synchronizes unchanged documents',t=>{
  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-built-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
  const put=(file,content)=>{const target=path.join(temporary,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,content);};
- put('project.conf','WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\n');
+ put('project.conf','WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs\nWEB_SUPPORTED_LANGUAGES=cs\n');
  put('dist/index.html','<html><head><title>Compiled public client</title></head></html>');
  put('dist/.vite/manifest.json',JSON.stringify({'src/marketing/help.js':{file:'web-assets/help.js'}}));
  put('dist/web-assets/help.js','/* compiled helper */');put('dist/assets/translations/cs.json','{}');
@@ -26,7 +26,7 @@ test('compiled help owns fresh bundle sitemap and synchronizes unchanged documen
 test('public guides render crawlable linked documents, code generator without unpublished plugin downloads',t=>{
  const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
  const target=path.join(temporary,'napoveda');const config=path.join(temporary,'project.conf');
- fs.writeFileSync(config,'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\n');
+ fs.writeFileSync(config,'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs\nWEB_SUPPORTED_LANGUAGES=cs\n');
  const render=()=>spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target],{encoding:'utf8'});
  let run=render();assert.equal(run.status,0,run.stderr);
  const pages=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/pages.json')));
@@ -40,6 +40,10 @@ test('public guides render crawlable linked documents, code generator without un
   assert.ok(html.includes(`rel="canonical" href="https://vstupenky.online/napoveda/${page.slug?page.slug+'/':''}"`));
   assert.match(html,/data-help-search/);assert.match(html,/assets\/search\.[a-f0-9]+\.js/);assert.match(html,/BreadcrumbList/);if(page.id.startsWith('category.'))assert.match(html,/ItemList/);
   assert.match(html,/application\/ld\+json/);assert.doesNotMatch(html,/\{\{/);
+  assert.match(html, /property="og:image" content="https:\/\/vstupenky\.online\/organizers-media\/organizers-social\.png"/);
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
+  assert.match(html, /name="twitter:description"/);
+
   if(page.id==='ai-agents') assert.doesNotMatch(html,/codex/i,'MCP guide metadata and body are client independent');
   if(page.id==='fio-token') {
    assert.equal((html.match(/<iframe /g)||[]).length,1);
@@ -101,35 +105,89 @@ test('public guides render crawlable linked documents, code generator without un
  const joomla=fs.readFileSync(path.join(target,'joomla/index.html'),'utf8');assert.match(joomla,/Přístupný název iframe/);assert.match(joomla,/Uložený veřejný odkaz na formulář/);
  const wix=fs.readFileSync(path.join(target,'wix/index.html'),'utf8');assert.match(wix,/Add to Site/);assert.match(wix,/Přístupný název formuláře/);
  const measurement=fs.readFileSync(path.join(target,'mereni-formularu/index.html'),'utf8');
+ assert.match(measurement,/id="prenos"/);
+ assert.match(measurement,/Konfigurace exportovaná z Festappu/);
+ assert.doesNotMatch(measurement,/"organization":1|"unit":2|"consentRevision":"[a-f0-9]{32}"/,'organizer help must not teach hand-written server scope');
+ for(const guide of [joomla,wix,fs.readFileSync(path.join(target,'webnode/index.html'),'utf8')])assert.ok(guide.includes('/napoveda/mereni-formularu/#prenos'),'every supported website guide leads to the same export workflow');
  const presetName=measurement.match(/href="\/napoveda\/assets\/(festapp-host-gtm\.[a-f0-9]+\.json)" download/)[1];
  const presetBytes=fs.readFileSync(path.join(target,'assets',presetName));
  assert.deepEqual(presetBytes,fs.readFileSync(path.join(root,'integrations/measurement/festapp-host-gtm.json')),'public download is the validated canonical preset');
  assert.ok(JSON.parse(presetBytes).containerVersion.tag.every(tag=>tag.paused),'customer imports start paused');
  assert.ok(embed.includes('/napoveda/mereni-formularu/'),'embed generator guide leads to measurement setup');
  const before=fs.readFileSync(path.join(target,'index.html'));run=render();assert.equal(run.status,0,run.stderr);assert.deepEqual(fs.readFileSync(path.join(target,'index.html')),before);
- const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en','--preview'],{encoding:'utf8'});
+ const enTarget=path.join(temporary,'help');
+ fs.writeFileSync(config,'WEB_LINK=https://tickets.festapp.net\nAPP_NAME=Festapp Tickets\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_ORGANIZER_CONTENT_PROFILE=festapp-en\nWEB_SUPPORTED_LANGUAGES=en\n');
+ const apiHelp=fs.readFileSync(path.join(target,'integrace/index.html'),'utf8');
+ assert.match(apiHelp,/id="api"/);
+ assert.ok(apiHelp.includes('href="https://api.vstupenky.online/integrations/v1/proofs/dpop/docs/" target="_blank"'));
+ assert.ok(apiHelp.includes('href="https://api.vstupenky.online/integrations/v1/proofs/dpop/openapi.json"'));
+ assert.ok(apiHelp.includes('href="/napoveda/webhooky/"'),'webhook setup is discoverable under integrations');
+ const webhooks=fs.readFileSync(path.join(target,'webhooky/index.html'),'utf8');
+ assert.ok(webhooks.includes('href="https://api.vstupenky.online/integrations/v1/proofs/dpop/docs/"'));
+ assert.ok(webhooks.includes('href="/napoveda/assets/webhook-receiver.mjs" download'));
+ assert.equal(fs.readFileSync(path.join(target,'assets/webhook-receiver.mjs'),'utf8'),fs.readFileSync(path.join(root,'tools/festapp/examples/webhook-receiver.mjs'),'utf8'));
+ const apiSearchSource=fs.readFileSync(path.join(target,'assets',fs.readdirSync(path.join(target,'assets')).find(name=>/^search\.[a-f0-9]+\.js$/.test(name))),'utf8');
+ const apiSearchData=JSON.parse(apiSearchSource.slice('globalThis.FestappHelpSearchData='.length,apiSearchSource.indexOf(';\n')));
+ const apiEntry=apiSearchData.entries.find(entry=>entry.id==='api-reference');
+ assert.equal(apiEntry.url,'/napoveda/integrace/#api');
+ assert.ok(apiEntry.aliases.includes('Swagger'));
+ const webhookEntry=apiSearchData.entries.find(entry=>entry.id==='webhooks');
+ assert.equal(webhookEntry.url,'/napoveda/webhooky/');
+ assert.ok(webhookEntry.aliases.includes('automatizace'));
+ const english=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',enTarget,'--preview'],{encoding:'utf8'});
  assert.equal(english.status,0,english.stderr);
+ const globalApiHelp=fs.readFileSync(path.join(enTarget,'integrations/index.html'),'utf8');
+ assert.ok(globalApiHelp.includes('href="https://api.festapp.net/integrations/v1/proofs/dpop/docs/" target="_blank"'));
+ assert.ok(globalApiHelp.includes('href="https://api.festapp.net/integrations/v1/proofs/dpop/openapi.json"'));
+ assert.doesNotMatch(globalApiHelp,/api\.vstupenky\.online/);
+ assert.ok(globalApiHelp.includes('href="/help/webhooks/"'));
+ const englishWebhooks=fs.readFileSync(path.join(enTarget,'webhooks/index.html'),'utf8');
+ assert.ok(englishWebhooks.includes('href="https://api.festapp.net/integrations/v1/proofs/dpop/docs/"'));
+ assert.ok(englishWebhooks.includes('href="/help/assets/webhook-receiver.mjs" download'));
  const englishPages=JSON.parse(fs.readFileSync(path.join(root,'automation/release/help/pages.en.json')));
- for(const page of englishPages.filter(p=>p.category)) assert.equal(mediaById.get(page.preview)?.locale,'en','English preview uses English UI captures');
- assert.deepEqual(englishPages.map(p=>p.id),pages.map(p=>p.id),'both locales address the same topics');
+ const regionalTopics=new Set(['wordpress','joomla','wix','ai-agents','mcp-reference']);
+ assert.deepEqual(englishPages.map(p=>p.id),pages.filter(p=>!regionalTopics.has(p.id)).map(p=>p.id),'global help publishes only integrations currently available globally');
  for(const page of englishPages){
-  const html=fs.readFileSync(path.join(target,page.slug,'index.html'),'utf8');
-  assert.match(html,/<html lang="en">/);
-  if(page.id==='ai-agents') assert.doesNotMatch(html,/codex/i,'English MCP guide metadata and body are client independent');
-  assert.doesNotMatch(html,/<title>[^<]*undefined/);
-  if(page.id==='fio-token') assert.match(html,/www\.youtube-nocookie\.com\/embed\/px9MCABSQbI/);assert.match(html,/noindex,nofollow/);
-  assert.doesNotMatch(html,/\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English preview has no Czech chrome or screenshot fallback');
-  if(coreTopics.includes(page.id)) assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing localized screenshot: ${page.id}`);
-  for(const match of html.matchAll(/(?:href|src)="(\/napoveda\/[^"#]*)(?:#[^"]*)?"/g)){
-   const local=match[1].slice('/napoveda/'.length);assert.ok(fs.existsSync(local.endsWith('/')||!local?path.join(target,local,'index.html'):path.join(target,local)),match[1]);
+  const html=fs.readFileSync(path.join(enTarget,page.slug,'index.html'),'utf8');
+  assert.match(html,/<html lang="en">/);assert.match(html,/noindex,nofollow/);
+  for (const tag of ['property="og:image"', 'name="twitter:image"']) assert.ok(html.includes(`${tag} content="https://tickets.festapp.net/organizers-media/global/festapp-tickets-social.png"`));
+  assert.match(html, /property="og:locale" content="en_US"/);
+  assert.match(html, /property="og:image:width" content="1200"/);
+  assert.match(html, /property="og:image:height" content="630"/);
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
+
+  assert.doesNotMatch(html,/vstupenky\.online|\{\{|Nápověda|Přihlásit se|cs-webnode-/,'English guide has no regional branding, Czech chrome or screenshot fallback');
+  assert.match(html,/https:\/\/cal\.com\/michael-bujnovsky-5srszz\/ukazka/,'all guides use the canonical booking target');
+  if(coreTopics.includes(page.id))assert.match(html,/<figure class="guide-screenshot(?: guide-screenshot-mobile)?">/,`Missing localized screenshot: ${page.id}`);
+  for(const match of html.matchAll(/(?:href|src)="(\/help\/[^"#]*)(?:#[^"]*)?"/g)){
+   const local=match[1].slice('/help/'.length);assert.ok(fs.existsSync(local.endsWith('/')||!local?path.join(enTarget,local,'index.html'):path.join(enTarget,local)),match[1]);
   }
  }
- const enMeasurement=fs.readFileSync(path.join(target,'form-measurement/index.html'),'utf8');
+ for(const slug of ['', 'integrations', 'form-measurement'])assert.doesNotMatch(fs.readFileSync(path.join(enTarget,slug,'index.html'),'utf8'),/WordPress|Joomla|Wix|MCP|agent access/,'global help does not promote withheld integrations');
+ assert.equal(fs.existsSync(path.join(enTarget,'assets/mcp-reference.json')),false,'regional-only MCP metadata is not shipped');
+ const enMeasurement=fs.readFileSync(path.join(enTarget,'form-measurement/index.html'),'utf8');
+ assert.match(enMeasurement,/id="transfer"/);
+ assert.doesNotMatch(enMeasurement,/"organization":1|"unit":2|"consentRevision":"[a-f0-9]{32}"/,'English help must not restore the manual server scope workflow');
  assert.ok(enMeasurement.includes(presetName),'both languages download one canonical preset');
- const refused=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',target,'--locale','en'],{encoding:'utf8'});
- assert.notEqual(refused.status,0,'English publication requires completed localized evidence');
- assert.ok(fs.existsSync(path.join(target,'index.html')),'invalid invocation does not delete the preview');
- fs.writeFileSync(config,'WEB_LINK=https://other.invalid\nWEB_ORGANIZER_LANDING_ENABLED=false\n');run=render();assert.equal(run.status,0,run.stderr);assert.equal(fs.existsSync(target),false,'tenant switch removes Czech help and download');
+ const published=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',enTarget],{encoding:'utf8'});
+ assert.equal(published.status,0,published.stderr);
+ const publishedHome=fs.readFileSync(path.join(enTarget,'index.html'),'utf8');
+ assert.match(publishedHome,/rel="canonical" href="https:\/\/tickets\.festapp\.net\/help\/"/);
+ assert.match(publishedHome,/name="robots" content="index,follow"/);
+ fs.writeFileSync(config,'WEB_LINK=https://other.invalid\nWEB_ORGANIZER_LANDING_ENABLED=false\nWEB_ORGANIZER_CONTENT_PROFILE=festapp-en\nWEB_SUPPORTED_LANGUAGES=en\n');
+ const disabled=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output',enTarget],{encoding:'utf8'});
+ assert.equal(disabled.status,0,disabled.stderr);assert.equal(fs.existsSync(enTarget),false,'disabled tenant does not retain English help');
+
+});
+
+test('disabled organizer help cleans both language outputs for other tenant locales',t=>{
+ const temporary=fs.mkdtempSync(path.join(os.tmpdir(),'festapp-disabled-help-'));t.after(()=>fs.rmSync(temporary,{recursive:true,force:true}));
+ const config=path.join(temporary,'project.conf');
+ fs.writeFileSync(config,'WEB_LINK=https://other.invalid\nWEB_ORGANIZER_LANDING_ENABLED=false\nWEB_SUPPORTED_LANGUAGES=sk\n');
+ for(const language of ['napoveda','help'])fs.mkdirSync(path.join(temporary,'output',language),{recursive:true});
+ const result=spawnSync(process.execPath,[path.join(root,'automation/release/render_help_pages.mjs'),'--config',config,'--output-root',path.join(temporary,'output')],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stderr);
+ for(const language of ['napoveda','help'])assert.equal(fs.existsSync(path.join(temporary,'output',language)),false);
 });
 
 test('phone scanner guides use only mobile webclient captures in both locales',()=>{
@@ -141,7 +199,7 @@ test('phone scanner guides use only mobile webclient captures in both locales',(
   const figures=[...`${door}\n${settings}`.matchAll(/\{\{MEDIA:([^}]+)\}\}/g)];
   assert.match(settings,/\{\{APP_LINK:scanner-settings\}\}/,'organizer settings must open the matching help intent');
   assert.doesNotMatch(door,/MEDIA:[^}]+\/(?:field-options|advanced|preview)\}\}/,'door staff recovery stays separate from organizer setup');
-  for(const state of ['invalid-access','not-found','settings','field-options','advanced','preview']) {
+  for(const state of [...(locale==='cs'?['invalid-access']:[]),'not-found','settings','field-options','advanced','preview']) {
    assert.ok(figures.some(([,id])=>id===`${locale}/scanner-advanced/${state}`),`Missing actual ${locale} scanner walkthrough: ${state}`);
   }
   for(const [,id] of figures){

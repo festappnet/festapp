@@ -25,6 +25,8 @@ BEGIN
  BEGIN
   PERFORM public.set_stripe_unit_feature(other_unit,true);RAISE EXCEPTION 'foreign admin enabled feature';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(u,actor,true);
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'stripe',true);
  PERFORM public.set_stripe_unit_feature(u,true);
  PERFORM assert_true(public.stripe_unit_feature_enabled_internal(u),'tenant admin enables selected unit');
  PERFORM assert_false(public.stripe_unit_feature_enabled_internal(other_unit),'other tenant stays hidden');
@@ -33,6 +35,6 @@ BEGIN
  PERFORM assert_eq(cfg#>>'{unit,stripe_preview_enabled}','true','context projects enabled unit');
  PERFORM public.set_stripe_unit_feature(u,false);
  PERFORM assert_false(public.stripe_unit_feature_enabled_internal(u),'admin can hide feature again');
- PERFORM assert_false(has_table_privilege('authenticated','eshop.stripe_unit_features','UPDATE'),'clients cannot modify hidden settings directly');
- PERFORM assert_false(has_table_privilege('service_role','eshop.stripe_unit_features','UPDATE'),'service role has no table write grant');
+ PERFORM assert_false(has_table_privilege('authenticated','eshop.unit_payment_method_policies','UPDATE'),'clients cannot modify policy directly');
+ PERFORM assert_true(to_regclass('eshop.stripe_unit_features') IS NULL,'legacy feature store contracted');
 END $$;

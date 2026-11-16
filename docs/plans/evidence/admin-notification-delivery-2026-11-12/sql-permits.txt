@@ -1,0 +1,18 @@
+Found 2 test file(s) to execute.
+>>> Setup: Resetting Sequences (Global)...
+>>> Setup Complete.
+
+
+▶ Running: database/tests/notification_center/admin_email_send_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_budget_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (97 ms): database/tests/notification_center/admin_email_send_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (345 ms): database/tests/notification_center/admin_email_budget_test.sql
+
+==================================================
+SUMMARY: 2 Passed, 0 Failed
+==================================================

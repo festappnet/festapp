@@ -45,6 +45,11 @@ BEGIN
  PERFORM public.reserve_public_link_internal('occasion',occ,occasion_link,true);
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  SET LOCAL ROLE authenticated;
+ report:=public.get_transactions_for_order(ord);
+ PERFORM assert_true((report->>'ledgerComplete')::boolean,'known provider history is complete');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM jsonb_array_elements(report->'transactions') t
+  WHERE t->>'transaction_type'='dispute' AND t->>'source'='provider' AND t->>'status'='needs_response'
+  AND t->'amount'='null'::jsonb AND (t->>'heldAmount')::numeric=10),'dispute history is a status fact, never a refund movement');
  report:=public.get_report_ws(occasion_link);
  RESET ROLE;
  PERFORM assert_eq(report->>'code','200','canonical report includes Stripe facts');

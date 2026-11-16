@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS eshop.ticket_wallet_integrations (
  publishing_ready boolean NOT NULL DEFAULT false,
  web_origin text NOT NULL CHECK(web_origin ~ '^https://[^/#?]+$'),
  badge_urls jsonb NOT NULL DEFAULT '{}',
- next_request_at timestamptz NOT NULL DEFAULT now()
+ next_request_at timestamptz NOT NULL DEFAULT now(),
+ paused boolean NOT NULL DEFAULT false
 );
 CREATE TABLE IF NOT EXISTS eshop.ticket_wallet_capabilities (
  ticket_id bigint PRIMARY KEY, organization bigint NOT NULL, occasion bigint NOT NULL,
@@ -19,12 +20,9 @@ CREATE TABLE IF NOT EXISTS eshop.ticket_wallet_capabilities (
 CREATE TABLE IF NOT EXISTS eshop.ticket_wallet_objects (
  ticket_id bigint PRIMARY KEY, organization bigint NOT NULL, occasion bigint NOT NULL,
  issuer text NOT NULL, environment text NOT NULL, object_id text UNIQUE NOT NULL,
- class_id text NOT NULL, lease uuid, lease_until timestamptz,
- next_attempt timestamptz NOT NULL DEFAULT now(), last_synced timestamptz,
- failures integer NOT NULL DEFAULT 0, last_error text,
+ class_id text NOT NULL,
  created_at timestamptz NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS ticket_wallet_due ON eshop.ticket_wallet_objects(next_attempt,ticket_id);
 CREATE TABLE IF NOT EXISTS eshop.ticket_wallet_audit (
  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY, ticket_id bigint NOT NULL,
  generation integer NOT NULL, token_hash text NOT NULL, actor uuid NOT NULL, action text NOT NULL CHECK(action IN ('revoke','reissue')),

@@ -13,6 +13,7 @@ class UnitModel {
   UnitUserModel? unitUser;
   int aggregateVersion;
   final bool stripePreviewEnabled;
+  final Map<String, dynamic>? paymentMethodPolicy;
 
   UnitModel({
     this.id,
@@ -24,12 +25,14 @@ class UnitModel {
     this.unitUser,
     this.aggregateVersion = 0,
     this.stripePreviewEnabled = false,
+    this.paymentMethodPolicy,
   });
 
   factory UnitModel.fromJson(Map<String, dynamic> json) {
     return UnitModel(
       id: json[Tb.units.id],
       stripePreviewEnabled: json['stripe_preview_enabled'] == true,
+      paymentMethodPolicy: json['payment_method_policy'] is Map ? Map<String, dynamic>.from(json['payment_method_policy']) : null,
       title: json[Tb.units.title],
       data: json[Tb.units.data],
       features: json[Tb.units.features] is List
@@ -58,6 +61,7 @@ class UnitModel {
       "unit_user": unitUser?.toJson(),
       'aggregate_version': aggregateVersion,
       'stripe_preview_enabled': stripePreviewEnabled,
+      'payment_method_policy': paymentMethodPolicy,
     };
   }
 }

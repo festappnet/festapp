@@ -14,6 +14,8 @@ class TransactionModel extends ITrinaRowModel {
   @override
   int? id;
   int? transactionId;
+  String? source, sourceId, provider, status;
+  double? heldAmount;
   DateTime? date;
   double? amount;
   String? currency;
@@ -52,6 +54,11 @@ class TransactionModel extends ITrinaRowModel {
   TransactionModel({
     this.id,
     this.transactionId,
+    this.source,
+    this.sourceId,
+    this.provider,
+    this.status,
+    this.heldAmount,
     this.date,
     this.amount,
     this.currency,
@@ -87,6 +94,11 @@ class TransactionModel extends ITrinaRowModel {
     return TransactionModel(
       id: json[TbEshop.transactions.id],
       transactionId: json[TbEshop.transactions.transaction_id],
+      source: json['source'],
+      sourceId: json['sourceId'],
+      provider: json['provider'],
+      status: json['status'],
+      heldAmount: (json['heldAmount'] as num?)?.toDouble(),
       date: json[TbEshop.transactions.date] != null
           ? DateTime.parse(json[TbEshop.transactions.date])
           : null,
@@ -208,6 +220,11 @@ class TransactionModel extends ITrinaRowModel {
           ? null
           : json[TbEshop.transactions.id],
       transactionId: json[TbEshop.transactions.transaction_id],
+      source: json['source'],
+      sourceId: json['sourceId'],
+      provider: json['provider'],
+      status: json['status'],
+      heldAmount: (json['heldAmount'] as num?)?.toDouble(),
       amount: (json[TbEshop.transactions.amount] ?? 0).toDouble(),
       currency: json[TbEshop.transactions.currency],
       counterAccount: json[TbEshop.transactions.counter_account],

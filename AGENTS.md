@@ -16,6 +16,48 @@ repository.
   when its overview avoids reading a large file. Do not initialize it solely
   because it is available. If selected, read its initial instructions once.
 
+## Test ownership before publication
+
+- Before publishing added or moved tests, run `python3 automation/ci/run.py inventory`.
+  It checks SQL ownership and that expected Flutter cases have an executed CI
+  entrypoint. Keep the canonical test inventory explicit.
+- Validate new Flutter CI cases through the actual entrypoint in
+  `automation/ci/checks.json` and record its executed semantic cases. A passing
+  component or local-only runner does not attest registration in CI.
+
+## Automatic cleanup after merge
+
+- After a successful merge, automatically retire the task's temporary worktree
+  and its local and remote source branches as part of completing the task.
+  This is standing authorization; do not ask for cleanup confirmation again.
+- Fetch the authoritative target and verify that the merged change is present.
+  For squash or rebase merges, verify the merged PR and its exact source head
+  instead of requiring the original branch tip to be an ancestor.
+- Finish any release, checks or other active work that still needs the source
+  checkout first. Check for other sessions using it and preserve uncommitted
+  changes and necessary ignored inputs, including credentials and release files.
+  Remove only regenerable build output and caches without preserving them.
+- Run cleanup from a retained checkout, use ordinary `git worktree remove`, and
+  delete only the verified source refs. Guard remote deletion with the expected
+  branch SHA so a concurrent update cannot be lost. Prune stale remote refs.
+- Preserve the primary checkout, `main`, `master`, `prod/*`, `gh-pages` and any
+  other long-lived branch. Never force-remove dirty or active worktrees, discard
+  unique work, or interrupt another task to perform routine cleanup. If cleanup
+  must wait, record the concrete reason and complete it when that dependency ends.
+
+## Explain large additions before publication
+
+- Before publishing a change adding 10,000 or more text lines, explain the
+  added line count, affected files, purpose and smaller alternatives to the
+  user. This applies to ordinary code, tests, dependencies, documentation and
+  generated files throughout the repository. Do not hide growth by splitting
+  a publication into smaller commits.
+- Record the concrete explanation in a `Large-change-reason:` commit trailer
+  of at least 80 characters. Each individual commit adding 10,000 lines also
+  needs its own explanation. Prefer removing unnecessary additions over
+  recording a generic waiver. The `server-policy` CI job enforces this check
+  on every run, before any cached test result can be reused.
+
 ## Tenant branch and Flutter build scope
 
 - By default, work on `main` and at most one currently selected tenant or
@@ -32,6 +74,23 @@ repository.
   in scope and keep versions consistent within that approved set.
 - Read-only inventory and drift checks across branches are allowed when needed
   to assess impact; they do not authorize writes, builds, or deployments.
+
+## Canonical software version
+
+- `automation/release/software-version.conf` on `main` owns the single Festapp
+  software version and numeric build for every tenant, web, iOS and Android.
+- Every new release inherits that version from its verified main base. Upgrade
+  an old tenant base before releasing; never retain or allocate a tenant-specific
+  version just because its previous store release used a lower number.
+- Advance the shared version once for a new software generation, above every
+  previously released build. Reuse that generation across its selected releases.
+  A store collision requires a new shared generation, not a package-only bump.
+- `project.conf`, pubspec, package metadata and HTML version stamps are generated
+  projections. Tenant inputs, environment variables and CLI arguments cannot
+  override the canonical version. Previously published artifacts retain their
+  historical version; this rule does not authorize releases of other tenants.
+- Android builds and Google Play operations run exclusively through the
+  canonical GitHub-hosted release workflows, never on local workstations.
 
 ## Production web release execution
 

@@ -118,3 +118,15 @@ Deno.test("contact repair reuses the existing order capability without rewriting
     else Deno.env.set("EMAIL_PAYLOAD_KEY", previous);
   }
 });
+
+Deno.test('self-service companion follows server actions and preserves one authored overview button',()=>{
+ const url='https://tickets.example/order?order_id=42&token='+'a'.repeat(64);
+ const actions=[{operation:'edit',enabled:true},{operation:'cancel',enabled:false},{operation:'move',enabled:true}];
+ const links=overviewRequiredLinks(url,'cs',actions);
+ const authored=`<p>Vlastní text pořadatele.</p><a href="${url.replaceAll('&','&amp;')}">Moje objednávka</a>`;
+ const rendered=completeEmailContent(completeEmailContent(authored,links),links);
+ assert.equal((rendered.match(/<a /g)||[]).length,1);assert.equal((rendered.match(/data-festapp-order-changes/g)||[]).length,1);
+ assert.match(rendered,/Vlastní text pořadatele/);assert.doesNotMatch(rendered,/upravit údaje/);assert.match(rendered,/změnu termínu/);assert.doesNotMatch(rendered,/požádat o storno/);
+ assert.equal(completeEmailContent('<p>Bez tlačítka.</p>',links),'<p>Bez tlačítka.</p>');
+ const off=completeEmailContent(authored,overviewRequiredLinks(url,'cs',[]));assert.doesNotMatch(off,/data-festapp-order-changes/);
+});

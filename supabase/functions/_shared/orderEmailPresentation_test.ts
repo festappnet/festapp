@@ -1,3 +1,4 @@
+import { generateFullOrder } from "./orderOverview.ts";
 import type { Tone } from "./communicationTone.ts";
 import {
   assertEquals,
@@ -18,6 +19,7 @@ export function examples(p: typeof presentation) {
         account_number_human_readable: "0000000000/0000",
       };
       const payment = {
+      payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: true},
         ...bank,
         amount: 800,
         paid: 0,
@@ -134,6 +136,7 @@ Deno.test("payment presentation retains exact pre-extraction producer output", a
 
 Deno.test("zero and deposit confirmation use canonical text and total scalar", () => {
   const payment = {
+    payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: true},
     amount: 800,
     currency_code: "CZK",
     deposit_amount: 300,
@@ -182,7 +185,7 @@ Deno.test("generated confirmation examples retain canonical zero text and deposi
     ),
   );
   const confirmations = asset.records.filter((r: any) =>
-    r.templateCode === "TICKET_ORDER_CONFIRMATION"
+    r.templateCode === "TICKET_ORDER_CONFIRMATION" && r.paymentMethod === "bank"
   );
   assertEquals(confirmations.length, 12);
   for (const record of confirmations) {
@@ -209,7 +212,7 @@ Deno.test('cash confirmation, updates and paid notices share saved instructions 
   }
 });
 Deno.test('bank none keeps deposit amounts but never inherits feature deadline text',()=>{
-  const info={payment_method:'bank',amount:800,deposit_amount:300,currency_code:'CZK',account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',variable_symbol:123,data:{payment_policy:{mode:'none'}}};
+  const info={collectionAction:{method:'bank',purpose:'collect_payment',allowed:true},payment_method:'bank',amount:800,deposit_amount:300,currency_code:'CZK',account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',variable_symbol:123,data:{payment_policy:{mode:'none'}}};
   const features=[{code:'deposit',deposit_deadline_days:7}];
   for(const lang of ['cs','en']) {
     const text=presentation.confirmationPaymentSubstitutions(info,features,lang,'formal').balanceReasoning;
@@ -229,4 +232,31 @@ Deno.test('confirmed net drives paid and balance copy after partial/full refund'
     assertEquals(presentation.confirmedNetPayment({...info,returned:'1000.00'}),0);
     assertEquals(presentation.confirmedNetPayment({...info,returned:'1200.00'}),-200);
   }
+});
+
+Deno.test('discount email shows original line prices and one aligned final discounted total', () => {
+  const order = {discount:{code:'SLEVA<kod>',base:100,discount:30,net:70,currency:'CZK'}};
+  const tickets = [{ticket_symbol:'ABC',products:[{title:'Vstupné',base_price:100,price:70,currency_code:'CZK'}]}];
+  const html = generateFullOrder(order,tickets,[],'cs');
+  const [items,summary] = html.split('<div class="order-discount-summary"');
+  assertStringIncludes(items,'100');
+  assertEquals(items.includes('>70'),false);
+  assertStringIncludes(summary,'Slevový kód: <strong>SLEVA&lt;kod&gt;</strong>');
+  assertStringIncludes(summary,'−30');
+  assertStringIncludes(summary,'Cena po slevě');
+  assertEquals(summary.includes('Celková cena:'),false);
+  assertEquals(tickets[0].products[0].price,70);
+});
+
+Deno.test('discount email retains original cancellation facts beside the current zero total', () => {
+  const html = generateFullOrder({discount:{code:'SAVE',base:100,discount:30,net:70,currency:'CZK'}},[],[],'cs');
+  assertStringIncludes(html,'Původní prodej před stornem');
+  assertStringIncludes(html,'Cena po slevě');
+  assertStringIncludes(html,'Celková cena: 0');
+});
+
+Deno.test('discount email keeps decimal amounts without forcing trailing zeros or double subtraction', () => {
+  const html = generateFullOrder({discount:{code:'SAVE',base:100.5,discount:30.25,net:70.25,currency:'CZK'}},[{products:[{base_price:100.5,price:70.25}]}],[],'cs');
+  for (const value of ['100,5','−30,25','70,25']) assertStringIncludes(html,value);
+  assertEquals(html.includes('100,50'),false);
 });

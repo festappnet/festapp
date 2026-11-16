@@ -1,6 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class UnitSettingsStrings {
+  static String get measurementSummaryEnabled =>
+      'UnitSettings.measurementSummaryEnabled'.tr();
+  static String get measurementSummaryDisabled =>
+      'UnitSettings.measurementSummaryDisabled'.tr();
   static String get labelOrganizationName =>
       'UnitSettings.labelOrganizationName'.tr();
   static String get labelReplyToEmail => 'UnitSettings.labelReplyToEmail'.tr();

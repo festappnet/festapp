@@ -7,6 +7,8 @@ BEGIN
  PERFORM public.create_user_for_test('cash-setup','cash-setup-'||gen_random_uuid()||'@example.invalid');
  actor:=public.get_user_id('cash-setup');
  INSERT INTO public.organizations(title) VALUES('Cash setup') RETURNING id INTO org;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'cash');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'cash',true);
  UPDATE public.user_info SET organization=org WHERE id=actor;
  INSERT INTO public.units(title,organization) VALUES('Cash setup',org) RETURNING id INTO un;
  INSERT INTO public.unit_users(unit,"user",is_manager,is_editor) VALUES(un,actor,true,true);

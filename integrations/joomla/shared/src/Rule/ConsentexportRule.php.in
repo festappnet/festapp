@@ -1,0 +1,15 @@
+<?php
+namespace Festapp\Module\@@NAMESPACE@@\Site\Rule;
+use Joomla\CMS\Form\Form;
+use Joomla\CMS\Form\FormRule;
+use Joomla\Registry\Registry;
+use Festapp\Module\@@NAMESPACE@@\Site\Helper\EmbedHelper;
+defined('_JEXEC') or die;
+final class ConsentexportRule extends FormRule
+{
+    public function test(\SimpleXMLElement $element, $value, $group = null, ?Registry $input = null, ?Form $form = null)
+    {
+        if ($value === '' || $value === null) { return true; }
+        return EmbedHelper::consent(['consent_enabled'=>1,'consent_export'=>$value]) !== null;
+    }
+}

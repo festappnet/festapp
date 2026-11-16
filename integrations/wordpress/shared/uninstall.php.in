@@ -1,0 +1,11 @@
+<?php
+/**
+ * Remove the only plugin-owned option. Service orders are never touched.
+ *
+ * @package @@NAMESPACE@@
+ */
+
+if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+	exit;
+}
+delete_option( '@@SLUG@@_consent' );

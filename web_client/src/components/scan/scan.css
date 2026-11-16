@@ -5,7 +5,7 @@
     --scan-soft:color-mix(in srgb,var(--primary-color) 6%,var(--surface-color));
     --scan-success:#186445;--scan-success-bg:#e9f5ef;
     --scan-warning:#855000;--scan-warning-bg:#fff4db;
-    --scan-used:#315aab;--scan-used-bg:#edf2fb;
+    --scan-used:var(--scan-warning);--scan-used-bg:var(--scan-warning-bg);
     font-family:Futura,sans-serif;font-size:17px;color:var(--text-color);background:var(--background-color);
     max-width:1048px;min-height:100dvh;padding:24px max(24px,env(safe-area-inset-left)) max(24px,env(safe-area-inset-bottom));
     box-sizing:border-box;overflow-wrap:anywhere;
@@ -111,8 +111,8 @@
 .scan-result.allowed,.scan-result.complete {--scan-tone:var(--scan-success)}
 .scan-result.pending {--scan-tone:var(--scan-warning)}
 .scan-result.used {--scan-tone:var(--scan-used)}
-.scan-result-status {display:flex;align-items:center;gap:8px;color:var(--scan-tone);margin-bottom:20px}
-.scan-result-status h2 {margin:0;font-size:1.1rem;font-weight:500}
+.scan-result-status {display:flex;align-items:center;gap:12px;color:var(--scan-tone);background:color-mix(in srgb,var(--scan-tone) 10%,var(--surface-color));border:1px solid var(--scan-tone);border-radius:12px;padding:16px;margin-bottom:20px}
+.scan-result-status h2 {margin:0;font-size:1.1rem;font-weight:700}
 .scan-result-icon {display:grid;place-items:center;flex-shrink:0;width:24px;height:24px}
 .scan-result-icon .scan-icon {width:24px;height:24px}
 .scan-result h3 {margin:0 0 4px}
@@ -213,7 +213,7 @@
     .scan-layout.camera-mode.has-result {grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);grid-template-rows:minmax(0,1fr)}
     .camera-mode.has-result .scan-camera {height:min(35dvh,160px)}
 }
-body.dark-mode .scan-shell {--scan-success:#8bdeb2;--scan-success-bg:#1c3d32;--scan-warning:#f4cd85;--scan-warning-bg:#47391f;--scan-used:#9bbdf6;--scan-used-bg:#263751;--scan-muted:#b2bdca;--scan-line:#46505e;color:#e8edf4}
+body.dark-mode .scan-shell {--scan-success:#8bdeb2;--scan-success-bg:#1c3d32;--scan-warning:#f4cd85;--scan-warning-bg:#47391f;--scan-used:var(--scan-warning);--scan-used-bg:var(--scan-warning-bg);--scan-muted:#b2bdca;--scan-line:#46505e;color:#e8edf4}
 body.dark-mode .scan-shell .scan-primary {color:#12243a}
 body.dark-mode .scan-shell .scan-primary:hover:not(:disabled) {background:#a0cdf5}
 @media(prefers-reduced-motion:reduce) {.scan-shell * {transition:none!important;animation:none!important}}
@@ -320,3 +320,5 @@ body.dark-mode .scan-shell .scan-primary:hover:not(:disabled) {background:#a0cdf
     .scan-entry [data-open] {gap:20px}
     .scan-saved {padding:0 4px}
 }
+
+.scan-payment {color:var(--scan-warning);border-color:var(--scan-warning);background:var(--scan-warning-bg)}

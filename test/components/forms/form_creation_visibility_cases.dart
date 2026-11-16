@@ -93,6 +93,10 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
+          if (detail) {
+            await tester.tap(find.byType(PopupMenuButton<Object>));
+            await tester.pumpAndSettle();
+          }
           expect(
             find.text(FormStrings.createNewForm),
             canCreate ? findsOneWidget : findsNothing,
@@ -102,7 +106,11 @@ void main() {
               find.byType(PopupMenuButton<String>),
               canCreate ? findsNWidgets(2) : findsNothing,
             );
-          if (detail) expect(find.text('Readable form'), findsOneWidget);
+          if (detail) {
+            await tester.tapAt(const Offset(1, 1));
+            await tester.pumpAndSettle();
+            expect(find.text('Readable form'), findsOneWidget);
+          }
         },
       );
     }

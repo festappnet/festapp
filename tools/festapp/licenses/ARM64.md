@@ -1,0 +1,5 @@
+# Native notice architecture mapping
+
+The production image uses Linux ARM64 GNU. Include `canvas-1.0.11/sbom-linux-arm64-gnu.cdx.json` and `keyring-2.1.2/LICENSE.third-party-linux-arm64-gnu.md` with the existing canvas 1.0.11 and keyring 2.1.2 license directories; keep their existing parent licenses, canvas Skia notices, FreeType acknowledgement, third-party notices and MPL source material.
+
+The canvas ARM64 and x64 GNU 1.0.11 SBOMs have exactly identical 106 library component records, including all available checksums: 93 components include hashes and 13 do not. The native file's hash differs as expected for a distinct architecture; the ARM64 SBOM's binary SHA-256 matches the npm tarball's extracted binary. No different library versions or source obligations were identified by this comparison. The ARM64 keyring notice differs from its x64 counterpart only in the binary name and target architecture. `provenance.json` records artifact URLs and hashes. SBOM equality is not independent proof of every linked component or binary reproducibility.

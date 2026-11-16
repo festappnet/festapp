@@ -1,3 +1,5 @@
+import { walletPreviewBadge } from '../_shared/wallet/emailProviders.ts';
+import {bankCollectionAllowed} from '../_shared/orderEmailPresentation.ts';
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { ticketEmailSubstitutions } from "../_shared/ticketEmail.ts";
 import {
@@ -5,6 +7,7 @@ import {
 } from "../_shared/ticketDelivery.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
+import { walletEmailTicket, walletEmailSection, walletTicketLabel, walletCollectionLabel, walletEmailIndividual } from '../_shared/ticketWalletEmail.ts';
 import defaults from "../_shared/emailPreviewDefaults.json" with {
   type: "json",
 };
@@ -58,7 +61,8 @@ export function previewOrder(
     payment_info: {
       amount,
       currency_code: currency,
-      payment_method: configuration?.paymentInfo?.payment_method ?? 'bank',
+      payment_method: configuration?.paymentInfo?.payment_method ?? null,
+      collectionAction: configuration?.paymentInfo?.collectionAction,
       data: configuration?.paymentInfo?.data,
       deadline: configuration?.paymentInfo && Object.hasOwn(configuration.paymentInfo, 'deadline') ? configuration.paymentInfo.deadline : deadline,
       account_number: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number || defaults.iban : null,
@@ -135,7 +139,12 @@ export async function renderDraftPreview(context: any) {
       };
     });
     if (context.walletEnabled !== false && context.walletReady === true && context.ticketsEnabled === true) {
-      delivery.html += '<p>Google Wallet - ukázka nabídky u každé vstupenky (' + tickets.length + ')</p>';
+      const lang=context.lang??'cs';
+      const actions=Object.entries(context.walletProviders??{}).filter(([,ready])=>ready===true).map(([provider])=>({provider,badge:walletPreviewBadge(provider,lang)}));
+      const rows=context.walletCollectionEnabled===true&&tickets.length>1
+        ? [walletEmailTicket(walletCollectionLabel(tickets.length,lang),actions,lang),...tickets.map((_,i)=>walletEmailIndividual(walletTicketLabel(i+1,tickets.length,lang),undefined,lang))]
+        : tickets.map((_,i)=>walletEmailTicket(walletTicketLabel(i+1,tickets.length,lang),actions,lang));
+      delivery.html += walletEmailSection(rows,lang,tickets.length);
     }
     // Admission QR stays deliberately invalid; only its human-readable sample
     // code is shown. Production delivery continues to show the real symbol.
@@ -150,7 +159,7 @@ export async function renderDraftPreview(context: any) {
     occasion: order.occasion,
     payment_info: { ...order.payment_info, paid: order.payment_info.amount },
     form_data: { communication_tone: context.tone },
-  });
+  }, context.lang ?? 'cs');
   const prepared = await renderEmail({
     to: "preview@example.invalid",
     context: { organization: 0 }, // Resolver below owns the already-authorized hierarchy.
@@ -164,9 +173,7 @@ export async function renderDraftPreview(context: any) {
       ? ticketSubs
       : {
         ...defaults,
-        ...confirmationSubstitutions(
-          order,
-        ),
+        ...confirmationSubstitutions(order, context.lang ?? 'cs'),
       },
     replyTo: context.replyTo ?? undefined,
   }, () => Promise.resolve(context.resolved));
@@ -187,9 +194,13 @@ export async function renderDraftPreview(context: any) {
     emailScope: context.emailScope,
     inheritedEmailBanner: context.inheritedEmailBanner,
     authoringContext: {
+      language:context.lang??'cs',
+      walletReady:context.walletReady===true,
+      walletEnabled:context.ticketsEnabled===true && context.walletReady===true && context.walletEnabled!==false,
+      ticketDeliveryMode:context.ticketsEnabled===true?context.deliveryMode??'pdf_attachment':null,
       senderAddress: prepared.from,
       wrapperHtml: context.resolved?.wrapper?.html,
-      paymentAccounts: context.paymentInfo && isBankPaymentInfo(context.paymentInfo)
+      paymentAccounts: context.paymentInfo && bankCollectionAllowed(context.paymentInfo)
         ? [{
           accountNumber: context.paymentInfo.account_number_human_readable ||
             context.paymentInfo.account_number,

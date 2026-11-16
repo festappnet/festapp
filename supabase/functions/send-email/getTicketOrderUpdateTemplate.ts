@@ -1,3 +1,4 @@
+import { bankCollectionAllowed } from "../_shared/orderEmailPresentation.ts";
 import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
@@ -45,10 +46,11 @@ export async function getTicketOrderUpdateTemplate(
     orderPrice, amountPaid, currency, bank_account, payment_info, lang, tone,
   );
 
-  if (isBankPaymentInfo(payment_info) && orderPrice !== 0 && balance > 0) {
+  if (bankCollectionAllowed(payment_info) && ['CZK','EUR'].includes(payment_info.currency_code) && orderPrice !== 0 && balance > 0) {
     // 4. Generate Payment QR Code if there is a balance
     try {
       const qrPaymentData = {
+        payment_method: payment_info.payment_method, collectionAction: payment_info.collectionAction,
         amount: balance,
         currency_code: currency,
         account_number: bank_account.account_number,

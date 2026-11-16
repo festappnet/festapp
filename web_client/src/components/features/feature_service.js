@@ -1,3 +1,5 @@
+import { usesTicketTerminology } from '../../../../supabase/functions/_shared/orderItemTerminology.ts';
+
 /**
  * Default currency for visual-only meta surcharge when admin leaves the per-product
  * currency field empty. Matches the placeholder shown in the admin input.
@@ -6,8 +8,13 @@
 export const DEFAULT_META_SURCHARGE_CURRENCY = 'EUR';
 
 export class FeatureService {
+    static usesTicketTerminology(features) {
+        return usesTicketTerminology(features);
+    }
+
     static get FeatureConstants() {
         return {
+            customerSelfService: 'customer_self_service',
             ticket: 'ticket',
             form: 'form',
             workshop: 'workshops',

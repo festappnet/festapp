@@ -3,10 +3,11 @@ DECLARE org bigint; u bigint; occ bigint; f bigint; pt bigint; p bigint; conn uu
 BEGIN
  INSERT INTO public.organizations(title,data) VALUES('Card form tenant','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Card form organizer',org) RETURNING id INTO u;
- INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(u,true);
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) SELECT organization,m,true FROM public.units CROSS JOIN unnest(ARRAY['bank','stripe']) m WHERE id=u ON CONFLICT(organization_id,method) DO UPDATE SET enabled=true;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) SELECT organization,'stripe' FROM public.units WHERE id=u ON CONFLICT DO NOTHING;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
  VALUES('Card forms',org,u,'card-form-'||extensions.gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
- INSERT INTO public.forms(occasion,data,is_open,key) VALUES(occ,'{}',true,extensions.gen_random_uuid()) RETURNING id INTO f;
+ INSERT INTO public.forms(occasion,data,is_open,key) VALUES(occ,'{"payments":{"bankEnabled":true}}',true,extensions.gen_random_uuid()) RETURNING id INTO f;
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Card tickets','spot') RETURNING id INTO pt;
  INSERT INTO eshop.products(product_type,occasion,title,price,currency_code) VALUES(pt,occ,'Ticket',123.45,'CZK') RETURNING id INTO p;
  INSERT INTO public.form_fields(form,product_type,type) VALUES(f,pt,'product_type');

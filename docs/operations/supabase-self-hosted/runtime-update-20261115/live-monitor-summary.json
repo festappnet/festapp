@@ -1,0 +1,99 @@
+{
+  "captured_at_utc": "2026-11-15T05:11:04.267771Z",
+  "source_sha": "1464872fd2c08226109f698856a38acb70ca6964",
+  "runtime": {
+    "status": "runtime_applied",
+    "ready_at_utc": "2026-11-15T04:30:08.257073Z",
+    "database": "festapp_rehearsal_20260909220601",
+    "organization_id": 3,
+    "postgres_version": "17.12",
+    "postgres_version_num": 170012,
+    "all_nine_services_healthy": true,
+    "image_inventory": "runtime-image-inventory.json"
+  },
+  "public_and_app_checks": {
+    "auth_with_anon": 200,
+    "rest_with_service_read_only": 200,
+    "anonymous_openapi_expected_rbac_denial": 403,
+    "invalid_absent_empty_apikey_denied": true,
+    "functions_worker_unauthenticated_probe": 401,
+    "cors_preflight": 200,
+    "cors_allowed_origin": "https://vstupenky.online",
+    "caddy_original_restored": true
+  },
+  "monitor": {
+    "started_at_utc": "2026-11-15T04:38:08.097722Z",
+    "ended_at_utc": "2026-11-15T05:08:08.079279Z",
+    "duration_seconds": 1799.982,
+    "systemd_unit_exit_code": 0,
+    "public_probe_cycles": 173,
+    "database_resource_cron_container_samples": 29,
+    "unexpected_5xx_total": 0,
+    "curl_errors": 0,
+    "unhealthy_container_samples": 0,
+    "auth_no_key": {
+      "http_status": 401,
+      "avg_seconds": 0.1017,
+      "p95_seconds": 0.1446,
+      "max_seconds": 0.1988
+    },
+    "rest_no_key": {
+      "http_status": 401,
+      "avg_seconds": 0.1006,
+      "p95_seconds": 0.145,
+      "max_seconds": 0.1534
+    },
+    "activation": {
+      "http_status": 200,
+      "avg_seconds": 0.1009,
+      "p95_seconds": 0.1206,
+      "max_seconds": 0.1925
+    },
+    "email_unpaused_samples": 29,
+    "email_sending_max": 0,
+    "email_preparing_max": 0,
+    "scanner_operations_30m_max": 0,
+    "scanner_snapshots_30m_max": 0,
+    "db_connections_min": 25,
+    "db_connections_max": 25,
+    "db_active_connections_max": 2,
+    "idle_in_transaction_max": 0,
+    "long_transactions_15m_max": 0,
+    "waiting_locks_max": 0,
+    "cron_total_and_active": [
+      18,
+      18
+    ],
+    "wal_recent_failure": false,
+    "wal_pending_ready_max": 0,
+    "minimum_disk_available_bytes": 5461696512,
+    "minimum_memory_available_kb": 1276644,
+    "raw_log": "live-30m-monitor-146.log"
+  },
+  "email_delivery_health": {
+    "observed_at_utc": "2026-11-15T05:08:49.160966Z",
+    "canonical_db_org3": true,
+    "healthy": true,
+    "producer_access_ok": true,
+    "alerts": [],
+    "queue_counts": {
+      "accepted": 768,
+      "cancelled": 741,
+      "expired": 6,
+      "pending": 15,
+      "unknown": 2,
+      "suppressed": 14
+    },
+    "due_count": 0,
+    "oldest_due_at": null,
+    "post_action_backlog": 0,
+    "heartbeat_at": "2026-11-15T05:07:01.367596Z",
+    "quota_fresh": true,
+    "provider_outage_streak": 0,
+    "provider_unmatched": 36,
+    "provider_last_event_at": "2026-11-15T02:27:12.978474Z",
+    "provider_feedback_lag_seconds": 0.308841,
+    "missing_template_count": 0
+  },
+  "final_readiness_after_monitor": true
+}

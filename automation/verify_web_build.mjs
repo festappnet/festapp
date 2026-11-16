@@ -314,6 +314,9 @@ assert.match(worker, /FESTAPP_QUERY_BUILD_VERSION/);
 for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
   const published = JSON.parse(await readFile(path.join(buildDir, 'assets/translations', `${locale}.json`), 'utf8'));
   const canonical = JSON.parse(await readFile(path.resolve(path.dirname(configPath), '..', 'assets/translations', `${locale}.json`), 'utf8'));
+  for (const namespace of ['Waitlist', 'CustomerSelfService', 'FeatureCustomerSelfService']) {
+    assert.deepEqual(published[namespace], canonical[namespace], `published ${locale} ${namespace} translations differ from canonical source`);
+  }
   assert.deepEqual(published.Scanner, canonical.Scanner, `published ${locale} scanner translations differ from canonical source`);
   assert.deepEqual(published.FeatureBlueprint, canonical.FeatureBlueprint, `published ${locale} blueprint translations differ from canonical source`);
 }

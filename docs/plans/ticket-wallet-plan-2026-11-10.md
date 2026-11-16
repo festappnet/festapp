@@ -1,5 +1,7 @@
 # Uložení vstupenek do Google Wallet z e-mailu
 
+Historický plán vydávání. Synchronizaci nahrazuje [plán změnové fronty](ticket-wallet-change-queue-plan-2026-11-13.md).
+
 Datum: 2026-11-10. Stav: lokální implementace probíhá; bez produkčního nasazení.
 Ověřování při implementaci: `standard` (nová veřejná capability, podpisové klíče a databázová migrace).
 

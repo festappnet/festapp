@@ -3,7 +3,7 @@ import { formatPrice } from '../../utils/formatters.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { LocalizationService } from '../../services/localization_service.js';
 
-// Existing Basic status palette, supplied through the generic presentation seam.
+// Unavailable states override the authored seat appearance.
 const basicSeatFills = {
     [SeatStates.AVAILABLE]: '#267329FF', [SeatStates.SELECTED_BY_ME]: '#267329FF',
     [SeatStates.SELECTED]: '#00000042', [SeatStates.ORDERED]: '#0000001F',
@@ -13,9 +13,10 @@ const basicSeatFills = {
 
 /** Public commerce/session adapter. All geometry and gestures belong to the package. */
 export class BlueprintLayoutAdapter {
-    constructor(data, { session, initialSeats = [] } = {}) {
+    constructor(data, { session, initialSeats = [], seatFills = {} } = {}) {
         if (!data?.layout) throw new Error('Blueprint V2 layout unavailable');
         this.document = data.layout;
+        this.authoredFills = seatFills;
         this.resources = data.layoutResources || {};
         this.session = session;
         this.disposed = false;
@@ -79,13 +80,18 @@ export class BlueprintLayoutAdapter {
         return Object.fromEntries([...this.models].map(([id, model]) => {
             const own = model.state === SeatStates.SELECTED_BY_ME;
             const available = model.state === SeatStates.AVAILABLE || own;
+            const selectable = own || (available && model.productModel != null && model.productModel.isAvailable !== false && model.productModel.is_dynamically_available !== false && model.productModel.is_available_dynamic_capacity !== false);
+            // The renderer selects optimistically before the hold completes.
+            // Supply the authored fill up front so that pending checks keep it too.
+            const fill = selectable
+                ? this.authoredFills[id] ?? (own ? basicSeatFills[SeatStates.AVAILABLE] : undefined)
+                : basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY];
             return [id, {
-                status: own ? 'available' : model.state === SeatStates.SELECTED ? 'reserved'
-                    : [SeatStates.ORDERED, SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'occupied'
-                    : model.state === SeatStates.BLACK ? 'occupied' : available ? 'available' : 'unavailable',
-                selectable: own || (available && model.productModel != null && model.productModel.isAvailable !== false && model.productModel.is_dynamically_available !== false && model.productModel.is_available_dynamic_capacity !== false),
-                stateMarker: [SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'none' : 'auto',
-                selected: own, label: model.title, fill: basicSeatFills[model.state] ?? basicSeatFills[SeatStates.EMPTY],
+                status: selectable ? 'available' : 'occupied',
+                selectable,
+                stateMarker: [SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'check' : 'auto',
+                selected: own, label: model.title,
+                ...(fill != null ? {fill} : {}),
                 tooltip: `${[model.productModel?.title, model.title].filter(Boolean).join(' ')}\n${CommonStrings.price}: ${model.priceLabel ?? formatPrice(0, 'CZK', 0, LocalizationService.currentLocale)}`,
             }];
         }));

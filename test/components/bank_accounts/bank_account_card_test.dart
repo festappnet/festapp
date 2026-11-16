@@ -41,7 +41,7 @@ void main() {
   });
   setUp(() {
     final rights = RightsContextFixture.bankAccounts(
-        manageableAccounts: {42}, canManageUnit: true);
+        manageableAccounts: {42}, canManageUnit: true, unitId: 1);
     addTearDown(rights.dispose);
   });
   for (final scale in [1.0, 2.0]) {

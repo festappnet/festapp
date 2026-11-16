@@ -72,7 +72,13 @@ export async function authoringContextResponse(
     } catch (_) {
       // Bank metadata is optional; preserve usable sender/wrapper information.
     }
+    const ticketFeature=entityType==='occasion' && Array.isArray(catalog.occasion?.features)
+      ?catalog.occasion.features.find((feature:any)=>feature.code==='ticket'):null;
     return reply({
+      language:catalog.organization?.data?.DEFAULT_LANGUAGE??'cs',
+      walletReady:catalog.walletReady===true,
+      walletEnabled:catalog.walletReady===true && ticketFeature?.is_enabled===true && ticketFeature.wallet_enabled!==false,
+      ticketDeliveryMode:ticketFeature?.is_enabled===true?ticketFeature.delivery_mode??'pdf_attachment':null,
       paymentAccounts,
       senderAddress,
       wrapperHtml: typeof resolved?.wrapper?.html === "string"

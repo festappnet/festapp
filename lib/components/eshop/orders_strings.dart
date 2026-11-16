@@ -30,12 +30,10 @@ class OrdersStrings {
       'FeatureOrders.waveAvailabilityHelpTitle'.tr();
   static String get waveAvailabilityKeepHint =>
       'FeatureOrders.waveAvailabilityKeepHint'.tr();
-  static String get waveAvailabilityHideHint =>
-      'FeatureOrders.waveAvailabilityHideHint'.tr();
+
   static String get waveAvailabilityShowHint =>
       'FeatureOrders.waveAvailabilityShowHint'.tr();
-  static String get waveAvailabilityHelp =>
-      'FeatureOrders.waveAvailabilityHelp'.tr();
+
   static String get waveAvailabilityNoChange =>
       'FeatureOrders.waveAvailabilityNoChange'.tr();
   static String get bankSyncWarningEnable =>
@@ -212,9 +210,7 @@ class OrdersStrings {
       'FeatureOrders.generateNewCode'.tr(); // "Generate New Code"
   static String get generateNewCodeWarning => 'FeatureOrders.generateNewCodeWarning'
       .tr(); // "By generating a new code, the old one will be replaced and will no longer work."
-  static String get provideScanLinkInstruction =>
-      'FeatureOrders.provideScanLinkInstruction'
-          .tr(); // "Provide the following link or code to the people who will be checking the tickets."
+
   static String get ordersHistoryTab =>
       'FeatureOrders.ordersHistoryTab'.tr(); // "Orders History"
 
@@ -222,16 +218,12 @@ class OrdersStrings {
       'FeatureOrders.setAsUsed'.tr(); // "Set as used"
   static String get restoreTicket =>
       'FeatureOrders.setAsUnused'.tr(); // "Set as unused"
-  static String get ticketUsage =>
-      'FeatureOrders.ticketUsage'.tr(); // "Ticket usage"
 
   // --- Tickets/Items Tab ---
 
   // --- Scan Page Specific ---
   // (Scan-specific labels moved to ScanStrings in lib/components/scan/scan_strings.dart)
-  static String get scanInstructionsAppUser =>
-      'FeatureOrders.scanInstructionsAppUser'
-          .tr(); // "Tip: Users can show their QR code from their ticket or directly from the mobile app Profile."
+
   static String get scanningForOccasion =>
       'FeatureOrders.scanningForOccasion'.tr(); // "Scanning for: "
 
@@ -249,8 +241,6 @@ class OrdersStrings {
           .tr(); // "Error: Email was not returned."
   static String get errorResetPasswordPrivilegedUser =>
       'FeatureOrders.errorResetPasswordPrivilegedUser'.tr();
-  static String get confirmTicketFailed =>
-      'FeatureOrders.confirmTicketFailed'.tr(); // "Failed to confirm ticket"
 
   static String get scanNotFound =>
       'FeatureOrders.scanNotFound'.tr(); // "Invalid code" (Neplatný kód)
@@ -415,8 +405,7 @@ class OrdersStrings {
       'ProductsDialog.sendEmailFailed'.tr(); // "Failed to send update email."
   static String get sendEmailSuccess => 'ProductsDialog.sendEmailSuccess'
       .tr(); // "Update email sent successfully."
-  static String get dialogTitleFallback =>
-      'ProductsDialog.dialogTitleFallback'.tr(); // "Ticket products"
+
   static String get originalPrice =>
       'ProductsDialog.originalPrice'.tr(); // "Original"
   static String get currentPrice =>
@@ -431,8 +420,7 @@ class OrdersStrings {
       'ProductsDialog.removeTooltip'.tr(); // "Remove"
   static String get addProductsButton =>
       'ProductsDialog.addProductsButton'.tr(); // "Add products"
-  static String get infoTicketSymbol =>
-      'ProductsDialog.infoTicketSymbol'.tr(); // "Ticket Symbol"
+
   static String get infoEmail => 'ProductsDialog.infoEmail'.tr(); // "Email"
   static String get infoOrderStatus =>
       'ProductsDialog.infoOrderStatus'.tr(); // "Order Status"
@@ -466,17 +454,7 @@ class OrdersStrings {
       'ProductsDialog.removedTicketStatus'.tr();
   static String get addedTicketStatus =>
       'ProductsDialog.addedTicketStatus'.tr();
-  static String get cancelledTicketsTitle =>
-      'ProductsDialog.cancelledTicketsTitle'.tr();
-  static String get removedTicketsTitle =>
-      'ProductsDialog.removedTicketsTitle'.tr();
-  static String get addedTicketsTitle =>
-      'ProductsDialog.addedTicketsTitle'.tr();
-  static String changeTicketLabel(String symbol) =>
-      'ProductsDialog.changeTicketLabel'.tr(namedArgs: {'symbol': symbol});
-  static String productChangesForTicket(String symbol) =>
-      'ProductsDialog.productChangesForTicket'
-          .tr(namedArgs: {'symbol': symbol});
+
   static String get ticketWithoutSymbol =>
       'ProductsDialog.ticketWithoutSymbol'.tr();
   static String get orderChangesOverview =>
@@ -493,8 +471,7 @@ class OrdersStrings {
       'ProductsDialog.partialCancelLabel'.tr(); // "Partial Cancel / Modified"
   static String get cancelOrderPrefix =>
       'ProductsDialog.cancelOrderPrefix'.tr(); // "CANCEL ORDER "
-  static String get cancelTicketPrefix =>
-      'ProductsDialog.cancelTicketPrefix'.tr(); // "CANCEL TICKET "
+
   static String get willBeRemoved =>
       'ProductsDialog.willBeRemoved'.tr(); // "Entire order will be removed"
   static String get newOrderTotal =>
@@ -519,8 +496,6 @@ class OrdersStrings {
           .tr(); // "Price cannot be negative."
   static String get totalPriceChange =>
       'ProductsDialog.totalPriceChange'.tr(); // "Total Price Change"
-  static String get globalChangesNote => 'ProductsDialog.globalChangesNote'
-      .tr(); // "Note: This includes changes from all tickets in this order."
 
   // --- Order History ---
   static String get noHistoryFound =>

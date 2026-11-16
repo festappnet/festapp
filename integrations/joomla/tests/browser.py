@@ -68,12 +68,27 @@ try:
     assert js('document.activeElement !== document.body'), 'Keyboard focus'
     edit({'url':'https://vstupenky.online/form/ples-u-lipy-mistenky'})
     run('open','http://127.0.0.1:59916/')
-    run('click',ref('button "SEAT SELECTION"'))
-    ref('button "Zoom in"')
+    run('wait', '--load', 'networkidle')
+    # Select the frame that actually contains the seat form, then wait inside
+    # that frame for the map control. Global snapshots contain several forms;
+    # their dynamic iframe updates can otherwise invalidate cross-frame refs.
+    ref('button "SEAT SELECTION"')
+    snapshot = run('snapshot', '-i')
+    frame_blocks = re.split(r'(?=^- Iframe )', snapshot, flags=re.MULTILINE)
+    seat_frames = [block for block in frame_blocks if 'button "SEAT SELECTION"' in block]
+    assert len(seat_frames) == 1, 'Expected exactly one seat-form iframe'
+    frame_ref = re.search(r'^- Iframe .*?\[ref=(e\d+)\]', seat_frames[0], re.MULTILINE)
+    assert frame_ref, 'Seat-form iframe has no browser reference'
+    run('frame', '@' + frame_ref.group(1))
+    run('wait', 'button.btn-blueprint-select')
+    run('click', ref('button "SEAT SELECTION"'))
+    run('snapshot', '-i')  # Refresh the selected frame after its dynamic update.
+    run('wait', 'button[aria-label="Zoom in"]')
     assert 'button "Zoom in"' in run('snapshot','-i'), 'Seat map controls did not appear'
     run('press','Escape')
     assert 'button "Zoom in"' not in run('snapshot','-i'), 'Seat map controls remain after Escape'
     ref('button "SEAT SELECTION"')
+    run('frame', 'main')
     cases.append({'case':'real seat selector opens and closes with Escape'})
     run('network','route','**/embed.js*','--abort')
     run('open','http://127.0.0.1:59916/')
@@ -103,5 +118,5 @@ finally:
     edit({'url':'https://vstupenky.online/form/embedded-synthetic'})
     edit({'url':'https://vstupenky.online/form/embedded-synthetic'}, article=True)
     run('close')
-(ROOT / 'evidence/browser.json').write_text(json.dumps({'boundary':'vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59941; international remote requests blocked; no purchase submitted','cases':cases},indent=2)+'\n')
+(ROOT / 'evidence/browser.json').write_text(json.dumps({'boundary':'vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59931; international remote requests blocked; no purchase submitted','cases':cases},indent=2)+'\n')
 print('PASS mobile/keyboard/auto-height/seat-selector/blocked-helper browser checks')

@@ -1,0 +1,21 @@
+{
+  "status": "pass",
+  "tool": "pgbackrest 2.57.0",
+  "backup_label": "20261115-043147F",
+  "target": "2026-11-15T04:34:25.121645Z",
+  "postgres_recovery_target": "2026-11-15 04:34:25.121645+00:00",
+  "paused_at_target": true,
+  "replay_at": "2026-11-15T04:34:24.484832+00:00",
+  "replay_lsn": "27/8B0A12E8",
+  "catalog_smoke": true,
+  "application_rest_read_smoke": false,
+  "production_integrations_started": false,
+  "network": "none",
+  "ports": false,
+  "host_mounts": false,
+  "application_preloads_disabled": true,
+  "encrypted_key_escrow_used": true,
+  "isolated_restore_seconds": 13.96,
+  "full_service_rto_proven": false,
+  "storage_r2_consistency_proven": false
+}

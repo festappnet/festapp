@@ -1,0 +1,35 @@
+{
+  "prepared_at_utc": "2026-11-14T17:59:38.400563+00:00",
+  "state": "READY_TO_SUBMIT",
+  "publisher": "festappnet",
+  "products": [
+    {
+      "plugin": "festapp-tickets",
+      "version": "1.0.3",
+      "zip": "dist/festapp-tickets-1.0.3.zip",
+      "zip_sha256": "b075fd2c427c24c796c4a96b06ad78f43ebd9d107e2275389031d326db96d2ea",
+      "offline_submission": "dist/festapp-tickets-wordpress-org-draft",
+      "release_manifest_sha256": "1168ec9d37d9603a4077125301acaf25669623ae49f98f268dfc4ee54f7f5fa1",
+      "files": 12
+    }
+  ],
+  "evidence_sha256": {
+    "global-preparation-20261114.json": "9221c2d1d80a436a2a3ac83cd9bb5f101527970a9d8e11185d2f41c651cfa56a",
+    "global-release-checks-20261114.json": "bf300fcf39ca38c34637e7904e02a619452377bf2814910e06ec36dba3baac4d",
+    "festapp-tickets-package-inputs.json": "60407eabc019efe76ad6dece7c6076d41b57d5b591051c75379c643beb12e0b4",
+    "shared-build.json": "3eeaaea0af5bd074ea22cfedfc8ae5cd916ee94e809adb40780d2238e4d4dfad"
+  },
+  "remaining_external_gates": [],
+  "production_service_fixes_deployed": true,
+  "production_service_scope": {
+    "required_new_service_changes": [],
+    "meaning": "Existing global service supplies the required shared embed contract. This plugin candidate changes only distribution metadata/documentation/translations; no new backend or service fix is required for its submission.",
+    "evidence": "global-release-checks-20261114.json confirms exact served helper identity with canonical global production branch, protocol-1 and saved appearance source. Live end-to-end purchase and authentication were not repeated."
+  },
+  "name_assessment": {
+    "third_party_search_result": "FEST App at festapp.io offers an event-program integration; no third-party exact Festapp Tickets name found.",
+    "owner_confirmation": "Owner reviewed the result and confirmed our name/product is different.",
+    "decision": "Submit distinct full name Festapp Tickets with transparent shared-source and separate-service disclosure; directory reviewers decide acceptance."
+  },
+  "scope": "Submission readiness only; WordPress.org manual review, hosting approval, assigned SVN and actual public listing are subsequent external stages."
+}

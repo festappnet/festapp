@@ -55,6 +55,7 @@ jobs:
         shell: bash
         run: |
           cp automation/release/verify_android_aab.mjs "$RUNNER_TEMP/verify_android_aab.mjs"
+          cp automation/release/project_version.mjs "$RUNNER_TEMP/project_version.mjs"
           cp automation/release/play_track_readback.rb "$RUNNER_TEMP/play_track_readback.rb"
       - name: Check out authorized source
         uses: actions/checkout@v7

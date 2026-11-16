@@ -58,7 +58,10 @@ BEGIN
     END IF;
 
     -- 4. Validate Provided Scan Code
-    IF scan_code IS DISTINCT FROM expected_scan_code THEN
+    IF scan_code IS DISTINCT FROM expected_scan_code OR NOT EXISTS (
+        SELECT 1 FROM public.get_scanner_occasion_for_scan_code_internal(scan_code) proof
+        WHERE proof.id=occasion_id
+    ) THEN
         PERFORM public.admit_scan_access_v1(occasion_id,false);
         RETURN jsonb_build_object(
             'code', 401,

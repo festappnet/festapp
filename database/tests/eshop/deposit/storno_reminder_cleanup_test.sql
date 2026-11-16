@@ -29,6 +29,7 @@ BEGIN
     -- ==================================================================
 
     INSERT INTO public.organizations (title) VALUES ('Test Org Storno') RETURNING id INTO v_org_id;
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(v_org_id,'bank',true);
     INSERT INTO public.units (title, organization) VALUES ('Test Unit Storno', v_org_id) RETURNING id INTO v_unit_id;
 
     INSERT INTO eshop.secrets (secret) VALUES ('test_secret_storno') RETURNING id INTO v_secret_id;
@@ -47,6 +48,7 @@ BEGIN
 
     INSERT INTO public.forms (title, occasion, is_open) VALUES ('Test Form Storno', v_occasion_id, true)
     RETURNING id, key INTO v_form_id, v_form_key;
+    UPDATE public.forms SET data=coalesce(data,'{}')||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=v_form_id;
 
     INSERT INTO eshop.product_types (title, occasion, type) VALUES ('Test PT Storno', v_occasion_id, 'spot')
     RETURNING id INTO v_product_type_id;

@@ -26,31 +26,34 @@ test('offline shell omits standalone editor fixtures but retains runtime font as
   }
 });
 
+for (const rendererDirectory of ['canvaskit', 'canvaskit.1.2.3-4']) {
 for (const skwasm of [false, true]) {
-  test(`cache engines follow the deployed Flutter build selection (skwasm=${skwasm})`, async () => {
+  test(`cache engines follow the deployed Flutter build selection (skwasm=${skwasm}, directory=${rendererDirectory})`, async () => {
     const root = await mkdtemp(path.join(tmpdir(), 'festapp-renderer-cache-'));
     try {
-      await mkdir(path.join(root, 'canvaskit', 'chromium'), {recursive: true});
-      await mkdir(path.join(root, 'canvaskit', 'webparagraph'), {recursive: true});
+      await mkdir(path.join(root, rendererDirectory, 'chromium'), {recursive: true});
+      await mkdir(path.join(root, rendererDirectory, 'webparagraph'), {recursive: true});
       const engines = ['canvaskit.js', 'canvaskit.wasm', 'chromium/canvaskit.wasm',
         'webparagraph/canvaskit.wasm', 'skwasm.js', 'skwasm.wasm',
         'skwasm_heavy.js', 'skwasm_heavy.wasm', 'wimp.js', 'wimp.wasm'];
       for (const name of ['flutter', 'webclient', 'main.dart.js']) await writeFile(path.join(root, name), name);
-      for (const name of engines) await writeFile(path.join(root, 'canvaskit', name), name);
+      for (const name of engines) await writeFile(path.join(root, rendererDirectory, name), name);
       const builds = [{compileTarget: 'dart2js', renderer: 'canvaskit'}];
       if (skwasm) builds.push({compileTarget: 'dart2wasm', renderer: 'skwasm'});
       await writeFile(path.join(root, 'flutter_bootstrap.js'), `_flutter.buildConfig = ${JSON.stringify({builds})};\n`);
       const manifest = await collectPwaShellManifest(root);
       for (const name of engines) {
         const expected = skwasm || name.includes('canvaskit');
-        assert.equal(manifest.knownResources.includes(`/canvaskit/${name}`), expected, name);
-        assert.equal(await readFile(path.join(root, 'canvaskit', name), 'utf8'), name,
+        assert.equal(manifest.knownResources.includes(`/${rendererDirectory}/${name}`), expected, name);
+        assert.equal(await readFile(path.join(root, rendererDirectory, name), 'utf8'), name,
           'all shipped renderer files remain available online');
       }
     } finally {
       await rm(root, {recursive: true, force: true});
     }
   });
+}
+
 }
 
 test('all deferred font modules are installed for first use offline', async () => {
@@ -273,7 +276,7 @@ test('marketing streams stay online and do not consume the application offline b
 });
 
 test('public help and plugin downloads do not enter the installed app cache', () => {
-  for (const file of ['co-je-nove/_assets/runtime/landing.js','co-je-nove/_assets/brand-symbol.svg','napoveda/index.html','napoveda/webnode/index.html','napoveda/assets/help.css','napoveda/assets/vstupenky-online-1.0.0.zip']) assert.equal(shouldPrecache(file),false);
+  for (const file of ['help/index.html','help/orders/index.html','help/assets/help.js','help/assets/brand-logo.svg','co-je-nove/_assets/runtime/landing.js','co-je-nove/_assets/brand-symbol.svg','napoveda/index.html','napoveda/webnode/index.html','napoveda/assets/help.css','napoveda/assets/vstupenky-online-1.0.0.zip']) assert.equal(shouldPrecache(file),false);
 });
 
 test('brand and startup symbols install with the shell for an offline cold start', async () => {

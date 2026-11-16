@@ -1,5 +1,7 @@
 # Zásadní zrychlení testovacího prostředí a běhu sad Festapp
 
+Navazující optimalizace selectoru, Wix/SQL jednotek a evidence: [CI efficiency](ci-efficiency-plan-2026-11-16.md). Historické výsledky tohoto plánu zůstávají beze změny.
+
 Datum: 2026-11-09
 Stav: Implementováno, ověřeno a nasazeno jako0.20.542+1053. Opravený seat benchmark102,51 ->45,72 s (2,24x); Flutter90,77 ->58,07 s. Všech8 exact-SHA hosted kontrol prošlo. Zbývající absolutní seat/browser cíle jsou uvedené v RESULT.
 Oprava při release ověření: starší seat speedup2,07x je nahrazen níže uvedeným opraveným měřením.

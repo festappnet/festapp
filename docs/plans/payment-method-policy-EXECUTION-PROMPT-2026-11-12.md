@@ -1,0 +1,20 @@
+V repozitáři `/Users/miakh/source/festapp` implementujte až do dokončení autoritativní plán `docs/plans/payment-method-policy-plan-2026-11-12.md`. Toto je zadání k realizaci celého plánu, nikoli k další analýze nebo první etapě. Ověření: standard.
+
+Přečtěte celý plán, AGENTS.md, CLAUDE.md, docs/architecture/ai_context.md a relevantní aktuální diff. Zachovejte cizí rozpracované změny; připravte vlastní jasně oddělitelný diff bez ztráty potřebného lokálního podkladu. Pokud je dostupný nástroj pro goals, založte jeden goal pro úplnou lokální implementaci a ověření tohoto plánu, bez umělého tokenového limitu. Stav a validační evidence průběžně udržujte v `docs/plans/payment-method-policy-RESULT-2026-11-12.md`.
+
+Výsledek:
+
+- Jeden vlastník politiky a operation capabilities nad existujícím registrem bank/cash/externích konektorů: tenant -> unit -> formulář. Oddělit podporu konkrétní operace, produktové povolení, RBAC, readiness a uložený finanční stav. Global má bankovní službu vypnutou a preferuje Stripe; lokální fixtures to prokazují, produkční data tento úkol nemění.
+- Zakázaná banka nemá běžné volby účtu, bankovní authoring, párování ani nové/reopened collection/refund QR. Ochrana platí v UI i přímých RPC/MCP a při stale context/replay. Order ledger, skutečné pohyby a recovery zůstávají zachované.
+- Gateway objednávky mají jen relevantní connector actions. Refund write, partial refund a refund observation jsou samostatné schopnosti. Nepodporovaná refundace nemá spustitelnou UI akci a API ji odmítne bez side effectů; žádný bank/cash/QR fallback. Externě pozorovaný refund může být přesto podporován a zobrazen. Servicing staré gateway platby nezávisí na povolení nového prodeje, ale stále vyžaduje skutečnou podporu, readiness a oprávnění.
+- E-maily, proměnné, wrappery, připomínky, přílohy a náhledy používají stejná rozhodnutí o metodě a účelu. Vstupenkové/login/wallet QR zůstávají funkční.
+
+Proveďte všech pět vln včetně migrací, přesunu všech callers, kontrakce starých zdrojů, dokumentace a ověření celé akceptační matice. Rozšiřujte stávající engine, ledger, queue a registry, nevytvářejte jejich paralelní alternativy. Dokončete deletion ledger. Kompatibilitu ponechte pouze na explicitně pojmenovaných hranicích plánu s consumerem a podmínkou odstranění. Nesoulad plánu se skutečným kódem opravte v plánu a pokračujte v zachování jeho invariantů; běžné implementační volby řešte samostatně.
+
+Pracujte souvisle až k ověřenému výsledku. Nezastavujte po průzkumu, návrhu, první vlně ani prvním průchodu testů. Nežádejte znovu potvrzení již autorizovaných lokálních kroků. Běžný opravitelný neúspěch diagnostikujte a opravte; úspěšné kontroly opakujte jen po relevantní změně. Skutečný externí blocker přesně zaznamenejte, dokončete nezávislé části a chybějící autoritu nevymýšlejte. Přes compaction udržujte stav v realizačním záznamu, neopakujte hotové kroky.
+
+Použijte cílené SQL/concurrency, Edge, core/Flutter a web testy, upgrade/source parity a relevantní canonical CI mirror lanes podle konečného diffu. Ověřte také nepřítomnost zakázaných akcí a přímé serverové odmítnutí, nejen happy path. Dodržte pnpm 11.24.0, jedinou Flutter úlohu a --concurrency=1, disposable DB a pravidla browser delegace. Nevyžadujte skutečné placené transakce jako náhradu deterministického lokálního ověření.
+
+Hotovo znamená: implementované všechny vlny a akceptační scénáře; žádné placeholdery, nezapojené API, neaktivní náhrady požadovaného UI ani neplánované fallbacky; migrace a contraction připravené a ověřené; každá položka deletion ledgeru odstraněna nebo výslovně zachována podle plánu; validační evidence a výsledný rozsah uložené v realizačním záznamu. Goal označte complete pouze při splnění těchto podmínek, nikdy kvůli konci tahu nebo rozpočtu. Pokud přetrvává blocker, neprohlašujte implementaci za dokončenou a nepřeskakujte neúspěšné gate.
+
+Rozsah je úplná lokální implementace a ověření. Tento prompt neautorizuje produkční migraci, live aktivaci, skutečné platby/refundy, commit/push ani deploy. Na konci stručně uveďte hotové chování, skutečně provedené kontroly, případné blokery a samostatně stav produkce.

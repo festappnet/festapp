@@ -282,6 +282,10 @@ class _NotificationCenterBellState extends State<NotificationCenterBell>
     }
     final account = data['bankAccountId'];
     final unit = data['unitId'];
+    if (item.kind == 'provider_problem' && unit is int) {
+      await pushRootPath(context.router.root, '/unit/$unit/edit');
+      return;
+    }
     if (account is int &&
         unit is int &&
         RightsService.hasBankCapability(

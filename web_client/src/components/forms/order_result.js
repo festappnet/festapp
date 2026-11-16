@@ -1,5 +1,7 @@
+import { LocalizationService } from '../../services/localization_service.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
 import { FormStrings } from './form_strings.js';
+import { FeatureService } from '../features/feature_service.js';
 import { overviewText } from './order_overview.js';
 import { WaitlistStrings } from './waitlist_strings.js';
 import { observeOrderDelivery } from './order_delivery_status.js';
@@ -22,7 +24,7 @@ export class OrderResult {
             container.append(symbol, statusHost);
             const handoff = resultData.payment_access?.kind === 'handoff';
             // Embedded receipt never consumes or upgrades the one-use capability.
-            renderCardPaymentStatus(statusHost, resultData.payment, handoff ? {} : paymentActions);
+            renderCardPaymentStatus(statusHost, resultData.payment, { ...(handoff ? {} : paymentActions), hasTickets: FeatureService.usesTicketTerminology(formModel.occasionFeatures) });
             if (handoff) {
                 const access = resultData.payment_access;
                 try {
@@ -53,9 +55,7 @@ export class OrderResult {
         // Prepare Data
         const isWaitlist = formModel.registrationMode === 'waitlist';
         const tone = formModel.communicationTone; 
-        // We need to know if tickets were involved. 
-        // FormModel knows fields. If ticket field exists -> hasTickets = true.
-        const hasTickets = formModel.visibleFields.some(f => f.type === 'ticket');
+        const hasTickets = FeatureService.usesTicketTerminology(formModel.occasionFeatures);
         
         let title, subtitle;
         let icon = 'check_circle';
@@ -75,6 +75,10 @@ export class OrderResult {
             colorClass = 'error-color';
         } else if (resultData?.errorCode === 'STRIPE_RECIPIENT_CHANGED') {
             title=paymentMethodText('reason_recipient_changed');subtitle=WaitlistStrings.refresh;icon='error';colorClass='error-color';
+        } else if (['ORDER_RECOVERY_REQUIRED','PAYMENT_RECOVERY_REQUIRED','PAYMENT_RECOVERY_PRINCIPAL_CHANGED'].includes(resultData?.errorCode)) {
+            title=LocalizationService.tr('DiscountCodes.recoveryUnavailable');subtitle='';icon='error';colorClass='error-color';
+        } else if (['DISCOUNT_QUOTE_CHANGED','DISCOUNT_INVALID'].includes(resultData?.errorCode)) {
+            title=LocalizationService.tr('DiscountCodes.changed');subtitle=LocalizationService.tr('DiscountCodes.invalid');icon='error';colorClass='error-color';
         } else if (resultData?.errorCode === 'STRIPE_PRICE_CHANGED') {
             title=paymentMethodText('priceChanged');subtitle=paymentMethodText('reviewPrices');icon='error';colorClass='error-color';
         } else if (resultData && resultData.code === 1017) { // Product Unavailable
@@ -227,6 +231,12 @@ export class OrderResult {
             }, {alive: () => container.isConnected});
         }
 
+        if (!success && paymentActions.onRetry) {
+            const retry = document.createElement('button'); retry.type='button'; retry.className='btn btn-primary';
+            retry.textContent=LocalizationService.tr('DiscountCodes.retry');
+            retry.onclick=()=> {retry.disabled=true;paymentActions.onRetry();};
+            container.querySelector('.result-actions')?.prepend(retry);
+        }
         // Attach Event
         const backBtn = container.querySelector('.btn-back-to-form');
         if (backBtn) {

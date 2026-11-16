@@ -10,13 +10,20 @@ verified live archive and notification receipts; Cloudflare versions own rollbac
 candidate/revalidation/production workflows. It deletes only recognized artifacts
 with verified completed main-branch producer runs:
 
-- Candidates after the existing seven-day promotion window, including historical
+- Candidates immediately after their exact producer run and full artifact name match
+  a successful main-branch production job. The job must have verified the candidate
+  receipt/AAB and successfully read the completed version back from Google Play.
+  Provenance is reconstructed from the trusted download-action inputs and readback
+  environment in the job log; unrelated output or truncated job names are not proof.
+  Missing, failed, skipped or ambiguous evidence preserves the candidate.
+- Unpublished candidates after the existing seven-day promotion window, including historical
   uploads whose original expiry was 30 days. Rebuild after expiry.
 - Raw AABs after their three-day recovery window, or immediately after a successful
   producer run stored the matching verified candidate. Failed verification keeps
   its raw recovery artifact for three days.
 
-Current candidates and unrelated evidence stay untouched. Active/queued/waiting
+Unpublished current candidates and unrelated evidence stay untouched. The original
+`festapp` Android application is excluded before producer/publication lookup and cleanup. Active/queued/waiting
 Android operations block cleanup, with a second check before deletion. A 200 MiB
 retained-storage budget fails visibly after safe cleanup; multiple pending large
 candidates need an explicit promotion/expiry decision rather than silent eviction.

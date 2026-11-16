@@ -1,0 +1,22 @@
+{
+  "observed_at_utc": "2026-11-14T18:00:29.765839+00:00",
+  "method": "Authenticated BrowserOS neo submission and post-submit page read",
+  "account": "festappnet",
+  "plugin": "Festapp Tickets",
+  "version": "1.0.3",
+  "submitted_file": "festapp-tickets-1.0.3.zip",
+  "local_candidate_sha256": "b075fd2c427c24c796c4a96b06ad78f43ebd9d107e2275389031d326db96d2ea",
+  "submission_date": "November 14, 2026",
+  "initial_slug": "festapp-tickets",
+  "slug_note": "Subject to change based on code review",
+  "status": "Awaiting Review",
+  "status_exact": "This plugin has not yet been reviewed.",
+  "automated_plugin_scanning": "Pass",
+  "manual_review_required": true,
+  "confirmation_email": "WordPress.org says it sent an email verifying submission to the account; email was not independently inspected.",
+  "confirmation_url": "https://wordpress.org/plugins/developers/add/",
+  "additional_information": "This plugin is published by festappnet, the publisher of vstupenky.online. Both plugins are generated from the same maintained source, but connect to separate services: this plugin serves the international Festapp Tickets tenant at https://tickets.festapp.net. Saved form URLs are strictly bound to their service origin, so vstupenky.online cannot embed forms from this tenant. Please assess whether a separate directory listing is acceptable or whether you would prefer one consolidated plugin.",
+  "public_catalog_live": false,
+  "svn_assigned": false,
+  "note": "Submission page states automated scan pass does not guarantee approval. Review response will be sent to the account email."
+}

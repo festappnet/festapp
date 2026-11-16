@@ -1,0 +1,386 @@
+Found 73 test file(s) to execute.
+>>> Setup: Resetting Sequences (Global)...
+>>> Setup Complete.
+
+
+▶ Running: database/tests/canonical_mutation_source_parity_test.sql
+
+▶ Running: database/tests/account_deletion_contract_test.sql
+
+▶ Running: database/tests/payment_providers/setup_and_revision_test.sql
+
+▶ Running: database/tests/payment_providers/refund_provider_dispatch_test.sql
+
+▶ Running: database/tests/payment_providers/projections_configuration_test.sql
+  ✔ PASSED (263 ms): database/tests/canonical_mutation_source_parity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (359 ms): database/tests/account_deletion_contract_test.sql
+  ✔ PASSED (410 ms): database/tests/payment_providers/setup_and_revision_test.sql
+  [NOTICE] truncate cascades to table "transactions"
+  [NOTICE] truncate cascades to table "orders"
+  [NOTICE] truncate cascades to table "barion_attempts"
+  [NOTICE] truncate cascades to table "payment_reference_reservations"
+  [NOTICE] truncate cascades to table "stripe_checkout_attempts"
+  [NOTICE] truncate cascades to table "transaction_pairing_events"
+  [NOTICE] truncate cascades to table "refund_requests"
+  [NOTICE] truncate cascades to table "payment_notification_incidents"
+  [NOTICE] truncate cascades to table "conversion_facts"
+  [NOTICE] truncate cascades to table "bank_account_requests"
+  [NOTICE] truncate cascades to table "bank_transaction_identities"
+  [NOTICE] truncate cascades to table "barion_capabilities"
+  [NOTICE] truncate cascades to table "barion_movements"
+  [NOTICE] truncate cascades to table "barion_observations"
+  [NOTICE] truncate cascades to table "barion_sources"
+  [NOTICE] truncate cascades to table "order_checkout_origins"
+  [NOTICE] truncate cascades to table "order_product_ticket"
+  [NOTICE] truncate cascades to table "orders_history"
+  [NOTICE] truncate cascades to table "replacement_invoice_preparations"
+  [NOTICE] truncate cascades to table "stripe_admission_decisions"
+  [NOTICE] truncate cascades to table "stripe_capabilities"
+  [NOTICE] truncate cascades to table "stripe_disputes"
+  [NOTICE] truncate cascades to table "stripe_payment_movements"
+  [NOTICE] truncate cascades to table "ticket_batch_items"
+  [NOTICE] truncate cascades to table "ticket_batches"
+  [NOTICE] truncate cascades to table "waitlist_acceptance_attempts"
+  [NOTICE] truncate cascades to table "waitlist_capabilities"
+  [NOTICE] truncate cascades to table "waitlist_offer_slots"
+  [NOTICE] truncate cascades to table "waitlist_offers"
+  [NOTICE] truncate cascades to table "refund_settlements"
+  [NOTICE] truncate cascades to table "payment_operation_events"
+  [NOTICE] truncate cascades to table "order_deletion_fences"
+  [NOTICE] truncate cascades to table "order_overview_sources"
+  [NOTICE] truncate cascades to table "spots"
+  [NOTICE] truncate cascades to table "stripe_payment_link_sources"
+  [NOTICE] truncate cascades to table "ticket_batch_document_parts"
+  [NOTICE] truncate cascades to table "blueprint_seat_bindings"
+  ✔ PASSED (759 ms): database/tests/payment_providers/projections_configuration_test.sql
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED (1389 ms): database/tests/payment_providers/refund_provider_dispatch_test.sql
+
+▶ Running: database/tests/payment_providers/policy_tenant_scope_test.sql
+
+▶ Running: database/tests/payment_providers/policy_template_queue_test.sql
+
+▶ Running: database/tests/payment_providers/policy_template_noop_test.sql
+
+▶ Running: database/tests/payment_providers/policy_template_audit_test.sql
+
+▶ Running: database/tests/payment_providers/policy_recovery_queue_test.sql
+  ✔ PASSED (268 ms): database/tests/payment_providers/policy_template_queue_test.sql
+  ✔ PASSED (631 ms): database/tests/payment_providers/policy_template_noop_test.sql
+  ✔ PASSED (997 ms): database/tests/payment_providers/policy_template_audit_test.sql
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED (1785 ms): database/tests/payment_providers/policy_recovery_queue_test.sql
+  ✔ PASSED (2291 ms): database/tests/payment_providers/policy_tenant_scope_test.sql
+
+▶ Running: database/tests/payment_providers/policy_global_stripe_journey_test.sql
+
+▶ Running: database/tests/payment_providers/policy_acl_test.sql
+
+▶ Running: database/tests/payment_providers/payment_operations_test.sql
+
+▶ Running: database/tests/payment_providers/order_read_plan_cache_test.sql
+
+▶ Running: database/tests/payment_providers/order_read_bulk_test.sql
+  ✔ PASSED (908 ms): database/tests/payment_providers/policy_global_stripe_journey_test.sql
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED (2103 ms): database/tests/payment_providers/order_read_bulk_test.sql
+  ✔ PASSED (2124 ms): database/tests/payment_providers/policy_acl_test.sql
+  ✔ PASSED (2882 ms): database/tests/payment_providers/payment_operations_test.sql
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED (3439 ms): database/tests/payment_providers/order_read_plan_cache_test.sql
+
+▶ Running: database/tests/payment_providers/method_policy_test.sql
+
+▶ Running: database/tests/payment_providers/method_operation_support_test.sql
+
+▶ Running: database/tests/payment_providers/effects_test.sql
+
+▶ Running: database/tests/payment_providers/connector_contract_test.sql
+
+▶ Running: database/tests/payment_providers/cash_setup_roundtrip_test.sql
+  ✔ PASSED (574 ms): database/tests/payment_providers/cash_setup_roundtrip_test.sql
+  ✔ PASSED (807 ms): database/tests/payment_providers/method_operation_support_test.sql
+  ✔ PASSED (1083 ms): database/tests/payment_providers/method_policy_test.sql
+  ✔ PASSED (1239 ms): database/tests/payment_providers/connector_contract_test.sql
+  ✔ PASSED (1367 ms): database/tests/payment_providers/effects_test.sql
+
+▶ Running: database/tests/payment_providers/cash_rpc_acl_test.sql
+
+▶ Running: database/tests/payment_providers/cash_reservations_test.sql
+
+▶ Running: database/tests/payment_providers/cash_policy_regression_test.sql
+
+▶ Running: database/tests/payment_providers/cash_history_access_test.sql
+
+▶ Running: database/tests/payment_providers/cash_default_policy_test.sql
+  ✔ PASSED (414 ms): database/tests/payment_providers/cash_policy_regression_test.sql
+  ✔ PASSED (432 ms): database/tests/payment_providers/cash_rpc_acl_test.sql
+  ✔ PASSED (664 ms): database/tests/payment_providers/cash_default_policy_test.sql
+  ✔ PASSED (1071 ms): database/tests/payment_providers/cash_reservations_test.sql
+  ✔ PASSED (1305 ms): database/tests/payment_providers/cash_history_access_test.sql
+
+▶ Running: database/tests/payment_providers/cash_configuration_lifecycle_test.sql
+
+▶ Running: database/tests/payment_providers/cash_command_guards_test.sql
+
+▶ Running: database/tests/payment_providers/bank_refund_contract_test.sql
+
+▶ Running: database/tests/notification_center/subject_visibility_test.sql
+
+▶ Running: database/tests/notification_center/serving_contraction_test.sql
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED (401 ms): database/tests/payment_providers/cash_command_guards_test.sql
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED (2517 ms): database/tests/payment_providers/bank_refund_contract_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (2800 ms): database/tests/notification_center/subject_visibility_test.sql
+  ✔ PASSED (4316 ms): database/tests/payment_providers/cash_configuration_lifecycle_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (4345 ms): database/tests/notification_center/serving_contraction_test.sql
+
+▶ Running: database/tests/notification_center/read_history_compaction_test.sql
+
+▶ Running: database/tests/notification_center/purge_hidden_history_test.sql
+
+▶ Running: database/tests/notification_center/provider_connection_alerts_test.sql
+
+▶ Running: database/tests/notification_center/projection_lifecycle_test.sql
+
+▶ Running: database/tests/notification_center/producers_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (3517 ms): database/tests/notification_center/read_history_compaction_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ❌ FAILED (5065 ms): database/tests/notification_center/provider_connection_alerts_test.sql
+  Error: canceling statement due to lock timeout (database/tests/notification_center/provider_connection_alerts_test.sql)
+  Code: 55P03
+  [NOTICE] there is no transaction in progress
+  ❌ FAILED (5068 ms): database/tests/notification_center/projection_lifecycle_test.sql
+  Error: canceling statement due to lock timeout (database/tests/notification_center/projection_lifecycle_test.sql)
+  Code: 55P03
+  [NOTICE] there is no transaction in progress
+  ❌ FAILED (5076 ms): database/tests/notification_center/purge_hidden_history_test.sql
+  Error: canceling statement due to lock timeout (database/tests/notification_center/purge_hidden_history_test.sql)
+  Code: 55P03
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (7292 ms): database/tests/notification_center/producers_test.sql
+
+▶ Running: database/tests/notification_center/presentation_test.sql
+
+▶ Running: database/tests/notification_center/prepared_wide_scope_test.sql
+
+▶ Running: database/tests/notification_center/prepared_scope_authority_test.sql
+
+▶ Running: database/tests/notification_center/prepared_retention_test.sql
+
+▶ Running: database/tests/notification_center/prepared_orders_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] Live scope authority equivalence: 1560 cases
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (321 ms): database/tests/notification_center/prepared_scope_authority_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] Wide notification open: 61.5 ms, 445 scopes, 30 rows
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (883 ms): database/tests/notification_center/prepared_wide_scope_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1088 ms): database/tests/notification_center/prepared_retention_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1660 ms): database/tests/notification_center/presentation_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (2249 ms): database/tests/notification_center/prepared_orders_test.sql
+
+▶ Running: database/tests/notification_center/prepared_lifecycle_test.sql
+
+▶ Running: database/tests/notification_center/prepared_history_test.sql
+
+▶ Running: database/tests/notification_center/payment_facts_test.sql
+
+▶ Running: database/tests/notification_center/open_latency_test.sql
+
+▶ Running: database/tests/notification_center/lifecycle_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (464 ms): database/tests/notification_center/prepared_history_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (513 ms): database/tests/notification_center/payment_facts_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1634 ms): database/tests/notification_center/lifecycle_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] notification open (hidden members: f): 77.2 ms
+  [NOTICE] notification open (hidden members: t): 99.8 ms
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (4866 ms): database/tests/notification_center/open_latency_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (5466 ms): database/tests/notification_center/prepared_lifecycle_test.sql
+
+▶ Running: database/tests/notification_center/legacy_place_totals_test.sql
+
+▶ Running: database/tests/notification_center/idle_wake_test.sql
+
+▶ Running: database/tests/notification_center/hidden_participants_test.sql
+
+▶ Running: database/tests/notification_center/hidden_identity_surfaces_test.sql
+
+▶ Running: database/tests/notification_center/form_availability_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (286 ms): database/tests/notification_center/legacy_place_totals_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (301 ms): database/tests/notification_center/idle_wake_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (390 ms): database/tests/notification_center/hidden_identity_surfaces_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (475 ms): database/tests/notification_center/form_availability_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (827 ms): database/tests/notification_center/hidden_participants_test.sql
+
+▶ Running: database/tests/notification_center/form_availability_save_test.sql
+
+▶ Running: database/tests/notification_center/email_window_policy_test.sql
+
+▶ Running: database/tests/notification_center/email_sources_test.sql
+
+▶ Running: database/tests/notification_center/email_recovery_test.sql
+
+▶ Running: database/tests/notification_center/email_preparation_failure_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (516 ms): database/tests/notification_center/email_sources_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (594 ms): database/tests/notification_center/email_window_policy_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (849 ms): database/tests/notification_center/email_recovery_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1275 ms): database/tests/notification_center/form_availability_save_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1335 ms): database/tests/notification_center/email_preparation_failure_test.sql
+
+▶ Running: database/tests/notification_center/delivery_operations_test.sql
+
+▶ Running: database/tests/notification_center/deleted_entities_test.sql
+
+▶ Running: database/tests/notification_center/current_participants_test.sql
+
+▶ Running: database/tests/notification_center/contract_test.sql
+
+▶ Running: database/tests/notification_center/cancelled_order_email_alerts_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (562 ms): database/tests/notification_center/contract_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (571 ms): database/tests/notification_center/delivery_operations_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (885 ms): database/tests/notification_center/deleted_entities_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1570 ms): database/tests/notification_center/current_participants_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] No tickets found for order 292, proceeding to storno order shell.
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1667 ms): database/tests/notification_center/cancelled_order_email_alerts_test.sql
+
+▶ Running: database/tests/notification_center/cancelled_new_orders_test.sql
+
+▶ Running: database/tests/notification_center/bank_sources_test.sql
+
+▶ Running: database/tests/notification_center/app_activity_test.sql
+
+▶ Running: database/tests/notification_center/administration_visibility_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_send_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (198 ms): database/tests/notification_center/admin_email_send_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1043 ms): database/tests/notification_center/administration_visibility_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (2315 ms): database/tests/notification_center/app_activity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (2708 ms): database/tests/notification_center/bank_sources_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (3298 ms): database/tests/notification_center/cancelled_new_orders_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_required_bank_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_no_address_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_delivery_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_budget_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_bank_identity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (310 ms): database/tests/notification_center/admin_email_delivery_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (506 ms): database/tests/notification_center/admin_email_required_bank_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (611 ms): database/tests/notification_center/admin_email_bank_identity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (722 ms): database/tests/notification_center/admin_email_no_address_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (2236 ms): database/tests/notification_center/admin_email_budget_test.sql
+
+▶ Running: database/tests/eshop/stripe/disconnect_test.sql
+
+▶ Running: database/tests/eshop/stripe/connections_test.sql
+
+▶ Running: database/tests/eshop/stripe/connection_status_test.sql
+  [NOTICE] relation "_test_user_aliases" already exists, skipping
+  ✔ PASSED (94 ms): database/tests/eshop/stripe/connections_test.sql
+  ✔ PASSED (175 ms): database/tests/eshop/stripe/disconnect_test.sql
+  ✔ PASSED (228 ms): database/tests/eshop/stripe/connection_status_test.sql
+
+>>> Retrying 3 failed test(s) sequentially...
+
+▶ Running: database/tests/notification_center/purge_hidden_history_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (36 ms): database/tests/notification_center/purge_hidden_history_test.sql
+
+▶ Running: database/tests/notification_center/provider_connection_alerts_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (232 ms): database/tests/notification_center/provider_connection_alerts_test.sql
+
+▶ Running: database/tests/notification_center/projection_lifecycle_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (311 ms): database/tests/notification_center/projection_lifecycle_test.sql
+
+==================================================
+SUMMARY: 73 Passed, 0 Failed (recovered 3 on sequential retry)
+==================================================

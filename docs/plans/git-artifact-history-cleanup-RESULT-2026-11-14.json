@@ -1,0 +1,74 @@
+{
+  "baseMainSha": "5b0872c048345bf2aa8ad6a62ff4b48f4382e990",
+  "removedWorktrees": [
+    "/Users/miakh/source/festapp-android-workflow-20261114",
+    "/Users/miakh/source/festapp-api-help-20261113-global",
+    "/Users/miakh/source/festapp-api-help-20261113-tickets",
+    "/Users/miakh/source/festapp-api-rollout-festapptickets-20261113",
+    "/Users/miakh/source/festapp-api-rollout-festappticketsglobal-20261113",
+    "/Users/miakh/source/festapp-apple-wallet",
+    "/Users/miakh/source/festapp-canonical-version-20261114",
+    "/Users/miakh/source/festapp-number-scroll",
+    "/Users/miakh/source/festapp-operator-20261113-global",
+    "/Users/miakh/source/festapp-operator-20261113-tickets",
+    "/Users/miakh/source/festapp-operator-issuer-20261113-global",
+    "/Users/miakh/source/festapp-operator-issuer-20261113-tickets",
+    "/Users/miakh/source/festapp-slunovrat-release-20261113",
+    "/Users/miakh/source/festapp-unified-api-review-20261113",
+    "/Users/miakh/source/festapp-wallet-badges-tenant",
+    "/Users/miakh/source/festapp-wallet-email-fix",
+    "/Users/miakh/source/festapp-wallet-tenant-collection-20261114",
+    "/Users/miakh/source/festapp-wallet-tenant-lifecycle-20261114",
+    "/Users/miakh/source/festapp-wallet-tenant-release-20261114",
+    "/Users/miakh/source/festapp-api-build-97a579e218c1"
+  ],
+  "backupRestore": {
+    "gitRefsRestored": 2544,
+    "workingFilesRestoredAndVerified": 1786,
+    "bundle": "/Users/miakh/Library/Application Support/Festapp/maintenance/20261114-history-cleanup/repository-before.bundle"
+  },
+  "apiArchive": {
+    "archive": "/Users/miakh/Library/Application Support/Festapp/maintenance/20261114-history-cleanup/api-contracts-20261114.tar.gz",
+    "sha256": "650962babfd9fc4eef0eda39b77a4a607e2c37ac9af1e2cefec0c79e85ef0b39",
+    "files": 240,
+    "rawBytes": 355598560,
+    "archiveBytes": 10531035,
+    "contentReview": "Generated OpenAPI schemas and synthetic examples only; secret-pattern scan passed; all entries parsed as OpenAPI and SHA256 verified"
+  },
+  "historyRewritten": false,
+  "productionRefsNotWritten": [
+    "refs/heads/prod/absolventskyvelehrad",
+    "refs/heads/prod/aksmcz",
+    "refs/heads/prod/avapp",
+    "refs/heads/prod/cavfotofest",
+    "refs/heads/prod/csmostrava2026",
+    "refs/heads/prod/doobiscup",
+    "refs/heads/prod/farnostopava",
+    "refs/heads/prod/festapp",
+    "refs/heads/prod/festapptickets",
+    "refs/heads/prod/festappticketsglobal",
+    "refs/heads/prod/festivalslunovrat",
+    "refs/heads/prod/hvezdamorska",
+    "refs/heads/prod/jubileum2025",
+    "refs/heads/prod/slunovratopava",
+    "refs/heads/prod/ticketonline"
+  ],
+  "blockers": [
+    "main requires one approved review and does not allow force pushes",
+    "a new Slunovrat Android worktree appeared after the initial freeze inventory"
+  ],
+  "checks": {
+    "node": 152,
+    "sourceAndSecurity": 19,
+    "postgresIntegration": 11,
+    "sql": 2,
+    "retention": 9,
+    "artifactGuard": 1,
+    "ciContract": 18,
+    "make": 12,
+    "help": 4,
+    "adminDigest": 7,
+    "dartAnalyze": "no issues",
+    "api": "eight deterministic projections and released baseline compatibility passed"
+  }
+}

@@ -56,7 +56,10 @@ BEGIN
     END IF;
 
     -- Verify Code Matches
-    IF scan_code IS DISTINCT FROM v_expected_scan_code THEN
+    IF scan_code IS DISTINCT FROM v_expected_scan_code OR NOT EXISTS (
+        SELECT 1 FROM public.get_scanner_occasion_for_scan_code_internal(scan_code) proof
+        WHERE proof.id=v_occasion_id
+    ) THEN
         PERFORM public.admit_scan_access_v1(v_occasion_id,false);
         RETURN jsonb_build_object('code', 401, 'message', 'Invalid scan code.');
     END IF;

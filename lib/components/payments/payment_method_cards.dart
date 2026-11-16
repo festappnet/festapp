@@ -12,11 +12,13 @@ class PaymentMethodCards extends StatelessWidget {
     required this.onChanged,
     this.onlineFirst = false,
     this.showOnline = true,
+    this.showBank = true,
+    this.showCash = true,
     this.onlineTitle,
   });
 
   final bool onlineFirst;
-  final bool showOnline;
+  final bool showOnline, showBank, showCash;
   final String? onlineTitle;
   final FormPaymentMethod? value;
   final bool canSelectOnline;
@@ -43,7 +45,7 @@ class PaymentMethodCards extends StatelessWidget {
                     FormPaymentMethod.online,
                     FormPaymentMethod.both,
                   ]))
-          if (showOnline || method == FormPaymentMethod.bank) method,
+          if ((showOnline || method == FormPaymentMethod.bank) && (showBank || method == FormPaymentMethod.online)) method,
       ];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,7 +73,7 @@ class PaymentMethodCards extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           const Divider(height: 1),
-          RadioGroup<FormPaymentMethod>(
+          if (showCash) RadioGroup<FormPaymentMethod>(
             groupValue: value,
             onChanged: (method) {
               if (method != null) onChanged(method);

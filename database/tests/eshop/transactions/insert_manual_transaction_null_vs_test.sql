@@ -14,6 +14,8 @@ DECLARE
 BEGIN
     -- 1. Setup: org, unit, mock user (manager)
     INSERT INTO public.organizations (title) VALUES ('Test Org IMT NullVS') RETURNING id INTO v_org_id;
+    INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(v_org_id,'bank');
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(v_org_id,'bank',true),(v_org_id,'cash',true);
     INSERT INTO public.units (organization, title) VALUES (v_org_id, 'Test Unit IMT NullVS') RETURNING id INTO v_unit_id;
 
     INSERT INTO auth.users (id, email) VALUES (v_user_id, 'test_imt_nullvs_' || v_user_id || '@example.com');

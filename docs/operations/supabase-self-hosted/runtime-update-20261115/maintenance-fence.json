@@ -1,0 +1,8 @@
+{
+  "status": "pass",
+  "all_four_api_paths_503": true,
+  "retry_after": "60",
+  "cache_control": "no-store",
+  "original_config_restored": true,
+  "roundtrip_seconds": 0.392
+}

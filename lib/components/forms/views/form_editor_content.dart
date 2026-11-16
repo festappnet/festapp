@@ -1,7 +1,7 @@
 import 'form_editor_toolbar.dart';
 import 'form_editor_outline.dart';
 import '../widgets_editor/form_fields_navigation_controller.dart';
-import '../widgets_editor/form_editor_scroll.dart';
+import '../../_shared/editor_scroll.dart';
 import 'form_unavailable_content_editor.dart';
 import '../sale_opening_strings.dart';
 
@@ -801,7 +801,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     _selectedSection.value = section;
     final target = anchor.currentContext;
     if (target != null) {
-      revealFormEditorTarget(
+      revealEditorTarget(
         target,
         controller: _scrollController,
         alignment: 0,

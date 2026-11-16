@@ -1,0 +1,10 @@
+{
+  "header": "-- Apple Wallet on the shared ticket capability and organization connector.",
+  "sources": [
+    "ticket_wallet/apple_schema.sql",
+    "ticket_wallet/settings.sql",
+    "ticket_wallet/capabilities.sql",
+    "eshop/get_order_details_for_email.sql",
+    "others/get_ticket_layout_write_contract_v1.sql"
+  ]
+}

@@ -16,7 +16,7 @@ BEGIN
  PERFORM assert_eq(public.resolve_form_payment_policy_internal(f,'bank'),'{"mode":"custom","durationSeconds":100}'::jsonb,'NULL legacy duration inherits event');
  UPDATE public.forms SET deadline_duration_seconds=0,data='{"payment_deadline":{"mode":"custom"}}' WHERE id=f;
  PERFORM assert_eq(public.resolve_form_payment_policy_internal(f,'bank'),'{"mode":"custom","durationSeconds":0}'::jsonb,'zero duration is immediate, not none');
- UPDATE public.forms SET deadline_duration_seconds=NULL,data='{"payment_deadline":{"mode":"inherit"}}' WHERE id=f;
+ UPDATE public.forms SET deadline_duration_seconds=NULL,data='{"payments":{"bankEnabled":true},"payment_deadline":{"mode":"inherit"}}' WHERE id=f;
  UPDATE public.occasions SET features='[{"code":"form","is_enabled":true,"payment_deadline":{"mode":"none"}},{"code":"deposit","deposit_deadline_days":7}]' WHERE id=oc;
  PERFORM assert_eq(public.resolve_form_payment_policy_internal(f,'bank'),'{"mode":"none"}'::jsonb,'new forms inherit explicit event none');
  payload:=jsonb_build_object('form',(SELECT key FROM public.forms WHERE id=f),'email','none@example.invalid','payment_method','bank',

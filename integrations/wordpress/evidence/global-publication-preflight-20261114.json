@@ -1,0 +1,82 @@
+{
+  "observed_at_utc": "2026-11-14T17:39:47.577591+00:00",
+  "method": "BrowserOS neo authenticated browser page reads; no registration, order or submission writes",
+  "wordpress": {
+    "url": "https://wordpress.org/plugins/developers/add/",
+    "account": "festappnet",
+    "form_owner_email": "info@festapp.net",
+    "submission_page_observation": "Authenticated page contains an Add your plugin form. No pending-plugin list, status notice, assigned slug or SVN information appeared in its page text. This does not rule out a pending submission.",
+    "exact_page_text": [
+      "Add your plugin",
+      "Currently there are 604 plugins awaiting their first review.",
+      "All new submissions received before November 8, 2026 have been sent an initial response by email.",
+      "Are you ready? Upload the .zip file for your plugin",
+      "Maximum allowed file size: 10 MB"
+    ],
+    "public_profile": "https://profiles.wordpress.org/festappnet/ lists one plugin, vstupenky.online",
+    "public_candidate": "https://wordpress.org/plugins/festapp-tickets/ redirects to search results rather than an individual listing",
+    "name_due_diligence": {
+      "checkbox_exact": "I have chosen a plugin name that is not confusingly similar to existing plugins, projects, organizations, or trademarks. I searched on the internet for similar names and found nothing similar.",
+      "search_url": "https://www.google.com/search?q=Festapp+Tickets+WordPress+plugin+ticket+software",
+      "third_party": {
+        "name": "FEST App",
+        "url": "https://festapp.io/organizers/website-plugin",
+        "observed": "Offers a WordPress and Wix festival lineup and schedule plugin; similar name and adjacent event domain. Similarity does not establish trademark infringement or a final reviewer decision."
+      },
+      "result": "Potential conflict requires reviewer guidance; do not assert no similar names found.",
+      "exact_name_search_url": "https://www.google.com/search?q=%22Festapp+Tickets%22+plugin",
+      "exact_name_result": "No separate third-party plugin with exact name identified in reviewed results."
+    },
+    "review_team_contact": {
+      "email": "plugins@wordpress.org",
+      "source": "https://developer.wordpress.org/plugins/wordpress-org/plugin-developer-faq/#how-do-i-contact-the-plugins-team",
+      "response_time_claim": "FAQ says replies within 7 business days; existing cases should use the existing email thread.",
+      "message_sent": false
+    },
+    "duplicate_policy": {
+      "source": "https://developer.wordpress.org/plugins/wordpress-org/plugin-developer-faq/",
+      "observed": "FAQ says essentially copied existing work is not accepted; meaningful differences and separate origin warrant reviewer assessment rather than presumed acceptance."
+    }
+  },
+  "service": {
+    "https://tickets.festapp.net/login": {
+      "result": "Page reached; accessible snapshot exposed Enable accessibility and Later/Reload controls, but no login form text. Login readiness and language not verified."
+    },
+    "https://tickets.festapp.net/privacy/": {
+      "result": "English page, heading Privacy - Festapp Tickets"
+    },
+    "https://tickets.festapp.net/terms/": {
+      "result": "English page, heading Terms of use - Festapp Tickets"
+    },
+    "https://tickets.festapp.net/support/": {
+      "result": "English page, heading Support - Festapp Tickets"
+    },
+    "https://tickets.festapp.net/privacy/choices/": {
+      "result": "English page, heading Your choices and rights - Festapp Tickets; contains Czech account-deletion link label Potvrzení smazání účtu"
+    },
+    "https://tickets.festapp.net/help/embed/": {
+      "result": "English Festapp Tickets guide, heading How to embed ticket sales in your website",
+      "limitation": "Documentation describes saved form appearance but does not prove deployed runtime behavior."
+    },
+    "https://tickets.festapp.net/backend-activation.json": {
+      "schemaVersion": 1,
+      "tenantId": "festappticketsglobal",
+      "generation": 1,
+      "backend": "canonical"
+    },
+    "https://tickets.festapp.net/version.json": {
+      "app_name": "fstapp",
+      "version": "0.20.605",
+      "build_number": "1130",
+      "package_name": "fstapp"
+    },
+    "https://tickets.festapp.net/embed.js": {
+      "result": "Browser navigation showed status Načítání aplikace and empty readable text; actual response MIME, protocol and runtime behavior not established from this observation. Earlier global-public-origins evidence is historical and does not prove current deployment."
+    }
+  },
+  "candidate": {
+    "path": "dist/festapp-tickets-1.0.3.zip",
+    "sha256_supplied_by_coordinator": "b075fd2c427c24c796c4a96b06ad78f43ebd9d107e2275389031d326db96d2ea",
+    "submitted": false
+  }
+}

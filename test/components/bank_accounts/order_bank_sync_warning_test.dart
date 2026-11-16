@@ -234,10 +234,23 @@ void main() {
         await tester.tap(find.byType(IconButton));
         await tester.pumpAndSettle();
         expect(find.text('Festival account'), findsOneWidget);
-        final retry = ['degraded', 'stale', 'temporary_failure', 'unavailable'].contains(status);
-        expect(find.text('admin@example.test'), retry ? findsNothing : findsOneWidget);
+        final retry = [
+          'degraded',
+          'stale',
+          'temporary_failure',
+          'unavailable',
+        ].contains(status);
+        expect(
+          find.text('admin@example.test'),
+          retry ? findsNothing : findsOneWidget,
+        );
         if (retry) {
-          expect(find.textContaining('Do not replace the token or disable synchronization.'), findsOneWidget);
+          expect(
+            find.textContaining(
+              'Do not replace the token or disable synchronization.',
+            ),
+            findsOneWidget,
+          );
           expect(find.byType(Link), findsNothing);
         }
       }
@@ -270,7 +283,10 @@ void main() {
       await EasyLocalization.ensureInitialized();
       final info = payment(
         paid: scenario.endsWith('full') ? 100 : 25,
-        warning: scenario != 'cash' && scenario != 'healthy' && scenario != 'grace-period',
+        warning:
+            scenario != 'cash' &&
+            scenario != 'healthy' &&
+            scenario != 'grace-period',
       );
       if (scenario == 'fallback') {
         info.bankSyncWarning = const BankSyncWarning(
@@ -285,7 +301,8 @@ void main() {
                 scenario == 'cash' ||
                 scenario == 'healthy' ||
                 scenario == 'missing-account' ||
-                scenario == 'fallback' || scenario == 'grace-period'
+                scenario == 'fallback' ||
+                scenario == 'grace-period'
             ? 'ordered'
             : scenario.split('-').first,
         paymentInfoModel: info,
@@ -442,7 +459,7 @@ void main() {
     setUpAll(() async {
       fixture = await RootSupabaseFixture.open((request) {
         final path = request.url.path;
-        if (path.endsWith('/get_my_admin_bank_accounts')) {
+        if (path.endsWith('/get_bank_accounts_for_unit_management')) {
           return http.Response(
             jsonEncode(
               allowed
@@ -481,6 +498,8 @@ void main() {
         allowed = isAdmin;
         final rights = RightsContextFixture.bankAccounts(
           manageableAccounts: isAdmin ? {42} : {},
+          canManageUnit: true,
+          unitId: 9,
         );
         addTearDown(rights.dispose);
         await tester.pumpWidget(
@@ -517,6 +536,19 @@ void main() {
           expect(screen.account.isAdmin, isTrue);
           expect(screen.unitId, isNull);
           expect(find.byType(Switch), findsOneWidget);
+          final disabled = RightsContextFixture.bankAccounts(
+            manageableAccounts: {42},
+            canManageUnit: true,
+            unitId: 9,
+            bankEnabled: false,
+          );
+          addTearDown(disabled.dispose);
+          await tester.pumpAndSettle();
+          expect(
+            find.byType(BankAccountSettingsScreen),
+            findsNothing,
+            reason: 'current policy revocation clears an already open bank settings destination',
+          );
         } else {
           expect(
             find.text(

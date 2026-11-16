@@ -72,10 +72,8 @@ DECLARE
     new_price NUMERIC;
     new_data JSONB;
     new_order_price NUMERIC;
-    new_state TEXT;
 
     price_delta NUMERIC;
-    history_needed BOOLEAN;
     now_time TIMESTAMP WITH TIME ZONE := NOW();
 BEGIN
     -- 1. Get current ticket and order data
@@ -87,6 +85,7 @@ BEGIN
     SELECT * INTO ord FROM eshop.orders WHERE id = opt."order" FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
+    PERFORM public.assert_order_discount_unchanged_internal(ord.id);
     original_product_id := opt.product;
 
     -- 2. Find the *original* product JSON and price from the order_ids.data
@@ -113,18 +112,9 @@ BEGIN
         RETURN;
     END IF;
 
-    -- 5. Calculate financials and state
+    -- 5. Calculate the final price delta
     price_delta := new_price - original_price;
-    history_needed := (original_product_id IS DISTINCT FROM p_new_product_id);
     new_order_price := COALESCE(ord.price, 0) + price_delta;
-
-    -- Recalculate order state
-    SELECT CASE
-        WHEN COALESCE(pi.paid, 0)-COALESCE(pi.returned,0) >= new_order_price AND new_order_price > 0 THEN 'paid'
-        WHEN new_order_price <= 0 THEN 'paid'
-        ELSE 'ordered'
-    END INTO new_state
-    FROM eshop.payment_info pi WHERE pi.id=ord.payment_info;
 
     -- 6. Build the new order_ids.data JSON
     new_data := jsonb_set(
@@ -164,7 +154,6 @@ BEGIN
     SET
         price = new_order_price,
         data = new_data,
-        state = new_state,
         updated_at = now_time
     WHERE id = ord.id;
 
@@ -174,11 +163,8 @@ BEGIN
         product = p_new_product_id
     WHERE id = p_opt_id;
 
-    -- 8. Create history log *only if* the product ID actually changed
-    IF history_needed THEN
-        INSERT INTO eshop.orders_history("order", data, state, price, currency_code)
-        VALUES (ord.id, new_data, new_state, new_order_price, ord.currency_code);
-    END IF;
+    -- The aggregate swap reconciles each affected order once, after all seat
+    -- pairs have their final products and totals, and appends one final snapshot.
 
 END;
 $$;
@@ -186,7 +172,7 @@ $$;
 
 -- Only the aggregate applier calls this worker, after locking the complete
 -- assignment graph and checking scope, holds and atomic-unit eligibility.
--- The price/order helper remains the sole financial calculation.
+-- The pair helper updates purchased prices; the aggregate owns reconciliation.
 CREATE OR REPLACE FUNCTION public.apply_blueprint_seat_pair_locked_internal(p_first bigint,p_second bigint)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE first_spot eshop.spots;second_spot eshop.spots;
@@ -204,6 +190,7 @@ BEGIN
  END IF;
  UPDATE eshop.spots SET order_product_ticket=CASE WHEN id=p_first THEN second_spot.order_product_ticket ELSE first_spot.order_product_ticket END
  WHERE id IN(p_first,p_second);
+ PERFORM public.enqueue_ticket_wallet_internal(ARRAY(SELECT ticket FROM eshop.order_product_ticket WHERE id IN(first_spot.order_product_ticket,second_spot.order_product_ticket) ORDER BY ticket));
 END $$;
 REVOKE ALL ON FUNCTION public.apply_blueprint_seat_pair_locked_internal(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
 

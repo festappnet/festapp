@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "publisher": "Festapp",
+  "products": [
+    {
+      "name": "Festapp",
+      "namespace": "net.festapp/festapp",
+      "short_en": "Create events, plan programs and seating, set ticket prices and track sales with your AI assistant.",
+      "short_cs": "Založte akci, sestavte program a plán sálu. S AI nastavte vstupenky a sledujte prodej.",
+      "long_en": "Turn an event idea into a working plan with your AI assistant. Create the event, build its program, lay out tables and seats, and set up ticket types and prices with Festapp and Festapp Tickets. Manage reservations and orders, see how sales are doing and handle guest check-in.\n\nTry: \"Prepare a ball for 180 guests, with tables of six and two ticket categories.\" Or: \"Show ticket sales and the seats still available for this event.\"\n\nAvailable actions depend on the selected Festapp environment, your account permissions and the access you approve for the connection.",
+      "long_cs": "Proměňte nápad v připravenou akci se svým AI asistentem. Založte událost, sestavte program, rozvrhněte stoly a sedadla a nastavte kategorie vstupenek i ceny ve Festapp a Festapp Tickets. Pracujte s rezervacemi a objednávkami, sledujte prodej a odbavujte hosty.\n\nZkuste třeba: „Připrav ples pro 180 hostů, stoly po šesti a dvě cenové kategorie vstupenek.“ Nebo: „Ukaž prodej vstupenek a zbývající místa na této akci.“\n\nDostupné funkce se řídí vybraným prostředím Festapp, Vašimi právy a přístupem, který připojení povolíte."
+    },
+    {
+      "name": "vstupenky.online",
+      "namespace": "net.festapp/vstupenky-online",
+      "short_en": "Set up events, seating and ticket prices, then manage orders, sales and check-in with AI.",
+      "short_cs": "Připravte akci a plán sálu. S AI nastavte vstupenky, spravujte objednávky a odbavujte hosty.",
+      "long_en": "Get your ball, concert or festival ready for ticket sales with your AI assistant. Create the event, lay out its tables and seats, and set ticket categories, prices and capacity on vstupenky.online. Work with reservations and orders, track sales and payments, and manage guest check-in.\n\nTry: \"Prepare a seating plan with 20 tables of six and a VIP section.\" Or: \"Show orders awaiting payment and how many tickets have been sold.\"\n\nYour existing vstupenky.online permissions and the access you approve for the connection determine which actions are available.",
+      "long_cs": "Připravte ples, koncert nebo festival k prodeji vstupenek se svým AI asistentem. Založte akci, navrhněte rozmístění stolů a sedadel a nastavte kategorie, ceny i kapacity vstupenek na vstupenky.online. Pracujte s rezervacemi a objednávkami, sledujte prodej i platby a spravujte odbavení hostů.\n\nZkuste třeba: „Připrav plán sálu s dvaceti stoly po šesti místech a VIP sektorem.“ Nebo: „Ukaž objednávky čekající na platbu a počet prodaných vstupenek.“\n\nDostupné funkce se řídí Vašimi právy ve vstupenky.online a přístupem, který připojení povolíte."
+    }
+  ],
+  "capabilityEvidence": {
+    "create_event": [
+      "occasions.create"
+    ],
+    "publish_event": [
+      "occasions.settings.save"
+    ],
+    "program": [
+      "events.save"
+    ],
+    "seating_tables_capacity": [
+      "blueprints.save"
+    ],
+    "ticket_types_prices": [
+      "products.save"
+    ],
+    "reservations_orders": [
+      "seats.preview_order",
+      "seats.create_order",
+      "orders.inspect"
+    ],
+    "sales_payments": [
+      "orders.report",
+      "orders.inspect"
+    ],
+    "check_in": [
+      "scanner.inspect",
+      "scanner.admit"
+    ]
+  },
+  "scopeNote": "Venue means an event hall/seating plan here. No claim of a separate venue directory, venue booking, automatic payment-provider onboarding, or universal client compatibility.",
+  "verifiedRuntimeSourceSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5"
+}

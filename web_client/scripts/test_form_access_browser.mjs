@@ -167,7 +167,7 @@ try {
                             window.__fixtureReleaseForm = () => { window.__fixtureFormPending = false; resolve(value); };
                         }));
                     }
-                    if (!String(input).includes('/festapp-version.json?t=')) return response;
+                    if (!String(input).includes('/festapp-version.json?t=') && !String(input).includes('/festapp-version.json?refresh=')) return response;
                     return response.then(value => new Promise(resolve => {
                         window.__fixtureVersionPending = true;
                         window.__fixtureReleaseVersion = () => { window.__fixtureVersionPending = false; resolve(value); };

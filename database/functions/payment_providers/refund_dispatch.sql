@@ -8,7 +8,7 @@ BEGIN
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[r.order_id]);
  PERFORM 1 FROM eshop.payment_info WHERE id=r.payment_info FOR UPDATE;
  SELECT * INTO STRICT r FROM eshop.refund_requests WHERE id=p_request FOR UPDATE;
- IF NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=r.method AND hosted_checkout AND (refund_write_enabled OR r.dispatched_at IS NOT NULL)) OR r.status NOT IN ('pending','processing','unknown') THEN RETURN jsonb_build_object('disposition','read'); END IF;
+ IF NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=r.method AND hosted_checkout AND (refund_write_supported AND refund_write_enabled OR r.dispatched_at IS NOT NULL)) OR r.status NOT IN ('pending','processing','unknown') THEN RETURN jsonb_build_object('disposition','read'); END IF;
  IF r.lease_until>clock_timestamp() THEN RETURN jsonb_build_object('disposition','busy'); END IF;
  binding:=public.payment_provider_call_internal(r.method,'refund_binding',jsonb_build_object('orderId',r.order_id));
  IF binding IS NULL OR binding IS DISTINCT FROM r.payload->'binding' THEN RAISE EXCEPTION 'REFUND_BINDING_CHANGED'; END IF;

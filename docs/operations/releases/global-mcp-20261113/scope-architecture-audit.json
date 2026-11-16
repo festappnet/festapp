@@ -1,0 +1,15 @@
+{
+  "source": "8aa7379d3a2f337fe298b48bbd2c318932cc5106",
+  "tools": 196,
+  "functionalScopes": 83,
+  "foundationScopes": [
+    "festapp:ticket-layouts:read",
+    "festapp:occasions:create"
+  ],
+  "readScopes": 38,
+  "nonReadScopes": 45,
+  "duplicateOperationScopes": [],
+  "missingOperations": [],
+  "readScopeWrites": [],
+  "dependencyCycles": []
+}

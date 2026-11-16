@@ -1,3 +1,25 @@
+CREATE OR REPLACE FUNCTION public.get_email_occasion_context(p_occasion bigint) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ PERFORM public.require_service_role();
+ RETURN (SELECT jsonb_build_object('organization',organization,'unit',unit) FROM public.occasions WHERE id=p_occasion);
+END $$;
+REVOKE ALL ON FUNCTION public.get_email_occasion_context(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_email_occasion_context(bigint) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.email_reporting_state(m public.email_messages) RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
+ SELECT CASE WHEN m.complained_at IS NOT NULL THEN 'complaint' WHEN m.bounced_at IS NOT NULL THEN 'bounce'
+ WHEN m.last_error='post_action_failed' THEN 'post_action_failed' WHEN m.provider_failure IN ('reject','rendering_failure') THEN m.provider_failure
+ WHEN m.workflow_state IN ('unknown','dead','suppressed','retry_wait') THEN m.workflow_state
+ WHEN m.clicked_at IS NOT NULL THEN 'click' WHEN m.opened_at IS NOT NULL THEN 'open' WHEN m.delivered_at IS NOT NULL THEN 'delivery'
+ WHEN m.provider_failure='delay' THEN 'delay' ELSE m.workflow_state END;
+$$;
+REVOKE ALL ON FUNCTION public.email_reporting_state(public.email_messages) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.email_reporting_state(public.email_messages) TO service_role;
+
+-- Current issues are explicit provenance chains, independent of historical counts.
+-- This invoker helper is only reachable through authorized reporting functions.
+-- Batched provenance chains retain order and message-kind boundaries. Events
+-- are aggregated once, including failures needed to judge superseding delivery.
 CREATE OR REPLACE FUNCTION public.order_email_current_issues_bulk(p_orders bigint[])
 RETURNS TABLE(order_id bigint,issues jsonb)
 LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
@@ -75,26 +97,6 @@ $$;
 REVOKE ALL ON FUNCTION public.order_email_current_issues_bulk(bigint[]) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.order_email_current_issues_bulk(bigint[]) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.get_email_occasion_context(p_occasion bigint) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-BEGIN
- PERFORM public.require_service_role();
- RETURN (SELECT jsonb_build_object('organization',organization,'unit',unit) FROM public.occasions WHERE id=p_occasion);
-END $$;
-REVOKE ALL ON FUNCTION public.get_email_occasion_context(bigint) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_email_occasion_context(bigint) TO service_role;
-
-CREATE OR REPLACE FUNCTION public.email_reporting_state(m public.email_messages) RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- SELECT CASE WHEN m.complained_at IS NOT NULL THEN 'complaint' WHEN m.bounced_at IS NOT NULL THEN 'bounce'
- WHEN m.last_error='post_action_failed' THEN 'post_action_failed' WHEN m.provider_failure IN ('reject','rendering_failure') THEN m.provider_failure
- WHEN m.workflow_state IN ('unknown','dead','suppressed','retry_wait') THEN m.workflow_state
- WHEN m.clicked_at IS NOT NULL THEN 'click' WHEN m.opened_at IS NOT NULL THEN 'open' WHEN m.delivered_at IS NOT NULL THEN 'delivery'
- WHEN m.provider_failure='delay' THEN 'delay' ELSE m.workflow_state END;
-$$;
-REVOKE ALL ON FUNCTION public.email_reporting_state(public.email_messages) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.email_reporting_state(public.email_messages) TO service_role;
-
--- Current issues are explicit provenance chains, independent of historical counts.
--- This invoker helper is only reachable through authorized reporting functions.
 CREATE OR REPLACE FUNCTION public.order_email_current_issues(p_order bigint) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
 BEGIN
@@ -172,7 +174,7 @@ BEGIN
  SELECT coalesce(jsonb_agg(x ORDER BY id DESC),'[]') INTO v_result FROM (
  SELECT id,message_id,message_kind,recipient,order_id,(SELECT o.order_symbol FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion WHERE o.id=m.order_id AND oc.organization=m.organization AND o.occasion=m.occasion) order_symbol,created_at,accepted_at,delivered_at,bounced_at,complained_at,opened_at,clicked_at,
  public.email_reporting_state(m) state,tracking_policy,post_action_state,last_error FROM public.email_messages m
- WHERE organization=v_org AND (p_occasion IS NULL OR occasion=p_occasion OR (p_user IS NOT NULL AND occasion IS NULL))
+ WHERE organization=v_org AND message_kind<>'admin_notification_digest' AND (p_occasion IS NULL OR occasion=p_occasion OR (p_user IS NOT NULL AND occasion IS NULL))
  AND (p_user IS NULL OR recipient_user=p_user) AND (p_since IS NULL OR created_at>=p_since) AND (p_before IS NULL OR id<p_before) AND (p_order IS NULL OR order_id=p_order)
  AND (m.message_kind NOT IN ('sale_opening_confirmation','sale_opening_opened') OR public.can_read_sale_opening_subscribers(m.occasion))
  AND (NOT coalesce(p_orders_only,false) OR order_id IS NOT NULL)
@@ -187,6 +189,7 @@ CREATE OR REPLACE FUNCTION public.get_email_delivery_detail(p_message uuid) RETU
 DECLARE m public.email_messages;
 BEGIN
  SELECT * INTO m FROM public.email_messages WHERE message_id=p_message;
+ IF m.message_kind='admin_notification_digest' THEN RAISE EXCEPTION 'email_read_denied'; END IF;
  IF m.message_id IS NULL THEN RAISE EXCEPTION 'email_detail_not_available'; END IF;
  IF NOT (CASE WHEN m.message_kind IN ('sale_opening_confirmation','sale_opening_opened') THEN public.can_read_sale_opening_subscribers(m.occasion) ELSE coalesce(public.email_report_allowed(m.organization,m.occasion),false) END) THEN RAISE EXCEPTION 'email_read_denied'; END IF;
  RETURN jsonb_build_object('message',jsonb_build_object('id',m.message_id,'kind',m.message_kind,'recipient',m.recipient,'created_at',m.created_at,'state',public.email_reporting_state(m),'tracking_policy',m.tracking_policy,'opened_at',m.opened_at,'clicked_at',m.clicked_at,'post_action',m.post_action_state,'last_error',m.last_error,'provider_id',m.provider_message_id,'requested_by',m.data->>'requested_by'),
@@ -240,7 +243,7 @@ BEGIN
  'complained',count(*) FILTER(WHERE complained_at IS NOT NULL),'opened_messages',count(*) FILTER(WHERE opened_at IS NOT NULL),
  'clicked_messages',count(*) FILTER(WHERE clicked_at IS NOT NULL),'tracking_coverage',count(*) FILTER(WHERE tracking_policy<>'disabled'),
  'unknown',count(*) FILTER(WHERE workflow_state='unknown'),'dead',count(*) FILTER(WHERE workflow_state='dead'),
- 'feedback_overdue',count(*) FILTER(WHERE accepted_at BETWEEN now()-interval '1 day' AND now()-interval '30 minutes' AND NOT EXISTS(SELECT 1 FROM public.email_delivery_events e WHERE e.message_id=email_messages.message_id))) FROM public.email_messages WHERE organization=v_org AND (p_occasion IS NULL OR occasion=p_occasion));
+ 'feedback_overdue',count(*) FILTER(WHERE accepted_at BETWEEN now()-interval '1 day' AND now()-interval '30 minutes' AND NOT EXISTS(SELECT 1 FROM public.email_delivery_events e WHERE e.message_id=email_messages.message_id))) FROM public.email_messages WHERE organization=v_org AND message_kind<>'admin_notification_digest' AND (p_occasion IS NULL OR occasion=p_occasion));
 END $$;
 REVOKE ALL ON FUNCTION public.get_email_delivery_overview(bigint,bigint) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.get_email_delivery_overview(bigint,bigint) TO authenticated,service_role;

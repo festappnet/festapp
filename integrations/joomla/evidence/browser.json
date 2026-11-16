@@ -1,11 +1,11 @@
 {
-  "boundary": "vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59941; international remote requests blocked; no purchase submitted",
+  "boundary": "vstupenky.online DNS routed only in isolated browser to disposable HTTPS fixture on 59803 and backend on 59931; international remote requests blocked; no purchase submitted",
   "cases": [
     {
       "case": "320px, real form, article/position auto height, one helper",
       "heights": [
-        723,
-        748
+        1756,
+        120
       ],
       "helpers": 1,
       "scrollWidth": 320,

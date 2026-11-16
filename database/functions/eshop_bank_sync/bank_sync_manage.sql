@@ -44,6 +44,7 @@ CREATE OR REPLACE FUNCTION public.begin_bank_sync_operation(p_id uuid,p_account_
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_operation eshop.bank_sync_operations%ROWTYPE; v_inserted integer;
 BEGIN
+  PERFORM public.require_bank_authoring_scope_internal(p_account_id,NULL);
   PERFORM public.check_is_admin_for_bank_account(p_account_id);
   IF p_operation='suspend' THEN PERFORM public.check_bank_refund_source_operation_internal(p_account_id); END IF;
   INSERT INTO eshop.bank_sync_operations(id,bank_account_id,actor,operation,payload_sha256,state)
@@ -138,6 +139,7 @@ BEGIN
     state=CASE WHEN p_state IN ('connected','degraded') AND observation_id>p_observation_id THEN state ELSE p_state END
     WHERE id=p_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_CONNECTION_NOT_FOUND'; END IF;
+  PERFORM public.notification_center_bank_incident_internal(p_id);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.update_bank_sync_connection_metadata(bigint,text,timestamptz,text,bigint,text) FROM PUBLIC,anon,authenticated;
@@ -171,7 +173,13 @@ BEGIN
     state=CASE WHEN state IN ('connected','degraded') THEN
       CASE WHEN p_error IS NOT NULL THEN 'degraded' WHEN p_success_at IS NOT NULL THEN 'connected' ELSE state END
       ELSE state END WHERE id=p_id AND observation_id<p_observation_id;
-  RETURN FOUND;
+  IF NOT FOUND THEN RETURN false; END IF;
+  -- Successful pull recovery invalidates the projected incident immediately.
+  IF p_error IS NULL AND p_success_at IS NOT NULL THEN
+   UPDATE eshop.bank_sync_health SET warning_code=NULL,warning_since=NULL,incident_id=NULL WHERE connection_id=p_id;
+  END IF;
+  PERFORM public.notification_center_bank_incident_internal(p_id);
+  RETURN true;
 END;
 $$;
 REVOKE ALL ON FUNCTION public.record_bank_sync_pull(bigint,timestamptz,text,bigint) FROM PUBLIC,anon,authenticated;

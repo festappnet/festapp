@@ -332,6 +332,7 @@ Deno.serve(async (req) => {
         commandId,
         unitName: order.occasion.title,
         replacement: !!replacement,
+        durable: !!order.data?.discount,
       });
       if (!preparation.ok) {
         return Response.json(

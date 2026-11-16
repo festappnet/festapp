@@ -1,3 +1,4 @@
+import '../../payments/payment_policy_settings.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 
 import '../../unit/verification/verification_queue.dart';
@@ -260,6 +261,12 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                                     '3335204bc4014e9c9e8d7568920650f8,cddce39c98cd4949b882c865471ab50d',
                               ),
                             ],
+                            if (orgId == 3 || orgId == 25)
+                              _analyticsReport(
+                                label: 'tickets.festapp.net',
+                                siteTags: '3335204bc4014e9c9e8d7568920650f8',
+                                host: 'tickets.festapp.net',
+                              ),
                             ListTile(
                                 leading: const Icon(Icons.verified_outlined),
                                 title: Text(VerificationStrings.text('queue')),
@@ -268,6 +275,8 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                                     MaterialPageRoute(
                                         builder: (_) => VerificationQueue(
                                             organizationId: orgId)))),
+                            PaymentPolicySettings(organizationId: orgId),
+                            const SizedBox(height: 24),
                             Text("Organization Settings",
                                 style:
                                     Theme.of(context).textTheme.headlineMedium),

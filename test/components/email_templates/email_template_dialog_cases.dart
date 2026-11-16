@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_email_preview.dart';
+import 'package:fstapp/components/ticket_layout/ticket_delivery_strings.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'dart:io';
@@ -106,6 +107,53 @@ Future<void> openTemplate(
 }
 
 void main() {
+  testWidgets('draft paid template includes Wallet without a saved occasion', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.runAsync(() => TicketDeliveryStrings.walletCopy('en'));
+    await openTemplate(
+      tester,
+      code: 'TICKET_ORDER_PAYMENT_DONE',
+      html: '<p>Tickets are attached.</p>{{tickets}}',
+      previewExamplesLoader: () async => EmailPreviewExamples.fromJson(
+        jsonDecode(
+          File('assets/email_templates/preview_examples.json')
+              .readAsStringSync(),
+        ),
+      ),
+      authoringContextLoader: () => Future<EmailAuthoringContext>.delayed(
+        Duration.zero,
+        () => const EmailAuthoringContext(
+          senderAddress: 'sender@test.invalid',
+          walletEnabled: true,
+          language: 'en',
+          ticketDeliveryMode: 'pdf_attachment',
+        ),
+      ),
+    );
+    await tester.ensureVisible(find.byIcon(Icons.preview_outlined).first);
+    await tester.tap(find.byIcon(Icons.preview_outlined).first);
+    await tester.pumpAndSettle();
+    final preview = find.byType(TicketEmailPreview);
+    expect(preview, findsOneWidget);
+    expect(
+      find.descendant(
+        of: preview,
+        matching: find.text('Tickets on your phone'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: preview, matching: find.byType(QrImageView)),
+      findsNothing,
+    );
+    expect(find.text('ticket_UKAZKA-1.pdf'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'waitlist offer dialog renders inherited wording as atomic blocks',
     (tester) async {

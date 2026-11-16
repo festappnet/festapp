@@ -48,7 +48,7 @@ DECLARE config jsonb; c eshop.stripe_connections; policy eshop.stripe_runtime_po
  bank boolean; card boolean; reason text; methods jsonb:='[]'::jsonb;
 BEGIN
  SELECT f.data->'payments',o.organization,o.unit INTO config,org,u FROM public.forms f JOIN public.occasions o ON o.id=f.occasion WHERE f.id=p_form;
- bank:=coalesce(config->'bankEnabled','true'::jsonb)='true'::jsonb;
+ bank:=coalesce(config->'bankEnabled','false'::jsonb)='true'::jsonb AND public.payment_method_policy_enabled_internal(u,'bank');
  card:=public.payment_provider_connection_internal(config,'stripe') IS NOT NULL;
  IF bank THEN methods:=methods||jsonb_build_array('bank'); END IF;
  IF card THEN

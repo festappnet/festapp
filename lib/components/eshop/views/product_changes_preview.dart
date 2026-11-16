@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 import '../orders_strings.dart';
@@ -10,12 +11,12 @@ class ProductChangesPreview extends StatelessWidget {
   String _symbol(OrderTicketChange ticket) =>
       ticket.ticketSymbol ?? OrdersStrings.ticketWithoutSymbol;
 
-  Widget _product(BuildContext context, ProductModel product,
+  Widget _product(BuildContext context, OrderChangeProduct product,
           {String prefix = '', Color? color}) =>
       Padding(
         padding: const EdgeInsets.only(left: 8, top: 4),
         child: Text(
-            '$prefix${product.title ?? ""} (${Utilities.formatPrice(context, product.price ?? 0, currencyCode: product.currencyCode ?? changes.currencyCode)})',
+            '$prefix${product.title ?? ""}${product.seatLabel.isEmpty ? "" : " - ${product.seatLabel}"} (${Utilities.formatPrice(context, product.price ?? 0, currencyCode: product.currencyCode ?? changes.currencyCode)})',
             style: TextStyle(color: color)),
       );
 
@@ -35,7 +36,7 @@ class ProductChangesPreview extends StatelessWidget {
   Widget _ticketHeading(OrderTicketChange ticket,
           {String? status, Color? color, bool cancelled = false}) =>
       Wrap(spacing: 8, runSpacing: 4, children: [
-        Text(OrdersStrings.changeTicketLabel(_symbol(ticket)),
+        Text(OrderItemStrings.changeTicketLabel(_symbol(ticket)),
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: color,
@@ -134,6 +135,9 @@ class ProductChangesPreview extends StatelessWidget {
                         _product(context, product,
                             prefix: '- ', color: Colors.red),
                       for (final product in ticket.changed) ...[
+                        if (product.from.seatLabel != product.to.seatLabel)
+                          _transition(context, OrdersStrings.gridSpot,
+                              product.from.seatLabel, product.to.seatLabel),
                         if (product.from.title != product.to.title)
                           _transition(context, product.to.title ?? '',
                               product.from.title ?? '', product.to.title ?? ''),

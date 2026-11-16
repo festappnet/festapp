@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class FeaturesStrings {
+  static String get customerSelfServiceTitle => 'FeatureCustomerSelfService.title'.tr();
+  static String get customerSelfServiceDescription => 'FeatureCustomerSelfService.description'.tr();
   static String get receptionTitle => 'FeatureReception.title'.tr();
   static String get receptionDescription => 'FeatureReception.description'.tr();
   // Schedule Feature Form
@@ -142,7 +144,6 @@ class FeaturesStrings {
   // Feature Ticket
   static String get labelShowHiddenNote =>
       'FeatureTicket.labelShowHiddenNote'.tr();
-  static String get selectTicket => 'FeatureTicket.selectTicket'.tr();
   static String get unknown => 'FeatureTicket.unknown'.tr();
   static String get noData => 'FeatureTicket.noData'.tr();
   static String get ticketDescription => 'FeatureTicket.description'

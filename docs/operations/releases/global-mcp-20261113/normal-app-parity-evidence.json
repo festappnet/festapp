@@ -1,0 +1,12 @@
+{
+  "sourceSha": "09cdd991fa30dd848324df586e188040931d3bd2",
+  "firstPartyVersion": "0.20.598+1120",
+  "firstPartyTenantSha": "fbb3434ef4b102a29939fcef084afc1f43611964",
+  "baseMainSha": "bf5016c49919ba874702791e7ef5cebaf654f67e",
+  "canonicalRpc": "get_operator_order_report_v1",
+  "normalSignedInAppHttpStatus": 200,
+  "mcpReadMatchesNormalApp": true,
+  "normalization": "recursively sorted keys; generated_at omitted",
+  "sha256": "202550bc7a0e84aa56b251714efeb074b374e1cb94e8fd2522923bf6c07cb98d",
+  "verification": "Terra isolated first-party signed-in browser; actual global MCP SDK result"
+}

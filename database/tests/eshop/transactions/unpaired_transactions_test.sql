@@ -4,6 +4,7 @@ BEGIN;
 DO $$
 DECLARE
     v_user_id uuid;
+    v_occasion bigint;
     v_org_id bigint;
     v_unit_id bigint;
     v_acc_id bigint;
@@ -34,6 +35,8 @@ BEGIN
     VALUES (v_acc_id, v_user_id, true);
 
     INSERT INTO public.organizations(title) VALUES('Unpaired account authority') RETURNING id INTO v_org_id;
+    INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(v_org_id,'bank');
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(v_org_id,'bank',true),(v_org_id,'cash',true);
     INSERT INTO public.units(title,organization) VALUES('Bank manager',v_org_id) RETURNING id INTO v_unit_id;
     INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(v_unit_id,v_user_id,true);
     INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(v_unit_id,v_acc_id);
@@ -43,6 +46,11 @@ BEGIN
     INSERT INTO eshop.payment_info (bank_account, amount, currency_code, variable_symbol)
     VALUES (v_acc_id, 1000, 'CZK', 12345)
     RETURNING id INTO v_payment_info_id;
+    INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
+    VALUES('Výpis plateb',v_org_id,v_unit_id,'unpaired-scope-'||gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO v_occasion;
+    INSERT INTO public.occasion_users(occasion,"user",is_editor_order_view) VALUES(v_occasion,v_user_id,true);
+    INSERT INTO eshop.orders(occasion,payment_info,state,price,currency_code,order_sequence,order_symbol)
+    VALUES(v_occasion,v_payment_info_id,'ordered',1000,'CZK',1,public.generate_order_symbol());
 
     -- 4. Create UNPAIRED Transactions
     

@@ -20,6 +20,19 @@ subprojects {
         }
     }
 }
+// Use AGP's public final DSL hook so hosted plugins cannot retain an SDK below
+// the Flutter dependencies they consume. Explicit newer or preview SDKs stay valid.
+subprojects { project ->
+    project.plugins.withId('com.android.library') {
+        project.extensions.getByName('androidComponents').finalizeDsl { dsl ->
+            def flutter = project.extensions.findByName('flutter')
+            if (flutter != null && dsl.compileSdkPreview == null &&
+                    (dsl.compileSdk ?: 0) < flutter.compileSdkVersion) {
+                dsl.compileSdk = flutter.compileSdkVersion
+            }
+        }
+    }
+}
 // Register every namespace callback before evaluating :app can evaluate plugins.
 subprojects {
     project.evaluationDependsOn(":app")

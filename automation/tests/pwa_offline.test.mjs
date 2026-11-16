@@ -671,7 +671,7 @@ try {
   assert.ok(ciContract.jobs['web-startup'].steps.includes('web-startup'));
   assert.match(ciContract.steps['web-startup'].script, /bash automation\/test_web_startup\.sh/);
   assert.match(sharedBuild, /release\.web-client-build node automation\/lib\/web_build_cache\.mjs component vite/);
-  assert.match(sharedBuild, /cd web_client && pnpm run build/);
+  assert.match(sharedBuild, /cd web_client && pnpm run compile/);
   assert.ok(sharedBuild.indexOf('python3 automation/ci/release_gate.py') < sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile')
     && sharedBuild.indexOf('cd web_client && pnpm install --frozen-lockfile') < sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check')
     && sharedBuild.indexOf('node web_client/scripts/build_runtime.mjs --check') < sharedBuild.indexOf('release.web-client-build node automation/lib/web_build_cache.mjs component vite'),
@@ -762,6 +762,27 @@ try {
   networkAvailable = true;
   assert.equal(await (await dispatchFetch(management)).text(), 'online connections');
   assert.equal(cachedPuts.some(url => url.includes('/settings/connections')), false);
+
+  // Online account documents can outlive the worker that controls the tab.
+  // Their immutable imports must follow the network document, not the old shell.
+  for (const pathname of ['/settings/connections', '/settings/mcp-connect', '/google-auth', '/wallet']) {
+    const client = {
+      id: 'online-account-client', url: 'https://app.test' + pathname,
+      postMessage: () => {},
+      navigate: async url => { navigatedClients.push([client.id, url]); },
+    };
+    clientsById.set(client.id, client);
+    await reportVersion(client, '1.2.3+5');
+    const before = navigatedClients.length;
+    const response = await dispatchFetch(new Request('https://app.test/web-assets/index.js'), client.id);
+    assert.equal(navigatedClients.length, before, pathname + ' must not reload a newer online document');
+    assert.equal(await response.text(), 'web client bundle');
+    vm.runInNewContext('clientVersions.clear(); clientCacheNames.clear();', context);
+    assert.equal(await (await dispatchFetch(new Request('https://app.test/web-assets/index.js'), client.id)).text(), 'web client bundle');
+    networkAvailable = false;
+    assert.equal((await dispatchFetch(new Request('https://app.test/web-assets/index.js'), client.id)).type, 'error', 'private documents never mix cached executables');
+    networkAvailable = true;
+  }
 
   const marketingRoot = new Request('https://app.test/');
   Object.defineProperty(marketingRoot,'mode',{value:'navigate'});

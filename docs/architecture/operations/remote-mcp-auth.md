@@ -341,7 +341,7 @@ Primary guidance: [OpenAI authentication](https://developers.openai.com/plugins/
 
 ## First-party tenant consent
 
-The public MCP issuer stays on `mcp.festapp.net`. With `tenantOrigin` configured,
+The regional MCP issuer uses `mcp.vstupenky.online`. With `tenantOrigin` configured,
 its connection interaction redirects to `/settings/mcp-connect` on the exact
 first-party tenant origin. The app reuses its ordinary session and login page
 (including its existing provider choices), displays the requesting client and
@@ -367,8 +367,12 @@ shared owner; tenant consent cannot expand the configured pilot allowlist.
 The production tenant UI is released before enabling `tenantOrigin` routing.
 The Edge runtime needs a protected `FESTAPP_MCP_TENANTS_JSON` registry: an array
 of `{tenantId, tenantOrigin, organizationId, issuer, brokerSecret}`. Origins are
-exact HTTPS origins, unique within the registry. Only the HTTP Origin selects a
-registry entry; client bodies cannot select an organization, issuer or credential.
+exact HTTPS origins. The `(tenantOrigin, issuer)` pair is unique. An optional
+`X-Festapp-Mcp-Issuer` selector resolves only an entry belonging to the verified
+HTTP Origin; it never introduces a destination. Without the selector, an origin's
+single registered issuer is retained; if multiple issuers exist, the regional
+issuer stays the default for existing clients. Client bodies cannot select an
+organization or credential.
 Every backchannel call carries the resolved tenant identity; the issuer checks
 it against its bound backend profile before inspecting a request or minting.
 The `brokerSecret` matches the separately protected issuer secrets file. Never
@@ -516,3 +520,38 @@ backend/network error is not proof of session expiry and follows the existing
 upstream-error path. Selecting one year therefore allows access for up to that
 fixed deadline, subject to the backend session remaining valid; it is not a
 promise of a year without reauthorization.
+
+
+## Global Festapp contexts
+
+The global issuer uses `contexts` instead of a single `profile`/`tenantOrigin`.
+Every entry contains a display name, a parsed activation-bound profile and an
+exact trusted first-party origin. Profiles cannot mix canonical and disposable
+backends; duplicate tenant IDs, profile bindings or origins are rejected. A
+context selection happens on the issuer's first-party page with the original
+interaction cookie and CSRF proof, before leaving for tenant login/consent.
+The selection cannot be changed once stored. A different environment requires
+another OAuth flow and explicit consent.
+
+Flow, preparation lease, result, grant and downstream session retain that profile
+binding. The grant also stores its interaction ID; request authorization checks
+the derived session binding and global audience. Each request constructs its
+own bound owner. SQL remains the owner of current membership, authorization,
+domain calculations, transactions and receipt replay. `user_info.organization`
+remains a single organization per account; the global URL does not turn an
+account into a cross-organization principal. Separate accounts/connections can
+use separate environments. Existing organizer memberships and capability rules
+remain authoritative within the selected environment.
+
+First-party clients send the optional selector from the issuer-provided login
+URL; the broker resolves only its protected `(Origin, issuer)` registry. Old
+clients on an origin with a sole global entry remain compatible without it.
+Connection management is the existing first-party account surface. The global
+issuer lists only configured destinations; selected-environment account proof
+is required to list/revoke its grants. The global runtime uses separate port,
+keys, encrypted state and storage target identity. It never imports regional
+consents or historical credentials from the retired global service.
+
+The global rollout and directory identities are tracked in
+`docs/operations/releases/global-mcp-20261113/` and `integrations/mcp-directories/`.
+Their prepared state is not a claim of live deployment or directory acceptance.

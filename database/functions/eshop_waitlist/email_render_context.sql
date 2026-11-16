@@ -56,7 +56,7 @@ BEGIN
   RAISE EXCEPTION 'waitlist_email_source_invalid';
  END IF;
  RETURN jsonb_build_object('orderId',o.id,'orderSymbol',o.order_symbol,
-  'organization',org.id,'occasion',occ.id,'unit',occ.unit,'formLink',f.link,
+  'allowedActions',public.customer_order_actions_internal(o.id),'organization',org.id,'occasion',occ.id,'unit',occ.unit,'formLink',f.link,
   'webLink',org.data->>'DEFAULT_URL','replyTo',public.get_reply_to_email_for_order(o.id),
   'participantCount',(SELECT count(*) FROM public.get_order_tickets_internal(o.id)),
   'offeredCount',(SELECT count(*) FROM eshop.waitlist_offer_slots

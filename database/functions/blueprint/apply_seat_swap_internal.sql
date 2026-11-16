@@ -22,7 +22,7 @@ REVOKE ALL ON FUNCTION public.check_blueprint_swap_scope_internal(bigint,bigint[
 CREATE OR REPLACE FUNCTION public.apply_blueprint_seat_swap_internal(p_first bigint,p_second bigint)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE occ bigint; left_ids bigint[];right_ids bigint[];ids bigint[];v_order_ids bigint[];
- before_orders jsonb;sides jsonb;revisions jsonb;effects jsonb;facts jsonb;result jsonb;i integer;
+ before_orders jsonb;sides jsonb;revisions jsonb;effects jsonb;facts jsonb;result jsonb;i integer;v_order_id bigint;
 BEGIN
  SELECT min(occasion) INTO occ FROM eshop.spots WHERE id IN(p_first,p_second);
  IF p_first IS NULL OR p_second IS NULL OR p_first=p_second OR occ IS NULL
@@ -59,6 +59,14 @@ BEGIN
  LEFT JOIN eshop.order_product_ticket i ON i.id=s.order_product_ticket LEFT JOIN eshop.tickets t ON t.id=i.ticket
  LEFT JOIN eshop.orders o ON o.id=i."order" LEFT JOIN lifecycle ON lifecycle.id=s.id WHERE s.id=ANY(ids);
  FOR i IN 1..cardinality(left_ids) LOOP PERFORM public.apply_blueprint_seat_pair_locked_internal(left_ids[i],right_ids[i]); END LOOP;
+ -- Seat-only edits invalidate customer content too. Reconcile final totals once
+ -- per order, so swaps within one order cannot create intermediate paid emails.
+ FOR v_order_id IN SELECT id FROM eshop.orders WHERE id=ANY(v_order_ids) ORDER BY id LOOP
+  PERFORM public.reconcile_order_payment_internal_v1(v_order_id,'product_edit');
+  PERFORM public.refresh_order_payment_deadline_internal(v_order_id);
+  INSERT INTO eshop.orders_history("order",data,state,price,currency_code)
+  SELECT id,data,state,price,currency_code FROM eshop.orders WHERE id=v_order_id;
+ END LOOP;
  SELECT coalesce(jsonb_agg(jsonb_build_object('orderId',id,
   'beforeAmount',(before_orders->id::text->>'amount')::numeric,'afterAmount',price,
   'delta',price-(before_orders->id::text->>'amount')::numeric,'currencyCode',currency_code,

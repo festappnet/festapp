@@ -13,7 +13,7 @@ export function renderPaymentMethodPicker(host,options,onChanged) {
         if(isCardPaymentMethod(state.selected)){
             const recipient=options.providers[state.selected]?.recipient;
             if(recipient?.name)line(paymentMethodRecipient(recipient.name));
-            line(text('fullAmount'));line(paymentMethodReservation(options.reservationSeconds));line(text(paymentConnectors.get(state.selected).hintKey));
+            line(text('fullAmount'));line(paymentMethodReservation(options.reservationSeconds));line(text(paymentConnectors.get(state.selected).hintKey, { hasTickets: options.hasTickets }));
         }
         if(options.cardConfigured&&!options.available.some(isCardPaymentMethod))line(text('reason_'+options.unavailableReason));
         if(!options.available.length){line(text('unavailable'));detail.setAttribute('role','alert');}

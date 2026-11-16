@@ -6,7 +6,12 @@ DECLARE a eshop.barion_attempts; c eshop.barion_connections; o eshop.orders; pi 
  result jsonb; input jsonb; binding uuid; amount numeric; stamp timestamptz:=date_trunc('second',clock_timestamp());
  received bigint; refunded bigint; status text; admission text; expiry timestamptz;
 BEGIN
- IF p_operation='operation_capabilities' THEN
+ IF p_operation='notification_connection_health' THEN
+  SELECT jsonb_build_object('organizationId',connection_row.organization_id,'unitId',connection_row.unit_id,'title','Barion',
+   'reason',CASE WHEN connection_row.enabled AND EXISTS(SELECT 1 FROM eshop.barion_attempts attempt_row WHERE attempt_row.connection_id=connection_row.id AND attempt_row.reconcile_failures>=public.payment_provider_connection_failure_threshold_internal()) THEN 'provider_unavailable' END)
+  INTO result FROM eshop.barion_connections connection_row WHERE connection_row.id=(p_args->>'connectionId')::uuid;
+  RETURN result;
+ ELSIF p_operation='operation_capabilities' THEN
   RETURN jsonb_build_object('id','barion','displayName','Barion sandbox','record',false,'refund',false,
    'verification','verified_provider_observation','reason','refund_write_unavailable');
  ELSIF p_operation='refund_binding' THEN RETURN NULL;
@@ -27,7 +32,7 @@ BEGIN
    RETURN NULL;
   END IF;
   SELECT * INTO c FROM eshop.barion_connections WHERE id=binding;
-  RETURN jsonb_build_object('providerId','barion','configured',binding IS NOT NULL,'available',false,
+  RETURN jsonb_build_object('providerId','barion','configured',binding IS NOT NULL,'available',false,'collectionAvailable',c.enabled AND EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions oc ON oc.id=f.occasion WHERE f.id=(p_args->>'formId')::bigint AND f.id=ANY(c.sandbox_form_ids) AND oc.unit=c.unit_id AND oc.organization=c.organization_id),
    'recipient',CASE WHEN c.id IS NOT NULL THEN jsonb_build_object('connectionId',c.id,'name',c.business_name,'livemode',false) ELSE NULL END,
    'supportedSurfaces','[]'::jsonb,'reason',jsonb_build_object('code','sandbox_only'));
  ELSIF p_operation='initialize_payment' THEN
@@ -69,7 +74,11 @@ BEGIN
  SELECT coalesce(sum(amount_minor) FILTER(WHERE kind='payment'),0),coalesce(sum(amount_minor) FILTER(WHERE kind='refund'),0) INTO received,refunded FROM eshop.barion_movements WHERE attempt_id=a.id;
  IF p_operation='totals' THEN RETURN jsonb_build_object('received',received/100.0,'returned',refunded/100.0,'held',CASE WHEN a.financial_hold THEN a.amount_minor/100.0 ELSE 0 END,'invalid',false);
  ELSIF p_operation='movements' THEN
-  RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object('kind',m.kind,'amount_minor',m.amount_minor,'currency',m.currency,'occurred_at',m.occurred_at)),'[]') FROM eshop.barion_movements m WHERE attempt_id=a.id);
+  RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object('sourceId',m.connection_id::text||':'||m.provider_id,'kind',m.kind,'amount_minor',m.amount_minor,'currency',m.currency,'occurred_at',m.occurred_at)),'[]') FROM eshop.barion_movements m WHERE attempt_id=a.id);
+ ELSIF p_operation='notification_facts' THEN
+  RETURN (SELECT coalesce(jsonb_agg(jsonb_build_object('identity',m.connection_id::text||':'||m.provider_id||':'||m.kind,
+   'amount',m.amount_minor::numeric/100,'currency',m.currency,'occurredAt',m.occurred_at)),'[]')
+   FROM eshop.barion_movements m WHERE m.attempt_id=(p_args->>'attemptId')::uuid AND m.kind='payment');
  ELSIF p_operation='effect_context' THEN
   RETURN jsonb_build_object('attemptId',a.id,'orderId',a.order_id,'paymentId',a.payment_info_id,'connectionId',c.id,'organizationId',a.organization_id,'unitId',a.unit_id,
    'accountId',c.account_id,'livemode',false,'amountMinor',a.amount_minor,'currency',a.currency,'reservationExpiresAt',a.reservation_expires_at,

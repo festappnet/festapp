@@ -1,0 +1,49 @@
+{
+  "state": "PUBLISHED_AND_PUBLICLY_VERIFIED",
+  "date": "2026-11-15",
+  "scope": {
+    "product": "vstupenky.online Joomla module",
+    "version": "1.0.6",
+    "global_festapp_tickets_published": false,
+    "new_JED_listing": false
+  },
+  "source": {
+    "main_sha": "1c3d9677ceff5e0cc261c912400a0fcc88a1e961",
+    "required_ci_jobs": 8,
+    "ci_status": "PASS"
+  },
+  "candidate": {
+    "sha256": "70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7",
+    "files": 15,
+    "verification_sha256": "cb086594488574360fc03f3029d75af2d9fd7f06ebd27577ad792ac246ff0547",
+    "critic_sha256": "d5faa26f7cf5584f979ec90d4f1304f0e5fc23c05f91467bacb2d76cca7d0130"
+  },
+  "github_release": {
+    "url": "https://github.com/festappnet/festapp/releases/tag/joomla-vstupenky-online-v1.0.6",
+    "tag": "joomla-vstupenky-online-v1.0.6",
+    "target_main_sha": "1c3d9677ceff5e0cc261c912400a0fcc88a1e961",
+    "zip_sha256": "70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7",
+    "public_asset_readback": "PASS"
+  },
+  "stable_updater": {
+    "url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
+    "feed_sha256": "ef6f19694d8d9e7737ffc9f3c1e6273d10dcf044640f4b3cec6dfd111ca64bcf",
+    "public_asset_and_feed_gate": "PASS",
+    "live_upgrade_checks": "Joomla 5.4.10 and 6.1.4 upgraded public 1.0.5 to 1.0.6; settings preserved",
+    "receipt_hashes": [
+      "4435ea4f0d6462b1d9b7ac3f1169d366cddb76d2e3a636a4317b6acd443e4543",
+      "a4b4981749ad9c6a282f39ae6671a229dc0f67d1cf92eade2f773597e3da1f35"
+    ]
+  },
+  "joomla_extensions_directory": {
+    "listing": "https://extensions.joomla.org/extension/vstupenky-online/",
+    "listing_id": 17931,
+    "version": "1.0.6",
+    "direct_release_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.6/vstupenky.online.zip",
+    "stored_file": "6af90ab190414.zip",
+    "stored_and_public_zip_sha256": "70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7",
+    "compatibility": "Joomla 5.4 and 6.1",
+    "paid_classification": "unchanged",
+    "publication_receipt_sha256": "b3f9be8c9ca2bb7312164c2291e77c3807a20fc5c18a3fc1dd52102e26f9b556"
+  }
+}

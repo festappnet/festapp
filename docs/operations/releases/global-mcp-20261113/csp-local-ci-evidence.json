@@ -1,0 +1,20 @@
+{
+  "head": "74262fe1929f55beb365d994bb0c64c6bc5a33c4",
+  "dirty": true,
+  "inputSha256": "f6f7c403131e76c4c481a3d81551182e3a4cabcf3f0f16b77e10a277657d61f0",
+  "selectedJobs": [
+    "server-policy"
+  ],
+  "scope": "partial",
+  "complete": true,
+  "jobs": [
+    {
+      "name": "server-policy",
+      "status": "PASS"
+    }
+  ],
+  "inputsUnchanged": true,
+  "receipt": "20261113T041826-0d86ad8cd000",
+  "verifiedCommit": "a37389cc225a139725a935d014f1df10f091484e",
+  "note": "Canonical mirror ran before commit on dirty base74262fe19 with the two final code/test edits; no code changes followed before commit."
+}

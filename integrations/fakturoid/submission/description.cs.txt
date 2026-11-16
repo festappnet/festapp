@@ -1,0 +1,14 @@
+vstupenky.online
+
+Prodej vstupenek s propojením na Fakturoid
+
+vstupenky.online pomáhají pořadatelům prodávat vstupenky, nabízet místenky
+a kontrolovat vstup pomocí QR kódů. Propojení s Fakturoidem slouží k vytvoření
+proformy k objednávce vstupenek a zachování jejího variabilního symbolu.
+
+Web služby: https://vstupenky.online/
+
+Pracovní návrh pro katalog. Před podáním doplnit veřejnou adresu návodu,
+ověřený kontakt podpory, podmínky dostupnosti a schválené reference.
+Neuvádět jako schválenou či veřejně dostupnou integraci před dokončením
+připojování účtů a přijetím do katalogu.

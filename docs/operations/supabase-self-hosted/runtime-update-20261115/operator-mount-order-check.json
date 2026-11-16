@@ -1,0 +1,7 @@
+{
+  "complete_mount_metadata_equal": true,
+  "count": 11,
+  "canonical_mount_sha256": "586c46d202a891d914ed56d839ac2d305bad05eca9f9c42d5e3ca5d4185b72f1",
+  "operator_script_sha256": "f557e927ccede9582f2a48e1162711a82ac71b4ca8c308a7f9a1a90f6e80e182",
+  "normalization": "Order only; no changed field accepted; state and canonical source unmodified."
+}

@@ -1,3 +1,4 @@
+import 'package:fstapp/components/eshop/payment_operation_strings.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/eshop/order_symbol_cell.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -149,10 +150,23 @@ class _ProductionShapeRouter extends RootStackRouter {
   }
 
   @override
-  List<AutoRoute> get routes => AppRouter().routes
-      .where((route) => route.name == 'ReservationsRoute')
-      .map(fixture)
-      .toList();
+  List<AutoRoute> get routes => [
+    AutoRoute(
+      path: '/unit/:id/edit',
+      page: PageInfo(
+        'UnitFixture',
+        builder: (_) => Scaffold(
+          appBar: showBell
+              ? AppBar(actions: const [NotificationCenterBell()])
+              : null,
+          body: const Text('Unit'),
+        ),
+      ),
+    ),
+    ...AppRouter().routes
+        .where((route) => route.name == 'ReservationsRoute')
+        .map(fixture),
+  ];
 }
 
 class _Translations extends AssetLoader {
@@ -169,6 +183,7 @@ void main() {
   var repairReads = 0;
   var groupSelection = false;
   var bellEntry = false;
+  var incidentEntry = false;
   var detailNavigation = false;
   var overduePayment = false;
   var bankDetails = false;
@@ -203,6 +218,16 @@ void main() {
     addTearDown(() => RightsService.occasionLinkModelNotifier.value = previous);
   });
   setUpAll(() async {
+    // Register this shared font before widget fake-async zones and only once.
+    final loader = FontLoader('NotificationPreviewFont')
+      ..addFont(
+        Future.value(
+          ByteData.sublistView(
+            File('test/fixtures/ticket_fonts/Roboto.ttf').readAsBytesSync(),
+          ),
+        ),
+      );
+    await loader.load();
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await Supabase.initialize(
@@ -215,10 +240,10 @@ void main() {
       httpClient: MockClient((request) async {
         final isOrders = request.url.path.endsWith('/get_orders_tab_data');
         if (bellEntry &&
-            (request.url.path.endsWith('/get_notification_center_prepared_badge') ||
-                request.url.path.endsWith(
-                  '/get_notification_center_view',
-                ))) {
+            (request.url.path.endsWith(
+                  '/get_notification_center_prepared_badge',
+                ) ||
+                request.url.path.endsWith('/get_notification_center_view'))) {
           final overview = request.url.path.endsWith(
             '/get_notification_center_view',
           );
@@ -242,19 +267,24 @@ void main() {
                 'items': [
                   {
                     'id': 'occasion-kind:1:order_created',
-                    'kind': 'order_created',
+                    'kind': incidentEntry ? 'email_problem' : 'order_created',
                     'occasionId': 1,
                     'occasionTitle': 'Ples',
                     'occasionLink': 'empty',
                     'sequence': 7,
                     'occurredAt': DateTime.now().toUtc().toIso8601String(),
                     'data': {
-                      'activityCount': 6,
-                      'relatedOrders': true,
-                      'placeCount': 6,
-                      'previewContacts': [
-                        {'name': 'Jan', 'surname': 'Novák'},
-                      ],
+                      if (!incidentEntry) 'activityCount': 6,
+                      if (incidentEntry) ...{
+                        'orderId': 4,
+                        'messageId': 'problem',
+                      },
+                      if (!incidentEntry) 'relatedOrders': true,
+                      if (!incidentEntry) 'placeCount': 6,
+                      if (!incidentEntry)
+                        'previewContacts': [
+                          {'name': 'Jan', 'surname': 'Novák'},
+                        ],
                     },
                   },
                 ],
@@ -503,6 +533,40 @@ void main() {
     }
   }
 
+  for (final source in ['/unit/2/edit', '/other/reservations/orders/current']) {
+    testWidgets('notification order closes after opening from $source', (
+      tester,
+    ) async {
+      fail = false;
+      includeOrder = true;
+      detailNavigation = true;
+      addTearDown(() {
+        includeOrder = false;
+        detailNavigation = false;
+      });
+      final router = _ProductionShapeRouter();
+      await showOrders(
+        tester,
+        externalRouter: router,
+        path: source,
+        viewport: const Size(390, 900),
+      );
+      unawaited(
+        pushRootPath(
+          router,
+          '/empty/reservations/orders/current?orderId=4&orderMessageId=problem&filter=keep',
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(OrderDetailView), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.close).last);
+      await tester.pumpAndSettle();
+      expect(find.byType(OrderDetailView), findsNothing);
+      expect(router.urlState.uri.queryParameters, {'filter': 'keep'});
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final productionShape in [false, true]) {
     testWidgets(
       'Escape closes detail before an outside control consumes the event nested=$productionShape',
@@ -715,7 +779,11 @@ void main() {
         greaterThanOrEqualTo(12),
       );
       expect(find.textContaining('Reference platby'), findsNothing);
-      for (final label in ['Částka', 'Zaplaceno', 'Vráceno']) {
+      for (final label in [
+        'Částka',
+        PaymentOperationStrings.text('received'),
+        'Vráceno',
+      ]) {
         expect(find.text(label), findsOneWidget);
       }
       expect(tester.takeException(), isNull);
@@ -1161,15 +1229,6 @@ void main() {
     testWidgets(
       'localized $kind names fit one line and metadata retains exact counts',
       (tester) async {
-        final loader = FontLoader('NotificationPreviewFont')
-          ..addFont(
-            Future.value(
-              ByteData.sublistView(
-                File('test/fixtures/ticket_fonts/Roboto.ttf').readAsBytesSync(),
-              ),
-            ),
-          );
-        await loader.load();
         final c = NotificationCenterController();
         addTearDown(c.dispose);
         addTearDown(tester.view.resetPhysicalSize);
@@ -1268,6 +1327,81 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'email problem opened from another unit closes through the cross',
+    (tester) async {
+      fail = false;
+      includeOrder = true;
+      detailNavigation = true;
+      bellEntry = true;
+      incidentEntry = true;
+      addTearDown(() {
+        includeOrder = false;
+        detailNavigation = false;
+        bellEntry = false;
+        incidentEntry = false;
+      });
+      const actor = '00000000-0000-4000-8000-000000000001';
+      final token = base64Url
+          .encode(
+            utf8.encode(
+              jsonEncode({
+                'exp': DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
+                'sub': actor,
+              }),
+            ),
+          )
+          .replaceAll('=', '');
+      await Supabase.instance.client.auth.recoverSession(
+        jsonEncode({
+          'access_token': 'eyJhbGciOiJIUzI1NiJ9.$token.fixture',
+          'refresh_token': 'fixture',
+          'token_type': 'bearer',
+          'expires_in': 3600,
+          'user': {
+            'id': actor,
+            'aud': 'authenticated',
+            'role': 'authenticated',
+            'created_at': '2026-01-01T00:00:00Z',
+          },
+        }),
+      );
+      final router = _ProductionShapeRouter(showBell: true);
+      await showOrders(
+        tester,
+        path: '/unit/2/edit',
+        externalRouter: router,
+        viewport: const Size(390, 900),
+      );
+      final dynamic bellState = tester.state(
+        find.byType(NotificationCenterBell),
+      );
+      final NotificationCenterController c = bellState.controller;
+      await tester.runAsync(c.refreshBadge);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(NotificationCenterBell));
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      });
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const ValueKey('notification-item-occasion-kind:1:order_created'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(OrderDetailView), findsOneWidget);
+      expect(router.urlState.uri.queryParameters['orderMessageId'], 'problem');
+      await tester.tap(find.byIcon(Icons.close).last);
+      await tester.pumpAndSettle();
+      expect(find.byType(OrderDetailView), findsNothing);
+      expect(
+        router.urlState.uri.queryParameters.containsKey('orderId'),
+        isFalse,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'actual bell click selects matching order rows through production routing',
     (tester) async {

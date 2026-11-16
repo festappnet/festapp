@@ -17,7 +17,9 @@ const resolved = {
   },
   wrapper: { html: "<main>{{content}}</main>" },
 };
+const bankAction = {method:'bank',purpose:'collect_payment',allowed:true};
 const context = {
+  paymentInfo:{payment_method:'bank',collectionAction:bankAction},
   sampleProducts: [{title:"Sample",price:1000,currency_code:"CZK"}],
   revision: 3,
   title: "Ukázková událost",
@@ -26,6 +28,22 @@ const context = {
   resolved,
   has_custom_template: true,
 };
+Deno.test('ticket email preview shows the real Wallet offer for every delivery mode without an issuance link',async()=>{
+ for(const mode of ['pdf_attachment','inline_qr','both']){
+  const preview=await renderDraftPreview({...context,messageType:'order_tickets',ticketsEnabled:true,walletEnabled:true,walletReady:true,walletProviders:{google:true,apple:false},deliveryMode:mode,sampleTicketCount:3,lang:'en',occasion:{id:0,title:context.title,data:{}}});
+  assert(preview.html.includes('Tickets on your phone'));
+  assert((preview.html.match(/google-wallet\/v1\/condensed\/en.png/g)??[]).length===3);
+  assert(preview.authoringContext.walletEnabled===true);
+  assert(preview.authoringContext.ticketDeliveryMode===mode);
+  assert(preview.authoringContext.language==='en');
+  assert(!preview.html.includes('/wallet#'));
+  assert(!preview.html.includes('Apple Wallet'));
+ }
+ for(const condition of [{walletEnabled:false,walletReady:true},{walletEnabled:true,walletReady:false}]){
+  const preview=await renderDraftPreview({...context,...condition,messageType:'order_tickets',ticketsEnabled:true,deliveryMode:'inline_qr'});
+  assert(!preview.html.includes('google-wallet/v1/'));
+ }
+});
 
 Deno.test("preview and sending use identical substitutions and inherited wrapper", async () => {
   const preview = await renderDraftPreview(context);
@@ -59,10 +77,12 @@ Deno.test("formal/informal only changes generated content, preserving custom sta
 });
 
 Deno.test("pure confirmation retains zero order and deposit semantics", () => {
-  const order: any = previewOrder("Test", "informal");
+  const order: any = previewOrder("Test", "informal",context);
   order.payment_info.amount = 0;
-  assert(confirmationSubstitutions(order).variableSymbol === defaults.variableSymbol);
+  order.payment_info.collectionAction={...bankAction,allowed:false};
+  assert(confirmationSubstitutions(order).variableSymbol === "");
   order.payment_info.amount = 1000;
+  order.payment_info.collectionAction=bankAction;
   order.payment_info.deposit_amount = 500;
   order.occasion.features = [{ code: "deposit", deposit_deadline: "on_site" }];
   const subs = confirmationSubstitutions(order);
@@ -143,7 +163,7 @@ Deno.test("preview reflects configured ticket/product content and retains author
 Deno.test('shared preview defaults and configured bank details render in full', async () => {
   const sample = previewOrder('Moje akce','formal',{
     sampleProducts:[{title:'Vstupné',price:725,currency_code:'CZK'}],
-    paymentInfo:{account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800'},
+    paymentInfo:{payment_method:'bank',collectionAction:bankAction,account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800'},
     deadlineDurationSeconds:3*86400,
   },new Date('2026-10-22T12:00:00Z'));
   assert(sample.payment_info.deadline==='2026-10-25T12:00:00.000Z');
@@ -246,7 +266,7 @@ Deno.test('cash draft preview hydrates the real confirmation helper without bank
  assert(rendered.authoringContext.paymentAccounts.length===0);
 });
 Deno.test('bank none draft preview retains bank instructions with explicit null date',async()=>{
- const paymentInfo={payment_method:'bank',deadline:null,account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',data:{payment_policy:{mode:'none'}}};
+ const paymentInfo={payment_method:'bank',collectionAction:bankAction,deadline:null,account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',data:{payment_policy:{mode:'none'}}};
  const rendered=await renderDraftPreview({...context,paymentInfo});
  assert(rendered.html.replace(/<[^>]*>/g,'').includes('19-2000145399/0800'));assert(rendered.previewContext.deadline===null);
  assert(!rendered.html.includes(defaults.deadline));
@@ -259,4 +279,22 @@ Deno.test("ticket preview and delivery share raw identity values and escape them
   assert(result.subject === "A & <B>");
   assert(result.html.includes("A &amp; &lt;B&gt;"));
   assert(!result.html.includes("&amp;amp;"));
+});
+
+Deno.test('missing or disabled preview method has no implicit bank instructions or authoring account',async()=>{
+ for(const paymentInfo of [undefined,{payment_method:'bank',account_number:'CZ6508000000192000145399',account_number_human_readable:'19-2000145399/0800',collectionAction:{...bankAction,allowed:false}}]) {
+  const rendered=await renderDraftPreview({...context,paymentInfo});
+  assert(!rendered.html.replace(/<[^>]*>/g,'').includes('19-2000145399/0800'));
+  assert(rendered.authoringContext.paymentAccounts.length===0);
+ }
+});
+
+Deno.test('preview follows collection readiness and singular wording without live capabilities',async()=>{
+ for(const lang of ['cs','en'])for(const count of [1,3]){
+  const preview=await renderDraftPreview({...context,messageType:'order_tickets',ticketsEnabled:true,walletEnabled:true,walletReady:true,walletProviders:{google:true,apple:true},walletCollectionEnabled:true,deliveryMode:'inline_qr',sampleTicketCount:count,lang,occasion:{id:0,title:context.title,data:{}}});
+  assert(preview.html.includes(lang==='cs'?(count===1?'Vstupenka v telefonu':'Všechny vstupenky (3)'):(count===1?'Ticket on your phone':'All tickets (3)')));
+  assert((preview.html.match(/google-wallet\/v1\/condensed\//g)??[]).length===1);
+  assert(preview.html.includes(lang==='cs'?'Přidat do Peněženky Apple':'Add to Apple Wallet'));
+  assert(!preview.html.includes('/wallet?'));assert(!preview.html.includes('1 z 1'));assert(!preview.html.includes('1 of 1'));
+ }
 });

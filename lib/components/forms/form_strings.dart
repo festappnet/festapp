@@ -1,11 +1,58 @@
+import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get cmsEnableImport =>
+      'FeatureFormSettings.cmsEnableImport'.tr();
+  static String get cmsImportLabel => 'FeatureFormSettings.cmsImportLabel'.tr();
+  static String get cmsImportInvalid =>
+      'FeatureFormSettings.cmsImportInvalid'.tr();
+  static String get cmsHtmlImportHelp =>
+      'FeatureFormSettings.cmsHtmlImportHelp'.tr();
+  static String get cmsHtml => 'FeatureFormSettings.cmsHtml'.tr();
+  static String get cmsTransfer => 'FeatureFormSettings.cmsTransfer'.tr();
+  static String get cmsTransferHelp =>
+      'FeatureFormSettings.cmsTransferHelp'.tr();
+  static String get cmsPlatform => 'FeatureFormSettings.cmsPlatform'.tr();
+  static String get cmsFreshChoiceHelp =>
+      'FeatureFormSettings.cmsFreshChoiceHelp'.tr();
+  static String get cmsPolicyId => 'FeatureFormSettings.cmsPolicyId'.tr();
+  static String get cmsProvider => 'FeatureFormSettings.cmsProvider'.tr();
+  static String get cmsAnalyticsCategory =>
+      'FeatureFormSettings.cmsAnalyticsCategory'.tr();
+  static String get cmsMarketingCategory =>
+      'FeatureFormSettings.cmsMarketingCategory'.tr();
+  static String get cmsAdvancedCategories =>
+      'FeatureFormSettings.cmsAdvancedCategories'.tr();
+  static String get cmsPolicyIdHelp =>
+      'FeatureFormSettings.cmsPolicyIdHelp'.tr();
+  static String get cmsPolicyIdInvalid =>
+      'FeatureFormSettings.cmsPolicyIdInvalid'.tr();
+  static String get cmsCategoriesInvalid =>
+      'FeatureFormSettings.cmsCategoriesInvalid'.tr();
+  static String get cmsSaveDraft => 'FeatureFormSettings.cmsSaveDraft'.tr();
+  static String get cmsChangesPending =>
+      'FeatureFormSettings.cmsChangesPending'.tr();
+  static String get cmsCoverageDetails =>
+      'FeatureFormSettings.cmsCoverageDetails'.tr();
+  static String get cmsShowConfiguration =>
+      'FeatureFormSettings.cmsShowConfiguration'.tr();
+  static String get cmsCoverage => 'FeatureFormSettings.cmsCoverage'.tr();
+  static String get cmsConfirm => 'FeatureFormSettings.cmsConfirm'.tr();
+  static String get cmsExport => 'FeatureFormSettings.cmsExport'.tr();
+  static String get cmsDisable => 'FeatureFormSettings.cmsDisable'.tr();
+  static String get cmsCopy => 'FeatureFormSettings.cmsCopy'.tr();
+  static String get cmsExportHelp => 'FeatureFormSettings.cmsExportHelp'.tr();
+  static String get cmsUnavailable => 'FeatureFormSettings.cmsUnavailable'.tr();
+  static String cmsState(String state) =>
+      'FeatureFormSettings.cmsState_$state'.tr();
+
   static String get formPreview => 'FormEditorLayout.formPreview'.tr();
   static String get publicPage => 'FormEditorLayout.publicPage'.tr();
-  static String get formIntroduction => 'FormEditorLayout.formIntroduction'.tr();
+  static String get formIntroduction =>
+      'FormEditorLayout.formIntroduction'.tr();
   static String get formOutline => 'FormEditorLayout.formOutline'.tr();
 
   static String get measurementFormUnitBlocked =>
@@ -510,10 +557,12 @@ class FormStrings {
       'FormsFeature.seatSelection'.tr(); // "Seat selection"
   static String get note => 'FormsFeature.note'.tr(); // "Note"
   // --- Strings for TicketEditorWidgets (Max Tickets) ---
-  static String get labelMaxTicketsPerOrder =>
-      'FormsFeature.labelMaxTicketsPerOrder'.tr(); // "Max tickets per order:"
-  static String get helperMaxTicketsPerOrder =>
-      'FormsFeature.helperMaxTicketsPerOrder'.tr(); // "How many tickets a user can buy in a single order (default: 1)."
+  static String get labelMaxTicketsPerOrder => OrderItemStrings.text(
+    'FormsFeature.labelMaxTicketsPerOrder',
+  ); // "Max tickets per order:"
+  static String get helperMaxTicketsPerOrder => OrderItemStrings.text(
+    'FormsFeature.helperMaxTicketsPerOrder',
+  ); // "How many tickets a user can buy in a single order (default: 1)."
   static String get validationMaxTicketsInvalid =>
       'FormsFeature.validationMaxTicketsInvalid'
           .tr(); // "Please enter a valid number (1 or more)."

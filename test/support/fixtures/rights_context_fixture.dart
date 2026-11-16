@@ -1,3 +1,4 @@
+import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -19,21 +20,34 @@ class RightsContextFixture {
   RightsContextFixture.bankAccounts({
     Set<int> manageableAccounts = const {},
     bool canManageUnit = false,
+    int? unitId,
+    bool bankEnabled = true,
   }) : this(
-            context: OccasionLinkModel(
-          capabilities: {
-            AuthorizationCapabilities.bankAccountsUnitManage: canManageUnit
-          },
-          bankCapabilities: {
-            for (final id in manageableAccounts)
-              id: {
-                AuthorizationCapabilities.bankAccountsWrite: true,
-                AuthorizationCapabilities.bankAccountsUsersWrite: true,
-                AuthorizationCapabilities.bankSyncManage: true,
-                AuthorizationCapabilities.bankTransactionsManage: true,
-              },
-          },
-        ));
+         context: OccasionLinkModel(
+           unit: unitId == null
+               ? null
+               : UnitModel(
+                   id: unitId,
+                   paymentMethodPolicy: {
+                     'methods': {
+                       'bank': {'policyEnabled': bankEnabled},
+                     },
+                   },
+                 ),
+           capabilities: {
+             AuthorizationCapabilities.bankAccountsUnitManage: canManageUnit,
+           },
+           bankCapabilities: {
+             for (final id in manageableAccounts)
+               id: {
+                 AuthorizationCapabilities.bankAccountsWrite: true,
+                 AuthorizationCapabilities.bankAccountsUsersWrite: true,
+                 AuthorizationCapabilities.bankSyncManage: true,
+                 AuthorizationCapabilities.bankTransactionsManage: true,
+               },
+           },
+         ),
+       );
 
   RightsContextFixture({OccasionLinkModel? context}) {
     RightsService.currentLink = null;

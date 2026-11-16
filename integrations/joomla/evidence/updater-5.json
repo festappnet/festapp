@@ -1,8 +1,8 @@
 {
   "joomla": "5.4.10",
   "php": "8.3.36",
-  "version": "1.0.4",
-  "sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
+  "version": "1.0.6",
+  "sha256": "70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7",
   "manifest_registers_public_update_url": true,
   "native_discovery_download_checksum_install": true,
   "settings_preserved": true,

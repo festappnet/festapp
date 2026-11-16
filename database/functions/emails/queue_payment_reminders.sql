@@ -29,6 +29,7 @@ BEGIN
   WHERE
     o.payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id AND (p_payment_info_id IS NULL OR payment_info=p_payment_info_id))
     AND o.state = 'ordered'
+    AND pi.payment_method='bank' AND public.payment_collection_action_internal(o.id)->'allowed'='true'::jsonb
     AND pi.data#>>'{payment_policy,mode}' IS DISTINCT FROM 'none'
     AND pi.deadline IS NOT NULL
 
@@ -63,6 +64,7 @@ BEGIN
     o.payment_info IN (SELECT payment_info FROM eshop.orders WHERE occasion=p_occasion_id AND (p_payment_info_id IS NULL OR payment_info=p_payment_info_id))
     -- Schedule the balance reminder before deposit payment, as order creation always did.
     AND o.state IN ('ordered','paid')
+    AND pi.payment_method='bank' AND public.payment_collection_action_internal(o.id)->'allowed'='true'::jsonb
     AND pi.data#>>'{payment_policy,mode}' IS DISTINCT FROM 'none'
     AND pi.deposit_amount IS NOT NULL
     AND coalesce(pi.paid,0)-coalesce(pi.returned,0) < pi.amount

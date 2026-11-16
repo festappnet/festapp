@@ -34,6 +34,21 @@ class TelemetryTest(unittest.TestCase):
                 api.side_effect=OSError('offline')
                 self.assertIsNone(execution_identity(root,'fixture',contract))
 
+    def test_hosted_report_includes_failed_attempts_without_claiming_billing(self):
+        from telemetry import hosted_report
+        run={'id':1,'run_attempt':2,'head_sha':'fixture','created_at':'2026-11-15T00:00:00Z'}
+        def api(repository,endpoint,paginate=False):
+            if 'workflows/' in endpoint:return {'workflow_runs':[run]}
+            attempt=1 if '/attempts/1/' in endpoint else 2
+            return [{'jobs':[{'name':'fixture','conclusion':'failure' if attempt==1 else 'success',
+                     'html_url':'https://github.com/fixture/repo/actions/runs/1','created_at':'2026-11-15T00:00:00Z',
+                     'started_at':'2026-11-15T00:00:10Z','completed_at':'2026-11-15T00:01:10Z','steps':[]}]}]
+        with patch.object(selection,'api',side_effect=api):
+            report=hosted_report('fixture/repo',{'jobs':{'fixture':{'workflow':'fixture.yml'}}})
+        self.assertEqual(report['groups']['fixture']['observations'],2)
+        self.assertEqual(report['groups']['fixture']['runnerMinutes'],2)
+        self.assertIn('not billing',report['limitations'][0])
+
     def test_docker_stream_cursor_controls_do_not_discard_memory_samples(self):
         with patch('telemetry.subprocess.Popen') as popen:
             popen.return_value.stdout=['\x1b[H{"MemUsage":"212.7MiB / 3.814GiB"}\x1b[K\n']

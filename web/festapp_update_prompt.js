@@ -389,14 +389,27 @@
       }
     }
     async function networkBuildVersion() {
+      const controller = typeof AbortController === "function" ? new AbortController() : null;
+      let timeout;
       try {
-        const response = await fetch("/festapp-version.json?refresh=" + Date.now(), {
-          cache: "no-store",
-          headers: { "cache-control": "no-cache" }
-        });
-        return response.ok ? (await response.json()).version : null;
+        const read = async () => {
+          const response = await fetch("/festapp-version.json?refresh=" + Date.now(), {
+            cache: "no-store",
+            headers: { "cache-control": "no-cache", pragma: "no-cache" },
+            ...controller ? { signal: controller.signal } : {}
+          });
+          return response.ok ? (await response.json()).version : null;
+        };
+        return await Promise.race([read(), new Promise((resolve) => {
+          timeout = window.setTimeout(() => {
+            controller?.abort();
+            resolve(null);
+          }, 1e4);
+        })]);
       } catch (_) {
         return null;
+      } finally {
+        window.clearTimeout(timeout);
       }
     }
     async function repairActiveAppShell(version) {
@@ -424,6 +437,46 @@
           finish(false);
         }
       });
+    }
+    function observeInstalledUpdates() {
+      const serviceWorker = navigator.serviceWorker;
+      if (!serviceWorker) return;
+      const registrations = /* @__PURE__ */ new Set();
+      const workers = /* @__PURE__ */ new WeakSet();
+      async function offer(worker) {
+        if (worker?.state !== "installed" || publicWeb() || window.__FESTAPP_APP_READY__ !== true || !allowed("background")) return;
+        try {
+          const version = await queryWorkerBuildVersion(worker, "web", window);
+          if (worker.state === "installed" && version && version !== currentVersion && allowed("background")) showUpdateBanner(version, "new-version");
+        } catch (error) {
+          console.warn("Festapp installed update check failed:", error);
+        }
+      }
+      function watch(worker) {
+        if (!worker) return;
+        if (!workers.has(worker)) {
+          workers.add(worker);
+          worker.addEventListener?.("statechange", () => {
+            void offer(worker);
+          });
+        }
+        void offer(worker);
+      }
+      function observe(registration) {
+        if (!registration) return;
+        if (!registrations.has(registration)) {
+          registrations.add(registration);
+          registration.addEventListener?.("updatefound", () => watch(registration.installing));
+        }
+        watch(registration.waiting);
+        watch(registration.installing);
+      }
+      serviceWorker.getRegistration("/").then((registration) => {
+        if (registration) observe(registration);
+        else return serviceWorker.ready?.then(observe);
+      }).catch(() => {
+      });
+      window.addEventListener("festapp-app-ready", () => registrations.forEach(observe));
     }
     function queryWorkerVersion(worker) {
       return queryWorkerBuildVersion(worker, window.__FESTAPP_CLIENT_RUNTIME__ || "flutter", window);
@@ -679,22 +732,8 @@
       }
       checkInFlight = true;
       try {
-        const response = await fetch("/festapp-version.json?t=" + Date.now(), {
-          cache: "no-store",
-          headers: {
-            "cache-control": "no-cache",
-            "pragma": "no-cache"
-          }
-        });
-        if (!response.ok) {
-          return;
-        }
-        const data = await response.json();
-        if (!allowed(reason)) return;
-        const latestVersion = data && data.version;
-        if (!latestVersion) {
-          return;
-        }
+        const latestVersion = await networkBuildVersion();
+        if (!allowed(reason) || !latestVersion) return;
         lastVersionCheckAt = Date.now();
         if (latestVersion === currentVersion) {
           const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration("/") : null;
@@ -767,6 +806,7 @@
       sessionStorage.removeItem(startupRecoveryStorageKey);
       reportClientVersion();
     });
+    observeInstalledUpdates();
     window.addEventListener("load", function() {
       deepRefreshIfStale().then(function(reloading) {
         if (!reloading) {

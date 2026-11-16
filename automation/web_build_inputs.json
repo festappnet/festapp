@@ -14,6 +14,7 @@
     "web_client/"
   ],
   "packagingOnly": [
+    "automation/release/software-version.conf",
     "docs/plans/",
     "automation/release/help/",
     "automation/release/organizers/",
@@ -74,7 +75,7 @@
   "viteCommand": [
     "pnpm",
     "run",
-    "build"
+    "compile"
   ],
   "flutterVersionPackaging": {
     "sdkRevision": "abaf9c523780a608bd46686fd5e53740a07077f8",

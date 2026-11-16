@@ -1,0 +1,7 @@
+{
+  "header": "-- Received payments remain available to explicit email subscriptions and order history, but no longer appear in the in-app center or its badge.",
+  "sources": [
+    "notification_center/prepared_projection.sql",
+    "notification_center/payment_channels_repair.sql"
+  ]
+}

@@ -1,0 +1,10 @@
+[workspace]
+
+[package]
+name = "festapp-native-security-probe"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+glib = { git = "https://github.com/festappnet/gtk-rs-core.git", rev = "5893f66e6385c2235982db0b2482aa86b46ea097" }

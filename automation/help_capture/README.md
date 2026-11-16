@@ -30,9 +30,25 @@ local backend. Follow `festapp-local-e2e` for a fresh Flutter/local-backend setu
 reuse an already running owned fixture when available. Never use production
 credentials or repeat order/admission/settings writes against production.
 
+## Existing-event settings
+
+The `event-settings-current-20261112` chapter in the canonical catalogue records
+the current Czech administration walkthrough, source hashes and runtime-only
+loopback adapters. It owns the two `cs/administration/event-settings-*` media
+identities used by the existing-event guide. Follow that chapter instead of
+reusing the October settings capture.
+
+A current-schema backend is required. The older navigation seed contains a
+schemaVersion-2 ticket layout that current whole-event saves reject. In the
+owned disposable fixture, use the valid schemaVersion-3 layout from
+`test/fixtures/ticket_layout/layouts.json`, resolve its product references to that
+fixture's actual products and require `validate_ticket_layout_references` to
+succeed before walking through Save and reopening the settings. Keep the real
+save RPC and validation enabled; a rejected save is not persistence evidence.
+
 ## Scanner errors and settings
 
-`scanner_light.py` captures all six scanner states in Czech and English, using
+`scanner_light.py` captures scanner settings, error and check-in states in Czech and English, using
 actual local Auth/RPC responses and the current webclient UI. Requirements:
 Python 3, agent-browser, a running webclient configured exclusively for the local
 backend, a scanner code, an editor account and an existing used ticket belonging
@@ -46,14 +62,28 @@ python3 automation/help_capture/scanner_light.py \
   --origin http://127.0.0.1:57982 \
   --scan-code '<fixture scanner code>' \
   --occasion '<fixture occasion ID>' \
-  --ticket '<existing fixture ticket symbol>'
+  --ticket '<Czech used fixture ticket symbol>' \
+  --ticket-en '<English used fixture ticket symbol>' \
+  --locale-command "$PWD/automation/help_capture/scanner_fixture_localize.sh" \
+  --search-command "$PWD/automation/help_capture/scanner_fixture_search.sh"
 ```
+
+The supplied guarded commands target only the retained `festapp-wizard-help-20261025` fixture and event 2. The locale command accepts `cs` or `en` and localizes all visible event, form,
+product and ticket-holder data in the owned disposable database. Use natural
+examples for each locale. For a recent used result, set only the used fixture
+ticket's `updated_at` to five minutes before capture; do not alter a receipt.
+The search command accepts `off` or `on` and changes both
+`scanner_settings.config.manual_search.tickets` and `.users` for that fixture.
+The script opens a fresh scanner session with search off to capture an actual
+failed ticket lookup, then restores search and opens a fresh session for the
+ordinary search walkthrough. Both commands must reject unrelated databases. The
+script restores search and the Czech fixture in its cleanup.
 
 The script only permits loopback origins. It authenticates through AuthService,
 looks up a deliberately missing ticket, opens editor settings, changes a draft
 and previews an existing ticket. It does not save settings or confirm admission.
 It checks light mode and overflow before capture and updates both provenance
-registries after all twelve captures succeed. If a capture fails, review any
+registries after all captures succeed. If a capture fails, review any
 partially replaced PNGs before rendering; registry updates are withheld.
 A saved-settings/reopen scenario remains a separate manual chapter in the
 catalogue. Camera acquisition and offline synchronization remain separate checks.
@@ -109,3 +139,26 @@ node --test automation/tests/help_pages.test.mjs automation/tests/help_search.te
 
 These changes do not publish or deploy help. The production release remains a
 separate authorized operation.
+
+## Customer self-service
+
+Run `node web_client/scripts/customer_order_changes_preview.mjs` from the repository.
+It leases a verified disposable database and starts loopback PostgREST, the production
+Edge handler and the actual order renderer. Its private mode-0600 locator file holds
+CS/EN overview URLs. Never print those URLs or verification fragments. Actual queued
+prepared mail is decrypted only by the local `/fixture/mail?order_id=...` sink; no
+SMTP provider is invoked. Only external queue wake is suppressed by a fixture-only
+pre-request function; authorization, throttles, receipts and domain SQL remain real.
+
+In an isolated muted light browser session, open the locale's overview, choose
+cancellation, verify the required reason, send the verification email and open its
+actual anchor. Capture preview before explicitly submitting the request. Verify
+one pending request with the order still valid, then capture desktop and mobile.
+Confirm that no date-change action or term selector is offered.
+Respect the real minimum 60 seconds between challenge emails per IP and order,
+and maximum three per hour. Generic 202 deliberately does not prove mail enqueue.
+
+Use absolute screenshot paths. Register current images and SHA-256 values in
+`media.json` and the `customer-self-service-20261115` catalogue chapter. Stop the
+owned Node process with SIGTERM, which releases its DB lease, local Edge process,
+PostgREST container and private files. Do not stop another session's runtime.

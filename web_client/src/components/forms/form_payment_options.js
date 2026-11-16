@@ -1,6 +1,6 @@
 import {paymentConnectors} from './payment_connector_registry.js';
 export function formPaymentOptions(value,surface='web',registry=paymentConnectors) {
-    if(value==null)return {available:['bank'],cardConfigured:false,reservationSeconds:1860,recipient:null,providers:{}};
+    if(value==null)return {available:[],cardConfigured:false,reservationSeconds:1860,recipient:null,providers:{}};
     const providers=Object.fromEntries(registry.values().filter(connector=>connector.hostedCheckout).map(connector=>[connector.id,connector.availability(value,surface)]));
     const available=[...new Set(Array.isArray(value.available)?value.available.filter(method=>registry.get(method)?.availability(value,surface).available === true):[])];
     const selected=available.find(method=>registry.get(method)?.hostedCheckout);

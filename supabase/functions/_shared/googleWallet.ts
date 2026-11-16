@@ -1,15 +1,13 @@
 /** Google Event Tickets only. No ticket/admission decisions live in this adapter. */
-import { googleWalletAppearance } from './googleWalletAppearance.ts';
+import { googleWalletAppearance, walletPublicImage } from './googleWalletAppearance.ts';
+import { parseOrganizationBranding } from './organizationBranding.ts';
 import { normalizeTicketData } from './ticketRenderData.ts';
-export type WalletState = 'ACTIVE' | 'COMPLETED' | 'INACTIVE' | 'EXPIRED';
-export type WalletProjection = { state: WalletState; ticket: any; occasion: any };
+import type {WalletProjection} from './wallet/contracts.ts';
+import {walletHash} from './wallet/identity.ts';
 export type WalletIdentity = { issuer: string; environment: string; organization: number; occasion: number; ticketId: number };
 const encoder = new TextEncoder();
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 function b64(bytes: Uint8Array) { return btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replaceAll('=',''); }
-export async function walletHash(value: string) {
- return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(value))), b=>b.toString(16).padStart(2,'0')).join('');
-}
 export async function walletIds(identity: WalletIdentity) {
  const { issuer, environment, organization, occasion, ticketId }=identity;
  if(!/^\d+$/.test(issuer)||!environment||![organization,occasion,ticketId].every(n=>Number.isSafeInteger(n)&&n>0)) throw new Error('wallet_identity');
@@ -31,10 +29,13 @@ export function walletDocuments(ids:{classId:string;objectId:string},projection:
  const normalized=normalizeTicketData(ticket,occasion,{});
  const zone=occasion.data?.timezone||'Europe/Prague';
  const appearance=googleWalletAppearance(occasion.ticketFeature,occasion.data);
+ const branding=parseOrganizationBranding(projection.branding);
+ const overrides=occasion.ticketFeature?.wallet_appearance??{};
+ const logo=Object.hasOwn(overrides,'logo')?appearance.logo:walletPublicImage(projection.branding?.WALLET_LOGO_URL)??appearance.logo;
  const image=(uri:string,description:string)=>({sourceUri:{uri},contentDescription:localized(description)});
  const classBody={...(appearance.backgroundColor?{hexBackgroundColor:appearance.backgroundColor}:{}),
- ...(appearance.logo?{logo:image(appearance.logo,occasion.title)}:{}),
- ...(appearance.heroImage?{heroImage:image(appearance.heroImage,occasion.title)}:{}),id:ids.classId,issuerName:'Festapp Tickets',eventName:localized(occasion.title),reviewStatus:'UNDER_REVIEW',
+ ...(logo?{logo:image(logo,branding.appName)}:{}),
+ ...(appearance.heroImage?{heroImage:image(appearance.heroImage,occasion.title)}:{}),id:ids.classId,issuerName:branding.appName,eventName:localized(occasion.title),reviewStatus:'UNDER_REVIEW',
  eventId:ids.classId.split('.')[1].slice(0,64),dateTime:{start:walletDate(occasion.start_time,zone),end:walletDate(occasion.end_time,zone)},
  textModulesData:normalized.occasionPlace?[{id:'place',header:'Místo / Venue',body:normalized.occasionPlace}]:[]};
  const products=ticket.order_product_ticket??[];
@@ -96,24 +97,43 @@ export class GoogleWallet {
     res=await this.request(path,'GET',null,before);
     if(res.ok)res=await this.request(path,'PUT',body,before);
    }
-  }else if(res.ok)res=await this.request(path,'PUT',body,before);
+  }else if(res.ok){
+   const remote=await res.json();
+   if(kind==='eventTicketClass' && remote.reviewStatus==='APPROVED')body={...body,reviewStatus:'APPROVED'};
+   // Compare only fields owned by this adapter, including removed optional fields.
+   const keys=kind==='eventTicketClass'
+    ? ['id','issuerName','eventName','reviewStatus','eventId','dateTime','textModulesData','logo','heroImage','hexBackgroundColor']
+    : ['id','classId','state','ticketNumber','barcode','validTimeInterval','textModulesData','seatInfo'];
+   const equal=(a:any,b:any):boolean=>{
+    if(a===b||(a==null&&b==null))return true;
+    if(!a||!b||typeof a!=='object'||typeof b!=='object')return false;
+    if(Array.isArray(a))return Array.isArray(b)&&a.length===b.length&&a.every((v,i)=>equal(v,b[i]));
+    return Object.keys(a).every(k=>equal(a[k],b[k]));
+   };
+   if(keys.every(k=>equal(body[k],remote[k])))return remote;
+   res=await this.request(path,'PUT',body,before);
+  }
   if(!res.ok)throw new Error('wallet_google_unavailable');
   return await res.json();
  }
+ async synchronizeClass(ids:{classId:string;objectId:string},projection:WalletProjection|null,before:()=>Promise<void>) {
+  // Deleted occasions have no shared metadata left; object invalidations still run.
+  if(!projection)return;
+  const {classBody}=walletDocuments(ids,projection);
+  const cls=await this.upsert('eventTicketClass',classBody,before);
+  if(String(cls.reviewStatus).toUpperCase()!=='APPROVED')throw new Error('wallet_class_pending');
+ }
  async synchronize(ids:{classId:string;objectId:string},projection:WalletProjection,before:()=>Promise<void>) {
-  // Revoked/deleted tickets retain remote identity without needing historical QR/PII.
   if(projection.state==='INACTIVE') {
    const res=await this.request('eventTicketObject/'+encodeURIComponent(ids.objectId),'PATCH',{state:'INACTIVE'},before);
    if(!res.ok&&res.status!==404)throw new Error('wallet_google_unavailable');return;
   }
-  const {classBody,objectBody}=walletDocuments(ids,projection);
-  const cls=await this.upsert('eventTicketClass',classBody,before);
-  if(String(cls.reviewStatus).toUpperCase()!=='APPROVED')throw new Error('wallet_class_pending');
+  const {objectBody}=walletDocuments(ids,projection);
   await this.upsert('eventTicketObject',objectBody,before);
  }
- async saveUrl(objectId:string,origin:string) {
+ async saveUrl(objectId:string|string[],origin:string) {
   const iat=Math.floor(this.now()/1000);
-  const jwt=await this.sign({iss:this.email,aud:'google',typ:'savetowallet',iat,exp:iat+300,origins:[origin],payload:{eventTicketObjects:[{id:objectId}]}});
+  const jwt=await this.sign({iss:this.email,aud:'google',typ:'savetowallet',iat,exp:iat+300,origins:[origin],payload:{eventTicketObjects:(Array.isArray(objectId)?objectId:[objectId]).map(id=>({id}))}});
   const url='https://pay.google.com/gp/v/save/'+jwt;
   if(url.length>1800)throw new Error('wallet_link_length');return url;
  }

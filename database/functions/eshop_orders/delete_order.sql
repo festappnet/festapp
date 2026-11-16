@@ -170,6 +170,7 @@ BEGIN
   -- Delete the related tickets.
   -- This is now safe, as any occasion_users foreign key constraints
   -- should be resolved by the loop above.
+  PERFORM public.enqueue_ticket_wallet_internal(ticket_ids);
   DELETE FROM eshop.tickets WHERE id = ANY(ticket_ids);
 
   -- Delete order history rows.

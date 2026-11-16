@@ -1,10 +1,10 @@
 {
   "element": "mod_vstupenky_online",
-  "version": "1.0.4",
-  "tag": "joomla-vstupenky-online-v1.0.4",
-  "zip": "dist/sha256/75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c/vstupenky.online.zip",
-  "sha256": "75cb1569f94af7829d405e44d4b227026af0f175b922ec37127540c478476b3c",
-  "download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.4/vstupenky.online.zip",
+  "version": "1.0.6",
+  "tag": "joomla-vstupenky-online-v1.0.6",
+  "zip": "dist/sha256/70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7/vstupenky.online.zip",
+  "sha256": "70e6575da678ca74d104405661013ba4f35d79b92458e68e5cf3f81aefcd30b7",
+  "download_url": "https://github.com/festappnet/festapp/releases/download/joomla-vstupenky-online-v1.0.6/vstupenky.online.zip",
   "update_url": "https://raw.githubusercontent.com/festappnet/festapp/main/integrations/joomla/updates/vstupenky-online.xml",
-  "update_feed_sha256": "aeb9ebdfe2f5fe029ad72b1f08a1547fe85d6347b05425799e970de880ef1e7b"
+  "update_feed_sha256": "ef6f19694d8d9e7737ffc9f3c1e6273d10dcf044640f4b3cec6dfd111ca64bcf"
 }

@@ -1,37 +1,24 @@
--- Discovery/setup gate only. Sales remain governed by stripe_runtime_policy.
-CREATE TABLE eshop.stripe_unit_features (
- unit_id bigint PRIMARY KEY REFERENCES public.units(id) ON DELETE CASCADE,
- enabled boolean NOT NULL DEFAULT false,
- updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
- updated_by uuid
-);
-ALTER TABLE eshop.stripe_unit_features ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON eshop.stripe_unit_features FROM PUBLIC,anon,authenticated,service_role;
-
+-- Released Stripe discovery boundary delegates to canonical scoped policy.
+-- Consumer: published mobile versions reading stripe_preview_enabled and the old
+-- feature endpoint. Remove after those supported clients retire. No second store.
 CREATE OR REPLACE FUNCTION public.stripe_unit_feature_enabled_internal(p_unit bigint)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
- SELECT coalesce(f.enabled,org.data->>'DEFAULT_FORM_PAYMENT_METHOD'='stripe',false)
- FROM public.units u JOIN public.organizations org ON org.id=u.organization
- LEFT JOIN eshop.stripe_unit_features f ON f.unit_id=u.id WHERE u.id=p_unit
+ SELECT coalesce(public.payment_method_policy_enabled_internal(p_unit,'stripe'),false);
 $$;
 REVOKE ALL ON FUNCTION public.stripe_unit_feature_enabled_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
-
 CREATE OR REPLACE FUNCTION public.set_stripe_unit_feature(p_unit bigint,p_enabled boolean)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE org bigint;
+DECLARE org bigint; input jsonb; preview jsonb;
 BEGIN
  SELECT organization INTO org FROM public.units WHERE id=p_unit;
- IF org IS NULL OR auth.uid() IS NULL OR NOT public.can_manage_organization_settings(org) THEN
-  RAISE insufficient_privilege USING MESSAGE='STRIPE_ORGANIZATION_ADMIN_REQUIRED';
- END IF;
- IF p_enabled IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='Stripe feature setting must be boolean'; END IF;
- IF public.is_demo_unit(p_unit) THEN RAISE insufficient_privilege USING MESSAGE='DEMO_UNIT_READ_ONLY'; END IF;
- -- Serialize with checkout and connection setup. Never alter retained money facts.
- PERFORM 1 FROM public.units WHERE id=p_unit FOR UPDATE;
- INSERT INTO eshop.stripe_unit_features(unit_id,enabled,updated_by)
- VALUES(p_unit,p_enabled,auth.uid()) ON CONFLICT(unit_id) DO UPDATE
- SET enabled=excluded.enabled,updated_by=excluded.updated_by,updated_at=clock_timestamp();
- RETURN p_enabled;
+ IF NOT public.can_manage_organization_settings(org) OR NOT public.can_manage_payment_method_policy(org,p_unit) THEN RAISE insufficient_privilege; END IF;
+ IF p_enabled IS NULL THEN RAISE EXCEPTION 'PAYMENT_POLICY_MODE_INVALID'; END IF;
+ input:=jsonb_build_object('organizationId',org,'unitId',p_unit,'method','stripe','mode',CASE WHEN p_enabled THEN 'enabled' ELSE 'disabled' END);
+ preview:=public.preview_payment_method_policy(input);
+ -- Legacy setter cannot acknowledge obligations: require the new preview UI.
+ IF p_enabled=false AND ((preview#>>'{impact,openCollections}')::bigint>0 OR (preview#>>'{impact,pendingRequests}')::bigint>0) THEN RAISE EXCEPTION 'PAYMENT_POLICY_IMPACT_CONFIRMATION_REQUIRED'; END IF;
+ PERFORM public.command_payment_method_policy(input,extensions.gen_random_uuid(),preview->>'confirmation');
+ RETURN public.payment_method_policy_enabled_internal(p_unit,'stripe');
 END $$;
 REVOKE ALL ON FUNCTION public.set_stripe_unit_feature(bigint,boolean) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.set_stripe_unit_feature(bigint,boolean) TO authenticated;

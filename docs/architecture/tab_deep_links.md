@@ -16,7 +16,7 @@ Occasion boundaries load route context and check access before mounting the nest
 
 ## Web query transport
 
-Use `root.urlState.uri` for query-preserving URLs. AutoRoute's `currentUrl` decodes reserved characters and can split nested return targets. `PlatformRouteParser` preserves query escapes across Flutter 3.47's web route-information transport, which decodes them once before the URL strategy. Native platforms keep the default representation. AutoRoute continues to own parsing and browser history; the adapter writes no history itself. Regression tests reproduce that engine transport, including repeated values and reserved characters. Recheck the engine behavior when upgrading Flutter.
+Use `root.urlState.uri` for query-preserving URLs. AutoRoute's `currentUrl` decodes reserved characters and can split nested return targets. Flutter 3.50 preserves path, query and fragment escapes in its web route-information transport. Use AutoRoute's default route parser directly; extra query encoding breaks the login return URL. AutoRoute owns parsing, browser history and route state. Browser regression tests cover the app's parser, nested return targets, repeated values and reserved characters.
 
 ## Retention and leaving editors
 

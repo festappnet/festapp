@@ -3,6 +3,7 @@ import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 import 'unit_occasion_dashboard.dart';
 import 'unit_measurement_approval.dart';
+import 'unit_website_consent.dart';
 
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_commands.dart';
@@ -10,6 +11,63 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 class DbUnits {
+  static Future<UnitWebsiteConsent> getWebsiteConsent(int unitId) async =>
+      UnitWebsiteConsent.fromJson(
+        Map<String, dynamic>.from(
+          await _supabase.rpc(
+            'get_unit_website_consent_bindings',
+            params: {'p_unit': unitId},
+          ),
+        ),
+      );
+
+  static Future<UnitWebsiteConsent> saveWebsiteConsent(
+    int unitId,
+    String origin,
+    String platform,
+    Map<String, dynamic> config,
+    int version,
+    String revision,
+    bool confirm,
+  ) async => UnitWebsiteConsent.fromJson(
+    Map<String, dynamic>.from(
+      await _supabase.rpc(
+        'save_unit_website_consent_binding',
+        params: {
+          'p_unit': unitId,
+          'p_website_origin': origin,
+          'p_platform': platform,
+          'p_provider_config': config,
+          'p_expected_version': version,
+          'p_expected_consent_revision': revision,
+          'p_confirm': confirm,
+        },
+      ),
+    ),
+  );
+
+  static Future<UnitWebsiteConsent> disableWebsiteConsent(
+    String binding,
+    int version,
+  ) async => UnitWebsiteConsent.fromJson(
+    Map<String, dynamic>.from(
+      await _supabase.rpc(
+        'disable_unit_website_consent_binding',
+        params: {'p_binding': binding, 'p_expected_version': version},
+      ),
+    ),
+  );
+
+  static Future<Map<String, dynamic>> exportWebsiteConsent(
+    String binding,
+    int version,
+  ) async => Map<String, dynamic>.from(
+    await _supabase.rpc(
+      'export_unit_website_consent_binding',
+      params: {'p_binding': binding, 'p_expected_version': version},
+    ),
+  );
+
   static Future<UnitMeasurementApproval> getMeasurementApproval(
     int unitId,
   ) async => UnitMeasurementApproval.fromJson(

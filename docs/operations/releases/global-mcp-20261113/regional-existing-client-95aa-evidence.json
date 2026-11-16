@@ -1,0 +1,32 @@
+{
+  "sourceSha": "95aa06a21898ee5a4eee09ec79f3543b86a1e8a5",
+  "existingConnection": true,
+  "before": {
+    "enabledOperations": [
+      "forms.list",
+      "forms.inspect",
+      "access.inspect",
+      "context.inspect",
+      "ticket_layouts.inspect"
+    ],
+    "writesEnabled": false,
+    "tenantId": "festapptickets",
+    "readAt": "2026-11-13T06:01:04.570Z"
+  },
+  "after": {
+    "enabledOperations": [
+      "forms.list",
+      "forms.inspect",
+      "access.inspect",
+      "context.inspect",
+      "ticket_layouts.inspect"
+    ],
+    "writesEnabled": false,
+    "tenantId": "festapptickets",
+    "readAt": "2026-11-13T06:30:09.461Z"
+  },
+  "permissionsPreserved": true,
+  "sameAccount": true,
+  "sameTenant": true,
+  "sameOrganization": true
+}

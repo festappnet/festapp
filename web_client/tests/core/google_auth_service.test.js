@@ -81,3 +81,16 @@ test('real Google start and callback preserve organizer creation through account
  assert.equal(finalize.mock.calls.length,1);
  assert.equal(sessionStorage.getItem('festapp-google-attempt-v1'),null);
 });
+
+test('identity status reports an unprovisioned provider as disabled while preserving actual failures', async t => {
+ const {SupabaseService}=await import('../../src/services/supabase_service.js');
+ const {FunctionsHttpError}=await import('@supabase/supabase-js');
+ let status=400,code='provider_unavailable';
+ t.mock.method(SupabaseService,'getClient',()=>({functions:{invoke:async()=>({data:null,
+  error:new FunctionsHttpError(new Response(JSON.stringify({error:code}),{status,headers:{'content-type':'application/json'}}))})}}));
+ assert.deepEqual(await Service.identityStatus(),{enabled:false});
+ status=401;code='authentication_required';
+ await assert.rejects(Service.identityStatus(),/authentication_required/);
+ status=503;code='auth_temporarily_unavailable';
+ await assert.rejects(Service.identityStatus(),/auth_temporarily_unavailable/);
+});

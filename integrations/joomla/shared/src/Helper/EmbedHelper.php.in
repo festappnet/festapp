@@ -5,6 +5,7 @@ namespace Festapp\Module\@@NAMESPACE@@\Site\Helper;
 use Joomla\CMS\Language\Text;
 
 defined('_JEXEC') or die;
+require_once __DIR__ . '/consent-export.php';
 
 final class EmbedHelper
 {
@@ -35,18 +36,29 @@ final class EmbedHelper
         ];
     }
 
+    public static function consent(array $params): ?array
+    {
+        if (!in_array($params['consent_enabled'] ?? null, [1,'1',true], true)) { return null; }
+        return \Festapp\CmsConsent\parse_export($params['consent_export'] ?? '', ['@@ORIGIN@@'], \Festapp\CmsConsent\origin_from_url(\Joomla\CMS\Uri\Uri::root()));
+    }
+
     public static function render(array $params): string
     {
         $s = self::settings($params);
         if ($s === null) {
             return '<p class="@@ELEMENT@@-error">' . self::escape(Text::_('@@KEY@@_INVALID_URL')) . '</p>';
         }
+        $config = self::consent($params);
+        $rel = $config ? 'data-festapp-consent-link' : 'rel="noopener noreferrer"';
+        if (($params['display'] ?? 'embed') === 'link') {
+            return '<a href="' . self::escape($s['url']) . '" target="_blank" ' . $rel . '>' . self::escape($s['title']) . '</a>';
+        }
         return sprintf(
-            '<div class="@@ELEMENT@@" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0;color-scheme:light dark" loading="lazy"></iframe><p><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></p></div>',
+            '<div class="@@ELEMENT@@" data-festapp-embed-host><iframe%s src="%s" title="%s" height="%d" style="display:block;width:100%%;max-width:100%%;border:0;color-scheme:light dark" loading="lazy"></iframe><p><a href="%s" target="_blank" %s>%s</a></p></div>',
             ' data-festapp-embed' . (!$s['auto'] ? ' data-festapp-height="fixed"' : '')
                 . ($s['measurement'] === 'host' ? ' data-festapp-datalayer' : ''),
             self::escape($s['url'] . '?embed=1'), self::escape($s['title']), $s['height'],
-            self::escape($s['url']), self::escape(Text::_('@@KEY@@_FALLBACK'))
+            self::escape($s['url']), $rel, self::escape(Text::_('@@KEY@@_FALLBACK'))
         );
     }
 

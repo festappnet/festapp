@@ -46,6 +46,11 @@ immediately and are not reversed by geometry undo or draft discard.
 
 ## Reservation and financial authority
 
+Available seats inherit the saved document appearance, including per-seat color
+overrides, in admin reservations and both customer pickers. Selected seats retain
+the selection check; unavailable seats use the canonical cross regardless of
+their lifecycle state. Status colors remain presentation overlays.
+
 Both customer pickers apply optimistic presentation through the package and
 rollback rejected callbacks. Only `select_spot` creates/releases the actual
 secret/expiry hold. SQL locks the complete atomic unit, validates the assigned blueprint bindings,
@@ -156,6 +161,11 @@ Pointer copy/move rollback is owned by pointer cancellation and Escape; incident
 keyboard focus transfer does not discard an active clone. Numeric property and
 slider fields share focused wheel edits with normal validation/commit behavior.
 Graphic import is one image/SVG action with the existing combined allowlist.
+
+A confirmed seat swap stays in its dialog when the canonical customer change
+summary offers an email update. Each affected order uses the product-editing
+summary and explicit send confirmation. Skipping or sending an email never
+repeats the swap; receipt recovery opens the same follow-up state.
 
 Operation entry reuses commercial selection: order mode expands atomic units and
 seeds only available priced seats; swap mode seeds at most two eligible seats,
@@ -310,3 +320,9 @@ to `forms.blueprint`, preserves ordinary registrations and their waiting lists, 
 and removes the obsolete publication table and RPCs without touching placements,
 orders, ticket identities or financial data. Historical migration files remain
 immutable. Superseded transition plans are historical records of the removed flow.
+
+Swap follow-up groups recipients by trimmed, case-insensitive email. A seat-only
+permutation within one order and multiple affected orders of the same recipient
+offer no update email. Meaningful single-order amount/state changes stay eligible.
+Accepted updates are not offered again in the completed dialog while delivery
+history catches up; dismissing the preview keeps the offer available.

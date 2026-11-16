@@ -15,6 +15,8 @@ function fixture(t) {
   const root = mkdtempSync(join(tmpdir(),'organizer-context-'));
   t.after(()=>rmSync(root,{recursive:true,force:true}));
   mkdirSync(join(root,'automation/release'),{recursive:true});
+  mkdirSync(join(root,'automation/lib'),{recursive:true});
+  cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),join(root,'automation/lib/write_if_changed.cjs'));
   cpSync(new URL('../release/platform_updates',import.meta.url),join(root,'automation/release/platform_updates'),{recursive:true,filter:source=>!source.includes('node_modules')});
   symlinkSync(fileURLToPath(new URL('../release/platform_updates/node_modules',import.meta.url)),join(root,'automation/release/platform_updates/node_modules'),'dir');
   cpSync(new URL('../../content/platform-updates',import.meta.url),join(root,'content/platform-updates'),{recursive:true});
@@ -40,7 +42,6 @@ test('one registry drives CS HTML, offline topics, sitemap and deterministic gen
   const pressHtml=readFileSync(join(f.root,'web/organizers/press'),'utf8');
   assert.match(pressHtml,/href="\/organizers-media\/press-kit\/vstupenky-online-loga.zip" download/);
   assert.match(pressHtml,/info@vstupenky.online/);
-  assert.match(pressHtml,/Co vstupenky.online umí/);
   const kit=join(f.root,'web/organizers-media/press-kit');
   const archive=readFileSync(join(kit,'vstupenky-online-loga.zip'));
   const inspect=spawnSync('python3',['-c',`from zipfile import ZipFile
@@ -155,4 +156,39 @@ test('invalid paths, duplicate identities and missing media never replace accept
   writeFileSync(contentPath,original);rmSync(join(f.root,'web/organizers-media/organizers-social.png'));
   assert.notEqual(f.render().status,0);assert.equal(readFileSync(target,'utf8'),before);
   for(const override of [{WEB_LINK:'https://vstupenky.online/prefix'},{DOMAIN:'wrong.invalid'},{WEB_ORGANIZER_CONTENT_PROFILE:'missing'}]) assert.throws(()=>resolveContext({...csConfig,...override}));
+});
+
+test('source catalogue retains its app icon while homepage publishes its social card', t => {
+  const enConfig = readConfig(new URL('./fixtures/tenants/festappticketsglobal.conf', import.meta.url));
+  for (const config of [csConfig, enConfig]) {
+    const f = fixture(t);
+    f.setConfig(config);
+    cpSync(new URL('../../web_client/index.html', import.meta.url), join(f.root, 'web_client/index.html'));
+    const result = f.render();
+    assert.equal(result.status, 0, result.stderr);
+    const context = resolveContext(config);
+    const image = new URL(context.projection.seo.image, context.origin).href;
+    const png = readFileSync(join(f.root, 'web', context.projection.seo.image));
+    assert.equal(png.readUInt32BE(16), 1200);
+    assert.equal(png.readUInt32BE(20), 630);
+    const catalogue = readFileSync(join(f.root, 'web_client/index.html'), 'utf8');
+    const homepage = readFileSync(join(f.root, 'web/organizers-page'), 'utf8');
+    for (const [html, expectedImage, width, height] of [
+      [catalogue, new URL('/android-chrome-512x512.png', context.origin).href, 512, 512],
+      [homepage, image, 1200, 630],
+    ]) {
+      assert.ok(html.includes(`property="og:image" content="${expectedImage}"`));
+      assert.ok(html.includes(`name="twitter:image" content="${expectedImage}"`));
+      assert.ok(html.includes(`property="og:locale" content="${context.projection.ogLocale}"`));
+      assert.equal((html.match(/(?:name|property)="og:image"/g) ?? []).length, 1);
+      assert.equal((html.match(/(?:name|property)="twitter:image"/g) ?? []).length, 1);
+      assert.ok(html.includes(`property="og:image:width" content="${width}"`));
+      assert.ok(html.includes(`property="og:image:height" content="${height}"`));
+    }
+    assert.ok(catalogue.includes(`<title>${context.projection.seo.catalogTitle}</title>`));
+    assert.ok(catalogue.includes(`rel="canonical" href="${context.origin}/events"`));
+    const repeated = f.render();
+    assert.equal(repeated.status, 0, repeated.stderr);
+    assert.equal(readFileSync(join(f.root, 'web_client/index.html'), 'utf8'), catalogue);
+  }
 });

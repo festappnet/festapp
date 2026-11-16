@@ -266,16 +266,16 @@ class DbTickets {
     );
   }
 
-  static Future<void> updateScanCode(
-      String occasionLink, String scannedCode) async {
-    final response = await _supabase.rpc('update_scan_code', params: {
+  static Future<String> getOrCreateScanCode(String occasionLink,
+      {bool rotate = false}) async {
+    final response = await _supabase.rpc('get_or_create_scan_code', params: {
       'occasion_link': occasionLink,
-      'new_scan_code': scannedCode,
+      'p_rotate': rotate,
     });
-
-    if (response["code"] != 200) {
-      throw Exception("Error retrieving ticket: ${response["message"]}");
+    if (response['code'] != 200) {
+      throw Exception('Error retrieving scan code: ${response['message']}');
     }
+    return response['scan_code'] as String;
   }
 
   static Future<bool> updateTicketToUsed(
@@ -286,17 +286,6 @@ class DbTickets {
     });
 
     return response["code"] == 200;
-  }
-
-  static Future<String?> getScanCode(String occasionLink) async {
-    final response = await _supabase.rpc('get_scan_code', params: {
-      'occasion_link': occasionLink,
-    });
-
-    if (response["code"] != 200) {
-      return null;
-    }
-    return response["scan_code"];
   }
 
   /// Resets the password for the user associated with the ticket.
@@ -335,7 +324,7 @@ class DbTickets {
           firstSpotId: firstSpotId,
           secondSpotId: secondSpotId);
 
-  static Future<bool> recoverBlueprintSwap(
+  static Future<SeatSwapOutcome?> recoverBlueprintSwap(
           {required int occasionId, required int blueprintId}) =>
       _commands.recoverSwap(
           occasionId: occasionId,
@@ -343,7 +332,7 @@ class DbTickets {
           unitId: RightsService.currentUnit()?.id,
           blueprintId: blueprintId);
 
-  static Future<void> swapBlueprintSpots(BlueprintSeatSwapPreview preview) =>
+  static Future<SeatSwapOutcome> swapBlueprintSpots(BlueprintSeatSwapPreview preview) =>
       _commands.swapSpots(preview);
 
   static Future<Map<String, dynamic>?> getOccasionByScanCode(

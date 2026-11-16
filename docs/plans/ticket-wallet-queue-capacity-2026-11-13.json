@@ -1,0 +1,32 @@
+[
+  {
+    "registrations": 1000,
+    "mode": "controlled transport, saturated continuous worker, no network",
+    "responseLatencyMs": 50,
+    "issuerRequestsPerSecond": 8,
+    "requests": 2005,
+    "writes": 1000,
+    "throughputPerSecond": 3.9832702648874725,
+    "p95Ms": 238550,
+    "maxWaitMs": 251050,
+    "cpuWallMs": 335,
+    "p95Target60s": false,
+    "maxTarget5min": true,
+    "limitation": "Bulk burst at issuer quota. Scheduler gaps, SQL and cold class approval add delay; these are optimistic bounds."
+  },
+  {
+    "registrations": 10000,
+    "mode": "controlled transport, saturated continuous worker, no network",
+    "responseLatencyMs": 50,
+    "issuerRequestsPerSecond": 8,
+    "requests": 20005,
+    "writes": 10000,
+    "throughputPerSecond": 3.998320705303772,
+    "p95Ms": 2376050,
+    "maxWaitMs": 2501050,
+    "cpuWallMs": 3513,
+    "p95Target60s": false,
+    "maxTarget5min": false,
+    "limitation": "Bulk burst at issuer quota. Scheduler gaps, SQL and cold class approval add delay; these are optimistic bounds."
+  }
+]

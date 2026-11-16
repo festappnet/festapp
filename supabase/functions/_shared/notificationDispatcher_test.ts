@@ -39,7 +39,7 @@ Deno.test("notification worker authorizes before any SQL and never accepts a cal
 });
 Deno.test("actual RPC transport commits each work class separately and validates receipts", async () => {
   const calls: { name: string; limit?: number }[] = [];
-  const responses = [2, 1, 0, 0, 0, 0];
+  const responses = [2, 1, 0, 0, 0, 0, 0, 0, 0, 0];
   const rpc = notificationRpc(
     "https://local.invalid",
     "fixture-service-key",
@@ -64,11 +64,26 @@ Deno.test("actual RPC transport commits each work class separately and validates
     "project_notification_center",
     "prepare_notification_center",
     "prepare_notification_center_views",
+    "collect_notification_center_emails",
+    "enqueue_notification_center_emails",
     "project_notification_center",
     "prepare_notification_center",
     "prepare_notification_center_views",
+    "collect_notification_center_emails",
+    "enqueue_notification_center_emails",
   ]);
-  assertEquals(calls.map((x) => x.limit), [500, 100, 100, 500, 100, 100]);
+  assertEquals(calls.map((x) => x.limit), [
+    500,
+    100,
+    100,
+    100,
+    100,
+    500,
+    100,
+    100,
+    100,
+    100,
+  ]);
 });
 Deno.test("HTTP failure after committed delivery retries through the same real executor without a fabricated success", async () => {
   let fail = true, delivered = false;
@@ -148,4 +163,17 @@ Deno.test("work is attached to runtime lifetime independently of the pg_net resp
   assertEquals(result.status, 200);
   await Promise.all(work);
   assertEquals(work.length, 1);
+});
+Deno.test("email collect/enqueue failures have separate receipts and do not stop the feed", async () => {
+  const calls: string[] = [];
+  const result = await drainNotifications(async (name) => {
+    calls.push(name);
+    if (name === "collect_notification_center_emails") {
+      throw new Error("collect_failed");
+    }
+    return 0;
+  });
+  assertEquals(result.emailFailures, 1);
+  assertEquals(result.idle, true);
+  assertEquals(calls.includes("enqueue_notification_center_emails"), true);
 });

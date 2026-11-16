@@ -3,7 +3,7 @@ import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { register } from 'node:module';
 import { JSDOM } from 'jsdom';
-import { helpActionIntent, helpActionFromPath, helpActionPath, helpActionFromWebPath, helpActionWebPath, helpActionFlutterPath } from '../../src/services/help_action_routes.js';
+import { helpActionIntent, helpActionFromPath, helpActionPath, helpActionFromWebPath, helpActionWebPath, helpActionFlutterPath, publicHelpRoot, publicHelpRootFromPath } from '../../src/services/help_action_routes.js';
 register('../css_loader.mjs', import.meta.url);
 const dom = new JSDOM('<!doctype html><body><div id="app"><main></main></div></body>', { url: 'https://tenant.invalid/events?help=orders' });
 for (const key of ['window','document','HTMLElement','customElements','Event','CustomEvent','DOMParser']) globalThis[key] = key === 'window' ? dom.window : dom.window[key];
@@ -70,4 +70,13 @@ test('help actions agree across localized generators, web and Flutter destinatio
     for(const path of ['/help-action/orders?next=x','/help-action/orders#x','/help-action/../orders','https://evil.invalid/help-action/orders','//evil.invalid/help-action/orders','/help-action/unknown',null]){
         assert.equal(helpActionFromPath(path),null);
     }
+});
+
+
+test('public localized guide routes stay separate from event and application intents',()=>{
+    assert.equal(publicHelpRoot('cs'),'/napoveda/');assert.equal(publicHelpRoot('en'),'/help/');
+    for(const value of ['fr','constructor','__proto__',null])assert.equal(publicHelpRoot(value),null);
+    for(const value of ['/help','/help/','/help/orders/','/help/assets/logo.svg'])assert.equal(publicHelpRootFromPath(value),'/help/');
+    assert.equal(publicHelpRootFromPath('/napoveda/objednavky/'),'/napoveda/');
+    for(const value of ['/helper','/help-action/orders','https://evil.invalid/help/',null])assert.equal(publicHelpRootFromPath(value),null);
 });

@@ -18,6 +18,13 @@ const catalog = {
   organization: { id: 3 },
   templates: [{ code: input.templateCode }],
 };
+Deno.test('authoring Wallet visibility comes from the authorized occasion and tenant readiness',async()=>{
+ for(const ready of [false,true])for(const enabled of [false,true]){
+  const {dependencies}=fixture({catalog:async()=>({...catalog,walletReady:ready,organization:{...catalog.organization,data:{DEFAULT_LANGUAGE:'en'}},occasion:{id:42,features:[{code:'ticket',is_enabled:true,wallet_enabled:enabled}]}})});
+  const response=await authoringContextResponse(input,'Bearer caller',dependencies);
+  const result=await response.json();assertEquals(result.walletEnabled,ready&&enabled);assertEquals(result.language,'en');
+ }
+});
 function fixture(overrides: Partial<AuthoringContextDependencies> = {}) {
   const calls: unknown[] = [];
   const dependencies: AuthoringContextDependencies = {
@@ -97,8 +104,12 @@ Deno.test("authoring metadata derives hierarchy only from authorized catalog", a
   assertEquals(result.senderAddress, "info@festapp.net");
   assertStringIncludes(result.wrapperHtml, "padding:24px");
   assertEquals(Object.keys(result).sort(), [
+    "language",
     "paymentAccounts",
     "senderAddress",
+    "ticketDeliveryMode",
+    "walletEnabled",
+    "walletReady",
     "wrapperHtml",
   ]);
 });

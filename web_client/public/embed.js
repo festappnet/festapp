@@ -95,6 +95,7 @@
     if (!policy || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization < 1 || policy.unit < 1 || !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision < 1 || !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision < 1 || typeof policy.processing_revision !== "string" || !policy.processing_revision || policy.processing_revision.length > 128 || policy.profile !== "gtm-v1" || !measurementId(formLink) || JSON.stringify(policy.required_purposes) !== JSON.stringify(["analytics", "marketing"])) return null;
     if (policy.consent_revision !== void 0 && (typeof policy.consent_revision !== "string" || !/^[a-f0-9]{32}$/.test(policy.consent_revision))) return null;
     return {
+      ...policy.website_consent_bindings !== void 0 ? { website_consent_bindings: policy.website_consent_bindings } : {},
       ...policy.consent_revision !== void 0 ? { consent_revision: policy.consent_revision } : {},
       measurement_protocol: measurementProtocol,
       organization: policy.organization,
@@ -108,16 +109,29 @@
       required_purposes: ["analytics", "marketing"]
     };
   }
-  var sameMeasurementManifest = (a, b) => !!a && !!b && ["measurement_protocol", "organization", "unit", "form_link", "processing_revision", "consent_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key])) && a.measurement_consent_bridge === true === (b.measurement_consent_bridge === true);
+  var sameMeasurementManifest = (a, b) => !!a && !!b && ["website_consent_bindings", "measurement_protocol", "organization", "unit", "form_link", "processing_revision", "consent_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key])) && a.measurement_consent_bridge === true === (b.measurement_consent_bridge === true);
 
   // src/components/forms/measurement_consent_source.js
-  function consentScope(policy) {
+  function consentScope(policy, origin) {
     const revision2 = policy?.processingRevision ?? policy?.processing_revision;
     const purposes = policy?.requiredPurposes ?? policy?.required_purposes;
     if (![policy?.organization, policy?.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof revision2 !== "string" || !revision2.length || revision2.length > 128 || purposes !== void 0 && (!Array.isArray(purposes) || purposes.length !== 2 || !purposes.includes("analytics") || !purposes.includes("marketing"))) return null;
     const consentRevision = policy.consentRevision ?? policy.consent_revision;
     if (consentRevision !== void 0 && (typeof consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(consentRevision))) return null;
+    let binding = policy.binding, websiteOrigin = policy.websiteOrigin;
+    if (policy.website_consent_bindings !== void 0) {
+      if (!Array.isArray(policy.website_consent_bindings)) return null;
+      const records = policy.website_consent_bindings.filter((b) => b.websiteOrigin === origin);
+      if (records.length > 1) return null;
+      if (records.length) {
+        if (records[0].effective !== true) return null;
+        binding = { id: records[0].id, version: records[0].version };
+        websiteOrigin = origin;
+      }
+    }
+    if (binding !== void 0 && (!validConsentBinding(binding) || typeof websiteOrigin !== "string")) return null;
     return {
+      ...binding !== void 0 ? { binding: { id: binding.id, version: binding.version }, websiteOrigin } : {},
       organization: policy.organization,
       unit: policy.unit,
       processingRevision: revision2,
@@ -125,13 +139,16 @@
       ...consentRevision !== void 0 ? { consentRevision } : {}
     };
   }
+  var validConsentBinding = (b) => !!b && typeof b.id === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(b.id) && Number.isSafeInteger(b.version) && b.version > 0;
+  var sameConsentBinding = (a, b) => validConsentBinding(a) && validConsentBinding(b) && a.id === b.id && a.version === b.version;
+  var managedConsentOrigin = (policy, origin) => Array.isArray(policy?.website_consent_bindings) && policy.website_consent_bindings.some((b) => b.websiteOrigin === origin);
   var sameConsentScope = (a, b) => !!a && !!b && JSON.stringify(a) === JSON.stringify(b);
   function readConsentSource(source, scope) {
     if (!scope) return null;
     try {
       const value = source?.read({ ...scope, requiredPurposes: [...scope.requiredPurposes] });
       const matches = value?.consentRevision !== void 0 ? scope.consentRevision !== void 0 && value.consentRevision === scope.consentRevision : value?.processingRevision === scope.processingRevision;
-      return matches ? measurementConsent(value) : null;
+      return matches && (!scope.binding || sameConsentBinding(value?.binding, scope.binding)) ? measurementConsent(value) : null;
     } catch {
       return null;
     }
@@ -309,6 +326,83 @@
     };
   }
 
+  // src/embed/host_consent_validity.js
+  var instant = (value) => typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+  function consentValidity(config) {
+    if (!instant(config.consentValidFrom) || !Number.isSafeInteger(config.maxAgeSeconds) || config.maxAgeSeconds <= 0 || config.maxAgeSeconds > 365 * 86400) return null;
+    const from = Date.parse(config.consentValidFrom), age = config.maxAgeSeconds * 1e3;
+    return (timestamp2, now) => Number.isSafeInteger(timestamp2) && timestamp2 >= from && timestamp2 <= now + 6e4 && now - timestamp2 < age;
+  }
+
+  // src/embed/host_wix_consent.js
+  function createWixConsentSource(win, input) {
+    let config;
+    try {
+      config = typeof input === "string" ? JSON.parse(input) : { ...input };
+      if (config.provider !== "wix" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin || !consentValidity(config)) config = null;
+    } catch {
+      config = null;
+    }
+    const listeners = /* @__PURE__ */ new Set();
+    let pending = false, timer, last;
+    const read = (scope) => {
+      try {
+        if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
+        const saved = win.consentPolicyManager?.getCurrentConsentPolicy();
+        const p = saved?.policy;
+        const date = saved?.createdDate;
+        const timestamp2 = typeof date === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?(?:Z|[+-]\d\d:\d\d)$/.test(date) ? Date.parse(date) : Object.prototype.toString.call(date) === "[object Date]" ? date.getTime() : NaN;
+        const now = win.Date.now();
+        if (saved?.defaultPolicy !== false || p?.essential !== true || !["functional", "analytics", "advertising", "dataToThirdParty"].every((k) => typeof p[k] === "boolean") || !consentValidity(config)(timestamp2, now)) return null;
+        return {
+          consentRevision: config.consentRevision,
+          analytics: p.analytics,
+          marketing: p.advertising && p.dataToThirdParty && typeof win.__tcfapi === "undefined"
+        };
+      } catch {
+        return null;
+      }
+    };
+    const tick = () => {
+      const next = JSON.stringify(read());
+      if (next === last) return;
+      last = next;
+      for (const listener of [...listeners]) {
+        try {
+          listener();
+        } catch {
+        }
+      }
+    };
+    const changed = () => {
+      if (pending) return;
+      pending = true;
+      win.queueMicrotask(() => {
+        pending = false;
+        tick();
+      });
+    };
+    return { read, subscribe(listener) {
+      listeners.add(listener);
+      if (listeners.size === 1 && config) {
+        last = JSON.stringify(read());
+        win.document.addEventListener("consentPolicyChanged", changed);
+        win.document.addEventListener("visibilitychange", tick);
+        win.addEventListener("focus", tick);
+        timer = win.setInterval(tick, 1e3);
+      }
+      return () => {
+        listeners.delete(listener);
+        if (!listeners.size) {
+          win.clearInterval(timer);
+          win.document.removeEventListener("consentPolicyChanged", changed);
+          win.document.removeEventListener("visibilitychange", tick);
+          win.removeEventListener("focus", tick);
+        }
+      };
+    } };
+  }
+
   // src/embed/host_complianz.js
   var events = [
     "cmplz_status_change",
@@ -393,19 +487,48 @@
     };
   }
 
-  // src/embed/host_cookieconsent.js
-  var events2 = ["cc:onConsent", "cc:onChange", "cc:onFirstConsent"];
-  var revision = (value) => Number.isSafeInteger(value) && value > 0;
-  var categoryName = (value) => typeof value === "string" && value.length > 0 && value.length <= 128;
-  var disabled2 = (value) => value === void 0 || value === false;
-  var timestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value));
-  function createCookieConsentSource(win, input) {
+  // src/embed/host_cookiebot.js
+  var events2 = [
+    "CookiebotOnConsentReady",
+    "CookiebotOnLoad",
+    "CookiebotOnAccept",
+    "CookiebotOnDecline",
+    "CookiebotOnDialogDisplay"
+  ];
+  var uuid = (value) => typeof value === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value);
+  var consentId = (value) => typeof value === "string" && value.length <= 256 && /^[A-Za-z0-9+/=_-]+$/.test(value) && !/^-?[01]$/.test(value);
+  function persisted(doc, id) {
+    const cookies = doc.cookie.split(";").map((value2) => value2.trim()).filter((value2) => value2.startsWith("CookieConsent="));
+    if (cookies.length !== 1) return false;
+    let value;
+    try {
+      value = decodeURIComponent(cookies[0].slice("CookieConsent=".length));
+    } catch {
+      return false;
+    }
+    const key = `stamp:'${id}'`, at = value.indexOf(key);
+    return value.startsWith("{") && value.endsWith("}") && (value.match(/[{,]stamp:/g) || []).length === 1 && at > 0 && "{,".includes(value[at - 1]) && ",}".includes(value[at + key.length]);
+  }
+  function loader(win, config) {
+    const scripts = [...win.document.querySelectorAll("script[src]")].filter((script2) => {
+      const url2 = new URL(script2.src, win.document.baseURI);
+      return url2.origin === "https://consent.cookiebot.com" && url2.pathname === "/uc.js";
+    });
+    if (scripts.length !== 1) return null;
+    const script = scripts[0], url = new URL(script.src);
+    const attribute = script.getAttribute("data-cbid"), query = url.searchParams.getAll("cbid");
+    if (query.length > 1 || !attribute && !query.length || [attribute, ...query].filter((value) => value !== null).some((value) => !uuid(value))) return null;
+    if (attribute && query.length && attribute.toLowerCase() !== query[0].toLowerCase()) return null;
+    if (config.cbid !== void 0 && [attribute, ...query].filter((value) => value !== null).some((value) => value.toLowerCase() !== config.cbid.toLowerCase())) return null;
+    return { tcf: !!script.getAttribute("data-framework") || !!url.searchParams.get("data-framework") };
+  }
+  function createCookiebotSource(win, input) {
     let config;
     try {
       config = typeof input === "string" ? JSON.parse(input) : { ...input };
-      const categories = config.categories === void 0 ? { analytics: "analytics", marketing: "marketing" } : config.categories;
-      if (config.provider !== "cookieconsent" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !revision(config.revision) || !categoryName(categories?.analytics) || !categoryName(categories?.marketing) || categories.analytics === categories.marketing) config = null;
-      else config = Object.freeze({ ...config, categories: Object.freeze({ ...categories }) });
+      const origin = new URL(config.origin);
+      if (config.provider !== "cookiebot" || ![config.organization, config.unit].every((value) => Number.isSafeInteger(value) && value > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || origin.origin !== config.origin || origin.protocol !== "https:" || config.cbid !== void 0 && !uuid(config.cbid) || !consentValidity(config)) config = null;
+      else config = Object.freeze(config);
     } catch {
       config = null;
     }
@@ -413,21 +536,20 @@
     let timer, last, pending = false;
     const read = (scope) => {
       try {
-        if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
-        const cmp = win.CookieConsent;
-        if (cmp?.validConsent() !== true || cmp.getConfig("mode") !== "opt-in" || cmp.getConfig("revision") !== config.revision) return null;
-        const cookie = cmp.getCookie(), categories = cmp.getConfig("categories");
-        if (cookie?.revision !== config.revision || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) || typeof cookie.consentId !== "string" || !cookie.consentId || !timestamp(cookie.consentTimestamp) || !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() || !cookie.services || typeof cookie.services !== "object" || Array.isArray(cookie.services)) return null;
-        const choice = {};
-        for (const purpose of ["analytics", "marketing"]) {
-          const name = config.categories[purpose], category = categories?.[name];
-          if (!category || typeof category !== "object" || !disabled2(category.enabled) || !disabled2(category.readOnly) || category.services !== void 0 && (!category.services || typeof category.services !== "object" || Array.isArray(category.services) || Object.keys(category.services).length) || !Array.isArray(cookie.services[name]) || cookie.services[name].length) return null;
-          const accepted = cmp.acceptedCategory(name);
-          if (typeof accepted !== "boolean" || accepted !== cookie.categories.includes(name)) return null;
-          choice[purpose] = accepted;
-        }
-        if (typeof win.__tcfapi !== "undefined") choice.marketing = false;
-        return { consentRevision: config.consentRevision, ...choice };
+        if (!config || pending || win.location.origin !== config.origin || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
+        const script = loader(win, config), cmp = win.Cookiebot, consent = cmp?.consent;
+        if (!script || consent?.method !== "explicit" || consent.necessary !== true || ![consent.preferences, consent.statistics, consent.marketing, cmp.consented, cmp.declined, cmp.hasResponse].every((value) => typeof value === "boolean") || cmp.regulations?.gdprApplies !== true || cmp.regulations.ccpaApplies !== false || typeof cmp.regulations.lgpdApplies !== "boolean" || consent.services !== void 0 || // Undocumented account mode; when exposed it must be an opt-in mode.
+        cmp.responseMode !== void 0 && !["optin", "leveloptin", "inlineoptin"].includes(cmp.responseMode)) return null;
+        const accepted = consent.preferences || consent.statistics || consent.marketing;
+        if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
+        const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
+        if (!consentId(id) || consent.stamp !== id || !consentValidity(config)(utc, now)) return null;
+        if (!persisted(win.document, id)) return null;
+        return {
+          consentRevision: config.consentRevision,
+          analytics: consent.statistics,
+          marketing: consent.marketing && !script.tcf && typeof win.__tcfapi === "undefined"
+        };
       } catch {
         return null;
       }
@@ -469,6 +591,113 @@
         }
       };
     } };
+  }
+
+  // src/embed/host_cookieconsent.js
+  var events3 = ["cc:onConsent", "cc:onChange", "cc:onFirstConsent"];
+  var revision = (value) => Number.isSafeInteger(value) && value > 0;
+  var categoryName = (value) => typeof value === "string" && value.length > 0 && value.length <= 128;
+  var disabled2 = (value) => value === void 0 || value === false;
+  var timestamp = (value) => typeof value === "string" && Number.isFinite(Date.parse(value));
+  function createCookieConsentSource(win, input) {
+    let config;
+    try {
+      config = typeof input === "string" ? JSON.parse(input) : { ...input };
+      const categories = config.categories === void 0 ? { analytics: "analytics", marketing: "marketing" } : config.categories;
+      if (config.provider !== "cookieconsent" || ![config.organization, config.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof config.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.revision !== void 0 && !revision(config.revision) || (config.revision === void 0 || config.consentValidFrom !== void 0 || config.maxAgeSeconds !== void 0) && !consentValidity(config) || !categoryName(categories?.analytics) || !categoryName(categories?.marketing) || categories.analytics === categories.marketing) config = null;
+      else config = Object.freeze({ ...config, categories: Object.freeze({ ...categories }) });
+    } catch {
+      config = null;
+    }
+    const listeners = /* @__PURE__ */ new Set();
+    let timer, last, pending = false;
+    const read = (scope) => {
+      try {
+        if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
+        const cmp = win.CookieConsent;
+        if (cmp?.validConsent() !== true || cmp.getConfig("mode") !== "opt-in" || !revision(cmp.getConfig("revision")) || config.revision !== void 0 && cmp.getConfig("revision") !== config.revision) return null;
+        const cookie = cmp.getCookie(), categories = cmp.getConfig("categories");
+        if (cookie?.revision !== cmp.getConfig("revision") || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) || typeof cookie.consentId !== "string" || !cookie.consentId || !timestamp(cookie.consentTimestamp) || !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() || !cookie.services || typeof cookie.services !== "object" || Array.isArray(cookie.services)) return null;
+        if (config.consentValidFrom !== void 0 && !consentValidity(config)(Date.parse(cookie.lastConsentTimestamp), win.Date.now())) return null;
+        const choice = {};
+        for (const purpose of ["analytics", "marketing"]) {
+          const name = config.categories[purpose], category = categories?.[name];
+          if (!category || typeof category !== "object" || !disabled2(category.enabled) || !disabled2(category.readOnly) || category.services !== void 0 && (!category.services || typeof category.services !== "object" || Array.isArray(category.services) || Object.keys(category.services).length) || !Array.isArray(cookie.services[name]) || cookie.services[name].length) return null;
+          const accepted = cmp.acceptedCategory(name);
+          if (typeof accepted !== "boolean" || accepted !== cookie.categories.includes(name)) return null;
+          choice[purpose] = accepted;
+        }
+        if (typeof win.__tcfapi !== "undefined") choice.marketing = false;
+        return { consentRevision: config.consentRevision, ...choice };
+      } catch {
+        return null;
+      }
+    };
+    const tick = () => {
+      if (!listeners.size) return;
+      const next = JSON.stringify(read());
+      if (next === last) return;
+      last = next;
+      for (const listener of [...listeners]) {
+        try {
+          listener();
+        } catch {
+        }
+      }
+    };
+    const changed = () => {
+      if (pending) return;
+      pending = true;
+      win.queueMicrotask(() => {
+        pending = false;
+        tick();
+      });
+    };
+    return { read, subscribe(listener) {
+      listeners.add(listener);
+      if (listeners.size === 1 && config) {
+        last = JSON.stringify(read());
+        for (const event of events3) win.addEventListener(event, changed);
+        timer = win.setInterval(tick, 1e3);
+      }
+      return () => {
+        listeners.delete(listener);
+        if (!listeners.size) {
+          win.clearInterval(timer);
+          timer = void 0;
+          last = void 0;
+          for (const event of events3) win.removeEventListener(event, changed);
+        }
+      };
+    } };
+  }
+
+  // src/embed/host_consent_export.js
+  function parseConsentExport(input, { serviceOrigin, websiteOrigin } = {}) {
+    try {
+      if (typeof input === "string" && input.length > 16384) return null;
+      const value = typeof input === "string" ? JSON.parse(input) : input;
+      if (value?.schemaVersion !== 1 || !validConsentBinding(value.binding) || !isConsentLinkOrigin(value.serviceOrigin) || !isConsentLinkOrigin(value.websiteOrigin) || serviceOrigin && value.serviceOrigin !== serviceOrigin || websiteOrigin && value.websiteOrigin !== websiteOrigin) return null;
+      const c = value.providerConfig;
+      if (!["complianz", "cookiebot", "cookieconsent", "wix"].includes(c?.provider) || ![c.organization, c.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof c.consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(c.consentRevision) || c.origin !== value.websiteOrigin) return null;
+      return value;
+    } catch {
+      return null;
+    }
+  }
+  function createManagedConsentSource(win, input, serviceOrigin) {
+    const value = parseConsentExport(input, { serviceOrigin, websiteOrigin: win.location.origin });
+    const create = { complianz: createComplianzSource, cookiebot: createCookiebotSource, cookieconsent: createCookieConsentSource, wix: createWixConsentSource }[value?.providerConfig.provider];
+    const source = create?.(win, value.providerConfig);
+    return {
+      read(scope) {
+        if (!value || !sameConsentBinding(scope?.binding, value.binding) || scope?.websiteOrigin !== value.websiteOrigin) return null;
+        const choice = source.read(scope);
+        return choice ? { ...choice, binding: { ...value.binding } } : null;
+      },
+      subscribe: (listener) => source ? source.subscribe(listener) : () => {
+      }
+    };
   }
 
   // src/embed/protocol.js
@@ -692,18 +921,25 @@
     };
     const readChoice = (record) => {
       try {
-        return measurementConsent(record.choice?.read(record.manifest));
+        const scope = consentScope(record.manifest, window.location.origin);
+        const choice = record.choice?.read(record.manifest);
+        record.consentBinding = choice && scope?.binding ? scope.binding : void 0;
+        return measurementConsent(choice);
       } catch {
         return measurementConsent(false);
       }
     };
-    const sendConsent = (frame, record) => record.channel.send("measurement-consent", { measurement: {
-      protocol: measurementProtocol,
-      manifest: record.manifest,
-      leaseId: record.lease?.id,
-      ttl: record.lease ? 6e4 : 0,
-      consent: readChoice(record)
-    } });
+    const sendConsent = (frame, record) => {
+      const choice = readChoice(record);
+      return record.channel.send("measurement-consent", { measurement: {
+        protocol: measurementProtocol,
+        manifest: record.manifest,
+        leaseId: record.lease?.id,
+        ttl: record.lease ? 6e4 : 0,
+        binding: record.consentBinding,
+        consent: choice
+      } });
+    };
     const revoke = (frame, record) => {
       record.lease = null;
       record.pageContext = null;
@@ -720,7 +956,7 @@
       if (!record.choice && automatic) {
         const legacyRead = scopedChoice(record, () => consentMode.read());
         bindChoice(frame, record, (notify) => ({
-          read: (manifest) => usesHostDataLayer(frame) ? false : consentSource?.configured ? consentSource.read(consentScope(manifest)) : legacyRead(manifest),
+          read: (manifest) => usesHostDataLayer(frame) ? false : consentSource?.configured ? consentSource.read(consentScope(manifest, window.location.origin)) : managedConsentOrigin(manifest, window.location.origin) ? false : legacyRead(manifest),
           dispose: (() => {
             const a = consentMode.subscribe(notify), b = consentSource?.subscribe(notify);
             return () => {
@@ -740,7 +976,7 @@
     const scopedChoice = (record, read) => {
       let scope = scopeOf(record.manifest);
       return (manifest) => {
-        if (!manifest) return false;
+        if (!manifest || managedConsentOrigin(manifest, window.location.origin)) return false;
         scope ??= scopeOf(manifest);
         return scope === scopeOf(manifest) ? read() : false;
       };
@@ -782,7 +1018,7 @@
         return bindChoice(frame, record, (notify) => {
           const dispose = source.subscribe(notify);
           return { dispose, read: (manifest) => {
-            return readConsentSource(source, consentScope(manifest));
+            return readConsentSource(source, consentScope(manifest, window.location.origin));
           } };
         });
       },
@@ -1153,8 +1389,13 @@
           provider = JSON.parse(input)?.provider;
         } catch {
         }
-        const createSource = provider === "cookieconsent" ? createCookieConsentSource : createComplianzSource;
-        consentSource.connect(createSource(window, input));
+        const createSource = provider === "cookiebot" ? createCookiebotSource : provider === "cookieconsent" ? createCookieConsentSource : createComplianzSource;
+        let managed = false;
+        try {
+          managed = JSON.parse(input)?.schemaVersion !== void 0;
+        } catch {
+        }
+        consentSource.connect(managed ? createManagedConsentSource(window, input, productOrigin) : createSource(window, input));
       }
       installHostConsentLink(window, productOrigin, consentSource);
     } catch {

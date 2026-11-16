@@ -1,0 +1,206 @@
+{
+  "measuredAt": "2026-11-14T05:02:23.019Z",
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v26.8.1",
+    "postgres": "PostgreSQL 15.8 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 13.2.0, 64-bit",
+    "project": "festapp-webhooks-20261114"
+  },
+  "method": {
+    "metric": "PostgreSQL EXPLAIN ANALYZE server execution time, successful canonical anonymous paid single-ticket checkout",
+    "blocks": 6,
+    "samplesPerCase": 72,
+    "warmupPerBlock": 3,
+    "orderPrice": "100.00 CZK",
+    "fixture": "Same organization/form/input across modes; each successful checkout is validated then rolled back; baseline removes only the producer call in the transaction-local function definition.",
+    "cache": "Warm; rotated block order; no benchmark-generated concurrent load; ordinary workstation background load was not controlled",
+    "limits": "Does not measure total database CPU utilization, commit/fsync latency, GoTrue refresh work, outbound network or lock contention. No production data or configuration was used."
+  },
+  "scenarios": [
+    {
+      "id": "before_webhooks",
+      "hook": false,
+      "active": 1,
+      "backlog": 0,
+      "deliveries": 0,
+      "reference": "before_webhooks",
+      "samples": 72,
+      "medianMs": 24.775,
+      "p95Ms": 32.666,
+      "minMs": 21.258,
+      "maxMs": 37.545,
+      "deltaMedianMs": 0,
+      "deltaMedianPct": 0,
+      "blockMedianDeltasPct": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "medianSharedHitBlocks": 6775,
+      "totalSharedReads": 4,
+      "medianWalBytes": 21822
+    },
+    {
+      "id": "no_active_subscription",
+      "hook": true,
+      "active": 0,
+      "backlog": 0,
+      "deliveries": 0,
+      "reference": "before_webhooks",
+      "samples": 72,
+      "medianMs": 24.957,
+      "p95Ms": 34.144,
+      "minMs": 22.706,
+      "maxMs": 40.711,
+      "deltaMedianMs": 0.18200000000000216,
+      "deltaMedianPct": 0.7346115035318013,
+      "blockMedianDeltasPct": {
+        "median": 4.217436073451175,
+        "min": -8.109148289266056,
+        "max": 18.04414003044139
+      },
+      "medianSharedHitBlocks": 6891,
+      "totalSharedReads": 4,
+      "medianWalBytes": 21402
+    },
+    {
+      "id": "other_form_only",
+      "hook": true,
+      "active": 0,
+      "other": true,
+      "backlog": 0,
+      "deliveries": 0,
+      "reference": "before_webhooks",
+      "samples": 72,
+      "medianMs": 25.377,
+      "p95Ms": 40.657,
+      "minMs": 23.107,
+      "maxMs": 148.75,
+      "deltaMedianMs": 0.6020000000000003,
+      "deltaMedianPct": 2.42986881937437,
+      "blockMedianDeltasPct": {
+        "median": 2.3597048223785944,
+        "min": -7.37334194823458,
+        "max": 48.93064914410079
+      },
+      "medianSharedHitBlocks": 6999,
+      "totalSharedReads": 4,
+      "medianWalBytes": 21469
+    },
+    {
+      "id": "one_matching",
+      "hook": true,
+      "active": 1,
+      "backlog": 0,
+      "deliveries": 1,
+      "reference": "before_webhooks",
+      "samples": 72,
+      "medianMs": 26.989,
+      "p95Ms": 37.919,
+      "minMs": 23.358,
+      "maxMs": 99.435,
+      "deltaMedianMs": 2.214000000000002,
+      "deltaMedianPct": 8.936427850655914,
+      "blockMedianDeltasPct": {
+        "median": 14.104659041090418,
+        "min": -7.139283377593042,
+        "max": 17.91738165990038
+      },
+      "medianSharedHitBlocks": 6705,
+      "totalSharedReads": 4,
+      "medianWalBytes": 23055
+    },
+    {
+      "id": "ten_matching",
+      "hook": true,
+      "active": 10,
+      "backlog": 0,
+      "deliveries": 10,
+      "reference": "before_webhooks",
+      "samples": 72,
+      "medianMs": 24.805,
+      "p95Ms": 34.125,
+      "minMs": 23.366,
+      "maxMs": 65.288,
+      "deltaMedianMs": 0.030000000000001137,
+      "deltaMedianPct": 0.12108980827447713,
+      "blockMedianDeltasPct": {
+        "median": 5.105416284723607,
+        "min": -7.4279336489243,
+        "max": 14.303652968036529
+      },
+      "medianSharedHitBlocks": 6965,
+      "totalSharedReads": 4,
+      "medianWalBytes": 27502
+    },
+    {
+      "id": "before_webhooks_backlog_10000",
+      "hook": false,
+      "active": 1,
+      "backlog": 10000,
+      "deliveries": 0,
+      "reference": "before_webhooks_backlog_10000",
+      "samples": 72,
+      "medianMs": 24.475,
+      "p95Ms": 28.577,
+      "minMs": 23.351,
+      "maxMs": 32.405,
+      "deltaMedianMs": 0,
+      "deltaMedianPct": 0,
+      "blockMedianDeltasPct": {
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "medianSharedHitBlocks": 8541,
+      "totalSharedReads": 0,
+      "medianWalBytes": 22016
+    },
+    {
+      "id": "one_matching_backlog_10000",
+      "hook": true,
+      "active": 1,
+      "backlog": 10000,
+      "deliveries": 1,
+      "reference": "before_webhooks_backlog_10000",
+      "samples": 72,
+      "medianMs": 26.462,
+      "p95Ms": 28.41,
+      "minMs": 25.589,
+      "maxMs": 29.716,
+      "deltaMedianMs": 1.9869999999999983,
+      "deltaMedianPct": 8.118488253319711,
+      "blockMedianDeltasPct": {
+        "median": 8.327252087894266,
+        "min": 0.8882565561793454,
+        "max": 9.73708219291698
+      },
+      "medianSharedHitBlocks": 8881,
+      "totalSharedReads": 0,
+      "medianWalBytes": 23475
+    }
+  ],
+  "idleWorkerSqlPair": {
+    "normal": {
+      "samples": 72,
+      "medianMs": 0.497,
+      "p95Ms": 0.582,
+      "minMs": 0.45,
+      "maxMs": 0.686
+    },
+    "backlog10000": {
+      "samples": 72,
+      "medianMs": 1.131,
+      "p95Ms": 1.238,
+      "minMs": 1.094,
+      "maxMs": 1.292
+    },
+    "description": "Two real SQL RPC actions (purge + empty claim) per selected active subscription tick; excludes upstream Auth refresh."
+  },
+  "interpretation": {
+    "scope": "Approximate local server-side query execution overhead, not whole-database CPU utilization or browser/API latency.",
+    "noise": "Block variation is larger than the smallest deltas; do not interpret the non-monotonic 1-vs-10 subscriber medians as a scaling speedup.",
+    "writes": "All successful checkouts, fixtures and transaction-local baseline function changes were rolled back; no outbound worker was started."
+  }
+}

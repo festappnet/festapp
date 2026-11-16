@@ -10,11 +10,13 @@ parser.add_argument('--product',choices=[p['slug'] for p in PRODUCTS])
 selected=parser.parse_args().product
 PRODUCTS=[p for p in PRODUCTS if selected is None or p['slug']==selected]
 CS=json.loads((SHARED/'cs_CZ.json').read_text())
-FILES={'plugin.php.in':'{slug}.php','embed.php.in':'includes/embed.php','admin.php.in':'includes/admin.php','editor.js.in':'blocks/ticket-form/editor.js','style.css.in':'blocks/ticket-form/style.css','block.json.in':'blocks/ticket-form/block.json','readme.txt.in':'readme.txt'}
+FILES={'consent.php.in':'includes/consent.php','uninstall.php.in':'uninstall.php','link-block.json.in':'blocks/form-link/block.json','plugin.php.in':'{slug}.php','embed.php.in':'includes/embed.php','admin.php.in':'includes/admin.php','editor.js.in':'blocks/ticket-form/editor.js','style.css.in':'blocks/ticket-form/style.css','block.json.in':'blocks/ticket-form/block.json','readme.txt.in':'readme.txt'}
 
 def replace(source,p):
  values={k.upper():str(v) for k,v in p.items()}
  values['OFFER_URL']=p['origin'].rstrip('/')+'/'
+ values['DOCUMENTATION']=p.get('documentation', 'Setup help is available under Settings > '+p['name']+'. Support: '+p['origin']+'/support/')
+ values['INSTALLATION']=p.get('installation', 'In WordPress, open Plugins > Add New, search for '+p['name']+', click Install Now and activate the plugin. You can also upload the plugin ZIP manually.')
  values['CHANGELOG']=p.get('changelog', '= '+p['version']+' =\n* Clearly identify the WordPress appearance option as a local override of the app appearance.')
  values['UPGRADE_NOTICE']=p.get('upgrade_notice', 'No database migration. Existing form URLs, titles and height settings are retained. Appearance now follows the saved form setting; previous local appearance overrides no longer apply.')
  for key,value in values.items():source=source.replace('@@'+key+'@@',value)
@@ -36,6 +38,13 @@ for p in PRODUCTS:
  out=ROOT/slug;assert not out.is_symlink();out.mkdir(exist_ok=True)
  generated={}
  for source,target in FILES.items():generated[target.format(slug=slug)]=replace((SHARED/source).read_text(),p)
+ # Bind the shared envelope algorithm to WordPress's native URL API and guard.
+ # Joomla keeps the native PHP binding; there is no runtime fallback or second parser.
+ consent_parser=(ROOT.parent/'measurement/consent-export.php').read_text()
+ native_binding='use function parse_url as parse_origin_url;'
+ assert consent_parser.count(native_binding)==1
+ wordpress_binding="use function wp_parse_url as parse_origin_url;\n\nif ( ! defined( 'ABSPATH' ) ) {\n\texit;\n}\n"
+ generated['includes/consent-export.php']=consent_parser.replace(native_binding,wordpress_binding)
  validate_minimum_wordpress(generated[f'{slug}.php'],generated['readme.txt'])
  # All textdomain arguments and namespaces are literal in the distributed sources.
  messages=set()
@@ -71,6 +80,6 @@ for p in PRODUCTS:
  for name,value in generated.items():
   target=out/name;assert not target.is_symlink();target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(value if isinstance(value,bytes) else value.encode())
  manifest[slug]={'files':{name:hashlib.sha256((out/name).read_bytes()).hexdigest() for name in sorted(generated)},'messages':len(messages),'czech_translations':len(catalog)-1}
-manifest['shared_inputs']={p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT/'products.json',ROOT/'scripts/build-plugins.py',ROOT/'scripts/package.py',ROOT/'scripts/metadata_contract.py',*sorted(SHARED.iterdir())] if p.is_file()}
+manifest['shared_inputs']={__import__('os').path.relpath(p,ROOT):hashlib.sha256(p.read_bytes()).hexdigest() for p in [ROOT.parent/'measurement/consent-export.php',ROOT/'products.json',ROOT/'scripts/build-plugins.py',ROOT/'scripts/package.py',ROOT/'scripts/metadata_contract.py',*sorted(SHARED.iterdir())] if p.is_file()}
 (ROOT/'evidence/shared-build.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(f'Generated {len(PRODUCTS)} selected plugin(s) from shared sources, with readable code and Czech translations')

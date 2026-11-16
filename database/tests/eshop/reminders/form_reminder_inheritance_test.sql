@@ -29,6 +29,7 @@ BEGIN
     -- ==================================================================
 
     INSERT INTO public.organizations (title) VALUES ('Grace Org') RETURNING id INTO v_org_id;
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(v_org_id,'bank',true);
     INSERT INTO public.units (title, organization) VALUES ('Grace Unit', v_org_id) RETURNING id INTO v_unit_id;
 
     INSERT INTO eshop.secrets (secret) VALUES ('grace_secret') RETURNING id INTO v_secret_id;
@@ -52,6 +53,7 @@ BEGIN
     INSERT INTO public.forms (title, occasion, is_open, data)
     VALUES ('Grace Form', v_occasion_id, true, '{}'::jsonb)
     RETURNING id, key INTO v_form_id, v_form_key;
+    UPDATE public.forms SET data=coalesce(data,'{}')||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=v_form_id;
 
     INSERT INTO eshop.product_types (title, occasion, type)
     VALUES ('Grace PT', v_occasion_id, 'spot')
@@ -82,17 +84,17 @@ BEGIN
     PERFORM assert_true((SELECT abs(extract(epoch FROM (deadline-created_at))-604800)<10 FROM eshop.payment_info WHERE id=v_payment_info_id), 'Missing form deadline inherits seven-day fallback');
     PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.payment_info pi ON pi.id=v_payment_info_id WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired') AND m.target_time=pi.deadline-interval '3 days' AND public.email_intent_valid(m)), 'Absent override inherits enabled and event interval');
 
-    UPDATE public.forms SET data='{"is_reminder_enabled":false}' WHERE id=v_form_id;
+    UPDATE public.forms SET data=coalesce(data,'{}')||'{"is_reminder_enabled":false}' WHERE id=v_form_id;
     PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND public.email_intent_valid(m)), 'Explicit false invalidates queued reminder at send time');
     PERFORM public.queue_payment_reminders(v_occasion_id,0);
     PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired')), 'Explicit false suppresses queue');
 
     UPDATE public.occasions SET features='[{"code":"form","is_enabled":true,"reminder_is_enabled":false,"reminder_interval_seconds":259200}]' WHERE id=v_occasion_id;
-    UPDATE public.forms SET data='{"is_reminder_enabled":true,"reminder_interval_seconds":86400}' WHERE id=v_form_id;
+    UPDATE public.forms SET data=coalesce(data,'{}')||'{"is_reminder_enabled":true,"reminder_interval_seconds":86400}' WHERE id=v_form_id;
     PERFORM public.queue_payment_reminders(v_occasion_id,0);
     PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.payment_info pi ON pi.id=v_payment_info_id WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired') AND m.target_time=pi.deadline-interval '1 day' AND public.email_intent_valid(m)), 'Form true and interval override event false and three-day interval');
 
-    UPDATE public.forms SET data='{}' WHERE id=v_form_id;
+    UPDATE public.forms SET data=jsonb_build_object('payments',data->'payments') WHERE id=v_form_id;
     PERFORM public.queue_payment_reminders(v_occasion_id,0);
     PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired')), 'Clearing overrides restores disabled event default');
 
@@ -101,7 +103,7 @@ BEGIN
     PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages m JOIN eshop.payment_info pi ON pi.id=v_payment_info_id WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired') AND m.target_time=pi.deadline-interval '1 day' AND public.email_intent_valid(m)), 'Missing event values default to enabled and one day');
 
     UPDATE public.occasions SET features='[{"code":"form","is_enabled":false}]' WHERE id=v_occasion_id;
-    UPDATE public.forms SET data='{"is_reminder_enabled":true}' WHERE id=v_form_id;
+    UPDATE public.forms SET data=coalesce(data,'{}')||'{"is_reminder_enabled":true}' WHERE id=v_form_id;
     PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND public.email_intent_valid(m)), 'Disabled form feature prevents delivery even with explicit form enable');
     PERFORM public.queue_payment_reminders(v_occasion_id,0);
     PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages m WHERE m.order_id=v_order_id AND m.message_kind='order_reminder' AND m.workflow_state NOT IN ('cancelled','expired')), 'Disabled form feature prevents queue');

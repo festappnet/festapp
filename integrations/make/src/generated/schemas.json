@@ -899,6 +899,18 @@
                               "string",
                               "null"
                             ]
+                          },
+                          "net": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pending": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -1124,6 +1136,18 @@
                             ]
                           },
                           "returned": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "net": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "pending": {
                             "type": [
                               "string",
                               "null"
@@ -1410,7 +1434,19 @@
     "input": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
-      "properties": {},
+      "properties": {
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "limit": {
+          "default": 5,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        }
+      },
       "additionalProperties": false
     },
     "output": {
@@ -1439,6 +1475,68 @@
             },
             "writesEnabled": {
               "type": "boolean"
+            },
+            "capabilitySearch": {
+              "type": "object",
+              "properties": {
+                "query": {
+                  "type": "string"
+                },
+                "authorization": {
+                  "type": "string",
+                  "const": "checked_when_action_runs"
+                },
+                "hasMore": {
+                  "type": "boolean"
+                },
+                "matches": {
+                  "maxItems": 10,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "operation": {
+                        "type": "string"
+                      },
+                      "tool": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "serverSupported": {
+                        "type": "boolean",
+                        "const": true
+                      },
+                      "toolEnabled": {
+                        "type": "boolean"
+                      },
+                      "requiredScopes": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "operation",
+                      "tool",
+                      "description",
+                      "serverSupported",
+                      "toolEnabled",
+                      "requiredScopes"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "query",
+                "authorization",
+                "hasMore",
+                "matches"
+              ],
+              "additionalProperties": false
             }
           },
           "required": [

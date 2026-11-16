@@ -1,0 +1,206 @@
+Found 39 test file(s) to execute.
+>>> Setup: Resetting Sequences (Global)...
+>>> Setup Complete.
+
+
+▶ Running: database/tests/canonical_mutation_source_parity_test.sql
+
+▶ Running: database/tests/notification_center/subject_visibility_test.sql
+
+▶ Running: database/tests/notification_center/serving_contraction_test.sql
+
+▶ Running: database/tests/notification_center/read_history_compaction_test.sql
+
+▶ Running: database/tests/notification_center/purge_hidden_history_test.sql
+  ✔ PASSED (78 ms): database/tests/canonical_mutation_source_parity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (422 ms): database/tests/notification_center/read_history_compaction_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (435 ms): database/tests/notification_center/purge_hidden_history_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (453 ms): database/tests/notification_center/subject_visibility_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (458 ms): database/tests/notification_center/serving_contraction_test.sql
+
+▶ Running: database/tests/notification_center/projection_lifecycle_test.sql
+
+▶ Running: database/tests/notification_center/producers_test.sql
+
+▶ Running: database/tests/notification_center/presentation_test.sql
+
+▶ Running: database/tests/notification_center/prepared_wide_scope_test.sql
+
+▶ Running: database/tests/notification_center/prepared_scope_authority_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (136 ms): database/tests/notification_center/projection_lifecycle_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] Wide notification open: 31.5 ms, 445 scopes, 30 rows
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (327 ms): database/tests/notification_center/prepared_wide_scope_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] Live scope authority equivalence: 1560 cases
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (418 ms): database/tests/notification_center/prepared_scope_authority_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (770 ms): database/tests/notification_center/presentation_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1763 ms): database/tests/notification_center/producers_test.sql
+
+▶ Running: database/tests/notification_center/prepared_retention_test.sql
+
+▶ Running: database/tests/notification_center/prepared_orders_test.sql
+
+▶ Running: database/tests/notification_center/prepared_lifecycle_test.sql
+
+▶ Running: database/tests/notification_center/prepared_history_test.sql
+
+▶ Running: database/tests/notification_center/payment_facts_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (324 ms): database/tests/notification_center/prepared_orders_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (665 ms): database/tests/notification_center/prepared_lifecycle_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (692 ms): database/tests/notification_center/payment_facts_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (778 ms): database/tests/notification_center/prepared_retention_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1018 ms): database/tests/notification_center/prepared_history_test.sql
+
+▶ Running: database/tests/notification_center/open_latency_test.sql
+
+▶ Running: database/tests/notification_center/lifecycle_test.sql
+
+▶ Running: database/tests/notification_center/legacy_place_totals_test.sql
+
+▶ Running: database/tests/notification_center/idle_wake_test.sql
+
+▶ Running: database/tests/notification_center/hidden_participants_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (11 ms): database/tests/notification_center/idle_wake_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (576 ms): database/tests/notification_center/lifecycle_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (740 ms): database/tests/notification_center/legacy_place_totals_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (987 ms): database/tests/notification_center/hidden_participants_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] notification open (hidden members: f): 41.8 ms
+  [NOTICE] notification open (hidden members: t): 37.8 ms
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (2485 ms): database/tests/notification_center/open_latency_test.sql
+
+▶ Running: database/tests/notification_center/hidden_identity_surfaces_test.sql
+
+▶ Running: database/tests/notification_center/form_availability_test.sql
+
+▶ Running: database/tests/notification_center/form_availability_save_test.sql
+
+▶ Running: database/tests/notification_center/email_sources_test.sql
+
+▶ Running: database/tests/notification_center/email_recovery_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (64 ms): database/tests/notification_center/hidden_identity_surfaces_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (399 ms): database/tests/notification_center/email_sources_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (570 ms): database/tests/notification_center/email_recovery_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (618 ms): database/tests/notification_center/form_availability_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (916 ms): database/tests/notification_center/form_availability_save_test.sql
+
+▶ Running: database/tests/notification_center/email_preparation_failure_test.sql
+
+▶ Running: database/tests/notification_center/delivery_operations_test.sql
+
+▶ Running: database/tests/notification_center/deleted_entities_test.sql
+
+▶ Running: database/tests/notification_center/current_participants_test.sql
+
+▶ Running: database/tests/notification_center/contract_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (51 ms): database/tests/notification_center/email_preparation_failure_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (492 ms): database/tests/notification_center/current_participants_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (873 ms): database/tests/notification_center/contract_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (880 ms): database/tests/notification_center/delivery_operations_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1070 ms): database/tests/notification_center/deleted_entities_test.sql
+
+▶ Running: database/tests/notification_center/cancelled_order_email_alerts_test.sql
+
+▶ Running: database/tests/notification_center/cancelled_new_orders_test.sql
+
+▶ Running: database/tests/notification_center/bank_sources_test.sql
+
+▶ Running: database/tests/notification_center/app_activity_test.sql
+
+▶ Running: database/tests/notification_center/administration_visibility_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (613 ms): database/tests/notification_center/app_activity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1116 ms): database/tests/notification_center/administration_visibility_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1529 ms): database/tests/notification_center/cancelled_new_orders_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] No tickets found for order 275, proceeding to storno order shell.
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1580 ms): database/tests/notification_center/cancelled_order_email_alerts_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (1829 ms): database/tests/notification_center/bank_sources_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_send_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_no_address_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_delivery_test.sql
+
+▶ Running: database/tests/notification_center/admin_email_bank_identity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (51 ms): database/tests/notification_center/admin_email_bank_identity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (136 ms): database/tests/notification_center/admin_email_send_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (296 ms): database/tests/notification_center/admin_email_delivery_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (329 ms): database/tests/notification_center/admin_email_no_address_test.sql
+
+==================================================
+SUMMARY: 39 Passed, 0 Failed
+==================================================

@@ -1,0 +1,30 @@
+{
+  "sourceSha": "4a373ff3dfd8b5bd7a056d999918cd096ffd57da",
+  "version": "0.20.605+1130",
+  "execution": "canonical local builds and automation/deploy_direct.sh",
+  "exactSourceGitHubJobs": "8/8 PASS",
+  "tenants": [
+    {
+      "branch": "prod/festapptickets",
+      "tenantSha": "1ef56dce0619ce8e9be9be9e917d1aae469d34e2",
+      "parentTenantSha": "ba2f050cd55ae59a67cfdbfbd4cfcd6ffaea1b9b",
+      "publicUrl": "https://vstupenky.online",
+      "deploymentUrl": "https://9132847f.vstupenkyonline.pages.dev",
+      "outputsSha256": "ac6c7c203148d7d779d75eff09e444d68b442775be39fc93c8ff1f7cb75234e9",
+      "receiptSha256": "2e3497b5c9543c4620b8540e153aff81468635f9bce25d4e3de03d15bfcbe664",
+      "canonicalBuildVerification": "PASS",
+      "consecutiveCoherentLiveVersionProbes": 3
+    },
+    {
+      "branch": "prod/festappticketsglobal",
+      "tenantSha": "3f001b230cc9fb4f4e8c01165077fd12fc877983",
+      "parentTenantSha": "e396e7c9f80dfbffab7976c32ea099417ce65767",
+      "publicUrl": "https://tickets.festapp.net",
+      "deploymentUrl": "https://0e731d10.festappticketsglobal.pages.dev",
+      "outputsSha256": "3cad9899b1c011b8a96762dd9050bc8c3bd65510f6585303dfff3cfda5d3c0dd",
+      "receiptSha256": "dd7a5e90ecbbf44e8e71a9c67b20490231dafb4ab847a4e8c8d6a3092770f281",
+      "canonicalBuildVerification": "PASS",
+      "consecutiveCoherentLiveVersionProbes": 3
+    }
+  ]
+}

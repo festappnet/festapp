@@ -1,0 +1,503 @@
+{
+  "version": 1,
+  "migrations": [
+    {
+      "migration": "20261106160000_payment_provider_hardening.sql",
+      "sha256": "95176f853212158111d5829e6bfb2ea005d7790e03f9d32eb1e9aef03d7da979",
+      "manifest": "payment-provider-hardening-migration.json",
+      "checkSources": true
+    },
+    {
+      "migration": "20261106180000_barion_sandbox_connector.sql",
+      "sha256": "9c5dbacf7997544ac5224391c02053d5b861fdec65278d77a76fa24d2187cb9e",
+      "manifest": "barion-sandbox-migration.json",
+      "checkSources": true
+    },
+    {
+      "migration": "20261106200000_payment_provider_canonical_integration.sql",
+      "sha256": "d476ba83e5018960de3545e5565350c4dfbf0ec4e27a6929dbd702d322024623",
+      "manifest": "payment-provider-integration-migration.json",
+      "checkSources": true
+    },
+    {
+      "migration": "20261106210000_restore_payment_configuration_null_resets.sql",
+      "sha256": "fc477ea3e8b7043dba1902bc67dd65385173411ea1a228a5d5a5cfc29689a46b",
+      "sources": [
+        "payment_providers/configuration.sql"
+      ],
+      "checkSources": true
+    },
+    {
+      "migration": "20261106220000_cash_reservations.sql",
+      "sha256": "faca691eb97680b060d4bedda89fedb7d3c2ba5ab4b29212fd4871d9f14791f0",
+      "manifest": "cash-reservations-migration.json",
+      "checkSources": true
+    },
+    {
+      "migration": "20261110220000_automatic_form_blueprints.sql",
+      "sha256": "2f5c7804c7cf623a52034a49e61f4528786fee6b2e15c6c5c0017d89ac7e774d",
+      "sources": [
+        "eshop_waitlist/form_capacity.sql",
+        "blueprint/form_binding.sql",
+        "blueprint/seating_context.sql",
+        "blueprint/seating_assignment.sql",
+        "blueprint/admission_seating.sql",
+        "blueprint/save.sql",
+        "eshop_forms/update_form.sql",
+        "eshop_forms/form_creation_domain.sql",
+        "others/update_occasion.sql",
+        "eshop_forms/delete_form_internal_v1.sql",
+        "others/delete_occasion.sql",
+        "eshop/order_seating.sql",
+        "eshop_orders/get_order_admin_detail.sql",
+        "eshop/materialize_ticket_products_internal_v1.sql",
+        "blueprint/retire_publication.sql",
+        "blueprint/seating_sync.sql",
+        "others/get_ticket_layout_write_contract_v1.sql"
+      ]
+    },
+    {
+      "migration": "20261110230000_ticket_wallet.sql",
+      "sha256": "fae4ba85422da499cc286988df402337c831026e4a6b82a12c2f41a50bb1dc56",
+      "manifest": "ticket-wallet-migration.json",
+      "checkSources": true
+    },
+    {
+      "migration": "20261110231000_payment_operations.sql",
+      "sha256": "268ec4905adf7b863683260e025b6de4b4fbb735f446cfa83a69dccc3b2fc5fa",
+      "manifest": "payment-operations-migration.json",
+      "checkSources": true
+    },
+    {
+      "migration": "20261111010000_access_membership.sql",
+      "sha256": "7fb1b6d6250be8af862fbfd2332c25a8d5218b2a9f433c993cdca1f4356131a9",
+      "manifest": "access-membership-migration.json",
+      "checkSources": true
+    },
+    {
+      "migration": "20261111123041_order_read_performance.sql",
+      "sha256": "214a240555f30042f70a3ce63511499edc61ab62e30560e985a2b0ebe04e2e8a",
+      "sources": [
+        "eshop_transactions/payment_totals.sql",
+        "user_permissions/domain_operations.sql",
+        "user_permissions/bank_operations.sql",
+        "user_permissions/get_is_manager_on_unit.sql",
+        "user_permissions/payment_operations.sql",
+        "payment_providers/builtin.sql",
+        "payment_providers/operation_contexts.sql",
+        "payment_providers/operations.sql",
+        "eshop/order_seating.sql",
+        "eshop_orders/get_orders.sql",
+        "emails/email_reporting.sql"
+      ]
+    },
+    {
+      "migration": "20261111140000_scanner_search_and_bank_movements.sql",
+      "sha256": "999f9ca2777c08167fc0a218aacced82f30560ead54b7ab1deedf38c09850636",
+      "sources": [
+        "scanning/admission.sql",
+        "eshop_transactions/payment_totals.sql"
+      ]
+    },
+    {
+      "migration": "20261112160000_payment_method_policy.sql",
+      "sha256": "075f16d5fef14d334a9f25ea19c187af697993d36c21e6dd27739bfd74694a5f",
+      "manifest": "payment-method-policy-migration.json",
+      "checkSources": true,
+      "functionOnlySources": [
+        "payment_providers/method_policy.sql"
+      ]
+    },
+    {
+      "migration": "20261112170000_payment_method_policy_contraction.sql",
+      "sha256": "6f8e75a3043d2441e8f92576be3fe106367c4b9f8254efbaefca30abbcfacbd9",
+      "manifest": "payment-method-policy-migration.json",
+      "sourceKey": "contractionSources",
+      "checkSources": true
+    },
+    {
+      "migration": "20261112180000_payment_policy_refinement.sql",
+      "manifest": "payment-policy-refinement-migration.json",
+      "checkSources": true,
+      "sha256": "7d9470dfa5736ccba150324af5c82a271d8c4ebd9985dea4b081c20af8104cef"
+    },
+    {
+      "migration": "20261112190000_seat_swap_lifecycle.sql",
+      "sha256": "9f8e53660aec1c33de8be2b874bfc04f899b22d483f22587bad8fc0487c23428",
+      "sources": [
+        "eshop_orders/recalculate_order_payment_status.sql",
+        "eshop/swap_spot_tickets.sql",
+        "blueprint/apply_seat_swap_internal.sql",
+        "eshop_orders/get_order_change_summary_v1.sql"
+      ],
+      "checkSources": true
+    },
+    {
+      "migration": "20261112200000_blueprint_group_default_removal.sql",
+      "sha256": "8c7c92ef0168bf5992d753a3568eb1082e7436a35efe45f78b80bf2545b45bf8",
+      "sources": [
+        "blueprint/save.sql"
+      ],
+      "checkSources": true
+    },
+    {
+      "migration": "20261112210000_payment_policy_release_integration.sql",
+      "manifest": "payment-policy-release-integration-migration.json",
+      "sha256": "475af36674e0c38dbe1869c7708d06dca7a430e3a2ee1028808b567235b34e8f",
+      "checkSources": true
+    },
+    {
+      "migration": "20261112220000_cash_policy_defaults.sql",
+      "manifest": "cash-policy-defaults-migration.json",
+      "sha256": "36b728b6742b1d8b815171bbd30c90435065915a80e9ea21d59139a885a15e42",
+      "checkSources": true
+    },
+    {
+      "migration": "20261112230000_order_bank_setup_projection.sql",
+      "header": "-- Keep bank setup prompts consistent with the configured unit account; pairing permissions are unchanged.",
+      "sources": [
+        "eshop_transactions/get_transactions_for_order.sql"
+      ],
+      "active": true
+    },
+    {
+      "migration": "20261112233000_ticket_wallet_branding.sql",
+      "header": "-- Tenant-owned Wallet branding and inert, representative email previews. No provider activation or customer sends.",
+      "sources": [
+        "ticket_wallet/projection.sql",
+        "occasion_setup/email_preview.sql",
+        "others/get_entity_email_templates.sql",
+        "others/get_ticket_layout_write_contract_v1.sql"
+      ],
+      "sha256": "c09d6b25de38ebb7eb75e6ed37057dd43183b7a17132d6bd6672d56b88d34ea0",
+      "checkSources": true
+    },
+    {
+      "migration": "20261112234500_admin_notification_delivery.sql",
+      "manifest": "admin-notification-delivery-manifest.json",
+      "sha256": "47bad82361fdd48072f3ad09e99c1e16271d43bfd4b217641ca931a60fcefc22"
+    },
+    {
+      "migration": "20261112235500_scanner_occasion_isolation.sql",
+      "header": "-- Scanner credentials and navigation are bound to one occasion.",
+      "sources": [
+        "scanning/credential_revocations.sql",
+        "user_permissions/technical_operations.sql",
+        "eshop_orders/update_scan_code.sql",
+        "scanning/access_codes.sql",
+        "eshop_orders/get_occasion_by_scan_code.sql",
+        "eshop_orders/get_all_tickets_for_scan.sql",
+        "eshop_orders/scan_ticket.sql",
+        "eshop_orders/update_ticket_to_used.sql",
+        "eshop_orders/reset_password_via_scan.sql",
+        "scanning/sessions.sql"
+      ],
+      "sha256": "d05cd77892e3d46b5d0795658c6982de829c7ff2b6eeb0762071191146eec604",
+      "checkSources": true
+    },
+    {
+      "migration": "20261113013000_scanner_ownership_contraction.sql",
+      "header": "-- Complete historical scanner isolation; operator must explicitly scope organization data repair.",
+      "sources": [
+        "scanning/access_code_generator.sql",
+        "scanning/access_codes.sql",
+        "scanning/ownership.sql"
+      ],
+      "active": true
+    },
+    {
+      "migration": "20261113014000_notification_settings_clarity.sql",
+      "manifest": "notification-settings-clarity-migration.json",
+      "active": false,
+      "sha256": "992e70005032068b02a78212f89d37927b5644a22a046bc103ee3fba93afe76a"
+    },
+    {
+      "migration": "20261113090000_ticket_wallet_queue_expand.sql",
+      "manifest": "ticket-wallet-queue-expand-migration.json",
+      "checkSources": true,
+      "sha256": "1ff67d4bbd55031d9206e64b385f8139ffa4422ae4cbb3067800b817fe745961"
+    },
+    {
+      "migration": "20261113090100_ticket_wallet_queue_contract.sql",
+      "manifest": "ticket-wallet-queue-contract-migration.json",
+      "sha256": "3f3530246b69fd14bcab7e70736194345d02a9b814c7df066d16b010dd15c4f7",
+      "checkSources": true
+    },
+    {
+      "migration": "20261113110000_notification_settings_unit_groups.sql",
+      "manifest": "notification-settings-unit-groups-migration.json",
+      "active": false,
+      "sha256": "0cc9714003f6fdafde7dab67ffd323789feb7bc4ab244e3814c31250da253617",
+      "checkSources": true
+    },
+    {
+      "migration": "20261113123000_notification_payment_channels.sql",
+      "manifest": "notification-payment-channels-migration.json",
+      "active": true
+    },
+    {
+      "migration": "20261113143000_product_catalog_detail_save.sql",
+      "sha256": "28ec4a4f7f10ba0f904e52e850375f75ddfaf61af959ddf9d72f1859434de006",
+      "checkSources": true,
+      "sources": [
+        "eshop/update_product.sql",
+        "eshop/update_product_client_sync_v1.sql"
+      ]
+    },
+    {
+      "migration": "20261113160000_shared_bank_writer_acl.sql",
+      "header": "-- Preserve the canonical authenticated bank writer across recreation; live two-role and payment-policy checks remain inside.",
+      "sources": [
+        "user_permissions/bank_operations.sql",
+        "eshop_bank_accounts/update_bank_account.sql"
+      ],
+      "active": true
+    },
+    {
+      "migration": "20261113180000_apple_ticket_wallet.sql",
+      "manifest": "apple-ticket-wallet-migration.json",
+      "sha256": "a97dad94dafa7830161f715948a473475ff6a19a4687523a98ec78f02662fea7",
+      "checkSources": true
+    },
+    {
+      "migration": "20261113190000_apple_ticket_wallet_updates.sql",
+      "manifest": "apple-ticket-wallet-updates-migration.json",
+      "active": true
+    },
+    {
+      "migration": "20261114010000_ticket_wallet_collections.sql",
+      "manifest": "ticket-wallet-collections-migration.json",
+      "active": false,
+      "sha256": "a3a9dc93db3afa58e61e84eb89a83cbaff9602260d9e03824218da510e225814",
+      "checkSources": true
+    },
+    {
+      "migration": "20261114110000_admin_payment_digest_details.sql",
+      "header": "-- Current authorized order and payment details for administration digests.",
+      "sources": [
+        "notification_center/email_context.sql"
+      ],
+      "sha256": "9d5e32105c8fccb6accdde8fe3371e29aff895ffeabed9cdd6ada11886cf68a3",
+      "checkSources": true
+    },
+    {
+      "migration": "20261114120000_integration_webhooks.sql",
+      "active": true,
+      "header": "-- Transactional integration webhooks; no application triggers or outbound SQL HTTP.",
+      "sources": [
+        "user_permissions/webhook_operations.sql",
+        "integration_webhooks/webhooks.sql",
+        "eshop/create_ticket_order.sql"
+      ]
+    },
+    {
+      "migration": "20261114130000_ticket_layout_contract_refresh.sql",
+      "active": false,
+      "header": "-- Refresh the generated ticket-layout readiness attestation from current canonical owners.",
+      "sources": [
+        "others/get_ticket_layout_write_contract_v1.sql"
+      ],
+      "sha256": "136e76e55ff60fca92d57c6b2c776b22c96eb43896d5e4f1d65c57b5554c84e9",
+      "checkSources": true
+    },
+    {
+      "migration": "20261114140000_admin_order_digest_contacts.sql",
+      "header": "-- Authorized customer identity for every order activity in administration digests.",
+      "sources": [
+        "notification_center/email_context.sql"
+      ],
+      "active": true
+    },
+    {
+      "migration": "20261114160000_canonical_seated_form_writers.sql",
+      "active": true,
+      "header": "-- Canonical primary selectors and validation at every form construction boundary.",
+      "sources": [
+        "eshop_forms/duplicate_form_to_occasion.sql",
+        "others/duplicate_occasion.sql",
+        "eshop_forms/form_creation_domain.sql"
+      ]
+    },
+    {
+      "migration": "20261114233000_order_item_terminology.sql",
+      "active": false,
+      "header": "-- Presentation-only ticket and application terminology from the occasion feature.",
+      "sources": [
+        "eshop/order_item_terminology.sql",
+        "sale_opening_notifications/settings.sql",
+        "eshop_waitlist/order_overview.sql",
+        "occasion_setup/sale_status.sql",
+        "scanning/sessions.sql"
+      ],
+      "sha256": "536ae265753dab10f9370f145adeaac2d7ecfeb034b301809e06169d54b78ab9",
+      "checkSources": true
+    },
+    {
+      "migration": "20261115120000_discount_codes.sql",
+      "active": false,
+      "header": "-- Discount codes: additive schema, canonical SQL price allocation, atomic order consumption. Feature defaults off.",
+      "sources": [
+        "eshop_discounts/schema.sql",
+        "abuse/policy.sql",
+        "user_permissions/discount_operations.sql",
+        "eshop_discounts/calculation.sql",
+        "eshop_discounts/management.sql",
+        "eshop_discounts/quote.sql",
+        "eshop_discounts/apply.sql",
+        "eshop/product_selection_contract.sql",
+        "eshop/materialize_ticket_products_internal_v1.sql",
+        "eshop/finalize_ticket_order.sql",
+        "eshop_orders/create_ticket_order_client_sync_v1.sql",
+        "eshop_waitlist/accept_offer.sql",
+        "eshop_orders/update_ticket_products_ws.sql",
+        "eshop/swap_spot_tickets.sql",
+        "eshop/confirm_blueprint_order_change.sql",
+        "eshop_forms/admin_form_orders.sql",
+        "eshop/get_report_ws.sql",
+        "eshop_orders/replacement_invoice_preparation.sql"
+      ],
+      "checkSources": true,
+      "sha256": "0a0bc68235931b1c64c7ed9383536e7ae4270bd0c5f8e6f592b2fea3a8a006f9"
+    },
+    {
+      "migration": "20261115130000_customer_order_policy_foundation.sql",
+      "active": false,
+      "header": "-- Customer order self-service. Additive schema; feature/operations remain disabled until explicitly configured.",
+      "sources": [
+        "customer_order_changes/policy_schema.sql",
+        "customer_order_changes/runtime_schema.sql",
+        "user_permissions/customer_order_changes.sql",
+        "ticket_wallet/collections.sql",
+        "ticket_wallet/capabilities.sql",
+        "eshop_forms/order_term.sql",
+        "abuse/orders.sql",
+        "customer_order_changes/policy.sql",
+        "eshop_orders/update_order_responses.sql",
+        "eshop_orders/update_order_detail_responses.sql",
+        "payment_providers/effects.sql",
+        "payment_providers/operations.sql",
+        "eshop_forms/update_form_client_sync_v1.sql",
+        "eshop_forms/get_form_for_edit.sql",
+        "others/update_occasion.sql",
+        "eshop/product_selection_contract.sql",
+        "customer_order_changes/move.sql",
+        "customer_order_changes/preview.sql",
+        "eshop_orders/storno_tickets_bulk.sql",
+        "customer_order_changes/commands.sql",
+        "customer_order_changes/staff.sql",
+        "eshop/materialize_ticket_products_internal_v1.sql",
+        "eshop_waitlist/order_overview.sql",
+        "eshop_orders/get_order_admin_detail.sql",
+        "notification_center/shared.sql",
+        "notification_center/email_preferences.sql",
+        "eshop_forms/admin_form_commands.sql",
+        "eshop_waitlist/order_overview_email.sql",
+        "eshop_waitlist/email_render_context.sql",
+        "eshop/get_order_details_for_email.sql",
+        "ticket_wallet/projection.sql"
+      ],
+      "sha256": "dc87a62f55bd0b8023ec37fef779cebfb248440e2ccf92c37ee44b12e6dbd98c",
+      "checkSources": true
+    },
+    {
+      "migration": "20261115140000_discount_code_projections.sql",
+      "active": true,
+      "header": "-- Discount sale snapshots in customer overviews, after shared customer-policy projection owners.",
+      "sources": [
+        "eshop_waitlist/order_overview.sql",
+        "others/get_ticket_layout_write_contract_v1.sql"
+      ]
+    },
+    {
+      "migration": "20261115150000_waitlist_count_setting.sql",
+      "active": true,
+      "header": "-- Public waitlist counter visibility, enabled by default in the reader.",
+      "sources": [
+        "eshop_forms/form_settings.sql"
+      ]
+    },
+    {
+      "migration": "20261115160000_customer_self_service_completion.sql",
+      "active": true,
+      "header": "-- Complete selected-ticket customer cancellation validation; preserve published foundation bytes.",
+      "sources": [
+        "customer_order_changes/policy.sql",
+        "customer_order_changes/preview.sql",
+        "customer_order_changes/commands.sql",
+        "customer_order_changes/staff.sql"
+      ]
+    },
+    {
+      "migration": "20261115180000_discount_confirmation_consistency.sql",
+      "header": "-- Treat absent and empty optional placement labels equally in confirmation comparisons.",
+      "sources": [
+        "eshop_orders/get_order_change_summary_v1.sql"
+      ],
+      "active": false,
+      "checkSources": true,
+      "sha256": "c0ac2a911f6604e34bd5564056604b878d2b1dcdcede7e4e4f467c7f7de74650"
+    },
+    {
+      "migration": "20261115190000_order_confirmation_seating_snapshot.sql",
+      "active": false,
+      "header": "-- Keep canonical seating in creation history; compare legacy group labels only when historically recorded.",
+      "sources": [
+        "eshop_orders/get_order_change_summary_v1.sql",
+        "eshop/finalize_ticket_order.sql"
+      ],
+      "checkSources": true,
+      "sha256": "b69c5c1c2c80ba9dbffe968a5ff1c491a3e4fbc9e4db7c363f9418cd5a95c361"
+    },
+    {
+      "migration": "20261115200000_checkout_admission_errors.sql",
+      "active": true,
+      "header": "-- Preserve checkout admission errors and atomic rollback without weakening limits.",
+      "sources": [
+        "eshop/finalize_ticket_order.sql"
+      ]
+    },
+    {
+      "migration": "20261116010000_customer_cancellation_cutover.sql",
+      "active": false,
+      "header": "-- Canonical cancellation-only self-service. Guarded retirement of unused term-moving capability.",
+      "sources": [
+        "customer_order_changes/retire_move_preflight.sql",
+        "customer_order_changes/policy.sql",
+        "customer_order_changes/preview.sql",
+        "customer_order_changes/commands.sql",
+        "customer_order_changes/staff.sql",
+        "eshop_forms/admin_form_commands.sql",
+        "eshop_forms/update_form_client_sync_v1.sql",
+        "eshop_forms/get_form_for_edit.sql",
+        "eshop/get_order_details_for_email.sql",
+        "ticket_wallet/projection.sql",
+        "ticket_wallet/capabilities.sql",
+        "ticket_wallet/collections.sql",
+        "customer_order_changes/retire_moves.sql"
+      ],
+      "retiredSources": [
+        "customer_order_changes/move.sql",
+        "customer_order_changes/runtime_schema.sql",
+        "eshop_forms/order_term.sql"
+      ],
+      "sha256": "f74fd3015ac10bdb64d2ed08116454d8817977a79659a62a7239c41e9862c352"
+    },
+    {
+      "migration": "20261116020000_customer_cancellation_default_deadline.sql",
+      "active": true,
+      "header": "-- An omitted cancellation deadline follows the current occasion start; explicit deadlines retain precedence.",
+      "sources": [
+        "customer_order_changes/policy.sql",
+        "customer_order_changes/preview.sql"
+      ]
+    },
+    {
+      "migration": "20261116120000_bank_multicurrency_availability.sql",
+      "active": true,
+      "header": "-- Allow separate receiving accounts to cover the currencies offered by a form.",
+      "sources": [
+        "payment_providers/builtin.sql"
+      ]
+    }
+  ]
+}

@@ -1285,14 +1285,6 @@
       "signature": "public.get_news_with_versions_v1(bigint)",
       "source": "database/functions/news/get_news_with_versions_v1.sql"
     },
-    "72ddb24977b26ec6f8007691b70ea6852370ea07674cb1efcd8c98340c15b60b": {
-      "signature": "public.claim_notification_center_bank_health(integer)",
-      "source": "database/functions/notification_center/bank.sql"
-    },
-    "2aa9af714dbf720427eb55b481c7c3db1ca620477cbf86ea4b372a66a941f3d4": {
-      "signature": "public.complete_notification_center_bank_health(bigint,uuid,timestamp with time zone,text,timestamp with time zone)",
-      "source": "database/functions/notification_center/bank.sql"
-    },
     "451fc8b39be47c10765bea9a1e68c49de1d1ae1b8f9d5ded515b48652055e609": {
       "signature": "public.project_notification_center(integer)",
       "source": "database/functions/notification_center/core.sql"
@@ -2913,7 +2905,7 @@
     },
     "7a22bfb468ab07f801369c0617d2c22bea287254538b0fd3051d0a6787bdcc53": {
       "signature": "public.get_bank_transaction_history(bigint)",
-      "source": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql"
+      "source": "database/functions/payment_providers/released_bank_readers.sql"
     },
     "3fb1ec78c0ba9b718da226ecd973c5e9f773e00bb512a1c0a564d5f17d58cb2a": {
       "signature": "public.get_form_by_link(jsonb)",
@@ -3178,6 +3170,202 @@
     "fb692f78f66a8f85296d9f0b8385d8af6905dd54d03c352ec6812681a010a83c": {
       "signature": "public.lookup_scanner_ticket_by_id(uuid,text,bigint)",
       "source": "database/functions/scanning/admission.sql"
+    },
+    "bfc1bb267476d67ab31e2c9a79aa1b45eceebc3d1e4a884fbc8f05c1830bc9d7": {
+      "signature": "public.can_manage_payment_method_policy(bigint,bigint)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "6215d89bb5aa66e9c354e9589e8be94b942100ba0d617c7e0634a867455fc503": {
+      "signature": "public.get_payment_method_policy(bigint,bigint)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "aea7700fe6f6e04eb708f458da10d1689383af664300b46d261bce2e6125a4fa": {
+      "signature": "public.preview_payment_method_policy(jsonb)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "328ee8d59b471dd7c486ff13facb57344de12066d7ac4e64959a0ec03b991fd1": {
+      "signature": "public.command_payment_method_policy(jsonb,uuid,text)",
+      "source": "database/functions/payment_providers/method_policy.sql"
+    },
+    "77eef535552455f8901ba71e76504634dae10365319faf996b3cff1fd5ae83f3": {
+      "signature": "public.get_payment_template_audit(bigint)",
+      "source": "database/functions/payment_providers/template_policy.sql"
+    },
+    "4d2f27acd84fb682dd233b5baecedef4cae14a22df7dd0e2db16f4f305755efa": {
+      "signature": "public.review_payment_templates(bigint,text)",
+      "source": "database/functions/payment_providers/template_policy.sql"
+    },
+    "add7e4f6fdc5d0f5bfb99913406a564075bf4422cc94a9afc04662f9cd2452d3": {
+      "signature": "public.get_bank_transaction_history(bigint,bigint)",
+      "source": "database/functions/eshop_transactions/get_transactions_for_order_all_available.sql"
+    },
+    "8e04141669f9902ecfd316abe44ec7f29c8f27729690483b80237b764205281f": {
+      "signature": "public.get_linkable_bank_accounts(bigint)",
+      "source": "database/functions/eshop_bank_accounts/get_my_admin_bank_accounts.sql"
+    },
+    "211e97014c5256432675d6404d9f1a3db74ba92510a2c5b116728ebe0a0271df": {
+      "signature": "public.get_order_details_for_email(bigint)",
+      "source": "database/functions/eshop/get_order_details_for_email.sql"
+    },
+    "01b856f65e3b17cf8a7ff79eae4c2a890e10b2513606b347b9e8d32d5a01376c": {
+      "signature": "public.get_my_admin_bank_accounts()",
+      "source": "database/functions/payment_providers/released_bank_readers.sql"
+    },
+    "7a7f2864b837b6e2d2007e72cbd7a4913faef5c041fa42c4e328c1870b7e956d": {
+      "signature": "public.get_or_create_scan_code(text,boolean)",
+      "source": "database/functions/scanning/access_codes.sql"
+    },
+    "f1cd32b6ac2cb4a5ff6dce30cdcac3159c84164450a919cb8723877776aeac50": {
+      "signature": "public.activate_notification_center_emails(bigint)",
+      "source": "database/functions/notification_center/email_preferences.sql"
+    },
+    "560ec1948e512ecb921d323a3ec7d2aa7e7671fb2152a319e446293d63ffc726": {
+      "signature": "public.get_notification_center_email_context(uuid,uuid)",
+      "source": "database/functions/notification_center/email_context.sql"
+    },
+    "18b46183fa268a326e5dc65c109002ee0cd4aa8355ef0bb1d99a3238a5416ef5": {
+      "signature": "public.collect_notification_center_emails(integer)",
+      "source": "database/functions/notification_center/email_delivery.sql"
+    },
+    "d9e272e4016491b8c6c0ba43ef169114c69c6df79e215cf9a278e9ad25a9cd8c": {
+      "signature": "public.enqueue_notification_center_emails(integer)",
+      "source": "database/functions/notification_center/email_delivery.sql"
+    },
+    "8d1d40820ab9d06d9cdfbb49dfee0a892a214b9a2bcdcb8a4860639a2b5c38fa": {
+      "signature": "public.get_notification_center_email_health()",
+      "source": "database/functions/notification_center/email_delivery.sql"
+    },
+    "ed432af2a87b29d2473de675c93ec9ee5df81b6b48f7ba0e74889a9e426febb1": {
+      "signature": "public.maintain_ticket_wallet(integer)",
+      "source": "database/functions/ticket_wallet/maintenance.sql"
+    },
+    "297200ed1e1d14f3b98dc815a9a1699b8157b4f7c2a5cf1a5a49d42ecb5fb732": {
+      "signature": "public.pause_ticket_wallet(bigint,boolean)",
+      "source": "database/functions/ticket_wallet/control.sql"
+    },
+    "a68185bd0d3baae32614591a3c6183b32893b1350a73294c8b8a117824a95cff": {
+      "signature": "public.finish_ticket_wallet(bigint,uuid,boolean,text)",
+      "source": "database/functions/ticket_wallet/sync.sql"
+    },
+    "d80c4acfef3c01af67cf18a3e6b38e341efd2d3e105c889b3d15d7ea338a12d4": {
+      "signature": "public.save_notification_center_email_settings(bigint,bigint,boolean,text,jsonb)",
+      "source": "database/functions/notification_center/email_preferences.sql"
+    },
+    "2d91c0a01b37304c99faf8958d9ee9a6119a795a6a55995bed61cf8336b2f5cc": {
+      "signature": "public.refresh_apple_ticket_wallet_internal(bigint)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "24a8d408f7e27cf98adae27475a4cbf4bc4cd63d3304ce6f3bead6b275d0c0de": {
+      "signature": "public.register_apple_ticket_wallet(text,text,text,text,text,jsonb)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "d0d8575c5ad77949657e3af01805eeb4761a2306dcc6375ba75e6b3310c5f6b6": {
+      "signature": "public.get_apple_ticket_wallet(text,text,text)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "c23b8a5b54c3611ecac81a819798970bbc32b8ee8be21f4f3f5c5a84b517d707": {
+      "signature": "public.register_apple_wallet_device(text,text,text,text,text,boolean)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "1daf36a4fddc3374746b7184b872892184048ee16a949c13269c2239dd00ce91": {
+      "signature": "public.list_apple_wallet_updates(text,text,text)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "23aa823017d062972fd108eee5bc5d91cd23499b577932ff34a5f620ada6da5a": {
+      "signature": "public.claim_apple_ticket_wallet()",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "a692b77fcc0493f9e5720a0f3ae1dfa54948e9e3f35ec6155d2cbf00bebfc85c": {
+      "signature": "public.apple_wallet_push_targets(bigint,uuid)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "c86cf23e0ed2d97aece9327de10f00586b777fae392099e3ebe65d7f367e3e5e": {
+      "signature": "public.finish_apple_wallet_push(bigint,uuid,text,bigint,boolean)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "a9ae45ade519eb125b985ae5414dea154fe9005c69edc94100d0a271e22499d0": {
+      "signature": "public.finish_apple_ticket_wallet(bigint,uuid,boolean)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "b681cce63da692b393364b2db052cb2a53aee954db528849f09ac2e480240c4d": {
+      "signature": "public.allow_apple_wallet_request(text)",
+      "source": "database/functions/ticket_wallet/apple_updates.sql"
+    },
+    "7f4b6db4bd05800c89e0499517cda64ddbc5b9b5e9abeccdd6f4daecc4ffb66f": {
+      "signature": "public.ticket_wallet_state_internal(bigint)",
+      "source": "database/functions/ticket_wallet/projection.sql"
+    },
+    "e358ce9ffb2e345cc3b98f7665d0750172722570e8e9d3ddcd01650c02283b02": {
+      "signature": "public.prepare_ticket_wallet_collection(uuid,bigint[],text,jsonb)",
+      "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "cd9beb33730b977bf6cca4334a84446b20cb94645f389781c2235b5149ec6b99": {
+      "signature": "public.ticket_wallet_scope_internal(text)",
+      "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "2195659f1b09d11a0378ac0570b916d2e6426fa695b4d521f6168708d619a6dc": {
+      "signature": "public.get_ticket_wallet_projections(text,bigint[],text)",
+      "source": "database/functions/ticket_wallet/collections.sql"
+    },
+    "c568d922101fc19c41152f6224375f6182c174f1b755befcc855e84e55e935e9": {
+      "signature": "public.can_manage_webhooks(bigint)",
+      "source": "database/functions/user_permissions/webhook_operations.sql"
+    },
+    "5e08b16671474d6dcb18fcf9591f7a21ef774163cdf2ff7bc7540f74581465a6": {
+      "signature": "public.integration_webhook_api_v1(bigint,text,jsonb)",
+      "source": "database/functions/integration_webhooks/webhooks.sql"
+    },
+    "109bc844c5aa71016f502fbea7dacf89a9de437e3ee93c06aa871a1855279890": {
+      "signature": "public.get_unit_website_consent_bindings(bigint)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "4f089c924881a4beb85f5da175e3a20479cc53de1c3f2466418ae834389388c5": {
+      "signature": "public.save_unit_website_consent_binding(bigint,text,text,jsonb,bigint,text,boolean)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "cda18acac047a59ad06bd45184616a58501244211fa35999a74d7d9f3148f310": {
+      "signature": "public.disable_unit_website_consent_binding(uuid,bigint)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "3b6418b956143f532dfb01c85a9c50089470ebd0144ef00dbbad75f6759b04ae": {
+      "signature": "public.export_unit_website_consent_binding(uuid,bigint)",
+      "source": "database/functions/eshop_forms/website_consent_bindings.sql"
+    },
+    "ba20cb928af90c87c221221ea2b5934b8249789748744d45b6fb99141492a5c5": {
+      "signature": "public.can_manage_discount_codes(bigint)",
+      "source": "database/functions/user_permissions/discount_operations.sql"
+    },
+    "5eb837ceb1568c3e3853c4fcd024acc304c0875eade23f930b1e55e842a6bb9c": {
+      "signature": "public.quote_order_discount(jsonb)",
+      "source": "database/functions/eshop_discounts/quote.sql"
+    },
+    "207c53edd565fccb37e7e1b3af7459c6768025e4489c5e688858630a526ce1b2": {
+      "signature": "public.save_discount_code(bigint,jsonb,bigint,bigint)",
+      "source": "database/functions/eshop_discounts/management.sql"
+    },
+    "40e2d9fa9b5401b3e05182fef9733f0a849c265e4d6b266b62396b3b13f713da": {
+      "signature": "public.list_discount_codes(bigint)",
+      "source": "database/functions/eshop_discounts/management.sql"
+    },
+    "2493e1c03508c746c8deeaf477d30fc8148bd67cd632809647cffc9fe1ef16cc": {
+      "signature": "public.can_manage_customer_order_policy(bigint,boolean)",
+      "source": "database/functions/user_permissions/customer_order_changes.sql"
+    },
+    "ef159e22ac37f47dab622f8033973021f8318cbaf4dbb01a595f7e668db9d743": {
+      "signature": "public.update_order_responses(bigint,jsonb)",
+      "source": "database/functions/eshop_orders/update_order_responses.sql"
+    },
+    "a040f1dcb0d3f3be0653b1704df302731a17f2288139a7050fe2b3b72727ed01": {
+      "signature": "public.customer_order_change_gateway(text,text,bigint,text,jsonb,uuid,text,jsonb,text)",
+      "source": "database/functions/customer_order_changes/commands.sql"
+    },
+    "86d582e30a29f0833213ae56f3248da1e1eeb6cbae788420078aad5d76abe042": {
+      "signature": "public.command_customer_order_request(uuid,text,uuid,timestamp with time zone,text)",
+      "source": "database/functions/customer_order_changes/staff.sql"
+    },
+    "4100acd632ad941077f895b444233bdd246800868cd72c6f9c9ca9dfa77279fe": {
+      "signature": "public.storno_tickets_bulk_internal_v1(bigint[],boolean)",
+      "source": "database/functions/eshop_orders/storno_tickets_bulk.sql"
     }
   }
 }

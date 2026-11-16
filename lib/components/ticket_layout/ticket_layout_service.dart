@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../features/ticket_feature.dart';
 import '../images/image_control_client.dart';
 import 'package:fstapp/app_config.dart';
 import 'ticket_preview_assets.dart';
@@ -305,6 +306,41 @@ class TicketPreviewOccasion {
 }
 
 class TicketLayoutService {
+  Future<String?> uploadWalletImage(
+    Uint8List bytes,
+    int? occasionId,
+    int? unitId,
+  ) => DbImages.uploadImage(
+    bytes,
+    occasionId,
+    occasionId == null ? unitId : null,
+  );
+
+  Future<bool> walletReady(int organizationId) async =>
+      await Supabase.instance.client.rpc(
+        'ticket_wallet_ready',
+        params: {'p_organization': organizationId},
+      ) ==
+      true;
+
+  Future<Map<String, dynamic>> deliveryPreview({
+    required int occasionId,
+    required TicketDeliveryMode mode,
+    required bool walletEnabled,
+  }) async => Map<String, dynamic>.from(
+    await Supabase.instance.client.rpc(
+      'get_occasion_setup_email_preview',
+      params: {
+        'p_id': null,
+        'p_expected_revision': null,
+        'p_message_type': 'order_tickets',
+        'p_occasion': occasionId,
+        'p_delivery_mode': mode.value,
+        'p_wallet_enabled': walletEnabled,
+      },
+    ) as Map,
+  );
+
   final String? setupDraftId;
   final int? setupUnitId, setupRevision;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>)? transport;

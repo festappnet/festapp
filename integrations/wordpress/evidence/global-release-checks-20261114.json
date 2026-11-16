@@ -1,0 +1,102 @@
+{
+  "checked_at": "2026-11-14T17:43:30+00:00",
+  "product": "festapp-tickets",
+  "version": "1.0.3",
+  "candidate_zip": "dist/festapp-tickets-1.0.3.zip",
+  "candidate_sha256": "b075fd2c427c24c796c4a96b06ad78f43ebd9d107e2275389031d326db96d2ea",
+  "scope": "publication validation only; no source or candidate changes; isolated wp-env stopped after checks",
+  "tooling": {
+    "node": "26.8.1",
+    "pnpm": "11.24.0",
+    "wp_env": "12.0.0",
+    "plugin_check": "2.1.0",
+    "phpcs": "3.13.6",
+    "wpcs": "3.4.1"
+  },
+  "plugin_check": {
+    "WP 7.1.3 / PHP 8.5.12": {
+      "errors": 0,
+      "warnings": [
+        {
+          "code": "PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound",
+          "file": "festapp-tickets.php",
+          "line": 29
+        }
+      ],
+      "status": "PASS_WITH_WARNING"
+    },
+    "WP 6.6 / PHP 7.4.33": {
+      "errors": 0,
+      "warnings": [
+        {
+          "code": "PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound",
+          "file": "festapp-tickets.php",
+          "line": 29
+        }
+      ],
+      "status": "PASS_WITH_WARNING"
+    }
+  },
+  "php_syntax": {
+    "WP 7.1.3/PHP 8.5.12": {
+      "files": 3,
+      "errors": 0,
+      "status": "PASS"
+    },
+    "WP 6.6/PHP 7.4.33": {
+      "files": 3,
+      "errors": 0,
+      "status": "PASS"
+    }
+  },
+  "wpcs": {
+    "version": "3.4.1",
+    "standard": "WordPress",
+    "php_files_only": true,
+    "phpcs_errors": 0,
+    "status": "PASS",
+    "note": "all plugin PHP files clean; default unfiltered scan reports 1 warning because editor.js is minified"
+  },
+  "production_readback": {
+    "origin": "https://tickets.festapp.net",
+    "version": {
+      "status": 200,
+      "content_type": "application/json",
+      "version": "0.20.605",
+      "build_number": "1130",
+      "sha256": "d14ac8e582b082a686b2b00b51f04b8be9cc533b2193169fa57b80feebc2b35e"
+    },
+    "backend_activation": {
+      "status": 200,
+      "tenantId": "festappticketsglobal",
+      "generation": 1,
+      "backend": "canonical",
+      "sha256": "3a1ac8b7d50b65f01efbd7039304f72df4cec8dacfab1f973992db9b9a966f38"
+    },
+    "embed_js": {
+      "status": "SOURCE_MATCH_CONFIRMED",
+      "content_type": "application/javascript",
+      "bytes": 66578,
+      "sha256": "480b1960596dea8eb7b54f27b7a3e0a6c178a0b1250922e3d99246dde62322ef",
+      "channel_peer_checks_detected": true,
+      "computed_style_support_detected": true,
+      "protocol_1_detected": false,
+      "saved_appearance_support_detected": false,
+      "note": "HTTP response is real JavaScript rather than SPA fallback, but static source scan does not identify protocol-1 and saved appearance identifiers; HTTP 200 alone is insufficient evidence of runtime parity.",
+      "served_source_identity": "exact byte match with web_client/public/embed.js in checked-out worktree and origin/prod/festappticketsglobal at e188fa550783901e4ba8e0470f5c841fe94dcc6f",
+      "deployed_source_sha": "480b1960596dea8eb7b54f27b7a3e0a6c178a0b1250922e3d99246dde62322ef",
+      "protocol_1_support": "confirmed in matching source web_client/src/embed/protocol.js (protocol=1), source-backed host/channel validation; test source web_client/tests/forms/embed_appearance.test.js exercises protocol 1",
+      "saved_appearance_support": "confirmed in matching source: FormModel.embedInheritStyle reads forms.data.design.embed_inherit_style; FormPage.applyTheme passes it to EmbedBridge.setInheritStyle; matching test asserts saved form controls appearance despite legacy host flags",
+      "runtime_e2e": "not performed; source identity and shared test evidence establish shipped helper implementation but do not establish live form end-to-end/purchase behavior",
+      "status_note": "Earlier static identifier scan was insufficient because bundle minification; resolved by exact deployed bundle hash equality to canonical production branch source."
+    },
+    "status": "SOURCE_PARITY_CONFIRMED_RUNTIME_E2E_NOT_PERFORMED"
+  },
+  "environment_cleanup": "node scripts/environment.mjs stop completed",
+  "limits": [
+    "No production writes.",
+    "No browser checks.",
+    "Prior dual-products, translation/lifecycle, origin gate and package integrity results retained from evidence/global-preparation-20261114.json.",
+    "No candidate submission/publication."
+  ]
+}

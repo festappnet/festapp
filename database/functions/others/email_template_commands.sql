@@ -11,6 +11,7 @@ REVOKE ALL ON FUNCTION public.validate_email_template_content_internal(text,text
 CREATE OR REPLACE FUNCTION public.lock_email_template_hierarchy_internal(p_context jsonb)
 RETURNS void LANGUAGE plpgsql SET search_path=public,extensions AS $$
 BEGIN
+ PERFORM public.payment_template_write_scope_internal(p_context);
  PERFORM 1 FROM public.organizations WHERE id=(p_context->>'organization')::bigint FOR SHARE;
  IF p_context->>'occasion' IS NOT NULL THEN
   PERFORM 1 FROM public.units WHERE id=(p_context->>'unit')::bigint FOR SHARE;

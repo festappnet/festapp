@@ -42,7 +42,7 @@ test('lookup, errors and receipts preserve the live camera; leaving scanner stop
     }
 });
 
-test('switching input preserves review; deliberately starting another ticket focuses manual search',async()=>{
+test('manual search preserves drafts; returning to camera clears the ticket review',async()=>{
     const dom=new JSDOM('<div id="scanner"></div>',{url:'http://localhost/scan'});
     const previous={document:globalThis.document,navigator:Object.getOwnPropertyDescriptor(globalThis,'navigator')};
     globalThis.document=dom.window.document;
@@ -70,10 +70,10 @@ test('switching input preserves review; deliberately starting another ticket foc
         assert.equal(page.controller.ticket.symbol,'NEXT-TICKET');
         assert.deepEqual(lookups,['PREVIOUS','NEXT-TICKET']);
         page.startCamera=async()=>{};page.setInputMode('camera');
-        assert.equal(page.controller.ticket.symbol,'NEXT-TICKET');
+        assert.equal(page.controller.ticket,null);assert.equal(page.controller.state,'ready');
         page.host.querySelector('[data-mode=manual]').click();
         assert.equal(page.host.querySelector('.scan-result'),null);
-        assert.equal(page.controller.ticket.symbol,'NEXT-TICKET');
+        assert.equal(page.controller.ticket,null);
         assert.equal(page.host.querySelector('[name=query]').disabled,false);
         assert.equal(document.activeElement,page.host.querySelector('[name=query]'));
         page.row.session.capabilities.search_tickets=true;page.render();
@@ -122,7 +122,7 @@ test('one current ticket ignores other QR codes until explicitly finished; unpai
   pending.get('A')(ticket('A'));await loading;await page.loadCodes(['B']);
   assert.equal(page.controller,controller);assert.equal(controller.ticket.symbol,'A');assert.deepEqual(lookups,['A']);
   assert.equal(page.host.querySelectorAll('.scan-result').length,1);assert.equal(page.host.querySelector('[data-group-ticket]'),null);
-  page.setInputMode('camera');assert.equal(controller.ticket.symbol,'A');assert.equal(page.input.paused,true);
+  page.setInputMode('camera');assert.equal(controller.ticket,null);assert.equal(controller.state,'ready');assert.equal(page.input.paused,false);
   controller.state='awaiting_server';page.nextScan();assert.equal(controller.state,'awaiting_server');
   controller.state='pending';controller.operation={key:'durable',payload:{ticket_id:1}};controller.emit();
   page.nextScan();assert.equal(controller.state,'ready');assert.equal(page.history[0].key,'durable','leaving review preserves durable history');

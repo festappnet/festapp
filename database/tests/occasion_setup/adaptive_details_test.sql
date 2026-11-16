@@ -7,6 +7,8 @@ BEGIN
  PERFORM create_user_for_test('adaptive_setup_manager','adaptive_setup@test.local');
  actor:=get_user_id('adaptive_setup_manager');
  INSERT INTO public.organizations(title,data) VALUES('Adaptive setup','{"IS_APP_SUPPORTED":false}') RETURNING id INTO org;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'bank');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  UPDATE public.user_info SET organization=org WHERE id=actor;
  INSERT INTO public.units(title,organization) VALUES('Adaptive',org) RETURNING id INTO unit_id;
  INSERT INTO public.units(title,organization) VALUES('Other',org) RETURNING id INTO other_unit;

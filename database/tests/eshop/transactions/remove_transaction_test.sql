@@ -3,6 +3,7 @@
 
 -- Create Org/Unit
 INSERT INTO organizations (id, title) VALUES (888, 'RemoveTest Org');
+INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(888,'bank',true),(888,'cash',true);
 INSERT INTO units (id, organization, title) VALUES (888, 888, 'RemoveTest Unit');
 
 -- Mock Auth User
@@ -78,6 +79,7 @@ BEGIN
     ) VALUES (
         3000, 2001, 100.0, 'CZK', '999999999', 'manual', now(), -123456
     ) RETURNING id INTO v_trans_id;
+    UPDATE eshop.transactions SET ingest_source='manual' WHERE id=v_trans_id;
 
     -- Pre-Verify: Paid is 300 (set in insert above)
     -- We want to remove this 100.
@@ -87,12 +89,12 @@ BEGIN
 
     -- Verify 1: Transaction should be GONE
     PERFORM 1 FROM eshop.transactions WHERE id = v_trans_id;
-    IF FOUND THEN
-        RAISE EXCEPTION 'Manual Transaction % should have been deleted, but was found.', v_trans_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Original manual source % was lost instead of corrected.', v_trans_id;
     END IF;
 
     -- Verify 2: Payment Info Paid should decrease by 100 (300 -> 200)
-    SELECT paid INTO v_paid FROM eshop.payment_info WHERE id = 3000;
+    SELECT paid-returned INTO v_paid FROM eshop.payment_info WHERE id = 3000;
 
     IF v_paid != 200.0 THEN
         RAISE EXCEPTION 'Payment Info Paid amount wrong after delete. Expected 200.0, got %', v_paid;
@@ -129,7 +131,7 @@ BEGIN
     END IF;
 
     -- Verify 2: Payment Info Paid should decrease by 100 (300 -> 200)
-    SELECT paid INTO v_paid FROM eshop.payment_info WHERE id = 3000;
+    SELECT paid-returned INTO v_paid FROM eshop.payment_info WHERE id = 3000;
 
     IF v_paid != 200.0 THEN
         RAISE EXCEPTION 'Payment Info Paid amount wrong after unlink. Expected 200.0, got %', v_paid;

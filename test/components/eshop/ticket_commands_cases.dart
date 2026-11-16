@@ -28,9 +28,11 @@ void main() {
       expect(name, 'swap_blueprint_seats');
       calls.add(args);
       if (calls.length == 1) throw TimeoutException('lost after SQL commit');
-      return commandResponseFixture(args['p_command_id'] as String);
+      return commandResponseFixture(args['p_command_id'] as String,
+          data: {'orders': blueprintSwapPreviewFixture()['orders']});
     }));
-    await commands.swapSpots(preview);
+    final outcome = await commands.swapSpots(preview);
+    expect(outcome.orderIds, [77]);
     expect(calls, hasLength(2));
     expect(calls[0], calls[1]);
     expect(calls.first['p_first'], 11);
@@ -76,26 +78,26 @@ void main() {
         ClientCommandTransport((name, args) async {
           expect(name, 'swap_blueprint_seats');
           calls.add(args);
-          return commandResponseFixture(args['p_command_id'] as String);
+          return commandResponseFixture(args['p_command_id'] as String,
+              data: {'orders': blueprintSwapPreviewFixture()['orders']});
         }, principalBinding: 'synthetic-swap-recovery-actor'),
         readRpc: (_, __) async => throw StateError(
             'Never preview the inverse while the first result is unknown'));
     expect(
         await reopened.recoverSwap(
             occasionId: 1, organizationId: 3, unitId: 7, blueprintId: 2),
-        isFalse);
+        isNull);
     expect(calls, hasLength(2),
         reason: 'A different map cannot resume this intent');
-    expect(
-        await reopened.recoverSwap(
-            occasionId: 1, organizationId: 3, unitId: 7, blueprintId: 1),
-        isTrue);
+    final recovered = await reopened.recoverSwap(
+        occasionId: 1, organizationId: 3, unitId: 7, blueprintId: 1);
+    expect(recovered?.orderIds, [77]);
     expect(calls, hasLength(3));
     expect(calls[2], calls[0]);
     expect(
         await reopened.recoverSwap(
             occasionId: 1, organizationId: 3, unitId: 7, blueprintId: 1),
-        isFalse);
+        isNull);
   });
 
   test(

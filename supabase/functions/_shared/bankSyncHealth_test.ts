@@ -40,7 +40,6 @@ for (
           }]);
         }
         if (name === "begin_bank_sync_observation") return response("123");
-        if (name === "enqueue_bank_sync_health_alerts") return response(2);
         return response(null);
       }
       assertEquals(init?.method, "GET");
@@ -68,11 +67,15 @@ for (
             : null,
         });
     }) as typeof fetch;
-    assertEquals(await monitorBankSyncHealth(3), { checked: 1, queued: 2 });
+    assertEquals(await monitorBankSyncHealth(3), { checked: 1 });
     assertEquals(
       calls.findIndex((c) => c.name === "begin_bank_sync_observation") <
         calls.findIndex((c) => c.name === "record_bank_sync_health"),
       true,
+    );
+    assertEquals(
+      calls.some((c) => c.name === "enqueue_bank_sync_health_alerts"),
+      false,
     );
     const observed = calls.find((c) =>
       c.name === "record_bank_sync_health"
@@ -95,7 +98,7 @@ for (
         ? null
         : scenario !== "missing-token",
     );
-    assertEquals(calls.at(-1)?.name, "enqueue_bank_sync_health_alerts");
+    assertEquals(calls.at(-1)?.name, "record_bank_sync_health");
   });
 }
 

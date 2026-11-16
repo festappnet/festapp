@@ -31,3 +31,12 @@ export function helpActionFlutterPath(intent) {
     // A reload returns to web sign-in, preserving the original intent.
     return '/flutter?redirect=' + encodeURIComponent(login);
 }
+
+// Public guide locations share the same locale contract across web and hosting.
+export function publicHelpRoot(locale) {
+    return locale === 'cs' ? '/napoveda/' : locale === 'en' ? '/help/' : null;
+}
+export function publicHelpRootFromPath(pathname) {
+    if (typeof pathname !== 'string') return null;
+    return ['cs', 'en'].map(publicHelpRoot).find(root => pathname === root.slice(0, -1) || pathname.startsWith(root)) ?? null;
+}

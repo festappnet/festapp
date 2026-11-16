@@ -1,0 +1,42 @@
+{
+  "purpose": "Dedicated retained catalogue health account, explicitly authorized by the user",
+  "provisioning": "user-authorized postgres operational provisioning",
+  "membership": {
+    "scope": "occasion",
+    "isEditorView": true,
+    "isEditor": false,
+    "isManager": false,
+    "isApproved": false,
+    "isApprover": false,
+    "isEditorOrder": false,
+    "isEditorOrderView": false,
+    "isReceptionist": false,
+    "isCleaningCrew": false,
+    "isCleaningBlocked": false,
+    "role": null,
+    "services": null,
+    "ticket": null,
+    "unitMembership": false,
+    "paymentFlags": "no payment role fields on canonical occasion_users table"
+  },
+  "canonicalFunctionHashes": {
+    "createUserPure4": "6316e0cc939535a1b7e95ba27a268cf18156692df4db26390b03d52bdce94a4f",
+    "createUserUnderlying5": "f746819cc02f99ce1b56f11c24a022a20151816d3bc0625c4ff1adbb8f15531e",
+    "recordClientSyncCommit": "565cda96c1154d4c25f7866ae69263d7d749d13bdd44a9068a3ce4c02369f76d"
+  },
+  "emailSent": false,
+  "liveVerification": {
+    "goTrueLogin": "passed",
+    "selectedOccasionCount": 1,
+    "unitMembershipCount": 0,
+    "foreignOrganizationDenied": true,
+    "domainDataReadDuringProvisioning": false
+  },
+  "policyCaveat": "Existing listed-demo reader policy also exposes other listed demo occasions and order-read capability. Health consent therefore selects exactly one occasion with foundation read scope only; no order functional permission or creation is delegated.",
+  "credentialStorage": {
+    "store": "encrypted macOS login Keychain",
+    "readbackVerified": true,
+    "iCloudSynchronization": "not verified"
+  },
+  "businessFixtureCreated": false
+}

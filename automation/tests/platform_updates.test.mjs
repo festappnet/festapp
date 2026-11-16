@@ -53,6 +53,7 @@ test('incremental renderer removes published -> draft HTML/feed/sitemap entries 
  fs.mkdirSync(path.join(root,'automation/lib'),{recursive:true});
  fs.cpSync(new URL('../lib/write_if_changed.cjs',import.meta.url),path.join(root,'automation/lib/write_if_changed.cjs'));
  fs.cpSync(new URL('../../web/organizers-media',import.meta.url),path.join(root,'web/organizers-media'),{recursive:true});
+ fs.cpSync(new URL('../../assets/brand/vstupenky-online',import.meta.url),path.join(root,'assets/brand/vstupenky-online'),{recursive:true});
  fs.cpSync(f.contentDir,path.join(root,'content/platform-updates'),{recursive:true});
  const config=path.join(root,'project.conf');fs.copyFileSync(new URL('../project.conf',import.meta.url),config);
  fs.mkdirSync(path.join(root,'web_client/public'),{recursive:true});

@@ -93,6 +93,7 @@ class DbEshop {
   static Future<List<TransactionModel>?> getTransactionsForOrderAllAvailable(
     int? paymentInfoId, {
     int? historyAccountId,
+    int? historyUnitId,
   }) async {
     final response = await _supabase.rpc(
       historyAccountId == null
@@ -100,7 +101,7 @@ class DbEshop {
           : 'get_bank_transaction_history',
       params: historyAccountId == null
           ? {'payment_info_id': paymentInfoId}
-          : {'p_bank_account_id': historyAccountId},
+          : {'p_bank_account_id': historyAccountId, 'p_unit_id': historyUnitId},
     );
 
     if (response != null) {
@@ -427,9 +428,11 @@ class GetTransactionsForOrderResponse {
   final List<TransactionModel> transactions;
   final OrderPaymentActions actions;
   final PaymentOperationContext paymentOperations;
+  final bool ledgerComplete;
 
   GetTransactionsForOrderResponse({
     this.orderState,
+    this.ledgerComplete = false,
     this.actions = const OrderPaymentActions(),
     this.paymentOperations = const PaymentOperationContext(),
     required this.paymentInfo,
@@ -460,6 +463,7 @@ class GetTransactionsForOrderResponse {
 
     return GetTransactionsForOrderResponse(
       orderState: json['order_state'] as String?,
+      ledgerComplete: json['ledgerComplete'] == true,
       paymentOperations: PaymentOperationContext.fromJson(
         json['paymentOperations'] as Map? ?? const {},
       ),

@@ -84,9 +84,9 @@ BEGIN
  UPDATE public.units SET data=data||'{"measurement_enabled":false}' WHERE id=un;
  PERFORM assert_false((public.form_measurement_status_internal(fid)->>'eligible')::boolean,'Unit off dominates form');
  UPDATE public.units SET data=data||'{"measurement_enabled":true}' WHERE id=un;
- UPDATE public.forms SET data='{"analytics":{"enabled":false}}' WHERE id=fid;
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":false}}' WHERE id=fid;
  PERFORM assert_false((public.form_measurement_status_internal(fid)->>'eligible')::boolean,'form remains separately off');
- UPDATE public.forms SET data='{"analytics":{"enabled":true}}' WHERE id=fid;
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":true}}' WHERE id=fid;
  UPDATE analytics.organization_policy SET enabled=false WHERE organization=org;
  PERFORM assert_false((public.form_measurement_status_internal(fid)->>'eligible')::boolean,'org admin cannot bypass platform');
  FOR slug IN SELECT unnest(ARRAY['anon','authenticated','service_role']) LOOP

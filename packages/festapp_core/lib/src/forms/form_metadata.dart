@@ -55,6 +55,7 @@ abstract final class FormMetadata {
     'payments': ['bankEnabled', 'providerConnections', 'cashEnabled', 'cashInstructions'],
     'payment_deadline': ['mode'],
     'analytics': ['enabled'],
+    'waitlist': ['show_count'],
     'design': [
       'embed_inherit_style',
       'is_card_design',

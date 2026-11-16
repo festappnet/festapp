@@ -24,11 +24,12 @@ BEGIN
  IF pi.amount>0 AND pi.amount>coalesce(pi.paid,0)-coalesce(pi.returned,0) AND pi.payment_method='bank' THEN
    SELECT * INTO STRICT f FROM public.forms WHERE id=o.form;
    SELECT unit,organization INTO unit_id,org_id FROM public.occasions WHERE id=o.occasion;
+   IF NOT coalesce(public.payment_method_policy_enabled_internal(unit_id,'bank'),false) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
    IF pi.bank_account IS NULL THEN
      IF pi.variable_symbol IS NOT NULL OR pi.creditor_reference IS NOT NULL THEN
        RAISE EXCEPTION 'PAYMENT_RECIPIENT_REQUIRED'; END IF;
      form_data:=public.get_effective_form_data(f.id);
-     IF coalesce(form_data#>'{payments,bankEnabled}','true'::jsonb)<>'true'::jsonb THEN
+     IF coalesce(form_data#>'{payments,bankEnabled}','false'::jsonb)<>'true'::jsonb THEN
        RAISE EXCEPTION 'BANK_PAYMENT_NOT_CONFIGURED'; END IF;
      SELECT b.id INTO receiving_account
      FROM eshop.unit_bank_accounts uba JOIN eshop.bank_accounts b ON b.id=uba.bank_account

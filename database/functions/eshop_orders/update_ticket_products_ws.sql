@@ -47,6 +47,7 @@ BEGIN
   END IF;
 
   PERFORM public.check_ticket_is_mutable(p_ticket_id);
+  PERFORM public.assert_order_discount_unchanged_internal(v_order_id);
   PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY[p_ticket_id]);
   IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND public.payment_method_is_online_internal(payment_method)) THEN
     RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
@@ -207,6 +208,7 @@ BEGIN
     v_currency_code
   );
 
+  PERFORM public.enqueue_ticket_wallet_internal(ARRAY[p_ticket_id]);
   RETURN jsonb_build_object('code',200,'data',v_new_data);
 END;
 $$;

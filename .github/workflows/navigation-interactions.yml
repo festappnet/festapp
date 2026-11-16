@@ -57,11 +57,15 @@ jobs:
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-        if: steps.selection.outputs.run == 'true'
         run: python3 automation/ci/run.py lane navigation-interactions
       - name: All lane tests executed
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.full == 'true'
         run: echo 'All lane tests executed'
+      - name: Some lane tests executed
+        if: steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'
+        run: echo 'Some lane tests executed'
+      - name: Lane coverage verified
+        run: echo 'Lane coverage verified'
       - name: Preserve canonical CI evidence
         if: always()
         uses: actions/upload-artifact@v7

@@ -120,7 +120,7 @@ DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/postgres \
 The runner rejects nonlocal databases and requires the bootstrap disposable
 identity. Renderer RPCs execute with `SET LOCAL ROLE service_role`, including
 order details, ticket details, products and template resolution. The CI
-`seat-contract` step runs this rehearsal and the six-kind order email SQL test;
+`seat-delivery` unit runs this rehearsal and the six-kind order email SQL test;
 that test also calls the actual renderer RPCs under the runtime role, rather
 than stopping after enqueue. A missing seating table read grant fails the test.
 

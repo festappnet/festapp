@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'package:festapp_core/time.dart';
 
 import '../google_wallet_appearance.dart';
+import '../../../app_config.dart';
+import '../../../widgets/logo_widget.dart';
 
 class TicketWalletCardPreview extends StatelessWidget {
   const TicketWalletCardPreview({
@@ -57,7 +59,8 @@ class TicketWalletCardPreview extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        if (appearance.logo != null) ...[
+                        if (appearance.logoOverridden &&
+                            appearance.logo != null) ...[
                           ClipOval(
                             child: Image.network(
                               appearance.logo!,
@@ -69,8 +72,15 @@ class TicketWalletCardPreview extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
+                        ] else if (!appearance.logoOverridden) ...[
+                          const LogoWidget(
+                            width: 40,
+                            height: 40,
+                            forceDark: false,
+                          ),
+                          const SizedBox(width: 12),
                         ],
-                        const Flexible(child: Text('Festapp Tickets')),
+                        const Flexible(child: Text(AppConfig.appName)),
                       ],
                     ),
                     const SizedBox(height: 20),

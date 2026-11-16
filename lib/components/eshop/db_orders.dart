@@ -89,19 +89,32 @@ class DbOrders {
   static OrderCommands get _commands => SupabaseOrderCommands(_supabase);
 
   static Future<FunctionResponse> sendTicketOrder(
-    Map<String, dynamic> data,
-  ) async {
-    return _sendTicketOrderIntent(
-      namespace: 'ticket_order',
-      payload: data,
-      bodyKey: 'orderDetails',
-    );
+    Map<String, dynamic> data, {
+    bool reusePendingOnly = false,
+  }) async {
+    try {
+      return await _sendTicketOrderIntent(
+        namespace: 'ticket_order',
+        payload: data,
+        bodyKey: 'orderDetails',
+        reusePendingOnly: reusePendingOnly,
+      );
+    } on StateError catch (error) {
+      if (!reusePendingOnly ||
+          !error.message.toString().startsWith('PAYMENT_RECOVERY_'))
+        rethrow;
+      return FunctionResponse(
+        status: 409,
+        data: {'code': 409, 'errorCode': 'ORDER_RECOVERY_REQUIRED'},
+      );
+    }
   }
 
   static Future<FunctionResponse> _sendTicketOrderIntent({
     required String namespace,
     required Map<String, dynamic> payload,
     required String bodyKey,
+    bool reusePendingOnly = false,
   }) async {
     payload = (jsonDecode(jsonEncode(payload)) as Map).cast<String, dynamic>();
     final clientId = await ClientCommandIdentity.clientId();
@@ -111,6 +124,7 @@ class DbOrders {
       namespace,
       payload,
       principalBinding: principalBinding,
+      requirePending: reusePendingOnly,
     );
     final response = await _supabase.functions.invoke(
       "send-ticket-order",
@@ -120,6 +134,9 @@ class DbOrders {
     final code = data is Map ? data['code'] : null;
     if (code is int &&
         (code == 200 ||
+            // Admission rejected and rolled back the command. A later explicit
+            // attempt must receive a new identity instead of replaying rejection.
+            (code == 429 && data['errorCode'] == 'ABUSE_LIMIT_EXCEEDED') ||
             (code >= 1000 && code < 2000) ||
             (code >= 400 && code < 500 && code != 408 && code != 429))) {
       await ClientCommandIdentity.completeIntent(
@@ -601,7 +618,9 @@ class DbOrders {
     try {
       final response = await _supabase.functions.invoke(
         'payment-operation',
-        body: {'input_data': {...input, 'operation': 'bank_instructions'}},
+        body: {
+          'input_data': {...input, 'operation': 'bank_instructions'},
+        },
       );
       final data = response.data;
       if (data is! Map || data['code'] != 200 || data['instructions'] is! Map) {

@@ -285,6 +285,9 @@ reply-to and the same production renderer as synthetic editor scenarios.
 Unsubscribe capabilities remain encrypted until rendering;
 these messages disable tracking and contain no order/payment/ticket blocks.
 The subject uses plain event text while the HTML substitutions escape it.
+Opening previews use the existing occasion ticket feature context to select
+presale or application wording. Both variants, including the disclaimer, are
+generated from the delivery substitutions rather than maintained in the editor.
 
 Atomic HTML slots and block email variables share `HtmlAtomicBlock` presentation
 and the editor's selection/move/delete/history operations. Stored email blocks

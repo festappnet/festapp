@@ -6,6 +6,27 @@ forward-only deployment overlays over one recorded main SHA; shared features
 must never be implemented by deleting source files or checking a Git branch at
 runtime.
 
+## One software version
+
+`automation/release/software-version.conf` is owned by main and supplies one
+version/build pair for every tenant and platform. `project_version.mjs` reads
+that file; configuration generation, web builds, iOS and Android release tooling
+all consume it. `VERSION` in `project.conf` is only a generated projection.
+Older tenant input values and inherited environment values do not select versions.
+
+Advance the shared generation above the highest existing released build once,
+then reuse that same generation for each selected tenant/platform release.
+Never bump a package separately. If a store has already consumed that build,
+advance the shared generation on main. Historical installations retain their
+published versions until their next authorized release; no automatic rollout
+to other tenants is implied.
+
+A release must upgrade an older tenant to the verified main generation before
+building it. Android planning rejects a source whose software version differs
+from the release tooling's canonical version, and AAB verification checks the
+actual version name and code against the immutable source. Android builds and
+Play access run only in the GitHub-hosted release workflows.
+
 Each production branch owns `automation/project.conf`, explicitly listed brand
 assets and namespaced legal/store/offline-map/recovery data. It also records:
 
@@ -27,10 +48,12 @@ The Flutter startup screen selects it with `WEB_LOADING_LOGO_ASSET=loading-logo.
 and lays out the wordmark above its loading indicator. Its accent color is
 generated from `THEME_SEED_2`, matching the dark-theme brand accent. Installation/PWA icons
 remain separate brand assets; custom tenant startup assets remain configurable.
-`WEB_LOADING_STYLE=vstupenky-outline` selects the canonical product outline/fill
+`WEB_LOADING_STYLE=brand-outline` selects the canonical product outline/fill
 loop. `WEB_LOADING_ANIMATION_ASSET` and `WEB_LOADING_DARK_ANIMATION_ASSET` select
-the light/dark SVG animations. The Flutter painter is generated from the same
-unioned SVG geometry and `assets/brand/vstupenky-online/source/loading-timeline.json`.
+the light/dark SVG animations. The shared Flutter painter consumes paths
+generated from each product's canonical SVG geometry and loading timeline.
+Global uses its symbol alone; both
+products share the outline/fill generator and reduced-motion/pulse behavior.
 Other profiles default to their existing spinner; they do not display this logo.
 `WEB_LOADING_BACKGROUND` defaults to `#242424`. `WEB_BRAND_ICON_DIR` optionally
 selects an icon export set. The generator emits normal/dark public logos and
@@ -91,6 +114,18 @@ deployment. An HTTP 200 alone is not proof that a legal route exists.
 Conflicts in shared source always resolve to main's canonical content. A
 conflict in an allowed overlay path is an explicit tenant decision; blanket
 `ours` resolutions are forbidden.
+
+## Release CI and dependency maintenance
+
+Release admission requires every canonical source CI job, including failures in
+additional source workflows. GitHub's automatically generated Dependabot updater
+is dependency-maintenance automation, not source verification. Its check is
+informational only when Actions API metadata confirms the exact generated path
+`dynamic/dependabot/dependabot-updates`, `dynamic` event, `dependabot[bot]` Bot
+actor, matching source SHA and check suite. A repository workflow with the same
+job name, missing lookup metadata, or a required job always remains blocking.
+Security-audit failures and Dependabot security alerts are not dismissed by this
+classification.
 
 ## Private input boundary
 

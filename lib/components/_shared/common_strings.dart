@@ -120,6 +120,8 @@ class CommonStrings {
   static String get progress => 'Common.progress'.tr(); // "Progress"
   static String get processingCancelled =>
       'Common.processingCancelled'.tr(); // "The processing has been cancelled."
+  static String get processingCompletedTitle =>
+      'Common.processingCompletedTitle'.tr(); // "Completed"
   static String get processingCompleted => 'Common.processingCompleted'
       .tr(); // "The processing has completed successfully."
   static String get processingFailed => 'Common.processingFailed'

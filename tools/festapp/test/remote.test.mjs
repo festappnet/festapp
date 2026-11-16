@@ -1,6 +1,7 @@
 import { activeConnections, verifyConnectionChoice } from '../src/remote/connection-choice.mjs';
 import { connectionActive, connectionDeadline } from '../../../packages/festapp_contracts/mcp-connection.mjs';
 import { DatabaseSync } from 'node:sqlite';
+import { canonicalBackendProfileSha256 } from '../../../automation/lib/backend_activation_manifest.mjs';
 import { digest } from '../src/context/profile.mjs';
 import { createRateLimiter } from '../src/remote/rate-limit.mjs';
 import {canonicalPreview} from './render-fixture.mjs';
@@ -36,8 +37,9 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-async function setup(t, { native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
-    const base = await fixture(t, { fetchImpl: (url, init) => url.pathname.startsWith('/functions/v1/preview-ticket-layout')
+async function setup(t, { global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch, registeredClient } = {}) {
+    const base = await fixture(t, { fetchImpl: (url, init) => global && url.pathname === '/second-activation.json'
+        ? reply({ schemaVersion: 1, tenantId: 'second', generation: 1, backend: 'canonical' }) : url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
     const root = await mkdtemp(join(tmpdir(), 'festapp-remote-'));
     const key = randomBytes(32);
@@ -49,12 +51,23 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
     const raw = configuration(issuer);
     if (webCallback) raw.clients[0].redirectUris = [webCallback];
     if (native) raw.clients[0] = { id: 'codex-fixture', name: 'Codex fixture', applicationType: 'native', redirectUris: ['http://127.0.0.1/callback'] };
+    if (registeredClient) raw.clients[0] = registeredClient;
     if (pilot) raw.clients = [raw.clients[0], { id: 'portable-fixture', name: 'Portable fixture', redirectUris: [issuer + '/callback/portable'], allowedScopes: [READ_SCOPE] }].map((c, i) => i ? c : { ...c, allowedScopes: [READ_SCOPE, 'festapp:orders:read'] });
     if (pilot) raw.regionalPortal = { name: 'vstupenky.online', platform: 'Festapp' };
     if (publicClient) { raw.clients[0].id = 'arbitrary-summary-client'; raw.clients[0].dataProfile = 'order-summary'; }
     if (genericClients) raw.clients = raw.clients.map((c, i) => ({ ...c, id: i ? 'browser-fixture' : 'desktop-fixture', name: i ? 'Browser application' : 'Desktop application' }));
     if (clientMetadataDocuments) raw.clientMetadataDocuments = clientMetadataDocuments;
     if (tenant) raw.tenantOrigin = 'https://tenant.fixture.test';
+    if (global) {
+        const second = { ...rawProfile(), tenantId: 'second', name: 'second', organizationId: 2,
+            activationUrl: rawProfile().backendOrigin + '/second-activation.json',
+            activationSha256: digest(JSON.stringify({ schemaVersion: 1, tenantId: 'second', generation: 1, backend: 'canonical' })) };
+        second.canonicalProfileSha256 = canonicalBackendProfileSha256({ tenantId: second.tenantId,
+            canonicalOrigin: second.backendOrigin, canonicalAnonKey: second.publicApiKey, canonicalOrganizationId: 2 });
+        raw.contexts = [{ name: 'First environment', profile: raw.profile, tenantOrigin: 'https://first.fixture.test' },
+            { name: 'Second environment', profile: second, tenantOrigin: 'https://second.fixture.test' }];
+        delete raw.profile; delete raw.tenantOrigin;
+    }
     const parsedConfig = parseRemoteConfig(raw);
     const config = canonical ? { ...parsedConfig, profile: { ...parsedConfig.profile, kind: 'canonical' } } : parsedConfig;
     const audit = [];
@@ -72,12 +85,12 @@ async function setup(t, { native = false, tenant = false, pilot = false, fetchIm
         }
         return r;
     };
-    return { ...base, root, key, storage, server, issuer, config, audit, browser, ...service };
+    return { ...base, root, key, storage, server, issuer, config, audit, browser, clearBrowserCookies: () => jar.clear(), ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, protocolScopes = ['openid', 'offline_access'], unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
-        redirect_uri: callbackUri, scope: `openid offline_access ${scope}`,
+        redirect_uri: callbackUri, scope: [...protocolScopes, scope].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'),
         code_challenge_method: 'S256', state: 'fixture-state' });
     for (const resource of resources) params.append('resource', resource);
@@ -123,11 +136,12 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     return { callback, exchange, response, tokens: await response.json() };
 }
 
-test('OAuth account switching authorizes only the provider auto-submit script and completes the protected POST', async t => {
+for (const native of [false, true]) test(`OAuth ${native ? 'native' : 'web'} account switching authorizes the callback and only the provider auto-submit script`, async t => {
     let switchedFetch;
-    const callbackUri = 'https://chatgpt.com/connector_platform_oauth_redirect';
-    const f = await setup(t, { webCallback: callbackUri, fetchImpl: (url, init) => switchedFetch?.(url.href, init) });
-    const first = await connect(f, { callbackUri });
+    const callbackUri = native ? 'http://127.0.0.1:51789/callback' : 'https://chatgpt.com/connector_platform_oauth_redirect';
+    const clientId = native ? 'codex-fixture' : 'chatgpt-fixture';
+    const f = await setup(t, { native, ...(native ? {} : { webCallback: callbackUri }), fetchImpl: (url, init) => switchedFetch?.(url.href, init) });
+    const first = await connect(f, { callbackUri, clientId });
     const baseline = (await f.browser('/healthz')).headers.get('content-security-policy');
     assert.match(baseline, /(?:^|;)\s*script-src\s*(?:;|$)/);
     assert.doesNotMatch(baseline, /script-src[^;]*unsafe-inline|sha256-/);
@@ -135,7 +149,7 @@ test('OAuth account switching authorizes only the provider auto-submit script an
     const other = await fixture(t, { userId: otherActor });
     switchedFetch = other.owner.fetch;
     let posts = 0;
-    const second = await connect(f, { callbackUri, handleFormPost: async response => {
+    const second = await connect(f, { callbackUri, clientId, handleFormPost: async response => {
         const html = await response.text();
         assert.match(html, /<title>Submitting Callback<\/title>/);
         const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
@@ -146,7 +160,8 @@ test('OAuth account switching authorizes only the provider auto-submit script an
         assert.equal(directive, 'script-src ' + expected);
         assert.match(policy, /default-src 'none'/);
         assert.match(policy, /form-action 'self'/);
-        assert.equal(policy.split(';').find(s => s.trim().startsWith('form-action')).trim(), "form-action 'self' " + callbackUri);
+        assert.equal(policy.split(';').find(s => s.trim().startsWith('form-action')).trim(),
+            "form-action 'self' " + (native ? 'http://127.0.0.1:*/callback' : callbackUri));
         assert.doesNotMatch(directive, /unsafe-inline|unsafe-eval|'self'|https:/);
         const action = new URL(html.match(/<form method="post" action="([^"]+)"/)[1], f.issuer);
         assert.equal(action.origin, f.issuer);
@@ -164,7 +179,7 @@ test('OAuth account switching authorizes only the provider auto-submit script an
     assert.deepEqual(new Set(f.storage.values('Delegation').map(g => g.userId)), new Set([actor, otherActor]));
     assert(f.storage.values('Delegation').every(g => !g.revoked));
     for (const redirectUri of ['https://chatgpt.com/not-registered','https://evil.example/callback']) {
-        const r = await f.browser('/auth?' + new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code', redirect_uri: redirectUri,
+        const r = await f.browser('/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code', redirect_uri: redirectUri,
             scope: READ_SCOPE, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) }));
         assert.equal(r.status, 400);
     }
@@ -907,26 +922,34 @@ test('configuration scopes and whole-unit selection stay separate from occasion-
  token.scope=READ_SCOPE+' festapp:unit-settings:read';assert(!owner().allowedOperations.includes('units.settings.save'));
 });
 
-async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, connection, legacy = false, pending = false, prepareStatus = 200 } = {}) {
+async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, connection, legacy = false, pending = false, prepareStatus = 200, contextIndex = 0, proofToken = supabaseToken, sessionRefresh = 'independent-fixture-refresh' } = {}) {
     const callbackUri = f.config.clients.find(c => c.id === clientId).redirectUris[0];
     const verifier = randomBytes(32).toString('base64url');
     let r = await f.browser('/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, resource: f.config.resource, scope: ['openid', 'offline_access', ...scopes].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' }));
     assert.equal(r.status, 303);
-    r = await f.browser(r.headers.get('location'));
+    const interaction = r.headers.get('location');
+    r = await f.browser(interaction);
+    if (f.config.contexts) {
+        assert.equal(r.status, 200);
+        r = await f.browser(interaction + '/context', { csrf: csrf(await r.text()), context: f.config.contexts[contextIndex].profile.binding });
+        assert.equal(r.status, 303);
+        r = await f.browser(r.headers.get('location'));
+    }
     assert.equal(r.status, 303);
     const request = new URL(r.headers.get('location')).searchParams.get('request');
+    const selected = f.config.contexts?.[contextIndex] ?? f.config;
     const broker = (operation, extra) => fetch(f.issuer + '/tenant-connection', { method: 'POST',
         headers: { 'content-type': 'application/json', 'x-festapp-mcp-broker': 'b'.repeat(43) },
-        body: JSON.stringify({ operation, request, tenantId: f.config.profile.tenantId,
-            organizationId: f.config.profile.organizationId, tenantOrigin: f.config.tenantOrigin, ...extra }) });
-    r = await broker('prepare', { accessToken: supabaseToken, access: legacy ? { type: 'occasions', occasionIds: [7] } : { consentVersion: 2,
+        body: JSON.stringify({ operation, request, tenantId: selected.profile.tenantId,
+            organizationId: selected.profile.organizationId, tenantOrigin: selected.tenantOrigin, ...extra }) });
+    r = await broker('prepare', { accessToken: proofToken, access: legacy ? { type: 'occasions', occasionIds: [7] } : { consentVersion: 2,
         selection, permissions: scopes.filter(s => MCP_SCOPES.includes(s)), ...(connection ? { connection } : {}) } });
     assert.equal(r.status, prepareStatus);
     if (prepareStatus !== 200) return;
     const { lease } = await r.json();
-    r = await broker('complete', { lease, session: { access_token: supabaseToken, refresh_token: 'independent-fixture-refresh' } });
+    r = await broker('complete', { lease, session: { access_token: proofToken, refresh_token: sessionRefresh } });
     assert.equal(r.status, 200);
     r = await f.browser((await r.json()).resumeUrl);
     let target = r.headers.get('location');
@@ -1755,6 +1778,86 @@ const nativeMetadata = () => ({ client_id: nativeMetadataId, client_name: 'Deskt
     application_type: 'native', redirect_uris: ['http://127.0.0.1/oauth/callback'],
     token_endpoint_auth_method: 'none', grant_types: ['authorization_code', 'refresh_token'], response_types: ['code'] });
 
+test('pre-registered hosted metadata identity supports public PKCE without trusting its whole origin or enabling DCR', async t => {
+    const id = 'https://hosted.fixture.test/oauth/client-metadata.json';
+    const callbackUri = 'https://hosted.fixture.test/oauth/callback';
+    const f = await setup(t, {
+        registeredClient: { id, name: 'Hosted client', applicationType: 'web', dataProfile: 'order-summary',
+            redirectUris: [callbackUri], allowedScopes: [READ_SCOPE, 'festapp:orders:read'] },
+        clientMetadataDocuments: { allowedOrigins: ['https://issuer.fixture.test'], dataProfile: 'order-summary', allowedScopes: [READ_SCOPE] },
+        metadataFetch: () => { throw new Error('Untrusted metadata fetch'); },
+    });
+    const discovery = await (await fetch(f.issuer + '/.well-known/oauth-authorization-server')).json();
+    assert.equal(discovery.client_id_metadata_document_supported, true);
+    assert.equal(discovery.registration_endpoint, undefined);
+    const { tokens } = await connect(f, { clientId: id, callbackUri, scope: `${READ_SCOPE} festapp:orders:read` });
+    const tools = await jsonRpc(f, tokens.access_token, 'tools/list');
+    assert.equal(tools.status, 200);
+    const body = await tools.json();
+    assert(body.result.tools.every(tool => tool.annotations.readOnlyHint === true));
+    assert(body.result.tools.some(tool => tool.name === 'festapp_orders_report'));
+    const refreshed = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', client_id: id, refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+    assert.equal(refreshed.status, 200);
+    assert.notEqual((await refreshed.json()).refresh_token, tokens.refresh_token);
+    const authorization = { client_id: id, redirect_uri: callbackUri, response_type: 'code', resource: f.config.resource,
+        code_challenge: 'a'.repeat(43), code_challenge_method: 'S256', scope: READ_SCOPE };
+    for (const override of [
+        { redirect_uri: 'https://evil.fixture.test/callback' },
+        { scope: `${READ_SCOPE} festapp:orders:read festapp:orders:write` },
+        { client_id: 'https://hosted.fixture.test/oauth/unregistered.json' },
+    ]) {
+        const rejected = await f.browser('/auth?' + new URLSearchParams({ ...authorization, ...override }));
+        if (override.scope) {
+            assert.equal(rejected.status, 303);
+            const target = new URL(rejected.headers.get('location'));
+            assert.equal(target.origin + target.pathname, callbackUri);
+            assert.equal(target.searchParams.get('error'), 'invalid_scope');
+            assert.equal(target.searchParams.get('code'), null);
+        } else assert.equal(rejected.status, 400, JSON.stringify(override));
+    }
+    const grant = f.storage.values('Delegation')[0];
+    f.storage.revoke(grant.id);
+    assert.equal((await jsonRpc(f, tokens.access_token, 'tools/list')).status, 401);
+});
+
+for (const mode of ['basic', 'read-only']) test(`full hosted-client scope request can receive ${mode} consent without a loop or creation grant`, async t => {
+    const id = 'https://hosted.fixture.test/oauth/client-metadata.json';
+    const callbackUri = 'https://hosted.fixture.test/oauth/callback';
+    const f = await setup(t, {
+        registeredClient: { id, name: 'Hosted operator', applicationType: 'web', redirectUris: [callbackUri] },
+        clientMetadataDocuments: { allowedOrigins: ['https://issuer.fixture.test'], dataProfile: 'order-summary', allowedScopes: [READ_SCOPE] },
+        metadataFetch: () => { throw new Error('Untrusted metadata fetch'); },
+    });
+    const { tokens } = await connect(f, { clientId: id, callbackUri, unitId: 3, create: true,
+        scope: DOMAIN_SCOPES.join(' '), ...(mode === 'basic' ? { protocolScopes: [] } : {}), consentFields: { permissionMode: mode } });
+    assert.equal(typeof tokens.scope, 'string');
+    const expected = [READ_SCOPE, ...(mode === 'read-only' ? MCP_SCOPES.filter(scope => scope.endsWith(':read')) : [])];
+    assert.deepEqual(tokens.scope.split(' ').filter(scope => DOMAIN_SCOPES.includes(scope)).sort(), expected.sort());
+    assert.equal(f.storage.values('Delegation')[0].access.canCreateOccasions, false);
+    const response = await jsonRpc(f, tokens.access_token, 'tools/list');
+    assert.equal(response.status, 200);
+    const tools = (await response.json()).result.tools;
+    assert(tools.every(tool => tool.annotations.readOnlyHint === true));
+    if (mode === 'basic') assert.deepEqual(tools.map(tool => tool.name).sort(),
+        ['festapp_access_inspect', 'festapp_context_inspect', 'festapp_ticket_layouts_inspect']);
+    const write = await jsonRpc(f, tokens.access_token, 'tools/call', { name: 'festapp_orders_cancel', arguments: { occasionId: 7 } });
+    assert.equal(write.status, 403);
+    assert.equal((await write.json()).error, 'insufficient_scope');
+    const refreshed = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', client_id: id, refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+    assert.equal(refreshed.status, 200);
+    const next = await refreshed.json();
+    assert.notEqual(next.refresh_token, tokens.refresh_token);
+    assert.deepEqual(next.scope.split(' ').filter(scope => DOMAIN_SCOPES.includes(scope)).sort(), expected.sort());
+});
+
+test('unknown consent mode cannot mint a grant', async t => {
+    const f = await setup(t);
+    await connect(f, { scope: `${READ_SCOPE} festapp:orders:read`, consentFields: { permissionMode: 'arbitrary' }, consentStatus: 403 });
+    assert.equal(f.storage.values('Delegation').length, 0);
+});
+
 test('trusted native client metadata uses normal PKCE, consent, MCP and refresh', async t => {
     const requests = [];
     const f = await setup(t, { clientMetadataDocuments: nativeMetadataPolicy(), metadataFetch: async (url, options) => {
@@ -1896,4 +1999,112 @@ test('standalone full-function consent accepts all 100 supported occasion select
     assert.deepEqual(grant.access.occasionIds, occasionIds);
     assert.deepEqual(new Set(grant.permissions), new Set(MCP_SCOPES));
     assert(!tokens.scope.split(' ').includes(CREATE_SCOPE));
+});
+
+test('global issuer pins selected first-party context through PKCE, grants and authenticated HTTP', async t => {
+    const f = await setup(t, { global: true });
+    const tokens = await connectTenant(f);
+    const grant = f.storage.values('Delegation')[0];
+    assert.equal(grant.profileBinding, f.config.contexts[0].profile.binding);
+    const token = await f.provider.AccessToken.find(tokens.access_token);
+    const owner = new DelegatedOwner(f.config, f.storage, token, { fetchImpl: f.owner.fetch });
+    assert.equal(owner.profile.organizationId, 1);
+    assert.deepEqual(await owner.delegatedContext({}, 7), { organizationId: 1, unitId: null });
+    const response = await jsonRpc(f, tokens.access_token, 'tools/call', { name: 'festapp_access_inspect', arguments: {} });
+    assert.equal(response.status, 200);
+    const otherAudience = { ...token, aud: 'https://mcp.vstupenky.online/mcp' };
+    assert.throws(() => new DelegatedOwner(f.config, f.storage, otherAudience));
+    f.storage.putUntil('Delegation', grant.id, { ...grant, profileBinding: f.config.contexts[1].profile.binding }, grant.expiresAt);
+    assert.throws(() => new DelegatedOwner(f.config, f.storage, token));
+    const wrongContextRefresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        grant_type: 'refresh_token', client_id: 'chatgpt-fixture', refresh_token: tokens.refresh_token, resource: f.config.resource }) });
+    assert.equal(wrongContextRefresh.status, 400);
+    f.storage.putUntil('Delegation', grant.id, grant, grant.expiresAt);
+    // The selected second tenant cannot adopt the first tenant's live identity.
+    await connectTenant(f, { contextIndex: 1, prepareStatus: 400 });
+    f.storage.revoke(grant.id);
+    assert.equal((await jsonRpc(f, tokens.access_token, 'tools/list', {})).status, 401);
+});
+
+test('global context selection rejects unknown and cross-origin changes and cannot be rebound', async t => {
+    const f = await setup(t, { global: true });
+    let response = await f.browser('/auth?' + new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
+        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: READ_SCOPE,
+        code_challenge: 'a'.repeat(43), code_challenge_method: 'S256' }));
+    const interaction = response.headers.get('location');
+    response = await f.browser(interaction);
+    // CSP applies to the selector POST's complete redirect chain, including
+    // first-party consent. A successful manual-fetch 303 alone missed this bug.
+    const formAction = response.headers.get('content-security-policy').split(';').find(s => s.trim().startsWith('form-action')).trim();
+    assert.deepEqual(formAction.split(' ').slice(1), ["'self'", f.issuer + '/callback',
+        'https://first.fixture.test/settings/mcp-connect', 'https://second.fixture.test/settings/mcp-connect']);
+    assert(!formAction.includes('evil.invalid'));
+    const secret = csrf(await response.text());
+    for (const [context, extra] of [['unknown', {}], [f.config.contexts[0].profile.binding, { origin: 'https://evil.invalid' }]]) {
+        assert.equal((await f.browser(interaction + '/context', { csrf: secret, context }, extra)).status, 403);
+    }
+    assert.equal((await f.browser(interaction + '/context', { csrf: secret, context: f.config.contexts[0].profile.binding })).status, 303);
+    assert.equal((await f.browser(interaction + '/context', { csrf: secret, context: f.config.contexts[1].profile.binding })).status, 403);
+});
+
+test('two concurrent global connections keep independent tenant sessions, rights and revocation', async t => {
+    const secondActor = '00000000-0000-4000-8000-000000000002';
+    const parts = supabaseToken.split('.');
+    const claims = JSON.parse(Buffer.from(parts[1], 'base64url'));
+    const secondToken = parts[0] + '.' + Buffer.from(JSON.stringify({ ...claims, sub: secondActor })).toString('base64url') + '.fixture';
+    const f = await setup(t, { global: true, fetchImpl: (url, init) => {
+        const bearer = new Headers(init.headers).get('authorization')?.slice(7);
+        const second = bearer === secondToken;
+        if (url.pathname === '/auth/v1/user' && second) return reply({ id: secondActor, factors: [], app_metadata: {}, user_metadata: {} });
+        if (url.pathname === '/rest/v1/user_info' && second) return reply({ id: secondActor, organization: 2 });
+        if (url.pathname === '/auth/v1/token' && JSON.parse(init.body).refresh_token?.startsWith('second'))
+            return reply({ access_token: secondToken, refresh_token: 'second-rotated', expires_in: 3600, token_type: 'bearer',
+                user: { id: secondActor, factors: [], app_metadata: {}, user_metadata: {} } });
+        if (url.pathname === '/rest/v1/rpc/get_operator_access_v1' && second)
+            return reply({ units: [], occasions: [{ id: 8, title: 'Second environment event', unitId: 4, capabilities: { 'ticket_layouts.read': false } }] });
+    } });
+    const first = await connectTenant(f, { scopes: [READ_SCOPE, 'festapp:orders:read'] });
+    f.clearBrowserCookies(); // independent browser session for the second account
+    const second = await connectTenant(f, { contextIndex: 1, proofToken: secondToken, sessionRefresh: 'second-initial',
+        scopes: [READ_SCOPE], selection: { type: 'occasions', occasionIds: [8] } });
+    const clients = await Promise.all([first, second].map(async tokens => {
+        const client = new Client({ name: 'context-fixture', version: '1' });
+        await client.connect(new StreamableHTTPClientTransport(new URL(f.config.resource), {
+            requestInit: { headers: { authorization: `Bearer ${tokens.access_token}` } } }));
+        t.after(() => client.close()); return client;
+    }));
+    const results = await Promise.all(clients.map(client => client.callTool({ name: 'festapp_access_inspect', arguments: {} })));
+    assert.deepEqual(results.map(r => r.structuredContent.data.occasions.map(o => o.id)), [[7], [8]]);
+    const tools = await Promise.all(clients.map(client => client.listTools()));
+    assert(tools[0].tools.some(t => t.name === 'festapp_orders_report'));
+    assert(!tools[1].tools.some(t => t.name === 'festapp_orders_report'));
+    f.storage.revoke((await f.provider.AccessToken.find(first.access_token)).grantId);
+    assert.equal((await jsonRpc(f, first.access_token, 'tools/list', {})).status, 401);
+    assert.equal((await clients[1].callTool({ name: 'festapp_access_inspect', arguments: {} })).structuredContent.ok, true);
+});
+
+test('global configuration rejects ambiguous, duplicate and untrusted context definitions', () => {
+    const raw = configuration('http://127.0.0.1:3456');
+    const contexts = [{ name: 'First', profile: raw.profile, tenantOrigin: 'https://one.invalid' },
+        { name: 'Duplicate', profile: raw.profile, tenantOrigin: 'https://two.invalid' }];
+    assert.throws(() => parseRemoteConfig({ ...raw, contexts }));
+    const { profile: unused, ...global } = raw;
+    assert.throws(() => parseRemoteConfig({ ...global, contexts }));
+    assert.throws(() => parseRemoteConfig({ ...global, contexts: [contexts[0]] }));
+    assert.throws(() => parseRemoteConfig({ ...global, contexts: contexts.map(c => ({ ...c, tenantOrigin: 'https://user@one.invalid' })) }));
+});
+
+test('public MCP identity, documentation and bilingual privacy need no account and disclose supported boundaries', async t => {
+    const f = await setup(t, { global: true });
+    const metadata = await (await fetch(f.issuer + '/.well-known/oauth-protected-resource')).json();
+    assert.equal(metadata.resource_name, 'Festapp');
+    assert.equal(metadata.resource_documentation, f.issuer + '/docs');
+    for (const route of ['/docs', '/privacy', '/terms', '/cs/privacy', '/cs/terms', '/support']) {
+        const response = await fetch(f.issuer + route);
+        assert.equal(response.status, 200);
+        assert.equal(response.headers.get('x-frame-options'), 'DENY');
+        const body = await response.text();
+        assert.match(body, /Festapp/);
+        assert.doesNotMatch(body, /<script/);
+    }
 });

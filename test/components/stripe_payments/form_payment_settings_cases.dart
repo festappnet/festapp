@@ -46,28 +46,40 @@ FormEditBundle _bundle(
   Map<String, dynamic>? payments, {
   List<BankAccountModel> accounts = const [],
 }) => FormEditBundle(
-  form: FormEditorDraft(
-    link: link,
-    title: 'Payment test',
-    occasionId: unit * 10,
-    occasionModel: OccasionModel(
-      unit: unit,
-      isOpen: true,
-      isHidden: false,
-      isPromoted: false,
-    ),
-    data: {
-      if (payments != null) 'payments': {...payments},
-    },
-    relatedFields: [
-      FormFieldDraft(
-        productType: ProductTypeModel(
-          products: [ProductModel(currencyCode: 'CZK')],
-        ),
-      ),
-    ],
-    availableBankAccounts: accounts,
-  ),
+  form:
+      FormEditorDraft(
+          link: link,
+          title: 'Payment test',
+          occasionId: unit * 10,
+          occasionModel: OccasionModel(
+            unit: unit,
+            isOpen: true,
+            isHidden: false,
+            isPromoted: false,
+          ),
+          data: {
+            'payments': payments == null
+                ? {'bankEnabled': true}
+                : {...payments},
+          },
+          relatedFields: [
+            FormFieldDraft(
+              productType: ProductTypeModel(
+                products: [ProductModel(currencyCode: 'CZK')],
+              ),
+            ),
+          ],
+          availableBankAccounts: accounts,
+        )
+        ..paymentMethodPolicy = {
+          'preferredMethod': 'bank',
+          'methods': {
+            'bank': {'policyEnabled': true},
+            'cash': {'policyEnabled': true},
+            'stripe': {'policyEnabled': true},
+            'orchard': {'policyEnabled': true},
+          },
+        },
   productTypes: [],
   products: [],
   availableBankAccounts: accounts,
@@ -116,7 +128,7 @@ void main() {
   ]) {
     testWidgetsWithEnvironment(
       () => _environment,
-      'bank is the clean default; account currency eligibility is visible: $currencies',
+      'explicit scoped bank selection is clean; account currency eligibility is visible: $currencies',
       (tester) async {
         var saves = 0;
         await _environment.pumpWidget(
@@ -330,7 +342,7 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => _environment,
-    'legacy defaults remain clean until a choice; all modes save and discard',
+    'server-materialized defaults remain clean until a choice; all modes save and discard',
     (tester) async {
       Map<String, dynamic>? savedPayments;
       var checks = 0;

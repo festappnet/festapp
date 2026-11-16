@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'automation'))
 import baseline
 from ci.telemetry import phase
+from local_db.images import references as image_references, resolve as resolve_image
 
 LABEL = 'net.festapp.sql-runtime'
 VERSION = '2'
@@ -131,7 +132,7 @@ class Runtime:
         if data['HostConfig']['PortBindings'].get('5432/tcp') != [{'HostIp':'127.0.0.1','HostPort':str(self.port)}]:
             raise ValueError('Owned runtime must publish only its exact loopback port')
         expected = ['postgres','-D','/etc/postgresql', *[arg for k,v in CONFIG['settings'].items() for arg in ('-c',k+'='+v)]]
-        if data['Config']['Image'] != CONFIG['image']:
+        if data['Config']['Image'] not in image_references(CONFIG['image']):
             raise ValueError('Owned container image/provider major mismatch')
         if data['Config']['Cmd'] != expected:
             raise ValueError('Runtime configuration drift; release leases and explicitly recreate the owned container')
@@ -152,15 +153,13 @@ class Runtime:
     def start(self):
         data = self.inspect()
         if not data:
-            image = subprocess.run(['docker','image','inspect',CONFIG['image']], capture_output=True)
-            if image.returncode:
-                with phase('database.image-download'):
-                    subprocess.run(['docker','pull',CONFIG['image']], check=True, stdout=sys.stderr)
+            with phase('database.image-download'):
+                image_reference, _ = resolve_image(CONFIG['image'])
             with phase('database.container-create'):
                 subprocess.run(['docker','run','-d','--name',self.container,'--label',LABEL+'='+VERSION,
                     '-e','POSTGRES_PASSWORD=postgres','-e','PGPASSWORD=postgres','-e','POSTGRES_USER=supabase_admin',
                     '-e','POSTGRES_HOST=/var/run/postgresql','-p',f'127.0.0.1:{self.port}:5432',
-                    '-v',self.container+':/var/lib/postgresql/data',CONFIG['image'],
+                    '-v',self.container+':/var/lib/postgresql/data',image_reference,
                     'postgres','-D','/etc/postgresql',
                     *[arg for k,v in CONFIG['settings'].items() for arg in ('-c',k+'='+v)]],
                     check=True,stdout=subprocess.DEVNULL)
@@ -191,7 +190,7 @@ class Runtime:
 
     def identity(self):
         paths=core_sources(ROOT)
-        image = json.loads(subprocess.check_output(['docker','image','inspect',CONFIG['image']]))[0]
+        _, image = resolve_image(CONFIG['image'],pull=False)
         tools = {tool:subprocess.check_output(command,text=True).strip() for tool,command in
                  {'psql':['psql','--version'],'supabase':['supabase','--version']}.items()}
         core = {'profile':self.profile,'inputs':content_digest(paths,ROOT),'imageId':image['Id'],'platform':image['Os']+'/'+image['Architecture'],'tools':tools}

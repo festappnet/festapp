@@ -811,6 +811,7 @@
   "registrySource": "database/operations/canonical_mutation_contraction.sql",
   "retirementState": "contraction prepared; exact signatures removed only under validated G3/G4",
   "registrySources": [
-    "database/operations/canonical_mutation_contraction.sql"
+    "database/operations/canonical_mutation_contraction.sql",
+    "database/functions/blueprint/seating_sync.sql"
   ]
 }

@@ -18,19 +18,31 @@ export function presentRefundInstructions(value: unknown): Record<string, unknow
   // No pretend SPD in other currencies: actual bank-event support remains SQL policy.
   return {...instructions, format: null, payload: null};
 }
-export function decoratePaymentOperation(value: unknown): Record<string, unknown> {
+export function decoratePaymentOperation(value: unknown, expectedOrderId?: number): Record<string, unknown> {
   const result = {...record(value)};
-  if (result.instructions) result.instructions = presentRefundInstructions(result.instructions);
-  if (record(result.request).instructions) {
-    result.request = {...record(result.request), instructions: presentRefundInstructions(record(result.request).instructions)};
-  }
-  if (Array.isArray(result.requests)) result.requests = result.requests.map(request => {
-    const r = record(request);
-    return {...r, ...(r.instructions ? {instructions: presentRefundInstructions(r.instructions)} : {})};
-  });
-  if (result.context) result.context = decoratePaymentOperation(result.context);
+  const orderId = Number.isSafeInteger(expectedOrderId) ? expectedOrderId : Number.isSafeInteger(result.orderId) ? Number(result.orderId) : (Number.isSafeInteger(result.sourceOrderId) ? Number(result.sourceOrderId) : undefined);
+  const decorateRequest = (value: unknown) => {
+    const request = {...record(value)};
+    const allowed = request.method === 'bank' && request.verification === 'bank_event' &&
+      request.purpose === 'bank_refund_instruction' && request.instructionAllowed === true &&
+      request.status === 'pending' && request.sourceMethod === 'bank' &&
+      Number.isSafeInteger(orderId) && request.sourceOrderId === orderId && Number.isSafeInteger(request.sourcePaymentId);
+    if (request.instructions && allowed) request.instructions = presentRefundInstructions(request.instructions);
+    else delete request.instructions;
+    return request;
+  };
+  const instructions = record(result.instructions);
+  const allowedRead = Number.isSafeInteger(orderId) && instructions.method === 'bank' &&
+    instructions.verification === 'bank_event' && instructions.purpose === 'bank_refund_instruction' &&
+    instructions.allowed === true && instructions.sourceMethod === 'bank' &&
+    instructions.sourceOrderId === orderId && Number.isSafeInteger(instructions.sourcePaymentId);
+  if (allowedRead) result.instructions = presentRefundInstructions(instructions);
+  else delete result.instructions;
+  if (result.request) result.request = decorateRequest(result.request);
+  if (Array.isArray(result.requests)) result.requests = result.requests.map(decorateRequest);
+  if (result.context) result.context = decoratePaymentOperation(result.context, orderId);
   // SQL client-sync envelope contains the same operation body as its data.
-  if (result.data) result.data = decoratePaymentOperation(result.data);
+  if (result.data) result.data = decoratePaymentOperation(result.data, orderId);
   return result;
 }
 export async function paymentOperationHandler(request: Request, deps: {
@@ -56,7 +68,7 @@ export async function paymentOperationHandler(request: Request, deps: {
       ? await deps.rpc(authorization, 'get_bank_refund_instructions', {input_data: input})
       : await deps.rpc(authorization, 'command_payment_operation', {input_data: input, p_command_id: body.p_command_id ?? body.commandId});
     rpcCompleted = true;
-    return Response.json(decoratePaymentOperation(value), {headers});
+    return Response.json(decoratePaymentOperation(value, Number(orderId)), {headers});
   } catch (error) {
     // SQL error codes are stable UI feedback; never return arbitrary provider bodies.
     const code = error instanceof PaymentError ? error.code : /^([A-Z][A-Z0-9_]+)$/.test(String(record(error).message))

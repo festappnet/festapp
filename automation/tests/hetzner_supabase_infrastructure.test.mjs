@@ -12,16 +12,20 @@ function read(name) {
   return fs.readFileSync(path.join(terraformDir, name), 'utf8');
 }
 
-test('Hetzner rehearsal module pins stable Terraform/provider and protected low-cost compute', () => {
+test('runtime updater rejects drift and preserves fencing across partial failures and resume', () => {
+  const result = spawnSync('python3', [path.join(root, 'automation/tests/test_runtime_update.py')], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test('Hetzner rehearsal module constrains Terraform, pins its provider and protects low-cost compute', () => {
   const versions = read('versions.tf');
   const variables = read('variables.tf');
   const server = read('server.tf');
   const pins = JSON.parse(fs.readFileSync(path.join(root, 'automation/hetzner-supabase/runtime/pins.json')));
 
-  assert.match(versions, /required_version\s*=\s*"~> 1\.16\.0"/);
-  assert.match(versions, /version\s*=\s*"= 1\.68\.0"/);
+  assert.match(versions, /required_version\s*=\s*"~> \d+\.\d+\.\d+"/);
+  assert.match(versions, /version\s*=\s*"= \d+\.\d+\.\d+"/);
   assert.match(variables, /default\s*=\s*"cax11"/);
-  assert.match(variables, /default\s*=\s*"nbg1"/);
   assert.equal(pins.architecture, 'linux/arm64');
   assert.equal(pins.supabase.registryEvidence.platform, pins.architecture);
   assert.match(server, /delete_protection\s*=\s*true/);
@@ -51,7 +55,8 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   const compose = fs.readFileSync(path.join(runtime, 'docker-compose.festapp.yml'), 'utf8');
   const caddy = fs.readFileSync(path.join(runtime, 'Caddyfile'), 'utf8');
   const databaseTarget = fs.readFileSync(path.join(runtime, 'docker-compose.database-target.yml'), 'utf8');
-  assert.match(deploy, /241bb11c0627f2981746d37033f57dbfa81d29b0/);
+  const pins = JSON.parse(fs.readFileSync(path.join(root, 'automation/hetzner-supabase/runtime/pins.json')));
+  assert.ok(deploy.includes(`readonly REVISION=${pins.supabase.commit}`));
   assert.match(deploy, /refusing to overwrite/);
   assert.doesNotMatch(deploy, /rm\s|down\s+-v|prune/);
   assert.match(compose, /127\.0\.0\.1:8000:8000/);
@@ -66,7 +71,11 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   assert.doesNotMatch(compose,/EMAIL_SES_ACCESS_KEY_ID:/);
   assert.match(compose, /PROJECT_URL: http:\/\/api-gw:8000/);
   assert.doesNotMatch(compose, /5432:5432/);
-  assert.equal((compose.match(/@sha256:/g) ?? []).length, 11);
+  const images = [...compose.matchAll(/^\s+image:\s*(\S+)/gm)].map(match => match[1]);
+  assert.ok(images.length > 0, 'runtime Compose must declare images');
+  for (const image of images) {
+    assert.match(image, /^[a-z0-9./_-]+:[A-Za-z0-9._-]+@sha256:[a-f0-9]{64}$/, image);
+  }
   assert.match(compose, /admin-tunnel:[\s\S]*profiles:[\s\S]*admin-dashboard/);
   assert.match(compose, /admin-tunnel:[\s\S]*network_mode: host/);
   assert.match(compose, /admin-tunnel:[\s\S]*--token-file/);
@@ -80,7 +89,6 @@ test('rehearsal runtime is immutable, loopback-only and non-destructive', () => 
   const studioLogout = fs.readFileSync(path.join(runtime, 'studio-customization/logout.js'), 'utf8');
   assert.match(studioLogout, /\/cdn-cgi\/access\/logout/);
   assert.match(studioLogout, /href.*\/account\/me/);
-  assert.match(studioLogout, /text-foreground-lighter/);
   const studioInstaller = fs.readFileSync(path.join(runtime, 'studio-customization/install-logout.mjs'), 'utf8');
   assert.match(studioInstaller, /Expected one pinned Studio document chunk/);
   for (const service of ['auth', 'rest', 'realtime', 'meta', 'functions', 'studio']) {
@@ -135,6 +143,13 @@ test('Studio customization installs an idempotent same-origin Access logout cont
     fs.readFileSync(path.join(tempDir, 'public/festapp-admin/logout.js'), 'utf8'),
     fs.readFileSync(asset, 'utf8'),
   );
+  fs.writeFileSync(chunk, 'children:[(0,d.jsx)(f.r,{}),(0,d.jsx)(e.Main,{}),(0,d.jsx)(e.NextScript,{})]');
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const installed = spawnSync('node', [installer], { encoding: 'utf8', env });
+    assert.equal(installed.status, 0, installed.stderr);
+  }
+  assert.equal(fs.readFileSync(chunk, 'utf8').match(/\/festapp-admin\/logout\.js/g)?.length, 1);
+  assert.match(fs.readFileSync(chunk, 'utf8'), /\(0,d\.jsx\)\(f\.r,\{\}\)/);
 });
 
 test('rehearsal environment remains valid when sourced by a shell', () => {

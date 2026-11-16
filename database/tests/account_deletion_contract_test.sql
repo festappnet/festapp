@@ -9,7 +9,7 @@ DECLARE
   v_request uuid;
   v_occasion bigint;
   v_event bigint;
-  v_result jsonb;
+  v_result jsonb; v_collecting uuid; v_queued uuid; v_digest uuid;
 BEGIN
   -- This is a real disposable identity in auth.users plus public.user_info.
   PERFORM create_user_for_test(v_login, v_email);
@@ -33,6 +33,16 @@ BEGIN
   INSERT INTO public.client_sync_private_scopes(component,occasion,user_id)
   VALUES('private_profile',v_occasion,v_user);
 
+
+  INSERT INTO public.notification_center_email_profiles(recipient,stopped) VALUES(v_user,false);
+  INSERT INTO public.notification_center_email_subscriptions(recipient,organization) VALUES(v_user,1);
+  INSERT INTO public.notification_center_email_dispatches(recipient,opened_at,due_at) VALUES(v_user,now(),now()+interval '300 seconds') RETURNING id INTO v_queued;
+  v_result:=public.enqueue_email('admin_notification_digest',jsonb_build_object('recipient_user',v_user),lower(v_email),
+    jsonb_build_object('dispatchId',v_queued,'templateVersion',1),'notification:'||v_queued,'ADMIN_NOTIFICATION_DIGEST');
+  v_digest:=(v_result->>'message_id')::uuid;
+  UPDATE public.notification_center_email_dispatches SET state='queued',message_id=v_digest WHERE id=v_queued;
+  UPDATE public.email_messages SET workflow_state='unknown',prepared='{"historical":"retain-audit"}' WHERE message_id=v_digest;
+  INSERT INTO public.notification_center_email_dispatches(recipient,opened_at,due_at) VALUES(v_user,now(),now()+interval '300 seconds') RETURNING id INTO v_collecting;
   PERFORM assert_true(NOT has_function_privilege('authenticated',
     'public.create_account_deletion_request(uuid,bigint,text,timestamptz,text)','EXECUTE'),
     'client cannot create deletion jobs directly');
@@ -63,6 +73,10 @@ BEGIN
   PERFORM assert_eq(v_result->>'status','processing','concurrent/replayed claim resumes one job');
 
   PERFORM public.cleanup_account_deletion_domain(v_request);
+
+  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.notification_center_email_profiles WHERE recipient=v_user),'account deletion removes recipient scheduling');
+  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.notification_center_email_dispatches WHERE id=v_collecting),'empty collecting envelope is removed');
+  PERFORM assert_true(EXISTS(SELECT 1 FROM public.email_messages WHERE message_id=v_digest AND workflow_state='unknown' AND prepared->>'historical'='retain-audit'),'unknown queue audit is retained without an account-deletion FK cycle');
   PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.user_info WHERE id=v_user),
     'public profile is deleted');
   PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.event_users WHERE "user"=v_user),

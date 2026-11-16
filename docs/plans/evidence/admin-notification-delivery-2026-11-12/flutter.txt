@@ -1,0 +1,111 @@
+00:00 +0: loading /Users/miakh/source/festapp/test/components/notification_center/notification_email_settings_test.dart
+00:00 +0: /Users/miakh/source/festapp/test/components/notification_center/notification_email_settings_test.dart: email settings save only current self scope and refresh authoritative revision
+00:00 +1: /Users/miakh/source/festapp/test/components/notification_center/notification_email_settings_test.dart: failed save keeps revision and always releases saving state
+00:00 +2: loading /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart
+00:11 +2: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: overlapping badge refreshes share pending work but later refresh is fresh
+00:11 +3: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: identity switch does not share or apply the previous pending badge
+00:11 +4: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: background invalidates pending badge and foreground requests fresh data
+00:11 +5: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: failed shared badge read releases pending work for retry
+00:11 +6: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: disposing rejects completion of a shared badge read
+00:11 +7: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: successful mute starts a fresh badge read instead of joining pre-mute work
+00:11 +8: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: unread rows retain the pre-open watermark until the next open
+00:11 +9: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: older backends do not invent an unread watermark
+00:11 +10: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: unread indication fits narrow dark panel
+Localization logs omitted: debug=0, expected missing=18
+00:12 +11: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: unread indication fits narrow light panel
+Localization logs omitted: debug=0, expected missing=18
+00:12 +12: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: open acknowledges once and late badge cannot restore unread
+00:12 +13: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: badge begun during acknowledgement cannot undo it
+00:12 +14: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: identity reset rejects a pending snapshot
+00:12 +15: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: capability absence hides center without detection acknowledgement
+00:12 +16: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: failed open preserves unread and pagination never acknowledges
+00:12 +17: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: polling pauses in background and does not acknowledge
+00:12 +18: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: pagination failure retains items and snapshot
+00:12 +19: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: token refresh restores slots and removes revoked private payloads
+00:12 +20: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: permission failure clears private content, network failure retains it
+00:12 +21: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: presenter uses contact fallback, historical count and neutral form labels
+Localization logs omitted: debug=0, expected missing=11
+00:12 +22: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: form notifications resolve the exact current form in their occasion
+00:12 +23: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: panel is accessible at mobile, breakpoint and desktop with large text
+Localization logs omitted: debug=0, expected missing=120
+00:12 +24: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: flat occasion blocks merge pages, retain same-name identities and detail navigation
+Localization logs omitted: debug=0, expected missing=61
+00:12 +25: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: email and bank incidents retain actionable details and safe affected links
+Localization logs omitted: debug=0, expected missing=18
+00:12 +26: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: device calendar partitions are contiguous and preserve DST day lengths
+00:12 +27: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: summary opens the common destination without expansion or filters
+Localization logs omitted: debug=0, expected missing=32
+00:12 +28: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: summary hydration updates full count without moving or acknowledging
+00:12 +29: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: occasions stay separate, ages are row metadata and summary names adapt to width
+Localization logs omitted: debug=0, expected missing=141
+00:12 +30: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: one RPC opens, refreshes all loaded rows and pages with a frozen timezone
+00:12 +31: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: summary uses exact place total and deduplicates a bounded customer preview
+Localization logs omitted: debug=0, expected missing=4
+00:12 +32: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: summary hydration rejects stale identities
+00:12 +33: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: server read state overrides seen watermark and item read is one scoped RPC
+00:12 +34: /Users/miakh/source/festapp/test/components/notification_center/notification_center_cases.dart: selected group scope survives route and rights invalidation
+00:12 +35: loading /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart
+00:14 +35: /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart: (setUpAll)
+[🌎 Easy Localization] [DEBUG] Localization initialized
+00:14 +35: /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart: email controls use the existing settings panel and save the selected scope
+[🌎 Easy Localization] [DEBUG] Start
+[🌎 Easy Localization] [DEBUG] Init state
+[🌎 Easy Localization] [INFO] Start locale loaded cs
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+00:15 +36: /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart: real batch panel keeps history and prioritizes unread at 390.0 dark
+[🌎 Easy Localization] [DEBUG] Start
+[🌎 Easy Localization] [DEBUG] Init state
+[🌎 Easy Localization] [INFO] Start locale loaded cs
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+00:15 +37: /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart: real batch panel keeps history and prioritizes unread at 390.0 light
+[🌎 Easy Localization] [DEBUG] Start
+[🌎 Easy Localization] [DEBUG] Init state
+[🌎 Easy Localization] [INFO] Start locale loaded cs
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+00:15 +38: /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart: real batch panel keeps history and prioritizes unread at 1000.0 dark
+[🌎 Easy Localization] [DEBUG] Start
+[🌎 Easy Localization] [DEBUG] Init state
+[🌎 Easy Localization] [INFO] Start locale loaded cs
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+00:15 +39: /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart: real batch panel keeps history and prioritizes unread at 1000.0 light
+[🌎 Easy Localization] [DEBUG] Start
+[🌎 Easy Localization] [DEBUG] Init state
+[🌎 Easy Localization] [INFO] Start locale loaded cs
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+00:15 +40: /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart: (tearDownAll)
+00:15 +40: All tests passed!

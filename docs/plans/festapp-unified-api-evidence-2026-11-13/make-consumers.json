@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-11-13T03:25:41.135Z",
+  "mode": "read-only",
+  "app": "vstupenky-online-buoz5u",
+  "version": 1,
+  "connectorPublishedByThisTask": false,
+  "public": true,
+  "inReview": true,
+  "definitionUsesLegacyIssuer": true,
+  "existingReviewerConnection": true,
+  "knownScenarios": [
+    {
+      "exists": true,
+      "active": false
+    },
+    {
+      "exists": true,
+      "active": false
+    }
+  ],
+  "deletionBlocked": true,
+  "reason": "Existing legacy connector definition/connection must be replaced through an authorized API rollout and new consent; no connection or scenario changed."
+}

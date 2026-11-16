@@ -12,6 +12,7 @@ DECLARE
   v_existing_id bigint;
   v_actual_unit bigint;
   v_actual_org bigint;
+  v_changed bigint;
 BEGIN
   -- Extract values from input JSON.
   v_occ  := CASE WHEN p_data ? 'occasion' THEN (p_data ->> 'occasion')::bigint ELSE NULL END;
@@ -57,7 +58,13 @@ BEGIN
     VALUES (p_data->>'html', v_occ, p_data->>'subject', v_org, v_code, v_unit, p_data->>'title')
     ON CONFLICT (occasion, code) WHERE occasion IS NOT NULL
     DO UPDATE SET html=EXCLUDED.html, subject=EXCLUDED.subject, title=EXCLUDED.title,
-                  unit=EXCLUDED.unit, organization=EXCLUDED.organization;
+                  unit=EXCLUDED.unit, organization=EXCLUDED.organization
+    WHERE (email_templates.html,email_templates.subject,email_templates.title,email_templates.unit,email_templates.organization)
+      IS DISTINCT FROM (EXCLUDED.html,EXCLUDED.subject,EXCLUDED.title,EXCLUDED.unit,EXCLUDED.organization);
+    GET DIAGNOSTICS v_changed=ROW_COUNT;
+    IF v_changed>0 THEN
+      PERFORM public.payment_template_write_scope_internal(jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org),true);
+    END IF;
     RETURN;
   END IF;
 
@@ -79,7 +86,7 @@ BEGIN
       html    = p_data ->> 'html',
       subject = p_data ->> 'subject',
       title   = p_data ->> 'title'
-    WHERE id = v_existing_id;
+    WHERE id = v_existing_id AND (html,subject,title) IS DISTINCT FROM (p_data->>'html',p_data->>'subject',p_data->>'title');
   ELSE
     -- Insert a new record.
     INSERT INTO public.email_templates (
@@ -100,6 +107,10 @@ BEGIN
       v_unit,
       p_data ->> 'title'
     );
+  END IF;
+  GET DIAGNOSTICS v_changed=ROW_COUNT;
+  IF v_changed>0 THEN
+    PERFORM public.payment_template_write_scope_internal(jsonb_build_object('occasion',v_occ,'unit',v_unit,'organization',v_org),true);
   END IF;
 END;
 $$;

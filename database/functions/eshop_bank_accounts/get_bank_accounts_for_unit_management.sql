@@ -21,6 +21,7 @@ SET search_path = public, extensions
 AS $$
 DECLARE v_unit_manager boolean;
 BEGIN
+    IF NOT coalesce(public.payment_method_policy_enabled_internal(p_unit_id,'bank'),false) THEN RAISE insufficient_privilege USING MESSAGE='PAYMENT_METHOD_POLICY_DISABLED'; END IF;
     v_unit_manager := public.can_manage_unit_bank_accounts(p_unit_id);
     IF NOT public.can_read_unit_bank_accounts(p_unit_id) THEN
       RAISE insufficient_privilege USING MESSAGE='User is not manager.';

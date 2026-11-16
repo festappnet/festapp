@@ -1,5 +1,31 @@
 # Eshop (Orders, Tickets, Payments)
 
+## Ticket and application terminology
+
+`FeatureService.usesTicketTerminology` owns the Dart presentation decision.
+The public web client and Edge email order overview share
+`supabase/functions/_shared/orderItemTerminology.ts` through the web
+`FeatureService` adapter. SQL presentation projections use
+`public.uses_ticket_terminology_internal(features)`; sale notifications,
+occasion sale summaries, customer order overviews and scanner sessions consume
+that owner. The client runtimes use the same cases in
+`test/fixtures/order_item_terminology.json`: an enabled occasion `ticket`
+feature selects ticket wording; otherwise use application/confirmation wording.
+Form field visibility, blueprint configuration, item count, payment state and
+delivery settings do not change terminology. Issuance and download eligibility
+remain separate checks.
+
+`OrderItemStrings.text` in Dart and JavaScript selects authored
+`ApplicationTerminology` translations for reusable product-change, payment,
+refund, seating and scanner copy. Public forms and payment views pass their
+own occasion decision explicitly instead of reading an unrelated admin context.
+User-authored form titles and email templates are preserved. Artwork, Wallet,
+printed ticket batches and ticket-feature setup describe actual tickets and
+keep their literal ticket labels. Organization-wide email history has no single
+occasion and retains its generic message-kind labels. Older saved scanner
+sessions lack the new presentation field and keep their previous wording until
+their normal expiry; new sessions receive the canonical server decision.
+
 ## Split Brain: Dart Reads, SQL Writes (CRITICAL)
 
 Dart is a thin RPC wrapper. ALL write logic lives in SQL. Do NOT replicate multi-step logic in Dart -- causes race conditions.
@@ -34,6 +60,9 @@ scoped email delivery dialog. Delivery RPCs and the outbound queue remain shared
 owns bank-fact and product-edit eligibility, preserving the saved deposit,
 protected ticket states and provider boundary. Actual product changes invalidate
 email content once; receipt replay and unchanged commands add no effects.
+Seat swaps use this same owner once per affected order after all products and
+prices are final. They preserve sent eligibility and expose pending customer
+updates through the existing product editor and `TICKET_ORDER_UPDATE` email path.
 The helper writes no order history. Product edits append one final snapshot;
 creation, accepted delivery and cancellation keep their existing snapshot owners.
 Manual mark-paid does not enqueue delivery. See the
@@ -214,6 +243,12 @@ Local review setup and actual evidence are recorded in
 
 ## Cash payments and payment deadlines
 
+Cash is enabled by default in organization payment-method settings and inherited
+by units. Explicit organization/unit disables remain authoritative. The cash
+default forward repairs only inferred installation disables, preserving recorded
+organization decisions; form checkout methods remain an independent selection.
+
+
 `payment_providers/registry.sql` classifies builtin bank/cash and installed
 online connectors. `payment_policy.sql` resolves a policy once during checkout;
 `payment_info.data.payment_policy` stores its metadata and cash instructions.
@@ -238,3 +273,57 @@ removes bank write rights. CASH movements remain correctable by the actual
 unit manager. The shared cash dialog keeps its draft during nested setup and
 history navigation. The transaction foreign key restricts account deletion
 instead of cascading away financial facts.
+
+The cash-default forward repairs inferred policy disables only for the activated
+`vstupenky.online` organization. It uses the policy writer fence and retains
+explicit decisions, unit overrides and all other organizations’ stored policies.
+
+## Discount codes and sold prices
+
+`database/functions/eshop_discounts/` owns code definitions, revisions/audit,
+quote validation, decimal largest-remainder allocation and atomic consumption.
+The `discount_codes` occasion feature defaults off. The existing occasion fence
+serializes feature saves against checkout; the finalizer checks current policy
+and the quote fingerprint after admission/product locks, before payment.
+
+`orders.data.tickets[].products[].price` is the sold **net** price. Its adjacent
+`base_price` and `discount_amount` explain the price; `order_product_ticket`
+contains the same explicit base/discount/net columns. No-code orders retain
+their old amounts. Backfill reads stored sold JSON only; unknown historical
+item amounts stay null. `order_discounts.snapshot` survives cancellation,
+detachment and catalogue deletion and never restores a use on cancellation,
+expiry or refund. Statistics group discount amounts by currency.
+
+The existing order command identity includes the discount and fingerprint.
+The same UUID replays the same order, price and consumption. Product repricing,
+seat swaps and replacements of a discounted order are rejected by shared SQL
+owners; contact/nonfinancial corrections, delivery, cancellation and refund
+continue through their existing owners. Preprinted batches do not apply codes.
+Waitlist registration consumes none; each acceptance explicitly supplies a new
+code and uses the same finalizer.
+
+Bank, cash and hosted payments use the ordinary payment engine with the net
+amount. Discounted Fakturoid orders use its existing invoice preparation lease
+and receipt for unknown-outcome recovery, and invoice the stored net lines with
+the adapter's existing zero-VAT treatment. There is no second tax/payment engine.
+Public quote responses disclose only totals and the selected public product
+lines; definitions, audit and usage statistics require the typed organizer
+predicates. Raw codes never belong in URLs, analytics or generic error logs.
+
+The local forward is assembled with
+`python3 automation/assemble-discount-codes-migration.py`; application and
+activation are separate operational steps documented in
+[the implementation receipt](../../../docs/plans/discount-codes-RESULT-2026-11-15.md).
+
+## Customer order changes
+
+The existing customer overview contains self-service; there is no parallel portal.
+`CustomerOrderChanges` consumes the server's allowed-action/preview contract through
+`customer-order-changes`. Its write token remains in memory, confirmation is explicit,
+and uncertain retries preserve the same command UUID and proposal. The organizer's
+form settings own the policy draft; only the ordinary form Save persists it.
+
+`CustomerOrderRequests` belongs to the existing order detail and uses the independently
+protected staff decision command. It never represents a request status as refunded
+money. Shared SQL ownership, lock ordering and automatic/manual boundaries are
+documented in `database/functions/customer_order_changes/README.md`.

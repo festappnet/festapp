@@ -1,0 +1,16 @@
+Found 2 test file(s) to execute.
+>>> Setup: Resetting Sequences (Global)...
+>>> Setup Complete.
+
+
+▶ Running: database/tests/canonical_mutation_source_parity_test.sql
+
+▶ Running: database/tests/notification_center/provider_connection_alerts_test.sql
+  ✔ PASSED (238 ms): database/tests/canonical_mutation_source_parity_test.sql
+  [NOTICE] there is already a transaction in progress
+  [NOTICE] there is no transaction in progress
+  ✔ PASSED (409 ms): database/tests/notification_center/provider_connection_alerts_test.sql
+
+==================================================
+SUMMARY: 2 Passed, 0 Failed
+==================================================

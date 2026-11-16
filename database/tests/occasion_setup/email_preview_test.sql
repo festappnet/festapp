@@ -8,6 +8,8 @@ BEGIN
  PERFORM public.create_user_for_test('email_preview_editor','email_preview_editor@test.local');
  actor:=public.get_user_id('email_preview_editor');
  INSERT INTO public.organizations(title) VALUES('Preview fixture') RETURNING id INTO org;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(org,'bank');
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  UPDATE public.user_info SET organization=org WHERE id=actor;
  INSERT INTO public.units(title,organization,data)
   VALUES('Preview unit',org,'{"reply_to":"unit@example.invalid","communication_tone":"informal"}') RETURNING id INTO target;

@@ -193,6 +193,43 @@ void main() {
     ).writeAsStringSync(entry.readAsStringSync());
     expect(checkCaseRegistration(root), contains(contains('exactly once')));
   });
+  test(
+    'CI entrypoints cover cases without hiding missing or duplicate registrations',
+    () {
+      final tests = Directory('${root.path}/test')..createSync();
+      final cases = File('${tests.path}/example_cases.dart')
+        ..writeAsStringSync('void main() {}');
+      final wrapper = File('${tests.path}/ci_cases.dart')
+        ..writeAsStringSync(
+          "import 'example_cases.dart' as cases; void main() { cases.main(); }",
+        );
+      final covered = <String>{};
+      expect(
+        checkCaseRegistration(
+          root,
+          entrypoints: [wrapper],
+          registeredCases: covered,
+        ),
+        isEmpty,
+      );
+      expect(
+        checkCaseRegistration(root, externallyRegistered: covered),
+        isEmpty,
+      );
+      File(
+        '${tests.path}/forgotten_cases.dart',
+      ).writeAsStringSync('void main() {}');
+      expect(
+        checkCaseRegistration(root, externallyRegistered: covered),
+        contains(contains('forgotten_cases.dart')),
+      );
+      expect(
+        checkCaseRegistration(root, entrypoints: [wrapper, cases]),
+        contains(contains('exactly once')),
+      );
+    },
+  );
+
   test('helper-only cases imports do not register or duplicate main', () {
     final tests = Directory('${root.path}/test')..createSync();
     File(

@@ -1,3 +1,4 @@
+@import url('./discount_summary.css');
 /* Form Page Layout */
 #form-page-container {
     padding: 24px 10px 20px 10px; 
@@ -914,3 +915,23 @@ body[data-shared-appearance] { background: var(--form-background); }
 body.festapp-consent-space { padding-bottom:76px; }
 html:has(body.festapp-consent-space) { scroll-padding-bottom:76px; }
 body.festapp-consent-space :is(input,button,select,textarea,a[href],[tabindex]) { scroll-margin-bottom:76px; }
+
+.overview-customer-changes { margin-block: 2rem; padding-block: 1.5rem; border-block: 1px solid var(--border-color, #cbd5e1); }
+.overview-customer-changes form { display: grid; gap: 1rem; max-width: 42rem; margin-block: 1rem; }
+.customer-change-field { display: grid; gap: .375rem; }
+.overview-customer-changes input, .overview-customer-changes textarea, .overview-customer-changes select { box-sizing: border-box; width: 100%; max-width: 100%; font: inherit; color: inherit; background: var(--surface-color, white); padding: .75rem; border: 1px solid var(--border-color, #64748b); border-radius: .375rem; }
+.overview-customer-changes button { min-height: 44px; padding: .625rem 1rem; cursor: pointer; }
+.overview-customer-changes button:disabled { cursor: wait; opacity: .65; }
+.overview-customer-changes :focus-visible { outline: 2px solid var(--primary-color, #1565c0); outline-offset: 3px; }
+
+.overview-customer-changes fieldset { min-inline-size: 0; padding: .5rem .75rem; border: 1px solid var(--border-color, #64748b); border-radius: .375rem; }
+.overview-customer-changes fieldset label { display: flex; align-items: flex-start; gap: .75rem; min-height: 44px; box-sizing: border-box; padding-block: .5rem; cursor: pointer; overflow-wrap: anywhere; }
+.overview-customer-changes input[type="checkbox"] { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; margin-block-start: .125rem; padding: 0; accent-color: var(--primary-color, #1565c0); }
+
+.discount-code-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+.discount-code-actions > button { margin: 0; }

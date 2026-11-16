@@ -77,7 +77,7 @@ class _TicketSettingsState extends State<TicketSettings> {
     final organization = RightsService.currentOccasion()?.organization;
     if (organization == null) return;
     try {
-      final ready = await Supabase.instance.client.rpc('ticket_wallet_ready', params: {'p_organization': organization});
+      final ready = await widget.service.walletReady(organization);
       if (mounted) setState(() => _walletReady = ready == true);
     } catch (_) { /* Optional integration stays unavailable. */ }
   }
@@ -333,21 +333,15 @@ class _TicketSettingsState extends State<TicketSettings> {
                   RightsService.currentOccasion()?.aggregateVersion
                 ]),
                 mode: widget.feature.deliveryMode,
-                load: () async {
-                  final data = await Supabase.instance.client
-                      .rpc('get_occasion_setup_email_preview', params: {
-                    'p_id': null,
-                    'p_expected_revision': null,
-                    'p_message_type': 'order_tickets',
-                    'p_occasion': widget.occasionId,
-                    'p_delivery_mode': widget.feature.deliveryMode.value,
-                    'p_wallet_enabled': widget.feature.walletEnabled,
-                  });
-                  return Map<String, dynamic>.from(data as Map);
-                }),
+                load: () => widget.service.deliveryPreview(
+                    occasionId: widget.occasionId,
+                    mode: widget.feature.deliveryMode,
+                    walletEnabled: widget.feature.walletEnabled)),
           const SizedBox(height: 16),
         ],
         TicketWalletAppearanceEditor(
+            uploadImage: (bytes) => widget.service.uploadWalletImage(bytes,
+                widget.occasionId > 0 ? widget.occasionId : null, widget.service.setupUnitId),
             feature: widget.feature,
             occasion: widget.previewOccasion?.toJson() ?? RightsService.currentOccasion()?.toJson() ?? {},
             occasionId: widget.occasionId > 0 ? widget.occasionId : null,

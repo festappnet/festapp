@@ -1,0 +1,138 @@
+{
+  "source": "a37389cc225a139725a935d014f1df10f091484e",
+  "records": [
+    {
+      "at": "2026-11-13T03:38:12.978Z",
+      "event": "oauth_connected",
+      "label": "regional",
+      "purpose": "ticketing",
+      "issuer": "https://mcp.festapp.net",
+      "tenant": "festapptickets",
+      "modern": "2026-07-28 modern (pinned)",
+      "legacy": "2025-11-25",
+      "accessibleOccasions": 1,
+      "tools": 6
+    },
+    {
+      "at": "2026-11-13T03:39:02.466Z",
+      "event": "scenario_passed",
+      "label": "regional",
+      "tool": "festapp_orders_report",
+      "canonicalResultDigest": "202550bc7a0e84aa56b251714efeb074b374e1cb94e8fd2522923bf6c07cb98d",
+      "readOnly": true
+    },
+    {
+      "at": "2026-11-13T03:39:15.327Z",
+      "event": "callback_failed",
+      "code": "INVALID_CALLBACK_ISSUER"
+    },
+    {
+      "at": "2026-11-13T03:40:18.931Z",
+      "event": "oauth_connected",
+      "label": "biscup",
+      "purpose": "program",
+      "issuer": "https://mcp.festapp.net",
+      "tenant": "doobiscup",
+      "modern": "2026-07-28 modern (pinned)",
+      "legacy": "2025-11-25",
+      "accessibleOccasions": 1,
+      "tools": 8
+    },
+    {
+      "at": "2026-11-13T03:40:32.718Z",
+      "event": "refresh_passed",
+      "label": "regional",
+      "rotated": true,
+      "authenticatedReadAfterRefresh": true
+    },
+    {
+      "at": "2026-11-13T03:40:34.225Z",
+      "event": "refresh_passed",
+      "label": "biscup",
+      "rotated": true,
+      "authenticatedReadAfterRefresh": true
+    },
+    {
+      "at": "2026-11-13T03:40:35.934Z",
+      "event": "scenario_passed",
+      "label": "biscup",
+      "tool": "festapp_events_list",
+      "canonicalResultDigest": "064718173686c721075c7133c7847ed9c8fb9992d6818da587dbec99bea2ebc9",
+      "readOnly": true
+    },
+    {
+      "at": "2026-11-13T03:40:37.253Z",
+      "event": "cross_tenant_occasion_denied",
+      "label": "regional",
+      "otherLabel": "biscup",
+      "tool": "festapp_orders_report"
+    },
+    {
+      "at": "2026-11-13T03:40:38.387Z",
+      "event": "cross_tenant_occasion_denied",
+      "label": "biscup",
+      "otherLabel": "regional",
+      "tool": "festapp_events_list"
+    },
+    {
+      "at": "2026-11-13T03:40:38.502Z",
+      "event": "request_context_boundaries_passed",
+      "label": "regional",
+      "forgedOrganizationDenied": true,
+      "foreignOriginStatus": 403
+    },
+    {
+      "at": "2026-11-13T03:40:38.605Z",
+      "event": "request_context_boundaries_passed",
+      "label": "biscup",
+      "forgedOrganizationDenied": true,
+      "foreignOriginStatus": 403
+    },
+    {
+      "at": "2026-11-13T03:40:38.820Z",
+      "event": "audience_isolation_passed",
+      "label": "regional",
+      "globalTokenRegionalStatus": 401
+    },
+    {
+      "at": "2026-11-13T03:40:38.879Z",
+      "event": "audience_isolation_passed",
+      "label": "biscup",
+      "globalTokenRegionalStatus": 401
+    },
+    {
+      "at": "2026-11-13T03:45:24.118Z",
+      "event": "ui_revocation_passed",
+      "label": "regional",
+      "accessStatus": 401,
+      "refreshStatus": 400
+    },
+    {
+      "at": "2026-11-13T03:45:25.685Z",
+      "event": "refresh_passed",
+      "label": "biscup",
+      "rotated": true,
+      "authenticatedReadAfterRefresh": true
+    },
+    {
+      "at": "2026-11-13T03:45:27.637Z",
+      "event": "scenario_passed",
+      "label": "biscup",
+      "tool": "festapp_events_list",
+      "canonicalResultDigest": "064718173686c721075c7133c7847ed9c8fb9992d6818da587dbec99bea2ebc9",
+      "readOnly": true
+    },
+    {
+      "at": "2026-11-13T03:47:12.222Z",
+      "event": "ui_revocation_passed",
+      "label": "biscup",
+      "accessStatus": 401,
+      "refreshStatus": 400
+    }
+  ],
+  "qualification": {
+    "successfulFlows": "Both selected contexts completed from /start through PKCE and modern/legacy SDK reads without reload or cookie clearing on exact final source.",
+    "cancelledAutomationFlow": "One incorrect selector automation choice was cancelled before approval or grant creation; the verifier recorded INVALID_CALLBACK_ISSUER because its success-only callback handler requires a code. A fresh correct BISCUP flow subsequently passed.",
+    "testGrantCleanup": "Both global verifier connections revoked through first-party UI; their access tokens returned401 and refresh400. BISCUP remained usable after regional grant revocation."
+  }
+}

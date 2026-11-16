@@ -3,6 +3,7 @@
 Build Dockerfile.remote first; all state and Caddy containers are disposable.
 """
 import json
+import os
 import shlex
 from pathlib import Path
 import subprocess
@@ -17,8 +18,8 @@ name = 'festapp-mcp-smoke-' + uuid.uuid4().hex[:10]
 volume = name + '-state'
 
 
-def run(*args, success=True):
-    result = subprocess.run(args, text=True, capture_output=True)
+def run(*args, success=True, env=None):
+    result = subprocess.run(args, text=True, capture_output=True, env=env)
     if success and result.returncode:
         raise RuntimeError(f'{args[0:3]}: {result.stderr[-3000:]} {result.stdout[-1000:]}')
     return result
@@ -45,8 +46,18 @@ try:
         'node', '--input-type=module', '-e', bootstrap)
     run('docker', 'run', '--rm', '--network', 'none', '-v', volume + ':/state', IMAGE,
         'node', 'tools/festapp/src/remote/main.mjs', 'secrets', 'init', '/state/keys/secrets.json')
-    compose = (ROOT / 'tools/festapp/remote-compose.yml').read_text()
-    health = compose.split('test: [CMD, node, -e, "', 1)[1].split('"]', 1)[0]
+    # Compose owns interpolation, including the per-service port. Use only
+    # disposable inputs and do not load a workstation or production .env file.
+    compose_env = {**os.environ, 'FESTAPP_MCP_IMAGE': IMAGE,
+                   'FESTAPP_MCP_CONFIG': '/fixture/config.json',
+                   'FESTAPP_MCP_SECRETS': '/fixture/secrets.json',
+                   'FESTAPP_MCP_DATA': '/fixture/data', 'FESTAPP_MCP_PORT': '3399'}
+    compose = json.loads(run('docker', 'compose', '--env-file', '/dev/null', '-f',
+                             str(ROOT / 'tools/festapp/remote-compose.yml'),
+                             'config', '--format', 'json', env=compose_env).stdout)
+    health_test = compose['services']['mcp']['healthcheck']['test']
+    assert health_test[:3] == ['CMD', 'node', '-e'] and len(health_test) == 4
+    health = health_test[3]
     health = health.replace('/run/festapp/config.json', '/state/config.json')
     command = ['node', 'tools/festapp/src/remote/main.mjs', 'serve', '/state/config.json',
                '--secrets', '/state/keys/secrets.json', '--data', '/state/data', '--port', '3399']

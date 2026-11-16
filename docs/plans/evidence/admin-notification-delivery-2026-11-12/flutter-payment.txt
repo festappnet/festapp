@@ -1,0 +1,17 @@
+00:00 +0: loading /Users/miakh/source/festapp/test/components/notification_center/notification_batch_panel_test.dart
+00:00 +0: (setUpAll)
+[🌎 Easy Localization] [DEBUG] Localization initialized
+00:00 +0: email controls use the existing settings panel and save the selected scope
+[🌎 Easy Localization] [DEBUG] Start
+[🌎 Easy Localization] [DEBUG] Init state
+[🌎 Easy Localization] [INFO] Start locale loaded cs
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+[🌎 Easy Localization] [DEBUG] Build
+[🌎 Easy Localization] [DEBUG] Init Localization Delegate
+[🌎 Easy Localization] [DEBUG] Init provider
+[🌎 Easy Localization] [DEBUG] Load Localization Delegate
+00:00 +1: (tearDownAll)
+00:00 +1: All tests passed!

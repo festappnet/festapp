@@ -1,0 +1,17 @@
+{
+  "canvas": {
+    "package": "@napi-rs/canvas-linux-arm64-gnu@1.0.11",
+    "source": "https://registry.npmjs.org/@napi-rs/canvas-linux-arm64-gnu/-/canvas-linux-arm64-gnu-1.0.11.tgz",
+    "tarball_sha256": "de222c2b77fd298a09d35547bc9e56ba2c268f5ae6673caa28b6cc21b94076cb",
+    "sbom_sha256": "19ba0c193ca252822e955a7a08ee701a3b20cacbb84134b3378f17a4813a09b2",
+    "binary_sha256": "e55ef6d796e99e7fe7e4b917dfb5ff02f647bf0242018dcc550ea4eeba414533",
+    "comparison": "All 106 library component records, including 93 with hashes, exactly match the x64 GNU 1.0.11 SBOM; binary component differs by architecture. 13 library records carry no checksum in either SBOM."
+  },
+  "keyring": {
+    "package": "@napi-rs/keyring-linux-arm64-gnu@2.1.2",
+    "source": "https://registry.npmjs.org/@napi-rs/keyring-linux-arm64-gnu/-/keyring-linux-arm64-gnu-2.1.2.tgz",
+    "tarball_sha256": "d15365537f71e4e75b06f65d4d839cbc11d86dbdd547faa7d146124fff47080d",
+    "notice_sha256": "7e31f56ddc47a7e8c30974772c4bfa1562f275c375dd29e783419396065dfa37",
+    "comparison": "Differs from x64 GNU notice only in the filename and architecture named in the first paragraph."
+  }
+}

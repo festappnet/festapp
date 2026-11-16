@@ -1,0 +1,20 @@
+{
+  "runId": "20261113T092221-16c68a1e5b1b",
+  "head": "97a579e218c1793769a195a88861382de47769ee",
+  "jobs": [
+    {
+      "name": "server-policy",
+      "status": "PASS"
+    }
+  ],
+  "units": {
+    "mcp-auth-install": {
+      "status": "PASS"
+    },
+    "mcp-auth-contract": {
+      "status": "PASS"
+    }
+  },
+  "apiCompatibility": "Released97 immutable baseline compatible; api:check now includes this gate automatically.",
+  "previousFailure": "20261113T092109-c25adbd85813 retained; regenerated stale MCP reference after package script fingerprint changed."
+}

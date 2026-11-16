@@ -1,3 +1,4 @@
+import '../../forms/sale_opening_strings.dart';
 import '../../ticket_layout/ticket_delivery_strings.dart';
 import '../../ticket_layout/views/ticket_email_preview.dart';
 import '../../features/ticket_feature.dart';
@@ -78,6 +79,12 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   _suggestion;
   TicketDeliveryMode? get _ticketMode {
     if (widget.template.code != 'TICKET_ORDER_PAYMENT_DONE') return null;
+    final projectedMode = _authoringContext?.ticketDeliveryMode;
+    if (projectedMode != null) {
+      return TicketDeliveryMode.values
+          .where((mode) => mode.value == projectedMode)
+          .firstOrNull;
+    }
     final occasion = widget.emailTemplatesResponse.occasion;
     if (occasion == null) return null;
     final current = RightsService.currentOccasion();
@@ -153,7 +160,17 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               (s) =>
                   s.scenario == previous?.scenario &&
                   s.locale == previous?.locale &&
-                  s.tone == previous?.tone,
+                  s.tone == previous?.tone &&
+                  (_authoringContext == null ||
+                      s.locale == _authoringContext!.language),
+            )
+            .firstOrNull ??
+        _scenarios
+            .where(
+              (s) =>
+                  s.locale == _authoringContext?.language &&
+                  (examples.context?.communicationTone == null ||
+                      s.tone == examples.context?.communicationTone),
             )
             .firstOrNull ??
         _scenarios
@@ -163,6 +180,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     _bodyProvider.inlineTicketsEnabled =
         _ticketMode != null && _ticketMode != TicketDeliveryMode.pdfAttachment;
     _bodyProvider.includesPdfTickets = _ticketMode?.includesPdf == true;
+    _bodyProvider.walletTicketsEnabled =
+        _ticketMode != null && _authoringContext?.walletEnabled == true;
     _subjectProvider.scenario = _scenario;
     _bodyProvider.scenario = _scenario;
   }
@@ -389,9 +408,13 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             TicketEmailPreview.ticketBody(
                               _bodyDraft?.html ?? _htmlContent ?? '',
                               _ticketMode,
+                              walletEnabled: _bodyProvider.walletTicketsEnabled,
                             ),
                           ),
                           'wrapper': _authoringContext!.wrapperHtml,
+                          'walletEnabled': _bodyProvider.walletTicketsEnabled,
+                          'walletTicketCount': 1,
+                          'walletLanguage': _scenario!.locale,
                           'attachments': TicketEmailPreview.sampleAttachments(
                             _ticketMode,
                             1,
@@ -609,6 +632,10 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   Widget _buildHtmlParent(BuildContext context) {
     // Get usage details from the email template (read-only info).
     final usageDetails = widget.template.getUsageDetails();
+    if (widget.template.code == 'sale_opening_opened' &&
+        _examples?.context?.ticketsEnabled == true) {
+      usageDetails['description'] = SaleOpeningStrings.explanation;
+    }
     return AppAlertDialog(
       onClose: _requestClose,
       title: Row(

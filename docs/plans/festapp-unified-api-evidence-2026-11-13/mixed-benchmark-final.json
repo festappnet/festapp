@@ -1,0 +1,453 @@
+{
+  "baselineImage": "sha256:e6c171dace2788670959a4f37edcf60947b7d87c4cc1fe05f985e94acb514199",
+  "candidateImage": "sha256:350aced2ee377f6a1a6f01b8e5963807a7af84024c60f46fb00aabadddf52a9b",
+  "reviewBase": "8aa7379d3a2f337fe298b48bbd2c318932cc5106",
+  "baselineSource": "a37389cc225a139725a935d014f1df10f091484e",
+  "baselineRuntimeMatchesReviewBase": true,
+  "baseline": {
+    "ok": true,
+    "mode": "baseline",
+    "runtimeDigest": "7c7a4dbf4d867f658b5813ba72ef3647c0b0ed3141e58b73d8a0bd0301575d79",
+    "node": "v24.22.1",
+    "limits": {
+      "heapMiB": 192,
+      "cgroup": {
+        "memory.peak": "206909440",
+        "memory.max": "402653184",
+        "cpu.max": "50000 100000"
+      }
+    },
+    "dataset": {
+      "rows": 50,
+      "columns": [
+        "id",
+        "symbol",
+        "state",
+        "ticketCount",
+        "price",
+        "currency",
+        "paid"
+      ],
+      "preview": "canonical named long-scenario renderer PDF with 32 elements and near-limit text input; distinct trailing PDF comment per preview",
+      "previewFixtureSha256": "4ed3782b3e79ed0da0692e9de94712dae419efd6b3b73a563551612b0afc9fcb"
+    },
+    "probeCount": 100,
+    "intervalMs": 1250,
+    "readCpuBefore": "usage_usec 945623\nuser_usec 839519\nsystem_usec 106103\ncore_sched.force_idle_usec 0\nnr_periods 19\nnr_throttled 18\nthrottled_usec 746727\nnr_bursts 0\nburst_usec 0\n",
+    "readCpuAfter": "usage_usec 2752825\nuser_usec 2410702\nsystem_usec 342122\ncore_sched.force_idle_usec 0\nnr_periods 873\nnr_throttled 20\nthrottled_usec 838836\nnr_bursts 0\nburst_usec 0\n",
+    "readCpuUsage": {
+      "user": 1571318,
+      "system": 235953
+    },
+    "mcpSamples": [
+      7.277811000007205,
+      7.382307000007131,
+      7.434064000000944,
+      7.571243999998842,
+      7.609747999995307,
+      7.78170699999464,
+      7.818375000002561,
+      7.974509000006947,
+      7.983256999999867,
+      8.001824999999371,
+      8.03391699999338,
+      8.06233699999575,
+      8.08031100000153,
+      8.108376999996835,
+      8.129456000009668,
+      8.16534700000193,
+      8.211083999995026,
+      8.308460999993258,
+      8.31025999999838,
+      8.313561000002665,
+      8.344759999992675,
+      8.429298000002746,
+      8.43531300000177,
+      8.4396310000011,
+      8.452846000000136,
+      8.461098999992828,
+      8.59844300000259,
+      8.699401999998372,
+      8.768691999997827,
+      8.806515999996918,
+      8.829203000001144,
+      8.958212000001367,
+      9.001327000005404,
+      9.004037999999127,
+      9.064720999998826,
+      9.202878999996756,
+      9.233469999999215,
+      9.234403000009479,
+      9.30532799998764,
+      9.355752999996184,
+      9.451757999995607,
+      9.64814099999785,
+      9.671147000000929,
+      9.73417999999947,
+      9.759486999995715,
+      9.775479999996605,
+      9.77639900000213,
+      9.797288999998273,
+      9.834228000006988,
+      9.842036999998527,
+      9.90547099999094,
+      9.911710000000312,
+      9.98043099998904,
+      9.981209999999919,
+      10.051645999992616,
+      10.11792400000013,
+      10.163730000000214,
+      10.336262999997416,
+      10.423735000003944,
+      10.543491999997059,
+      10.550273000000743,
+      10.604929000000993,
+      10.747479999998177,
+      10.78044299999965,
+      10.841203000003588,
+      10.852582999999868,
+      10.961301000003004,
+      11.134574999996403,
+      11.166370999999344,
+      11.17149100000097,
+      11.411016999991261,
+      11.452271000001929,
+      11.489386000001105,
+      11.736654000007547,
+      11.790392000002612,
+      12.042409000001498,
+      12.311334999999872,
+      12.363291999994544,
+      12.471185000002151,
+      12.530564000000595,
+      12.851920999994036,
+      13.167569999999614,
+      13.45440199999939,
+      13.700882999997702,
+      14.174338000004354,
+      14.624524999999267,
+      14.793957000001683,
+      14.828204000001278,
+      15.440853000000061,
+      16.734651000000667,
+      17.184129999994184,
+      17.240935000001627,
+      17.599700000006123,
+      17.656330000005255,
+      18.370498999996926,
+      19.084458999997878,
+      19.329391999999643,
+      19.77774999999383,
+      22.58459799999946,
+      69.28243899999984
+    ],
+    "workload": "12 warm MCP reads, 100 measured MCP canaries + 100 equal background reads (baseline MCP, candidate API) at 1.25s cadence, 4 50-row exports and 4 distinct canonical PDF/raster previews each concurrent with MCP read and followed by authorized artifact read, 12 refreshes, expired-token rejection, GC recovery",
+    "documents": [
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 22.44084300000395
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 1205.483938999998
+      },
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 30.722131999995327
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 922.7185230000032
+      },
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 18.368677000005846
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 846.6034609999915
+      },
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 18.44009499999811
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 900.8531890000013
+      }
+    ],
+    "mcpP95Ms": 18.370498999996926,
+    "memory": {
+      "idle": {
+        "rss": 135278592,
+        "heapTotal": 55603200,
+        "heapUsed": 49154152,
+        "external": 4731048,
+        "arrayBuffers": 399363
+      },
+      "afterWork": {
+        "rss": 241352704,
+        "heapTotal": 72019968,
+        "heapUsed": 58120344,
+        "external": 18641186,
+        "arrayBuffers": 7241182
+      },
+      "afterGc": {
+        "rss": 240840704,
+        "heapTotal": 67563520,
+        "heapUsed": 58152184,
+        "external": 13670487,
+        "arrayBuffers": 2339700
+      },
+      "peakRss": 247980032
+    },
+    "eventLoopP95Ms": 10.477567,
+    "limitations": [
+      "fixture backend/renderer response; production renderer/network/DB costs excluded",
+      "32-element near-input-limit text fixture; remote image-worker/network failure costs excluded",
+      "queue exhaustion and disconnect admission covered by targeted HTTP tests, not this timing sample"
+    ]
+  },
+  "candidate": {
+    "ok": true,
+    "mode": "candidate",
+    "runtimeDigest": "659700fe31e459de0b1ba3954e59f8d47c677d205fe80646eb82cb5ace920deb",
+    "node": "v24.22.1",
+    "limits": {
+      "heapMiB": 192,
+      "cgroup": {
+        "memory.peak": "192720896",
+        "memory.max": "402653184",
+        "cpu.max": "50000 100000"
+      }
+    },
+    "dataset": {
+      "rows": 50,
+      "columns": [
+        "id",
+        "symbol",
+        "state",
+        "ticketCount",
+        "price",
+        "currency",
+        "paid"
+      ],
+      "preview": "canonical named long-scenario renderer PDF with 32 elements and near-limit text input; distinct trailing PDF comment per preview",
+      "previewFixtureSha256": "4ed3782b3e79ed0da0692e9de94712dae419efd6b3b73a563551612b0afc9fcb"
+    },
+    "probeCount": 100,
+    "intervalMs": 1250,
+    "readCpuBefore": "usage_usec 658759\nuser_usec 576994\nsystem_usec 81764\ncore_sched.force_idle_usec 0\nnr_periods 13\nnr_throttled 12\nthrottled_usec 724428\nnr_bursts 0\nburst_usec 0\n",
+    "readCpuAfter": "usage_usec 2508200\nuser_usec 2195271\nsystem_usec 312928\ncore_sched.force_idle_usec 0\nnr_periods 887\nnr_throttled 13\nthrottled_usec 840066\nnr_bursts 0\nburst_usec 0\n",
+    "readCpuUsage": {
+      "user": 1620159,
+      "system": 229985
+    },
+    "mcpSamples": [
+      6.502139000003808,
+      6.897698000000673,
+      6.971944999997504,
+      7.0432829999990645,
+      7.112240999995265,
+      7.177080000001297,
+      7.191624999999476,
+      7.268620999995619,
+      7.316748999997799,
+      7.596004999999423,
+      7.608251999990898,
+      7.635548000005656,
+      7.660673000005772,
+      7.6807150000095135,
+      7.694555000001856,
+      7.7977200000023,
+      7.800885999997263,
+      7.881728000000294,
+      7.890805999995791,
+      7.893634000007296,
+      7.914058000002115,
+      7.955390000002808,
+      8.071987000002991,
+      8.116312999998627,
+      8.157824999998411,
+      8.249524999999267,
+      8.317280000002938,
+      8.342489000002388,
+      8.55546299999969,
+      8.582495000002382,
+      8.687990000005811,
+      8.758628999999928,
+      8.807339999999385,
+      8.848172999998496,
+      8.864240999988397,
+      8.914171999997052,
+      8.92629499999748,
+      9.052933999999368,
+      9.054840999997396,
+      9.225124999997206,
+      9.261710999999195,
+      9.613327999999456,
+      9.613569000001007,
+      9.637688000002527,
+      9.658806999999797,
+      9.673284000000422,
+      9.87106700000004,
+      9.904410000002827,
+      9.904750000001513,
+      10.000692999994499,
+      10.037752000000182,
+      10.124655999999959,
+      10.311198999988846,
+      10.330595999999787,
+      10.374786000000313,
+      10.395842999998422,
+      10.5029130000039,
+      10.511895999999979,
+      10.529481000000033,
+      10.579330000007758,
+      10.609351000002789,
+      10.644169999999576,
+      10.695646000000124,
+      10.71472399999766,
+      10.788129000007757,
+      10.86771900000167,
+      11.014842000004137,
+      11.061286999999538,
+      11.12207699999999,
+      11.126532000002044,
+      11.39184000000023,
+      11.429685000010068,
+      11.762283000003663,
+      11.828360999992583,
+      12.48031799999444,
+      12.733585999998468,
+      13.365599999997357,
+      13.424981999998636,
+      13.51419100000021,
+      13.804282999999486,
+      13.930230999998457,
+      14.945686000002752,
+      14.978856999998243,
+      15.18554099999892,
+      15.478797999996459,
+      15.509458999993512,
+      15.538201000003028,
+      15.704217999998946,
+      16.248440999988816,
+      16.582710000002407,
+      16.936423999999533,
+      17.251132000004873,
+      18.24850400000014,
+      18.270776999997906,
+      19.482331999999587,
+      23.113801999992575,
+      27.328695999996853,
+      31.323884999990696,
+      36.963707000002614,
+      49.786759000009624
+    ],
+    "workload": "12 warm MCP reads, 100 measured MCP canaries + 100 equal background reads (baseline MCP, candidate API) at 1.25s cadence, 4 50-row exports and 4 distinct canonical PDF/raster previews each concurrent with MCP read and followed by authorized artifact read, 12 refreshes, expired-token rejection, GC recovery",
+    "documents": [
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 34.46021900000051
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 1600.359181000007
+      },
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 24.78220699999656
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 1236.9489979999926
+      },
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 85.9231390000059
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 1199.528621000005
+      },
+      {
+        "kind": "export",
+        "bytes": 2957,
+        "elapsedMs": 28.86418999999296
+      },
+      {
+        "kind": "preview",
+        "bytes": 216489,
+        "elapsedMs": 1235.2410430000018
+      }
+    ],
+    "mcpP95Ms": 19.482331999999587,
+    "memory": {
+      "idle": {
+        "rss": 143175680,
+        "heapTotal": 60059648,
+        "heapUsed": 51943824,
+        "external": 4868753,
+        "arrayBuffers": 464899
+      },
+      "afterWork": {
+        "rss": 234946560,
+        "heapTotal": 73773056,
+        "heapUsed": 60180800,
+        "external": 19083923,
+        "arrayBuffers": 2923416
+      },
+      "afterGc": {
+        "rss": 234434560,
+        "heapTotal": 69316608,
+        "heapUsed": 60492440,
+        "external": 13801559,
+        "arrayBuffers": 2470772
+      },
+      "peakRss": 241238016
+    },
+    "eventLoopP95Ms": 10.510335,
+    "limitations": [
+      "fixture backend/renderer response; production renderer/network/DB costs excluded",
+      "32-element near-input-limit text fixture; remote image-worker/network failure costs excluded",
+      "queue exhaustion and disconnect admission covered by targeted HTTP tests, not this timing sample"
+    ]
+  },
+  "comparison": {
+    "mcpP95ChangePercent": 6.052274355763809,
+    "warmedIdleRssDeltaMiB": 7.53125,
+    "candidateContainerPeakMiB": 183.79296875
+  },
+  "budgetDecision": {
+    "latency": "PASS below+10% under declared workload",
+    "containerPeak": "PASS below300MiB",
+    "idleRss": "PASS below16MiB in final controlled pair; previous17.34375MiB observation explicitly accepted by user",
+    "userAcceptedPreviousApprox17MiB": true,
+    "limitsRaised": false
+  },
+  "otherOwnedChecksConcurrent": false,
+  "hostLoad": [
+    " 7:24  up 1 day, 17:28, 2 users, load averages: 5.07 4.52 4.54",
+    " 7:28  up 1 day, 17:32, 2 users, load averages: 3.72 3.88 4.23"
+  ],
+  "limitations": [
+    "Synthetic backend/canonical renderer fixture, remote network/image-worker costs excluded.",
+    "100 equal MCP canaries +100 equal background business operations at1.25s cadence; prior unequal/burst and concurrent-CI samples retained separately.",
+    "Eight bounded export/32-element preview requests with MCP reads and artifacts; 12 refreshes; queue/disconnect/exhaustion correctness qualified by separate HTTP tests."
+  ]
+}

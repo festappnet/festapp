@@ -1,0 +1,50 @@
+[
+  {
+    "url": "https://api.festapp.net/integrations/v1/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "5fe6d502e985462d624f084f20fa6522c618267f13a9624232a9616799123a3a"
+  },
+  {
+    "url": "https://api.festapp.net/integrations/v1/proofs/dpop/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "d5788d6b8a642f26fd21a0af5619b4d44e5cfff93da61d21524506c35cc6ad90"
+  },
+  {
+    "url": "https://api.festapp.net/integrations/v1/profiles/order-summary/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "f4559e8fd01e897575d8173cca4674270a4389cc57addd8d16d3be26cc3d0105"
+  },
+  {
+    "url": "https://api.festapp.net/integrations/v1/profiles/order-summary/proofs/dpop/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "d3bf49e80f03074375c9db4fe8bafaeac0f65f7e8362cd1f79051e8a36f598f1"
+  },
+  {
+    "url": "https://api.vstupenky.online/integrations/v1/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "43be9254c27a126d35855d74a2e460f75cdeff81494c0b5318f15fd7ce18f2b9"
+  },
+  {
+    "url": "https://api.vstupenky.online/integrations/v1/proofs/dpop/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "fbd5a838b57d115d5f5157faa0e5b2d7245b93fc328881105a033c645488f408"
+  },
+  {
+    "url": "https://api.vstupenky.online/integrations/v1/profiles/order-summary/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "8bc2000fe6430cd283743c2af066f1c3d59a518e27c9e8382614ea25fd80eb5e"
+  },
+  {
+    "url": "https://api.vstupenky.online/integrations/v1/profiles/order-summary/proofs/dpop/manifest.json",
+    "status": 200,
+    "sourceSha": "d9f0e34cd5fc53e1873a63762017c952ad44cfb2",
+    "projectionDigest": "28d864ca9af52fc81f3774498a55b4d4feed917e3a9ab1b98268afee0cb3ae3b"
+  }
+]

@@ -16,7 +16,7 @@ async function fixture(t) {
     'flutter_bootstrap.js':'bootstrap','festapp_update_prompt.js':'recovery',
     'festapp-version.json':JSON.stringify({version:'1.2.3+4',main:'main.dart.1.2.3-4.js'}),
     'main.dart.1.2.3-4.js':'main','main.dart.1.2.3-4.js_1.part.js':'deferred',
-    'web-assets/form.js':'form', 'canvaskit/canvaskit.wasm':'wasm'};
+    'web-assets/form.js':'form', 'canvaskit/canvaskit.wasm':'wasm', 'assets/fonts/MaterialIcons-Regular.otf':'current font'};
   for(const [name,value] of Object.entries(resources)) {
     await mkdir(path.dirname(path.join(root,name)),{recursive:true}); await writeFile(path.join(root,name),value);
   }
@@ -26,7 +26,11 @@ async function fixture(t) {
   let offline=false, failPart=false;
   const origin='https://app.test';
   const key=value=>new URL(typeof value==='string'?value:value.url,origin).href;
-  const network=async value=>{
+  const network=async (value,options)=>{
+    if (new URL(key(value)).pathname === '/assets/fonts/MaterialIcons-Regular.otf' &&
+        options?.cache !== 'no-store' && value.cache !== 'no-store') {
+      return new Response('stale HTTP cached font');
+    }
     const url=new URL(key(value)); requests.push(url.pathname);
     if(offline || (failPart && url.pathname.endsWith('_1.part.js'))) throw Error('simulated network failure');
     const body=resources[url.pathname.slice(1)];
@@ -56,7 +60,12 @@ async function fixture(t) {
     Object.defineProperty(request,'mode',{value:'navigate'});
     handlers.fetch({request,clientId:'',resultingClientId:'new-page',respondWith:value=>response=value,waitUntil:value=>pending=value});
     const result=await response;await pending;return result;};
-  return {manifest:await collectPwaShellManifest(root),requests,batches,stores,clients,lifecycle,message,navigate,
+  const resource=async pathname=>{let response;
+    handlers.fetch({request:new Request(origin+pathname),clientId:'',
+      respondWith:value=>response=value,waitUntil(){}});
+    return response;
+  };
+  return {manifest:await collectPwaShellManifest(root),requests,batches,stores,clients,lifecycle,message,navigate,resource,
     activation:()=>({skipWaiting,claimed}),
     offline:value=>offline=value,failPart:value=>failPart=value,
     cached:()=>[...stores.get('festapp-app-shell-1.2.3+4').keys()].map(url=>new URL(url).pathname)};
@@ -115,4 +124,12 @@ test('first Flutter navigation prepares the shell without a prior query',async t
   assert.match(await (await f.navigate('/event/news')).text(),/Flutter app/);
   assert.ok(f.cached().includes('/main.dart.1.2.3-4.js'));
   f.offline(true);assert.match(await (await f.navigate('/event/news')).text(),/Flutter app/);
+});
+
+test('a fresh app cache never imports a previous deployment font from HTTP cache',async t=>{
+  const f=await fixture(t);await f.lifecycle('install');
+  const url='/assets/fonts/MaterialIcons-Regular.otf';
+  assert.equal(await (await f.resource(url)).text(),'current font');
+  f.offline(true);
+  assert.equal(await (await f.resource(url)).text(),'current font');
 });

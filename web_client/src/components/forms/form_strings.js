@@ -125,8 +125,6 @@ export class FormStrings {
     static get notSet() { return LocalizationService.tr('FeatureFormSettings.notSet'); }
     static get publicView() { return LocalizationService.tr('FeatureFormSettings.publicView'); }
     static get editorPreview() { return LocalizationService.tr('FeatureFormSettings.editorPreview'); }
-    static get addTicket() { return LocalizationService.tr('FormsFeature.addTicket') || "Add ticket"; }
-    static get ticket() { return LocalizationService.tr('Common.ticket') || "Ticket"; }
     static get buttonContinue() { return LocalizationService.tr('Common.continueAction'); }
 
     // --- Form Fields (General) ---

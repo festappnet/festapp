@@ -133,7 +133,7 @@ export function boundedFetch(fetchImpl = fetch) {
                 check(size <= 20 * 1024 * 1024, 'UPSTREAM_CONTRACT_FAILURE');
                 chunks.push(chunk);
             }
-        return new Response(Buffer.concat(chunks), {
+        return new Response([204, 205, 304].includes(response.status) ? null : Buffer.concat(chunks), {
             status: response.status,
             headers: response.headers,
         });

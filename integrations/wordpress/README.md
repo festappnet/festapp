@@ -1,5 +1,29 @@
 # vstupenky.online a Festapp Tickets pro WordPress
 
+## Vydání 1.0.9 - centrální import voleb cookies
+
+Český balíček vstupenky.online 1.0.9 importuje jedinou konfiguraci z nastavení
+pořadatele. Rozsah, revizi, potvrzení a odvolání vlastní server; doplněk
+neobsahuje ruční editor interních ID a revizí. Služba a společný helper jsou
+kompatibilní od generace 0.20.613+1140. Předchozí veřejná verze ověřená před
+přípravou tohoto vydání byla 1.0.8. Publikace se týká stávajícího českého slugu;
+globální kandidát Festapp Tickets 1.0.3 zůstává oddělený.
+
+Přesný ZIP, Plugin Check, WPCS, instalace a SVN staging musí projít aktuální
+branou podle [SUBMISSION.md](SUBMISSION.md). Veřejné vydání se potvrzuje
+porovnáním skutečného katalogového ZIPu s ověřenými soubory.
+
+## Globální podání z 14. 11. 2026
+
+Samostatný Festapp Tickets 1.0.3 byl podán pod účtem `festappnet`; tehdejší
+potvrzení zachycuje automatickou kontrolu Pass a ruční kontrolu Awaiting Review.
+[GLOBAL.md](GLOBAL.md) uchovává přesný artefakt, jeho kontroly a potvrzení podání.
+Další práce vychází z tohoto záznamu; nezakládá se duplicitní žádost. Aktuální
+sdílené šablony mezitím postoupily, takže historické kontroly neověřují nově
+vygenerovaný ZIP.
+
+## Historické publikační důkazy
+
 Oficiální české vydání **1.0.4** je dostupné v
 [katalogu WordPress.org](https://wordpress.org/plugins/vstupenky-online/).
 SVN revize 3787697 obsahuje trunk, neměnný tag 1.0.4 a katalogové obrázky;
@@ -189,3 +213,43 @@ page scripts. It does not install tags, grant consent or enable measurement.
 Both modes require enabled Festapp measurement and an approved website origin.
 Unit mode requires a consent adapter. See the canonical
 [measurement contract](../../docs/integrations/form-datalayer.md).
+
+## Katalogový popis a české překlady
+
+Anglický popis v `shared/readme.txt.in` je zdrojem katalogových řetězců pro
+WordPress.org. Český překlad katalogu udržuje
+`translations/vstupenky-online-readme-cs_CZ.po`. České ovládání doplňku se dál
+sestavuje z `shared/cs_CZ.json` do přibalených PHP a editorových katalogů.
+Jazyk rozhraní respektuje nastavení WordPressu.
+
+Přibalený český katalog automaticky nezveřejní češtinu na WordPress.org.
+Překlady je třeba importovat do projektů Stable a Stable Readme na
+[translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/vstupenky-online/).
+Účet bez validačních práv je odesílá jako návrhy `Waiting`. První oficiální
+jazykový balíček vyžaduje alespoň 90 % schválených řetězců Stable (`Current`);
+text katalogové stránky má samostatný překladový projekt. Stav importu proto
+neoznačujte jako schválený ani jako veřejně dostupný jazykový balíček.
+
+
+## Server-owned cookie choice import
+
+Configure the exact saved website in Festapp under **Organizer settings >
+Measurement > My websites**. Save Unit changes first, choose WordPress/Joomla
+and the CMP, enter its mapping and explicitly confirm coverage. Display and copy
+the JSON export. The extension accepts this export in one field and keeps a
+separate off/on switch. It does not author Unit IDs, notice revisions or CMP
+mapping. Its import status is local acceptance only; the public form checks the
+current server policy. An extension version without the import field must be
+updated when that package is published; manual ID/revision entry is unsupported.
+
+Only the extension's own form links and fallback link opt into transfer.
+Existing manual links and their `noopener`/`noreferrer` attributes stay intact.
+Cookie choices are separate from continuity of analytics visitor identity.
+Blocking COOP, caching or unavailable policy may require the form's own banner;
+checkout remains available. Disabled bindings persist server-side, so an old
+export cannot reactivate a revoked version. Website dataLayer mode retains its
+separate existing contract. See [managed CMS schema and RPCs](../../docs/integrations/form-datalayer.md#managed-cms-consent-configuration-schema-1).
+
+The 2026-11-14 managed import implementation is a source change. Earlier package
+publication receipts do not attest this implementation or authorize a new CMS
+publication. Installed-CMS tests are distinct from stubbed renderer tests.

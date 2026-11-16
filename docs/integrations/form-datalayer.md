@@ -438,9 +438,10 @@ window.CookieConsent = CookieConsent;
   data-festapp-consent='{"provider":"cookieconsent","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","revision":42,"categories":{"analytics":"analytics","marketing":"marketing"}}'></script>
 ```
 
-Use actual IDs and `analytics.consent_revision` from form metadata. `revision`
-is a positive integer matching both `CookieConsent.getConfig('revision')` and
-the saved cookie. Archive that CMP notice and its mapping to the Festapp revision;
+For explicit developer configurations, use actual IDs and
+`analytics.consent_revision` from form metadata. `revision` is a positive integer matching both `CookieConsent.getConfig('revision')` and
+the saved cookie. New managed exports instead supply a server-issued coverage
+window, checked against the saved last-consent timestamp. Archive that CMP notice and its mapping to the Festapp revision;
 it must cover the form, both purposes, recipients and measurement domain. Increase
 the CMP revision and obtain a new choice when coverage changes. Zero (revision
 management disabled), opt-out and unknown/malformed configurations keep the local
@@ -462,6 +463,70 @@ be distinguished from a visitor's action; the organizer must use the CMP correct
 The underlying GCM iframe bridge and Complianz adapter are unchanged.
 
 Sources and conservative boundaries: [adapter research](../plans/consent-link-cmp-adapters-2026-11-11.md).
+
+### Configured Cookiebot source
+
+Standard sources also include Cookiebot (`provider:"cookiebot"`). Map Cookiebot
+statistics to analytics and marketing to marketing. The ordinary loader from the
+Cookiebot Manager is enough; both automatic and manual blocking work:
+
+```html
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js"
+  data-cbid="12345678-1234-1234-1234-123456789abc" data-blockingmode="auto"></script>
+<script defer src="https://vstupenky.online/embed.js" data-cookieconsent="ignore"
+  data-festapp-consent='{"provider":"cookiebot","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","cbid":"12345678-1234-1234-1234-123456789abc","origin":"https://organizer.example","consentValidFrom":"2026-11-11T00:00:00.000Z","maxAgeSeconds":15552000}'></script>
+```
+
+Replace every example value. Use `analytics.consent_revision` from form metadata,
+the actual organization/Unit, the website's exact HTTPS origin. An explicitly configured CBID must match the
+loader (attribute or `?cbid=` query); it can be omitted in server-issued exports. Exactly one official `.com/uc.js` loader must
+remain in the DOM. Both identifiers must agree if attribute and query are present.
+Opt-in is read from the runtime state, not from loader attributes: the choice
+must be explicit (`consent.method`), GDPR must apply and CCPA must not; implied
+choices, a non-opt-in account mode and unknown state keep the local form notice.
+The persisted `CookieConsent` record must carry this tab's consent ID, so a
+choice in another tab or a removed record ends the transfer at the next one-second poll. Changing CBID or
+origin invalidates the mapping. A configured CBID change also invalidates it. `data-blockingmode="none"` or an omitted blocking
+attribute uses manual blocking; this does not change consent eligibility.
+`data-cookieconsent="ignore"` keeps the helper available with auto-blocking.
+
+**Cookiebot's public SDK provides no comparable saved/current policy revision.**
+Neither consent ID/stamp nor the cookie's undocumented `ver` is treated as one.
+For explicit configurations, required `consentValidFrom` is the UTC effective instant of the archived notice
+and its mapping to Festapp's semantic revision (exact ISO format with milliseconds
+and Z). Only choices at or after it can transfer. `maxAgeSeconds` is required,
+positive and at most 31536000; set it no greater than the actual consent lifetime
+configured in Cookiebot. The example uses 180 days. Managed exports instead use
+the server confirmation time and server-owned age ceiling described below. When the notice, recipients,
+purposes, CBID or scope change, archive the new notice, renew Cookiebot consents,
+and update the cutoff and `consentRevision`. Never relabel old records. This
+organizer assertion does not verify notice contents, bind a cookie cryptographically
+to CBID or discover remote configuration changes automatically.
+
+Import requires boolean `hasResponse`, explicit `consent.method`, consistent
+boolean `consented`/`declined` and categories, and a valid SDK `consentUTC`.
+`hasResponse:false` is allowed while renewing an existing saved choice. Both SDK
+`consentID` and `consent.stamp` are required and must match the persisted cookie's
+stamp. Categories and timestamps come from the SDK, not other cookie fields.
+Missing, stale, malformed, expired, per-service or
+unprovable records return `null`, remain configured and never fall back to GCM.
+A saved refusal transfers without another notice. The cookie reader checks exactly one matching stamp field and never executes cookie
+text. Other fields are not interpreted; they do not grant consent. Any missing or
+mismatched stamp immediately denies a new transfer. An existing linked visit is
+revoked at the next one-second poll. A non-atomic CMP write may therefore end the
+import and restore the form notice instead of reusing a cached grant.
+
+The five window events `CookiebotOnConsentReady`, `CookiebotOnLoad`,
+`CookiebotOnAccept`, `CookiebotOnDecline`, `CookiebotOnDialogDisplay` coalesce in
+a microtask and notify only on a changed result. A one-second interval detects
+expiry/removal and other-tab changes. If storage and cached API disagree, the
+visit import ends; reload the website to adopt the other tab's new choice.
+TCF (`__tcfapi`, `data-framework="IAB"`/`"TCF"`, also the query form) always denies
+marketing; vendor/purpose choices cannot become a blanket advertising grant.
+
+Official sources and limits: [Cookiebot research](../plans/consent-link-cmp-adapters-2026-11-11.md#etapa-cookiebot--rešerše-před-implementací).
+Live Cookiebot auto/manual blocking is verified by the website administrator;
+repository tests model the documented SDK boundary without network requests.
 
 `consent_revision` binds organization/Unit, destination code, privacy URL, notice
 text/title, consent version, runtime profile, collector origins and purposes.
@@ -609,3 +674,93 @@ Save proposed websites through the Unit aggregate first, then refresh approval
 status and request permission. Drafts must not be presented as submitted requests.
 The frontend fails closed when the new lifecycle fields are unavailable; apply
 the forward SQL migration before deploying its reader.
+
+### Managed CMS consent configuration (schema 1)
+
+SQL in `website_consent_bindings.sql` owns one durable binding per Unit and exact
+saved website origin. `get_unit_website_consent_bindings(p_unit)` returns current
+`consentRevision` and bindings. Managers save through
+`save_unit_website_consent_binding(p_unit,p_website_origin,p_platform,p_provider_config,
+p_expected_version,p_expected_consent_revision,p_confirm)`. Version 0 creates;
+every write increments version, clears old confirmation and optionally records
+an explicit new confirmation. Stale version or notice raises SQLSTATE 40001.
+`disable_unit_website_consent_binding(p_binding,p_expected_version)` retains the
+row. `export_unit_website_consent_binding(p_binding,p_expected_version)` only
+exports effective, confirmed bindings. All four RPCs require the canonical Unit
+configuration capability and authenticated identity; no direct table access.
+
+Export: `{schemaVersion:1,serviceOrigin,websiteOrigin,binding:{id,version},
+providerConfig:{provider,organization,unit,consentRevision,...}}`.
+`serviceOrigin` comes from the stored organization's `DEFAULT_URL`. Complianz
+requires an explicit `policyId`: its supported category API has no saved-choice
+timestamp to prove coverage. The configured, current and saved policy must agree.
+CookieConsent v3 optionally adds distinct `categories:{analytics,marketing}`
+(1-128 UTF-16 units each, Unicode/spaces preserved), defaulting to
+`analytics`/`marketing`. Its live positive revision must match the saved cookie.
+
+For each new confirmation of CookieConsent v3, Cookiebot or Wix, the server
+stores `consentValidFrom` at confirmation time and a `maxAgeSeconds` ceiling of
+31536000. Client-supplied cutoff, age and CookieConsent revision are not adopted.
+The persisted choice timestamp must be at or after confirmation, no more than
+60 seconds in the future, and younger than that ceiling; CMP expiry also applies.
+CookieConsent uses the saved `lastConsentTimestamp`, Cookiebot `consentUTC`,
+and Wix `createdDate`. Scope and the Festapp semantic revision remain server owned.
+Cookiebot needs exactly one official HTTPS uc.js loader with a valid, internally
+consistent UUID CBID and a matching persisted stamp; new managed exports do not
+require a manually configured CBID.
+
+Publish the matching notice, confirm coverage, import the new export, then
+require new visitor decisions through the CMP. Repeat this sequence and increase
+`measurement_consent_version` when the processing scope changes. For Complianz,
+publish and confirm the new matching policy ID. Banner validity alone cannot
+prove that a historic choice covers newly introduced Festapp purposes.
+Cookiebot requires an [operator-triggered renewal](https://support.cookiebot.com/hc/en-us/articles/26380933353372-Renew-existing-user-consents-in-the-Cookiebot-Manager);
+changing banner information alone is not proof that consent was renewed.
+
+Existing schemaVersion 1 exports keep every restriction, including policy ID,
+CBID, revision, cutoff and shorter maximum age. The forward migration updates
+functions only; it does not rewrite stored configs, versions or confirmations.
+A new save follows normal version and confirmation rules, so superseded exports
+fail closed. CMS envelope parsers already accept these fields; no plugin release
+is needed. Deploy SQL and the hosted helper coherently. An older helper rejects
+new CookieConsent exports without a configured revision, leaving local consent.
+
+The public form policy carries `website_consent_bindings` with only `id`,
+`version`, `websiteOrigin`, `effective`, including disabled tombstones. An origin
+with a row requires matching binding identity/version on every transferred
+choice. Removing binding fields cannot fall back to an external adapter there.
+External adapters on unmanaged origins retain their existing contract. Binding
+changes affect `processing_revision`, never the semantic `consent_revision`.
+Refresh retires a changed grant; policy loss never extends the 60-second lease.
+CMS import status indicates local acceptance only. Cookie choice transfer does
+not promise continuity of an analytics visitor identity.
+
+The same schema also covers `platform: wix` and `platform: html` (including
+Webnode). Platform changes update the existing Unit/origin row; they do not create
+a second consent policy. Wix settings and the HTML generators import the same
+export, with transfer off by default. Their own fallback links can participate;
+unrelated page links remain untouched. Wix checkout provenance and the signed
+`checkout_origin` flow remain separate and unchanged.
+
+The native `wix` adapter reads the public synchronous
+`window.consentPolicyManager.getCurrentConsentPolicy()` boundary exposed by
+`@wix/site`'s consentPolicyManager module. It requires `defaultPolicy === false`,
+a valid top-level `createdDate`, `essential === true` and boolean purpose fields.
+Analytics maps to `analytics`; marketing requires both `advertising` and
+`dataToThirdParty`, and is clamped when TCF is present. Both the confirmed
+coverage window and Wix saved-policy validity apply. Missing timestamps, default
+policy, pre-confirmation/future/expired records and unavailable APIs never import. No
+consent cookie values or visitor identifiers are exported to CMS configuration.
+
+Each read rechecks the current native API; event, polling, focus and visibility
+updates catch resets, other-tab changes and expiry. The installed SDK's
+`@wix/consent-policy-manager@1.15.0` is a thin public API wrapper. The existing
+public development site was tested in an isolated browser on 2026-11-14: deleting
+the exact `consent-policy` cookie and resetting from a second tab immediately
+returned `defaultPolicy: true` in the first tab without reload. That observation
+covers the tested live host; modeled SDK tests are not a claim of live hosting
+coverage for every Wix editor or account.
+
+Primary Wix contracts: [consent requirements](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/gdpr-compliance/implement-cookie-consent-requirements),
+[consent apps and default policy](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/about-consent-apps),
+[consent policy manager](https://dev.wix.com/docs/sdk/host-modules/site/consent-policy-manager/introduction).

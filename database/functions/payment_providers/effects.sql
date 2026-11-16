@@ -1,3 +1,30 @@
+-- Shared admission effect. Callers own authorization and financial interpretation.
+-- This owner never manufactures a provider observation or changes original prices.
+-- Lock hierarchy: payment policy fence -> capacity/forms -> order -> payment ->
+-- provider attempt -> tickets. Callers that hold later locks must own the parents.
+CREATE OR REPLACE FUNCTION public.cancel_online_order_admission_internal(p_order bigint,p_state text)
+RETURNS bigint[] LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE o eshop.orders; cancelled bigint[];
+BEGIN
+ IF p_state IS NULL OR p_state NOT IN ('storno','expired') THEN
+  RAISE invalid_parameter_value USING MESSAGE='invalid admission cancellation state'; END IF;
+ PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order]);
+ SELECT * INTO STRICT o FROM eshop.orders WHERE id=p_order FOR UPDATE;
+ IF NOT EXISTS(SELECT 1 FROM eshop.payment_info pi WHERE pi.id=o.payment_info
+  AND public.payment_method_is_online_internal(pi.payment_method)) THEN
+  RAISE EXCEPTION 'ONLINE_ADMISSION_SOURCE_REQUIRED'; END IF;
+ IF o.state=p_state THEN RETURN '{}'::bigint[]; END IF;
+ SELECT array_agg(t.id ORDER BY t.id) INTO cancelled FROM public.get_order_tickets_internal(o.id) t
+ WHERE coalesce(t.state,'') NOT IN ('used','storno');
+ PERFORM public.internal_storno_tickets_221(cancelled);
+ UPDATE eshop.orders SET state=p_state,email_payment_version=email_payment_version+1,
+  updated_at=clock_timestamp() WHERE id=o.id;
+ PERFORM public.cancel_order_email_intents(o.id);
+ RETURN coalesce(cancelled,'{}');
+END $$;
+REVOKE ALL ON FUNCTION public.cancel_online_order_admission_internal(bigint,text)
+ FROM PUBLIC,anon,authenticated,service_role;
+
 -- Lock order: capacity/form scope -> order -> payment -> provider attempt -> tickets.
 -- All facts are read back from connector storage. No caller-supplied markPaid/amount.
 CREATE OR REPLACE FUNCTION public.apply_provider_payment_effects_internal(
@@ -6,7 +33,7 @@ CREATE OR REPLACE FUNCTION public.apply_provider_payment_effects_internal(
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE context jsonb; prior jsonb; o eshop.orders; pi eshop.payment_info; totals record; projection jsonb; transition jsonb;
  received numeric; refunded numeric; payment_time timestamptz; deadline timestamptz; cancelled bigint[];
- conflict boolean; action_required boolean; changed boolean:=false; args jsonb:=jsonb_build_object('attemptId',p_attempt); decision jsonb;
+ conflict boolean; action_required boolean; changed boolean:=false; args jsonb:=jsonb_build_object('attemptId',p_attempt); decision jsonb; fact jsonb;
 BEGIN
  IF p_provider IS NULL OR p_provider='bank' OR p_attempt IS NULL OR nullif(p_revision,'') IS NULL
   OR p_action IS NULL OR p_action NOT IN ('observe','keep','cancel_selected') THEN RAISE EXCEPTION 'PAYMENT_EFFECT_INPUT_INVALID'; END IF;
@@ -54,6 +81,7 @@ BEGIN
    IF EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) WHERE state<>'storno') THEN PERFORM public.enqueue_paid_order_tickets(o.id); END IF;
   END IF;
   decision:=public.payment_provider_call_internal(p_provider,'effect_decision',args||jsonb_build_object('reason',CASE WHEN p_action='keep' THEN 'partial_refund_keep' ELSE 'partial_refund_cancel' END,'revision',p_revision,'tickets',to_jsonb(p_tickets)));
+  PERFORM public.enqueue_order_wallet_internal(o.id);
   RETURN jsonb_build_object('changed',true,'decisionId',decision,'payment',public.provider_order_payment_projection_internal(o.id));
  END IF;
  IF conflict AND NOT context->'decisions' ? 'financial_conflict' THEN
@@ -77,19 +105,15 @@ BEGIN
  END IF;
  IF refunded>=pi.amount AND received>0 THEN
   IF NOT context->'decisions' ? 'full_refund' THEN
-   SELECT array_agg(t.id) INTO cancelled FROM public.get_order_tickets_internal(o.id) t WHERE coalesce(t.state,'') NOT IN ('used','storno');
-   PERFORM public.internal_storno_tickets_221(cancelled);
+   cancelled:=public.cancel_online_order_admission_internal(o.id,'storno');
    PERFORM public.payment_provider_call_internal(p_provider,'effect_decision',args||jsonb_build_object('reason','full_refund','revision',p_revision,'tickets',to_jsonb(coalesce(cancelled,'{}'))));
-   UPDATE eshop.orders SET state='storno',email_payment_version=email_payment_version+1,updated_at=clock_timestamp() WHERE id=o.id;
-   PERFORM public.cancel_order_email_intents(o.id);changed:=true;
+   changed:=true;
   END IF;
  ELSIF totals.gross_received=0 AND (p_expired OR (p_unresolved AND deadline<=clock_timestamp())) AND o.state='ordered' THEN
-  SELECT array_agg(t.id) INTO cancelled FROM public.get_order_tickets_internal(o.id) t WHERE coalesce(t.state,'') NOT IN ('used','storno');
-  PERFORM public.internal_storno_tickets_221(cancelled);
-  UPDATE eshop.orders SET state='expired',email_payment_version=email_payment_version+1,updated_at=clock_timestamp() WHERE id=o.id;
+  cancelled:=public.cancel_online_order_admission_internal(o.id,'expired');
   -- Releasing inventory does not prove financial absence. Keep uncertain recovery alive.
   IF NOT p_unresolved THEN PERFORM public.payment_provider_call_internal(p_provider,'effect_state',args||'{"state":"expired"}'); END IF;
-  PERFORM public.cancel_order_email_intents(o.id);changed:=true;
+  changed:=true;
  END IF;
  projection:=public.provider_order_payment_projection_internal(o.id);
  IF projection->>'admissionState' IS DISTINCT FROM p_before->>'admissionState' AND
@@ -101,6 +125,13 @@ BEGIN
   IF projection->>'admissionState'='valid' THEN PERFORM public.enqueue_paid_order_tickets(o.id); END IF;
   changed:=true;
  END IF;
+
+ FOR fact IN SELECT value FROM jsonb_array_elements(public.payment_provider_call_internal(p_provider,'notification_facts',args)) LOOP
+  PERFORM public.notification_center_payment_fact_internal(o.id,p_provider,fact->>'identity',(fact->>'amount')::numeric,fact->>'currency',(fact->>'occurredAt')::timestamptz);
+ END LOOP;
+ PERFORM public.notification_center_payment_problem_internal(o.id,action_required OR conflict,
+  CASE WHEN conflict THEN 'financial_conflict' ELSE 'action_required' END);
+ PERFORM public.enqueue_order_wallet_internal(o.id);
  RETURN jsonb_build_object('changed',changed,'payment',projection);
 END $$;
 REVOKE ALL ON FUNCTION public.apply_provider_payment_effects_internal(text,uuid,text,jsonb,boolean,boolean,text,bigint[]) FROM PUBLIC,anon,authenticated,service_role;

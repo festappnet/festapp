@@ -29,6 +29,9 @@ class FormEditBundle {
   }) {
     // 1. Parse all individual JSON lists into Dart models.
     final form = FormEditorDraft.fromJson(data['form']);
+    form.paymentMethodPolicy = data['payment_method_policy'] is Map
+        ? Map<String, dynamic>.from(data['payment_method_policy'])
+        : null;
     final formFields = (data['form_fields'] as List)
         .map((e) => FormFieldDraft.fromJson(e))
         .toList();
@@ -231,12 +234,19 @@ class DbForms {
     );
   }
 
-  static Future<FormEditorDraft> updateForm(FormEditorDraft form, {bool paymentSelectionChanged = false}) async {
-    final response = await _commands.save({...form.toEditedJson(), if (paymentSelectionChanged) 'payment_selection_intent': 'replace'});
+  static Future<FormEditorDraft> updateForm(
+    FormEditorDraft form, {
+    bool paymentSelectionChanged = false,
+  }) async {
+    final response = await _commands.save({
+      ...form.toEditedJson(),
+      if (paymentSelectionChanged) 'payment_selection_intent': 'replace',
+    });
     final saved = FormEditBundle.fromSave(form, response).form;
     // Receipt metadata is historical. Refresh only the read-only live policy,
     // with current reader authorization, without changing acknowledged versions.
     final current = await getFormForEdit(saved.definition.link!);
+    saved.paymentMethodPolicy = current?.form.paymentMethodPolicy;
     saved.definition = saved.definition.copyWith(
       measurementStatus: current?.form.definition.measurementStatus,
     );
@@ -253,7 +263,12 @@ class DbForms {
   static Future<FormBundle?> getFormFromLink(String link) async {
     final response = await _supabase.rpc(
       'get_form_by_link',
-      params: {'input_data': {'form_link': link, 'client_capabilities': ['cash_reservations', 'no_payment_deadline']}},
+      params: {
+        'input_data': {
+          'form_link': link,
+          'client_capabilities': ['cash_reservations', 'no_payment_deadline'],
+        },
+      },
     );
 
     if (response["code"] == 200 || response["code"] == 400) {
@@ -261,6 +276,24 @@ class DbForms {
       return form;
     }
     return null;
+  }
+
+  static Future<Map<String, dynamic>> getPaymentTemplateAudit(
+    int formId,
+  ) async => Map<String, dynamic>.from(
+    await _supabase.rpc(
+      'get_payment_template_audit',
+      params: {'p_form': formId},
+    ),
+  );
+  static Future<void> reviewPaymentTemplates(
+    int formId,
+    String revision,
+  ) async {
+    await _supabase.rpc(
+      'review_payment_templates',
+      params: {'p_form': formId, 'p_revision': revision},
+    );
   }
 
   static Future<FormEditBundle?> getFormForEdit(String link) async {

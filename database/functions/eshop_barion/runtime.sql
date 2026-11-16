@@ -44,6 +44,7 @@ BEGIN
   INSERT INTO eshop.barion_capabilities(token_hash,attempt_id,scope,expires_at) VALUES(p_args->>'tokenHash',a.id,'handoff',least(a.reservation_expires_at,stamp+interval '30 minutes')) ON CONFLICT DO NOTHING;
   RETURN NULL;
  END IF;
+ IF p_operation='claim_checkout' THEN PERFORM public.payment_policy_fence_internal(a.organization_id); END IF;
  PERFORM public.lock_order_capacity_scope_internal(ARRAY[a.order_id]);
  PERFORM 1 FROM eshop.orders WHERE id=a.order_id FOR UPDATE;
  PERFORM 1 FROM eshop.payment_info WHERE id=a.payment_info_id FOR UPDATE;
@@ -61,6 +62,7 @@ BEGIN
   END IF;
   RETURN jsonb_build_object('payment',before_projection);
  ELSIF p_operation IN ('claim_checkout','claim_sync') THEN
+  IF p_operation='claim_checkout' AND public.payment_collection_action_internal(a.order_id)->'allowed' IS DISTINCT FROM 'true'::jsonb THEN RETURN jsonb_build_object('providerId','barion','disposition','read','payment',before_projection); END IF;
   IF p_operation='claim_sync' AND p_args->>'accountId' IS DISTINCT FROM c.account_id THEN RAISE EXCEPTION 'BARION_SCOPE_INVALID'; END IF;
   IF a.lease_expires_at>stamp OR coalesce(a.last_synced_at,'-infinity')>stamp-interval '6 seconds' THEN
    RETURN jsonb_build_object('providerId','barion','disposition','busy','payment',before_projection); END IF;
@@ -88,7 +90,7 @@ BEGIN
   IF facts->>'id' IS NULL OR facts->>'id' !~ '^[a-f0-9]{32}$' OR (a.remote_id IS NOT NULL AND a.remote_id<>facts->>'id')
    OR facts->>'url' IS DISTINCT FROM ('https://secure.test.barion.com/Pay?Id='||(facts->>'id'))
    OR (facts->>'expiresAt')::bigint IS DISTINCT FROM extract(epoch FROM a.reservation_expires_at)::bigint THEN RAISE EXCEPTION 'BARION_CHECKOUT_INVALID'; END IF;
-  UPDATE eshop.barion_attempts SET remote_id=facts->>'id',checkout_url=facts->>'url',state=CASE WHEN state IN ('preparing','uncertain') THEN 'open' ELSE state END,
+  UPDATE eshop.barion_attempts SET remote_id=facts->>'id',checkout_url=facts->>'url',reconcile_failures=0,state=CASE WHEN state IN ('preparing','uncertain') THEN 'open' ELSE state END,
    lease_token=NULL,lease_expires_at=NULL,next_reconcile_at=stamp+interval '6 seconds' WHERE id=a.id;
  ELSIF p_operation IN ('fail','defer') THEN
   seconds:=CASE WHEN p_operation='fail' THEN 60 ELSE (p_args->>'seconds')::integer END;
@@ -131,6 +133,7 @@ BEGIN
   UPDATE eshop.barion_attempts SET lease_token=NULL,lease_expires_at=NULL,next_reconcile_at=stamp+CASE WHEN total>0 THEN interval '15 minutes' ELSE interval '1 minute' END WHERE id=a.id;
  ELSE RAISE EXCEPTION 'BARION_RUNTIME_OPERATION_UNSUPPORTED';
  END IF;
+ PERFORM public.notification_center_provider_connection_internal('barion',a.connection_id);
  RETURN jsonb_build_object('committed',true,'payment',public.provider_order_payment_projection_internal(a.order_id));
 END $$;
 REVOKE ALL ON FUNCTION public.barion_runtime_internal(text,jsonb) FROM PUBLIC,anon,authenticated;

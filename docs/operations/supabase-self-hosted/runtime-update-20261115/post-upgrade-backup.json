@@ -1,0 +1,16 @@
+{
+  "status": "pass",
+  "physical_production_data_clone": true,
+  "postgres": "17.12",
+  "pgbackrest": "2.57.0",
+  "full_backup_seconds": 8.036,
+  "isolated_restore_seconds": 7.099,
+  "full_label": "20261115-014452F",
+  "time_target": "2026-11-15 01:45:00.648365+00",
+  "confirmed_fixture_preserved": true,
+  "later_fixture_excluded": true,
+  "differential_backup": true,
+  "network": "none",
+  "repo_type": "encrypted-posix-fixture",
+  "off_host_production_repo_tested": false
+}

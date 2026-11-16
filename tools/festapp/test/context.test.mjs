@@ -52,10 +52,9 @@ test('session rotation is serialized across owners and persisted before reads', 
         }),
     ]);
     assert.deepEqual(seen, ['rotated-2', 'rotated-3']);
-    assert.equal(
-        f.calls.filter((c) => c.url.pathname === '/auth/v1/user').length,
-        3,
-    );
+    // Supabase may also validate the user while refreshing a session.
+    assert(f.calls.filter((c) => c.url.pathname === '/auth/v1/user').length >= 3,
+        'login and both authorized reads must validate the user');
 });
 test('foreign organization is denied and never reaches domain commands', async (t) => {
     const f = await fixture(t, {
@@ -97,6 +96,25 @@ test('activation redirects are prohibited at the network boundary', async () => 
     });
     await fetcher('https://example.test');
     assert.equal(redirects, 'error');
+});
+test('bounded upstream responses preserve null-body statuses and ordinary JSON', async () => {
+    for (const status of [204, 205, 304]) {
+        const response = await boundedFetch(async () => new Response(null, {
+            status, headers: { 'x-upstream': 'preserved' },
+        }))('https://example.test');
+        assert.equal(response.status, status);
+        assert.equal(response.body, null);
+        assert.equal(response.headers.get('x-upstream'), 'preserved');
+        assert.equal(await response.text(), '');
+    }
+    const response = await boundedFetch(async () => reply({ ok: true }))('https://example.test');
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type'), /application\/json/);
+    assert.deepEqual(await response.json(), { ok: true });
+});
+test('bounded upstream responses still reject bodies over 20 MiB', async () => {
+    const fetcher = boundedFetch(async () => new Response(new Uint8Array(20 * 1024 * 1024 + 1)));
+    await assert.rejects(() => fetcher('https://example.test'), { code: 'UPSTREAM_CONTRACT_FAILURE' });
 });
 test('MFA challenge is explicit and does not persist a downgraded session', async (t) => {
     const f = await fixture(t, {

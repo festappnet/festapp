@@ -1,5 +1,37 @@
 # vstupenky.online - WordPress.org vydání
 
+## Vydání 1.0.9 - centrální import
+
+Rozsah je pouze stávající `vstupenky-online`, účet `festappnet`,
+`https://plugins.svn.wordpress.org/vstupenky-online/`. Finální ZIP vzniká
+`python3 scripts/package.py --product vstupenky-online`; obsahuje 16 souborů.
+Neměnný nový tag je `1.0.9`, veřejný GitHub tag případného přímého balíčku
+`wordpress-vstupenky-online-v1.0.9`. Předchozí tagy zůstávají nedotčené.
+
+Před publikací musí projít skutečné instalace na minimální i aktuální
+podporované verzi, Plugin Check, WPCS, PHP syntax a aktuální technický seal.
+`python3 scripts/stage-submission.py --product vstupenky-online` připraví
+trunk, nový tag a katalogové assets. Poté ověřte
+`python3 scripts/verify-submission.py --product vstupenky-online --submit-ready`
+pro přesný ZIP, soubory stage, zdroje a výsledky. Historické schválení ani
+ověření staršího ZIPu tuto bránu nenahrazuje.
+
+Kompatibilní serverový export a helper jsou nasazené v generaci
+0.20.613+1140. Vydání má povolený stávající hosting; nevytvářejte novou
+katalogovou žádost. Po SVN commitu ověřte katalogové API a stáhněte veřejný
+ZIP, porovnejte každý soubor s kandidátem a ověřte aktualizaci v čisté
+izolované instalaci. Heslo načítejte soukromě z Klíčenky přes stdin podle
+pravidel níže. Globální produkt se tímto vydáním nepublikuje.
+
+## Samostatné globální podání
+
+Festapp Tickets má vlastní historické podání z 14. 11. 2026 pod vydavatelem
+`festappnet`. Přesný odeslaný ZIP, stav zachycený při podání a související důkazy
+jsou v [GLOBAL.md](GLOBAL.md). České vydání 1.0.9 a jeho ověření tento globální
+artefakt nenahrazují; pro nový kandidát platí aktuální technické brány.
+
+## Historické podání a vydání
+
 ## Schválený hosting - 2026-11-06
 
 WordPress.org schválil hosting po kontrole verze 1.0.3. Účet vydavatele je

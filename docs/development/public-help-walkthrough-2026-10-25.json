@@ -153,10 +153,10 @@
     {
       "mediaId": "cs/seating/templates",
       "file": "cs/walkthrough/09-seating-template-picker.png",
-      "sha256": "a62ab4873d539202e31c90c46a84174b11fa8137b436cf2e6342c604cce6724a",
-      "capturedAt": "2026-10-24T23:20:59.994434+00:00",
-      "captureStep": "135-seating-templates-shot",
-      "alt": "Výběr šablon sálu včetně Ples u kulatých stolů."
+      "sha256": "b8395b478940f75637981fbb3e062c944662f28e35bd0f15912b5966192346b4",
+      "capturedAt": "2026-11-13T00:09:00.685737+00:00",
+      "captureStep": "20261113-current-wizard-visual-template-gallery",
+      "alt": "Vizuální výběr šablon sálu v průvodci založením akce."
     },
     {
       "mediaId": "cs/seating/style",
@@ -336,41 +336,44 @@
     {
       "mediaId": "cs/check-in/ready-mobile",
       "file": "cs/walkthrough/65-mobile-scanner-ready.png",
-      "sha256": "f90416a1041b89b3062fb240c9b033fcbe667b7f563059e12eaf8a9ca9a2b7e8",
-      "capturedAt": "2026-10-25T00:07:39.543483+00:00",
+      "sha256": "52ea8bc93a99e647418692be0803c8e9227587484a14e6727e4d3b5fc329205a",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M26-mobile-scan-ready",
       "alt": "Mobilní úvod skeneru se správnou akcí a volbami kamery nebo ručního zadání.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/check-in/manual-mobile",
       "file": "cs/walkthrough/66-mobile-scanner-manual.png",
-      "sha256": "0fcda4e5a2b324c24219aa71323a0be45ec4b778a85bcc186c87a893fbc61251",
-      "capturedAt": "2026-10-25T00:07:39.760015+00:00",
+      "sha256": "af091372392c14535098161377524dab524cc8651284c5b9b3fb4617595347c8",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M28-mobile-manual-shot",
       "alt": "Mobilní skener s ručním zadáním symbolu vstupenky.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/check-in/used-mobile",
       "file": "cs/walkthrough/67-mobile-scanner-used.png",
-      "sha256": "f858f1973733d19e37be27239775016af3ba7d47c3f99f7b53bec90ea082a907",
-      "capturedAt": "2026-10-25T00:07:39.959477+00:00",
+      "sha256": "884452fe105941cc5b81c9aadd426df8a5c95f7ccd1ec8d821fca2aba76f50aa",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M31-mobile-used-shot",
       "alt": "Mobilní upozornění Vstupenka už byla použita.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/forms/buyer-mobile",
@@ -388,34 +391,36 @@
     {
       "mediaId": "en/check-in/manual-mobile",
       "file": "en/walkthrough/69-en-mobile-scanner-manual.png",
-      "sha256": "7793c0e9bce71a515214cb0b1cb095733b4dbf2ac630a9dc3da443a93c991202",
-      "capturedAt": "2026-10-25T00:08:06.342371+00:00",
+      "sha256": "56edb86460bc2b981c1a4e8b5024e2e87248783ac0d0ba749961bd3f3f0ded62",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M43-en-manual-shot",
       "alt": "English mobile scanner with a Ticket code field and Look up button.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "en/check-in/used-mobile",
       "file": "en/walkthrough/70-en-mobile-scanner-used.png",
-      "sha256": "3482cbbf99bd7d30792b437e880dbfee0114aa9e47ed3854be1067915545fc22",
-      "capturedAt": "2026-10-25T00:08:14.223854+00:00",
+      "sha256": "930ceb2df73ad979e2d64b24b33e994a1add5f727021cca3d8b9f1fa053d3baf",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "captureStep": "M47-en-result-shot",
       "alt": "English mobile result stating that the ticket has already been used.",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "physicalDevice": false
+      "physicalDevice": false,
+      "theme": "light"
     },
     {
       "mediaId": "cs/scanner-advanced/invalid-access",
       "file": "cs/scanner-advanced/invalid-access.png",
-      "sha256": "b906e30b8c15a044206c0c744739735f1cdcf30c66a5c329f7b107c764462f86",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "ab8a767420f0df848e65a8f3cbffbefc1734a2bea1be6e62ea79c761c3c6b27c",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Chybný přístupový kód skeneru s hlášením Kód skeneru není platný.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -424,8 +429,8 @@
     {
       "mediaId": "cs/scanner-advanced/not-found",
       "file": "cs/scanner-advanced/not-found.png",
-      "sha256": "ee847bf60cb1c4db2264572ace0e41799ff51ad7f3906a8644e1aa6a1244ea22",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "e40194c1dabccc4b7a8292faec11aab715ef4fff3bcd691496860e233c05068b",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Mobilní webový skener hlásí Vstupenka nenalezena.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -434,8 +439,8 @@
     {
       "mediaId": "cs/scanner-advanced/settings",
       "file": "cs/scanner-advanced/settings.png",
-      "sha256": "0c0d5e336d9de66023e4f8d3ad47edd63f600071ff6f2819adb4d7f22043841b",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "aeb6957f0b4b829cb2062e05170beaa69fe3ebf9caa40e9907ae262c3f077cfc",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Nastavení mobilního webového skeneru se základními údaji a výběrem produktů.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -444,8 +449,8 @@
     {
       "mediaId": "cs/scanner-advanced/field-options",
       "file": "cs/scanner-advanced/field-options.png",
-      "sha256": "7444b1b8960c5bbf02c24fafd73c30ed66e0e9132741a5736d10ec4704057ef5",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "30cddb78285d271bc0fa2b50a7b6b5e78c288a7df9b08f0c6d9a210f3f8a570e",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Nastavení e-mailu z formuláře: popisek, skrytí prázdných hodnot a pořadí.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -454,8 +459,8 @@
     {
       "mediaId": "cs/scanner-advanced/advanced",
       "file": "cs/scanner-advanced/advanced.png",
-      "sha256": "4dd37620547785495acf7dda1a3a0988cefe7e757ae0d4f751d87e399d863a27",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "d0c48bfd4d14259290899c3f21407119874b4046b64ed42010799464cab1af2f",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Chování skeneru s volbami hledání, cen, interní poznámky a offline přípravy.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -464,8 +469,8 @@
     {
       "mediaId": "cs/scanner-advanced/preview",
       "file": "cs/scanner-advanced/preview.png",
-      "sha256": "4df7b25988e9586b6f8549ebbc3309dbb3c6f660ed2fd7e6ce188daea1ffc668",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "d8bf43aec9fa36a43dcfb96e2a7525ef30bc2a2db773cf3c815a333880e88597",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Náhled ukázkové použité vstupenky v nastavení webového skeneru.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -474,8 +479,8 @@
     {
       "mediaId": "en/scanner-advanced/invalid-access",
       "file": "en/scanner-advanced/invalid-access.png",
-      "sha256": "13522947b328cf5ad422d054acc52d3b9d15a9c651d3474e1c62d02849ddcafe",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "8700a6df01cced2d2eacb613d90dd653349aea16cf12a81f59b35503caa5326e",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Invalid scanner code message in the mobile web scanner.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -484,8 +489,8 @@
     {
       "mediaId": "en/scanner-advanced/not-found",
       "file": "en/scanner-advanced/not-found.png",
-      "sha256": "e347317b9c2d0da678e4e82f4cce2c5d1035bb2d1f0ea0448815484804caf8f1",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "26e61322ffdafe6389394749bcbe8090b78cad1e40b7d6c009e8f5d819be18d7",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Mobile web scanner showing Ticket not found.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -494,8 +499,8 @@
     {
       "mediaId": "en/scanner-advanced/settings",
       "file": "en/scanner-advanced/settings.png",
-      "sha256": "ed3a77e383bc5069441f6d333846afe5553428a9e5b90a0d2740b7c5de3c55c9",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "2601ec9a8daed0dffda9ce13b3f931ec0853c150ab960a492bfb62053071d709",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Mobile web scanner display settings with fixed core details and product selection.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -504,8 +509,8 @@
     {
       "mediaId": "en/scanner-advanced/field-options",
       "file": "en/scanner-advanced/field-options.png",
-      "sha256": "20a30e72d3836071b508c1f7245fdbed5aa68f42787d06087c7984cbbde56370",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "c5a5ff0d1f0ea4be61f081918238eba3afc36f67765db7e74eea40fcbac329f7",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Form email display options including label, empty values and ordering.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -514,8 +519,8 @@
     {
       "mediaId": "en/scanner-advanced/advanced",
       "file": "en/scanner-advanced/advanced.png",
-      "sha256": "15f6aa008134f795ccd77dbfbeadca6e6a9035d5b7ebfa9ac00ef4fe1094512f",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "606d4e73100e330d752122b9217b9e4f2c79983ba927cb1a18472804088d1cf7",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "Scanner behavior options for search, prices, internal notes and offline preparation.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -524,8 +529,8 @@
     {
       "mediaId": "en/scanner-advanced/preview",
       "file": "en/scanner-advanced/preview.png",
-      "sha256": "a42a333718faadb196721b6f2c184da1c4a1293816e3b0687bfd60c66d18dd45",
-      "capturedAt": "2026-10-26T00:11:29.931199+00:00",
+      "sha256": "01d4bcfda74d7b1e7ee54355ed10f23a6ce26d8c62ed066c3358e87b381db634",
+      "capturedAt": "2026-11-13T05:09:45.167626+00:00",
       "alt": "A previously used sample ticket in the web scanner settings preview.",
       "platform": "web-client",
       "physicalDevice": false,
@@ -738,6 +743,22 @@
       "capturedAt": "2026-11-05",
       "captureStep": "order-detail-add-payment-en",
       "alt": "Cash payment dialog from order detail, including Find and link a transaction."
+    },
+    {
+      "mediaId": "cs/administration/event-settings-overview",
+      "file": "cs/administration/event-settings-20261112-overview.png",
+      "sha256": "ca45e9eabe3afdcbf087b8a0b61f048089f5d06bb52a373b0d2d94e430e044a3",
+      "capturedAt": "2026-11-12T17:07:54.956424+00:00",
+      "captureStep": "event-settings-current-20261112/event-settings-overview",
+      "alt": "Nastavení vytvořeného Městského plesu v Lípě: název, termín přes půlnoc, místo konání, obrázek, popis a viditelnost."
+    },
+    {
+      "mediaId": "cs/administration/event-settings-advanced",
+      "file": "cs/administration/event-settings-20261112-advanced.png",
+      "sha256": "380ba55339171a5fbe1d980577baae391d1b613aa1ede28ec346b42a122187c3",
+      "capturedAt": "2026-11-12T17:08:56.137818+00:00",
+      "captureStep": "event-settings-current-20261112/event-settings-advanced",
+      "alt": "Pokročilá nastavení akce s e-mailem pro odpovědi, časovým pásmem Europe/Prague a začátkem sekce Funkce."
     }
   ],
   "chapters": [
@@ -1152,6 +1173,172 @@
         "Mobile captures are Chrome, not Safari"
       ],
       "catalogTranslation": "1.0.4 suggestions were Waiting; revised1.0.5 translation must follow new stable source, never claim approved"
+    },
+    {
+      "id": "event-settings-current-20261112",
+      "guides": [
+        "event-settings"
+      ],
+      "locale": "cs",
+      "eventFixture": "Městský ples v Lípě",
+      "organizerFixture": "Spolek U Lípy",
+      "sourceBase": "742d614b722bbe619b3a095f66605bd4bb536006",
+      "sourceState": "Current working tree including pre-existing uncommitted application changes; captured UI sources matched the task-only runtime copy byte-for-byte.",
+      "sourceFiles": {
+        "lib/components/occasion_settings/occasion_settings_tab.dart": "4bb0d4f9edb564fee956218f171d047f887e0b55be789b506728248bd10707c6",
+        "lib/components/occasion_settings/occasion_advanced_settings.dart": "cce3ee4f77ba35f6a00883d29858b3dd3f24f86d3be3de6c81d1b9eb097ef227",
+        "lib/components/occasion_settings/occasion_features_section.dart": "5ca2da9333f549a795c2b5afcbb0f0555d513f7c47b255246f81d6d80685ab8d",
+        "lib/components/_shared/editor_action_bar.dart": "da0159ddb2d125952e50801d1beaf2ebab02fd89a4af655f59971550cbe74737",
+        "lib/widgets/time_data_range_picker.dart": "cae5144942826b7d438ce21f98a3a8735e6cf7604bdb90ea522a8c8af837dff8",
+        "assets/translations/cs.json": "3b71d05f08d4bdc55fe5d6d8b908f30c33f885d2e6d3b79f293aab0d55c44942"
+      },
+      "environment": {
+        "backend": "Fresh owned disposable Supabase festapp-settings-help-20261112; loopback API 58921, DB 58922; canonical baseline and forward migrations through 20261112190000",
+        "application": "Current real Flutter full_app_e2e entry, ticketing variant FESTAPP_APP_SUPPORTED=false; isolated headless Chromium, CS, light, 1440x1000",
+        "runtimeAdapters": [
+          "Copied source tree only: main.dart selects installed v219 app-config contract on loopback instead of transition v218.",
+          "Copied source tree only: app_config.dart sets empty sync origins to https://sync.invalid so endpoint validation succeeds; no public sync service is certified.",
+          "Existing E2E entry stubs external notification callbacks; production backend requests are blocked."
+        ],
+        "fixture": "Canonical navigation fixture localized before captures: Czech event, organizer, venue, description and Europe/Prague. Before successful save testing, replace its obsolete schemaVersion-2 ticket feature layout with test/fixtures/ticket_layout/layouts.json valid[0], mapping productTypeId 123 to actual same-event product 1; validate_ticket_layout_references must succeed. Never apply this fixture to production."
+      },
+      "steps": [
+        {
+          "action": "Log in to local Auth, select organizer and existing event, open Nastavení using fresh semantics; DOM semantic click fallback used for Flutter controls.",
+          "outcome": "Existing-event settings selected; real Czech title, start/end dates across midnight, place, intro image, description, Skrýt and Propagované. Veřejné and event link are absent in this ticketing variant."
+        },
+        {
+          "action": "Expand Pokročilá nastavení and inspect the following Funkce section.",
+          "outcome": "Real E-mail pro odpovědi and Časové pásmo controls; Europe/Prague selected; actual Zahodit změny and Uložit actions."
+        },
+        {
+          "action": "Edit title, place and reply-to, then Uložit.",
+          "outcome": "Initial attempt rejected with HTTP 400 P0001 Invalid ticket layout; database retained original values. Corrected only the obsolete local fixture using the current valid layout and validated same-event product references. Repeated real save_occasion_client_sync_v1 returned HTTP 200."
+        },
+        {
+          "action": "Reopen the existing event Settings after saving; compare actual rendered fields with the disposable database.",
+          "outcome": "UI reloaded title Městský ples U Lípy, venue Kulturní dům U Lípy, hlavní sál and reply-to poradatele@example.cz; Uložit disabled because no further edits remained. SQL independently confirmed the same persisted values."
+        },
+        {
+          "action": "Open generated standalone file:// guide at desktop and 390px width, scroll to lazy screenshots.",
+          "outcome": "Both new screenshots load, correct H1 and seven content headings, no unresolved template tokens or horizontal overflow at 1440px and 390px."
+        }
+      ],
+      "stills": [
+        "cs/administration/event-settings-overview",
+        "cs/administration/event-settings-advanced"
+      ],
+      "notVerified": [
+        "No image upload, external mail delivery, production configuration, public sync, PDF regeneration or production deployment.",
+        "No physical phone or mobile Safari check; narrow preview uses desktop Chromium.",
+        "Feature toggling and event deletion are not exercised.",
+        "Zahodit změny is described from the current EditorActionBar source; this walkthrough did not exercise discarding a draft."
+      ],
+      "privateEvidence": ".private/settings-help-20261112/evidence.md",
+      "validation": {
+        "helpTests": "pnpm --dir web_client exec node --test ../automation/tests/help_pages.test.mjs ../automation/tests/help_search.test.mjs: 6 passed, 0 failed, 0 skipped. Final article, route metadata and media inputs unchanged after this check.",
+        "preview": "Standalone generated file:// preview; real headless browser verified 1440px and 390px, both screenshots loaded and no horizontal overflow.",
+        "persistence": "Actual UI save, real local RPC HTTP 200, reopen and independent SQL readback succeeded.",
+        "publication": "Canonical source updated locally; no source push or production deployment performed."
+      },
+      "cleanup": "Owned Flutter web-server, isolated browser and only the owned Supabase project stopped after successful readback. Other sessions and the control-channel server preserved."
+    },
+    {
+      "id": "customer-self-service-20261115",
+      "guides": [
+        "customer-self-service"
+      ],
+      "locales": [
+        "cs",
+        "en"
+      ],
+      "sourceState": "Current working tree; no deployment or activation",
+      "environment": {
+        "backend": "Verified disposable SQL lease, local PostgREST and production customer-order-changes Edge handler",
+        "renderer": "Actual order overview sources through Vite middleware, isolated headless browser, light",
+        "email": "Existing encrypted prepared email queue; local read sink, no external delivery"
+      },
+      "steps": [
+        "Open the existing order overview URL from the private locale fixture",
+        "Select cancellation and verify empty required reason blocks submission",
+        "Enter a reason, send challenge, respect order/IP throttles",
+        "Open the actual queued email anchor; verify fragment is removed and order is unchanged",
+        "Read the server preview and explicitly submit one approval request",
+        "Check one pending request and original order admission/payment state",
+        "Capture current desktop 1280x1000 and mobile 390x844",
+        "Move preview: choose distinguishable title/date, verify target products, do not claim a completed move"
+      ],
+      "screenshots": [
+        {
+          "mediaId": "cs/customer-self-service/desktop",
+          "file": "cs/customer-self-service/desktop.png",
+          "sha256": "34acef26cb977c730cc56855ecbecba15aa1514ccbc8976ed0ebf367fbdc3e21"
+        },
+        {
+          "mediaId": "cs/customer-self-service/mobile",
+          "file": "cs/customer-self-service/mobile.png",
+          "sha256": "8b0a1d91b1232b538e3a1ca5d9051c2063cb144cbe8e83478be27a4c41b7c4b9"
+        },
+        {
+          "mediaId": "en/customer-self-service/desktop",
+          "file": "en/customer-self-service/desktop.png",
+          "sha256": "3206c8cfe9573c440cf03a7d892342ce45fbb7ef1a72570e968dd8af458a17da"
+        },
+        {
+          "mediaId": "en/customer-self-service/mobile",
+          "file": "en/customer-self-service/mobile.png",
+          "sha256": "ef1777fd463fcb1284aff1553a4b4264f8b73f7e4ac010347e9c7cbf5118a14b"
+        }
+      ],
+      "sourceFiles": {
+        "web_client/src/components/forms/customer_order_changes.js": "363f49e7dfed6c63a5f44d5873284af846e554743c96876d7e71155354c6e39f",
+        "web_client/src/components/forms/order_overview.js": "a3d0baaa6f8bdd5b4a163512150f8781d984ed05917600d952e5d0f613e69b9c",
+        "supabase/functions/customer-order-changes/index.ts": "dd3f8e8bc30ba5bc4edfa291bd7e58fa38c2f7b3db5f0bad4836ca7c24c261c7",
+        "supabase/functions/_shared/customerOrderChangesHandler.ts": "300175a9520b5303ff9de8751deeaa17bb9a9eeeb61546bad05e286f0e592377",
+        "web_client/scripts/customer_order_changes_preview.mjs": "088b52951b3f9c995f8382eeac48c78cf9f01c9ea7dadc03855092f23bab0c71"
+      },
+      "notVerified": [
+        "Production rollout and activation",
+        "External SMTP delivery, real provider refund execution",
+        "Native device visual appearance; Flutter interaction contracts tested separately"
+      ],
+      "selectedTicketFollowup": {
+        "fixtureEnvironment": "CUSTOMER_PREVIEW_SEATS=1 CUSTOMER_PREVIEW_CANCEL_MODE=automatic",
+        "steps": [
+          "Choose Cancel tickets and deselect seat 13",
+          "Enter reason; open actual queued verification mail",
+          "Verify only seat 12 in preview and other tickets remain valid",
+          "Explicitly confirm once; order remains active, total 1000, seat 13 retains identity",
+          "Read-only refresh shows actor-neutral completed status"
+        ],
+        "screenshots": [
+          {
+            "mediaId": "cs/customer-self-service/partial-preview-desktop",
+            "file": "cs/customer-self-service/partial-preview-desktop.png",
+            "sha256": "863411675885c6dbeda8a54178ffd8d0812d193a2c17f440b18ec6cc39f0b80d"
+          },
+          {
+            "mediaId": "cs/customer-self-service/partial-preview-mobile",
+            "file": "cs/customer-self-service/partial-preview-mobile.png",
+            "sha256": "f30f4bb112067ed42603166dd5bde9771ece2ed69b3e7a151f5691c61ae1539d"
+          },
+          {
+            "mediaId": "en/customer-self-service/partial-selector-desktop",
+            "file": "en/customer-self-service/partial-selector-desktop.png",
+            "sha256": "b3a6037413714af4108a2968a7317b9ec64804882f260017f487b4da95982d35"
+          },
+          {
+            "mediaId": "en/customer-self-service/partial-selector-mobile",
+            "file": "en/customer-self-service/partial-selector-mobile.png",
+            "sha256": "1ea0fc28b8baf22cb6d81bbc02f88637d44d67daf69270a6a67aadc8f9c885f3"
+          }
+        ]
+      },
+      "answerLock": {
+        "decision": "All submitted answers including name and phone are customer read-only",
+        "verification": "Current actual CS/EN renderer shows submitted phone and only cancel/move actions; no mutation or email challenge for recapture",
+        "captureScope": "Viewport focused on customer actions; mobile answer text is above the viewport"
+      }
     }
   ],
   "notVerified": [
@@ -1300,5 +1487,12 @@
     "emailsRequested": false,
     "draftContactsSaved": false,
     "servicesClosed": true
+  },
+  "visualGalleryCapture20261113": {
+    "sourceBase": "a21a6f604",
+    "mediaId": "cs/seating/templates",
+    "capture": "Real current Flutter wizard using the production gallery; Czech locale, light theme, 1440x1000, isolated headless browser; synthetic Slavnostní ples U Lípy and Spolek U Lípy.",
+    "backend": "Owned disposable local Supabase on loopback 56821/56822. Canonical automation/baseline.py upgrade-local applied historical forwards through 20261112235500 preserving fixture data; temporary migration superuser restored to NOSUPERUSER. Local test entry selected the real v219 contract; external push SDK callbacks isolated.",
+    "observed": "Ples u kulatých stolů and Zahradní gala each show 96 seats; Lipoltice shows 186. Save and return was not verified for this capture due to local font resolver failure."
   }
 }

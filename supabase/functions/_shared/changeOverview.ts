@@ -5,6 +5,8 @@ interface Product {
   title?: string;
   price?: number;
   currency_code?: string;
+  spot_title?: string;
+  spot_group_title?: string;
 }
 interface TicketChange {
   id?: number;
@@ -82,11 +84,14 @@ export function generateChangeOverview(
         product.currency_code || changes.currencyCode,
       ),
     );
+  const label = (product: Product) =>
+    [product.title, product.spot_group_title, product.spot_title]
+      .filter((part) => part != null && part !== "").map(escape).join(" - ");
   const products = (items: Product[], color: string, prefix: string) =>
     items.map((p) => `
         <tr>
             <td style="padding: 4px 8px 4px 0; color: ${color};">${prefix}${
-      escape(p.title)
+      label(p)
     }</td>
             <td style="padding: 4px 0 4px 8px; color: ${color}; text-align: right; white-space: nowrap; font-weight: 500;">${
       price(p)
@@ -134,9 +139,9 @@ export function generateChangeOverview(
     const changedHtml = (ticket.changed ?? []).map((c) => `
         <tr>
             <td style="padding: 4px 8px 4px 0;">${
-      c.from.title === c.to.title
-        ? escape(c.to.title)
-        : `${escape(c.from.title)} → ${escape(c.to.title)}`
+      label(c.from) === label(c.to)
+        ? label(c.to)
+        : `${label(c.from)} → ${label(c.to)}`
     }</td>
             <td style="padding: 4px 0 4px 8px; text-align: right; white-space: nowrap;">
                 <span style="color:#6b7280; font-size: 90%;">${

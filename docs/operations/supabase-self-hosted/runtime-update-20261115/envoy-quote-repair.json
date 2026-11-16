@@ -1,0 +1,8 @@
+{
+  "status": "pass",
+  "repair": "Preserve string type around existing optional env substitutions; template YAML object unchanged",
+  "old_template_sha256": "a7193d6497d03ebb346b4ad8a420ba46f3e9f2944e857b03f9dcecdb40f8885d",
+  "new_template_sha256": "c8aad7b60afbf34530ed405da7b4c14531812e80c3fcbaf54318cc362e2c99d0",
+  "unauthenticated_rest_status": "401",
+  "at": 1794716721.7138798
+}

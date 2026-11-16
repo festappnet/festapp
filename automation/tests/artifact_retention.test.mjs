@@ -1,6 +1,7 @@
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
-import {cleanArtifacts, retentionPlan} from '../release/artifact_retention.mjs';
+import {cleanArtifacts, retentionPlan, publicationFromJob, readJobLog} from '../release/artifact_retention.mjs';
 
 const now = Date.parse('2026-10-28T12:00:00Z');
 const sha = 'a'.repeat(40);
@@ -15,7 +16,7 @@ function fixture() {
     artifact(4, `android-raw-three-${sha}-42`, 2),
     artifact(5, `android-raw-four-${sha}-42`, 4), artifact(6, 'release-evidence', 90)];
   const deleted = [];
-  const api = {activeRuns: async () => [], artifacts: async () => artifacts,
+  const api = {publications: async () => [], activeRuns: async () => [], artifacts: async () => artifacts,
     run: async () => run, remove: async id => { deleted.push(id); }};
   return {artifacts, runs: [run], now, api, deleted};
 }
@@ -61,4 +62,101 @@ test('active consumers, consumers starting during planning and API errors preven
   f.api.run = async () => { throw Error('HTTP 403'); };
   await assert.rejects(cleanArtifacts({...f, apply: true}), /403/);
   assert.deepEqual(f.deleted, []);
+});
+
+
+test('completed exact production publication retires a candidate inside its promotion window', () => {
+  const f = fixture();
+  f.publications = [{candidateRunId:42, candidateName:`android-candidate-two-${sha}`, productionRunId:80}];
+  assert.deepEqual(retentionPlan(f).map(a=>a.id), [1,2,3,5]);
+});
+
+
+const publicationFixture = () => JSON.parse(readFileSync(new URL('./fixtures/android_published_candidate.json', import.meta.url)));
+test('replays actual successful candidate download and completed Play readback boundaries', () => {
+  const f = publicationFixture();
+  assert.deepEqual(publicationFromJob(f.run,f.job,f.log), {
+    candidateName:'android-candidate-cavfotofest-e2fb67b22ffad245fb65d0f121085acc74d4b463',
+    candidateRunId:43695254882,productionRunId:43696918865,jobId:132759465611,
+    packageName:'fstapp.cav',versionCode:1143,
+  });
+});
+
+test('failed, skipped, foreign, ambiguous and incomplete publication evidence never retires candidates', () => {
+  const changes = [f=>f.run.path='.github/workflows/unrelated.yml', f=>f.run.head_branch='prod/cavfotofest',
+    f=>f.run.event='pull_request', f=>f.run.status='in_progress', f=>f.run.conclusion='failure',
+    f=>f.job.conclusion='failure', f=>f.job.run_id=1,
+    f=>f.job.steps.find(s=>s.name==='Read production state back from Google Play').conclusion='skipped',
+    f=>f.job.steps.find(s=>s.name==='Verify the downloaded receipt and hash').conclusion='failure',
+    f=>f.log=f.log.replace('PLAY_EXPECTED_VERSION_CODE: 1143','PLAY_EXPECTED_VERSION_CODE: 1144'),
+    f=>f.log=f.log.replace('PLAY_PACKAGE: fstapp.cav','PLAY_PACKAGE: fstapp.fstapp'),
+    f=>f.log=f.log.replace('run-id: 43695254882','run-id: 0'), f=>f.log+=f.log];
+  for (const change of changes) {
+    const f=publicationFixture();change(f);
+    assert.equal(publicationFromJob(f.run,f.job,f.log),null);
+  }
+  for (const publication of [
+    {candidateRunId:99,candidateName:`android-candidate-two-${sha}`},
+    {candidateRunId:42,candidateName:`android-candidate-other-${sha}`},
+  ]) assert.deepEqual(retentionPlan({...fixture(),publications:[publication]}).map(a=>a.id),[1,3,5]);
+});
+
+test('applied retirement includes the exact publication receipt and still blocks active operations', async () => {
+  const f=fixture();
+  const publication={candidateRunId:42,candidateName:`android-candidate-two-${sha}`,productionRunId:80};
+  f.api.publications=async()=>[publication];
+  const result=await cleanArtifacts({...f,apply:true});
+  assert.deepEqual(f.deleted,[1,2,3,5]);
+  assert.deepEqual(result.removed.find(a=>a.id===2).publication,publication);
+  assert.equal(result.retainedBytes,200);
+});
+
+test('the forbidden original Android app is excluded before producer lookup and deletion', async () => {
+  const f=fixture();
+  f.artifacts.push({...f.artifacts[0],id:99,name:`android-candidate-festapp-${sha}`,workflow_run:{id:99,head_sha:sha}});
+  f.api.run=async id=>{assert.notEqual(id,99);return f.runs[0];};
+  await cleanArtifacts({...f,apply:true});
+  assert.ok(!f.deleted.includes(99));
+});
+
+
+test('captures old CLI log data privately without sending an unsupported flag', () => {
+  const f=publicationFixture();const calls=[];
+  const log=readJobLog(f.job.id,(command,args,options)=>{
+    calls.push({command,args,options});
+    assert.ok(!args.includes('--allow-escape-sequences'));
+    return Buffer.from(f.log.replace('##[group]','\x1b[36m##[group]\x1b[0m'));
+  });
+  assert.equal(calls.length,1);
+  assert.deepEqual(calls[0].options.stdio,['ignore','pipe','pipe']);
+  assert.equal(log.includes('\x1b'),false);
+  assert.ok(publicationFromJob(f.run,f.job,log));
+});
+
+test('replays hosted gh escape rejection through the real read-only recovery executor', () => {
+  const f=publicationFixture();const calls=[];
+  const rejection=Object.assign(new Error('Command failed: gh api job/logs'),{status:1,
+    stderr:Buffer.from('the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway\n')});
+  const log=readJobLog(f.job.id,(command,args,options)=>{
+    calls.push(args);
+    if(calls.length===1) throw rejection;
+    assert.deepEqual(options.stdio,['ignore','pipe','pipe']);
+    return Buffer.from(f.log);
+  });
+  const endpoint=`repos/festappnet/festapp/actions/jobs/${f.job.id}/logs`;
+  assert.deepEqual(calls,[['api',endpoint],['api','--allow-escape-sequences',endpoint]]);
+  assert.ok(publicationFromJob(f.run,f.job,log));
+});
+
+test('auth, network and other CLI errors fail closed without retries; recovery also has one attempt', () => {
+  for(const error of [Object.assign(new Error('HTTP403'),{status:1,stderr:Buffer.from('HTTP403')}),
+    Object.assign(new Error('network failure'),{status:2,stderr:Buffer.from('network failure')})]) {
+    let calls=0;
+    assert.throws(()=>readJobLog(42,()=>{calls++;throw error;}),e=>e===error);
+    assert.equal(calls,1);
+  }
+  let calls=0;
+  assert.throws(()=>readJobLog(42,()=>{calls++;throw Object.assign(new Error('escape rejection'),{status:1,
+    stderr:Buffer.from('the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway')});}),/escape rejection/);
+  assert.equal(calls,2);
 });

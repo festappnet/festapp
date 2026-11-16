@@ -1,3 +1,7 @@
+import 'package:fstapp/components/blueprint/views/blueprint_seat_swap_dialog.dart';
+import 'package:fstapp/components/eshop/ticket_commands.dart';
+import 'package:fstapp/components/eshop/ticket_cancellation_updates.dart';
+import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/eshop/seat_order_commands.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
@@ -989,6 +993,13 @@ void main() {
     await tester.pumpAndSettle();
     final action = find.byKey(const ValueKey('commercial-cancel-tickets'));
     await tester.ensureVisible(action);
+    for (var attempt = 0;
+        attempt < 100 && tester.widget<OutlinedButton>(action).onPressed == null;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    expect(tester.widget<OutlinedButton>(action).onPressed, isNotNull);
     // Cancellation recovery uses the same durable journal as hold release.
     // Let its filesystem/HTTP continuation run outside the fake clock.
     await tester.runAsync(() => tester.tap(action));
@@ -1055,6 +1066,21 @@ void main() {
         {seats.first.id, seats.last.id});
     var swapPreviews = 0;
     Map<String, dynamic>? approvedSwap;
+    var updateEmailsSent = 0;
+    var hasCustomerChanges = true;
+    final updatedOrder = {
+      'id': 77,
+      'order_sequence': 77,
+      'price': 300,
+      'currency_code': 'CZK',
+      'state': 'ordered',
+      'data': {
+        'email': 'swap@example.invalid',
+        'tickets': [
+          {'id': 51},
+        ],
+      },
+    };
     final swapWrites = <Map<String, dynamic>>[];
     pickerResponse = (request) {
       final body = jsonDecode(request.body) as Map<String, dynamic>;
@@ -1073,7 +1099,38 @@ void main() {
         approvedSwap = response;
       } else if (request.url.path.endsWith('/swap_blueprint_seats')) {
         swapWrites.add(body);
-        response = commandResponseFixture(body['p_command_id'] as String);
+        response = commandResponseFixture(body['p_command_id'] as String,
+            data: {'orders': blueprintSwapPreviewFixture()['orders']});
+      } else if (request.url.path.endsWith('/get_order_history')) {
+        expect(body['order_id'], 77);
+        response = {
+          'code': 200,
+          'data': {'order': updatedOrder, 'history': [], 'users': []},
+        };
+      } else if (request.url.path.endsWith('/get_products_for_ticket')) {
+        expect(body['ticket_id'], 51);
+        response = {
+          'code': 200,
+          'data': {
+            'ticket': {'id': 51},
+            'order': updatedOrder,
+            'order_history': {'is_newer_version_available': true},
+            'order_changes': {
+              'version': 1,
+              'hasChanges': hasCustomerChanges,
+              'referenceTotal': 200,
+              'currentTotal': 300,
+              'currencyCode': 'CZK',
+              'cancelledTickets': [],
+              'removedTickets': [],
+              'addedTickets': [],
+              'productChanges': [],
+            },
+          },
+        };
+      } else if (request.url.path.endsWith('/send-email')) {
+        updateEmailsSent++;
+        response = {'code': 200};
       } else {
         throw StateError('Unexpected swap request: ${request.url.path}');
       }
@@ -1107,7 +1164,7 @@ void main() {
                   .map((t) => t.data)
                   .join(' | '));
       expect(find.text('Destination companion'), findsOneWidget);
-      expect(find.text(BlueprintStrings.swapServerNotice), findsOneWidget);
+      expect(find.text(BlueprintStrings.swapServerNotice), findsNothing);
     }
 
     await openSwap();
@@ -1137,6 +1194,57 @@ void main() {
           () async => Future<void>.delayed(const Duration(milliseconds: 20)));
     }
     await tester.pumpAndSettle();
+    for (var attempt = 0;
+        attempt < 100 && find.text(OrdersStrings.sendUpdateButton).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(BlueprintStrings.swapSuccess), findsWidgets);
+    expect(find.text(OrdersStrings.sendUpdateButton), findsOneWidget);
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsNothing,
+        reason: 'The completed swap stays open with an explicit update action');
+    await tester.runAsync(() => tester.tap(find.text(OrdersStrings.sendUpdateButton)));
+    for (var attempt = 0;
+        attempt < 100 && find.text(OrdersStrings.sendUpdateTitle).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsOneWidget);
+    expect(find.text(OrdersStrings.sendUpdateContent('swap@example.invalid')), findsOneWidget);
+    expect(updateEmailsSent, 0, reason: 'Customer updates require explicit confirmation');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    for (var attempt = 0;
+        attempt < 100 && find.text(OrdersStrings.sendUpdateButton).evaluate().isEmpty;
+        attempt++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateButton), findsOneWidget,
+        reason: 'Dismissing the email preview retains the completed swap');
+    expect(swapWrites, hasLength(1), reason: 'Follow-up cannot repeat the swap');
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(updateEmailsSent, 0);
+    hasCustomerChanges = false;
+    await tester.runAsync(() => showOrderUpdateEmails(
+        tester.element(find.byType(BlueprintLayoutHost)), [77], onlyIfChanged: true));
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsNothing,
+        reason: 'An unchanged customer summary does not need another email');
+    hasCustomerChanges = true;
+    (updatedOrder['data'] as Map)['email'] = '';
+    await tester.runAsync(() => showOrderUpdateEmails(
+        tester.element(find.byType(BlueprintLayoutHost)), [77], onlyIfChanged: true));
+    await tester.pumpAndSettle();
+    expect(find.text(OrdersStrings.sendUpdateTitle), findsNothing,
+        reason: 'Orders without a recipient do not offer email');
+    expect(updateEmailsSent, 0);
     expect(swapPreviews, 2);
     expect(swapWrites, hasLength(1));
     expect(swapWrites.single['p_first'], approvedSwap!['firstSpotId']);
@@ -1159,6 +1267,96 @@ void main() {
     expect(
         find.byKey(const ValueKey('commercial-cancel-tickets')), findsNothing);
   });
+
+  for (final scenario in [
+    (name: 'same order', ids: [77, 77], emails: ['buyer@example.invalid', 'buyer@example.invalid'], delta: '0.00', offers: 0),
+    (name: 'same customer', ids: [77, 78], emails: [' Buyer@Example.invalid ', 'buyer@example.invalid'], delta: '0.00', offers: 0),
+    (name: 'different customers', ids: [77, 78], emails: ['first@example.invalid', 'second@example.invalid'], delta: '0.00', offers: 2),
+    (name: 'expanded duplicate customer', ids: [77, 78, 79], emails: ['same@example.invalid', ' SAME@example.invalid ', 'other@example.invalid'], delta: '0.00', offers: 1),
+    (name: 'single order price change', ids: [77], emails: ['buyer@example.invalid'], delta: '100.00', offers: 1),
+  ]) {
+    testWidgetsWithEnvironment(() => environment,
+        'swap follow-up recipient offers: ${scenario.name}', (tester) async {
+      const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+      var reads = 0;
+      var sends = 0;
+      Map<String, dynamic> order(int id) => {
+        'id': id, 'order_sequence': id, 'price': 300, 'currency_code': 'CZK',
+        'state': 'ordered', 'data': {
+          'email': scenario.emails[scenario.ids.indexOf(id)],
+          'tickets': [{'id': id}],
+        },
+      };
+      pickerResponse = (request) {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        late Map<String, dynamic> response;
+        if (request.url.path.endsWith('/get_order_history')) {
+          reads++;
+          response = {'code': 200, 'data': {'order': order(body['order_id'] as int), 'history': [], 'users': []}};
+        } else if (request.url.path.endsWith('/get_products_for_ticket')) {
+          final id = body['ticket_id'] as int;
+          response = {'code': 200, 'data': {
+            'ticket': {'id': id}, 'order': order(id),
+            'order_history': {'is_newer_version_available': true},
+            'order_changes': {'version': 1, 'hasChanges': true,
+              'referenceTotal': 200, 'currentTotal': 300, 'currencyCode': 'CZK',
+              'cancelledTickets': [], 'removedTickets': [], 'addedTickets': [], 'productChanges': []},
+          }};
+        } else if (request.url.path.endsWith('/send-email')) {
+          sends++;
+          response = {'code': 200};
+        } else {
+          throw StateError('Unexpected email follow-up request: ${request.url.path}');
+        }
+        return http.Response(jsonEncode(response), 200, request: request,
+            headers: {'content-type': 'application/json'});
+      };
+      final outcome = SeatSwapOutcome.fromJson({'orders': [
+        for (final id in scenario.ids) {'orderId': id, 'delta': scenario.delta,
+          'beforeState': 'paid', 'afterState': 'paid'},
+      ]});
+      await environment.pumpWidget(tester, MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(body: Builder(builder: (context) => TextButton(
+          onPressed: () => showDialog<void>(context: context,
+            builder: (_) => BlueprintSeatSwapDialog(initialOutcome: outcome)),
+          child: const Text('Otevřít prohození'),
+        ))),
+      ));
+      Future<void> settleUntil(bool Function() ready) async {
+        for (var attempt = 0; attempt < 80; attempt++) {
+          await tester.runAsync(() async => Future<void>.delayed(const Duration(milliseconds: 10)));
+          await tester.pump(const Duration(milliseconds: 20));
+          if (ready()) break;
+        }
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Otevřít prohození'));
+      await settleUntil(() => scenario.offers == 0
+        ? find.byType(BlueprintSeatSwapDialog).evaluate().isEmpty
+        : find.text(OrdersStrings.sendUpdateButton).evaluate().length == scenario.offers);
+      expect(find.text(OrdersStrings.sendUpdateButton), findsNWidgets(scenario.offers));
+      expect(sends, 0);
+      if (scenario.name == 'same order') expect(reads, 0);
+      if (scenario.name == 'different customers') {
+        await tester.runAsync(() => tester.tap(find.text(OrdersStrings.sendUpdateButton).first));
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateTitle).evaluate().isNotEmpty);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateButton).evaluate().length == 2);
+        expect(sends, 0, reason: 'Canceling preview does not notify or consume the offer');
+        await tester.runAsync(() => tester.tap(find.text(OrdersStrings.sendUpdateButton).first));
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateTitle).evaluate().isNotEmpty);
+        await tester.runAsync(() => tester.tap(find.widgetWithText(ElevatedButton, OrdersStrings.sendEmailButton)));
+        await settleUntil(() => find.text(OrdersStrings.sendUpdateButton).evaluate().length == 1);
+        expect(sends, 1);
+        expect(find.text(OrdersStrings.sendUpdateButton), findsOneWidget,
+          reason: 'An accepted update is not offered again while sent history catches up');
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final outcome in ['merge', 'removed', 'replaced', 'reload', 'failed']) {
     testWidgetsWithEnvironment(
@@ -1389,6 +1587,8 @@ void main() {
       await tester.pump();
       await tester.pump();
       if (outcome == 'disposed') {
+        await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+        await tester.pumpAndSettle();
         await environment.pumpWidget(tester, const SizedBox.shrink());
         await tester.pumpAndSettle();
         expect(batches, 0);
@@ -1436,6 +1636,10 @@ void main() {
           reason: 'The saved plan remains unchanged');
       expect(source.layoutSnapshot!.revision, 1);
       expect(controller.dirty, isTrue);
+      // Flutter 3.50 delivers native font notifications on the next event turn.
+      // Let the real engine deliver them before disposing the render tree.
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
   }
@@ -1807,6 +2011,9 @@ void main() {
     editor.controller.undo();
     await tester.pump();
     expect(editor.controller.document, same(original));
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
   });
   testWidgetsWithEnvironment(() => environment,
       'blueprint host history shortcuts survive semantic inspector activation',

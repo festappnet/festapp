@@ -1,0 +1,4 @@
+vstupenky.online
+
+Vyberte logo podle pozadí a zachovejte jeho barvy i poměr stran.
+Soubory s příponou -dark jsou určeny na tmavé pozadí.

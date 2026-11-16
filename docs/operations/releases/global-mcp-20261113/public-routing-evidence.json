@@ -1,0 +1,26 @@
+{
+  "sourceSha": "09cdd991fa30dd848324df586e188040931d3bd2",
+  "configSha256": "cfb0b204779f9dcc414b1eee64986099cc97931903df0ff1bf2cc6abea1375b3",
+  "activeConfigPath": "/config/Caddyfile.global-cfb0b204779f",
+  "outsideOldGlobalBlockPreserved": true,
+  "regionalProxyUnchanged": true,
+  "globalHostHeaderCorrect": true,
+  "globalResourceAndIssuerVerified": true,
+  "unrestrictedDcrDisabled": true,
+  "checks": {
+    "mcp.vstupenky.online/healthz": 200,
+    "mcp.festapp.net/healthz": 200,
+    "resourceMetadata": 200,
+    "oauthMetadata": 200,
+    "/docs": 200,
+    "/privacy": 200,
+    "/terms": 200,
+    "/cs/privacy": 200,
+    "/cs/terms": 200,
+    "/support": 200,
+    "unauthenticatedMcp": 401,
+    "globalPythonHttpClient": 200
+  },
+  "startupSourceDigestMatches": true,
+  "readOnlyLegacyMountNotWritten": true
+}

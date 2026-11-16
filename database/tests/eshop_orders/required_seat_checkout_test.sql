@@ -12,6 +12,7 @@ DECLARE org bigint; un bigint; oc bigint; fid bigint; fk uuid; bank bigint;
  payload jsonb; result jsonb; oid bigint; before_orders bigint; command uuid;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Seat checkout regression') RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO public.units(title,organization) VALUES('Seat checkout regression',org) RETURNING id INTO un;
  INSERT INTO public.occasions(title,unit,organization,link,start_time,end_time)
  VALUES('Seat checkout regression',un,org,gen_random_uuid()::text,now(),now()+interval '1 day') RETURNING id INTO oc;
@@ -21,6 +22,7 @@ BEGIN
  INSERT INTO eshop.blueprints(title,organization,occasion) VALUES('Regression seats',org,oc) RETURNING id INTO bp;
  INSERT INTO public.forms(occasion,link,is_open,blueprint,bank_account)
  VALUES(oc,gen_random_uuid()::text,true,bp,bank) RETURNING id,key INTO fid,fk;
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"payments":{"bankEnabled":true}}'::jsonb WHERE id=fid;
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('Admission','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion,is_hidden)
  VALUES('Admission',pt,150,'CZK',oc,false) RETURNING id INTO prod;

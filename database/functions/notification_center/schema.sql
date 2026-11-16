@@ -12,7 +12,7 @@ CREATE TABLE public.notification_center_events (
  affected_occasions bigint[] NOT NULL DEFAULT '{}', projected_revision bigint NOT NULL DEFAULT 0,
  UNIQUE(organization,source_key)
 );
-CREATE INDEX notification_center_order_projection ON public.notification_center_events(occasion,(data->>'orderId'),id) WHERE kind IN ('order_created','waitlist_registered','order_cancelled','offer_accepted','offer_declined','offer_expired');
+CREATE INDEX notification_center_order_projection ON public.notification_center_events(occasion,(data->>'orderId'),id) WHERE kind IN ('order_created','waitlist_registered','order_cancelled','order_payment_received','payment_problem','offer_accepted','offer_declined','offer_expired');
 CREATE INDEX notification_center_pending ON public.notification_center_events(organization,occurred_at,id) WHERE projected_revision<attention_revision;
 CREATE TABLE public.notification_center_recipients (
  event_id uuid NOT NULL REFERENCES public.notification_center_events(id) ON DELETE CASCADE, recipient uuid NOT NULL,

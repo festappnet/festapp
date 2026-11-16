@@ -18,11 +18,20 @@ class NotificationItemPresenter {
       (item.occasionLink != null && item.data['relatedOrders'] == true) ||
       item.data['messageId'] is String ||
       (item.occasionLink != null && item.data['orderId'] is int) ||
+      (item.kind == 'provider_problem' && item.data['unitId'] is int) ||
       (item.data['bankAccountId'] is int && item.data['unitId'] is int);
   bool get isError =>
-      const {'email_problem', 'bank_problem'}.contains(item.kind) &&
+      const {
+        'email_problem',
+        'bank_problem',
+        'payment_problem',
+        'provider_problem',
+      }.contains(item.kind) &&
       item.status != 'recovered';
-  String get title => item.isSummary && (item.data['activityCount'] as int) > 1
+  String get title =>
+      item.kind == 'order_payment_received' && item.data['reassigned'] == true
+      ? NotificationCenterStrings.text('paymentAssigned')
+      : item.isSummary && (item.data['activityCount'] as int) > 1
       ? NotificationCenterStrings.activities(
           item.kind,
           item.data['activityCount'] as int,
@@ -85,7 +94,7 @@ class NotificationItemPresenter {
         NotificationCenterStrings.places(count, locale: locale),
       if (data['messageKind'] is String)
         EmailDeliveryStrings.kind(data['messageKind']),
-      if (reason != null) reason!,
+      ?reason,
       if (data['registrationMode'] == 'full')
         NotificationCenterStrings.kind('capacity_full'),
       if (data['registrationMode'] == 'waitlist')

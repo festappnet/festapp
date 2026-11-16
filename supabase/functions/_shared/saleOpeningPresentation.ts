@@ -1,9 +1,9 @@
 import { escapeEmailHtml, waitlistActionLink } from './emailActionLink.ts';
 export const saleOpeningCopy = {
   "cs": {
-    "subject": "Prodej byl spuštěn",
-    "action": "Přejít na prodej",
-    "disclaimer": "Přihlášení nezajišťuje rezervaci ani přednostní nákup.",
+    "subject": "Předprodej byl spuštěn",
+    "action": "Přejít na předprodej",
+    "disclaimer": "Přihlášení k upozornění nezajišťuje rezervaci vstupenek ani přednostní nákup.",
     "unsubscribe": "Odhlásit upozornění"
   },
   "en": {
@@ -39,8 +39,8 @@ export const saleOpeningCopy = {
 } as const;
 export const saleOpeningRegistrationCopy = {
   "cs": [
-    "Registrace byla otevřena",
-    "Přejít na registraci"
+    "Přihlašování bylo spuštěno",
+    "Přejít na přihlašování"
   ],
   "en": [
     "Registration is open",
@@ -63,6 +63,14 @@ export const saleOpeningRegistrationCopy = {
     "Перейти до реєстрації"
   ]
 } as const;
+const registrationDisclaimers = {
+ cs: 'Přihlášení k upozornění nezajišťuje místo na akci ani přednostní přihlášení.',
+ en: 'Signing up for notifications does not reserve a place or provide priority registration.',
+ sk: 'Prihlásenie na upozornenie nezaisťuje miesto na podujatí ani prednostné prihlásenie.',
+ de: 'Die Benachrichtigung reserviert keinen Platz und gewährt keine bevorzugte Anmeldung.',
+ pl: 'Zapis na powiadomienie nie rezerwuje miejsca ani nie zapewnia pierwszeństwa rejestracji.',
+ uk: 'Підписка на сповіщення не гарантує місця на події чи пріоритетної реєстрації.',
+} as const;
 export function saleOpeningUrl(webLink: string, formLink: string, purpose?: string, token?: string): string {
  const base = new URL(webLink);
  if ((base.protocol !== 'https:' && !(base.protocol === 'http:' && ['localhost','127.0.0.1','[::1]'].includes(base.hostname))) || base.username || base.password || base.search || base.hash) throw new Error('sale_opening_origin_invalid');
@@ -76,7 +84,7 @@ export function saleOpeningSubstitutions(lang: string, title: string, action: st
  const registration = saleOpeningRegistrationCopy[lang as keyof typeof saleOpeningRegistrationCopy];
  const subject = options.hasTickets === false ? registration[0] : copy.subject;
  return {occasionTitle: title,sale_opening_subject:subject,sale_opening_heading:subject,
-  sale_opening_disclaimer:copy.disclaimer,
+  sale_opening_disclaimer:options.hasTickets === false ? registrationDisclaimers[lang as keyof typeof registrationDisclaimers] : copy.disclaimer,
   sale_opening_action:waitlistActionLink(escapeEmailHtml(action),options.hasTickets === false ? registration[1] : copy.action),
   sale_opening_unsubscribe:`<a href="${escapeEmailHtml(unsubscribe)}" rel="noreferrer noopener" referrerpolicy="no-referrer">${copy.unsubscribe}</a>`};
 }

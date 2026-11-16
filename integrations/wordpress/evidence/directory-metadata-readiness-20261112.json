@@ -1,0 +1,23 @@
+{
+  "baselineVersion": "1.0.7",
+  "candidateVersion": "1.0.8",
+  "officialBaselineZipSha256": "80a48e18ad6bb9fd9cff2c89acda3780f442fff14f240ec2ae0497e9ade3ff57",
+  "files": 12,
+  "changedFiles": [
+    "vstupenky-online/blocks/ticket-form/block.json",
+    "vstupenky-online/languages/vstupenky-online-cs_CZ-d2e462fda38d352e30f2759389b5f7b5.json",
+    "vstupenky-online/languages/vstupenky-online-cs_CZ.mo",
+    "vstupenky-online/languages/vstupenky-online-cs_CZ.po",
+    "vstupenky-online/languages/vstupenky-online.pot",
+    "vstupenky-online/readme.txt",
+    "vstupenky-online/vstupenky-online.php"
+  ],
+  "runtimeHandlersEditorAndCssByteIdentical": true,
+  "bootstrapOnlyDescriptionAndVersionChanged": true,
+  "metadataContractTests": "PASS",
+  "czechGettextFormat": "PASS",
+  "scope": "vstupenky-online only; documentation, metadata and Czech copy",
+  "fullPurchaseFlowRerun": false,
+  "validationBoundary": "Metadata-only update against official 1.0.7; runtime handlers, editor JavaScript and CSS unchanged. No service deployment required.",
+  "directoryCzechStatus": "Translation proposals require independent WordPress.org locale-editor review; not claimed approved."
+}

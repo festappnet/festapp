@@ -42,10 +42,10 @@ class OrderChangeSummary {
 class OrderTicketChange {
   final int? id;
   final String? ticketSymbol;
-  final List<ProductModel> products;
-  final List<ProductModel> added;
-  final List<ProductModel> removed;
-  final List<({ProductModel from, ProductModel to})> changed;
+  final List<OrderChangeProduct> products;
+  final List<OrderChangeProduct> added;
+  final List<OrderChangeProduct> removed;
+  final List<({OrderChangeProduct from, OrderChangeProduct to})> changed;
 
   OrderTicketChange.fromJson(Map<String, dynamic> json)
     : id = (json['id'] as num?)?.toInt(),
@@ -59,13 +59,30 @@ class OrderTicketChange {
         ),
       );
 
-  static List<ProductModel> _products(dynamic value) =>
+  static List<OrderChangeProduct> _products(dynamic value) =>
       List.unmodifiable((value as List? ?? []).map(_product));
 
-  static ProductModel _product(dynamic value) => ProductModel(
-    id: value['id'],
-    title: value['title'],
-    price: (value['price'] as num?)?.toDouble() ?? 0,
-    currencyCode: value['currency_code'],
-  );
+  static OrderChangeProduct _product(dynamic value) =>
+      OrderChangeProduct.fromJson(Map<String, dynamic>.from(value));
+}
+
+/// Purchased product snapshot with the seating facts used in customer updates.
+class OrderChangeProduct extends ProductModel {
+  final String? spotTitle;
+  final String? spotGroupTitle;
+
+  OrderChangeProduct.fromJson(Map<String, dynamic> json)
+    : spotTitle = json['spot_title'] as String?,
+      spotGroupTitle = json['spot_group_title'] as String?,
+      super(
+        id: json['id'],
+        title: json['title'],
+        price: (json['price'] as num?)?.toDouble() ?? 0,
+        currencyCode: json['currency_code'],
+      );
+
+  String get seatLabel => [
+    spotGroupTitle,
+    spotTitle,
+  ].whereType<String>().where((part) => part.isNotEmpty).join(' / ');
 }

@@ -15,6 +15,7 @@ BEGIN
  IF existing.id IS NOT NULL AND (existing.unit_id<>p_unit OR existing.organization_id<>p_organization) THEN RAISE EXCEPTION 'BARION_SANDBOX_SCOPE_INVALID'; END IF;
  INSERT INTO eshop.barion_connections(organization_id,unit_id,account_id,business_name,sandbox_form_ids,enabled) VALUES(p_organization,p_unit,p_shop,p_name,p_forms,p_enabled)
  ON CONFLICT(account_id) DO UPDATE SET business_name=excluded.business_name,sandbox_form_ids=excluded.sandbox_form_ids,enabled=excluded.enabled RETURNING id INTO connection;
+ PERFORM public.notification_center_provider_connection_internal('barion',connection);
  RETURN connection;
 END $$;
 REVOKE ALL ON FUNCTION public.configure_barion_sandbox_connection_internal(bigint,bigint,text,text,bigint[],boolean) FROM PUBLIC,anon,authenticated;
@@ -22,4 +23,5 @@ GRANT EXECUTE ON FUNCTION public.configure_barion_sandbox_connection_internal(bi
 INSERT INTO public.abuse_policy_rules(rule_key,budget_key,scope_kind,kind,window_seconds,bucket_seconds,base_limit,hard_cap) VALUES
  ('barion.checkout.token.minute','barion.checkout','actor','rolling',60,60,5,10),
  ('barion.checkout.unit.minute','barion.checkout','unit','rolling',60,60,100,200),
- ('barion.checkout.organization.day','barion.checkout','organization','rolling',86400,3600,5000,10000);
+ ('barion.checkout.organization.day','barion.checkout','organization','rolling',86400,3600,5000,10000)
+ ON CONFLICT(rule_key) DO NOTHING;

@@ -2,7 +2,7 @@
 """Real full/differential/PITR and archive-failure test, no network or host mounts."""
 import json,subprocess,tempfile,time,uuid
 from pathlib import Path
-IMAGE='festapp-postgres-pgbackrest:17.6-2.57.0-r0'
+IMAGE='festapp-postgres-pgbackrest:17.12-2.57.0-r0'
 name='festapp-pgbackrest-test-'+uuid.uuid4().hex[:10]
 def run(*args,input=None):
  return subprocess.check_output(args,input=input,stderr=subprocess.STDOUT).decode().strip()

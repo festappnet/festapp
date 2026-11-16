@@ -1,7 +1,7 @@
 # Copyright (C) 2026 Festapp
 # License: GPL-2.0-or-later
 msgid ""
-msgstr "Project-Id-Version: Festapp Tickets 1.0.2\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: festapp-tickets\n"
+msgstr "Project-Id-Version: Festapp Tickets 1.0.3\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nLanguage: \nPlural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\nX-Domain: festapp-tickets\n"
 
 msgid "1. Prepare your form"
 msgstr ""
@@ -27,7 +27,19 @@ msgstr ""
 msgid "Both height modes load the service helper. Fixed height (240-4000 px) scrolls within the form. The link below the form works without the helper. If your theme or security policy blocks embedding, visitors can open the form in a new tab."
 msgstr ""
 
+msgid "Button"
+msgstr ""
+
+msgid "Buy tickets"
+msgstr ""
+
 msgid "Check the public URL. The server accepts only an allowed form address."
+msgstr ""
+
+msgid "Configuration exported from Festapp"
+msgstr ""
+
+msgid "Cookie choice transfer"
 msgstr ""
 
 msgid "Copy the public URL in the form https://tickets.festapp.net/form/saved-slug. Do not use a personal order link or administration URL."
@@ -45,10 +57,13 @@ msgstr ""
 msgid "Describe this form for visitors using screen readers. This does not rename the event."
 msgstr ""
 
+msgid "Display as"
+msgstr ""
+
 msgid "Embed a form from your Festapp Tickets account. Manage events, orders and admission in the service."
 msgstr ""
 
-msgid "Embed a saved Festapp Tickets ticket form with a block or shortcode."
+msgid "Enable imported configuration"
 msgstr ""
 
 msgid "External service and privacy"
@@ -58,6 +73,9 @@ msgid "Fallback height without the helper (px)"
 msgstr ""
 
 msgid "Festapp Tickets"
+msgstr ""
+
+msgid "Festapp Tickets form link"
 msgstr ""
 
 msgid "Festapp Unit runtime (existing behavior)"
@@ -84,6 +102,18 @@ msgstr ""
 msgid "If a purchase result is uncertain, check the order with the organizer before buying again. Payments and seat availability are controlled by the service. Deactivation or deletion does not delete service orders; raw shortcode text may then appear on the page."
 msgstr ""
 
+msgid "Import a valid export for this website from Festapp."
+msgstr ""
+
+msgid "Import accepted locally. The form verifies current server approval."
+msgstr ""
+
+msgid "In Festapp, open Organizer settings > Measurement > My websites. Confirm coverage there and copy the export here. Cookie choice transfer does not preserve analytics visitor identity."
+msgstr ""
+
+msgid "Link text"
+msgstr ""
+
 msgid "Measurement destination"
 msgstr ""
 
@@ -108,6 +138,9 @@ msgstr ""
 msgid "Privacy policy"
 msgstr ""
 
+msgid "Sell tickets and collect event registrations with Festapp Tickets forms. Add a Gutenberg block or shortcode to your WordPress site."
+msgstr ""
+
 msgid "Sell tickets using a saved public Festapp Tickets form."
 msgstr ""
 
@@ -129,10 +162,19 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
+msgid "Text link"
+msgstr ""
+
 msgid "The editor shows the block settings. Save the page and open its preview to see the real form, then publish when you are ready."
 msgstr ""
 
 msgid "The form is not configured. Enter a saved public https://tickets.festapp.net/form/ URL without extra parameters."
+msgstr ""
+
+msgid "The form opens in a new tab with its own cookie notice. Cookie choice transfer can be enabled under Settings."
+msgstr ""
+
+msgid "The import is enabled locally. The form verifies current approval and the saved cookie choice."
 msgstr ""
 
 msgid "The published form connects to Festapp Tickets and loads /embed.js. Unit measurement remains the default for existing blocks and shortcodes. New blocks and shortcode examples use Website measurement, recommended for websites with their own GTM and consent banner. Website measurement shares conversion contacts and transaction identifiers with page scripts through dataLayer. Configure your website tags, consent manager and privacy notice before enabling it. The plugin stores no buyer orders or service credentials in WordPress. Activation, this help page and the editor do not load the remote form."
@@ -142,6 +184,9 @@ msgid "Ticket sales - Festapp Tickets"
 msgstr ""
 
 msgid "Tickets on your website"
+msgstr ""
+
+msgid "Transfer is off or the export is invalid. Checkout remains available."
 msgstr ""
 
 msgid "Use https://tickets.festapp.net/form/saved-slug without query parameters or personal fragments."

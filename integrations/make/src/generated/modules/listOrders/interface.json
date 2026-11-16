@@ -61,6 +61,16 @@
         "name": "returned",
         "label": "Returned",
         "type": "text"
+      },
+      {
+        "name": "net",
+        "label": "Net",
+        "type": "text"
+      },
+      {
+        "name": "pending",
+        "label": "Pending",
+        "type": "text"
       }
     ]
   }

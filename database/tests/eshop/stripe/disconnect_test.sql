@@ -3,7 +3,8 @@ DECLARE org bigint; unit_id bigint; oc bigint; pi bigint; oid bigint; connection
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Disconnect tenant') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Disconnect organizer',org) RETURNING id INTO unit_id;
- INSERT INTO eshop.stripe_unit_features(unit_id,enabled) VALUES(unit_id,true);
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) SELECT organization,m,true FROM public.units CROSS JOIN unnest(ARRAY['bank','stripe']) m WHERE id=unit_id ON CONFLICT(organization_id,method) DO UPDATE SET enabled=true;
+ INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) SELECT organization,'stripe' FROM public.units WHERE id=unit_id ON CONFLICT DO NOTHING;
  INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time) VALUES('Disconnect event',org,unit_id,'disconnect-'||extensions.gen_random_uuid(),now(),now()+interval '1 day') RETURNING id INTO oc;
  PERFORM public.create_user_for_test('stripe_disconnect_manager','stripe-disconnect@example.test');actor:=get_user_id('stripe_disconnect_manager');
  UPDATE public.user_info SET organization=org WHERE id=actor;

@@ -387,6 +387,41 @@ a volby po službách vracejí neznámý stav a ponechají místní lištu. Voli
 Podporována jsou cookies i `useLocalStorage`. Neplatná konfigurace nepřejde na GCM.
 Podrobnosti a zdroje jsou v [rešerši adaptéru](../plans/consent-link-cmp-adapters-2026-11-11.md).
 
+Dalším standardním zdrojem je Cookiebot (`provider:"cookiebot"`). Stačí běžný
+loader z Cookiebot Manageru:
+
+```html
+<script id="Cookiebot" src="https://consent.cookiebot.com/uc.js"
+  data-cbid="12345678-1234-1234-1234-123456789abc" data-blockingmode="auto"></script>
+<script defer src="https://vstupenky.online/embed.js" data-cookieconsent="ignore"
+  data-festapp-consent='{"provider":"cookiebot","organization":1,"unit":2,"consentRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","cbid":"12345678-1234-1234-1234-123456789abc","origin":"https://poradatel.example","consentValidFrom":"2026-11-11T00:00:00.000Z","maxAgeSeconds":15552000}'></script>
+```
+
+Všechny ukázkové hodnoty nahraďte. `cbid` musí odpovídat data-cbid nebo parametru
+cbid loaderu a `origin` přesně HTTPS originu webu. Loader `.com/uc.js` ponechte
+v DOM. Opt-in se čte ze stavu lišty, ne z atributů loaderu: volba musí být
+výslovná (`consent.method`), musí platit GDPR a nesmí CCPA; implied volba, jiný
+než opt-in režim účtu a neznámý stav souhlas nepřevezmou. Uložený záznam
+`CookieConsent` musí nést ID souhlasu této karty, takže volba v jiné kartě nebo
+smazaný záznam převzetí ukončí při následující sekundové kontrole. Pro ruční blokování použijte `data-blockingmode="none"`;
+blokování samo nedokládá souhlas. Atribut ignore ponechá helper dostupný i při
+automatickém blokování.
+
+Cookiebot SDK nenabízí srovnatelnou verzi zásad. Povinné `consentValidFrom` je
+okamžik účinnosti archivovaného znění (UTC ISO s milisekundami a Z), vůči němuž se
+kontroluje `consentUTC`. Povinné `maxAgeSeconds` nastavte nejvýše na skutečnou
+platnost v Cookiebotu, maximálně 365 dní; ukázka používá 180 dní. Při změně
+rozsahu obnovte souhlasy a aktualizujte časový předěl i revizi Festappu.
+CBID, stamp, consentID ani cookie ver nejsou automatickým důkazem verze zásad;
+obsah a správné mapování dokládá správce. Změna CBID nebo domény převzetí odmítne.
+
+Převádějí se statistics → analytics a marketing → marketing, pouze u výslovné
+uložené volby shodné s API a čerstvou cookie. Implied/opt-out, neznámé či rozbité
+API, expirace, per-service a nesoulad úložiště ponechají lištu formuláře bez
+fallbacku na GCM. Interval kontroluje i jinou kartu; při neshodě načtěte web znovu.
+TCF marketing zůstává odmítnutý. Podrobné hranice a oficiální zdroje jsou v
+[dokumentaci měření](form-datalayer.md#configured-cookiebot-source).
+
 Technická změna runtime ukončí starou vazbu, ale nemění verzi podmínek souhlasu.
 Při změně účelů, příjemců nebo vzdáleného obsahu GTM/zásad zvyšte
 `measurement_consent_version`, zajistěte nové rozhodnutí v CMP a aktualizujte
@@ -415,3 +450,33 @@ může potlačit GTM Just Links trigger s validací; nákup měřte událostmi f
 
 Přesný kontrakt zdroje a protokolu je v
 [dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).
+
+
+### Jednodušší nastavení pomocí serverového exportu
+
+Pro běžné nastavení použijte celý export z **Nastavení pořadatele > Měření >
+Moje weby**. Výše uvedené příklady popisují také přímé vývojářské integrace;
+export neupravujte ani z něj neodstraňujte omezení.
+
+Complianz nadále vyžaduje ID zásad, které skutečně pokrývají formulář. Jeho
+podporované API nedokládá čas uložené volby. CookieConsent v3 nabízí jen volitelné
+mapování kategorií, Cookiebot a Wix nevyžadují další technické údaje.
+
+Při potvrzení pokrytí server pro CookieConsent v3, Cookiebot a Wix uloží
+`consentValidFrom` podle času potvrzení a `maxAgeSeconds` nejvýše na 365 dní.
+Převezmou se pouze volby uložené po tomto potvrzení; vlastní expirace CMP platí
+současně. Nejdříve zveřejněte odpovídající zásady, potvrďte pokrytí ve Festappu,
+importujte nový export a poté ve své liště vyžádejte novou volbu návštěvníků.
+Při změně rozsahu zvyšte také `measurement_consent_version` a celý postup
+opakujte. U Complianzu zveřejněte a potvrďte odpovídající nové ID zásad.
+
+Cookiebot při změně textu automaticky neprokazuje obnovení všech souhlasů;
+správce použije [Renew now v Cookiebot Manageru](https://support.cookiebot.com/hc/en-us/articles/26380933353372-Renew-existing-user-consents-in-the-Cookiebot-Manager).
+Do nové volby zůstane dostupná místní lišta formuláře i samotný nákup.
+
+Starší exporty se stejným `schemaVersion: 1` zůstávají podporované se všemi
+svými omezeními: `policyId`, `cbid`, `revision`, `consentValidFrom` i
+`maxAgeSeconds`. Migrace jejich konfiguraci, potvrzení ani verzi nepřepisuje.
+Nové potvrzení verzovanou konfiguraci nahradí; starý export pak není platný.
+Aktualizace CMS doplňků není potřeba, ale SQL a hostovaný helper musí být nasazeny
+společně. Starší helper nový export bez ruční revize odmítne a ponechá místní lištu.
