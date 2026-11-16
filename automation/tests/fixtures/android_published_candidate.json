@@ -1,0 +1,99 @@
+{
+  "run": {
+    "id": 43696918865,
+    "path": ".github/workflows/android-production.yml",
+    "head_branch": "main",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "job": {
+    "id": 132759465611,
+    "run_id": 43696918865,
+    "name": "publish (cavfotofest, prod/cavfotofest, fstapp.cav, 1143, e2fb67b22ffad245fb65d0f121085acc74d4b46...",
+    "conclusion": "success",
+    "steps": [
+      {
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "name": "Check out trusted release tooling",
+        "conclusion": "success"
+      },
+      {
+        "name": "Preserve trusted verification tooling",
+        "conclusion": "success"
+      },
+      {
+        "name": "Check out authorized source",
+        "conclusion": "success"
+      },
+      {
+        "name": "Prove the authorized source is still current",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run actions/setup-java@v6",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run ruby/setup-ruby@v1",
+        "conclusion": "success"
+      },
+      {
+        "name": "Materialize private publishing inputs",
+        "conclusion": "success"
+      },
+      {
+        "name": "Download the exact authorized candidate from GitHub",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify the downloaded receipt and hash",
+        "conclusion": "success"
+      },
+      {
+        "name": "Install pinned Bundletool verifier",
+        "conclusion": "success"
+      },
+      {
+        "name": "Reverify the exact production input",
+        "conclusion": "success"
+      },
+      {
+        "name": "Install pinned Play publishing tooling",
+        "conclusion": "success"
+      },
+      {
+        "name": "Publish the authorized AAB to full production",
+        "conclusion": "success"
+      },
+      {
+        "name": "Read production state back from Google Play",
+        "conclusion": "success"
+      },
+      {
+        "name": "Remove private inputs",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Run actions/setup-java@v6",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Check out authorized source",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Check out trusted release tooling",
+        "conclusion": "success"
+      },
+      {
+        "name": "Complete job",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "log": "##[group]Run actions/download-artifact@v8\n  name: android-candidate-cavfotofest-e2fb67b22ffad245fb65d0f121085acc74d4b463\n  run-id: 43695254882\n##[endgroup]\n##[group]Run bundle exec ruby \"$RUNNER_TEMP/play_track_readback.rb\"\n  PLAY_PACKAGE: fstapp.cav\n  PLAY_EXPECTED_VERSION_CODE: 1143\n##[endgroup]\n"
+}
