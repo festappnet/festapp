@@ -282,7 +282,8 @@ class ReusePolicyTest(unittest.TestCase):
         self.checkout_available = True
         self.original_contract=copy.deepcopy(self.contract)
 
-    def evaluate(self, fingerprint=None, runs=None, definition=None, consume=False):
+    def evaluate(self, fingerprint=None, runs=None, definition=None, consume=False,
+                 expire_endpoint=None, expire_unit=None):
         import hashlib, io, zipfile
         archive = io.BytesIO()
         with zipfile.ZipFile(archive,'w') as bundle:
@@ -290,6 +291,9 @@ class ReusePolicyTest(unittest.TestCase):
         payload=archive.getvalue()
         self.artifact['digest']='sha256:'+hashlib.sha256(payload).hexdigest()
         def api(repository, endpoint, paginate=False):
+            if endpoint==expire_endpoint:
+                selection.LOOKUP.get()['deadline']=0
+                raise selection.BudgetExpired('fixture lookup deadline')
             if not endpoint: return {'id':7}
             if endpoint=='actions/runs/123': return self.run
             if endpoint.startswith('actions/workflows/'):
@@ -306,11 +310,19 @@ class ReusePolicyTest(unittest.TestCase):
                 if not self.checkout_available: raise ValueError('foreign base')
                 return b''
             raise AssertionError(args)
+        original_verify=selection.verify_execution
+        def verify(*args,**kwargs):
+            unit=args[-1]
+            if unit==expire_unit:
+                selection.LOOKUP.get()['deadline']=0
+                raise selection.BudgetExpired('fixture verification deadline')
+            return original_verify(*args,**kwargs)
         with tempfile.TemporaryDirectory() as directory, \
              patch.object(selection.Path,'home',return_value=Path(directory)), \
              patch.object(selection,'git',side_effect=git), \
              patch.object(selection,'ensure_commit'), \
              patch.object(selection,'source_policy',return_value=self.original_contract), \
+             patch.object(selection,'verify_execution',side_effect=verify), \
              patch.object(selection,'definition',side_effect=definition or (lambda *args:'trusted')), \
              patch.object(selection,'fingerprint',side_effect=fingerprint or (lambda *args:'same-inputs')), \
              patch.object(selection,'toolchain',return_value=self.tools), \
@@ -423,6 +435,30 @@ class ReusePolicyTest(unittest.TestCase):
         result=self.evaluate(fingerprint=digest,consume=True)
         self.assertEqual(result['execute'],['image-storage'])
         self.assertEqual(set(result['reuse']),set(self.contract['jobs']['image-contract']['steps'])-{'image-storage'})
+
+    def test_budget_expiry_keeps_verified_units_and_executes_changed_remainder(self):
+        self.contract['steps']['image-storage']['after']=[]
+        self.original_contract['steps']['image-storage']['after']=[]
+        self.run['run_number']=2
+        older={**self.run,'id':122,'run_number':1}
+        def digest(sha,lane,policy,unit=None):
+            return 'changed' if sha==SHA and unit=='image-storage' else 'same-inputs'
+        result=self.evaluate(fingerprint=digest,runs=[older,self.run],
+                             expire_endpoint='actions/runs/122',consume=True)
+        self.assertEqual(result['execute'],['image-storage'])
+        self.assertEqual(set(result['reuse']),{'image-install','image-policy','image-preflight'})
+        self.assertIn('budget',result['reason'])
+        self.assertEqual({p['source'] for p in result['reuse'].values()},{BASE})
+
+    def test_budget_never_admits_a_unit_whose_verification_did_not_finish(self):
+        for policy in (self.contract,self.original_contract):
+            for unit in policy['jobs']['image-contract']['steps']:policy['steps'][unit]['after']=[]
+        result=self.evaluate(expire_unit='image-policy',consume=True)
+        self.assertEqual(set(result['reuse']),{'image-install'})
+        self.assertEqual(set(result['execute']),{'image-policy','image-preflight','image-storage'})
+        result=self.evaluate(expire_endpoint='actions/runs/123',consume=True)
+        self.assertFalse(result['reuse'])
+        self.assertEqual(set(result['execute']),set(self.contract['jobs']['image-contract']['steps']))
 
     def test_mixed_receipt_cannot_refresh_a_reused_units_origin(self):
         self.receipt['units']['image-storage']['state']='reused'

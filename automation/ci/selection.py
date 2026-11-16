@@ -312,52 +312,59 @@ def reusable(lane, sha, repository, contract, policy):
     trusted=definition('origin/main')
     if definition(sha)!=trusted: return {'run':True,'reason':'CI policy changes require execution'}
     units=contract['jobs'][lane]['steps']
+    lane_input=fingerprint(sha,lane,policy)
     current={unit:fingerprint(sha,lane,policy,unit) for unit in units}
     remaining=set(units);proofs={}
     repository_id=api(repository,'')['id']
     workflow=contract['jobs'][lane]['workflow']
     runs=api(repository,f'actions/workflows/{workflow}/runs?per_page=100')['workflow_runs']
     cutoff=datetime.now(timezone.utc)-timedelta(days=policy['reusePolicy']['maxAgeDays'])
-    for run in sorted(runs,key=lambda r:(r['run_number'],r['run_attempt']),reverse=True):
-        if str(run['id'])==os.environ.get('GITHUB_RUN_ID'): continue
-        if (run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or
-                run['event'] not in ('push','workflow_dispatch','pull_request') or
-                run['path']!=f'.github/workflows/{workflow}' or
-                datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff): continue
-        state=LOOKUP.get()
-        if state is not None: state['candidates']+=1
-        # A list entry may become stale during a rerun. Refresh status/attempt
-        # before admitting an immutable artifact from that execution.
-        expected_id=run['id']
-        run=api(repository,f'actions/runs/{expected_id}')
-        if (run['id']!=expected_id or run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or run['event'] not in ('push','workflow_dispatch','pull_request') or run['path']!=f'.github/workflows/{workflow}'):
-            raise ValueError('Fresh run binding changed')
-        if datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff: continue
-        ensure_commit(run['head_sha'])
-        if run['status']!='completed' or run['conclusion']!='success':
-            if run['event']=='pull_request' or any(fingerprint(run['head_sha'],lane,policy,u)==current[u] for u in remaining):
-                return {'run':True,'reason':'Newer matching or unresolved workflow did not pass'}
-            continue
-        # For main the API SHA is the checkout. Reject mismatches before ZIP
-        # download. PRs MUST use the receipt's validated synthetic merge tree.
-        candidates=remaining if run['event']=='pull_request' else {
-            u for u in remaining if fingerprint(run['head_sha'],lane,policy,u)==current[u]}
-        if not candidates: continue
-        if run['event']!='pull_request' and definition(run['head_sha'])!=trusted: continue
-        job=job_for(repository,run,lane)
-        if not direct_marker(job): continue
-        receipt,artifact=read_artifact(repository,run,lane)
-        # Old lane receipts never supply unit evidence. Mixed receipts supply
-        # only directly executed rows, never the rows that they reused.
-        if receipt.get('execution',{}).get('schemaVersion')!=2: continue
-        for unit in sorted(candidates):
-            row=receipt.get('units',{}).get(unit,{})
-            if row.get('state')!='executed' or row.get('inputSha256')!=current[unit]: continue
-            source=verify_execution(receipt,run,job,lane,current[unit],repository_id,contract,policy,trusted,unit)
-            proofs[unit]={'source':source,'inputSha256':current[unit],'url':job['html_url'],
-                          'runId':run['id'],'attempt':run['run_attempt'],'jobId':job['id'],'artifact':artifact}
-            remaining.remove(unit)
-        if not remaining: break
+    expired=False
+    try:
+        for run in sorted(runs,key=lambda r:(r['run_number'],r['run_attempt']),reverse=True):
+            if str(run['id'])==os.environ.get('GITHUB_RUN_ID'): continue
+            if (run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or
+                    run['event'] not in ('push','workflow_dispatch','pull_request') or
+                    run['path']!=f'.github/workflows/{workflow}' or
+                    datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff): continue
+            state=LOOKUP.get()
+            if state is not None: state['candidates']+=1
+            # A list entry may become stale during a rerun. Refresh status/attempt
+            # before admitting an immutable artifact from that execution.
+            expected_id=run['id']
+            run=api(repository,f'actions/runs/{expected_id}')
+            if (run['id']!=expected_id or run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or run['event'] not in ('push','workflow_dispatch','pull_request') or run['path']!=f'.github/workflows/{workflow}'):
+                raise ValueError('Fresh run binding changed')
+            if datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff: continue
+            ensure_commit(run['head_sha'])
+            if run['status']!='completed' or run['conclusion']!='success':
+                if run['event']=='pull_request' or any(fingerprint(run['head_sha'],lane,policy,u)==current[u] for u in remaining):
+                    return {'run':True,'reason':'Newer matching or unresolved workflow did not pass'}
+                continue
+            # For main the API SHA is the checkout. Reject mismatches before ZIP
+            # download. PRs MUST use the receipt's validated synthetic merge tree.
+            candidates=remaining if run['event']=='pull_request' else {
+                u for u in remaining if fingerprint(run['head_sha'],lane,policy,u)==current[u]}
+            if not candidates: continue
+            if run['event']!='pull_request' and definition(run['head_sha'])!=trusted: continue
+            job=job_for(repository,run,lane)
+            if not direct_marker(job): continue
+            receipt,artifact=read_artifact(repository,run,lane)
+            # Old lane receipts never supply unit evidence. Mixed receipts supply
+            # only directly executed rows, never the rows that they reused.
+            if receipt.get('execution',{}).get('schemaVersion')!=2: continue
+            for unit in sorted(candidates):
+                row=receipt.get('units',{}).get(unit,{})
+                if row.get('state')!='executed' or row.get('inputSha256')!=current[unit]: continue
+                source=verify_execution(receipt,run,job,lane,current[unit],repository_id,contract,policy,trusted,unit)
+                proofs[unit]={'source':source,'inputSha256':current[unit],'url':job['html_url'],
+                              'runId':run['id'],'attempt':run['run_attempt'],'jobId':job['id'],'artifact':artifact}
+                remaining.remove(unit)
+            if not remaining: break
+    except BudgetExpired:
+        # Only fully verified proofs have been admitted. Older, unvisited runs
+        # cannot supersede them; unresolved units and their preparation execute.
+        expired=True
     # Environment preparation cannot be reused as installed state. Any selected
     # consumer reruns its dependency closure even if a dependency has a PASS.
     selected=set(remaining)
@@ -368,9 +375,12 @@ def reusable(lane, sha, repository, contract, policy):
     proofs={u:p for u,p in proofs.items() if u not in selected}
     result={'run':bool(selected),'reason':'Verified unit coverage' if proofs else 'No verified direct unit evidence',
             'execute':[u for u in units if u in selected],'reuse':proofs}
+    if expired:
+        result['reason']='Selector budget exhausted; retained verified coverage' if proofs else 'Selector budget exhausted; running tests'
+        result['budgetExhausted']=True
     if not selected:
         first=next(iter(proofs.values()))
-        result.update(source=first['source'],fingerprint=fingerprint(sha,lane,policy),url=first['url'],
+        result.update(source=first['source'],fingerprint=lane_input,url=first['url'],
                       runId=first['runId'],attempt=first['attempt'],jobId=first['jobId'])
     return result
 

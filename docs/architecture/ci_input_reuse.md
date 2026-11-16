@@ -68,6 +68,14 @@ and establishes a new baseline; old incomplete receipts are not grandfathered.
 
 Drafts remain deferred. Ready-for-review, reruns, manual dispatch and `merge_group` force
 execution. Merge queue support does not activate a queue or change protection.
+
+When the 20-second lookup budget expires, selection retains only unit proofs
+whose complete provenance verification already finished. All unresolved units
+and their preparation dependencies execute. A timeout during a unit's own
+verification never admits that unit. Selection still walks newest runs first;
+the retained proofs are rechecked with fresh GitHub status at consumption.
+Timeout before any proof is verified still runs the full lane. This avoids
+discarding valid coverage while searching older history for newly changed units.
 The job summary links the original execution and input fingerprint. Exact-main
 release admission still rejects missing, skipped, pending or failed current jobs.
 
