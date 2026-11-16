@@ -75,6 +75,33 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => environment,
+    'ticket shortcut reopens its modal across retained tab navigation',
+    (tester) async {
+      final rights = RightsContextFixture();
+      addTearDown(rights.dispose);
+      final fixture = OccasionSettingsFixture()..installRights();
+      final router = OccasionSettingsFixtureRouter(fixture, tabbed: true);
+      addTearDown(router.dispose);
+      await environment.pumpWidget(tester, MaterialApp.router(
+        builder: DependencyMaterialBridge.builder,
+        routerConfig: router.config(deepLinkBuilder: (_) => DeepLink.path('/ples-u-lipy/reservations/tickets')),
+      ));
+      await tester.pumpAndSettle();
+      for (var attempt = 0; attempt < 3; attempt++) {
+        await tester.tap(find.text('Nastavení vstupenek'));
+        await tester.pumpAndSettle();
+        expect(find.byType(AppDialog), findsOneWidget, reason: 'Open attempt $attempt');
+        expect(find.byType(TicketSettings), findsOneWidget);
+        tester.widget<AppDialog>(find.byType(AppDialog)).onClose!();
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Vstupenky'));
+        await tester.pumpAndSettle();
+      }
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => environment,
     'real page public save validates hidden enabled editor then writes exactly once',
     (tester) async {
       final rights = RightsContextFixture();

@@ -175,11 +175,12 @@ class _ImageAreaState extends State<ImageArea> {
             end: 0,
             child: IconButton.filled(
               tooltip: CommonStrings.delete,
-              icon: const Icon(Icons.delete_outline),
+              icon: const Icon(Icons.close),
               onPressed: widget.enabled ? widget.onRemove : null,
               style: IconButton.styleFrom(
-                backgroundColor: colors.errorContainer,
-                foregroundColor: colors.onErrorContainer,
+                backgroundColor: colors.surfaceContainerHighest,
+                foregroundColor: colors.onSurface,
+                shape: CircleBorder(side: BorderSide(color: colors.outline)),
                 minimumSize: const Size(48, 48),
                 maximumSize: const Size(48, 48),
               ),

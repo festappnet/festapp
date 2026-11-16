@@ -514,6 +514,47 @@ void main() {
       },
     );
   }
+  for (final brightness in [Brightness.light, Brightness.dark]) {
+    testWidgetsWithEnvironment(
+      () => _environment,
+      'image removal uses a neutral circular close button in ${brightness.name}',
+      (tester) async {
+        var removed = 0;
+        final capture = GlobalKey();
+        await _environment.pumpWidget(tester, MaterialApp(
+          theme: ThemeConfig.theme(brightness: brightness),
+          home: Scaffold(body: Center(child: RepaintBoundary(key: capture, child: SizedBox(width: 360,
+            child: ImageArea(
+              imageUrl: 'https://img.festapp.net/example.png',
+              preview: const SizedBox(height: 120),
+              onFileSelected: (_) async => null,
+              onRemove: () => removed++,
+            ),
+          )))),
+        ));
+        final finder = find.widgetWithIcon(IconButton, Icons.close);
+        expect(finder, findsOneWidget);
+        expect(find.byIcon(Icons.delete_outline), findsNothing);
+        final button = tester.widget<IconButton>(finder);
+        final colors = Theme.of(tester.element(finder)).colorScheme;
+        expect(button.style!.shape!.resolve({}), isA<CircleBorder>());
+        expect(button.style!.backgroundColor!.resolve({}), colors.surfaceContainerHighest);
+        expect(button.style!.foregroundColor!.resolve({}), colors.onSurface);
+        expect(tester.getSize(finder), const Size(48, 48));
+        final output = Platform.environment['IMAGE_CLOSE_CAPTURE_DIR'];
+        if (brightness == Brightness.light && output != null) {
+          final boundary = capture.currentContext!.findRenderObject() as RenderRepaintBoundary;
+          final image = (await tester.runAsync(() => boundary.toImage()))!;
+          final bytes = (await tester.runAsync(() => image.toByteData(format: ui.ImageByteFormat.png)))!;
+          Directory(output).createSync(recursive: true);
+          File('$output/image-close-light.png').writeAsBytesSync(bytes.buffer.asUint8List());
+          image.dispose();
+        }
+        await tester.tap(finder);
+        expect(removed, 1);
+      },
+    );
+  }
   testWidgetsWithEnvironment(
     () => _environment,
     'selected tools and dimensions dialog use the editor dark palette',

@@ -158,6 +158,8 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // The settings page survives tab switches; root listeners alone miss re-entry.
+    TabsRouterScope.of(context, watch: true);
     final root = context.router.root;
     if (_routeRouter != root) {
       _routeRouter?.removeListener(_routeChanged);

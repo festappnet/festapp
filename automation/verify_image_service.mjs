@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
+import { walletPresentation } from '../supabase/functions/_shared/wallet/presentation.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -54,6 +56,26 @@ export async function verifyImageClient(client, request = fetch) {
   return client;
 }
 
+// Email clients load these immutable public objects independently of the web build.
+export async function verifyWalletEmailArtwork(request = fetch) {
+  const assets = ['apple', 'google'].flatMap(provider =>
+    Object.entries(walletPresentation[provider].emailBadges).map(([locale, url]) => ({
+      url,
+      file: path.join(root, 'assets/brand', `${provider}-wallet`, provider === 'apple' ? 'email' : 'condensed', `${locale}.png`),
+    })));
+  await Promise.all(assets.map(async ({ url, file }) => {
+    const response = await request(url, { signal: AbortSignal.timeout(15000) });
+    if (!response.ok || response.headers.get('content-type')?.split(';')[0] !== 'image/png') {
+      throw new Error(`Wallet email artwork unavailable: ${url} (HTTP ${response.status})`);
+    }
+    const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+    if (digest(Buffer.from(await response.arrayBuffer())) !== digest(fs.readFileSync(file))) {
+      throw new Error(`Wallet email artwork differs from canonical file: ${url}`);
+    }
+  }));
+  return assets.length;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   let sources;
@@ -71,6 +93,7 @@ async function main() {
   const results = await Promise.allSettled(sources.map(source => verifyImageClient(imageClientConfig(source))));
   const failures = results.filter(result => result.status === 'rejected');
   if (failures.length) throw new Error(failures.map(result => result.reason.message).join('\n'));
+  await verifyWalletEmailArtwork();
   console.log(`Image service: ${results.length} client configuration(s) passed CORS and project checks`);
 }
 

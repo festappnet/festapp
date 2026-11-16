@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/app_router.dart';
+import 'package:fstapp/app_router.gr.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/form_feature.dart';
@@ -106,10 +107,34 @@ class OccasionSettingsFixture {
 }
 
 class OccasionSettingsFixtureRouter extends RootStackRouter {
-  OccasionSettingsFixtureRouter(this.fixture);
+  OccasionSettingsFixtureRouter(this.fixture, {this.tabbed = false});
+  final bool tabbed;
   final OccasionSettingsFixture fixture;
   @override
-  List<AutoRoute> get routes => [
+  List<AutoRoute> get routes => tabbed ? [
+    AutoRoute(
+      path: '/:${AppRouter.linkFormatted}/reservations',
+      page: PageInfo('TicketSettingsTabsFixture', builder: (_) => AutoTabsRouter.tabBar(
+        routes: const [TicketsSectionRoute(), SettingsSectionRoute()],
+        builder: (context, child, _) => Scaffold(
+          appBar: AppBar(actions: [TextButton(
+            onPressed: () => context.tabsRouter.setActiveIndex(0),
+            child: const Text('Vstupenky'),
+          )]),
+          body: child,
+        ),
+      )),
+      children: [
+        AutoRoute(path: 'tickets', page: PageInfo(TicketsSectionRoute.name,
+          builder: (_) => Builder(builder: (context) => TextButton(
+            onPressed: () => context.tabsRouter.navigate(const SettingsSectionRoute().copyWith(queryParams: {'feature': FeatureConstants.ticket})),
+            child: const Text('Nastavení vstupenek'),
+          )),
+        )),
+        AutoRoute(path: 'settings', page: PageInfo(SettingsSectionRoute.name, builder: (_) => fixture.page())),
+      ],
+    ),
+  ] : [
     AutoRoute(
       page: PageInfo(
         'OccasionSettingsPreview',
