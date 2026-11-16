@@ -2,7 +2,29 @@
 
 Implementace dokončena lokálně: větev `perf/ci-efficiency-20261116`, čistý worktree od
 main `2b9ca14268ce4d95e577a3ce2346bdd7684687fd`. Publikace CI byla následně autorizována uživatelem; ověřování hosted běhů probíhá. Produkční tenant rollout není součástí této změny.
-Cíl 30 % se zatím nepovažuje za naměřený výsledek.
+Cíl 30 % se v tomto původním běhu nepovažoval za naměřený výsledek.
+
+## Navazující měření instalované CMS matice
+
+Následný audit zjistil, že hlavní část čekání tvoří postupný start služeb,
+nikoli interakce checkoutem. Hosted výchozí job Wix trval 502 s, z toho CMS
+412,8 s; samostatný seat browser scénář v checkout jobu trval 8,6 s. Tato čísla
+pocházejí z runů `43852923883` a `43852923451` na main `e6850dae`.
+
+Na stejném Macu prošla stejná devítipřípadová matice před změnou za 223,5 s
+a po omezeném souběhu přípravy a úklidu za 138,5 s: o 85 s, tedy 38 % méně.
+Oba běhy potvrdily nezměněné vstupy a všech devět scénářů. Cache a síť mohou
+výsledek ovlivnit; jde o naměřený lokální běh, nikoli záruku hosted času.
+Servisní databázová jednotka klesla ze 125,3 na 93,8 s; její souběh má vlastní
+lease, jeden ze dvou DB slotů a zachovaný zámek generování zdrojů.
+
+Celý následný lokální mirror všech osmi jobs na kódu `40bd4182` prošel za
+471,34 s, `complete:true`, `inputsUnchanged:true`. Zachoval původní CMS matrix,
+ochranu COOP, Chromium/Firefox/WebKit, kontroly oprávnění i cold upgrade.
+Kontrakty výběru navíc dokazují, že samostatná změna objednávkové Edge Function
+nezneplatní instalovanou CMS jednotku, zatímco změna formuláře, schématu,
+sdíleného runtime nebo neznámý vstup ji stále spustí. Nová definice vyžaduje
+čerstvé úplné hosted ověření před dalším produkčním rolloutem.
 
 ## Baseline
 
