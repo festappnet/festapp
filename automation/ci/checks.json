@@ -49,7 +49,13 @@
         "automation/verify_measurement_runtimes.mjs",
         "automation/tests/measurement_runtimes.test.mjs",
         ".github/workflows/measurement-runtime-drift.yml",
-        "assets/translations/**"
+        "assets/translations/**",
+        "automation/tests/canonical_mutation_inventory.test.mjs",
+        "automation/tests/organizer_context.test.mjs",
+        "automation/client-sync/canonical-mutation-inventory.json",
+        "automation/client-sync/check_canonical_inventory.mjs",
+        "database/operations/canonical_mutation_contraction.sql",
+        "database/functions/blueprint/seating_sync.sql"
       ]
     },
     "wix-checkout-compatibility": {
@@ -318,7 +324,7 @@
       }
     },
     "deploy-contract": {
-      "script": "node --test automation/tests/local_release_manifest.test.mjs automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\nnode --test automation/tests/android_gradle_contract.test.mjs automation/tests/android_ci_release_contract.test.mjs\n",
+      "script": "node --test automation/tests/local_release_manifest.test.mjs automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\nnode --test automation/tests/android_gradle_contract.test.mjs automation/tests/android_ci_release_contract.test.mjs\nnode --test automation/tests/canonical_mutation_inventory.test.mjs automation/tests/organizer_context.test.mjs\n",
       "after": [
         "renderer-install"
       ],
@@ -1155,8 +1161,8 @@
       "database/tests/client_sync_v1_runtime_test.sql",
       "database/tests/companion_contract_test.sql",
       "database/tests/customer_order_changes/authorization_test.sql",
-      "database/tests/customer_order_changes/commands_test.sql",
       "database/tests/customer_order_changes/cancellation_cutover_test.sql",
+      "database/tests/customer_order_changes/commands_test.sql",
       "database/tests/customer_order_changes/partial_cancellation_test.sql",
       "database/tests/customer_order_changes/refund_test.sql",
       "database/tests/customer_order_changes/self_service_test.sql",
@@ -1449,6 +1455,7 @@
       "database/tests/organization_verification/profile_test.sql",
       "database/tests/organization_verification/public_projection_test.sql",
       "database/tests/others/sync_via_http_test.sql",
+      "database/tests/payment_providers/bank_multicurrency_checkout_test.sql",
       "database/tests/payment_providers/bank_refund_contract_test.sql",
       "database/tests/payment_providers/cash_command_guards_test.sql",
       "database/tests/payment_providers/cash_configuration_lifecycle_test.sql",
@@ -1725,8 +1732,8 @@
     "database/tests/client_sync_v1_runtime_test.sql",
     "database/tests/companion_contract_test.sql",
     "database/tests/customer_order_changes/authorization_test.sql",
-    "database/tests/customer_order_changes/commands_test.sql",
     "database/tests/customer_order_changes/cancellation_cutover_test.sql",
+    "database/tests/customer_order_changes/commands_test.sql",
     "database/tests/customer_order_changes/partial_cancellation_test.sql",
     "database/tests/customer_order_changes/refund_test.sql",
     "database/tests/customer_order_changes/self_service_test.sql",
@@ -2034,6 +2041,7 @@
     "database/tests/organization_verification/profile_test.sql",
     "database/tests/organization_verification/public_projection_test.sql",
     "database/tests/others/sync_via_http_test.sql",
+    "database/tests/payment_providers/bank_multicurrency_checkout_test.sql",
     "database/tests/payment_providers/bank_refund_contract_test.sql",
     "database/tests/payment_providers/cash_command_guards_test.sql",
     "database/tests/payment_providers/cash_configuration_lifecycle_test.sql",
@@ -2616,7 +2624,6 @@
     "web_client/tests/forms/validation_fixes.test.js",
     "web_client/tests/forms/waitlist_flow.test.js",
     "web_client/tests/forms/waitlist_presentation.test.js",
-    "web_client/tests/issues/reproduce_currency_issue.test.js",
     "web_client/tests/logic/email_address.test.js",
     "web_client/tests/logic/email_domain_suffix.test.js",
     "web_client/tests/logic/multiselect_price.test.js",

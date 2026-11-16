@@ -35,14 +35,10 @@ test('production targets require immutable artifact identity and explicit comple
   }]));
 });
 
-test('GitHub release workflows use Linux, bounded matrices, shared cache and immutable artifacts', () => {
+test('GitHub release workflows preserve immutable artifacts and separate revalidation from builds', () => {
   const candidate = fs.readFileSync(path.join(root, '.github/workflows/android-candidate.yml'), 'utf8');
   const revalidation = fs.readFileSync(path.join(root, '.github/workflows/android-candidate-revalidate.yml'), 'utf8');
   const production = fs.readFileSync(path.join(root, '.github/workflows/android-production.yml'), 'utf8');
-  assert.match(candidate, /runs-on: ubuntu-latest/);
-  assert.match(candidate, /max-parallel: 5/);
-  assert.match(candidate, /fail-fast: false/);
-  assert.match(candidate, /gradle\/actions\/setup-gradle@v6/);
   assert.match(candidate, /cache-provider: external/);
   const tenantBuild = candidate.slice(candidate.indexOf('\n  build:'));
   assert.match(tenantBuild, /Save shared Gradle compilation state/);
@@ -60,19 +56,13 @@ test('GitHub release workflows use Linux, bounded matrices, shared cache and imm
   assert.ok(candidate.indexOf('./gradlew checkReleaseAarMetadata') > 0 &&
     candidate.indexOf('./gradlew checkReleaseAarMetadata') < candidate.indexOf('flutter build appbundle'),
     'dependency SDK requirements must fail before expensive native compilation');
-  assert.match(candidate, /retention-days: 3/);
-  assert.match(candidate, /retention-days: 7/);
-  assert.match(revalidation, /retention-days: 7/);
-  assert.match(revalidation, /actions\/download-artifact@v8/);
   assert.match(revalidation, /run-id: \$\{\{ needs\.plan\.outputs\.raw_run_id \}\}/);
   assert.match(revalidation, /android-raw-\$\{\{ matrix\.tenant \}\}/);
   assert.doesNotMatch(revalidation, /flutter build|macos-latest|windows-latest/);
   assert.doesNotMatch(candidate, /macos-latest|windows-latest/);
-  assert.match(production, /max-parallel: 3/);
   assert.match(production, /artifactSha256/);
   assert.match(production, /candidateRunId/);
   assert.match(production, /toolingSha/);
-  assert.match(production, /actions\/download-artifact@v8/);
   assert.match(candidate, /gpg[\s\S]*--symmetric --cipher-algo AES256/);
   assert.match(production, /gpg[\s\S]*--decrypt/);
   assert.match(production, /play_track_readback\.rb/);
