@@ -13,7 +13,6 @@
     "removeTarget": "Remove target",
     "loadMapping": "Load mapping",
     "sourceField": "Original field",
-    "termHelp": "The actual date is separate from the sales window. Automatic moves require an explicit date.",
     "invalidTime": "This local time does not exist or is ambiguous at a clock change. Choose another time.",
     "title": "Order changes",
     "intro": "Choose a change allowed by the organizer. A verification link goes to the buyer’s original email.",
@@ -59,11 +58,11 @@
     "resolve": "Mark as handled",
     "staffHelp": "Approval checks tickets, capacity and financial permission again. Complete a manual refund only after recording the actual returned money.",
     "saveRules": "Self-service rules",
-    "setupHelp": "Aktivieren Sie unten Stornierungen oder Terminänderungen, legen Sie die Regeln fest und speichern Sie das gesamte Formular. Verfügbare Änderungen finden Kunden dann in der Bestellübersicht aus ihrer Bestätigungs-E-Mail.",
-    "notConfigured": "Die Funktion ist aktiviert, aber Stornierungen und Terminänderungen sind für dieses Formular noch deaktiviert.",
-    "configuredHelp": "Verfügbare Änderungen richten sich nach den folgenden Regeln. Speichern Sie Regeländerungen zusammen mit den übrigen Formulareinstellungen.",
+    "setupHelp": "Aktivieren Sie Stornierungen, legen Sie die Regeln fest und speichern Sie das gesamte Formular. Kunden können über die Bestellübersicht aus der Bestätigungs-E-Mail stornieren.",
+    "notConfigured": "Die Funktion ist aktiviert, aber Stornierungen sind für dieses Formular noch nicht erlaubt.",
+    "configuredHelp": "Für Stornierungen gelten die folgenden Regeln. Speichern Sie Änderungen zusammen mit dem Formular.",
     "enabled": "Enable operation",
-    "deadline": "Allow until",
+    "deadline": "Stornierung möglich bis",
     "automatic": "Automatically after customer confirmation",
     "approvalRequired": "Requires organizer approval",
     "requireReason": "Require a cancellation reason",
@@ -72,8 +71,6 @@
     "automaticRefund": "Automatically to the original online source, when supported",
     "manualRefund": "Cancel and request a manual refund",
     "allowedFields": "Details the customer may change",
-    "termStart": "Date starts at",
-    "termEnd": "Date ends at",
     "targets": "Move targets and mapping",
     "sourceProduct": "Original product",
     "targetProduct": "Target product",
@@ -95,11 +92,14 @@
     "cancel_refund_selected": "The selected tickets will be cancelled and the corresponding available amount reserved for a refund. Money has not yet been returned.",
     "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval.",
     "cancelTickets": "Tickets stornieren",
-    "answersLocked": "Abgegebene Antworten einschließlich Name und Telefonnummer sind für Kunden gesperrt. Korrekturen übernimmt das Personal."
+    "answersLocked": "Abgegebene Antworten einschließlich Name und Telefonnummer sind für Kunden gesperrt. Korrekturen übernimmt das Personal.",
+    "cancellationScopeHelp": "Kunden können die gesamte Bestellung oder ausgewählte Tickets stornieren.",
+    "deadlineDate": "Datum",
+    "deadlineTime": "Uhrzeit"
   },
   "FeatureCustomerSelfService": {
     "title": "Kunden-Selbstbedienung",
-    "description": "Legen Sie die Regeln für jedes Formular unter Einstellungen - Kunden-Selbstbedienung fest. Das Aktivieren allein erlaubt keine Stornierungen oder Terminänderungen. Kunden können abgesendete Antworten nicht bearbeiten."
+    "description": "Legen Sie Stornierungsregeln für jedes Formular unter Einstellungen - Kunden-Selbstbedienung fest. Das Aktivieren allein erlaubt keine Stornierungen. Kunden können abgesendete Antworten nicht bearbeiten."
   },
   "EmailDomainSuffix": {
     "warning": "Die Domainendung .{suffix} ist uns unbekannt. Prüfen Sie die E-Mail-Adresse.",

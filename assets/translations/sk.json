@@ -13,7 +13,6 @@
     "removeTarget": "Remove target",
     "loadMapping": "Load mapping",
     "sourceField": "Original field",
-    "termHelp": "The actual date is separate from the sales window. Automatic moves require an explicit date.",
     "invalidTime": "This local time does not exist or is ambiguous at a clock change. Choose another time.",
     "title": "Order changes",
     "intro": "Choose a change allowed by the organizer. A verification link goes to the buyer’s original email.",
@@ -59,11 +58,11 @@
     "resolve": "Mark as handled",
     "staffHelp": "Approval checks tickets, capacity and financial permission again. Complete a manual refund only after recording the actual returned money.",
     "saveRules": "Self-service rules",
-    "setupHelp": "Nižšie povoľte storno alebo zmenu termínu, nastavte pravidlá a uložte celý formulár. Zákazník potom nájde dostupné zmeny v prehľade objednávky z potvrdzovacieho e-mailu.",
-    "notConfigured": "Funkcia je zapnutá, ale pre tento formulár zatiaľ nie je povolené storno ani zmena termínu.",
-    "configuredHelp": "Dostupnosť zmien sa riadi pravidlami nižšie. Zmeny pravidiel uložte tlačidlom Uložiť spolu s ostatnými nastaveniami formulára.",
+    "setupHelp": "Povoľte storno, nastavte pravidlá a uložte celý formulár. Zákazník môže storno vybaviť v prehľade objednávky z potvrdzovacieho e-mailu.",
+    "notConfigured": "Funkcia je zapnutá, ale pre tento formulár zatiaľ nie je povolené storno.",
+    "configuredHelp": "Storno sa riadi pravidlami nižšie. Zmeny sa uložia spolu s formulárom.",
     "enabled": "Enable operation",
-    "deadline": "Allow until",
+    "deadline": "Storno je možné do",
     "automatic": "Automatically after customer confirmation",
     "approvalRequired": "Requires organizer approval",
     "requireReason": "Require a cancellation reason",
@@ -72,8 +71,6 @@
     "automaticRefund": "Automatically to the original online source, when supported",
     "manualRefund": "Cancel and request a manual refund",
     "allowedFields": "Details the customer may change",
-    "termStart": "Date starts at",
-    "termEnd": "Date ends at",
     "targets": "Move targets and mapping",
     "sourceProduct": "Original product",
     "targetProduct": "Target product",
@@ -95,11 +92,14 @@
     "cancel_refund_selected": "The selected tickets will be cancelled and the corresponding available amount reserved for a refund. Money has not yet been returned.",
     "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval.",
     "cancelTickets": "Stornovať vstupenky",
-    "answersLocked": "Odoslané odpovede sú pre zákazníka zamknuté vrátane mena a telefónu. Opravy rieši obsluha."
+    "answersLocked": "Odoslané odpovede sú pre zákazníka zamknuté vrátane mena a telefónu. Opravy rieši obsluha.",
+    "cancellationScopeHelp": "Zákazník môže stornovať celú objednávku alebo vybrané vstupenky.",
+    "deadlineDate": "Dátum",
+    "deadlineTime": "Čas"
   },
   "FeatureCustomerSelfService": {
     "title": "Zákaznícka samoobsluha",
-    "description": "Pravidlá nastavíte pre každý formulár v záložke Nastavenia - Zákaznícka samoobsluha. Samotné zapnutie nepovoľuje storno ani presuny. Zákazník neupravuje odoslané odpovede."
+    "description": "Pravidlá storna nastavíte pre každý formulár v záložke Nastavenia - Zákaznícka samoobsluha. Samotné zapnutie storno nepovoľuje. Zákazník neupravuje odoslané odpovede."
   },
   "EmailDomainSuffix": {
     "warning": "Koncovku domény .{suffix} nepoznáme. Skontrolujte e-mailovú adresu.",

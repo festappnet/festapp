@@ -5709,7 +5709,6 @@
     "removeTarget": "Remove target",
     "loadMapping": "Load mapping",
     "sourceField": "Original field",
-    "termHelp": "The actual event term is separate from the sales window. Automatic moves require a start and end for both terms.",
     "invalidTime": "This local time does not exist or is ambiguous at a clock change. Choose another time.",
     "title": "Order changes",
     "intro": "Choose a change allowed by the organizer. A verification link goes to the buyer’s original email.",
@@ -5755,11 +5754,11 @@
     "resolve": "Mark as handled",
     "staffHelp": "Approval checks tickets, capacity and financial permission again. Complete a manual refund only after recording the actual returned money.",
     "saveRules": "Self-service rules",
-    "setupHelp": "Enable cancellation or date changes below, configure the rules and save the whole form. Customers then find available changes in the order overview linked from their confirmation email.",
-    "notConfigured": "The feature is enabled, but cancellation and date changes are still disabled for this form.",
-    "configuredHelp": "Available changes follow the rules below. Use Save to store rule changes together with the rest of the form settings.",
+    "setupHelp": "Enable cancellation, set the rules and save the whole form. Customers can cancel from the order overview linked in their confirmation email.",
+    "notConfigured": "The feature is on, but cancellation is not enabled for this form yet.",
+    "configuredHelp": "Cancellation follows the rules below. Save changes together with the form.",
     "enabled": "Enable operation",
-    "deadline": "Allow until",
+    "deadline": "Cancellation deadline",
     "automatic": "Automatically after customer confirmation",
     "approvalRequired": "Requires organizer approval",
     "requireReason": "Require a cancellation reason",
@@ -5768,8 +5767,6 @@
     "automaticRefund": "Automatically to the original online source, when supported",
     "manualRefund": "Cancel and request a manual refund",
     "allowedFields": "Details the customer may change",
-    "termStart": "Date starts at",
-    "termEnd": "Date ends at",
     "targets": "Move targets and mapping",
     "sourceProduct": "Original product",
     "targetProduct": "Target product",
@@ -5791,11 +5788,14 @@
     "cancel_refund_selected": "The selected tickets will be cancelled and the corresponding available amount reserved for a refund. Money has not yet been returned.",
     "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval.",
     "cancelTickets": "Cancel tickets",
-    "answersLocked": "Submitted answers are locked for customers, including names and phone numbers. Contact staff for corrections."
+    "answersLocked": "Submitted answers are locked for customers, including names and phone numbers. Contact staff for corrections.",
+    "cancellationScopeHelp": "Customers can cancel the entire order or selected tickets.",
+    "deadlineDate": "Date",
+    "deadlineTime": "Time"
   },
   "FeatureCustomerSelfService": {
     "title": "Customer self-service",
-    "description": "Configure each form under Settings - Customer self-service. Enabling this feature alone does not allow cancellation or date changes. Customers cannot edit submitted answers."
+    "description": "Set cancellation rules for each form under Settings - Customer self-service. Enabling the feature alone does not allow cancellation. Customers cannot edit submitted answers."
   },
   "DiscountCodes": {
     "title": "Discount codes",

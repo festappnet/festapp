@@ -211,53 +211,54 @@ void main() {
     },
   );
 
-  testWidgets(
-    'customer move preview shows destination products before confirmation',
-    (tester) async {
-      final api = _ChangeApi(
-        operation: 'move',
-        preview: Future.value({
-          'code': 200,
-          'effect': 'move',
-          'fingerprint': 'move',
-          'target': {
-            'title': 'Večerní termín',
-            'tickets': [
-              {
-                'products': [
-                  {
-                    'title': 'Vstup na večer',
-                    'price': 1000,
-                    'currency_code': 'CZK',
-                  },
-                ],
-              },
-            ],
-          },
-        }),
-      );
-      await tester.pumpWidget(
-        MaterialApp(
-          builder: DependencyMaterialBridge.builder,
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: CustomerOrderChanges(
-                scope: CustomerOrderScope('a' * 64, 1, changeToken: 'b' * 64),
-                data: CustomerOrderOverview(fixture()),
-                client: api,
-                onChanged: () async {},
-              ),
+  testWidgets('customer self-service rejects obsolete date-change deep links', (
+    tester,
+  ) async {
+    final api = _ChangeApi(
+      operation: 'move',
+      preview: Future.value({
+        'code': 200,
+        'effect': 'move',
+        'fingerprint': 'move',
+        'target': {
+          'title': 'Večerní termín',
+          'tickets': [
+            {
+              'products': [
+                {
+                  'title': 'Vstup na večer',
+                  'price': 1000,
+                  'currency_code': 'CZK',
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: CustomerOrderChanges(
+              scope: CustomerOrderScope('a' * 64, 1, changeToken: 'b' * 64),
+              data: CustomerOrderOverview(fixture()),
+              client: api,
+              onChanged: () async {},
             ),
           ),
         ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Večerní termín'), findsOneWidget);
-      expect(find.text('Vstup na večer: 1000 CZK'), findsOneWidget);
-      expect(find.text('CustomerSelfService.confirm'), findsOneWidget);
-      expect(api.calls.where((c) => c['action'] == 'command'), isEmpty);
-    },
-  );
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Večerní termín'), findsNothing);
+    expect(find.text('Vstup na večer: 1000 CZK'), findsNothing);
+    expect(find.text('CustomerSelfService.confirm'), findsNothing);
+    expect(find.text('CustomerSelfService.unavailable'), findsOneWidget);
+    expect(api.calls.where((c) => c['action'] == 'preview'), isEmpty);
+    expect(api.calls.where((c) => c['action'] == 'command'), isEmpty);
+  });
 
   testWidgets('customer cancellation sends only checked tickets', (
     tester,

@@ -46,14 +46,13 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
   final Map<String, TextEditingController> _fields = {};
   final Map<String, String> _originals = {};
   String? _token, _operation, _message;
-  int? _target;
   final Set<int> _selectedTickets = {};
   bool _busy = false;
   int _generation = 0;
   String _command = const Uuid().v4();
   Map<String, dynamic>? _proposal, _preview;
   List<CustomerOrderChangeAction> get _actions => widget.data.allowedActions
-      .where((a) => a.enabled && const ['cancel', 'move'].contains(a.operation))
+      .where((a) => a.enabled && a.operation == 'cancel')
       .toList();
   @override
   void initState() {
@@ -77,7 +76,6 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
     _preview = null;
     _message = null;
     _operation = null;
-    _target = null;
     _busy = false;
     _command = const Uuid().v4();
     _reason.clear();
@@ -131,7 +129,7 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
           'commandId': _command,
         });
     if (proposal['orderId'] != orderId ||
-        !const ['cancel', 'move', 'withdraw'].contains(proposal['operation'])) {
+        !const ['cancel', 'withdraw'].contains(proposal['operation'])) {
       throw const CustomerOrderChangeException('unavailable');
     }
     final preview = await _client.call({
@@ -208,7 +206,6 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
     }
     setState(() {
       _operation = action.operation;
-      _target = null;
       _message = null;
     });
   }
@@ -320,25 +317,6 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
         );
       }
     }
-    if (action.operation == 'move') {
-      children.add(
-        DropdownButtonFormField<int>(
-          isExpanded: true,
-          decoration: InputDecoration(labelText: customerChangeText('target')),
-          items: [
-            for (final t in action.data['targets'] as List? ?? const [])
-              DropdownMenuItem(
-                value: t['formId'] as int,
-                child: Text(
-                  '${_targetLabel(t)}${t['automatic'] == true ? '' : ' (${customerChangeText('manual')})'}',
-                ),
-              ),
-          ],
-          onChanged: _busy ? null : (v) => setState(() => _target = v),
-          validator: (v) => v == null ? customerChangeText('target') : null,
-        ),
-      );
-    }
     if (action.operation != 'edit') {
       children.add(
         TextFormField(
@@ -402,7 +380,6 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
                         payload['ticketIds'] = _selectedTickets.toList()
                           ..sort();
                       }
-                      if (_target != null) payload['targetFormId'] = _target;
                     }
                     _challenge(action.operation, payload);
                   },
@@ -422,20 +399,6 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
         children: children,
       ),
     );
-  }
-
-  String _targetLabel(Map target) => [
-    target['title']?.toString(),
-    _date(target['startsAt']),
-  ].whereType<String>().where((value) => value.isNotEmpty).join(' - ');
-
-  String? _date(dynamic value) {
-    final parsed = DateTime.tryParse(value?.toString() ?? '');
-    return parsed == null
-        ? null
-        : DateFormat.yMd(context.locale.toLanguageTag())
-              .add_jm()
-              .format(parsed.toLocal());
   }
 
   @override
@@ -508,18 +471,6 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
                 Text(
                   '${customerChangeText('amount')}: ${preview['refundAmount']} ${preview['currency']}',
                 ),
-              if (preview['target'] != null) ...[
-                Text(
-                  '${customerChangeText('target')}: ${_targetLabel(preview['target'])}',
-                ),
-                Text(customerChangeText('difference')),
-                for (final ticket
-                    in preview['target']['tickets'] as List? ?? const [])
-                  for (final item in ticket['products'] as List? ?? const [])
-                    Text(
-                      '${item['title']}: ${item['price']} ${item['currency_code']}',
-                    ),
-              ],
               if ((_proposal?['payload']?['reason'] ?? '')
                   .toString()
                   .isNotEmpty)

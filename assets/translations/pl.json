@@ -13,7 +13,6 @@
     "removeTarget": "Remove target",
     "loadMapping": "Load mapping",
     "sourceField": "Original field",
-    "termHelp": "The actual date is separate from the sales window. Automatic moves require an explicit date.",
     "invalidTime": "This local time does not exist or is ambiguous at a clock change. Choose another time.",
     "title": "Order changes",
     "intro": "Choose a change allowed by the organizer. A verification link goes to the buyer’s original email.",
@@ -59,11 +58,11 @@
     "resolve": "Mark as handled",
     "staffHelp": "Approval checks tickets, capacity and financial permission again. Complete a manual refund only after recording the actual returned money.",
     "saveRules": "Self-service rules",
-    "setupHelp": "Poniżej włącz anulowanie lub zmianę terminu, ustaw zasady i zapisz cały formularz. Klient znajdzie dostępne zmiany w podglądzie zamówienia z wiadomości potwierdzającej.",
-    "notConfigured": "Funkcja jest włączona, ale anulowanie i zmiana terminu są nadal wyłączone dla tego formularza.",
-    "configuredHelp": "Dostępność zmian zależy od poniższych zasad. Zapisz zmiany zasad razem z pozostałymi ustawieniami formularza.",
+    "setupHelp": "Włącz anulowanie, ustaw zasady i zapisz cały formularz. Klient może anulować zamówienie w podglądzie dostępnym z wiadomości potwierdzającej.",
+    "notConfigured": "Funkcja jest włączona, ale anulowanie nie jest jeszcze dozwolone dla tego formularza.",
+    "configuredHelp": "Anulowanie podlega poniższym zasadom. Zapisz zmiany razem z formularzem.",
     "enabled": "Enable operation",
-    "deadline": "Allow until",
+    "deadline": "Anulowanie możliwe do",
     "automatic": "Automatically after customer confirmation",
     "approvalRequired": "Requires organizer approval",
     "requireReason": "Require a cancellation reason",
@@ -72,8 +71,6 @@
     "automaticRefund": "Automatically to the original online source, when supported",
     "manualRefund": "Cancel and request a manual refund",
     "allowedFields": "Details the customer may change",
-    "termStart": "Date starts at",
-    "termEnd": "Date ends at",
     "targets": "Move targets and mapping",
     "sourceProduct": "Original product",
     "targetProduct": "Target product",
@@ -95,11 +92,14 @@
     "cancel_refund_selected": "The selected tickets will be cancelled and the corresponding available amount reserved for a refund. Money has not yet been returned.",
     "request_cancel_selected": "Request cancellation of only the selected tickets. They remain valid until approval.",
     "cancelTickets": "Anuluj bilety",
-    "answersLocked": "Wysłane odpowiedzi, w tym imię i telefon, są zablokowane dla klienta. Poprawki wprowadza obsługa."
+    "answersLocked": "Wysłane odpowiedzi, w tym imię i telefon, są zablokowane dla klienta. Poprawki wprowadza obsługa.",
+    "cancellationScopeHelp": "Klient może anulować całe zamówienie lub wybrane bilety.",
+    "deadlineDate": "Data",
+    "deadlineTime": "Godzina"
   },
   "FeatureCustomerSelfService": {
     "title": "Samoobsługa klienta",
-    "description": "Ustaw zasady dla każdego formularza w zakładce Ustawienia - Samoobsługa klienta. Samo włączenie funkcji nie zezwala na anulowanie ani zmianę terminu. Klient nie może edytować wysłanych odpowiedzi."
+    "description": "Ustaw zasady anulowania dla każdego formularza w zakładce Ustawienia - Samoobsługa klienta. Samo włączenie funkcji nie zezwala na anulowanie. Klient nie może edytować wysłanych odpowiedzi."
   },
   "EmailDomainSuffix": {
     "warning": "Nie rozpoznajemy końcówki domeny .{suffix}. Prosimy sprawdzić adres e-mail.",

@@ -5711,7 +5711,6 @@
     "removeTarget": "Odebrat cíl",
     "loadMapping": "Načíst mapování",
     "sourceField": "Původní údaj",
-    "termHelp": "Skutečný termín konání je oddělený od okna prodeje. Automatické přesuny vyžadují nastavený začátek i konec obou termínů.",
     "invalidTime": "Tento místní čas neexistuje nebo je při změně času nejednoznačný. Vyberte jiný čas.",
     "title": "Změny objednávky",
     "intro": "Vyberte změnu povolenou pořadatelem. Ověřovací odkaz zašleme na původní e-mail kupujícího.",
@@ -5757,11 +5756,11 @@
     "resolve": "Označit za vyřešené",
     "staffHelp": "Schválení znovu ověří vstupenky, kapacitu a finanční oprávnění. Ruční refundaci označte za dokončenou až po evidenci skutečného vrácení peněz.",
     "saveRules": "Pravidla samoobsluhy",
-    "setupHelp": "Povolte níže storno nebo změnu termínu, nastavte pravidla a uložte celý formulář. Zákazník pak najde dostupné změny v přehledu objednávky z potvrzovacího e-mailu.",
-    "notConfigured": "Funkce je zapnutá, ale pro tento formulář zatím není povoleno storno ani změna termínu.",
-    "configuredHelp": "Dostupnost změn se řídí níže nastavenými pravidly. Změny pravidel se uloží tlačítkem Uložit spolu s ostatním nastavením formuláře.",
+    "setupHelp": "Povolte storno, nastavte pravidla a uložte celý formulář. Zákazník může storno vyřídit v přehledu objednávky z potvrzovacího e-mailu.",
+    "notConfigured": "Funkce je zapnutá, ale pro tento formulář zatím není povoleno storno.",
+    "configuredHelp": "Storno se řídí níže nastavenými pravidly. Změny se uloží společně s formulářem.",
     "enabled": "Povolit operaci",
-    "deadline": "Povolit do",
+    "deadline": "Storno je možné do",
     "automatic": "Automaticky po potvrzení zákazníkem",
     "approvalRequired": "Vyžaduje schválení pořadatelem",
     "requireReason": "Vyžadovat důvod storna",
@@ -5770,8 +5769,6 @@
     "automaticRefund": "Automaticky do původního online zdroje, pokud je podporován",
     "manualRefund": "Storno s požadavkem na ruční refundaci",
     "allowedFields": "Údaje, které zákazník smí změnit",
-    "termStart": "Konání termínu od",
-    "termEnd": "Konání termínu do",
     "targets": "Cíle přesunů a mapování",
     "sourceProduct": "Původní produkt",
     "targetProduct": "Cílový produkt",
@@ -5793,11 +5790,14 @@
     "cancel_refund_selected": "Vybrané vstupenky budou stornovány a odpovídající dostupná částka připravena k refundaci. Peníze ještě nejsou vrácené.",
     "request_cancel_selected": "Odešlete žádost o storno pouze vybraných vstupenek. Do schválení zůstávají platné.",
     "cancelTickets": "Stornovat vstupenky",
-    "answersLocked": "Odeslané odpovědi jsou pro zákazníka zamčené, včetně jména a telefonu. Opravy řeší obsluha."
+    "answersLocked": "Odeslané odpovědi jsou pro zákazníka zamčené, včetně jména a telefonu. Opravy řeší obsluha.",
+    "cancellationScopeHelp": "Zákazník může stornovat celou objednávku nebo vybrané vstupenky.",
+    "deadlineDate": "Datum",
+    "deadlineTime": "Čas"
   },
   "FeatureCustomerSelfService": {
     "title": "Zákaznická samoobsluha",
-    "description": "Pravidla nastavíte pro každý formulář v jeho záložce Nastavení - Zákaznická samoobsluha. Samotné zapnutí nepovoluje storno ani přesuny. Odeslané odpovědi zákazník neupravuje."
+    "description": "Pravidla storna nastavíte pro každý formulář v záložce Nastavení - Zákaznická samoobsluha. Samotné zapnutí storno nepovoluje. Odeslané odpovědi zákazník neupravuje."
   },
   "DiscountCodes": {
     "title": "Slevové kódy",

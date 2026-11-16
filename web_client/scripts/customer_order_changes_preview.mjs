@@ -31,7 +31,7 @@ try{
   await db.query('UPDATE public.organizations SET title=$1,data=$2 WHERE id=$3',[locale==='cs'?'Spolek Přátelé tance':'Friends of Dance Association',{DEFAULT_URL:origin,DEFAULT_LANGUAGE:locale},x.organization]);
   await db.query('UPDATE public.occasions SET title=$1 WHERE id=$2',[title,x.occasion]);
   await db.query('UPDATE public.units SET title=$1 WHERE id=(SELECT unit FROM public.occasions WHERE id=$2)',[locale==='cs'?'Spolek Přátelé tance':'Friends of Dance Association',x.occasion]);
-  await db.query('UPDATE public.forms SET title=$1,term_start_at=now()+interval \'10 days\',term_end_at=now()+interval \'10 days 3 hours\' WHERE id=$2',[title,x.form]);
+  await db.query('UPDATE public.forms SET title=$1 WHERE id=$2',[title,x.form]);
   await db.query('UPDATE public.form_fields SET title=$1 WHERE id=$2',[locale==='cs'?'Telefon':'Phone',x.field]);
   await db.query('UPDATE eshop.products SET title=$1 WHERE id=$2',[locale==='cs'?'Vstup na taneční večer':'Dance evening admission',x.product]);
   await db.query('UPDATE eshop.product_types SET title=$1 WHERE id=(SELECT product_type FROM eshop.products WHERE id=$2)',[locale==='cs'?'Vstupné':'Admission',x.product]);
@@ -40,17 +40,7 @@ try{
   policy.cancel={...policy.cancel,mode:process.env.CUSTOMER_PREVIEW_CANCEL_MODE==='automatic'?'automatic':'approval_required',reason_required:true,refund_mode:'manual'};
   await db.query('SELECT public.save_customer_order_policy_internal($1,$2)',[x.form,policy]);
   await db.query("UPDATE eshop.orders SET data=jsonb_set(jsonb_set(data,'{tickets,0,products,0,title}',$1::jsonb),'{tickets,0,products,0,type_title}',$2::jsonb) WHERE id=$3",[JSON.stringify(locale==='cs'?'Vstup na taneční večer':'Dance evening admission'),JSON.stringify(locale==='cs'?'Vstupné':'Admission'),x.order]);
-  const targets=[];
-  for (const suffix of [1,2]) {
-    const title=locale==='cs'?`Taneční večer - termín ${suffix}`:`Dance evening - term ${suffix}`;
-    const target=(await db.query("INSERT INTO public.forms(occasion,title,bank_account,is_open,participant_capacity,term_start_at,term_end_at) VALUES($1,$2,$3,true,10,now()+interval '11 days',now()+interval '11 days 3 hours') RETURNING id",[x.occasion,title,x.bank])).rows[0].id;
-    const pt=(await db.query("INSERT INTO eshop.product_types(occasion,title,type) VALUES($1,$2,'spot') RETURNING id",[x.occasion,locale==='cs'?'Vstupné':'Admission'])).rows[0].id;
-    const product=(await db.query("INSERT INTO eshop.products(occasion,title,product_type,price,currency_code,is_hidden,maximum) VALUES($1,$2,$3,1000,'CZK',false,10) RETURNING id",[x.occasion,locale==='cs'?'Vstup na další večer':'Admission to the next evening',pt])).rows[0].id;
-    await db.query("INSERT INTO public.form_fields(form,title,type,product_type,is_ticket_field,is_hidden,is_required) VALUES($1,$2,'product_type',$3,true,false,true)",[target,locale==='cs'?'Vstupné':'Admission',pt]);
-    await db.query('SELECT public.save_customer_order_policy_internal($1,$2)',[target,{move:{enabled:true,allowed_until:new Date(Date.now()+86400000).toISOString(),targets:[]}}]);
-    targets.push({formId:Number(target),products:{[x.product]:Number(product)},fields:{}});
-  }
-  policy.move={enabled:true,allowed_until:new Date(Date.now()+86400000).toISOString(),targets};
+  policy.move={enabled:false,targets:[]};
   await db.query('SELECT public.save_customer_order_policy_internal($1,$2)',[x.form,policy]);
   if(process.env.CUSTOMER_PREVIEW_SEATS==='1') {
     const seated=(await db.query('SELECT pg_temp.payment_attach_spot($1) x',[x])).rows[0].x;
