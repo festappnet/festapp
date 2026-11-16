@@ -158,7 +158,7 @@ test('invalid paths, duplicate identities and missing media never replace accept
   for(const override of [{WEB_LINK:'https://vstupenky.online/prefix'},{DOMAIN:'wrong.invalid'},{WEB_ORGANIZER_CONTENT_PROFILE:'missing'}]) assert.throws(()=>resolveContext({...csConfig,...override}));
 });
 
-test('real marketing profiles give catalogue and homepage the same published social card', t => {
+test('source catalogue retains its app icon while homepage publishes its social card', t => {
   const enConfig = readConfig(new URL('./fixtures/tenants/festappticketsglobal.conf', import.meta.url));
   for (const config of [csConfig, enConfig]) {
     const f = fixture(t);
@@ -173,15 +173,17 @@ test('real marketing profiles give catalogue and homepage the same published soc
     assert.equal(png.readUInt32BE(20), 630);
     const catalogue = readFileSync(join(f.root, 'web_client/index.html'), 'utf8');
     const homepage = readFileSync(join(f.root, 'web/organizers-page'), 'utf8');
-    for (const html of [catalogue, homepage]) {
-      assert.ok(html.includes(`property="og:image" content="${image}"`));
-      assert.ok(html.includes(`name="twitter:image" content="${image}"`));
+    for (const [html, expectedImage, width, height] of [
+      [catalogue, new URL('/android-chrome-512x512.png', context.origin).href, 512, 512],
+      [homepage, image, 1200, 630],
+    ]) {
+      assert.ok(html.includes(`property="og:image" content="${expectedImage}"`));
+      assert.ok(html.includes(`name="twitter:image" content="${expectedImage}"`));
       assert.ok(html.includes(`property="og:locale" content="${context.projection.ogLocale}"`));
       assert.equal((html.match(/(?:name|property)="og:image"/g) ?? []).length, 1);
       assert.equal((html.match(/(?:name|property)="twitter:image"/g) ?? []).length, 1);
-      assert.match(html, /property="og:image:width" content="1200"/);
-      assert.match(html, /property="og:image:height" content="630"/);
-      assert.doesNotMatch(html, /(?:og|twitter):image" content="[^" ]*android-chrome/);
+      assert.ok(html.includes(`property="og:image:width" content="${width}"`));
+      assert.ok(html.includes(`property="og:image:height" content="${height}"`));
     }
     assert.ok(catalogue.includes(`<title>${context.projection.seo.catalogTitle}</title>`));
     assert.ok(catalogue.includes(`rel="canonical" href="${context.origin}/events"`));
