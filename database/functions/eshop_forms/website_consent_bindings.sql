@@ -44,34 +44,26 @@ REVOKE ALL ON FUNCTION public.website_consent_bindings_policy_internal(bigint) F
 -- bounds count UTF-16 code units, matching the existing JavaScript CMP adapter.
 CREATE OR REPLACE FUNCTION public.normalize_website_consent_provider_internal(p_config jsonb)
 RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE provider text:=p_config->>'provider'; a text; m text; cutoff text; n numeric;
+DECLARE provider text:=p_config->>'provider'; a text; m text;
 BEGIN
  IF jsonb_typeof(p_config) IS DISTINCT FROM 'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid_consent_provider'; END IF;
  IF provider='complianz' THEN
   IF jsonb_typeof(p_config->'policyId') IS DISTINCT FROM 'string' OR (p_config->>'policyId') !~ '^[1-9][0-9]{0,15}$' THEN
    RAISE invalid_parameter_value USING MESSAGE='invalid_complianz_policy'; END IF;
   RETURN jsonb_build_object('provider',provider,'policyId',p_config->>'policyId');
+ ELSIF provider IN ('cookiebot','wix') THEN
+  RETURN jsonb_build_object('provider',provider);
  ELSIF provider='cookieconsent' THEN
+  IF NOT p_config ? 'categories' THEN RETURN jsonb_build_object('provider',provider); END IF;
   a:=p_config#>>'{categories,analytics}'; m:=p_config#>>'{categories,marketing}';
-  IF jsonb_typeof(p_config->'revision') IS DISTINCT FROM 'number' OR (p_config->>'revision') !~ '^[1-9][0-9]*$'
-   OR (p_config->>'revision')::numeric>9007199254740991 OR a IS NULL OR m IS NULL OR a=m
+  IF a IS NULL OR m IS NULL OR a=m
    OR jsonb_typeof(p_config#>'{categories,analytics}') IS DISTINCT FROM 'string'
    OR jsonb_typeof(p_config#>'{categories,marketing}') IS DISTINCT FROM 'string'
    OR length(a)=0 OR length(m)=0
    OR (SELECT coalesce(sum(CASE WHEN ascii(c)>65535 THEN 2 ELSE 1 END),0) FROM regexp_split_to_table(a,'') c)>128
    OR (SELECT coalesce(sum(CASE WHEN ascii(c)>65535 THEN 2 ELSE 1 END),0) FROM regexp_split_to_table(m,'') c)>128 THEN
     RAISE invalid_parameter_value USING MESSAGE='invalid_cookieconsent_mapping'; END IF;
-  RETURN jsonb_build_object('provider',provider,'revision',(p_config->>'revision')::bigint,'categories',jsonb_build_object('analytics',a,'marketing',m));
- ELSIF provider IN ('cookiebot','wix') THEN
-  cutoff:=p_config->>'consentValidFrom';
-  IF (provider='cookiebot' AND (jsonb_typeof(p_config->'cbid') IS DISTINCT FROM 'string' OR (p_config->>'cbid') !~* '^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$'))
-   OR cutoff IS NULL OR cutoff !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$'
-   OR to_char(cutoff::timestamptz AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')<>cutoff
-   OR jsonb_typeof(p_config->'maxAgeSeconds') IS DISTINCT FROM 'number' OR (p_config->>'maxAgeSeconds') !~ '^[1-9][0-9]*$'
-   OR (p_config->>'maxAgeSeconds')::numeric>31536000 THEN
-    RAISE invalid_parameter_value USING MESSAGE='invalid_cookiebot_mapping'; END IF;
-  RETURN jsonb_build_object('provider',provider,'consentValidFrom',cutoff,'maxAgeSeconds',(p_config->>'maxAgeSeconds')::bigint)
-   ||CASE WHEN provider='cookiebot' THEN jsonb_build_object('cbid',lower(p_config->>'cbid')) ELSE '{}'::jsonb END;
+  RETURN jsonb_build_object('provider',provider,'categories',jsonb_build_object('analytics',a,'marketing',m));
  END IF;
  RAISE invalid_parameter_value USING MESSAGE='unsupported_consent_provider';
 END $$;
@@ -98,7 +90,7 @@ GRANT EXECUTE ON FUNCTION public.get_unit_website_consent_bindings(bigint) TO au
 CREATE OR REPLACE FUNCTION public.save_unit_website_consent_binding(p_unit bigint,p_website_origin text,p_platform text,
  p_provider_config jsonb,p_expected_version bigint,p_expected_consent_revision text,p_confirm boolean)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE u public.units; b analytics.website_consent_bindings; scope jsonb; config jsonb;
+DECLARE u public.units; b analytics.website_consent_bindings; scope jsonb; config jsonb; confirmation_time timestamptz;
 BEGIN
  IF auth.uid() IS NULL OR NOT public.can_manage_unit_configuration(p_unit) THEN RAISE insufficient_privilege; END IF;
  SELECT * INTO STRICT u FROM public.units WHERE id=p_unit FOR UPDATE;
@@ -112,9 +104,16 @@ BEGIN
  IF p_expected_version IS DISTINCT FROM coalesce(b.version,0) OR p_expected_consent_revision IS DISTINCT FROM scope->>'consentRevision' THEN
   RAISE serialization_failure USING MESSAGE='website_consent_conflict'; END IF;
  config:=public.normalize_website_consent_provider_internal(p_provider_config);
+ -- Timestamped CMP records must postdate this explicit coverage confirmation.
+ -- The caller cannot backdate coverage or extend the server's one-year ceiling.
+ confirmation_time:=CASE WHEN p_confirm THEN clock_timestamp() END;
+ IF p_confirm AND config->>'provider' IN ('cookiebot','wix','cookieconsent') THEN
+  config:=config||jsonb_build_object('consentValidFrom',to_char(confirmation_time AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+   'maxAgeSeconds',31536000);
+ END IF;
  INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_by,confirmed_at)
  VALUES(p_unit,p_website_origin,p_platform,config,1,p_confirm,CASE WHEN p_confirm THEN scope->>'consentRevision' END,
-  CASE WHEN p_confirm THEN auth.uid() END,CASE WHEN p_confirm THEN clock_timestamp() END)
+  CASE WHEN p_confirm THEN auth.uid() END,confirmation_time)
  ON CONFLICT(unit,website_origin) DO UPDATE SET platform=excluded.platform,provider_config=excluded.provider_config,
   version=analytics.website_consent_bindings.version+1,enabled=excluded.enabled,confirmed_revision=excluded.confirmed_revision,
   confirmed_by=excluded.confirmed_by,confirmed_at=excluded.confirmed_at;

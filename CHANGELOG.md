@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Standalone consent links support configured Cookiebot explicit opt-in choices with CBID/origin and archived-notice cutoff mapping, expiry checks and TCF marketing denial.
+- Simplify website consent setup with server-issued coverage windows, retain explicit Complianz policy mapping and enforce all restrictions in existing exports.
+
+- Standalone consent links support configured Cookiebot explicit opt-in choices with loader/origin consistency and persisted-choice checks and TCF marketing denial.
 
 - Measurement website requests can be retried after cancelled or undelivered notifications; organizer settings distinguish drafts, unsent requests and platform approval, and show website validation while editing.
 

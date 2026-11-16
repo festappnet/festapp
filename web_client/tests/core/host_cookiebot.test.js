@@ -22,7 +22,7 @@ for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false
  });
 for(const input of ['{',null,{}, {...cookiebotConfig,provider:'other'},
  ...[0,'1',-1].map(organization=>({...cookiebotConfig,organization})),{...cookiebotConfig,unit:0},
- {...cookiebotConfig,consentRevision:'x'},...['',undefined,'bad'].map(cbid=>({...cookiebotConfig,cbid})),
+ {...cookiebotConfig,consentRevision:'x'},...['','bad'].map(cbid=>({...cookiebotConfig,cbid})),
  ...['https://host.example/','http://host.example','https://host.example/path',undefined].map(origin=>({...cookiebotConfig,origin})),
  ...['2026-01-01','2026-02-31T00:00:00.000Z',undefined].map(consentValidFrom=>({...cookiebotConfig,consentValidFrom})),
  ...[0,-1,'100',365*86400+1,1.5,undefined].map(maxAgeSeconds=>({...cookiebotConfig,maxAgeSeconds}))])
@@ -225,4 +225,9 @@ test('a mismatch present before any match never grants',()=>{
   cmp.store({stamp:'b3RoZXI=',necessary:true,preferences:false,statistics:false,marketing:false,method:'explicit',ver:1,utc:1,region:'cz'});
   assert.equal(createCookiebotSource(win,cookiebotConfig).read(scope),null);
  }finally{win.close()}
+});
+
+test('server-issued coverage works without a manually configured CBID',()=>{
+ const {cbid,...config}=cookiebotConfig;
+ const f=fixture(both,config);try{assert.deepEqual(f.read(),both);f.script.src+='?cbid=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';assert.equal(f.read(),null)}finally{f.close()}
 });

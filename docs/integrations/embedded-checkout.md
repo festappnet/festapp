@@ -450,3 +450,33 @@ může potlačit GTM Just Links trigger s validací; nákup měřte událostmi f
 
 Přesný kontrakt zdroje a protokolu je v
 [dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).
+
+
+### Jednodušší nastavení pomocí serverového exportu
+
+Pro běžné nastavení použijte celý export z **Nastavení pořadatele > Měření >
+Moje weby**. Výše uvedené příklady popisují také přímé vývojářské integrace;
+export neupravujte ani z něj neodstraňujte omezení.
+
+Complianz nadále vyžaduje ID zásad, které skutečně pokrývají formulář. Jeho
+podporované API nedokládá čas uložené volby. CookieConsent v3 nabízí jen volitelné
+mapování kategorií, Cookiebot a Wix nevyžadují další technické údaje.
+
+Při potvrzení pokrytí server pro CookieConsent v3, Cookiebot a Wix uloží
+`consentValidFrom` podle času potvrzení a `maxAgeSeconds` nejvýše na 365 dní.
+Převezmou se pouze volby uložené po tomto potvrzení; vlastní expirace CMP platí
+současně. Nejdříve zveřejněte odpovídající zásady, potvrďte pokrytí ve Festappu,
+importujte nový export a poté ve své liště vyžádejte novou volbu návštěvníků.
+Při změně rozsahu zvyšte také `measurement_consent_version` a celý postup
+opakujte. U Complianzu zveřejněte a potvrďte odpovídající nové ID zásad.
+
+Cookiebot při změně textu automaticky neprokazuje obnovení všech souhlasů;
+správce použije [Renew now v Cookiebot Manageru](https://support.cookiebot.com/hc/en-us/articles/26380933353372-Renew-existing-user-consents-in-the-Cookiebot-Manager).
+Do nové volby zůstane dostupná místní lišta formuláře i samotný nákup.
+
+Starší exporty se stejným `schemaVersion: 1` zůstávají podporované se všemi
+svými omezeními: `policyId`, `cbid`, `revision`, `consentValidFrom` i
+`maxAgeSeconds`. Migrace jejich konfiguraci, potvrzení ani verzi nepřepisuje.
+Nové potvrzení verzovanou konfiguraci nahradí; starý export pak není platný.
+Aktualizace CMS doplňků není potřeba, ale SQL a hostovaný helper musí být nasazeny
+společně. Starší helper nový export bez ruční revize odmítne a ponechá místní lištu.

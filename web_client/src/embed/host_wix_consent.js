@@ -1,15 +1,12 @@
+import {consentValidity} from './host_consent_validity.js';
 // Wix @wix/site consentPolicyManager's synchronous saved-policy boundary.
-// Wix has no notice revision: the organizer archives cutoff/age coverage, as
-// for Cookiebot. A default policy or missing creation date never imports.
-const instant = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
-    Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+// A default policy or missing creation date never imports.
 export function createWixConsentSource(win, input) {
     let config;
     try {
         config = typeof input === 'string' ? JSON.parse(input) : {...input};
         if (config.provider !== 'wix' || ![config.organization,config.unit].every(v => Number.isSafeInteger(v) && v > 0) ||
-            !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin || !instant(config.consentValidFrom) ||
-            !Number.isSafeInteger(config.maxAgeSeconds) || config.maxAgeSeconds <= 0 || config.maxAgeSeconds > 365*86400) config = null;
+            !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin || !consentValidity(config)) config = null;
     } catch { config = null; }
     const listeners = new Set();
     let pending = false, timer, last;
@@ -24,7 +21,7 @@ export function createWixConsentSource(win, input) {
             const now = win.Date.now();
             if (saved?.defaultPolicy !== false || p?.essential !== true ||
                 !['functional','analytics','advertising','dataToThirdParty'].every(k => typeof p[k] === 'boolean') ||
-                !Number.isFinite(timestamp) || timestamp < Date.parse(config.consentValidFrom) || timestamp > now+60000 || now-timestamp >= config.maxAgeSeconds*1000) return null;
+                !consentValidity(config)(timestamp, now)) return null;
             return {consentRevision:config.consentRevision, analytics:p.analytics,
                 marketing:p.advertising && p.dataToThirdParty && typeof win.__tcfapi === 'undefined'};
         } catch { return null; }

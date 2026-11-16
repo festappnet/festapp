@@ -26,6 +26,21 @@ try {
   const data=await scalar(a,'SELECT public.get_unit_website_consent_bindings($1) v',[unit]);
   assert.equal(data.bindings.length,1);assert.equal(data.bindings[0].version,1);
  });
+ await test('forward preserves existing restrictions, confirmations and semantic scope',async()=>{
+  const source=readFileSync(new URL('../../../supabase/migrations/20261115210000_website_consent_live_provider_state.sql',import.meta.url),'utf8');
+  await a.query('BEGIN');
+  try {
+   await a.query(`UPDATE analytics.website_consent_bindings SET provider_config='{"provider":"complianz","policyId":"42","cbid":"obsolete","revision":42,"consentValidFrom":"2026-01-01T00:00:00.000Z","maxAgeSeconds":86400}' WHERE unit=$1`,[unit]);
+   const before=await scalar(a,'SELECT to_jsonb(b) v FROM analytics.website_consent_bindings b WHERE unit=$1',[unit]);
+   assert.equal(before.enabled,true);assert.equal(before.confirmed_revision,scope.consentRevision);
+   assert.ok(before.confirmed_by);assert.ok(before.confirmed_at);
+   const body=source.replace(/^BEGIN;\n/m,'').replace(/COMMIT;\s*$/,'');
+   await a.query(body);await a.query(body);
+   const after=await scalar(a,'SELECT to_jsonb(b) v FROM analytics.website_consent_bindings b WHERE unit=$1',[unit]);
+   assert.deepEqual(after,before);
+   assert.equal((await scalar(a,'SELECT public.unit_measurement_consent_scope_internal($1) v',[unit])).consentRevision,scope.consentRevision);
+  } finally {await a.query('ROLLBACK');}
+ });
  await test('confirmation waits for Unit save and rejects the superseded semantic revision',async()=>{
   await a.query('BEGIN');
   await a.query(`UPDATE public.units SET data=data||'{"measurement_consent_version":2}' WHERE id=$1`,[unit]);
@@ -34,6 +49,24 @@ try {
   await new Promise(r=>setTimeout(r,30));assert.equal(settled,false);
   await a.query('COMMIT');
   assert.equal((await pending).error.code,'40001');
+ });
+ await test('server dates each new confirmation and ignores client-supplied validity',async()=>{
+  await a.query('BEGIN');
+  try {
+   const revision=await scalar(a,"SELECT public.unit_measurement_consent_scope_internal($1)->>'consentRevision' v",[unit]);
+   for(const provider of ['cookiebot','cookieconsent','wix']) {
+    const config={provider,consentValidFrom:'2020-01-01T00:00:00.000Z',maxAgeSeconds:999999999,revision:1};
+    const previous=await scalar(a,'SELECT version v FROM analytics.website_consent_bindings WHERE unit=$1',[unit]);
+    const before=Date.now();
+    const saved=await scalar(a,`SELECT public.save_unit_website_consent_binding($1,'https://website.example','html',$2::jsonb,$3,$4,true) v`,[unit,JSON.stringify(config),previous,revision]);
+    const binding=saved.bindings[0];
+    assert.equal(binding.version,Number(previous)+1);assert.equal(binding.confirmedRevision,revision);
+    assert.ok(Date.parse(binding.providerConfig.consentValidFrom)>=before-1000);
+    assert.ok(Date.parse(binding.providerConfig.consentValidFrom)<=Date.now()+1000);
+    assert.equal(binding.providerConfig.maxAgeSeconds,31536000);
+    assert.equal(binding.providerConfig.revision,undefined);
+   }
+  } finally {await a.query('ROLLBACK');}
  });
  await test('forward migration reapplies transactionally without changing existing binding or semantic revision',async()=>{
   const source=readFileSync(new URL('../../../supabase/migrations/20261114170000_website_consent_bindings.sql',import.meta.url),'utf8');

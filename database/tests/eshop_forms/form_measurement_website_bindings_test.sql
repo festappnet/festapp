@@ -4,6 +4,13 @@ DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; org big
  fid bigint:=(x->>'form')::bigint; scope jsonb; result jsonb; b jsonb; exported jsonb; before_policy jsonb; legacy_revision text; rejected boolean; signature text;
  config jsonb:='{"provider":"cookieconsent","revision":7,"categories":{"analytics":"statistika návštěv","marketing":"reklama"}}';
 BEGIN
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"complianz","policyId":"42"}'),'{"provider":"complianz","policyId":"42"}'::jsonb,'Complianz retains explicit policy coverage');
+ rejected:=false;
+ BEGIN PERFORM public.normalize_website_consent_provider_internal('{"provider":"complianz"}'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ PERFORM assert_true(rejected,'Complianz without comparable timestamp needs a policy ID');
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"cookiebot"}'),'{"provider":"cookiebot"}'::jsonb,'Cookiebot needs no mapping');
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"wix"}'),'{"provider":"wix"}'::jsonb,'Wix needs no mapping');
+ PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"cookieconsent"}'),'{"provider":"cookieconsent"}'::jsonb,'CookieConsent categories optional');
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=org;
  UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://organizer.example"]}' WHERE id=un;
  UPDATE public.forms SET is_open=true,data='{"analytics":{"enabled":true}}' WHERE id=fid;
@@ -34,6 +41,9 @@ BEGIN
  PERFORM assert_eq(exported#>>'{providerConfig,consentRevision}',legacy_revision,'export confirmed server scope');
  PERFORM assert_eq(exported->>'serviceOrigin','https://tickets.example','service from organization');
  PERFORM assert_eq(exported#>>'{binding,version}','2','version advances');
+ PERFORM assert_eq(exported#>>'{providerConfig,maxAgeSeconds}','31536000','server owns age ceiling');
+ PERFORM assert_true((exported#>>'{providerConfig,consentValidFrom}')::timestamptz >= transaction_timestamp(),'new coverage cannot predate confirmation');
+ PERFORM assert_false(exported->'providerConfig' ? 'revision','new CookieConsent exports use server coverage time');
  PERFORM assert_eq(public.form_measurement_runtime_internal(fid)#>>'{website_consent_bindings,0,effective}','true','policy advertises effective binding');
  PERFORM assert_false((public.form_measurement_runtime_internal(fid)->'website_consent_bindings')::text LIKE '%statistika%','public policy redacts provider config');
  PERFORM assert_true(public.form_measurement_runtime_internal(fid)->>'processing_revision'<>before_policy->>'processing_revision','managed binding changes technical revision');
@@ -58,6 +68,8 @@ BEGIN
   '{"provider":"wix","consentValidFrom":"2026-01-01T00:00:00.000Z","maxAgeSeconds":86400,"organization":999,"unit":999}',4,scope->>'consentRevision',true);
  exported:=public.export_unit_website_consent_binding((b->>'id')::uuid,5);
  PERFORM assert_eq(exported#>>'{providerConfig,provider}','wix','native Wix uses same server export');
+ PERFORM assert_true((exported#>>'{providerConfig,consentValidFrom}')::timestamptz >= transaction_timestamp(),'caller cannot backdate coverage');
+ PERFORM assert_eq(exported#>>'{providerConfig,maxAgeSeconds}','31536000','caller cannot choose validity ceiling');
  PERFORM assert_eq(exported#>>'{providerConfig,unit}',un::text,'client scope cannot override stored Unit');
  result:=public.save_unit_website_consent_binding(un,'https://organizer.example','html',config,5,scope->>'consentRevision',true);
  PERFORM assert_eq((SELECT count(*)::integer FROM analytics.website_consent_bindings WHERE unit=un),1,'four platform choices retain one binding');

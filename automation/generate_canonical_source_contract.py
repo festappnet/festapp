@@ -168,7 +168,7 @@ def render(root=ROOT, additional_sources=()):
     command_transaction_owners(selected)
     # Additional domains request final-body parity only. Receipt ownership
     # remains scoped to the canonical operation manifest above.
-    for source in additional_sources:
+    for source in [*config.get('additionalSources', []), *additional_sources]:
         for signature, body in definitions((root / 'database/functions' / source).read_text()):
             if body is not None:
                 selected[signature] = body

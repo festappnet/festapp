@@ -1,10 +1,8 @@
-// Cookiebot's SDK has no public policy revision. The organizer archives a CBID,
-// origin and effective-date mapping; consent IDs are not policy versions.
+import {consentValidity} from './host_consent_validity.js';
+// Cookiebot storage expiry and the confirmed coverage window both apply.
 const events = ['CookiebotOnConsentReady', 'CookiebotOnLoad', 'CookiebotOnAccept',
     'CookiebotOnDecline', 'CookiebotOnDialogDisplay'];
 const uuid = value => typeof value === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value);
-const instant = value => typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
-    Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
 // Measured on Cookiebot uc.js (Chromium, Firefox, WebKit): the SDK keeps the
 // tab's last state in memory. A decision in another tab or an expired/removed
 // cookie leaves hasResponse, consent.* and consentID unchanged until reload.
@@ -32,7 +30,9 @@ function loader(win, config) {
     // Ordinary embeds carry only id, src and data-cbid; the consent mode comes from
     // the account configuration and is checked at runtime, not from attributes.
     if (query.length > 1 || (!attribute && !query.length) ||
-        [attribute, ...query].filter(value => value !== null).some(value => !uuid(value) || value.toLowerCase() !== config.cbid)) return null;
+        [attribute, ...query].filter(value => value !== null).some(value => !uuid(value))) return null;
+    if (attribute && query.length && attribute.toLowerCase() !== query[0].toLowerCase()) return null;
+    if (config.cbid !== undefined && [attribute, ...query].filter(value => value !== null).some(value => value.toLowerCase() !== config.cbid.toLowerCase())) return null;
     return {tcf:!!script.getAttribute('data-framework') || !!url.searchParams.get('data-framework')};
 }
 export function createCookiebotSource(win, input) {
@@ -41,10 +41,10 @@ export function createCookiebotSource(win, input) {
         config = typeof input === 'string' ? JSON.parse(input) : {...input};
         const origin = new URL(config.origin);
         if (config.provider !== 'cookiebot' || ![config.organization, config.unit].every(value => Number.isSafeInteger(value) && value > 0) ||
-            typeof config.consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(config.consentRevision) || !uuid(config.cbid) ||
-            origin.origin !== config.origin || origin.protocol !== 'https:' || !instant(config.consentValidFrom) ||
-            !Number.isSafeInteger(config.maxAgeSeconds) || config.maxAgeSeconds <= 0 || config.maxAgeSeconds > 365 * 86400) config = null;
-        else config = Object.freeze({...config, cbid:config.cbid.toLowerCase(), validFrom:Date.parse(config.consentValidFrom)});
+            typeof config.consentRevision !== 'string' || !/^[a-f0-9]{32}$/.test(config.consentRevision) ||
+            origin.origin !== config.origin || origin.protocol !== 'https:' ||
+            (config.cbid !== undefined && !uuid(config.cbid)) || !consentValidity(config)) config = null;
+        else config = Object.freeze(config);
     } catch { config = null; }
     const listeners = new Set();
     let timer, last, pending = false;
@@ -67,8 +67,7 @@ export function createCookiebotSource(win, input) {
             if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
             const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
             // consentUTC can lead Date.now() by a few ms right after a choice (measured).
-            if (!consentId(id) || consent.stamp !== id || !Number.isSafeInteger(utc) || utc < config.validFrom ||
-                utc > now + 60000 || now - utc >= config.maxAgeSeconds * 1000) return null;
+            if (!consentId(id) || consent.stamp !== id || !consentValidity(config)(utc, now)) return null;
             // Cookiebot writes storage and its cached API non-atomically. Until
             // both agree, no reader may reuse the previous grant: the same
             // mismatch also means withdrawal in another tab or cookie removal.
