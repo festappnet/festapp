@@ -154,6 +154,14 @@ try {
     await page.locator('#dynamic-form .btn-submit').first().scrollIntoViewIfNeeded();
     await page.locator('#dynamic-form .btn-submit').first().click();
     await page.locator('.btn-submit-order').first().waitFor();
+    const paymentPreview = await page.evaluate(() => {
+        const host=document.querySelector('[data-payment-methods]');
+        return {enabled:!document.querySelector('.btn-submit-order').disabled, hidden:host.hidden,
+            alerts:[...host.querySelectorAll('[role="alert"]')].map(el=>el.textContent)};
+    });
+    assert.equal(paymentPreview.enabled,true,'A CZK/EUR form with separate receiving accounts must allow submission');
+    assert.equal(paymentPreview.hidden,true,'Bank-only checkout must not show an unnecessary payment section');
+    assert.deepEqual(paymentPreview.alerts,[],'Available bank transfer must not report unavailable payments');
     await page.locator('.btn-submit-order').first().scrollIntoViewIfNeeded();
     await page.waitForFunction(`(() => { const b=document.querySelector('.btn-submit-order'); const r=b.getBoundingClientRect(); return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('.btn-submit-order')===b && document.getAnimations().every(a=>a.playState!=='running'); })()`);
     await page.locator('.btn-submit-order').first().click();
@@ -174,6 +182,10 @@ try {
     assert.equal(String(bound.order_id), String(checkout.result.order.id));
     assert.equal(bound.state, 'ordered');
     assert.ok(bound.ticket_symbol);
+    const payment = (await db.query(`SELECT pi.bank_account,trim(pi.currency_code) AS currency
+        FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=$1`,[bound.order_id])).rows[0];
+    assert.equal(Number(payment.bank_account),fixture.bank,'CZK checkout selects the CZK receiving account');
+    assert.equal(payment.currency,'CZK');
     console.log('PASS: real map click -> SQL reservation -> preview -> order -> selected seat bound to ticket');
     if (offlineRecovery) console.log('PASS: offline seat release -> reconnect -> authoritative recovery -> one successful order, original seat and answers retained');
 } catch (error) {

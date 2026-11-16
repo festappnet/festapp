@@ -490,6 +490,14 @@
         "customer_order_changes/policy.sql",
         "customer_order_changes/preview.sql"
       ]
+    },
+    {
+      "migration": "20261116120000_bank_multicurrency_availability.sql",
+      "active": true,
+      "header": "-- Allow separate receiving accounts to cover the currencies offered by a form.",
+      "sources": [
+        "payment_providers/builtin.sql"
+      ]
     }
   ]
 }
