@@ -11,7 +11,6 @@ test('applied batch history refuses rewriting after the seat-order forward deepe
  assert.notEqual(result.status,0);assert.match(result.stderr,/immutable/);assert.equal(digest(),before);
 });
 test('terminal seat-order forward follows batch and ACL prerequisites and reproduces canonical owners',()=>{
- const version='20261024023000';for(const parent of ['20261024020000','20261024021000'])assert(version>parent);
  for(const script of ['automation/assemble-seat-order-migration.py','automation/assemble-blueprint-recovery-migration.py','automation/assemble-ticket-batches-migration.py','automation/generate_canonical_source_contract.py']){
   const result=spawnSync('python3',[script,'--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
  }

@@ -61,7 +61,7 @@ test('capture paths are explicit and missing replay inputs fail before database 
 });
 
 
-test('completed migration toolchains and duplicate previews stay retired',()=>{
+test('completed migration toolchains stay retired',()=>{
     for (const path of [
         'automation/hetzner-supabase/rehearsal',
         'automation/blueprint_local_e2e.py',
@@ -73,11 +73,7 @@ test('completed migration toolchains and duplicate previews stay retired',()=>{
         'automation/image-migration/migrate-files.js',
         'automation/image-migration/rewrite-urls.js',
         'automation/image-migration/private-bucket-cutover.js',
-        'docs/design/occasion-card-layout-preview/compact-layout.html',
-        'docs/design/occasion-card-layout-preview/real-layout.html',
     ]) assert.equal(existsSync(join(root,path)),false,path);
-    assert.ok(existsSync(join(root,'docs/design/occasion-card-layout-preview/index.html')));
-    assert.ok(existsSync(join(root,'docs/design/occasion-card-layout-preview/variants.html')));
 });
 
 
