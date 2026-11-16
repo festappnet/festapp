@@ -476,7 +476,7 @@
         "seat-install"
       ],
       "resources": {
-        "ramMiB": 256,
+        "ramMiB": 768,
         "sourceGeneration": 1
       },
       "inputs": [
@@ -554,7 +554,7 @@
         "seat-mcp-prepare"
       ],
       "resources": {
-        "ramMiB": 900,
+        "ramMiB": 1024,
         "dbCluster": 1
       },
       "inputs": [

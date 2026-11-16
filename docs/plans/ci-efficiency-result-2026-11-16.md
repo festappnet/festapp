@@ -109,6 +109,21 @@ Dynamické rozdělení i jeho test hlídají úplnost a jedinečnost všech soub
 Samotná změna UI checkoutu již nemá MCP databázové jednotky mezi vlastníky;
 změna backendu, fixture nebo MCP implementace je stále invaliduje.
 
+### Hosted výsledek MCP rozdělení
+
+Exact main `4c2293b5a1630e6e7526c71e09a9e87681f5acf2` prošel všemi osmi
+kanonickými GitHub jobs. Run `43880101955` potvrzuje dva různé DB workspaces,
+24 + 256 testů PASS a nula skip/fail. Souběžné MCP okno mělo 105,22 s proti
+předchozímu sériovému TAP bloku 162,19 s (-35 %); příprava API měla 5,49 s.
+Společná příprava databáze se mezi API přípravou a testy měří zvlášť a není
+započtena do okna samotných testů. `seat-services` klesla na 27,70 s po
+přesunutí MCP. Celý checkout job měl 299 s proti poslednímu vzorku 401 s;
+starší vzorek měl 306 s, takže nejde o záruku stejného zrychlení každého běhu.
+
+Naměřený součet RSS procesů přípravy byl 632 MiB, kontraktů 912 MiB.
+Navazující rezervace plánovače proto mají 768 a 1024 MiB; celkový rozpočet
+3500 MiB ani dva DB sloty se nezvyšují. Tato korekce mění jen plánování CI.
+
 ## Baseline
 
 [Uložený vzorek](ci-efficiency-baseline-2026-11-16.json) vznikl read-only
