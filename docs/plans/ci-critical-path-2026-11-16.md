@@ -1,225 +1,119 @@
-# CI critical path: plan and execution
+# CI critical path: plan and implementation
 
-Scope: `festappnet/festapp`, canonical main CI only. No product release,
-production database access, paid runner upgrade or unrelated repository changes.
-Starting source: `748e575bd19b5d81f750d7f5bf65f2b7bfd425fc`.
+Scope: canonical Festapp CI. Baseline product source is main
+`9a8e156ab9c825c9514b27230e2517603a875a5b`. No production release is part of
+this change. Keep all eight required jobs, proof provenance/age checks, complete
+scenario ownership, 3500 MiB/three-worker admission, two DB slots, exclusive
+cluster operations and the single local Flutter task with concurrency one.
 
-## Evidence and objective
+## Baseline and success criteria
 
-The full hosted baseline `3c837dc327672b7ed703f54800fb437d2171fe5f`
-took 380 seconds from first workflow creation to the last required job completion.
-Verified reuse on the following documentation change took 37 seconds.
-The goal is to avoid unrelated executions and shorten genuinely affected/full
-executions. A tenfold improvement is a target for narrow changes, not an
-established claim about the complete cold suite.
+The exact-source hosted baseline executed all eight complete lanes successfully.
+Its first-workflow-created to last-required-job-completed window was **363 s**
+(16:30:54-16:36:57 UTC). Wix took 359 s, seat checkout 284 s, ticket delivery
+279 s, navigation 206 s. The earlier unchanged-input documentation sample took
+37 s; that does not demonstrate faster affected/full execution.
 
-Observed bottlenecks (overlapping phases must not be summed):
+Target materially shorter affected runs without removing scenarios. A tenfold
+improvement is a target for narrow changes, not a claim about the full cold suite.
+Count preparation, cache transfer/export, cleanup and failed experiments. Compare
+actual work, source, runtimes and complete semantic inventories.
 
-| Area | Measured time | Source |
-| --- | ---: | --- |
-| CMS unit | 283 s | Wix baseline artifact |
-| WordPress startup | 165 s | `cms.wordpress.start` |
-| CMS browser installation | 48 s | `cms.browsers.install` |
-| CMS cleanup | 30 s | `cms.cleanup.wordpress` |
-| Ticket Flutter tests | 184 s | `ticket-client` |
-| MCP contracts | 131 s | `seat-mcp-contracts` |
-| MCP authorization truth table | 57 s | all 2,048 combinations |
+## Ordered implementation plan
 
-## Implementation order
+1. **Correct consumed inputs and runtime dependencies.** Remove broad MCP inputs
+   from seven SQL units and the public checkout browser unit that do not import
+   MCP application code. Retain the explicit disposable-database guard consumer.
+   Separate ticket Deno/core inputs from the Flutter application; retain their
+   actual external email/brand/layout/font fixtures. Unknown input paths/tests
+   remain conservative. Keep `after` for full-run check order; use existing
+   `requires` for real preparation. Always add requirements as scheduler edges
+   when independently verified ordering checks are omitted from a partial plan.
+2. **Provision selected tools only.** Derive Flutter, SQL and browser preparation
+   flags from executed commands/resource claims. Deno-only ticket execution does
+   not install Flutter; MCP-only execution does not download browsers. Missing
+   local preparation flags default to full setup; invalid flags fail closed.
+   Runtime.acquire() prepares and clones its own marked canonical database.
+   Reused upgrade/runtime checks still need valid exact-input direct proof.
+3. **Reduce compatible Flutter engine starts.** Use existing grouped registration,
+   explicit semantic-origin mappings and isolated SDK/font/locale environments.
+   Six compatible ticket roots share an engine (22 -> 17 roots), four navigation
+   roots share one (13 -> 10, plus the separate define=false engine). Reverse only
+   the new outer groups with `FESTAPP_CI_GROUP_ORDER=reverse`; retain legacy nested
+   fixture profiles. Preserve all 657 ticket and 228 navigation registrations,
+   including their original skip states and multiplicities.
+4. **Remove redundant work.** Five MCP PostgreSQL files were run both in the full
+   contracts group and in measurement. Remove only the duplicate invocation and
+   dependency install; all files remain dynamically discovered in the complete
+   grouped suite. Keep the new information assembler with its actual contract
+   owner. A CI contract now prevents duplicate per-file SQL MCP execution.
+5. **Shorten unavoidable execution.** Evaluate all 2,048 authorization combinations
+   in one real authenticated PostgreSQL loop; retain the independent JavaScript
+   predicate/capability/historical-envelope assertions and verify the actor role
+   on every row. Remove the obsolete next-OTP-window sleep from the production-
+   pinned GoTrue fixture. Explicitly reject replay of the verified browser
+   challenge and verify a distinct challenge using a current valid OTP. Preserve
+   AAL2, separate sessions, browser refresh credentials, provider-verified actor,
+   refresh and freshness assertions. No provider policy or MFA clock is changed.
+6. **Reduce CMS preparation.** Start four independent preparation workers. Use
+   supported wp-env cleanup to remove owned state while retaining runtime images.
+   Cache only upstream registry-digest images, binding platform, runtime config,
+   lockfile, workflow and cache helper; verify archive bytes and loaded image IDs.
+   Never cache custom builds, containers, volumes, accounts or credentials.
+   Explicit WordPress base pulls still resolve mutable upstream tags each run.
+   A warm hit avoids another export. Advance browser time through the real 20 s
+   iframe renewal interval and still require its actual message. Preserve all
+   nine real CMS/backend cases and negative revocation waits.
+7. **Validate, publish and measure.** Run targeted canonical mirrors, inventory,
+   reverse-order isolation and a real fresh-runtime checkout. Fetch and integrate
+   latest main before publication. Require eight exact-source GitHub jobs to pass;
+   separately measure cold and warm CMS execution, including archive transfer.
+   Record first-cache construction cost. Do not substitute a short reuse run for
+   full-suite improvement or dispatch a production build.
 
-1. **Correct unit dependencies.** Audit actual commands and their imports before
-   removing broad MCP inputs from unrelated SQL units. Give Dart-core and Deno
-   ticket units their actual inputs instead of inheriting the whole application.
-   Add positive and negative selection cases: consumer changes rerun consumers,
-   shared SQL/runtime/fixture changes retain all required consumers, unknown
-   inputs continue to select full scope. Do not infer independence from a name.
-2. **Reuse Flutter engines across compatible tests.** Consolidate CI entrypoints
-   with the existing grouped registration helper. Keep separate compile-time
-   defines and incompatible environments. Preserve the exact semantic inventory
-   (657 ticket cases, 228 navigation registrations, including skip states), map every
-   moved group explicitly, and verify both normal and reverse registration order.
-   Retain consolidation only when it passes isolation and improves elapsed time.
-3. **Reduce CMS preparation and waiting.** Start browser preparation immediately
-   alongside independent services. Cache only immutable downloaded runtime inputs,
-   never CMS databases, accounts, volumes, consent state or credentials. Key
-   caches by platform and their pinned tool/configuration inputs; validate loaded
-   identities and fail closed. Preserve the complete nine-case real CMS matrix,
-   including WordPress versions, three engines, Joomla versions, iframe renewal,
-   withdrawal, revocation and COOP fallback. Record restore/export overhead.
-4. **Batch the authorization truth table.** Keep all 2,048 combinations, real
-   canonical predicates under `authenticated`, complete capability assertions and
-   historical-envelope comparison. Reduce client/server round trips without
-   replacing the database owner with a simulation or testing as an administrator.
-   Compare the original and batched executors on the same disposable database;
-   retain the change only if it measurably improves the test.
-5. **Publish and measure.** Run canonical affected local lanes once on the coherent
-   change, plus inventory and semantic isolation checks. Fetch and integrate
-   current main before publication. Require all eight exact-source GitHub jobs
-   to pass. Compare total time, preparation, executed cases, reuse and runner
-   work with the baseline; distinguish cold provisioning from affected executions.
+## Completed native validation
 
-## Acceptance and boundaries
+- Latest main was integrated before validation; its information migration and new
+  tests are preserved. Canonical inventory passed.
+- The five-lane mirror passed all 31 units, all 283 MCP tests (24 authorization,
+  259 contracts, zero skips/failures), all 657/228 Flutter registrations and all
+  nine CMS cases: `20261116T175301-b43213742746`.
+- Compatible Flutter grouping passed both ordinary and reversed new-outer-group
+  order with identical semantic inventories.
+- A completely fresh, uniquely marked canonical Runtime ran public seat checkout
+  and offline recovery in 14.99 s without the independent upgrade-test units.
+  The task-owned database/container/volume/cache were verified and removed.
+- Final clean source `889e47575b5714b54e9086f8c1e4999254f94865` passed all 21 image
+  and seat units in 109.86 s, complete=true, inputsUnchanged=true, dirty=false:
+  `20261116T185230-6b4a8dc3ffd8`. All 283 MCP cases passed with zero skips.
+  The real pinned GoTrue case took 964.63 ms, versus earlier 7-29 s samples.
+  This is a local measurement, not a hosted total-time claim.
+- The authorization-loop paired sample was 16.884 -> 13.391 s (-20.7%) on the
+  same disposable database and Node 22.23.4, retaining all 2,048 combinations.
 
-- No required test/scenario removed, weakened, silently skipped or moved outside
-  its canonical entrypoint. Preserve release-gate names, provenance, age limits
-  and resource ceilings (one local Flutter task, concurrency one, two DB slots).
-- Target a material reduction (at least 30%) in affected Flutter execution and
-  targeted preparation; measure actual outcomes rather than promising them.
-- Unknown dependency syntax, missing inputs or invalid cache evidence must run
-  the conservative path. Every optimization has negative coverage for this.
-- A failed experiment may be rejected with its measured reason. Do not retain
-  speculative complexity or claim an unverified tenfold full-suite improvement.
-- Finish publication checks and retain evidence before retiring the task worktree.
+The pinned GoTrue implementation verifies new challenges against current valid
+OTPs and rejects verified-challenge reuse:
+[GoTrue v2.197.0](https://github.com/supabase/auth/blob/v2.197.0/internal/api/mfa.go#L540).
+The fixture now tests that rejection explicitly rather than sleeping until a
+new OTP period. Private token output remains only in its parent pipe.
 
-## Execution record
+## Rejected experiments and limits
 
-- Dependency audit removed blanket MCP inputs from seven SQL units and the
-  public checkout browser unit. The explicit MCP disposable-database guard still
-  invalidates its actual `seat-services` consumer. Ticket Deno/core and Flutter
-  dependency installation now have separate platform inputs.
-- A transitive Dart graph experiment was rejected before publication: the real
-  router imports a large application graph, while source-inspection tests read
-  files dynamically. Retain conservative application inputs instead of adding a
-  mostly-fallback graph/parser and pretending it narrows coverage safely.
-- Broad engine consolidation was rejected after actual forward/reverse runs
-  exposed singleton SDK, cached fonts and fallback/localization boundaries.
-  Those original scopes stay separate. Six compatible ticket roots share one
-  engine (22 -> 17 roots); four compatible navigation roots share one (13 -> 10,
-  plus the separate define=false engine). Only the new outer groups use
-  `FESTAPP_CI_GROUP_ORDER=reverse`; existing nested fixture registration profiles
-  retain their established order. Exact semantic baselines remain unchanged.
-- Original/batched authorization truth-table comparison on the same local
-  disposable database, pinned Node 22.23.4: 16.884 s versus 13.391 s (-20.7%).
-  Both executed all 2,048 combinations; all JavaScript rights/capability/envelope
-  assertions are unchanged. The first complete MCP run passed all 24 + 256 cases
-  with zero skips. Hosted timing remains to be measured.
-- CMS uses four preparation workers and the supported wp-env `cleanup` command,
-  which removes owned containers/volumes/networks without discarding runtime
-  images. The GitHub cache transfers only upstream content-addressed base images;
-  its key binds runtime configuration, lockfile, helper, workflow and platform.
-  Archive and loaded image IDs are checked; a warm hit avoids another export.
-- The first multi-lane experiment is retained as failed evidence; the Flutter
-  isolation failures were not hidden or reclassified as successful tests.
-  Final semantic checks, reverse-order isolation and hosted measurements follow.
+A transitive Dart graph was rejected: real router imports and dynamic source-
+inspection tests made a mostly-fallback parser an unsafe or ineffective shortcut.
+Broader Flutter aggregation failed SDK/cache/font/fallback isolation checks;
+those failures narrowed the final groups, never weakened assertions.
 
-The 31-unit forward mirror at the intermediate isolation boundary passed with
-`complete=true`, `inputsUnchanged=true` in 403.08 s on this workstation; CMS
-159.4 s, MCP contracts 64.4 s, authorization 17.6 s. Reverse-order failures
-rejected that larger grouping; these are not final performance claims.
-The renewal case now advances the real browser clock through its actual 20s
-interval and still requires the real cross-frame renewal message. Negative
-revocation waits and all nine CMS scenarios remain unchanged. WordPress bases
-are explicitly prefetched during its preparation worker so BuildKit layers
-can enter the upstream-image cache; mutable tags are still resolved each run.
+A third DB slot was rejected. A 126.72 -> 96.36 s pair initially looked promising,
+but another valid run took 125.33 s. The GoTrue case alone varied 25.72 -> 7.45 ->
+29.27 s because of its explicit OTP-window sleep. That is not stable evidence of
+an admission improvement. One additional exploratory run changed inputs and is
+also excluded. The final configuration retains the original two-slot capacity
+and all whole-cluster exclusion claims. The actual sleep was removed instead.
 
-Final safe grouping validation before integrating the next main advance:
-canonical mirror `image-contract navigation-interactions
- ticket-preview-and-delivery wix-checkout-compatibility` PASS, 14/14 units,
-`complete=true`, `inputsUnchanged=true`, 208.39 s. Receipt:
-`20261116T174507-a9de83c4362d`. Navigation 34.35 s; ticket 56.60 s; CMS 97.09 s,
-including every one of the nine real CMS cases and timer-driven iframe renewal.
-These native samples have warm downloads and different selected lanes; their
-aggregate times are not a hosted speedup comparison. The optional GitHub image
-transfer cache was disabled in this native run, as designed.
+## Hosted outcome
 
-Both canonical Flutter commands also passed with
-`FESTAPP_CI_GROUP_ORDER=reverse`: the exact same 228 navigation and 657 ticket
-registrations, including skips. Existing standalone SDK/font/locale processes
-and compile-time defines are preserved. A broad reverse of pre-existing nested
-fixtures is not substituted for the isolation check of the newly combined roots.
-
-Main `9a8e156ab9c825c9514b27230e2517603a875a5b` was inventoried and integrated
-before publication. Its information SQL migration and added tests are preserved.
-The measurement SQL unit duplicated five files already auto-discovered by the
-complete MCP group. Their duplicate invocation and redundant install are removed;
-a contract now enforces the grouped owners. The new information assembler stays
-with its actual `mcp-auth-contract` owner. Latest-main validation follows.
-
-Final-main native mirror after duplicate removal: all 31 units PASS,
-`complete=true`, `inputsUnchanged=true`, 321.58 s, receipt
-`20261116T175301-b43213742746`. Source HEAD `4370fc42d` is the rebased
-implementation commit whose parent is canonical main `9a8e156ab`; dirty=true
-records the reviewed follow-up changes, not a different backend target.
-All 283 MCP tests passed (24 authorization + 259 contracts), zero skips/failures;
-all 657/228 Flutter registrations and nine CMS cases passed. Measurement dropped
-to 4.4 s after removing the five duplicate MCP file executions. Consumed-input
-review also retained external email examples, Wallet brand assets, and Deno's
-real database/layout/font fixtures in the relevant fingerprints.
-
-A bounded scheduler experiment follows the measured bottleneck: authorization,
-contracts and service units peaked at 404/670/541 MiB of sampled process RSS.
-Compare the same seat lane with two versus three admitted database units, keeping
-3500 MiB admission RAM, one local Flutter task and all cluster-wide/exclusive
-claims intact. This is a proposed extension to the initial two-slot constraint,
-not an unmeasured relaxation: reject it on case failures, excessive memory or no
-material wall-time benefit. No production/runtime capacity changes are in scope.
-
-Controlled two-slot baseline: canonical seat lane PASS, 17/17 units, same 283
-MCP cases with zero skips, 126.72 s total, receipt
-`20261116T180111-07028b8ee899`. Database-container peak sampled 464.4 MiB;
-per-unit peaks below their admission reservations. The candidate raises only
-DB admission to three within the existing three workers and 3500 MiB budget;
-all five prior full-cluster claims rise from two to three, preserving exclusion.
-
-The first three-slot exploratory run passed all cases but its global receipt
-reported changed inputs because the new test-contract guard was edited during
-startup. Its 107.58 s is not accepted as a valid comparison. The source is now
-frozen for one clean repeat; require at least 15% improvement over 126.72 s,
-all cases/pass states unchanged, no increased RAM budget and preserved exclusive
-claims. Reject the three-slot change if this bounded repeat misses the threshold.
-
-A further consumed-input audit found an existing but unused distinction:
-`requires` is runtime preparation, while `after` also orders independent checks.
-Partial plans previously replayed upgrade/runtime-contract tests through `after`
-even when their direct execution evidence remained valid. The full DAG order
-is unchanged; SQL behavior units require their actual dependency install (MCP
-also its one API preparation), because canonical Runtime.acquire() calls prepare()
-before cloning a marked workspace. Ticket Deno/core units are independently
-self-preparing; Flutter client requires the root Flutter installation. All
-unchanged checks still require verified, unexpired exact-input execution proof.
-Missing proof executes the check. Provision Flutter, SQL and browser tools only
-when selected commands/resources need them; unknown/missing flags retain full
-preparation. Verify dependency omission is rejected and exercise a real standalone
-checkout browser workspace without the independent upgrade-test units.
-
-The frozen repeat passed on clean source `dcfb7ba74`: image-contract PASS
-(106 CI tests plus its existing storage/retention checks); seat-checkout PASS,
-all 17 units, same 283 MCP cases with zero skips, 96.36 s versus 126.72 s
-(-24.0%) in the paired native sample. Receipt `20261116T182532-f256c91fdccb`
-reports complete/input-unchanged true and dirty=false. Container peak 476.1 MiB
-versus 464.4 MiB. Three DB admissions are retained at the existing 3500 MiB and
-three-worker budget; all five whole-cluster claims consume all three slots.
-This native paired sample is not a promise about GitHub CPU/cache variability.
-
-A real public checkout/offline-recovery check then acquired a completely new,
-uniquely marked canonical Runtime/database, without the independent upgrade-test
-units. Both browser scenarios passed; 14.99 s including bootstrap and cleanup.
-The task-owned container, volume, lease/cache were verified and removed.
-Partial execution also explicitly retains `requires` as scheduler edges after
-already-verified ordering checks are removed, so consumers cannot race installs.
-A scheduler regression test exercises exactly that race.
-
-The third-slot experiment is REJECTED. A further valid run took 125.33 s, and
-TAP decomposition exposed the confound: the GoTrue case waited 25.72 s in the
-two-slot sample, 7.45 s in the 96.36 s sample, and 29.27 s in the next run.
-The one-pair 24% figure is not stable evidence of a scheduler improvement.
-Restore the original two-slot admission and whole-cluster exclusion weights.
-The 3500 MiB/three-worker and workstation Flutter limits are unchanged.
-
-The real cause is an unconditional next-OTP-window sleep in the fixture.
-The exact pinned production GoTrue v2.197.0 rejects reuse of a verified challenge
-and independently verifies a new challenge against a currently valid OTP:
-https://github.com/supabase/auth/blob/v2.197.0/internal/api/mfa.go#L540
-Replace the sleep with explicit distinct real challenges. Add a negative assertion
-that the already-verified browser challenge is rejected by the delegated client;
-retain actual AAL2, separate session, unchanged browser refresh credential,
-provider-verified actor, refresh and five-minute freshness assertions. No provider
-configuration, product policy, clock override or simulated MFA is introduced.
-
-The no-sleep MFA flow passed against the immutable production GoTrue release:
-1.326 s (one case, zero skips/failures) versus the prior observed 7-29 s range.
-The fixture explicitly rejects replay of the verified browser challenge, obtains
-its own new challenge, and verifies the current OTP through the real provider.
-All original actor/AAL2/session/refresh/freshness assertions remain. This removes
-the clock-window source of variance instead of claiming it as a scheduler win.
-The final implementation retains two DB slots and the original exclusion claims.
+Pending exact-source GitHub validation and one controlled same-source warm CMS
+measurement. Report that outcome separately from native and unchanged-input
+reuse results; retain a cache only when transfer-inclusive measurements support
+its recurring benefit.
