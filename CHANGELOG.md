@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Detect Complianz policy IDs from approved organizer websites, recheck automatic confirmation on the server and offer reload and manual fallback while retaining the configured/current/saved policy pin.
+
 - Simplify website consent setup with server-issued coverage windows, retain explicit Complianz policy mapping and enforce all restrictions in existing exports.
 
 - Standalone consent links support configured Cookiebot explicit opt-in choices with loader/origin consistency and persisted-choice checks and TCF marketing denial.

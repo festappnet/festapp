@@ -37,6 +37,183 @@ void main() {
     }
   });
   testWidgets(
+    'Complianz probes only saved approved origins and ignores revoked results',
+    (tester) async {
+      const site = 'https://poradatel.cz';
+      var saved = true;
+      var approved = false;
+      var attempts = 0;
+      final pending = Completer<String>();
+      Future<void> pump() => tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitWebsiteConsentSettings(
+                key: const ValueKey('eligibility'),
+                unitId: 2,
+                websites: const [site],
+                approvedWebsites: approved ? const [site] : const [],
+                saved: saved,
+                load: () async => UnitWebsiteConsent.fromJson({
+                  'consentRevision': 'a' * 32,
+                  'bindings': [],
+                }),
+                detectPolicy: (_) {
+                  attempts++;
+                  return pending.future;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await pump();
+      await tester.pumpAndSettle();
+      expect(
+        attempts,
+        0,
+        reason: 'saved websites alone do not authorize a probe',
+      );
+      saved = false;
+      approved = true;
+      await pump();
+      await tester.pumpAndSettle();
+      expect(attempts, 0, reason: 'unsaved changes cannot start a probe');
+      saved = true;
+      await pump();
+      await tester.pumpAndSettle();
+      expect(
+        attempts,
+        1,
+        reason: 'a new approved website needs no existing binding',
+      );
+      expect(find.text(CommonStrings.loading), findsOneWidget);
+      approved = false;
+      await pump();
+      await tester.pumpAndSettle();
+      expect(find.text(CommonStrings.loading), findsNothing);
+      pending.complete('42');
+      await tester.pumpAndSettle();
+      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsNothing);
+      expect(attempts, 1);
+    },
+  );
+
+  testWidgets(
+    'Complianz stalled probe settles, times out to manual entry and ignores late success',
+    (tester) async {
+      final pending = Completer<String>();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitWebsiteConsentSettings(
+                unitId: 2,
+                websites: const ['https://poradatel.cz'],
+                approvedWebsites: const ['https://poradatel.cz'],
+                saved: true,
+                load: () async => UnitWebsiteConsent.fromJson({
+                  'consentRevision': 'a' * 32,
+                  'bindings': [],
+                }),
+                detectPolicy: (_) => pending.future,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(CommonStrings.loading), findsOneWidget);
+      await tester.pump(const Duration(seconds: 20));
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsPolicyDetectionFailed), findsOneWidget);
+      expect(find.text(CommonStrings.loading), findsNothing);
+      pending.complete('42');
+      await tester.pumpAndSettle();
+      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsNothing);
+      await tester.tap(find.text(FormStrings.cmsPolicyManual));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+        '43',
+      );
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, '43'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Complianz detects read-only ID, reloads and offers manual fallback',
+    (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var attempts = 0;
+      Map<String, dynamic>? pinned;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitWebsiteConsentSettings(
+                unitId: 2,
+                websites: const ['https://poradatel.cz'],
+                approvedWebsites: const ['https://poradatel.cz'],
+                saved: true,
+                load: () async => UnitWebsiteConsent.fromJson({
+                  'consentRevision': 'a' * 32,
+                  'bindings': [],
+                }),
+                detectPolicy: (_) async {
+                  attempts++;
+                  if (attempts == 3) throw StateError('blocked');
+                  return attempts == 1 ? '42' : '43';
+                },
+                save: (_, _, config, _, _, _) async {
+                  pinned = config;
+                  return UnitWebsiteConsent.fromJson({
+                    'consentRevision': 'a' * 32,
+                    'bindings': [],
+                  });
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.cmsPolicyReload));
+      await tester.pumpAndSettle();
+      expect(find.text('${FormStrings.cmsPolicyId}: 43'), findsOneWidget);
+      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, false);
+      await tester.tap(find.text(FormStrings.cmsPolicyReload));
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsPolicyDetectionFailed), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+        findsNothing,
+      );
+      await tester.tap(find.text(FormStrings.cmsPolicyManual));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+        '44',
+      );
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.cmsConfirm));
+      await tester.pumpAndSettle();
+      expect(pinned, {'provider': 'complianz', 'policyId': '44'});
+    },
+  );
+  testWidgets(
     'CMS confirmation requires saved settings and explicit coverage; export and disable use stored binding',
     (tester) async {
       tester.view.physicalSize = const Size(1200, 2400);
@@ -69,9 +246,11 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: UnitWebsiteConsentSettings(
+                detectPolicy: (_) async => throw StateError('blocked'),
                 key: ValueKey('consent-$state'),
                 unitId: 2,
                 websites: const [site],
+                approvedWebsites: const [site],
                 saved: saved,
                 load: () async => data(),
                 save:
@@ -127,6 +306,8 @@ void main() {
       await pump();
       await tester.pumpAndSettle();
       expect(confirm().onPressed, isNull);
+      await tester.tap(find.text(FormStrings.cmsPolicyManual));
+      await tester.pumpAndSettle();
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsPolicyId),
         'invalid',
@@ -201,6 +382,8 @@ void main() {
         state = suspendedState;
         await pump();
         await tester.pumpAndSettle();
+        await tester.tap(find.text(FormStrings.cmsPolicyManual));
+        await tester.pumpAndSettle();
         await tester.enterText(
           find.widgetWithText(TextField, FormStrings.cmsPolicyId),
           '43',
@@ -240,8 +423,10 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: UnitWebsiteConsentSettings(
+                detectPolicy: (_) async => throw StateError('blocked'),
                 unitId: 2,
                 websites: const ['https://poradatel.cz'],
+                approvedWebsites: const ['https://poradatel.cz'],
                 saved: true,
                 load: () => pending.future,
               ),
@@ -326,8 +511,10 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: UnitWebsiteConsentSettings(
+                detectPolicy: (_) async => throw StateError('blocked'),
                 unitId: 2,
                 websites: const ['https://poradatel.cz'],
+                approvedWebsites: const ['https://poradatel.cz'],
                 saved: true,
                 load: () async {
                   loads++;
@@ -343,6 +530,8 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.cmsPolicyManual));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsPolicyId),
@@ -394,9 +583,11 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: UnitWebsiteConsentSettings(
+                detectPolicy: (_) async => throw StateError('blocked'),
                 key: const ValueKey('same-unit'),
                 unitId: 2,
                 websites: sites,
+                approvedWebsites: sites,
                 saved: saved,
                 load: () async {
                   loads++;
@@ -465,8 +656,10 @@ void main() {
                 maintainState: true,
                 children: [
                   UnitWebsiteConsentSettings(
+                    detectPolicy: (_) async => throw StateError('blocked'),
                     unitId: 2,
                     websites: const ['https://poradatel.cz'],
+                    approvedWebsites: const ['https://poradatel.cz'],
                     saved: true,
                     load: () async => UnitWebsiteConsent.fromJson({
                       'consentRevision': 'a' * 32,

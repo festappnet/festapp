@@ -11,6 +11,39 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 class DbUnits {
+  static Future<String> detectComplianzPolicy(int unitId, String origin) async {
+    final response = await _supabase.functions.invoke(
+      'probe-complianz',
+      body: {'unitId': unitId, 'origin': origin},
+    );
+    return (response.data as Map)['policyId'] as String;
+  }
+
+  static Future<UnitWebsiteConsent> confirmDetectedComplianz(
+    int unitId,
+    String origin,
+    String platform,
+    String policyId,
+    int version,
+    String revision,
+  ) async {
+    final response = await _supabase.functions.invoke(
+      'probe-complianz',
+      body: {
+        'unitId': unitId,
+        'origin': origin,
+        'confirm': true,
+        'platform': platform,
+        'expectedPolicyId': policyId,
+        'version': version,
+        'revision': revision,
+      },
+    );
+    return UnitWebsiteConsent.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+    );
+  }
+
   static Future<UnitWebsiteConsent> getWebsiteConsent(int unitId) async =>
       UnitWebsiteConsent.fromJson(
         Map<String, dynamic>.from(

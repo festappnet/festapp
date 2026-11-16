@@ -396,3 +396,6 @@ verify_jwt = false
 
 [functions.customer-order-changes]
 verify_jwt = false
+
+[functions.probe-complianz]
+verify_jwt = false

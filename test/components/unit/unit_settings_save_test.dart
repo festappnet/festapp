@@ -515,6 +515,13 @@ void main() {
         await tester.tap(button);
         await tester.pumpAndSettle();
         expect(approvalRequests, 1);
+        expect(
+          backend.requests.where(
+            (request) => request.url.path.endsWith('/probe-complianz'),
+          ),
+          isEmpty,
+          reason: 'saving or requesting approval must not probe an unapproved website',
+        );
         if (failure == 'none') {
           expect(saves, hasLength(2));
           expect((stored['data'] as Map)['measurement_websites'], [

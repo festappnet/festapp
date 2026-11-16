@@ -105,19 +105,33 @@ export async function fetchPublicBinary(
   dependencies: FetchDependencies = defaultDependencies,
   maxBytes = MAX_BYTES,
   allowedTypes: readonly string[] = ['image/*','application/octet-stream'],
+  sameOrigin = false,
 ) {
   let url = parseSafeTarget(target);
+  const origin = url.origin;
+  const signal = AbortSignal.timeout(15_000);
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
-    const address = await assertPublicDns(url.hostname, dependencies.resolveDns);
+    signal.throwIfAborted();
+    let abortDns: (() => void) | undefined;
+    const address = await Promise.race([
+      assertPublicDns(url.hostname, dependencies.resolveDns),
+      new Promise<never>((_, reject) => {
+        abortDns = () => reject(signal.reason);
+        signal.addEventListener('abort', abortDns, { once: true });
+      }),
+    ]).finally(() => {
+      if (abortDns) signal.removeEventListener('abort', abortDns);
+    });
     const response = await dependencies.fetch(url, {
       redirect: 'manual',
-      signal: AbortSignal.timeout(15_000),
+      signal,
     }, address);
     if (response.status >= 300 && response.status < 400) {
       await response.body?.cancel();
       const location = response.headers.get('location');
       if (!location || redirect === MAX_REDIRECTS) throw new UnsafeTargetError('unsafe_redirect');
       url = parseSafeTarget(location, url);
+      if (sameOrigin && url.origin !== origin) throw new UnsafeTargetError('unsafe_redirect');
       continue;
     }
     if (!response.ok) {

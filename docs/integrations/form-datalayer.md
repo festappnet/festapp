@@ -692,8 +692,30 @@ configuration capability and authenticated identity; no direct table access.
 Export: `{schemaVersion:1,serviceOrigin,websiteOrigin,binding:{id,version},
 providerConfig:{provider,organization,unit,consentRevision,...}}`.
 `serviceOrigin` comes from the stored organization's `DEFAULT_URL`. Complianz
-requires an explicit `policyId`: its supported category API has no saved-choice
+requires a pinned `policyId`: its supported category API has no saved-choice
 timestamp to prove coverage. The configured, current and saved policy must agree.
+Organizer settings automatically read `current_policy_id` from the approved
+website's inline WordPress `complianz` JSON configuration. Multisite cookie
+prefixes do not change this field; visitor cookies still use the prefix-aware
+adapter. See [Complianz's integration guide](https://complianz.io/help/wordpress/configuration/developers-guide-for-third-party-integrations/).
+The authenticated `probe-complianz` function checks configuration-management
+permission and both saved and approved origins through existing caller-JWT RPCs.
+Only the exact HTTPS origin is fetched, without cookies, using the existing
+DNS-vetted, TLS-identity-preserving pinned fetcher, a 15-second request timeout,
+a 1 MiB body ceiling and same-origin redirects. JavaScript is never executed.
+The UI starts probing only after the owning screen has loaded approval for the
+saved origin; approval requests alone do not trigger it. Pending detection uses
+a static loading message and releases the editor to manual fallback after
+20 seconds, including when the transport never completes. Scope changes and
+disposal cancel the UI deadline and invalidate late results.
+Missing, ambiguous, blocked or unsupported configuration offers a collapsed manual
+entry fallback. Reload clears coverage confirmation. Automatic confirmation
+fetches again on the server and saves only if the detected ID still matches the
+organizer's reviewed ID; otherwise reload and confirm again. The existing manual
+save RPC remains supported. This does not attest notice contents or replace the
+organizer's explicit coverage confirmation, and never updates an existing pin
+without confirmation. No saved-choice timestamp is inferred.
+
 CookieConsent v3 optionally adds distinct `categories:{analytics,marketing}`
 (1-128 UTF-16 units each, Unicode/spaces preserved), defaulting to
 `analytics`/`marketing`. Its live positive revision must match the saved cookie.

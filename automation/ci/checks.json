@@ -49,6 +49,8 @@
         "automation/verify_measurement_runtimes.mjs",
         "automation/tests/measurement_runtimes.test.mjs",
         ".github/workflows/measurement-runtime-drift.yml",
+        "supabase/functions/probe-complianz/**",
+        "supabase/functions/fetch-http-data/**",
         "assets/translations/**"
       ]
     },
@@ -577,7 +579,7 @@
       }
     },
     "web-measurement": {
-      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/core/host_consent_export.test.js web_client/tests/core/host_wix_consent.test.js web_client/tests/core/host_provider_live_state.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
+      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/core/host_consent_export.test.js web_client/tests/core/host_wix_consent.test.js web_client/tests/core/host_provider_live_state.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/probe-complianz supabase/functions/fetch-http-data\n",
       "after": [
         "web-startup"
       ],
@@ -2261,6 +2263,8 @@
     "supabase/functions/exchange-sign-in-code/exchange_test.ts",
     "supabase/functions/fetch-http-data/handler_test.ts",
     "supabase/functions/fetch-http-data/safeFetch_test.ts",
+    "supabase/functions/probe-complianz/handler_test.ts",
+    "supabase/functions/probe-complianz/policy_test.ts",
     "supabase/functions/fetch-transactions/handler_test.ts",
     "supabase/functions/generate-order-agreement/agreementConfig_test.ts",
     "supabase/functions/manage-member-access/handler_test.ts",
