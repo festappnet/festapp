@@ -9,6 +9,7 @@ import tempfile
 import unittest
 import uuid
 from unittest.mock import patch
+from automation.local_db.images import resolve as resolve_image
 
 ROOT = Path(__file__).parents[1] / 'hetzner-supabase/maintenance'
 
@@ -22,7 +23,7 @@ def load(name, file):
 
 retention = load('test_db_retention', 'database-retention.py')
 cleanup = load('test_db_cleanup', 'database-cleanup.py')
-IMAGE = 'public.ecr.aws/supabase/postgres:17.6.1.156'
+IMAGE = json.loads((Path(__file__).parents[1] / 'local_db/test-base.json').read_text())['providers']['17']['image']
 
 
 class DatabaseMaintenanceTest(unittest.TestCase):
@@ -30,9 +31,10 @@ class DatabaseMaintenanceTest(unittest.TestCase):
     def setUpClass(cls):
         cls.container = 'festapp-maintenance-test-' + uuid.uuid4().hex[:10]
         try:
+            image, _ = resolve_image(IMAGE)
             cls.command('docker', 'run', '-d', '--name', cls.container, '--network', 'none',
                         '--memory', '512m', '--cpus', '1', '--user', 'postgres', '--entrypoint', 'sh',
-                        IMAGE, '-c', 'sleep 1800')
+                        image, '-c', 'sleep 1800')
             cls.command('docker', 'exec', cls.container, 'initdb', '-D', '/tmp/test-pg',
                         '-U', 'postgres', '--auth=trust', '--no-locale', '--encoding=UTF8')
             cls.command('docker', 'exec', cls.container, 'pg_ctl', '-D', '/tmp/test-pg',

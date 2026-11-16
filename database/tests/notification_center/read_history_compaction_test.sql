@@ -1,4 +1,20 @@
 BEGIN;
+-- Exercise real delayed preparation instead of relying on a CPU-dependent pass count.
+CREATE FUNCTION pg_temp.ready_history_view(org bigint, oc bigint) RETURNS jsonb
+LANGUAGE plpgsql AS $$
+DECLARE v jsonb; deadline timestamptz:=clock_timestamp()+interval '5 seconds';
+BEGIN
+ v:=public.get_notification_center_view(org,oc);
+ LOOP
+  IF v->>'state'='ready' THEN RETURN v; END IF;
+  PERFORM assert_eq(v->>'state','preparing','history view uses the asynchronous preparation protocol');
+  PERFORM assert_true(clock_timestamp()<deadline,'history preparation completes within five seconds');
+  PERFORM public.prepare_notification_center(100);
+  PERFORM public.prepare_notification_center_views(100);
+  PERFORM pg_sleep(0.01);
+  v:=public.get_notification_center_view(org,oc,p_view=>(v->>'viewToken')::uuid);
+ END LOOP;
+END $$;
 DO $$
 DECLARE org bigint;oc bigint;viewer uuid:=gen_random_uuid();oid bigint;v jsonb;row jsonb;
  history jsonb;frozen jsonb;scope jsonb;receipts jsonb;frozen_token uuid;
@@ -17,18 +33,18 @@ BEGIN
   PERFORM public.notification_center_publish_internal(org,oc,'order_created','history:'||i,
    jsonb_build_object('orderId',oid,'count',2,'formContext',jsonb_build_object('allowsMultiple',true)),NULL,now()-make_interval(days=>4-i));
   PERFORM public.project_notification_center(500);
-  v:=public.get_notification_center_view(org,oc);
-  FOR pass IN 1..20 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
-  v:=public.get_notification_center_view(org,oc);
+  PERFORM public.get_notification_center_view(org,oc);
+  UPDATE public.notification_center_projection_scopes SET next_check_at=clock_timestamp()+interval '200 milliseconds' WHERE organization=org;
+  v:=pg_temp.ready_history_view(org,oc);
   SELECT value INTO row FROM jsonb_array_elements(v->'items') WHERE value->>'isRead'='false';
+  PERFORM assert_not_null(row,'ready history view contains an unread row');
   scope:=jsonb_build_object('viewToken',v->>'viewToken','id',row->>'id','organization',org);
   PERFORM assert_true(public.mark_notification_center_view_item_read(org,scope),'read each distinct delivered batch');
   PERFORM public.get_notification_center_view(org,oc,p_mode=>'close_all');
-  FOR pass IN 1..20 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
  END LOOP;
  SELECT jsonb_agg(to_jsonb(b) ORDER BY b.id) INTO receipts FROM public.notification_center_read_batches b WHERE organization=org;
  PERFORM assert_eq(jsonb_array_length(receipts),3,'canonical read receipts remain distinct');
- v:=public.get_notification_center_view(org,oc);
+ v:=pg_temp.ready_history_view(org,oc);
  PERFORM assert_eq(jsonb_array_length(v->'items'),1,'read batches across days occupy one history row');
  history:=v#>'{items,0}';frozen_token:=(v->>'viewToken')::uuid;
  PERFORM assert_eq((history#>>'{data,activityCount}')::int,3,'history has the complete order count');
@@ -39,19 +55,18 @@ BEGIN
  PERFORM public.notification_center_publish_internal(org,oc,'order_created','history:4',
   jsonb_build_object('orderId',oid,'count',2,'formContext',jsonb_build_object('allowsMultiple',true)));
  PERFORM public.project_notification_center(500);
- FOR pass IN 1..20 LOOP PERFORM public.prepare_notification_center(100);END LOOP;
- v:=public.get_notification_center_view(org,oc);
+ v:=pg_temp.ready_history_view(org,oc);
  PERFORM assert_eq(jsonb_array_length(v->'items'),2,'new unread activity stays separate from history');
  SELECT value INTO row FROM jsonb_array_elements(v->'items') WHERE value->>'isRead'='false';
  PERFORM assert_eq((row#>>'{data,activityCount}')::int,1,'new unread count excludes history');
  scope:=jsonb_build_object('viewToken',v->>'viewToken','id',row->>'id','organization',org);
  PERFORM public.mark_notification_center_view_item_read(org,scope);
- FOR pass IN 1..30 LOOP PERFORM public.prepare_notification_center(100);PERFORM public.prepare_notification_center_views(100);END LOOP;
+ PERFORM pg_temp.ready_history_view(org,oc);
  frozen:=public.get_notification_center_view(org,oc,p_mode=>'refresh',p_view=>frozen_token);
  PERFORM assert_eq((frozen#>>'{items,0,data,activityCount}')::int,3,'existing history snapshot does not absorb later reads');
  scope:=jsonb_build_object('viewToken',frozen_token,'id',history->>'id','organization',org);
  PERFORM assert_eq(jsonb_array_length(public.notification_center_order_selection(oc,scope)),3,'frozen history detail excludes later reads too');
- v:=public.get_notification_center_view(org,oc);
+ v:=pg_temp.ready_history_view(org,oc);
  PERFORM assert_eq(jsonb_array_length(v->'items'),1,'newly read activity joins existing history');
  PERFORM assert_eq((v#>>'{items,0,data,activityCount}')::int,4,'compacted history retains every order');
  PERFORM assert_eq(v#>>'{items,0,id}',history->>'id','history identity survives later read batches');
