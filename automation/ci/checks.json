@@ -553,7 +553,7 @@
       ],
       "resources": {
         "ramMiB": 1000,
-        "dbCluster": 3
+        "dbCluster": 2
       },
       "inputs": [
         "database/**",
@@ -1019,7 +1019,7 @@
       ],
       "resources": {
         "ramMiB": 1000,
-        "dbCluster": 3
+        "dbCluster": 2
       },
       "inputs": [
         "database/**",
@@ -1046,7 +1046,7 @@
         "seat-upgrade"
       ],
       "resources": {
-        "dbCluster": 3,
+        "dbCluster": 2,
         "sourceGeneration": 1,
         "ramMiB": 1000
       },
@@ -1137,7 +1137,7 @@
       "resources": {
         "ramMiB": 3000,
         "browser": 1,
-        "dbCluster": 3
+        "dbCluster": 2
       },
       "inputs": [
         "automation/test_embed_adapters.sh",
@@ -1181,7 +1181,7 @@
       ],
       "resources": {
         "ramMiB": 900,
-        "dbCluster": 3
+        "dbCluster": 2
       },
       "inputs": [
         "database/functions/**",
@@ -1461,7 +1461,7 @@
   "resources": {
     "flutter": 1,
     "browser": 1,
-    "dbCluster": 3,
+    "dbCluster": 2,
     "sourceGeneration": 1,
     "ramMiB": 3500
   },

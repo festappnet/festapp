@@ -198,3 +198,28 @@ The task-owned container, volume, lease/cache were verified and removed.
 Partial execution also explicitly retains `requires` as scheduler edges after
 already-verified ordering checks are removed, so consumers cannot race installs.
 A scheduler regression test exercises exactly that race.
+
+The third-slot experiment is REJECTED. A further valid run took 125.33 s, and
+TAP decomposition exposed the confound: the GoTrue case waited 25.72 s in the
+two-slot sample, 7.45 s in the 96.36 s sample, and 29.27 s in the next run.
+The one-pair 24% figure is not stable evidence of a scheduler improvement.
+Restore the original two-slot admission and whole-cluster exclusion weights.
+The 3500 MiB/three-worker and workstation Flutter limits are unchanged.
+
+The real cause is an unconditional next-OTP-window sleep in the fixture.
+The exact pinned production GoTrue v2.197.0 rejects reuse of a verified challenge
+and independently verifies a new challenge against a currently valid OTP:
+https://github.com/supabase/auth/blob/v2.197.0/internal/api/mfa.go#L540
+Replace the sleep with explicit distinct real challenges. Add a negative assertion
+that the already-verified browser challenge is rejected by the delegated client;
+retain actual AAL2, separate session, unchanged browser refresh credential,
+provider-verified actor, refresh and five-minute freshness assertions. No provider
+configuration, product policy, clock override or simulated MFA is introduced.
+
+The no-sleep MFA flow passed against the immutable production GoTrue release:
+1.326 s (one case, zero skips/failures) versus the prior observed 7-29 s range.
+The fixture explicitly rejects replay of the verified browser challenge, obtains
+its own new challenge, and verifies the current OTP through the real provider.
+All original actor/AAL2/session/refresh/freshness assertions remain. This removes
+the clock-window source of variance instead of claiming it as a scheduler win.
+The final implementation retains two DB slots and the original exclusion claims.

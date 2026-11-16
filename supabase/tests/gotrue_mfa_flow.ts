@@ -32,16 +32,21 @@ async function code() {
     const mac=new Uint8Array(await crypto.subtle.sign('HMAC',key,counter)),offset=mac.at(-1)!&15;
     return String((new DataView(mac.buffer).getUint32(offset)&0x7fffffff)%1000000).padStart(6,'0');
 }
-const verified=await browser.auth.mfa.challengeAndVerify({factorId:factor.data.id,code:await code()});ensure(!verified.error,'Browser MFA verification failed');
+const browserChallenge=await browser.auth.mfa.challenge({factorId:factor.data.id});ensure(!browserChallenge.error&&browserChallenge.data,'Browser MFA challenge failed');
+const verified=await browser.auth.mfa.verify({factorId:factor.data.id,challengeId:browserChallenge.data.id,code:await code()});ensure(!verified.error,'Browser MFA verification failed');
 const original=(await browser.auth.getSession()).data.session;ensure(original,'Original browser session missing');
 let refused=false;try{await issueExistingUserSession({targetUserId:userId,expectedAuthEmail:email},admin,client(anonKey));}catch(error){refused=error instanceof Error&&error.message==='mfa_required';}
 ensure(refused,'Ordinary mint must never bypass MFA');
-// GoTrue rejects a reused OTP. The independent connection proves a new code.
-await new Promise(resolve=>setTimeout(resolve,30000-Date.now()%30000+1000));
+// The pinned production GoTrue rejects a verified challenge. A distinct real
+// challenge verifies the current OTP without waiting for another 30s window.
 const issued=await issueExistingUserSession({targetUserId:userId,expectedAuthEmail:email},admin,delegated,{
     purpose:'delegation',completeMfa:async session=>{
         ensure(session.access_token!==original.access_token,'Browser access must not be adopted');
-        const result=await delegated.auth.mfa.challengeAndVerify({factorId:factor.data!.id,code:await code()});ensure(!result.error,'Independent MFA verification failed');
+        const replay=await delegated.auth.mfa.verify({factorId:factor.data!.id,challengeId:browserChallenge.data!.id,code:await code()});
+        ensure(replay.error?.code==='mfa_ip_address_mismatch','A verified browser MFA challenge must not be replayed');
+        const challenge=await delegated.auth.mfa.challenge({factorId:factor.data!.id});ensure(!challenge.error&&challenge.data,'Independent MFA challenge failed');
+        ensure(challenge.data.id!==browserChallenge.data!.id,'Independent MFA must use its own challenge');
+        const result=await delegated.auth.mfa.verify({factorId:factor.data!.id,challengeId:challenge.data.id,code:await code()});ensure(!result.error,'Independent MFA verification failed');
         const upgraded=(await delegated.auth.getSession()).data.session;ensure(upgraded,'Independent session missing');return upgraded;
     },
 });

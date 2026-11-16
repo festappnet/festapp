@@ -45,8 +45,8 @@ serial because fixtures may commit, analyze tables or replace functions.
 and verifies the dynamic partition covers every `*-postgres.test.mjs` file.
 The ordinary `test:postgres` command still runs the complete suite. Both CI
 groups retain the marked-database and paused-delivery guard, and each claims one
-of three admitted DB slots within the unchanged 3500 MiB/three-worker budget.
-Whole-cluster mutation units reserve all three slots. API generation finishes before either consumer;
+of two admitted DB slots within the unchanged 3500 MiB/three-worker budget.
+Whole-cluster mutation units reserve both slots. API generation finishes before either consumer;
 the local mirror also waits for the server-policy API writer. Backend changes
 invalidate MCP proofs; standalone checkout UI changes do not.
 
