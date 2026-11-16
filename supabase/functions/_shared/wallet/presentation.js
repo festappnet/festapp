@@ -8,6 +8,7 @@ export const walletPresentation = {
   badges: Object.fromEntries(['cs','sk','en','de','pl','uk'].map(locale=>[locale,`https://img.festapp.net/assets/google-wallet/v1/${locale}.png`])),
  },
  apple: {
+  emailBadges: Object.fromEntries(['cs','sk','en','de','pl','uk'].map(locale=>[locale,`https://img.festapp.net/assets/apple-wallet/v2/email/${locale}.png`])),
   labels: {cs:'Přidat do Peněženky Apple',sk:'Pridať do Peňaženky Apple',en:'Add to Apple Wallet',de:'Hinzufügen zu Apple Wallet',pl:'Dodaj do Portfela Apple',uk:'Додати до Гаманця Apple'},
   handoff: {
    cs:'Pokud se otevřela Peněženka, potvrďte přidání. Pokud se soubor pouze stáhl, otevřete jej ve Stažených souborech. Pro přímé přidání můžete odkaz z e-mailu otevřít v Safari na iPhonu.',

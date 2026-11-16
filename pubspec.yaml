@@ -169,6 +169,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   fonts:
+    - family: WalletPreviewSans
+      fonts:
+        - asset: supabase/functions/_shared/ticket-assets/roboto.ttf
     - family: Futura
       fonts:
         - asset: fonts/Futura PT Book.ttf

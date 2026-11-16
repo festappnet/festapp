@@ -92,7 +92,12 @@ function installRuntimeState(win) {
         },
         get retrying() { return retrying; },
         protectDraft() { draftProtected = true; },
-        allowed(reason) { return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase,
+        allowed(reason) {
+            // Wallet credentials exist only in memory after early URL cleanup.
+            // An update/recovery reload would turn a valid email link into the
+            // missing-link screen. Leave this short-lived handoff on its build.
+            if (/^\/wallet\/?$/.test(win.location.pathname)) return false;
+            return !navigating && allowUpdate(reason, {context:pageContext(win.location), phase:runtime.phase,
             publicWeb:win.__FESTAPP_CLIENT_RUNTIME__ === 'web', draftProtected}); },
         navigate(reason, effect) {
             if (!runtime.allowed(reason)) return false;

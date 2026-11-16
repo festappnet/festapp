@@ -691,3 +691,16 @@ test('embed that becomes ready during a version fetch ignores the late result', 
     assert.equal(banner(win), null);
     dom.window.close();
 });
+for (const appReady of [false,true]) test(`Wallet email entry survives automatic updates (ready=${appReady})`,async t=>{
+ const dom=boot({url:'https://csmostrava.festapp.net/wallet',appReady,
+  clientRuntime:'web',latestVersion:'2.0.0+2',waitingWorker:true});
+ t.after(()=>dom.window.close());
+ // The early bootstrap has already removed the private fragment from the URL.
+ dom.window.__festappWalletToken='a'.repeat(64);
+ dom.window.dispatchEvent(new dom.window.Event('focus'));
+ await flush();
+ assert.equal(dom.window.__navigationErrors.length,0,'reload would discard the in-memory email credential');
+ assert.deepEqual([...dom.window.__skipWaitingMessages],[]);
+ assert.equal(dom.window.FestappRuntime.allowed('automatic-update'),false);
+ assert.equal(dom.window.FestappRuntime.allowed('startup'),false);
+});

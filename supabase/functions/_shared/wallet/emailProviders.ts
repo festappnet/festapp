@@ -24,6 +24,7 @@ export const walletEmailProviders:Record<string,{labels:Record<string,string>;ar
  },artwork:(badge,locale)=>{
   const installed=badge===apple.badges[locale]?locale:badge===apple.badges.en?'en':undefined;
   const width=installed?apple.widths[installed]:undefined;
-  return badge&&width?{url:badge,width}:undefined;
+  const url=installed?apple.emailBadges?.[installed]:undefined;
+  return url&&width?{url,width}:undefined;
  }},
 };

@@ -30,8 +30,14 @@ test('provider failures support explicit retry and concurrent requests cannot is
 test('missing token and unavailable ticket have distinct states',async()=>{
  for(const token of ['', 'invalid', 'a'.repeat(64)]){const {dom,page,navigations}=fixture(token);await page.init();if(token.length===64)await page.save();for(const action of page.actions.values())assert.equal(action.button.hidden,true);assert.deepEqual(navigations,[]);assert.match(page.status.textContent,token.length===64?/není dostupná/:/znovu otevřete/);dom.window.close();}
 });
-test('used tickets retain the warning and require explicit continuation',async()=>{
- const url='https://pay.google.com/gp/v/save/a.b.c';const {dom,page,navigations}=fixture('a'.repeat(64),async()=>({state:'COMPLETED',url}));await page.init();await page.save();assert.deepEqual(navigations,[]);assert.match(page.status.textContent,/již byla použita/);page.actions.get('google').button.click();assert.deepEqual(navigations,[url]);dom.window.close();
+test('email links redirect immediately for both active and already-used tickets',async()=>{
+ for(const state of ['ACTIVE','COMPLETED']) {
+  const url='https://pay.google.com/gp/v/save/a.b.c';let calls=0;
+  const {dom,page,navigations}=fixture('a'.repeat(64),async()=>{calls++;return {state,url};});
+  page.win.__festappWalletOptions={provider:'google',lang:'cs'};
+  await page.init();assert.deepEqual(navigations,[url],state+' must forward on the first email opening');
+  assert.equal(calls,1);page.clear();dom.window.close();
+ }
 });
 test('unsafe provider URLs stay on the retry page',async()=>{
  const {dom,page,navigations}=fixture('a'.repeat(64),async()=>({state:'ACTIVE',url:'https://evil.invalid/gp/v/save/a.b.c'}));await page.init();await page.save();assert.deepEqual(navigations,[]);assert.match(page.status.textContent,/dočasně/);dom.window.close();

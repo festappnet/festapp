@@ -19,3 +19,10 @@ Publish the exact bytes as canonical public image Worker/R2 objects at
 `assets/apple-wallet/v1/<locale>.svg` before configuring the integration's
 `badge_urls.apple` locale keys and deploying referencing email/web code. Never
 overwrite immutable public artwork with different bytes at the same URL.
+
+Email-specific PNGs in `email/` are transparent 4x rasterizations of these
+unchanged official SVGs. Their provenance records source/output digests and
+renderer version. They avoid low-resolution SVG rasterization in email clients;
+web buttons retain the original SVG. Publish these immutable PNGs at
+`assets/apple-wallet/v2/email/<locale>.png` before releasing the updated email
+renderer. Keep the existing v1 SVGs installed for older emails and web buttons.

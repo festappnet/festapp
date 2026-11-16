@@ -280,6 +280,7 @@
         draftProtected = true;
       },
       allowed(reason) {
+        if (/^\/wallet\/?$/.test(win.location.pathname)) return false;
         return !navigating && allowUpdate(reason, {
           context: pageContext(win.location),
           phase: runtime.phase,

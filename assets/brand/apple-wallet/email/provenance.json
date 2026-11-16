@@ -1,0 +1,50 @@
+{
+  "renderer": "@resvg/resvg-js 2.6.2",
+  "height": 192,
+  "displayHeight": 48,
+  "background": "transparent",
+  "files": {
+    "cs": {
+      "source": "../cs.svg",
+      "sourceSha256": "87c0d0b81e0cc8948d2c2571e72f750348a1ed795040d4f9035377e8df8d7bb1",
+      "sha256": "16733aa71d94733dae0c03f7bf5e8b969c4ae79d714e92abf9eedfbd09dcbcfd",
+      "width": 737,
+      "height": 192
+    },
+    "sk": {
+      "source": "../sk.svg",
+      "sourceSha256": "0428e648a3aee1f4aee7c0057d6b704784676f7a4e2b6d16bc9ff0fc9b79a3cf",
+      "sha256": "1ff75274344af61acd14a89c7fda5493557f26396edc3c4a0b472e961180c2f1",
+      "width": 737,
+      "height": 192
+    },
+    "en": {
+      "source": "../en.svg",
+      "sourceSha256": "052b3b446860fd2f9b49c2f0336038947623a5a9433ee3583585b8552ff6f506",
+      "sha256": "ccc151044e71c7fd3b8551b2891538c75597781317dbac89d0525fae9ae90768",
+      "width": 607,
+      "height": 192
+    },
+    "de": {
+      "source": "../de.svg",
+      "sourceSha256": "cbb0a4cd86a5785b78057d5a82975d67eac15253fb705a829a85b1d512ddce52",
+      "sha256": "286c785a9998324517e94f511993a12b7a9b12d8009f2ff2debb1d9a44ce2d51",
+      "width": 614,
+      "height": 192
+    },
+    "pl": {
+      "source": "../pl.svg",
+      "sourceSha256": "0a45fdee23ddd460fe0b7922f71e39a30889d558576baddd4788543d10aab6bc",
+      "sha256": "ceb39935d53174db0dd6bca204e372dd1d24599fa85e033a772ab27c27101b56",
+      "width": 644,
+      "height": 192
+    },
+    "uk": {
+      "source": "../uk.svg",
+      "sourceSha256": "d8fe983aef5dcd297d0192d7bdb74d0be6b663d03d40131fc26fff7050f0dc46",
+      "sha256": "83f0a5a86342a8370f1f06e5b9826efda8e1c9ebdd357a1e5c9419a4d861ba62",
+      "width": 676,
+      "height": 192
+    }
+  }
+}

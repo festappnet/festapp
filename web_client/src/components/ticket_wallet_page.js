@@ -161,7 +161,6 @@ export class TicketWalletPage extends Component {
   if(!link||link.signal.aborted||this.busy||!this.token)return;
   // Existing single-ticket links retain their direct native delivery and need no preflight.
   if(link.scope!=='collection'&&connector.delivery==='file'){this.#submitFile(connector);return;}
-  if(action.url){this.win.location.assign(action.url);return;}
   this.busy=true;button.disabled=true;this.status.textContent=this.text.preparing;
   try {
    let plan=action.plan;
@@ -184,9 +183,8 @@ export class TicketWalletPage extends Component {
    if(link.signal.aborted)return;
    if(result?.error==='wallet_unavailable'){action.plan=null;this.status.textContent=this.text.unavailable;if(link.scope!=='collection')for(const item of this.actions.values())item.button.hidden=true;return;}
    const url=connector.validateUrl(result?.url);if(!url)throw new Error('wallet_retry');
-   if(result.state==='COMPLETED'){
-    this.status.textContent=this.text.used;label.textContent=connector.label(this.locale);action.url=url;
-   }else this.win.location.assign(url);
+   // The provider displays admission state, including an already-used ticket.
+   this.win.location.assign(url);
   }catch{if(!link.signal.aborted){action.plan=null;this.status.textContent=this.text.retry;label.textContent=this.text.tryAgain;}}
   finally{if(!link.signal.aborted){this.busy=false;button.disabled=false;}}
  }

@@ -98,7 +98,7 @@ Deno.test('Google stays localized; Apple uses its installed official English art
  const urls={en:'https://img.festapp.net/assets/google-wallet/v1/en.png',apple:{en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg'}};
  assertEquals(walletEmailProviders.google.badge(urls,'cs'),undefined);
  assertEquals(walletEmailProviders.apple.badge(urls,'cs'),urls.apple.en);
- assertEquals(walletEmailProviders.apple.artwork(urls.apple.en,'cs'),{url:urls.apple.en,width:151.80});
+ assertEquals(walletEmailProviders.apple.artwork(urls.apple.en,'cs'),{url:'https://img.festapp.net/assets/apple-wallet/v2/email/en.png',width:151.80});
  for(const descriptor of Object.values(walletEmailProviders)){assert(descriptor.badge(urls,'en'));assert(descriptor.labelFallback);}
 });
 
@@ -167,7 +167,7 @@ Deno.test('Czech email renders its installed official localized Apple badge with
  const urls={apple:{en:'https://img.festapp.net/assets/apple-wallet/v1/en.svg',cs:'https://img.festapp.net/assets/apple-wallet/v1/cs.svg'}};
  const badge=walletEmailProviders.apple.badge(urls,'cs');
  const html=walletEmailTicket('Všechny vstupenky (2)',[{provider:'apple',badge,url:'https://tenant.invalid/wallet#'+'a'.repeat(64)}],'cs');
- assert(html.includes('src="'+urls.apple.cs+'"'));assert(!html.includes('src="'+urls.apple.en+'"'));assert(html.includes('alt="Přidat do Peněženky Apple"'));
+ assert(html.includes('src="https://img.festapp.net/assets/apple-wallet/v2/email/cs.png"'));assert(!html.includes('src="'+urls.apple.en+'"'));assert(html.includes('alt="Přidat do Peněženky Apple"'));
  assert(!html.includes('background:#202124'));assert(html.includes('width:184.14px'));
 });
 
@@ -183,5 +183,17 @@ Deno.test('official localized Apple badges retain provenance bytes and proportio
   assertEquals(walletEmailProviders.apple.badge({apple:{[lang]:url}},lang),url);
   const artwork=walletEmailProviders.apple.artwork(url,lang);assert(artwork);
   assert(Math.abs(artwork.width-width/height*48)<0.01);assert(artwork.width+16<=232);
+ }
+});
+
+Deno.test('Apple email badges use transparent high-density PNGs at a proportional 48px display height',async()=>{
+ for(const lang of ['cs','sk','en','de','pl','uk']){
+  const bytes=await Deno.readFile(new URL(`../../../assets/brand/apple-wallet/email/${lang}.png`,import.meta.url));
+  const header=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+  const width=header.getUint32(16),height=header.getUint32(20);
+  assertEquals(height,192);assertEquals(bytes[25],6); // RGBA, four device pixels per CSS pixel.
+  const artwork=walletEmailProviders.apple.artwork(`https://img.festapp.net/assets/apple-wallet/v1/${lang}.svg`,lang);
+  assert(artwork);assertEquals(artwork.url,`https://img.festapp.net/assets/apple-wallet/v2/email/${lang}.png`);
+  assert(Math.abs(artwork.width-width/height*48)<0.2);
  }
 });

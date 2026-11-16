@@ -13,7 +13,7 @@ import '../../images/image_area.dart';
 import '../../images/db_images.dart';
 
 /// Inert native preview and three optional overrides. It never issues a pass.
-class TicketWalletAppearanceEditor extends StatelessWidget {
+class TicketWalletAppearanceEditor extends StatefulWidget {
   const TicketWalletAppearanceEditor({
     super.key,
     required this.feature,
@@ -30,17 +30,27 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
   final int? occasionId, unitId;
   final bool readOnly;
   final Future<String?> Function(Uint8List)? uploadImage;
+  @override
+  State<TicketWalletAppearanceEditor> createState() =>
+      _TicketWalletAppearanceEditorState();
+}
+
+class _TicketWalletAppearanceEditorState
+    extends State<TicketWalletAppearanceEditor> {
+  TicketWalletPlatform platform = TicketWalletPlatform.google;
   String t(String key) => TicketDeliveryStrings.text(key);
   @override
   Widget build(BuildContext context) {
-    final overrides = feature.walletAppearance ?? <String, dynamic>{};
+    final overrides = widget.feature.walletAppearance ?? <String, dynamic>{};
     final appearance = GoogleWalletAppearance.fromTicket(
-      feature.toJson(),
-      Map<String, dynamic>.from(occasion['data'] as Map? ?? {}),
+      widget.feature.toJson(),
+      Map<String, dynamic>.from(widget.occasion['data'] as Map? ?? {}),
     );
     void change(String key, Object? value) =>
-        onChanged({...overrides, key: value});
-    final uploadAllowed = !readOnly && (occasionId != null || unitId != null);
+        widget.onChanged({...overrides, key: value});
+    final uploadAllowed =
+        !widget.readOnly &&
+        (widget.occasionId != null || widget.unitId != null);
     Widget image(String key, String? effective, String label, String help) =>
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,12 +90,12 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
                 } finally {
                   buffer.dispose();
                 }
-                final url = uploadImage != null
-                    ? await uploadImage!(bytes)
+                final url = widget.uploadImage != null
+                    ? await widget.uploadImage!(bytes)
                     : await DbImages.uploadImage(
                         bytes,
-                        occasionId,
-                        occasionId == null ? unitId : null,
+                        widget.occasionId,
+                        widget.occasionId == null ? widget.unitId : null,
                       );
                 if (context.mounted) change(key, url);
                 return url;
@@ -105,13 +115,32 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
           title: Text(t('walletAppearance')),
           subtitle: Text(t('walletAppearanceSummary')),
           children: [
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final value in TicketWalletPlatform.values)
+                  ChoiceChip(
+                    label: Text(
+                      value == TicketWalletPlatform.google
+                          ? 'Google Wallet'
+                          : 'Apple Wallet',
+                    ),
+                    selected: platform == value,
+                    onSelected: (_) => setState(() => platform = value),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
             TicketWalletCardPreview(
+              platform: platform,
               appearance: appearance,
-              occasion: occasion,
+              occasion: widget.occasion,
               previewLabel: t('walletPreview'),
               sampleCodeLabel: t('walletSampleCode'),
             ),
             const SizedBox(height: 12),
+            Text(t('walletSampleCode')),
+            const SizedBox(height: 8),
             Text(t('walletAppearanceRules')),
             const SizedBox(height: 16),
             TextFormField(
@@ -119,7 +148,7 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
               initialValue:
                   overrides['background_color'] as String? ??
                   appearance.backgroundColor,
-              readOnly: readOnly,
+              readOnly: widget.readOnly,
               decoration: InputDecoration(
                 labelText: t('walletColor'),
                 hintText: '#216acf',
@@ -131,7 +160,7 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
                       RegExp(r'^#?[a-fA-F0-9]{6}$').hasMatch(value)
                   ? null
                   : t('walletColorInvalid'),
-              onChanged: readOnly
+              onChanged: widget.readOnly
                   ? null
                   : (value) {
                       if (value.isEmpty ||
@@ -157,7 +186,7 @@ class TicketWalletAppearanceEditor extends StatelessWidget {
               t('walletHeroHelp'),
             ),
             TextButton(
-              onPressed: readOnly ? null : () => onChanged({}),
+              onPressed: widget.readOnly ? null : () => widget.onChanged({}),
               child: Text(t('walletInherit')),
             ),
           ],
