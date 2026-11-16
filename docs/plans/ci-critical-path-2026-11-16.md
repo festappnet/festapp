@@ -57,17 +57,15 @@ actual work, source, runtimes and complete semantic inventories.
    refresh and freshness assertions. No provider policy or MFA clock is changed.
 6. **Reduce CMS preparation.** Start four independent preparation workers. Use
    supported wp-env cleanup to remove owned state while retaining runtime images.
-   Cache only upstream registry-digest images, binding platform, runtime config,
-   lockfile, workflow and cache helper; verify archive bytes and loaded image IDs.
-   Never cache custom builds, containers, volumes, accounts or credentials.
-   Explicit WordPress base pulls still resolve mutable upstream tags each run.
-   A warm hit avoids another export. Advance browser time through the real 20 s
+   Evaluate preparation caches using transfer-inclusive hosted measurements.
+   Reject caches without demonstrated recurring benefit; never cache private CMS
+   state, accounts or credentials. Advance browser time through the real 20 s
    iframe renewal interval and still require its actual message. Preserve all
    nine real CMS/backend cases and negative revocation waits.
 7. **Validate, publish and measure.** Run targeted canonical mirrors, inventory,
    reverse-order isolation and a real fresh-runtime checkout. Fetch and integrate
    latest main before publication. Require eight exact-source GitHub jobs to pass;
-   separately measure cold and warm CMS execution, including archive transfer.
+   separately measure cold and warm CMS execution, including cache transfer.
    Record first-cache construction cost. Do not substitute a short reuse run for
    full-suite improvement or dispatch a production build.
 
@@ -113,7 +111,24 @@ and all whole-cluster exclusion claims. The actual sleep was removed instead.
 
 ## Hosted outcome
 
-Pending exact-source GitHub validation and one controlled same-source warm CMS
-measurement. Report that outcome separately from native and unchanged-input
-reuse results; retain a cache only when transfer-inclusive measurements support
-its recurring benefit.
+The first candidate passed all eight full GitHub lanes on exact source
+`c0a26b422dbefe56c3e67751f4c50894e691216b`, but its overall hosted window was
+413 s versus the 363 s baseline. Wix was 410 s cold and 429 s on a controlled
+same-source warm rerun; installed CMS was 327.0 / 325.6 s. All nine CMS scenarios
+passed. The 2.25 GB Docker image cache had a confirmed hit, 29 s restore and
+10.79 s initial save, without a recurring total-time benefit. It was removed.
+WordPress startup remained 150.5 s warm. An isolated fresh two-version PHPUnit
+source preparation probe took 6.974 s locally; this does not isolate the hosted
+bottleneck or justify another source-cache implementation. No source cache was
+added. Further full-suite gains require profiling the generated WordPress image
+build and installed-browser system dependencies on GitHub, not removing cases.
+
+The pinned GoTrue test improved from 31.016 to 6.863 s on GitHub. Image contracts
+were 116 -> 85 s; navigation 206 -> 182 s; web startup 177 -> 132 s. Other lanes
+regressed or stayed flat, including the hosted authorization batch (35.166 ->
+36.570 s), so the local authorization improvement is not a hosted speedup claim.
+These are individual samples on shared GitHub runners, not controlled averages.
+
+Partial-run input ownership and tool provisioning now avoid unrelated work; a
+new affected-change hosted sample is still needed to quantify that benefit.
+Final source after removing the rejected cache requires fresh canonical checks.

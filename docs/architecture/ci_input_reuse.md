@@ -147,15 +147,13 @@ Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix
 reinstalls shared package dependencies. CMS uses one frozen WordPress tool
 installation within the run, keeping all copied environment state private.
-Pinned browser binaries and upstream image layers are cached on GitHub. The
-image cache binds platform, runtime configuration, lockfile, workflow and helper;
-archive bytes and loaded image identities are checked. Only registry-digest
-upstream images are exported, never custom builds, containers, volumes, accounts
-or credentials. WordPress base tags still resolve each run; a warm hit avoids
-another export. System browser libraries and all private CMS/database state are
-prepared normally. All nine browser scenarios remain; the iframe renewal case
-advances browser time through its real 20-second interval and requires the real
-message. Transfer/restore overhead is included in hosted measurements.
+Pinned browser binaries are cached on GitHub; system browser libraries and all
+private CMS/database state are prepared normally. A measured upstream Docker
+image archive cache was removed: even a verified warm hit did not improve the
+hosted CMS duration, and transferred a 2.25 GB archive. All nine browser scenarios
+remain; the iframe renewal case advances browser time through its real 20-second
+interval and requires the actual message. Transfer/restore overhead is included
+in hosted measurements.
 
 The first definition rollout requires full execution. Main/release concurrency
 is unchanged. Batch related ready changes before publication and assign one

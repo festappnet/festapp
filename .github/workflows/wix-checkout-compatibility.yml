@@ -61,20 +61,9 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ steps.cms-browser-key.outputs.key }}
-      - name: Identify CMS upstream runtime cache
-        id: cms-runtime-key
-        if: steps.selection.outputs.cms == 'true'
-        run: echo "key=$(python3 automation/ci/docker_cache.py key)" >> "$GITHUB_OUTPUT"
-      - name: Restore CMS upstream runtime images
-        if: steps.selection.outputs.cms == 'true'
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/festapp-cms-images
-          key: cms-images-${{ steps.cms-runtime-key.outputs.key }}
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-          FESTAPP_CMS_IMAGE_CACHE: '1'
         run: python3 automation/ci/run.py lane wix-checkout-compatibility
       - name: All lane tests executed
         if: steps.selection.outputs.full == 'true'

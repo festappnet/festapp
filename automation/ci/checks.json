@@ -1130,7 +1130,7 @@
       ]
     },
     "wix-cms": {
-      "script": "python3 automation/ci/docker_cache.py restore\npython3 automation/testing/cms_consent_fixture.py\npython3 automation/ci/docker_cache.py save\n",
+      "script": "python3 automation/testing/cms_consent_fixture.py\n",
       "after": [
         "wix-install"
       ],
