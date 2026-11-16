@@ -83,6 +83,7 @@
     "answersLocked": "Abgegebene Antworten einschließlich Name und Telefonnummer sind für Kunden gesperrt. Korrekturen übernimmt das Personal.",
     "cancellationScopeHelp": "Kunden können die gesamte Bestellung oder ausgewählte Tickets stornieren.",
     "deadlineDate": "Datum",
+    "deadlineDefault": "Ohne eigene Frist ist eine Stornierung bis zum Veranstaltungsbeginn möglich.",
     "deadlineTime": "Uhrzeit"
   },
   "FeatureCustomerSelfService": {

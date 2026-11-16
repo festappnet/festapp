@@ -91,6 +91,7 @@ void main() {
             },
           );
         }
+        final formKey = GlobalKey<FormState>();
         final originalPolicy = jsonEncode(form.definition.customerSelfService);
         await environment.pumpWidget(
           tester,
@@ -98,10 +99,13 @@ void main() {
             builder: DependencyMaterialBridge.builder,
             home: Scaffold(
               body: SingleChildScrollView(
-                child: CustomerSelfServiceSettings(
-                  form: form,
-                  canEdit: true,
-                  onChanged: () {},
+                child: Form(
+                  key: formKey,
+                  child: CustomerSelfServiceSettings(
+                    form: form,
+                    canEdit: true,
+                    onChanged: () {},
+                  ),
                 ),
               ),
             ),
@@ -135,6 +139,12 @@ void main() {
           expect(form.customerPolicyDirty, isTrue);
           final policy = form.toEditedJson()['customer_self_service'] as Map;
           expect(policy['cancel']['enabled'], isTrue);
+          expect(policy['cancel'].containsKey('allowed_until'), isFalse);
+          expect(formKey.currentState!.validate(), isTrue);
+          expect(
+            find.text(customerChangeText('deadlineDefault')),
+            findsOneWidget,
+          );
           expect(policy['cancel']['mode'], 'approval_required');
           expect(policy['cancel']['refund_mode'], 'none');
           expect(policy.containsKey('move'), isFalse);

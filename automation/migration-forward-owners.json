@@ -458,7 +458,7 @@
     },
     {
       "migration": "20261116010000_customer_cancellation_cutover.sql",
-      "active": true,
+      "active": false,
       "header": "-- Canonical cancellation-only self-service. Guarded retirement of unused term-moving capability.",
       "sources": [
         "customer_order_changes/retire_move_preflight.sql",
@@ -479,6 +479,16 @@
         "customer_order_changes/move.sql",
         "customer_order_changes/runtime_schema.sql",
         "eshop_forms/order_term.sql"
+      ],
+      "sha256": "f74fd3015ac10bdb64d2ed08116454d8817977a79659a62a7239c41e9862c352"
+    },
+    {
+      "migration": "20261116020000_customer_cancellation_default_deadline.sql",
+      "active": true,
+      "header": "-- An omitted cancellation deadline follows the current occasion start; explicit deadlines retain precedence.",
+      "sources": [
+        "customer_order_changes/policy.sql",
+        "customer_order_changes/preview.sql"
       ]
     }
   ]

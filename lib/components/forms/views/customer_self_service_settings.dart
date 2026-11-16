@@ -57,12 +57,7 @@ class _CustomerSelfServiceSettingsState
     setState(() {});
   }
 
-  Widget _date(
-    String label,
-    DateTime? value,
-    ValueChanged<DateTime?> changed, {
-    bool required = false,
-  }) {
+  Widget _date(String label, DateTime? value, ValueChanged<DateTime?> changed) {
     final wall = value == null ? null : TimeHelper.eventTime.atInstant(value);
     void save(DateTime day, TimeOfDay time) {
       final instants = TimeHelper.eventTime.instantsForWallTime(
@@ -79,8 +74,6 @@ class _CustomerSelfServiceSettingsState
     return FormField<DateTime>(
       key: ValueKey('$label:${value?.toIso8601String()}'),
       initialValue: value,
-      validator: (v) =>
-          required && v == null ? customerChangeText('deadlineRequired') : null,
       builder: (state) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
@@ -149,8 +142,8 @@ class _CustomerSelfServiceSettingsState
                 }
                 _change();
               },
-              required: true,
             ),
+            Text(customerChangeText('deadlineDefault')),
             DropdownButtonFormField<String>(
               initialValue: rule['mode'] as String?,
               isExpanded: true,

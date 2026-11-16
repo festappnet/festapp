@@ -83,6 +83,7 @@
     "answersLocked": "Wysłane odpowiedzi, w tym imię i telefon, są zablokowane dla klienta. Poprawki wprowadza obsługa.",
     "cancellationScopeHelp": "Klient może anulować całe zamówienie lub wybrane bilety.",
     "deadlineDate": "Data",
+    "deadlineDefault": "Bez podanego terminu anulowanie jest możliwe do rozpoczęcia wydarzenia.",
     "deadlineTime": "Godzina"
   },
   "FeatureCustomerSelfService": {

@@ -5781,6 +5781,7 @@
     "answersLocked": "Odeslané odpovědi jsou pro zákazníka zamčené, včetně jména a telefonu. Opravy řeší obsluha.",
     "cancellationScopeHelp": "Zákazník může stornovat celou objednávku nebo vybrané vstupenky.",
     "deadlineDate": "Datum",
+    "deadlineDefault": "Bez vyplněné lhůty je storno možné do začátku události.",
     "deadlineTime": "Čas"
   },
   "FeatureCustomerSelfService": {
