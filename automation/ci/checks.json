@@ -118,7 +118,8 @@
         "packages/nm/**",
         "packages/super_native_extensions/**",
         "packages/irondash_engine_context/**",
-        "packages/windows_file_picker/**"
+        "packages/windows_file_picker/**",
+        "automation/testing/navigation_ci.dart"
       ]
     },
     "server-policy": {
@@ -263,7 +264,8 @@
         "packages/nm/**",
         "packages/super_native_extensions/**",
         "packages/irondash_engine_context/**",
-        "packages/windows_file_picker/**"
+        "packages/windows_file_picker/**",
+        "automation/testing/ticket_default_ci.dart"
       ]
     }
   },
@@ -399,17 +401,59 @@
         "ramMiB": 2600,
         "flutter": 1,
         "sourceGeneration": 1
-      }
+      },
+      "inputs": [
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf",
+        "automation/configure_fonts.js",
+        "automation/lib/**",
+        "fonts/**",
+        "assets/**",
+        "packages/**/pubspec.*"
+      ]
     },
     "navigation-contract": {
-      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/navigation_default.dart test/components/navigation/admin_breadcrumb_navigation_test.dart test/components/schedule/light_timeline_initial_day_cases.dart test/components/schedule/schedule_initial_day_cases.dart test/components/occasion/occasion_list_refresh_test.dart test/components/unit/unit_measurement_settings_cases.dart test/components/unit/unit_settings_save_test.dart test/components/eshop/order_detail_save_changes_cases.dart test/components/eshop/order_email_repair_design_cases.dart test/components/eshop/order_detail_answers_cases.dart test/components/eshop/order_commands_cases.dart test/components/eshop/order_detail_scroll_storage_cases.dart test/components/eshop/order_detail_viewer_cases.dart\nfvm flutter test --no-pub --concurrency=1 --dart-define=FESTAPP_APP_SUPPORTED=false test/components/navigation/ticketing_catalog_boundary_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/navigation_ci.dart automation/testing/navigation_default.dart test/components/navigation/admin_breadcrumb_navigation_test.dart test/components/schedule/light_timeline_initial_day_cases.dart test/components/occasion/occasion_list_refresh_test.dart test/components/unit/unit_measurement_settings_cases.dart test/components/unit/unit_settings_save_test.dart test/components/eshop/order_email_repair_design_cases.dart test/components/eshop/order_detail_scroll_storage_cases.dart test/components/eshop/order_detail_viewer_cases.dart\nfvm flutter test --no-pub --concurrency=1 --dart-define=FESTAPP_APP_SUPPORTED=false test/components/navigation/ticketing_catalog_boundary_cases.dart\n",
       "after": [
         "navigation-install"
       ],
       "resources": {
         "ramMiB": 2600,
         "flutter": 1
-      }
+      },
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "test_dart/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf",
+        "automation/testing/navigation_default.dart",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "automation/testing/navigation_ci.dart",
+        "test/components/navigation/ticketing_catalog_boundary_cases.dart",
+        "test/support/**",
+        "test/fixtures/**"
+      ]
     },
     "image-client-install": {
       "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
@@ -658,7 +702,6 @@
         "supabase/functions/deno.lock",
         "automation/**",
         "lib/**",
-        "tools/festapp/**",
         "assets/**",
         "packages/festapp_contracts/**",
         "web_client/scripts/run_db_tests.js",
@@ -691,7 +734,6 @@
         "supabase/functions/deno.lock",
         "automation/**",
         "lib/**",
-        "tools/festapp/**",
         "assets/**",
         "packages/festapp_contracts/**",
         "web_client/scripts/run_db_tests.js",
@@ -725,7 +767,6 @@
         "supabase/functions/deno.lock",
         "automation/**",
         "lib/**",
-        "tools/festapp/**",
         "assets/**",
         "packages/festapp_contracts/**",
         "web_client/scripts/run_db_tests.js",
@@ -750,14 +791,32 @@
         "ramMiB": 1800,
         "browser": 1,
         "dbCluster": 1
-      }
+      },
+      "inputs": [
+        "web_client/**",
+        "database/**",
+        "supabase/**",
+        "automation/**",
+        "assets/translations/**",
+        "packages/festapp_contracts/**"
+      ]
     },
     "ticket-edge": {
       "script": "deno run --frozen --lock=supabase/functions/deno.lock --allow-read automation/tickets/generate-preview-assets.ts --check\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/preview-ticket-layout/preview_test.ts supabase/functions/preview-ticket-layout/resourceAdmission_test.ts supabase/functions/preview-ticket-layout/entrypoint_test.ts supabase/functions/_shared/edgeEntrypoints_test.ts supabase/functions/occasion-setup-email-preview/preview_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/_shared/communicationTone_test.ts supabase/functions/_shared/emailVariables_test.ts supabase/functions/_shared/emailCommunication_test.ts supabase/functions/_shared/confirmationContent_test.ts supabase/functions/_shared/orderEmailPresentation_test.ts supabase/functions/_shared/paymentPresentation_test.ts supabase/functions/send-custom-email/setupPreview_test.ts supabase/functions/send-custom-email/authoringContext_test.ts supabase/functions/send-email/deposit_templates_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-reset-password-link/index.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/googleWallet_test.ts supabase/functions/_shared/ticketWallet_test.ts supabase/functions/_shared/ticketWalletEmail_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/manage-member-access/handler_test.ts supabase/functions/send-occasion-team-invitations/handler_test.ts supabase/functions/exchange-sign-in-code/exchange_test.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-env --allow-net supabase/functions/probe-complianz supabase/functions/fetch-http-data\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read --allow-write --allow-env --allow-net --allow-run=openssl supabase/functions/_shared/appleWallet_test.ts supabase/functions/apple-wallet/handler_test.ts supabase/functions/_shared/wallet/registry_test.ts\n\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-read supabase/functions/_shared/customerOrderChanges_test.ts supabase/functions/_shared/orderEmailOverview_test.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/customer-order-changes/index.ts\ndeno check --frozen --lock=supabase/functions/deno.lock supabase/functions/send-ticket-order/index.ts\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-read supabase/functions/send-ticket-order/fakturoid_test.ts supabase/functions/send-ticket-order/fakturoidPreparation_test.ts supabase/functions/send-ticket-order/fakturoidReference_test.ts\n",
       "after": [],
       "resources": {
         "ramMiB": 1100
-      }
+      },
+      "inputs": [
+        "supabase/functions/**",
+        "automation/tickets/**",
+        "assets/email_templates/**",
+        "assets/translations/**",
+        "fonts/**",
+        "packages/festapp_contracts/**",
+        "automation/lib/**",
+        "automation/client_test_inventory.*"
+      ]
     },
     "ticket-install": {
       "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
@@ -766,7 +825,17 @@
         "ramMiB": 2000,
         "flutter": 1,
         "sourceGeneration": 1
-      }
+      },
+      "inputs": [
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf",
+        "automation/configure_fonts.js",
+        "automation/lib/**",
+        "fonts/**",
+        "assets/**",
+        "packages/**/pubspec.*"
+      ]
     },
     "ticket-core": {
       "script": "cd packages/festapp_core\nfvm dart pub get\nfvm dart test --concurrency=1 test/eshop/customer_label_test.dart test/payments/configuration_test.dart test/forms/form_payment_options_test.dart test/forms/form_metadata_test.dart test/email_templates\n",
@@ -776,10 +845,17 @@
       "resources": {
         "ramMiB": 700,
         "sourceGeneration": 1
-      }
+      },
+      "inputs": [
+        "packages/festapp_core/**",
+        "packages/festapp_contracts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf"
+      ]
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/sessions/customer_self_service_settings_test.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/components/notification_center/notification_email_settings_test.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/email_templates/email_templates_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_cases.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/data_services/client_command_identity_cases.dart test/components/blueprint/blueprint_template_groups_test.dart test/components/eshop/payment_policy_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -789,6 +865,41 @@
       },
       "requires": [
         "ticket-install"
+      ],
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "supabase/functions/**",
+        "automation/tickets/**",
+        "automation/client_test_inventory*",
+        "automation/project.conf",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "automation/testing/ticket_default_ci.dart",
+        "test/sessions/ticket_czech_cases.dart",
+        "test/sessions/ticket_futura_cases.dart",
+        "test/sessions/ticket_palette_cases.dart",
+        "test/support/**",
+        "test/fixtures/**"
       ]
     },
     "occasion-lifecycle": {
@@ -808,7 +919,6 @@
         "supabase/functions/deno.lock",
         "automation/**",
         "lib/**",
-        "tools/festapp/**",
         "assets/**",
         "packages/festapp_contracts/**",
         "web_client/scripts/run_db_tests.js",
@@ -983,7 +1093,7 @@
       ]
     },
     "wix-cms": {
-      "script": "python3 automation/testing/cms_consent_fixture.py\n",
+      "script": "python3 automation/ci/docker_cache.py restore\npython3 automation/testing/cms_consent_fixture.py\npython3 automation/ci/docker_cache.py save\n",
       "after": [
         "wix-install"
       ],
@@ -1046,7 +1156,6 @@
         "web_client/scripts/**",
         "web_client/package.json",
         "web_client/pnpm*",
-        "tools/festapp/**",
         "packages/festapp_contracts/**",
         "assets/translations/**",
         "web_client/tests/database/payment_provider_upgrade.test.js",
@@ -1090,7 +1199,6 @@
         "web_client/scripts/**",
         "web_client/package.json",
         "web_client/pnpm*",
-        "tools/festapp/**",
         "packages/festapp_contracts/**",
         "assets/translations/**",
         "database/tests/eshop/payment_product_transition_concurrency.test.mjs",
@@ -1145,7 +1253,6 @@
         "web_client/scripts/**",
         "web_client/package.json",
         "web_client/pnpm*",
-        "tools/festapp/**",
         "packages/festapp_contracts/**",
         "assets/translations/**",
         "database/tests/occasion_setup/wallet_queue_concurrency.test.mjs",

@@ -28,7 +28,8 @@ try {
     const iframeContext=await owner.context({ignoreHTTPSErrors:true});
     try {
       await iframeContext.addInitScript(()=>{window.__testEmbedMessages=[];addEventListener('message',event=>{if(event.data?.namespace==='festapp-embed')window.__testEmbedMessages.push(event.data.type);});});
-      const host=await iframeContext.newPage();await host.goto(site+(process.env.FESTAPP_CMS_TEST_PATH || '/'));
+      const host=await iframeContext.newPage();await host.clock.install();
+      await host.goto(site+(process.env.FESTAPP_CMS_TEST_PATH || '/'));
       await host.locator('iframe').first().waitFor({timeout:15000});const frame=host.frameLocator('iframe').first();
       await frame.locator('form').waitFor({timeout:30000});
       await frame.locator('body').evaluate(()=>new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{clearInterval(timer);reject(new Error('initial embed consent missing'));},15000);const timer=setInterval(()=>{if(window.__testEmbedMessages.includes('measurement-consent')){clearTimeout(timeout);clearInterval(timer);resolve();}},100);}));
@@ -38,6 +39,9 @@ try {
       await frame.locator('.festapp-consent-fab').waitFor();
       assert.ok((await frame.locator('body').evaluate(()=>document.cookie)).includes('festapp-measurement-'),'local choice was not stored');
       const count=await frame.locator('body').evaluate(()=>window.__testEmbedMessages.filter(type=>type==='measurement-consent').length);
+      // Exercise the real 20s renewal interval without spending 20 wall seconds.
+      // The browser timer, postMessage bridge and backend remain the real code.
+      await host.clock.fastForward(21000);
       await frame.locator('body').evaluate((_element,before)=>new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{clearInterval(timer);reject(new Error('embed renewal stopped after local save: before='+before+' messages='+JSON.stringify(window.__testEmbedMessages)));},30000);const timer=setInterval(()=>{if(window.__testEmbedMessages.filter(type=>type==='measurement-consent').length>before){clearTimeout(timeout);clearInterval(timer);resolve();}},250);}),count);
     } finally { await iframeContext.close(); }
   }

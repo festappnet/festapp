@@ -27,6 +27,30 @@ class CanonicalTranslationOwnershipTest(unittest.TestCase):
 
 
 class CmsDependencyOwnershipTest(unittest.TestCase):
+    def test_mcp_source_does_not_invalidate_independent_sql_executors(self):
+        independent={'occasion-lifecycle','seat-authorization','seat-google-auth',
+                     'seat-payments','seat-orders','seat-delivery','seat-notifications','seat-browser'}
+        for path in ['tools/festapp/src/remote/views.mjs',
+                     'tools/festapp/src/operations/orders.mjs']:
+            units=selection.unit_owners(path,'seat-checkout',CONTRACT)
+            self.assertTrue(independent.isdisjoint(units),path)
+            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts'}.issubset(units),path)
+        for path in ['database/functions/eshop/finalize_ticket_order.sql',
+                     'database/tests/helpers/reset_owned_sequences.sql']:
+            self.assertTrue(independent.issubset(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
+        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','seat-checkout',CONTRACT))
+
+    def test_ticket_core_and_edge_have_only_their_actual_platform_inputs(self):
+        lane='ticket-preview-and-delivery'
+        for path in ['lib/components/occasion_settings/occasion_settings_layout.dart',
+                     'test/components/occasion/occasion_setup_feedback_cases.dart']:
+            units=selection.unit_owners(path,lane,CONTRACT)
+            self.assertIn('ticket-client',units)
+            self.assertTrue({'ticket-core','ticket-edge','ticket-install'}.isdisjoint(units))
+        self.assertIn('ticket-core',selection.unit_owners('packages/festapp_core/lib/eshop/customer_label.dart',lane,CONTRACT))
+        self.assertIn('ticket-edge',selection.unit_owners('supabase/functions/preview-ticket-layout/entrypoint_test.ts',lane,CONTRACT))
+        self.assertEqual(selection.unit_owners('unknown_shared/input.dat',lane,CONTRACT),set(CONTRACT['jobs'][lane]['steps']))
+
     def test_image_health_checker_has_only_actual_consumers(self):
         self.assertEqual(selection.owners('automation/verify_image_service.mjs',CONTRACT),
                          {'image-contract','web-startup'})

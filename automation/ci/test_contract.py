@@ -173,6 +173,8 @@ class MirrorContractTest(unittest.TestCase):
         self.assertTrue({'ticket-client','navigation-contract','image-client-browser'}
                         .issubset(inventory['ci_cases']))
         self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']),10)
+        self.assertIn('automation/testing/navigation_ci.dart',
+                      steps['navigation-contract']['script'])
         self.assertIn('automation/testing/navigation_default.dart',
                       steps['navigation-contract']['script'])
 
