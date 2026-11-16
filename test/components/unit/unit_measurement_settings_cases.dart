@@ -69,6 +69,7 @@ void main() {
           home: Scaffold(
             body: SingleChildScrollView(
               child: UnitWebsiteConsentSettings(
+                key: ValueKey('consent-$state'),
                 unitId: 2,
                 websites: const [site],
                 saved: saved,
@@ -128,6 +129,13 @@ void main() {
       expect(confirm().onPressed, isNull);
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+        'invalid',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsPolicyIdInvalid), findsOneWidget);
+      expect(confirm().onPressed, isNull);
+      await tester.enterText(
+        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
         '42',
       );
       await tester.tap(find.byType(Checkbox));
@@ -137,23 +145,80 @@ void main() {
       await tester.pumpAndSettle();
       expect(confirmations, 1);
       expect(version, 1);
+      expect(find.text(FormStrings.cmsConfirm), findsNothing);
+      expect(find.text(FormStrings.cmsSaveDraft), findsNothing);
+      expect(find.byType(CheckboxListTile), findsNothing);
       await tester.tap(find.text(FormStrings.cmsExport));
       await tester.pumpAndSettle();
+      expect(find.byType(SelectableText), findsNothing);
+      await tester.tap(find.text(FormStrings.cmsShowConfiguration));
+      await tester.pumpAndSettle();
       expect(find.byType(SelectableText), findsOneWidget);
+      expect(
+        version,
+        1,
+        reason: 'getting configuration never reconfirms coverage',
+      );
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await tester.tap(find.text(FormStrings.cmsCopy));
+      await tester.pumpAndSettle();
+      expect(copied, contains('"schemaVersion": 1'));
+      expect(find.text(CommonStrings.copiedToClipboard), findsOneWidget);
       await tester.tap(find.text('Complianz'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cookiebot').last);
       await tester.pumpAndSettle();
       expect(find.byType(SelectableText), findsNothing);
       expect(confirm().onPressed, isNull);
+      expect(find.text(FormStrings.cmsExport), findsNothing);
+      expect(find.text(FormStrings.cmsSaveDraft), findsNothing);
+      expect(find.text(FormStrings.cmsChangesPending), findsOneWidget);
+      await tester.tap(find.text(CommonStrings.discardChanges));
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsExport), findsOneWidget);
+      expect(find.text(FormStrings.cmsConfirm), findsNothing);
       expect(
-        tester
-            .widget<OutlinedButton>(
-              find.widgetWithText(OutlinedButton, FormStrings.cmsExport),
-            )
-            .onPressed,
-        isNull,
+        version,
+        1,
+        reason: 'discarding edits preserves the active binding',
       );
+      for (final suspendedState in ['approval_required', 'unavailable']) {
+        state = suspendedState;
+        await pump();
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+          '43',
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text(FormStrings.cmsSaveDraft),
+          findsNothing,
+          reason: 'a temporarily unavailable confirmed binding cannot become a draft by accident',
+        );
+        await tester.tap(find.text(CommonStrings.discardChanges));
+        await tester.pumpAndSettle();
+        expect(version, 1);
+        expect(confirmations, 1);
+      }
+      state = 'ready';
+      await pump();
+      await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.cmsDisable));
       await tester.pumpAndSettle();
       expect(state, 'disabled');
@@ -201,12 +266,41 @@ void main() {
       await tester.tap(find.text(FormStrings.cmsAdvancedCategories));
       await tester.pumpAndSettle();
       expect(find.text(FormStrings.cmsAnalyticsCategory), findsOneWidget);
+      await tester.enterText(
+        find.widgetWithText(TextField, FormStrings.cmsAnalyticsCategory),
+        'marketing',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsCategoriesInvalid), findsOneWidget);
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, FormStrings.cmsConfirm),
+            )
+            .onPressed,
+        isNull,
+      );
       await tester.tap(find.text('CookieConsent v3'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cookiebot').last);
       await tester.pumpAndSettle();
       expect(find.text('Cookiebot CBID'), findsNothing);
       expect(find.text(FormStrings.cmsAnalyticsCategory), findsNothing);
+      await tester.tap(find.text('WordPress'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Wix').last);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.tap(
+        find.widgetWithText(DropdownButtonFormField<String>, 'Wix').first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('WordPress').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Complianz'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       expect(
         tester
             .widget<FilledButton>(
@@ -250,6 +344,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+        '42',
+      );
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.cmsConfirm));
@@ -401,11 +499,13 @@ void main() {
       await tester.tap(find.text('Measurement settings'));
       await tester.pumpAndSettle();
       final exportButton = find.widgetWithText(
-        OutlinedButton,
+        FilledButton,
         FormStrings.cmsExport,
       );
       await tester.ensureVisible(exportButton);
       await tester.tap(exportButton);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.cmsShowConfiguration));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.byType(SelectableText), findsOneWidget);

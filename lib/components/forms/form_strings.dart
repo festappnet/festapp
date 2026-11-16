@@ -26,6 +26,19 @@ class FormStrings {
       'FeatureFormSettings.cmsMarketingCategory'.tr();
   static String get cmsAdvancedCategories =>
       'FeatureFormSettings.cmsAdvancedCategories'.tr();
+  static String get cmsPolicyIdHelp =>
+      'FeatureFormSettings.cmsPolicyIdHelp'.tr();
+  static String get cmsPolicyIdInvalid =>
+      'FeatureFormSettings.cmsPolicyIdInvalid'.tr();
+  static String get cmsCategoriesInvalid =>
+      'FeatureFormSettings.cmsCategoriesInvalid'.tr();
+  static String get cmsSaveDraft => 'FeatureFormSettings.cmsSaveDraft'.tr();
+  static String get cmsChangesPending =>
+      'FeatureFormSettings.cmsChangesPending'.tr();
+  static String get cmsCoverageDetails =>
+      'FeatureFormSettings.cmsCoverageDetails'.tr();
+  static String get cmsShowConfiguration =>
+      'FeatureFormSettings.cmsShowConfiguration'.tr();
   static String get cmsCoverage => 'FeatureFormSettings.cmsCoverage'.tr();
   static String get cmsConfirm => 'FeatureFormSettings.cmsConfirm'.tr();
   static String get cmsExport => 'FeatureFormSettings.cmsExport'.tr();

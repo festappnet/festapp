@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
@@ -94,6 +94,22 @@ class _UnitWebsiteConsentSettingsState
   }
 
   UnitWebsiteConsentBinding? get _binding => _data?.forWebsite(_origin ?? '');
+  bool get _canSaveDraft =>
+      _binding == null || {'draft', 'disabled'}.contains(_binding!.state);
+  bool get _needsConfirmation => _edited || _binding?.state != 'ready';
+  bool get _validPolicy =>
+      RegExp(r'^[1-9][0-9]{0,15}$').hasMatch(_policy.text.trim());
+  bool get _validCategories =>
+      _analytics.text.isNotEmpty &&
+      _analytics.text.length <= 128 &&
+      _marketing.text.isNotEmpty &&
+      _marketing.text.length <= 128 &&
+      _analytics.text != _marketing.text;
+  bool get _validConfig => switch (_provider) {
+    'complianz' => _validPolicy,
+    'cookieconsent' => _validCategories,
+    _ => true,
+  };
   void _select(String origin) {
     _origin = origin;
     final b = _binding;
@@ -146,7 +162,7 @@ class _UnitWebsiteConsentSettingsState
   });
   Map<String, dynamic> get _config => {
     'provider': _provider,
-    if (_provider == 'complianz') 'policyId': _policy.text,
+    if (_provider == 'complianz') 'policyId': _policy.text.trim(),
     if (_provider == 'cookieconsent') ...{
       'categories': {
         'analytics': _analytics.text,
@@ -186,19 +202,32 @@ class _UnitWebsiteConsentSettingsState
     _export = null;
     _edited = true;
   });
+  Future<void> _copyConfiguration() async {
+    final value = _export;
+    if (value == null) return;
+    final copied = await CopyButton.copy(context, value);
+    if (!mounted || !copied || _export != value) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(CommonStrings.copiedToClipboard)));
+  }
+
   Widget _field(
     TextEditingController controller,
     String label, {
-    String? hint,
+    String? helper,
+    String? error,
+    TextInputType? keyboardType,
   }) => Padding(
     padding: const EdgeInsets.only(top: 16),
     child: TextField(
       key: PageStorageKey('consent-field-$label'),
       controller: controller,
       enabled: !_busy && widget.saved,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        hintText: hint,
+        helper: helper == null ? null : Text(helper),
+        error: error == null ? null : Text(error),
         border: const OutlineInputBorder(),
       ),
       onChanged: (_) => _changed(),
@@ -220,7 +249,7 @@ class _UnitWebsiteConsentSettingsState
         Text(FormStrings.cmsTransferHelp),
         if (!widget.saved) Text(FormStrings.measurementWebsitesSaveFirst),
         if (_failed) ...[
-          Text(FormStrings.cmsUnavailable),
+          Semantics(liveRegion: true, child: Text(FormStrings.cmsUnavailable)),
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton(
@@ -242,8 +271,17 @@ class _UnitWebsiteConsentSettingsState
             ),
             items: widget.websites
                 .map(
-                  (origin) =>
-                      DropdownMenuItem(value: origin, child: Text(origin)),
+                  (origin) => DropdownMenuItem(
+                    value: origin,
+                    child: Tooltip(
+                      message: origin,
+                      child: Text(
+                        origin,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
                 )
                 .toList(),
             onChanged: allowed ? (v) => setState(() => _select(v!)) : null,
@@ -252,6 +290,7 @@ class _UnitWebsiteConsentSettingsState
           DropdownButtonFormField<String>(
             key: ValueKey('platform-$_platform'),
             initialValue: _platform,
+            isExpanded: true,
             decoration: InputDecoration(
               labelText: FormStrings.cmsPlatform,
               border: const OutlineInputBorder(),
@@ -260,12 +299,22 @@ class _UnitWebsiteConsentSettingsState
               DropdownMenuItem(value: 'wordpress', child: Text('WordPress')),
               DropdownMenuItem(value: 'joomla', child: Text('Joomla')),
               DropdownMenuItem(value: 'wix', child: Text('Wix')),
-              DropdownMenuItem(value: 'html', child: Text(FormStrings.cmsHtml)),
+              DropdownMenuItem(
+                value: 'html',
+                child: Text(
+                  FormStrings.cmsHtml,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
             onChanged: allowed
                 ? (v) {
                     _platform = v!;
                     if (_platform == 'wix') _provider = 'wix';
+                    if (_platform != 'wix' && _provider == 'wix') {
+                      _provider = 'complianz';
+                    }
                     _changed();
                   }
                 : null,
@@ -274,15 +323,23 @@ class _UnitWebsiteConsentSettingsState
           DropdownButtonFormField<String>(
             key: ValueKey('provider-$_provider'),
             initialValue: _provider,
+            isExpanded: true,
             decoration: InputDecoration(
               labelText: FormStrings.cmsProvider,
               border: const OutlineInputBorder(),
             ),
-            items: const [
-              DropdownMenuItem(value: 'complianz', child: Text('Complianz')),
-              DropdownMenuItem(value: 'cookiebot', child: Text('Cookiebot')),
-              DropdownMenuItem(value: 'wix', child: Text('Wix')),
-              DropdownMenuItem(
+            items: [
+              const DropdownMenuItem(
+                value: 'complianz',
+                child: Text('Complianz'),
+              ),
+              const DropdownMenuItem(
+                value: 'cookiebot',
+                child: Text('Cookiebot'),
+              ),
+              if (_platform == 'wix' || _provider == 'wix')
+                const DropdownMenuItem(value: 'wix', child: Text('Wix')),
+              const DropdownMenuItem(
                 value: 'cookieconsent',
                 child: Text('CookieConsent v3'),
               ),
@@ -295,61 +352,135 @@ class _UnitWebsiteConsentSettingsState
                 : null,
           ),
           if (_provider == 'complianz')
-            _field(_policy, FormStrings.cmsPolicyId),
+            _field(
+              _policy,
+              FormStrings.cmsPolicyId,
+              helper: FormStrings.cmsPolicyIdHelp,
+              error: (_edited || _coverage) && !_validPolicy
+                  ? FormStrings.cmsPolicyIdInvalid
+                  : null,
+              keyboardType: TextInputType.number,
+            ),
           if (_provider == 'cookieconsent')
             ExpansionTile(
               title: Text(FormStrings.cmsAdvancedCategories),
               children: [
                 _field(_analytics, FormStrings.cmsAnalyticsCategory),
-                _field(_marketing, FormStrings.cmsMarketingCategory),
+                _field(
+                  _marketing,
+                  FormStrings.cmsMarketingCategory,
+                  error: _edited && !_validCategories
+                      ? FormStrings.cmsCategoriesInvalid
+                      : null,
+                ),
               ],
             ),
-          if (_provider != 'complianz') Text(FormStrings.cmsFreshChoiceHelp),
           const SizedBox(height: 16),
-          Text(
-            FormStrings.cmsState(
-              _edited ? 'draft' : _binding?.state ?? 'draft',
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              FormStrings.cmsState(
+                _edited ? 'draft' : _binding?.state ?? 'draft',
+              ),
+              style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _coverage,
-            title: Text(FormStrings.cmsCoverage),
-            onChanged: allowed
-                ? (v) => setState(() => _coverage = v == true)
-                : null,
-          ),
+          if (_edited && !_canSaveDraft) ...[
+            const SizedBox(height: 8),
+            Text(FormStrings.cmsChangesPending),
+          ],
+          if (_needsConfirmation) ...[
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _coverage,
+              title: Text(FormStrings.cmsCoverage),
+              onChanged: allowed
+                  ? (v) => setState(() => _coverage = v == true)
+                  : null,
+            ),
+            Text(
+              FormStrings.cmsCoverageDetails,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+          if (_provider != 'complianz') ...[
+            const SizedBox(height: 8),
+            Text(FormStrings.cmsFreshChoiceHelp),
+          ],
+          const SizedBox(height: 12),
+          if (_export != null && widget.saved) ...[
+            Text(FormStrings.cmsExportHelp),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: _busy ? null : _copyConfiguration,
+                icon: const Icon(Icons.copy),
+                label: Text(FormStrings.cmsCopy),
+              ),
+            ),
+            ExpansionTile(
+              key: const PageStorageKey('website-consent-export-details'),
+              title: Text(FormStrings.cmsShowConfiguration),
+              children: [
+                SelectableText(
+                  _export!,
+                  key: const PageStorageKey('website-consent-export-text'),
+                ),
+              ],
+            ),
+          ],
           Wrap(
             spacing: 12,
             runSpacing: 8,
             children: [
-              OutlinedButton(
-                onPressed: allowed ? () => _save(false) : null,
-                child: Text(CommonStrings.save),
-              ),
-              FilledButton(
-                onPressed: allowed && _coverage ? () => _save(true) : null,
-                child: Text(FormStrings.cmsConfirm),
-              ),
-              OutlinedButton(
-                onPressed: allowed && !_edited && _binding?.state == 'ready'
-                    ? () => _run(() async {
-                        final b = _binding!;
-                        final data =
-                            await (widget.export?.call(b.id, b.version) ??
-                                DbUnits.exportWebsiteConsent(b.id, b.version));
-                        if (mounted) {
-                          setState(
-                            () =>
-                                _export = const JsonEncoder.withIndent('  ')
-                                    .convert(data),
-                          );
-                        }
-                      })
-                    : null,
-                child: Text(FormStrings.cmsExport),
-              ),
-              if (_binding != null)
+              if (_needsConfirmation)
+                FilledButton(
+                  onPressed: allowed && _validConfig && _coverage
+                      ? () => _save(true)
+                      : null,
+                  child: Text(FormStrings.cmsConfirm),
+                ),
+              if (_needsConfirmation && _canSaveDraft)
+                OutlinedButton(
+                  onPressed: allowed && _validConfig && _edited
+                      ? () => _save(false)
+                      : null,
+                  child: Text(FormStrings.cmsSaveDraft),
+                ),
+              if (!_needsConfirmation && _export == null)
+                FilledButton(
+                  onPressed: allowed
+                      ? () => _run(() async {
+                          final b = _binding!;
+                          final data =
+                              await (widget.export?.call(b.id, b.version) ??
+                                  DbUnits.exportWebsiteConsent(
+                                    b.id,
+                                    b.version,
+                                  ));
+                          if (mounted) {
+                            setState(
+                              () =>
+                                  _export = const JsonEncoder.withIndent('  ')
+                                      .convert(data),
+                            );
+                          }
+                        })
+                      : null,
+                  child: Text(FormStrings.cmsExport),
+                ),
+              if (_edited && _binding != null)
+                TextButton(
+                  onPressed: allowed
+                      ? () => setState(() => _select(_origin!))
+                      : null,
+                  child: Text(CommonStrings.discardChanges),
+                ),
+              if (_binding != null &&
+                  !{'draft', 'disabled'}.contains(_binding!.state))
                 TextButton(
                   onPressed: allowed
                       ? () => _run(() async {
@@ -372,23 +503,6 @@ class _UnitWebsiteConsentSettingsState
                 ),
             ],
           ),
-          if (_export != null && widget.saved) ...[
-            const SizedBox(height: 16),
-            Text(FormStrings.cmsExportHelp),
-            SelectableText(
-              _export!,
-              key: const PageStorageKey('website-consent-export-text'),
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: () =>
-                    Clipboard.setData(ClipboardData(text: _export!)),
-                icon: const Icon(Icons.copy),
-                label: Text(FormStrings.cmsCopy),
-              ),
-            ),
-          ],
         ],
       ],
     );
