@@ -327,7 +327,7 @@ export function renderCustomerOrderChanges(
           text(
             impact.partial
               ? `${impact.effect}_selected`
-              : ["edit", "move", "withdraw", "cancel"].includes(impact.effect)
+              : ["edit", "withdraw", "cancel"].includes(impact.effect)
               ? `${impact.effect}_effect`
               : impact.effect,
           ),

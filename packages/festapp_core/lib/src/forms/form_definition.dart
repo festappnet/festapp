@@ -41,8 +41,6 @@ class FormDefinition {
   final Map<String, dynamic>? payments;
   final Map<String, dynamic>? measurementStatus;
   final Map<String, dynamic>? customerSelfService;
-  final DateTime? termStartAt;
-  final DateTime? termEndAt;
   bool get isWaitlist => registrationMode == 'waitlist';
   final int? id;
   final DateTime? createdAt;
@@ -100,8 +98,6 @@ class FormDefinition {
   FormDefinition({
     Map<String, dynamic>? measurementStatus,
     Map<String, dynamic>? customerSelfService,
-    this.termStartAt,
-    this.termEndAt,
     this.demoSimulation = false,
     this.participantCapacity,
     this.waitlistEnabled = false,
@@ -154,8 +150,6 @@ class FormDefinition {
     return FormDefinition(
       customerSelfService: (json['customer_self_service'] as Map?)
           ?.cast<String, dynamic>(),
-      termStartAt: DateTime.tryParse(json['term_start_at']?.toString() ?? ''),
-      termEndAt: DateTime.tryParse(json['term_end_at']?.toString() ?? ''),
       measurementStatus: (json['measurement_status'] as Map?)
           ?.cast<String, dynamic>(),
       demoSimulation: json['demo_simulation'] == true,
@@ -545,8 +539,6 @@ class FormDefinition {
   FormDefinition copyWith({
     Object? measurementStatus = _unchanged,
     Object? customerSelfService = _unchanged,
-    Object? termStartAt = _unchanged,
-    Object? termEndAt = _unchanged,
     Object? participantCapacity = _unchanged,
     Object? waitlistEnabled = _unchanged,
     Object? showRemainingCapacity = _unchanged,
@@ -578,12 +570,6 @@ class FormDefinition {
     customerSelfService: identical(customerSelfService, _unchanged)
         ? this.customerSelfService
         : (customerSelfService as Map?)?.cast<String, dynamic>(),
-    termStartAt: identical(termStartAt, _unchanged)
-        ? this.termStartAt
-        : termStartAt as DateTime?,
-    termEndAt: identical(termEndAt, _unchanged)
-        ? this.termEndAt
-        : termEndAt as DateTime?,
     measurementStatus: identical(measurementStatus, _unchanged)
         ? this.measurementStatus
         : (measurementStatus as Map?)?.cast<String, dynamic>(),

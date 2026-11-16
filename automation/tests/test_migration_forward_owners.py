@@ -39,6 +39,26 @@ class ForwardOwnerTests(unittest.TestCase):
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
 
+    def test_retirement_requires_absence_of_source_and_effective_sql_identity(self):
+        self.entries[1]['retiredSources'] = ['owner.sql']
+        self.write('automation/forward.json', json.dumps({'header': '-- Retirement\nDROP FUNCTION public.sample();', 'sources': []}))
+        self.save_registry()
+        (self.root / 'database/functions/owner.sql').unlink()
+        target, content = owners.render_forward(self.root, self.entries[1])
+        target.write_text(content)
+        owners.verify_forward(self.root)
+        owners.verify_forward.cache_clear()
+        self.write('database/functions/owner.sql', self.current)
+        with self.assertRaisesRegex(SystemExit, 'Retired canonical source still exists'):
+            owners.verify_forward(self.root)
+        (self.root / 'database/functions/owner.sql').unlink()
+        owners.verify_forward.cache_clear()
+        self.write('automation/forward.json', json.dumps({'header': '-- Missing retirement', 'sources': []}))
+        target, content = owners.render_forward(self.root, self.entries[1])
+        target.write_text(content)
+        with self.assertRaisesRegex(SystemExit, 'Retired SQL identity still exists'):
+            owners.verify_forward(self.root)
+
     def write(self, name, text):
         (self.root / name).write_text(text)
 

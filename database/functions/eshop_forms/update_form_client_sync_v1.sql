@@ -93,15 +93,6 @@ BEGIN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',
       CASE WHEN (v_result->>'code')::integer BETWEEN 100 AND 599 THEN (v_result->>'code')::integer ELSE 400 END,v_result); END IF;
   v_form:=(v_result->>'form_id')::bigint;
-  IF p_form ? 'term_start_at' OR p_form ? 'term_end_at' THEN
-    IF NOT p_form ? 'expected_aggregate_version' THEN RAISE invalid_parameter_value USING MESSAGE='term revision required'; END IF;
-    IF EXISTS(SELECT 1 FROM jsonb_each(p_form) setting WHERE setting.key IN ('term_start_at','term_end_at')
-      AND setting.value<>'null'::jsonb AND (jsonb_typeof(setting.value)<>'string' OR
-      setting.value#>>'{}' !~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$')) THEN
-      RAISE invalid_parameter_value USING MESSAGE='term requires explicit ISO instant'; END IF;
-    UPDATE public.forms SET term_start_at=CASE WHEN p_form ? 'term_start_at' THEN (p_form->>'term_start_at')::timestamptz ELSE term_start_at END,
-      term_end_at=CASE WHEN p_form ? 'term_end_at' THEN (p_form->>'term_end_at')::timestamptz ELSE term_end_at END WHERE id=v_form;
-  END IF;
   IF p_form ? 'customer_self_service' THEN
     PERFORM public.save_customer_order_policy_internal(v_form,p_form->'customer_self_service');
   END IF;

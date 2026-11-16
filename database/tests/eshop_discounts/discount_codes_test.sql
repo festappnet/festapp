@@ -46,8 +46,6 @@ BEGIN
  PERFORM assert_eq(public.quote_order_discount(payload)->>'errorCode','DISCOUNT_INVALID','exhausted code generic error');
  failed:=false; BEGIN PERFORM public.update_ticket_products_client_sync_v1((SELECT ticket FROM eshop.order_product_ticket WHERE "order"=oid LIMIT 1),jsonb_build_array(jsonb_build_object('id',x->'product','price',80)),gen_random_uuid()); EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='DISCOUNTED_ORDER_PRICE_IMMUTABLE'; END;
  PERFORM assert_true(failed,'product repricing rejected');
- failed:=false; BEGIN PERFORM public.move_customer_order_domain_internal(oid,(x->>'form')::bigint); EXCEPTION WHEN OTHERS THEN failed:=SQLERRM='DISCOUNTED_ORDER_PRICE_IMMUTABLE'; END;
- PERFORM assert_true(failed,'term moves also use the canonical discount guard');
  UPDATE public.occasions SET features='[]' WHERE id=oc;
  replay:=public.create_ticket_order_client_sync_v1(payload,cmd,client);
  PERFORM assert_eq(replay#>>'{data,order,id}',result#>>'{data,order,id}','receipt survives feature off');

@@ -6,7 +6,7 @@ BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO t FROM eshop.tickets WHERE id=p_ticket;
  SELECT * INTO c FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket;
- SELECT * INTO o FROM public.order_term_occasion_internal(c.order_id);
+ SELECT oc.* INTO o FROM public.occasions oc JOIN eshop.orders ord ON ord.occasion=oc.id WHERE ord.id=c.order_id;
  SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
  state:='INACTIVE';
  IF t.id IS NOT NULL AND t.occasion=c.occasion AND o.organization=c.organization
@@ -32,7 +32,7 @@ BEGIN
  PERFORM public.require_service_role();
  SELECT * INTO t FROM eshop.tickets WHERE id=p_ticket;
  SELECT * INTO c FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket;
- SELECT * INTO o FROM public.order_term_occasion_internal(c.order_id);
+ SELECT oc.* INTO o FROM public.occasions oc JOIN eshop.orders ord ON ord.occasion=oc.id WHERE ord.id=c.order_id;
  SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
  state:=public.ticket_wallet_state_internal(p_ticket);
  IF t.id IS NOT NULL THEN
@@ -51,9 +51,16 @@ GRANT EXECUTE ON FUNCTION public.ticket_wallet_projection_internal(bigint) TO se
 
 CREATE OR REPLACE FUNCTION public.refresh_ticket_wallet_term_internal(p_ticket bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE o public.occasions; oid bigint;
 BEGIN
  PERFORM public.require_service_role();
- PERFORM public.refresh_order_wallet_term_domain_internal((SELECT order_id FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket));
+ SELECT order_id INTO oid FROM eshop.ticket_wallet_capabilities WHERE ticket_id=p_ticket;
+ SELECT oc.* INTO o FROM public.occasions oc JOIN eshop.orders ord ON ord.occasion=oc.id WHERE ord.id=oid;
+ IF o.end_time IS NULL THEN RETURN; END IF;
+ UPDATE eshop.ticket_wallet_capabilities SET event_end_at=o.end_time,expires_at=o.end_time+interval '7 days'
+ WHERE order_id=oid AND occasion=o.id AND organization=o.organization AND revoked_at IS NULL AND reissue_after IS NULL AND event_end_at IS DISTINCT FROM o.end_time;
+ UPDATE eshop.ticket_wallet_collections SET event_end_at=o.end_time,expires_at=o.end_time+interval '7 days'
+ WHERE order_id=oid AND occasion=o.id AND organization=o.organization AND revoked_at IS NULL AND event_end_at IS DISTINCT FROM o.end_time;
 END $$;
 REVOKE ALL ON FUNCTION public.refresh_ticket_wallet_term_internal(bigint) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.refresh_ticket_wallet_term_internal(bigint) TO service_role;

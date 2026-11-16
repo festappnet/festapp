@@ -8,7 +8,7 @@ BEGIN
  IF m.message_kind IS DISTINCT FROM 'order_tickets' OR NOT public.email_intent_valid(m)
  OR NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE ticket=p_ticket AND "order"=m.order_id) THEN
   RAISE insufficient_privilege USING MESSAGE='Wallet unavailable'; END IF;
- SELECT term.* INTO o FROM public.order_term_occasion_internal(m.order_id) term WHERE term.id=m.occasion AND term.organization=m.organization;
+ SELECT oc.* INTO o FROM public.occasions oc JOIN eshop.orders ord ON ord.occasion=oc.id WHERE ord.id=m.order_id AND oc.id=m.occasion AND oc.organization=m.organization;
  SELECT x INTO f FROM jsonb_array_elements(o.features) x WHERE x->>'code'='ticket';
  SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=m.organization AND (publishing_ready OR apple_publishing_ready);
  IF NOT coalesce((f->>'is_enabled')::boolean,false) OR NOT public.ticket_wallet_enabled(f) OR i.organization IS NULL

@@ -28,32 +28,29 @@ class CustomerSelfServiceSettings extends StatefulWidget {
 
 class _CustomerSelfServiceSettingsState
     extends State<CustomerSelfServiceSettings> {
-  late final Map<String, dynamic> _policy = Map<String, dynamic>.from(
-    jsonDecode(
-      jsonEncode(widget.form.definition.customerSelfService?['policy'] ?? {}),
-    ) as Map,
-  );
+  late final Map<String, dynamic> _cancel = {
+    'enabled': false,
+    'mode': 'approval_required',
+    'reason_required': false,
+    'refund_mode': 'none',
+    ...Map<String, dynamic>.from(
+      jsonDecode(
+        jsonEncode(
+          widget.form.definition.customerSelfService?['policy']?['cancel'] ??
+              {},
+        ),
+      ) as Map,
+    ),
+  };
   String? _error;
   bool get _enabled =>
       FeatureService.isFeatureEnabled(FeatureConstants.customerSelfService);
-  Map<String, dynamic> get _cancel => _policy.putIfAbsent(
-    'cancel',
-    () => {
-      'enabled': false,
-      'mode': 'approval_required',
-      'reason_required': false,
-      'refund_mode': 'none',
-    },
-  ) as Map<String, dynamic>;
-
   void _change() {
-    _policy['edit'] = {'enabled': false, 'fields': <dynamic>[]};
-    _policy['move'] = {'enabled': false, 'targets': <dynamic>[]};
     widget.form.customerPolicyDirty = true;
     widget.form.definition = widget.form.definition.copyWith(
       customerSelfService: {
         ...?widget.form.definition.customerSelfService,
-        'policy': jsonDecode(jsonEncode(_policy)),
+        'policy': {'cancel': jsonDecode(jsonEncode(_cancel))},
       },
     );
     widget.onChanged();

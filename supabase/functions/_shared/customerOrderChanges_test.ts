@@ -148,3 +148,12 @@ Deno.test("HTTP conflicts preserve explicit recovery and never claim success fro
     assert.match(body, /CUSTOMER_CHANGE_CONFLICT/);
   }
 });
+
+Deno.test("retired term-moving requests are rejected at the public transport boundary", async () => {
+  for (const action of ["challenge", "preview", "command"]) {
+    await assert.rejects(() => readCustomerChangeInput(request({
+      action, token: readToken, orderId: 42, operation: "move", payload: { targetFormId: 2 },
+      commandId: "12345678-1234-4234-8234-123456789012",
+    })));
+  }
+});

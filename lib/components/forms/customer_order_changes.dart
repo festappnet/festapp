@@ -439,12 +439,7 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
                 customerChangeText(
                   preview['partial'] == true
                       ? '${effect}_selected'
-                      : const [
-                          'edit',
-                          'move',
-                          'cancel',
-                          'withdraw',
-                        ].contains(effect)
+                      : const ['edit', 'cancel', 'withdraw'].contains(effect)
                       ? '${effect}_effect'
                       : effect!,
                 ),

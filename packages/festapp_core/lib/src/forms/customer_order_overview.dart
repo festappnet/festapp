@@ -63,7 +63,7 @@ class CustomerOrderScope {
 /// Server policy metadata is presentation, never a client write entitlement.
 class CustomerOrderChangeAction {
   CustomerOrderChangeAction(this.data) {
-    if (!const ['edit', 'cancel', 'move'].contains(data['operation']) ||
+    if (!const ['edit', 'cancel'].contains(data['operation']) ||
         data['enabled'] is! bool)
       throw const FormatException('Invalid customer action');
   }

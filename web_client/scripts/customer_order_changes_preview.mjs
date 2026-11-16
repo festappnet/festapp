@@ -40,7 +40,6 @@ try{
   policy.cancel={...policy.cancel,mode:process.env.CUSTOMER_PREVIEW_CANCEL_MODE==='automatic'?'automatic':'approval_required',reason_required:true,refund_mode:'manual'};
   await db.query('SELECT public.save_customer_order_policy_internal($1,$2)',[x.form,policy]);
   await db.query("UPDATE eshop.orders SET data=jsonb_set(jsonb_set(data,'{tickets,0,products,0,title}',$1::jsonb),'{tickets,0,products,0,type_title}',$2::jsonb) WHERE id=$3",[JSON.stringify(locale==='cs'?'Vstup na taneční večer':'Dance evening admission'),JSON.stringify(locale==='cs'?'Vstupné':'Admission'),x.order]);
-  policy.move={enabled:false,targets:[]};
   await db.query('SELECT public.save_customer_order_policy_internal($1,$2)',[x.form,policy]);
   if(process.env.CUSTOMER_PREVIEW_SEATS==='1') {
     const seated=(await db.query('SELECT pg_temp.payment_attach_spot($1) x',[x])).rows[0].x;

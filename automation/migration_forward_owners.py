@@ -29,7 +29,8 @@ def entry_for(root: Path, migration):
 
 
 def forward_sources(root: Path, after=''):
-    return frozenset(s for e in registry(root) if e['migration'] > after for s in sources(root, e))
+    return frozenset(s for e in registry(root) if e['migration'] > after
+                     for s in [*sources(root, e), *e.get('retiredSources', [])])
 
 
 def render_forward(root: Path, entry):
@@ -123,7 +124,17 @@ def check_effective_sources(root: Path, source_list):
                 effective.pop(signature, None)
             else:
                 effective[signature] = body
+    retired = {s for e in registry(root) for s in e.get('retiredSources', [])}
     for source in source_list:
+        if source in retired:
+            if migration_inputs.exists(root / 'database/functions' / source):
+                raise SystemExit('Retired canonical source still exists: ' + source)
+            for entry in registry(root):
+                if source in sources(root, entry):
+                    for signature, body in definitions(historical_source(root, entry['migration'], source)):
+                        if body is not None and signature in effective:
+                            raise SystemExit('Retired SQL identity still exists: ' + signature)
+            continue
         for signature, body in definitions(migration_inputs.read_text(root / 'database/functions' / source)):
             if body is not None and not isinstance(body, tuple) and effective.get(signature) != body:
                 raise SystemExit('Canonical owner differs from effective migration head: ' + signature)

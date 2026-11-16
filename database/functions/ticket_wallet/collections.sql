@@ -11,7 +11,7 @@ BEGIN
  SELECT * INTO m FROM public.email_messages WHERE message_id=p_message;
  IF m.message_kind IS DISTINCT FROM 'order_tickets' OR NOT public.email_intent_valid(m) THEN RAISE insufficient_privilege; END IF;
  SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=m.organization AND collection_enabled AND NOT paused AND (publishing_ready OR apple_publishing_ready);
- SELECT term.* INTO o FROM public.order_term_occasion_internal(m.order_id) term WHERE term.id=m.occasion AND term.organization=m.organization;
+ SELECT oc.* INTO o FROM public.occasions oc JOIN eshop.orders ord ON ord.occasion=oc.id WHERE ord.id=m.order_id AND oc.id=m.occasion AND oc.organization=m.organization;
  IF i.organization IS NULL OR o.end_time IS NULL OR o.end_time+interval '7 days'<=now() THEN RETURN NULL; END IF;
  FOR c IN SELECT * FROM eshop.ticket_wallet_capabilities WHERE ticket_id=ANY(ids) ORDER BY ticket_id FOR UPDATE LOOP
   PERFORM public.refresh_ticket_wallet_term_internal(c.ticket_id);
@@ -51,7 +51,7 @@ BEGIN
  ELSE
   UPDATE eshop.ticket_wallet_collections x SET event_end_at=o.end_time,expires_at=o.end_time+interval '7 days'
    FROM public.occasions o WHERE x.token_hash=p_hash AND x.revoked_at IS NULL AND x.occasion=o.id AND x.organization=o.organization
-    AND o.end_time IS NOT NULL AND x.event_end_at IS DISTINCT FROM o.end_time AND NOT EXISTS(SELECT 1 FROM public.forms f JOIN eshop.orders ord ON ord.form=f.id WHERE ord.id=x.order_id AND f.term_start_at IS NOT NULL);
+    AND o.end_time IS NOT NULL AND x.event_end_at IS DISTINCT FROM o.end_time;
   SELECT * INTO b FROM eshop.ticket_wallet_collections WHERE token_hash=p_hash AND revoked_at IS NULL AND expires_at>now();
   IF b.id IS NULL THEN RETURN NULL; END IF;
   SELECT * INTO i FROM eshop.ticket_wallet_integrations WHERE organization=b.organization AND collection_enabled AND NOT paused;

@@ -74,35 +74,6 @@ test('a saved stricter policy and a customer confirmation share the same fence',
  assert.equal((await scalar('SELECT public.customer_order_policy_internal($1)',[x.form])).policy.cancel.enabled,false);
 }));
 
-test('two term moves competing for the last place keep one allocation and one unchanged order', async()=>workspace(async({control,scalar,x,writers,gateway,cap,race})=>{
- await control.query("UPDATE public.forms SET term_start_at=now()+interval '3 days',term_end_at=now()+interval '3 days 2 hours' WHERE id=$1",[x.form]);
- const target=await scalar("INSERT INTO public.forms(occasion,title,bank_account,is_open,participant_capacity,term_start_at,term_end_at) VALUES($1,'Target term',$2,true,1,now()+interval '4 days',now()+interval '4 days 2 hours') RETURNING id",[x.occasion,x.bank]);
- const type=await scalar("INSERT INTO eshop.product_types(occasion,title,type) VALUES($1,'Target admission','spot') RETURNING id",[x.occasion]);
- const product=await scalar("INSERT INTO eshop.products(occasion,title,product_type,price,currency_code,is_hidden,maximum) VALUES($1,'Target ticket',$2,1000,'CZK',false,1) RETURNING id",[x.occasion,type]);
- await control.query("INSERT INTO public.form_fields(form,title,type,product_type,is_ticket_field,is_hidden,is_required) VALUES($1,'Admission','product_type',$2,true,false,true)",[target,type]);
- const until=new Date(Date.now()+86400000).toISOString();
- await scalar('SELECT public.save_customer_order_policy_internal($1,$2)',[target,{move:{enabled:true,allowed_until:until,targets:[]}}]);
- const policy=(await scalar('SELECT public.customer_order_policy_internal($1)',[x.form])).policy;
- policy.move={enabled:true,allowed_until:until,targets:[{formId:Number(target),products:{[x.product]:Number(product)},fields:{}}]};
- await scalar('SELECT public.save_customer_order_policy_internal($1,$2)',[x.form,policy]);
- // Use the actual checkout owner for the second customer, on the same source form.
- const formKey=await scalar('SELECT key FROM public.forms WHERE id=$1',[x.form]);
- const checkout=await scalar('SELECT public.create_ticket_order_client_sync_v1($1,$2,$3)',[{form:formKey,email:'second@example.test',fields:[{[x.field]:'+420777333444'}],ticket:[{fields:[{product_type:Number(x.product)}]}]},randomUUID(),randomUUID()]);
- assert.equal(checkout.status,'applied',JSON.stringify(checkout));
- const second={...x,order:checkout.data.order.id,readToken:'c'.repeat(64)};
- await scalar('SELECT public.issue_order_overview_internal($1,$2,$3)',[second.order,{tokenHash:await scalar("SELECT encode(extensions.digest($1,'sha256'),'hex')",[second.readToken]),contentHash:'a'.repeat(64),sealed:{}},randomUUID()]);
- const payload={targetFormId:Number(target)},first=await cap('move',payload),other=await scalar('SELECT pg_temp.customer_cap($1,$2,$3)',[second,'move',payload]);
- const ids=[randomUUID(),randomUUID()];
- const previews=await Promise.all([gateway(writers[0],'preview',first,'move',payload,ids[0]),gateway(writers[1],'preview',other,'move',payload,ids[1])]);
- assert.ok(previews.every(p=>p.effect==='move'),JSON.stringify(previews));
- const outcomes=await race([c=>gateway(c,'command',first,'move',payload,ids[0],previews[0].fingerprint),c=>gateway(c,'command',other,'move',payload,ids[1],previews[1].fingerprint)]);
- assert.equal(outcomes.filter(r=>r.value?.code===200).length,1);
- assert.equal(outcomes.filter(r=>r.error?.code==='40001').length,1,JSON.stringify(outcomes));
- assert.equal(Number(await scalar('SELECT count(*) FROM eshop.orders WHERE id=ANY($1) AND form=$2',[[x.order,second.order],target])),1);
- assert.equal(Number(await scalar('SELECT count(*) FROM eshop.orders WHERE id=ANY($1) AND form=$2',[[x.order,second.order],x.form])),1);
- assert.equal(Number(await scalar('SELECT count(*) FROM eshop.refund_requests WHERE order_id=ANY($1)',[[x.order,second.order]])),0);
-}));
-
 test('scanner admission and confirmed cancellation cannot both succeed',async()=>workspace(async({control,scalar,x,writers,gateway,cap,race})=>{
  await scalar('SELECT pg_temp.payment_pair($1,1000)',[x]);
  const policy=(await scalar('SELECT public.customer_order_policy_internal($1)',[x.form])).policy;policy.cancel.refund_mode='manual';

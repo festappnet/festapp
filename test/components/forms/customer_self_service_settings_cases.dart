@@ -115,7 +115,7 @@ void main() {
         );
         expect(form.customerPolicyDirty, isFalse);
         expect(jsonEncode(form.definition.customerSelfService), originalPolicy);
-        expect(find.text(customerChangeText('move')), findsNothing);
+        expect(find.text('CustomerSelfService.move'), findsNothing);
         expect(find.text('CustomerSelfService.termHelp'), findsNothing);
         expect(find.byType(TimeDatePicker), findsNothing);
         if (!enabled) {
@@ -137,15 +137,13 @@ void main() {
           expect(policy['cancel']['enabled'], isTrue);
           expect(policy['cancel']['mode'], 'approval_required');
           expect(policy['cancel']['refund_mode'], 'none');
-          expect(policy['move']['enabled'], isFalse);
-          expect(policy['move']['targets'], isEmpty);
+          expect(policy.containsKey('move'), isFalse);
           expect(find.byType(TimeDatePicker), findsOneWidget);
           final deadline = tester.widget<TimeDatePicker>(
             find.byType(TimeDatePicker),
           );
           expect(deadline.dateLabel, customerChangeText('deadlineDate'));
           expect(deadline.timeLabel, customerChangeText('deadlineTime'));
-          expect(form.customerTermDirty, isFalse);
           expect(
             find.text(customerChangeText('configuredHelp')),
             findsOneWidget,
