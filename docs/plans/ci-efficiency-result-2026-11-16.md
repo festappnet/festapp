@@ -151,6 +151,31 @@ Po publikaci této koherentní změny musí vzniknout jedna čerstvá baseline.
 Následný obyčejný commit záznamu měření se stejnými implementačními vstupy
 ověří skutečné převzetí výsledků v GitHubu a celkové čekání na osm zelených jobs.
 
+## Skutečná hosted baseline opravy vstupů
+
+Main `3c837dc327672b7ed703f54800fb437d2171fe5f`: exact release gate PASS,
+všech osm povinných jobs skutečně dokončeno úspěšně. Okno od vytvoření prvního
+workflow po dokončení posledního povinného jobu bylo 15:43:52-15:50:12 UTC,
+380 s (6 min 20 s). Tato plná baseline tedy stále nepotvrzuje zrychlení
+celého běhu. Časy zahrnují provisioning a post-job cleanup.
+
+| Povinný job | Sekundy | Důkaz |
+| --- | ---: | --- |
+| client-contract | 205 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538282/job/133412090351) |
+| server-policy | 176 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538282/job/133412089607) |
+| image-contract | 101 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538274/job/133412088673) |
+| navigation-interactions | 197 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538360/job/133412092015) |
+| seat-checkout | 377 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538333/job/133412089307) |
+| ticket-preview-and-delivery | 265 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538333/job/133412089930) |
+| web-startup | 188 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538393/job/133412089135) |
+| wix-checkout-compatibility | 368 | [GitHub job](https://github.com/festappnet/festapp/actions/runs/43899538395/job/133412087891) |
+
+Tento záznam měření mění pouze dokumentaci. Jeho následující CI má stejné
+implementační vstupy a ověří převzetí skutečně provedených testů z této baseline.
+Krátký reuse běh by dokazoval odstranění zbytečného opakování nezměněných sad,
+nikoliv zrychlení plné CMS/checkout matice. Příslušné změny kódu musí dál
+spustit ovlivněné testy; bezpečnostní, provenienční a sedmidenní podmínky zůstávají.
+
 ## Baseline
 
 [Uložený vzorek](ci-efficiency-baseline-2026-11-16.json) vznikl read-only
