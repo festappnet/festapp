@@ -418,14 +418,15 @@
     },
     {
       "migration": "20261115160000_customer_self_service_completion.sql",
-      "active": true,
       "header": "-- Complete selected-ticket customer cancellation validation; preserve published foundation bytes.",
       "sources": [
         "customer_order_changes/policy.sql",
         "customer_order_changes/preview.sql",
         "customer_order_changes/commands.sql",
         "customer_order_changes/staff.sql"
-      ]
+      ],
+      "sha256": "be327246dbd0888dab4d4df7a2d235d706fcb0daba669835f4edbf7e7a13082f",
+      "checkSources": true
     },
     {
       "migration": "20261115180000_discount_confirmation_consistency.sql",
@@ -497,6 +498,14 @@
       "header": "-- Allow separate receiving accounts to cover the currencies offered by a form.",
       "sources": [
         "payment_providers/builtin.sql"
+      ]
+    },
+    {
+      "migration": "20261116140000_restore_fakturoid_czk_reference.sql",
+      "active": true,
+      "header": "-- Restore Fakturoid-owned CZK variable symbols before order confirmation.",
+      "sources": [
+        "emails/fakturoid_email_gate.sql"
       ]
     }
   ]

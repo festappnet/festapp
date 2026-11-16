@@ -113,12 +113,14 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     return invoices[0];
   }
 
-  function variableSymbol(invoice: Invoice, order: FakturoidOrder): string {
+  function variableSymbol(invoice: Invoice, order: FakturoidOrder, preparing = false): string {
     const value = String(invoice.variable_symbol ?? "");
     if (!/^\d{1,10}$/.test(value)) {
       throw new Error("FAKTUROID_VARIABLE_SYMBOL_INVALID");
     }
-    assertFakturoidVariableSymbol(invoice, order.payment_info.variable_symbol);
+    if (!preparing || String(order.payment_info.currency_code).toUpperCase() !== "CZK") {
+      assertFakturoidVariableSymbol(invoice, order.payment_info.variable_symbol);
+    }
     return value;
   }
 
@@ -158,7 +160,7 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       invoice = await response.json();
     }
     if (!invoice) throw new Error("FAKTUROID_INVOICE_NOT_READY");
-    variableSymbol(invoice, order);
+    const preparedSymbol = variableSymbol(invoice, order, true);
     const data = order.data ?? {};
     const clientName = `${data.name || ""} ${data.surname || ""}`.trim();
     if (clientName) {
@@ -171,7 +173,9 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
         client_has_delivery_address: false,
         client_phone: data.phone,
       };
-      patchBody.variable_symbol = String(order.payment_info.variable_symbol);
+      if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
+        patchBody.variable_symbol = String(order.payment_info.variable_symbol);
+      }
       const response = await request(
         `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${invoice.id}.json`,
         { method: "PUT", headers, body: JSON.stringify(patchBody) },
@@ -182,7 +186,9 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       invoice = await response.json();
     }
     if (!invoice) throw new Error("FAKTUROID_INVOICE_NOT_READY");
-    return variableSymbol(invoice, order);
+    // A customer-only update must not renumber the invoice.
+    assertFakturoidVariableSymbol(invoice, preparedSymbol);
+    return variableSymbol(invoice, order, true);
   }
 
   async function getEmailAttachment(

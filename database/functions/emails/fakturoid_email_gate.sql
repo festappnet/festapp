@@ -64,6 +64,10 @@ DECLARE
   v_currency text;
   v_payment_id bigint;
   v_existing_vs bigint;
+  v_form bigint;
+  v_bank bigint;
+  v_namespace text;
+  v_account text;
   v_occasion bigint;
   v_queue_id bigint;
   v_impacts jsonb;
@@ -72,11 +76,11 @@ BEGIN
   PERFORM public.lock_order_capacity_scope_internal(ARRAY[p_order_id]);
   IF EXISTS(SELECT 1 FROM eshop.waitlist_acceptance_attempts WHERE target_order_id=p_order_id AND command_id=p_command_id AND state='aborted') THEN
     RAISE EXCEPTION 'Acceptance attempt aborted'; END IF;
-  SELECT o.state,trim(o.currency_code),o.payment_info,o.occasion,pi.variable_symbol
-  INTO v_state,v_currency,v_payment_id,v_occasion,v_existing_vs
+  SELECT o.state,trim(o.currency_code),o.payment_info,o.occasion,pi.variable_symbol,o.form,pi.bank_account
+  INTO v_state,v_currency,v_payment_id,v_occasion,v_existing_vs,v_form,v_bank
   FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info
   WHERE o.id=p_order_id FOR UPDATE OF o,pi;
-  IF v_state IS NULL OR p_command_id IS NULL OR p_variable_symbol NOT BETWEEN 1 AND 9999999999 THEN
+  IF v_state IS NULL OR p_command_id IS NULL OR p_variable_symbol IS NULL OR p_variable_symbol NOT BETWEEN 1 AND 9999999999 THEN
     RAISE invalid_parameter_value USING MESSAGE='invalid Fakturoid completion';
   END IF;
   IF v_state IN ('ordered','paid') THEN
@@ -94,8 +98,39 @@ BEGIN
   IF v_queue_id IS NULL THEN
     RAISE check_violation USING MESSAGE='Fakturoid order confirmation claim missing';
   END IF;
-  IF v_currency NOT IN ('CZK','EUR') OR v_existing_vs IS DISTINCT FROM p_variable_symbol THEN
+  IF v_currency NOT IN ('CZK','EUR') OR (v_currency='EUR' AND v_existing_vs IS DISTINCT FROM p_variable_symbol) THEN
     RAISE check_violation USING MESSAGE='Fakturoid symbol differs from application payment reference';
+  END IF;
+  IF v_currency='CZK' AND v_existing_vs IS DISTINCT FROM p_variable_symbol THEN
+    -- Keep the provisional reservation as a tombstone. Reserve the provider's
+    -- actual number before publishing any payment instructions or email.
+    IF public.payment_reference_scope_enabled_internal(v_form) THEN
+      SELECT namespace_id INTO v_namespace FROM eshop.payment_reference_accounts WHERE bank_account_id=v_bank;
+      PERFORM 1 FROM eshop.payment_reference_namespaces WHERE id=v_namespace FOR UPDATE;
+      IF NOT EXISTS(SELECT 1 FROM eshop.payment_reference_reservations
+        WHERE namespace_id=v_namespace AND variable_symbol=p_variable_symbol
+          AND original_payment_info_id=v_payment_id) THEN
+        PERFORM public.reserve_payment_reference_internal(v_payment_id,v_form,
+          'fakturoid:payment:'||v_payment_id,
+          jsonb_build_object('mode','exact','value',p_variable_symbol::text),
+          encode(extensions.digest(jsonb_build_object('payment',v_payment_id,
+            'command',p_command_id,'fakturoidSymbol',p_variable_symbol)::text,'sha256'),'hex'));
+      END IF;
+    ELSE
+      SELECT public.try_payment_reference_account_internal(account_number) INTO v_account
+        FROM eshop.bank_accounts WHERE id=v_bank;
+      IF EXISTS(SELECT 1 FROM eshop.payment_info pi JOIN eshop.bank_accounts b ON b.id=pi.bank_account
+        WHERE pi.id<>v_payment_id AND pi.variable_symbol=p_variable_symbol
+          AND (pi.bank_account=v_bank OR (v_account IS NOT NULL AND
+            public.try_payment_reference_account_internal(b.account_number)=v_account)))
+        OR EXISTS(SELECT 1 FROM eshop.payment_reference_namespaces n
+          JOIN eshop.payment_reference_reservations r ON r.namespace_id=n.id
+          WHERE n.canonical_account=v_account AND r.variable_symbol=p_variable_symbol
+            AND r.original_payment_info_id IS DISTINCT FROM v_payment_id) THEN
+        RAISE check_violation USING MESSAGE='PAYMENT_REFERENCE_CONFLICT';
+      END IF;
+    END IF;
+    UPDATE eshop.payment_info SET variable_symbol=p_variable_symbol WHERE id=v_payment_id;
   END IF;
   UPDATE eshop.waitlist_acceptance_attempts SET state='completed',updated_at=clock_timestamp()
    WHERE target_order_id=p_order_id AND command_id=p_command_id AND state='preparing';

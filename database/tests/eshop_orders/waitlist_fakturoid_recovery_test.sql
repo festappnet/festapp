@@ -6,15 +6,23 @@ UPDATE public.abuse_policy_rules SET base_limit=100,hard_cap=100
  WHERE rule_key IN ('email.ordinary.recipient.burst','email.ordinary.recipient.day');
 SELECT set_config('request.jwt.claim.role','service_role',true);
 SELECT set_config('festapp.email_wake','scheduled',true);
-CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE plpgsql AS $$
+CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1, active_references boolean DEFAULT false) RETURNS jsonb LANGUAGE plpgsql AS $$
 DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint; prod bigint; bank bigint; actor uuid; suffix text:=gen_random_uuid()::text;
 BEGIN
  INSERT INTO organizations(title) VALUES('Waitlist regression '||suffix) RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO units(title,organization) VALUES('Waitlist regression',org) RETURNING id INTO un;
  INSERT INTO occasions(title,unit,organization,link,start_time,end_time) VALUES('Waitlist regression',un,org,suffix,now(),now()+interval '1 day') RETURNING id INTO oc;
- INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END) RETURNING id,key INTO f,fk;
+ INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds,data) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END,'{"payments":{"bankEnabled":true}}') RETURNING id,key INTO f,fk;
  INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Regression bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
+ IF active_references THEN
+  UPDATE eshop.bank_accounts SET account_number='19-2000145399/0800' WHERE id=bank;
+  PERFORM public.enroll_payment_reference_account(bank);
+  INSERT INTO eshop.payment_reference_scopes(organization_id,phase,manifest_sha256) VALUES(org,'active',repeat('a',64));
+  UPDATE eshop.payment_reference_namespaces SET allocation_enabled=true
+   WHERE id=(SELECT namespace_id FROM eshop.payment_reference_accounts WHERE bank_account_id=bank);
+ END IF;
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('spot','spot',oc) RETURNING id INTO pt;
  INSERT INTO eshop.products(title,product_type,price,currency_code,occasion) VALUES('Admission',pt,100,'CZK',oc) RETURNING id INTO prod;
  INSERT INTO form_fields(form,product_type,type) VALUES(f,pt,'product_type');
@@ -68,7 +76,7 @@ DO $$
 DECLARE x jsonb; f bigint; source bigint; regular bigint; r jsonb; w jsonb; person bigint; remainder bigint; command uuid; target bigint; original_symbol text; original_sequence bigint; before_history bigint; before_email_version bigint; price_id bigint; result_vs bigint;
 BEGIN
  FOR people IN 1..2 LOOP
-  x:=pg_temp.fixture(1); f:=(x->>'form')::bigint;
+  x:=pg_temp.fixture(1,people=2); f:=(x->>'form')::bigint;
   r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x)); regular:=(r#>>'{order,id}')::bigint;
   source:=(pg_temp.register(x,people)->>'order')::bigint;
   SELECT order_symbol,order_sequence INTO original_symbol,original_sequence FROM eshop.orders WHERE id=source;
@@ -115,9 +123,25 @@ BEGIN
   command:=gen_random_uuid(); r:=pg_temp.accept(x,w,ARRAY[person],command);
   PERFORM assert_eq(r#>>'{data,code}','200'::text,'retry prepare: '||r::text); target:=(r#>>'{data,order,id}')::bigint;
   PERFORM set_config('request.jwt.claim.sub','',true);
-  result_vs:=(r#>>'{data,order,payment_info,variable_symbol}')::bigint;
-  PERFORM assert_eq(public.complete_fakturoid_ticket_order_v1(target,command,result_vs),result_vs,'invoice preserves application VS');
+  -- Provider collisions must leave the order and blocked confirmation untouched.
+  BEGIN
+   PERFORM public.complete_fakturoid_ticket_order_v1(target,command,
+    (SELECT pi.variable_symbol FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info WHERE o.id=regular));
+   RAISE EXCEPTION 'provider collision accepted';
+  EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'PAYMENT_REFERENCE_CONFLICT' THEN RAISE; END IF; END;
+  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=target),'preparing_payment'::text,'collision leaves preparation pending');
+  result_vs:=20260950 + target;
+  PERFORM assert_eq(public.complete_fakturoid_ticket_order_v1(target,command,result_vs),result_vs,'invoice adopts Fakturoid VS');
   PERFORM assert_eq(public.complete_fakturoid_ticket_order_v1(target,command,result_vs),result_vs,'complete replay');
+  PERFORM assert_eq((SELECT variable_symbol FROM eshop.payment_info WHERE id=(SELECT payment_info FROM eshop.orders WHERE id=target)),result_vs,'stored provider symbol');
+  PERFORM assert_eq((SELECT (data#>>'{ticket_order,order,payment_info,variable_symbol}')::bigint FROM email_messages WHERE code='TICKET_ORDER_CONFIRMATION' AND data->>'command_id'=command::text),result_vs,'email uses provider symbol');
+  IF people=2 THEN
+   PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.payment_reference_reservations
+    WHERE variable_symbol=result_vs AND original_payment_info_id=(SELECT payment_info FROM eshop.orders WHERE id=target)),'provider symbol permanently reserved');
+   PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.payment_reference_reservations
+    WHERE variable_symbol=(r#>>'{data,order,payment_info,variable_symbol}')::bigint
+    AND original_payment_info_id=(SELECT payment_info FROM eshop.orders WHERE id=target)),'provisional reservation retained');
+  END IF;
   PERFORM assert_eq((SELECT state FROM eshop.waitlist_acceptance_attempts WHERE command_id=command),'completed'::text,'journal completed');
   PERFORM assert_jsonb_contains(public.get_form_capacity_snapshot_internal(f),'{"occupiedPeople":1,"offeredPlaces":0}','complete capacity once');
  END LOOP;

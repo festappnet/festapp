@@ -40,7 +40,10 @@ export function buildFakturoidInvoicePayload(
       name: p.title, quantity: 1, unit_price: (minor(p.price) / 100n).toString() + "." + (minor(p.price) % 100n).toString().padStart(2, "0"), vat_rate: 0,
     }));
   }
-  body.variable_symbol = String(order.payment_info.variable_symbol);
+  // CZK follows Fakturoid numbering; EUR must preserve its RF-derived reference.
+  if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
+    body.variable_symbol = String(order.payment_info.variable_symbol);
+  }
   if (note) body.note = note;
   return body;
 }

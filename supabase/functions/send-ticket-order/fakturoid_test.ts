@@ -43,12 +43,12 @@ Deno.test("EUR proforma carries the VS used to derive the RF reference", () => {
   assertEquals(payload.note, "Tenant note");
 });
 
-Deno.test("CZK proforma carries the application variable symbol", () => {
+Deno.test("CZK proforma lets Fakturoid assign its variable symbol", () => {
   const payload = buildFakturoidInvoicePayload(
     order("CZK", "987654"), "Long tenant unit", "command-2", 43,
     undefined, "2026-08-23",
   );
-  assertEquals(payload.variable_symbol, "987654");
+  assertEquals(payload.variable_symbol, undefined);
   assertEquals(
     (payload.lines as Array<{ unit_name: string }>)[0].unit_name,
     "Long tenan",
@@ -63,22 +63,22 @@ Deno.test("EUR invoice must preserve the RF numeric VS", () => {
   );
 });
 
-Deno.test("checkout preserves the application CZK VS without mutating its input", async () => {
+Deno.test("checkout adopts the Fakturoid CZK VS without mutating its input", async () => {
   const sent: Record<string, unknown>[] = [];
   const client = gateway((url, method, body) => {
     if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
     if (method === "GET") return Response.json([]);
     sent.push(body!);
-    return Response.json({ id: 55, variable_symbol: "987654" });
+    return Response.json({ id: 55, variable_symbol: "20260950" });
   });
   const input = order("CZK", "987654");
   const variableSymbol = await client.preparePayment({
     config, order: input, unitName: "Test unit", commandId: "command-1",
   });
-  assertEquals(variableSymbol, "987654");
+  assertEquals(variableSymbol, "20260950");
   assertEquals(input.payment_info.variable_symbol, "987654");
   assertEquals(sent.length, 1);
-  assertEquals(sent[0].variable_symbol, "987654");
+  assertEquals(sent[0].variable_symbol, undefined);
 });
 
 Deno.test("email phase cannot create a second proforma", async () => {
@@ -142,11 +142,11 @@ Deno.test("failed client update rejects checkout", async () => {
   );
 });
 
-Deno.test("CZK invoice mismatch is rejected before any patch", async () => {
+Deno.test("EUR invoice mismatch is rejected before any patch", async () => {
   const client = gateway((url, method) => url.endsWith("/oauth/token")
     ? Response.json({access_token:"token"}) : method === "GET"
     ? Response.json([{id:1,variable_symbol:"99"}]) : (()=>{throw Error("must not patch");})());
-  await assertRejects(()=>client.preparePayment({config,order:order("CZK","42"),unitName:"Test",commandId:"same"}),Error,"FAKTUROID_VARIABLE_SYMBOL_MISMATCH");
+  await assertRejects(()=>client.preparePayment({config,order:order("EUR","42"),unitName:"Test",commandId:"same"}),Error,"FAKTUROID_VARIABLE_SYMBOL_MISMATCH");
 });
 Deno.test("ambiguous invoice lookup cannot select the first document or create another", async () => {
   const client=gateway(url=>url.endsWith("/oauth/token")?Response.json({access_token:"token"}):Response.json([{id:1},{id:2}]));
@@ -231,4 +231,20 @@ Deno.test('email overview renders the same base discount and net without subtrac
     assertEquals(/19[,.]75/.test(html),true);
     assertEquals(/60[,.]50/.test(html),false);
   }
+});
+
+Deno.test("CZK customer update preserves the provider symbol and email requires the committed symbol", async () => {
+  const patches: Record<string, unknown>[] = [];
+  const client = gateway((url, method, body) => {
+    if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
+    if (method === "GET") return Response.json([{ id: 55, variable_symbol: "20260950" }]);
+    patches.push(body!);
+    return Response.json({ id: 55, variable_symbol: "20260950" });
+  });
+  const input = { ...order("CZK", "4830"), data: { name: "Eva" } };
+  assertEquals(await client.preparePayment({ config, order: input, commandId: "same", unitName: "Test" }), "20260950");
+  assertEquals(patches[0].variable_symbol, undefined);
+  await assertRejects(() => client.getEmailAttachment({ config, order: input, commandId: "same" }), Error, "FAKTUROID_VARIABLE_SYMBOL_MISMATCH");
+  input.payment_info.variable_symbol = "20260950";
+  assertEquals((await client.getEmailAttachment({ config, order: input, commandId: "same" })).variableSymbol, "20260950");
 });
