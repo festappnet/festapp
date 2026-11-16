@@ -5,6 +5,9 @@ ENV FESTAPP_SOURCE_SHA=$FESTAPP_SOURCE_SHA
 COPY tools/festapp/package.json tools/festapp/pnpm-lock.yaml tools/festapp/pnpm-workspace.yaml ./tools/festapp/
 RUN corepack enable && corepack prepare pnpm@11.24.0 --activate && pnpm --dir tools/festapp install --frozen-lockfile --ignore-scripts
 COPY tools/festapp/src ./tools/festapp/src
+COPY web_client/src/theme_config.css ./web_client/src/theme_config.css
+COPY web_client/src/components/users/connection_page_styles.js ./web_client/src/components/users/connection_page_styles.js
+COPY web_client/src/assets/fonts ./web_client/src/assets/fonts
 COPY tools/festapp/scripts ./tools/festapp/scripts
 COPY tools/festapp/api-contract-archive.json tools/festapp/api-release-baseline.json tools/festapp/redocly.yaml ./tools/festapp/
 COPY packages/festapp_contracts ./packages/festapp_contracts
@@ -27,6 +30,9 @@ RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 RUN pnpm --dir tools/festapp install --frozen-lockfile --prod --ignore-scripts
 RUN pnpm --dir tools/festapp licenses list --prod --json | node tools/festapp/scripts/runtime-notices.mjs /app/THIRD_PARTY_NOTICES
 COPY tools/festapp/src ./tools/festapp/src
+COPY web_client/src/theme_config.css ./web_client/src/theme_config.css
+COPY web_client/src/components/users/connection_page_styles.js ./web_client/src/components/users/connection_page_styles.js
+COPY web_client/src/assets/fonts ./web_client/src/assets/fonts
 COPY --from=api-build /app/tools/festapp/contracts/api-v1 ./tools/festapp/contracts/api-v1
 COPY packages/festapp_contracts ./packages/festapp_contracts
 COPY assets/translations/cs.json ./assets/translations/cs.json

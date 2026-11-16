@@ -2108,3 +2108,23 @@ test('public MCP identity, documentation and bilingual privacy need no account a
         assert.doesNotMatch(body, /<script/);
     }
 });
+
+
+test('issuer uses the shared first-party connection theme and serves its own font with restrictive CSP', async t => {
+    const f = await setup(t);
+    const response = await f.browser('/docs');
+    const html = await response.text();
+    assert.match(html, /class="connection-page"/);
+    assert.match(html, /--seed-1: #253759/);
+    assert.match(html, /font-family: 'Futura'/);
+    assert.match(html, /connection-control-line/);
+    assert.match(html, /url\('\/assets\/fonts\/FuturaPTBook.ttf'\)/);
+    const policy = response.headers.get('content-security-policy');
+    assert.match(policy, /font-src 'self'/);
+    assert.match(policy, /default-src 'none'/);
+    assert.doesNotMatch(policy, /script-src[^;]*unsafe-inline/);
+    const font = await f.browser('/assets/fonts/FuturaPTBook.ttf');
+    assert.equal(font.status, 200);
+    assert.match(font.headers.get('content-type'), /font/);
+    assert((await font.arrayBuffer()).byteLength > 1000);
+});

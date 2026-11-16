@@ -206,13 +206,14 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
             'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
             // Empty script-src denies scripts; oidc-provider adds only the exact
             // hash of its account-switch auto-submit script when it renders it.
-            'Content-Security-Policy': `default-src 'none'; script-src; style-src 'unsafe-inline'; form-action ${formAction}; frame-ancestors 'none'; base-uri 'none'` });
+            'Content-Security-Policy': `default-src 'none'; script-src; style-src 'unsafe-inline'; font-src 'self'; form-action ${formAction}; frame-ancestors 'none'; base-uri 'none'` });
         if (canonical) res.set('Strict-Transport-Security', 'max-age=31536000');
         if (req.method === 'GET' && req.path === '/healthz') return next();
         let ip;
         try { ip = clientIdentity(req, canonical); } catch { return endpoint ? sendProblem(res, { code: 'INVALID_INGRESS' }, { outcome: 'rejected' }) : res.sendStatus(400); }
         try { limit(`http:${ip}`, 240); next(); } catch (error) { limited(req, res, error); }
     });
+    app.use('/assets/fonts', express.static(new URL('../../../../web_client/src/assets/fonts/', import.meta.url).pathname, { index: false, redirect: false }));
     app.get(['/', '/docs'], (_req, res) => res.type('html').send(serviceDocumentation(config)));
     app.get('/support', (_req, res) => res.type('html').send(page('Festapp support',
         '<p>Provider: Michael Bujnovský, IČO 06455361. Contact <a href="mailto:info@festapp.net">info@festapp.net</a> for MCP connection support. Include the client and a safe error/request ID. Never send passwords, access tokens or customer data. Event and order questions belong to the selected organizer.</p><p><a href="/docs">Documentation</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>', 'en')));

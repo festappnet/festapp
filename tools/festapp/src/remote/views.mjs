@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { connectionPageStyles } from '../../../../web_client/src/components/users/connection_page_styles.js';
 import { CONNECTION_DURATION_DAYS, DEFAULT_CONNECTION_DURATION_DAYS, CONNECTION_IDLE_SECONDS, DAY_SECONDS, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { accessSelection } from '../operations/access.mjs';
 import cs from '../../../../assets/translations/cs.json' with { type: 'json' };
@@ -13,8 +15,28 @@ export function oauthFailure(code) {
     const message = messages[code] ?? 'Požadavek není platný nebo vypršel. Spusťte připojení znovu v aplikaci.';
     return page('Připojení se nezdařilo', `<p>${message}</p>${Object.hasOwn(messages, code) ? `<p>Kód: <code>${code}</code></p>` : ''}`);
 }
-export const page = (title, body, language = 'cs') => `<!doctype html><html lang="${escape(language)}"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escape(title)} | Festapp</title><style>
-:root{font:16px/1.5 system-ui;color:#1b2421;background:#f7f8f7}body{max-width:560px;margin:48px auto;padding:0 24px}h1{font-size:1.7rem}label{display:block;margin:16px 0 4px}input:not([type=checkbox]){box-sizing:border-box;width:100%;padding:12px;border:1px solid #68746d;border-radius:6px;font:inherit}input[type=checkbox]{width:24px;height:24px;vertical-align:middle;margin-right:8px}button{font:inherit;min-height:48px;padding:8px 20px;border:1px solid #174d37;border-radius:6px;background:#174d37;color:white;margin:16px 8px 0 0}button.secondary{background:white;color:#174d37}:focus-visible{outline:3px solid #b46d00;outline-offset:3px}.error{border-left:4px solid #b02618;padding:8px 16px}small{display:block;color:#44524a}form:has(select[name=permissionMode] option[value=basic]:checked) .permission-list{display:none}form:has(select[name=permissionMode] option[value=read-only]:checked) .permission-list li[data-write]{display:none}fieldset{margin:24px 0;padding:16px;border:1px solid #68746d}a{color:#174d37}form:has(select[name=durationDays] option:checked:not([value="365"])) .long-duration-hint{display:none}</style><main><p>Festapp</p><h1>${escape(title)}</h1>${body}</main></html>`;
+// Share the first-party connection surface and application typography/colors.
+const themeStyles = readFileSync(new URL('../../../../web_client/src/theme_config.css', import.meta.url), 'utf8')
+    .replaceAll("./assets/fonts/", "/assets/fonts/");
+const formStyles = `
+.connection-brand{max-width:800px;margin:32px auto 0;padding:0 24px;font-size:1.2rem;font-weight:700;color:var(--seed-1)}
+.connection-page{margin-top:20px;font-size:1.125rem}
+.connection-page label{display:block;margin:20px 0 8px;font-weight:500}
+.connection-page input:not([type=checkbox]):not([type=radio]):not([type=hidden]),.connection-page select{display:block;width:100%;min-height:48px;margin-top:8px;padding:12px 14px;border:1px solid var(--connection-control-line);border-radius:8px;background:var(--card-bg);color:inherit;font:inherit;caret-color:var(--primary-color)}
+.connection-page input[type=checkbox],.connection-page input[type=radio]{width:22px;height:22px;vertical-align:middle;margin:0 10px 0 0;accent-color:var(--seed-1)}
+.connection-page button:not(.secondary){background:var(--seed-1);border-color:var(--seed-1);color:#fff}
+.connection-page button:not(.secondary):hover:not(:disabled){background:#304b73}
+.connection-page button{margin-top:24px;min-height:48px}
+.connection-page small{display:block;font-size:1rem;line-height:1.55;color:#465165;margin-top:8px}
+.connection-page fieldset{min-width:0;margin:24px 0;padding:16px 20px;border:1px solid var(--connection-line);border-radius:8px}
+.connection-page legend{padding:0 6px;font-weight:500}
+.connection-page .error{padding:12px 16px;border:1px solid #a12424;border-radius:8px;color:#a12424}
+form:has(select[name=permissionMode] option[value=basic]:checked) .permission-list{display:none}
+form:has(select[name=permissionMode] option[value=read-only]:checked) .permission-list li[data-write]{display:none}
+form:has(select[name=durationDays] option:checked:not([value="365"])) .long-duration-hint{display:none}
+@media(max-width:600px){.connection-brand{margin-top:20px;padding:0 32px}.connection-page{margin-top:16px}}
+`;
+export const page = (title, body, language = 'cs') => `<!doctype html><html lang="${escape(language)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${escape(title)} | Festapp</title><style>${themeStyles}${connectionPageStyles}${formStyles}</style></head><body><header class="connection-brand">Festapp</header><main class="connection-page"><h1>${escape(title)}</h1>${body}</main></body></html>`;
 
 export const loginForm = ({ csrf, client, action, error = '', consent = false }) => page(
     consent ? 'Připojit účet' : 'Správa připojení',
@@ -50,10 +72,10 @@ export const connectionsPage = (csrf, grants) => page('Připojené aplikace',
     <form method="post" action="/connections/logout"><input type="hidden" name="csrf" value="${escape(csrf)}"><button class="secondary" type="submit">Odhlásit správu připojení</button></form>`,
 );
 
-export const contextChoiceForm = ({ csrf, action, contexts }) => page('Vyberte prostředí Festapp',
-    `<p>Vyberte prostředí svého účtu. Přihlášení a souhlas platí pouze pro toto prostředí. Pro další prostředí vytvořte nové připojení.</p>
+export const contextChoiceForm = ({ csrf, action, contexts }) => page('Vyberte organizaci',
+    `<p>Vyberte organizaci, v jejíž aplikaci chcete pracovat. Přístup potvrdíte jejím účtem a bude platit pouze pro tuto organizaci.</p>
     <form method="post" action="${escape(action)}"><input type="hidden" name="csrf" value="${escape(csrf)}">
-    <label>Prostředí<select name="context" required>${contexts.map(c => `<option value="${escape(c.profile.binding)}">${escape(c.name)}</option>`).join('')}</select></label>
+    <label for="organization">Organizace</label><select id="organization" name="context" required>${contexts.map(c => `<option value="${escape(c.profile.binding)}">${escape(c.name)}</option>`).join('')}</select>
     <button type="submit">Pokračovat</button></form>`);
 
 export const contextManagementPage = config => page('Správa připojení Festapp',
