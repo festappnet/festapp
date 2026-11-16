@@ -18,6 +18,9 @@ class FormStrings {
   static String get cmsPlatform => 'FeatureFormSettings.cmsPlatform'.tr();
   static String get cmsFreshChoiceHelp =>
       'FeatureFormSettings.cmsFreshChoiceHelp'.tr();
+  static String get cmsPolicySaved => 'FeatureFormSettings.cmsPolicySaved'.tr();
+  static String get cmsPolicyChanged =>
+      'FeatureFormSettings.cmsPolicyChanged'.tr();
   static String get cmsPolicyDetected =>
       'FeatureFormSettings.cmsPolicyDetected'.tr();
   static String get cmsPolicyDetectionFailed =>

@@ -44,3 +44,38 @@ Deno.test("missing, executable, ambiguous, invalid and oversized data fail close
     ]
   ) assertEquals(extractPolicyId(html), null);
 });
+
+Deno.test("inactive and executable lookalikes never become detected policy IDs", () => {
+  const config = 'var complianz={"current_policy_id":"42"};';
+  for (
+    const html of [
+      `<!-- <script>${config}</script> -->`,
+      `<script>/* ${config} */</script>`,
+      `<script>// ${config}</script>`,
+      `<script>const example = '${config}';</script>`,
+      `<script>function unused(){${config}}</script>`,
+      `<script>if(false){${config}}</script>`,
+      `<script type="application/json">${config}</script>`,
+      `<script type="module">${config}</script>`,
+      `<script src="/other.js">${config}</script>`,
+      `<template><script>${config}</script></template>`,
+      `<noscript><script>${config}</script></noscript>`,
+      `<textarea><script>${config}</script></textarea>`,
+      `<script>${config} complianz.current_policy_id="43";</script>`,
+      `<script>${config} var complianz={</script>`,
+      `<script>${config}</script><script>var complianz={</script>`,
+    ]
+  ) assertEquals(extractPolicyId(html), null, html);
+  assertEquals(
+    extractPolicyId(
+      `<script>/* WordPress localized settings */ ${config}\n//# sourceURL=cmplz-js-extra</script>`,
+    ),
+    "42",
+  );
+});
+
+Deno.test("maximum-size repeated unfinished declarations are rejected in one parse", () => {
+  const html = `<script>${"var complianz={".repeat(69_000)}</script>`;
+  assertEquals(html.length < MAX_HTML_BYTES, true);
+  assertEquals(extractPolicyId(html), null);
+});

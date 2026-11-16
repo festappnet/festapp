@@ -633,6 +633,8 @@
     "cmsState_approval_required": "Website-Freigabe erforderlich",
     "cmsState_confirmation_required": "Die Richtlinie wurde geändert. Bestätigen Sie die Abdeckung erneut.",
     "cmsState_unavailable": "Übertragung nicht verfügbar. Prüfen Sie Messung, Übertragung und Website-Freigabe.",
+    "cmsPolicySaved": "Gespeicherte Richtlinien-ID",
+    "cmsPolicyChanged": "Die Richtlinie der Website hat sich während der Bestätigung geändert. Prüfen Sie die neu geladene ID und bestätigen Sie die Abdeckung des Formulars erneut.",
     "cmsPolicyDetected": "Die Richtlinien-ID wurde von Ihrer Website gelesen. Die Bestätigung bindet diese Richtlinienversion.",
     "cmsPolicyDetectionFailed": "Die Richtlinien-ID konnte nicht erkannt werden (die Website blockiert möglicherweise den Zugriff oder enthält keine Complianz-Konfiguration). Versuchen Sie es erneut oder geben Sie sie manuell ein.",
     "cmsPolicyManual": "Manuell eingeben",

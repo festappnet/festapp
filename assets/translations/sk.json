@@ -653,6 +653,8 @@
     "cmsState_approval_required": "Web vyžaduje schválenie",
     "cmsState_confirmation_required": "Zásady sa zmenili. Potvrďte pokrytie znova.",
     "cmsState_unavailable": "Prenos nie je účinný. Overte zapnutie merania, prenosu a schválenie webu.",
+    "cmsPolicySaved": "Uložené ID zásad",
+    "cmsPolicyChanged": "Zásady webu sa počas potvrdzovania zmenili. Skontrolujte načítané ID a znova potvrďte pokrytie formulára.",
     "cmsPolicyDetected": "ID zásad bolo načítané z Vášho webu. Potvrdením pripnete túto verziu zásad.",
     "cmsPolicyDetectionFailed": "ID zásad sa nepodarilo načítať (web môže blokovať prístup alebo neobsahuje konfiguráciu Complianz). Skúste to znova alebo zadajte ID ručne.",
     "cmsPolicyManual": "Zadať ručne",

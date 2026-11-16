@@ -635,6 +635,8 @@
     "cmsState_approval_required": "Witryna wymaga zatwierdzenia",
     "cmsState_confirmation_required": "Zasady uległy zmianie. Proszę ponownie potwierdzić zakres.",
     "cmsState_unavailable": "Przenoszenie jest niedostępne. Proszę sprawdzić pomiary, przenoszenie i zatwierdzenie witryny.",
+    "cmsPolicySaved": "Zapisany identyfikator zasad",
+    "cmsPolicyChanged": "Zasady witryny zmieniły się podczas potwierdzania. Sprawdź ponownie wczytany identyfikator i ponownie potwierdź objęcie formularza zasadami.",
     "cmsPolicyDetected": "Identyfikator zasad został odczytany z Państwa witryny. Potwierdzenie przypisuje tę wersję zasad.",
     "cmsPolicyDetectionFailed": "Nie udało się odczytać identyfikatora zasad (witryna może blokować dostęp lub nie zawierać konfiguracji Complianz). Proszę spróbować ponownie lub wpisać go ręcznie.",
     "cmsPolicyManual": "Wpisz ręcznie",

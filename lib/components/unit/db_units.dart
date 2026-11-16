@@ -27,21 +27,31 @@ class DbUnits {
     int version,
     String revision,
   ) async {
-    final response = await _supabase.functions.invoke(
-      'probe-complianz',
-      body: {
-        'unitId': unitId,
-        'origin': origin,
-        'confirm': true,
-        'platform': platform,
-        'expectedPolicyId': policyId,
-        'version': version,
-        'revision': revision,
-      },
-    );
-    return UnitWebsiteConsent.fromJson(
-      Map<String, dynamic>.from(response.data as Map),
-    );
+    try {
+      final response = await _supabase.functions.invoke(
+        'probe-complianz',
+        body: {
+          'unitId': unitId,
+          'origin': origin,
+          'confirm': true,
+          'platform': platform,
+          'expectedPolicyId': policyId,
+          'version': version,
+          'revision': revision,
+        },
+      );
+      return UnitWebsiteConsent.fromJson(
+        Map<String, dynamic>.from(response.data as Map),
+      );
+    } on FunctionException catch (error) {
+      final details = error.details;
+      if (error.status == 409 &&
+          details is Map &&
+          details['error'] == 'policy_changed') {
+        throw const ComplianzPolicyChanged();
+      }
+      rethrow;
+    }
   }
 
   static Future<UnitWebsiteConsent> getWebsiteConsent(int unitId) async =>

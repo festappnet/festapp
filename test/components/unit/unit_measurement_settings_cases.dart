@@ -36,6 +36,237 @@ void main() {
       await loader.load();
     }
   });
+  Future<void> pumpConsent(
+    WidgetTester tester, {
+    List<String> approved = const [],
+    Future<String> Function(String)? detect,
+    List<Map<String, dynamic>> bindings = const [],
+    Future<UnitWebsiteConsent> Function(
+      String,
+      String,
+      Map<String, dynamic>,
+      int,
+      String,
+      bool,
+    )?
+    save,
+    Future<UnitWebsiteConsent> Function(String, String, String, int, String)?
+    confirmDetected,
+  }) => tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: UnitWebsiteConsentSettings(
+            unitId: 2,
+            websites: const ['https://poradatel.cz'],
+            approvedWebsites: approved,
+            saved: true,
+            load: () async => UnitWebsiteConsent.fromJson({
+              'consentRevision': 'a' * 32,
+              'bindings': bindings,
+            }),
+            detectPolicy: detect,
+            save: save,
+            confirmDetected: confirmDetected,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  testWidgets('Complianz manual draft is editable before website approval', (
+    tester,
+  ) async {
+    Map<String, dynamic>? draft;
+    await pumpConsent(
+      tester,
+      detect: (_) async =>
+          throw StateError('unapproved website must never be fetched'),
+      save: (_, _, config, _, _, confirm) async {
+        expect(confirm, false);
+        draft = config;
+        return UnitWebsiteConsent.fromJson({
+          'consentRevision': 'a' * 32,
+          'bindings': [],
+        });
+      },
+    );
+    await tester.pumpAndSettle();
+    expect(find.text(CommonStrings.loading), findsNothing);
+    await tester.tap(find.text(FormStrings.cmsPolicyManual));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+      '42',
+    );
+    await tester.pump();
+    await tester.ensureVisible(find.text(FormStrings.cmsSaveDraft));
+    await tester.tap(find.text(FormStrings.cmsSaveDraft));
+    await tester.pumpAndSettle();
+    expect(draft, {'provider': 'complianz', 'policyId': '42'});
+  });
+
+  testWidgets(
+    'Complianz pending probe does not block changing provider and ignores late result',
+    (tester) async {
+      final pending = Completer<String>();
+      await pumpConsent(
+        tester,
+        approved: const ['https://poradatel.cz'],
+        detect: (_) => pending.future,
+      );
+      await tester.pumpAndSettle();
+      final selectors = tester
+          .widgetList<DropdownButtonFormField<String>>(
+            find.byType(DropdownButtonFormField<String>),
+          )
+          .toList();
+      expect(selectors.every((selector) => selector.onChanged != null), true);
+      // Drive the same callback used by keyboard and dropdown selection.
+      selectors.last.onChanged!('cookiebot');
+      await tester.pumpAndSettle();
+      expect(find.text(CommonStrings.loading), findsNothing);
+      pending.complete('42');
+      await tester.pumpAndSettle();
+      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsNothing);
+      expect(find.text(FormStrings.cmsFreshChoiceHelp), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Complianz failed reload preserves saved draft and manual changes',
+    (tester) async {
+      await pumpConsent(
+        tester,
+        approved: const ['https://poradatel.cz'],
+        detect: (_) async => throw StateError('blocked'),
+        bindings: [
+          {
+            'id': '11111111-1111-1111-1111-111111111111',
+            'websiteOrigin': 'https://poradatel.cz',
+            'platform': 'wordpress',
+            'version': 1,
+            'state': 'draft',
+            'providerConfig': {'provider': 'complianz', 'policyId': '41'},
+          },
+        ],
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('${FormStrings.cmsPolicySaved}: 41'), findsOneWidget);
+      await tester.tap(find.text(FormStrings.cmsPolicyManual));
+      await tester.pumpAndSettle();
+      final field = find.widgetWithText(TextField, FormStrings.cmsPolicyId);
+      expect(tester.widget<TextField>(field).controller!.text, '41');
+      await tester.enterText(field, '43');
+      await tester.ensureVisible(find.text(FormStrings.cmsPolicyReload));
+      await tester.tap(find.text(FormStrings.cmsPolicyReload));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(field).controller!.text, '43');
+    },
+  );
+
+  testWidgets(
+    'Complianz changed-policy conflict reloads and requires fresh confirmation',
+    (tester) async {
+      var probes = 0;
+      var confirmations = 0;
+      await pumpConsent(
+        tester,
+        approved: const ['https://poradatel.cz'],
+        detect: (_) async => ++probes == 1 ? '42' : '43',
+        save: (_, _, _, _, _, _) async =>
+            throw StateError('detected confirmation must use probe'),
+        confirmDetected: (_, _, policy, _, _) async {
+          confirmations++;
+          if (confirmations == 1) {
+            expect(policy, '42');
+            throw const ComplianzPolicyChanged();
+          }
+          expect(policy, '43');
+          return UnitWebsiteConsent.fromJson({
+            'consentRevision': 'a' * 32,
+            'bindings': [],
+          });
+        },
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byType(Checkbox));
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+      await tester.ensureVisible(find.text(FormStrings.cmsConfirm));
+      await tester.tap(find.text(FormStrings.cmsConfirm));
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsPolicyChanged), findsOneWidget);
+      expect(find.text('${FormStrings.cmsPolicyId}: 43'), findsOneWidget);
+      expect(find.text(FormStrings.cmsUnavailable), findsNothing);
+      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, false);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, FormStrings.cmsConfirm),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.ensureVisible(find.byType(Checkbox));
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+      await tester.ensureVisible(find.text(FormStrings.cmsConfirm));
+      await tester.tap(find.text(FormStrings.cmsConfirm));
+      await tester.pumpAndSettle();
+      expect(confirmations, 2);
+      expect(
+        probes,
+        2,
+        reason: 'successful confirmation must not immediately probe again',
+      );
+    },
+  );
+
+  testWidgets(
+    'Complianz conflict recovery releases busy state after stalled probe deadline',
+    (tester) async {
+      var attempts = 0;
+      final pending = Completer<String>();
+      await pumpConsent(
+        tester,
+        approved: const ['https://poradatel.cz'],
+        detect: (_) => ++attempts == 1 ? Future.value('42') : pending.future,
+        confirmDetected: (_, _, _, _, _) async =>
+            throw const ComplianzPolicyChanged(),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byType(Checkbox));
+      await tester.tap(find.byType(Checkbox));
+      await tester.pump();
+      await tester.ensureVisible(find.text(FormStrings.cmsConfirm));
+      await tester.tap(find.text(FormStrings.cmsConfirm));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 21));
+      await tester.pumpAndSettle();
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.text(FormStrings.cmsPolicyDetectionFailed), findsOneWidget);
+      expect(
+        tester
+            .widgetList<DropdownButtonFormField<String>>(
+              find.byType(DropdownButtonFormField<String>),
+            )
+            .every((selector) => selector.onChanged != null),
+        true,
+      );
+      await tester.ensureVisible(find.text(FormStrings.cmsPolicyManual));
+      await tester.tap(find.text(FormStrings.cmsPolicyManual));
+      await tester.pumpAndSettle();
+      final field = find.widgetWithText(TextField, FormStrings.cmsPolicyId);
+      expect(tester.widget<TextField>(field).enabled, true);
+      expect(tester.widget<TextField>(field).controller!.text, '42');
+      pending.complete('43');
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(field).controller!.text, '42');
+    },
+  );
+
   testWidgets(
     'Complianz probes only saved approved origins and ignores revoked results',
     (tester) async {
