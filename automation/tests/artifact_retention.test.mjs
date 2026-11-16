@@ -1,7 +1,7 @@
 import test from 'node:test';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
-import {cleanArtifacts, retentionPlan, publicationFromJob} from '../release/artifact_retention.mjs';
+import {cleanArtifacts, retentionPlan, publicationFromJob, readJobLog} from '../release/artifact_retention.mjs';
 
 const now = Date.parse('2026-10-28T12:00:00Z');
 const sha = 'a'.repeat(40);
@@ -117,4 +117,46 @@ test('the forbidden original Android app is excluded before producer lookup and 
   f.api.run=async id=>{assert.notEqual(id,99);return f.runs[0];};
   await cleanArtifacts({...f,apply:true});
   assert.ok(!f.deleted.includes(99));
+});
+
+
+test('captures old CLI log data privately without sending an unsupported flag', () => {
+  const f=publicationFixture();const calls=[];
+  const log=readJobLog(f.job.id,(command,args,options)=>{
+    calls.push({command,args,options});
+    assert.ok(!args.includes('--allow-escape-sequences'));
+    return Buffer.from(f.log.replace('##[group]','\x1b[36m##[group]\x1b[0m'));
+  });
+  assert.equal(calls.length,1);
+  assert.deepEqual(calls[0].options.stdio,['ignore','pipe','pipe']);
+  assert.equal(log.includes('\x1b'),false);
+  assert.ok(publicationFromJob(f.run,f.job,log));
+});
+
+test('replays hosted gh escape rejection through the real read-only recovery executor', () => {
+  const f=publicationFixture();const calls=[];
+  const rejection=Object.assign(new Error('Command failed: gh api job/logs'),{status:1,
+    stderr:Buffer.from('the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway\n')});
+  const log=readJobLog(f.job.id,(command,args,options)=>{
+    calls.push(args);
+    if(calls.length===1) throw rejection;
+    assert.deepEqual(options.stdio,['ignore','pipe','pipe']);
+    return Buffer.from(f.log);
+  });
+  const endpoint=`repos/festappnet/festapp/actions/jobs/${f.job.id}/logs`;
+  assert.deepEqual(calls,[['api',endpoint],['api','--allow-escape-sequences',endpoint]]);
+  assert.ok(publicationFromJob(f.run,f.job,log));
+});
+
+test('auth, network and other CLI errors fail closed without retries; recovery also has one attempt', () => {
+  for(const error of [Object.assign(new Error('HTTP403'),{status:1,stderr:Buffer.from('HTTP403')}),
+    Object.assign(new Error('network failure'),{status:2,stderr:Buffer.from('network failure')})]) {
+    let calls=0;
+    assert.throws(()=>readJobLog(42,()=>{calls++;throw error;}),e=>e===error);
+    assert.equal(calls,1);
+  }
+  let calls=0;
+  assert.throws(()=>readJobLog(42,()=>{calls++;throw Object.assign(new Error('escape rejection'),{status:1,
+    stderr:Buffer.from('the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway')});}),/escape rejection/);
+  assert.equal(calls,2);
 });
