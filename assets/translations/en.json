@@ -5779,6 +5779,7 @@
     "answersLocked": "Submitted answers are locked for customers, including names and phone numbers. Contact staff for corrections.",
     "cancellationScopeHelp": "Customers can cancel the entire order or selected tickets.",
     "deadlineDate": "Date",
+    "deadlineDefault": "Leave blank to allow cancellation until the event starts.",
     "deadlineTime": "Time"
   },
   "FeatureCustomerSelfService": {

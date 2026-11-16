@@ -676,27 +676,27 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.current_activity_graph_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d0583e00959d3db738d339078e980dca'),'current SQL source parity: public.current_activity_graph_internal_v1(bigint)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.custom_email_send_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='ace7a31980f690d9f854ab8c0474ae25'),'current SQL source parity: public.custom_email_send_rule(boolean,boolean)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_change_read_scope_internal(text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='15f17cfc3a7ad98e9cfffd38e87ef283'),'current SQL source parity: public.customer_change_read_scope_internal(text,bigint)');
 -- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
  PERFORM assert_true(to_regprocedure('public.customer_move_preview_internal(bigint,bigint)') IS NULL,'retired SQL identity remains absent: public.customer_move_preview_internal(bigint,bigint)');
 -- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
  PERFORM assert_true(to_regprocedure('public.customer_move_targets_internal(bigint)') IS NULL,'retired SQL identity remains absent: public.customer_move_targets_internal(bigint)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_actions_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='0a79fb2c4a623840f626fb5db84e466f'),'current SQL source parity: public.customer_order_actions_internal(bigint)');
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_actions_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d6bd28c067b8ac98a72cd0a820422611'),'current SQL source parity: public.customer_order_actions_internal(bigint)');
 -- supabase/migrations/20261115140000_discount_code_projections.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_answers_internal(bigint,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='23f2289791c885f2b41f519543cfb3b3'),'current SQL source parity: public.customer_order_answers_internal(bigint,jsonb,boolean)');
 -- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_change_gateway(text,text,bigint,text,jsonb,uuid,text,jsonb,text)') AND md5(btrim(prosrc,E' \n\r\t'))='ab3dca316440dd962cc458c54521affd'),'current SQL source parity: public.customer_order_change_gateway(text,text,bigint,text,jsonb,uuid,text,jsonb,text)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_change_requests_internal(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='ab6cef20c59c1da9f0a221e5cfd127c7'),'current SQL source parity: public.customer_order_change_requests_internal(bigint,boolean)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_feature_enabled_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f187e020d66153e855a7894b8d01ec80'),'current SQL source parity: public.customer_order_feature_enabled_internal(bigint)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_operation_enabled_internal(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='56601b6e5719e69b41db649f16008229'),'current SQL source parity: public.customer_order_operation_enabled_internal(bigint,text)');
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_operation_enabled_internal(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='9c663f973ec013c95c59612759a04fee'),'current SQL source parity: public.customer_order_operation_enabled_internal(bigint,text)');
 -- supabase/migrations/20261115140000_discount_code_projections.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_payment_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e3d25046a9b70ca9dcb2e28ac0c6786b'),'current SQL source parity: public.customer_order_payment_internal(bigint)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_order_policy_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='aae4a0a485cd6af6535d07b58a50c12c'),'current SQL source parity: public.customer_order_policy_internal(bigint)');
 -- supabase/migrations/20261115140000_discount_code_projections.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.customer_ticket_label_internal(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d23a4dc27f263f3cd9a32fd62bff5acb'),'current SQL source parity: public.customer_ticket_label_internal(bigint,bigint)');
@@ -1688,8 +1688,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.news_data_read_rule(boolean,boolean,boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f68f00938a5a8efee47af7edc0062f94'),'current SQL source parity: public.news_data_read_rule(boolean,boolean,boolean,boolean,boolean,boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_activity_graph_internal_v1(bigint,jsonb,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='6c56b08f6a179fdf44f44e85b1498afc'),'current SQL source parity: public.normalize_activity_graph_internal_v1(bigint,jsonb,boolean,boolean)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_customer_order_policy_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='873d43c64fd87330672d9acd00c45fad'),'current SQL source parity: public.normalize_customer_order_policy_internal(jsonb)');
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_customer_order_policy_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='21b357d1bd3f1df573f7e4dbdb666834'),'current SQL source parity: public.normalize_customer_order_policy_internal(jsonb)');
 -- supabase/migrations/20261115150000_waitlist_count_setting.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.normalize_form_metadata_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='8b54a59749b16019602b5bf0dbe4b59c'),'current SQL source parity: public.normalize_form_metadata_internal(jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -1998,7 +1998,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_blueprint_swap(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6bc2f649ca6af0580e24d40a9a2a44ed'),'current SQL source parity: public.preview_blueprint_swap(bigint,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_blueprint_ticket_cancellation(bigint,bigint,bigint,bigint,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='4bc04afa7720cc11551b226ad2777443'),'current SQL source parity: public.preview_blueprint_ticket_cancellation(bigint,bigint,bigint,bigint,bigint[])');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_customer_order_change_internal(bigint,text,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='17f31a078a5e0a0a6f05ceeddda9d0b3'),'current SQL source parity: public.preview_customer_order_change_internal(bigint,text,jsonb,boolean)');
 -- supabase/migrations/20261115120000_discount_codes.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.preview_form_order_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='5e783c0fb2071de766194b2a3062f5be'),'current SQL source parity: public.preview_form_order_internal(bigint,jsonb)');
@@ -2224,7 +2224,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_blueprint_layout_internal_v1(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1757e48f111e5970cac96665f0274e8c'),'current SQL source parity: public.save_blueprint_layout_internal_v1(jsonb)');
 -- supabase/migrations/20261110200000_form_measurement_consent_bridge.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_configuration_settings(text,bigint,bigint,bigint,bigint,uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='ec15183b478f3f2d8525bad4e9c7ba4f'),'current SQL source parity: public.save_configuration_settings(text,bigint,bigint,bigint,bigint,uuid,jsonb)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_customer_order_policy_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f35c5c34e7f3b6707c9eca69142af5c1'),'current SQL source parity: public.save_customer_order_policy_internal(bigint,jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.save_delegated_ticket_layout(bigint,bigint,bigint,uuid,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='651a433fe2341eeb0297c75f9d72bae4'),'current SQL source parity: public.save_delegated_ticket_layout(bigint,bigint,bigint,uuid,bigint,jsonb)');
@@ -2620,7 +2620,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.validate_blueprint_layout_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='e47c90a3b876bf35d3b4a672f604e447'),'current SQL source parity: public.validate_blueprint_layout_internal(jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.validate_configuration_value_internal_v1(jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='b1c55a15625d6d697c74393a97ebaa03'),'current SQL source parity: public.validate_configuration_value_internal_v1(jsonb,jsonb)');
--- supabase/migrations/20261116010000_customer_cancellation_cutover.sql
+-- supabase/migrations/20261116020000_customer_cancellation_default_deadline.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.validate_customer_cancellation_reason_internal(jsonb,text)') AND md5(btrim(prosrc,E' \n\r\t'))='ba3aa057093f95bf0a8682b4bf4b92a2'),'current SQL source parity: public.validate_customer_cancellation_reason_internal(jsonb,text)');
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.validate_email_template_content_internal(text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='82b5111e3ce1028ccf0a07b36c70d639'),'current SQL source parity: public.validate_email_template_content_internal(text,text)');

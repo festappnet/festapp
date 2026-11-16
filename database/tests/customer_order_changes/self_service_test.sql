@@ -29,7 +29,7 @@ BEGIN
  PERFORM assert_eq((SELECT revision FROM eshop.customer_order_change_policies WHERE form_id=f),rev+1,'changed policy advances revision');
  BEGIN
   PERFORM public.normalize_customer_order_policy_internal('{"cancel":{"enabled":true}}');
-  RAISE EXCEPTION 'missing deadline/mode accepted';
+  RAISE EXCEPTION 'missing cancellation mode accepted';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN
   PERFORM public.normalize_customer_order_policy_internal('{"edit":{"enabled":false,"fields":[{"id":1,"type":"email"}]}}');
@@ -161,5 +161,40 @@ BEGIN
  BEGIN
   PERFORM public.validate_customer_cancellation_reason_internal('{"reason_required":false}',repeat('a',2001));
   RAISE EXCEPTION 'oversize reason accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+END $$;
+
+-- Missing cancellation deadlines follow the live occasion start, never sale dates.
+DO $$
+DECLARE x jsonb:=pg_temp.payment_fixture(); fid bigint:=(x->>'form')::bigint;
+ oc bigint:=(x->>'occasion')::bigint; oid bigint:=(x->>'order')::bigint;
+ rule jsonb:='{"enabled":true,"mode":"approval_required","reason_required":false,"refund_mode":"none"}';
+ start_at timestamptz:=statement_timestamp()+interval '2 hours'; actions jsonb;
+BEGIN
+ UPDATE public.occasions SET start_time=start_at,features=features||'[{"code":"customer_self_service","is_enabled":true}]'::jsonb WHERE id=oc;
+ PERFORM public.save_customer_order_policy_internal(fid,jsonb_build_object('cancel',rule));
+ PERFORM assert_true(public.customer_order_operation_enabled_internal(fid,'cancel'),'omitted deadline permits cancellation before occasion start');
+ actions:=public.customer_order_actions_internal(oid);
+ PERFORM assert_eq((actions#>>'{0,allowedUntil}')::timestamptz,start_at,'customer action displays effective occasion deadline');
+ PERFORM public.preview_customer_order_change_internal(oid,'cancel','{}');
+ UPDATE public.occasions SET start_time=statement_timestamp() WHERE id=oc;
+ PERFORM assert_false(public.customer_order_operation_enabled_internal(fid,'cancel'),'cancellation closes exactly at occasion start');
+ BEGIN
+  PERFORM public.preview_customer_order_change_internal(oid,'cancel','{}');
+  RAISE EXCEPTION 'expired default deadline accepted';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ UPDATE public.occasions SET start_time=statement_timestamp()-interval '1 hour' WHERE id=oc;
+ PERFORM assert_false(public.customer_order_operation_enabled_internal(fid,'cancel'),'changed occasion start is honored without rewriting policy');
+ rule:=rule||jsonb_build_object('allowed_until',start_at);
+ PERFORM public.save_customer_order_policy_internal(fid,jsonb_build_object('cancel',rule));
+ PERFORM assert_true(public.customer_order_operation_enabled_internal(fid,'cancel'),'explicit later deadline overrides an already-started occasion');
+ PERFORM assert_eq((public.customer_order_actions_internal(oid)#>>'{0,allowedUntil}')::timestamptz,start_at,'customer action displays explicit deadline');
+ UPDATE public.occasions SET start_time=statement_timestamp()+interval '1 day' WHERE id=oc;
+ rule:=rule||jsonb_build_object('allowed_until',statement_timestamp()-interval '1 hour');
+ PERFORM public.save_customer_order_policy_internal(fid,jsonb_build_object('cancel',rule));
+ PERFORM assert_false(public.customer_order_operation_enabled_internal(fid,'cancel'),'explicit earlier deadline retains precedence over future occasion');
+ BEGIN
+  PERFORM public.normalize_customer_order_policy_internal(jsonb_build_object('cancel',rule||'{"allowed_until":null}'::jsonb));
+  RAISE EXCEPTION 'malformed explicit deadline accepted';
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
 END $$;

@@ -17,7 +17,7 @@ BEGIN
    OR EXISTS(SELECT 1 FROM jsonb_object_keys(rule) k WHERE k NOT IN ('enabled','allowed_until',
      'fields','mode','reason_required','refund_mode')) THEN
    RAISE invalid_parameter_value USING MESSAGE='invalid customer operation policy'; END IF;
-  IF rule->'enabled'='true'::jsonb OR rule ? 'allowed_until' THEN
+  IF (op.key<>'cancel' AND rule->'enabled'='true'::jsonb) OR rule ? 'allowed_until' THEN
    IF jsonb_typeof(rule->'allowed_until') IS DISTINCT FROM 'string'
     OR rule->>'allowed_until' !~ '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$' THEN
     RAISE invalid_parameter_value USING MESSAGE='customer operation deadline required'; END IF;
@@ -86,7 +86,7 @@ REVOKE ALL ON FUNCTION public.customer_order_policy_internal(bigint) FROM PUBLIC
 CREATE OR REPLACE FUNCTION public.customer_order_operation_enabled_internal(p_form bigint,p_operation text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT coalesce((SELECT p.policy#>ARRAY[p_operation,'enabled']='true'::jsonb
-  AND nullif(p.policy#>>ARRAY[p_operation,'allowed_until'],'')::timestamptz>statement_timestamp()
+  AND coalesce(nullif(p.policy#>>ARRAY[p_operation,'allowed_until'],'')::timestamptz,o.start_time)>statement_timestamp()
   AND jsonb_path_exists(coalesce(o.features,'[]'),'$[*] ? (@.code == "customer_self_service" && @.is_enabled == true)')
   FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
   JOIN eshop.customer_order_change_policies p ON p.form_id=f.id

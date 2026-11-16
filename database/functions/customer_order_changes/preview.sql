@@ -39,7 +39,7 @@ BEGIN
     OR EXISTS(SELECT 1 FROM public.get_order_tickets_internal(o.id) WHERE state='waitlisted') THEN 'waitlist_family'
    ELSE NULL END;
   actions:=actions||jsonb_build_array(jsonb_build_object('operation',op,'enabled',reason IS NULL,'reason',reason,
-   'allowedUntil',rule->'allowed_until','mode',rule->'mode','reasonRequired',rule->'reason_required',
+   'allowedUntil',coalesce(nullif(rule->>'allowed_until','')::timestamptz,(SELECT start_time FROM public.occasions WHERE id=o.occasion)),'mode',rule->'mode','reasonRequired',rule->'reason_required',
    'refundMode',rule->'refund_mode','tickets',CASE WHEN op='cancel' AND reason IS NULL THEN (SELECT coalesce(jsonb_agg(jsonb_build_object('id',t.id,'label',public.customer_ticket_label_internal(t.id,o.form)) ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t WHERE t.state NOT IN ('used','storno','expired','stock','waitlisted','preparing_payment')) ELSE '[]'::jsonb END));
  END LOOP;
  RETURN actions;
