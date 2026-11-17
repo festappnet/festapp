@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Guard selected canonical Function releases against exact installed bytes.
 
-Selected releases never replace shared modules, dependencies, locks or router.
-A changed shared dependency requires a coordinated full release instead.
+Shared modules change only when individually selected and pinned in the manifest.
+Every other installed module, dependency, lock and router remains unchanged.
 """
 import argparse
 import hashlib
@@ -42,9 +42,10 @@ def inventory(root):
     return {'version': 1, 'files': files, 'tree_sha256': digest(json.dumps(files, sort_keys=True, separators=(',', ':')).encode())}
 
 
-def module_closure(root, functions):
+def module_closure(root, functions, shared_modules):
     root = root.resolve()
     pending = [root / name / 'index.ts' for name in functions]
+    pending.extend(root / name for name in shared_modules)
     seen, external = set(), set()
     while pending:
         path = pending.pop().resolve()
@@ -62,27 +63,41 @@ def module_closure(root, functions):
     return seen, external
 
 
-def selection(source, base, functions):
+def selection(source, base, functions, shared_modules=()):
     require(functions and len(set(functions)) == len(functions), 'Invalid Function selection')
     require(all(re.fullmatch(r'[a-z][a-z0-9-]+', name) and name not in ('main', 'hello', 'instance-install') for name in functions), 'Invalid Function name')
     require(base.get('version') == 1 and base.get('tree_sha256') == digest(json.dumps(base['files'], sort_keys=True, separators=(',', ':')).encode()), 'Invalid base inventory')
-    closure, external = module_closure(source, functions)
-    dependencies = {name: digest((source / name).read_bytes()) for name in sorted(closure) if name.split('/')[0] not in functions}
+    require(len(set(shared_modules)) == len(shared_modules), 'Duplicate shared module selection')
+    require(all(re.fullmatch(r'_shared/[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)', name)
+                and name in base['files'] and not (source / name).is_symlink()
+                for name in shared_modules), 'Shared selection must name existing direct code modules')
+    closure, external = module_closure(source, functions, shared_modules)
+    dependencies = {name: digest((source / name).read_bytes()) for name in sorted(closure)
+                    if name.split('/')[0] not in functions and name not in shared_modules}
     require(all(base['files'].get(name) == value for name, value in dependencies.items()), 'Shared dependency differs from installed canonical owner; coordinate a full release')
     # External specs must already exist in the installed lock; selected releases
     # cannot upgrade or silently fetch a new dependency graph.
     lock = source / 'deno.lock'
     require(base['files'].get('deno.lock') == digest(lock.read_bytes()), 'Dependency lock differs; coordinate a full release')
     return {'functions': sorted(functions), 'base_runtime_sha256': base['tree_sha256'],
+            'shared_modules': {name: digest((source / name).read_bytes()) for name in sorted(shared_modules)},
             'dependencies': dependencies, 'external_imports': sorted(external),
             'lock_sha256': base['files']['deno.lock']}
 
 
 def stage(current, stage, manifest):
-    selected = manifest['selection']
+    selected = dict(manifest['selection'])
+    selected.setdefault('shared_modules', {})
     require(inventory(current)['tree_sha256'] == selected['base_runtime_sha256'], 'Installed Function tree changed since selection')
     allowed = selected['functions']
-    require(set(p.name for p in stage.iterdir()) == set(allowed), 'Selected archive has unexpected paths')
+    shared = selected['shared_modules']
+    require(isinstance(shared, dict), 'Invalid shared module manifest')
+    require(set(p.name for p in stage.iterdir()) == set(allowed) | ({'_shared'} if shared else set()),
+            'Selected archive has unexpected paths')
+    if shared:
+        require((stage / '_shared').is_dir() and not (stage / '_shared').is_symlink(), 'Unsafe shared archive directory')
+        actual_shared = {'_shared/' + name: value for name, value in inventory(stage / '_shared')['files'].items()}
+        require(actual_shared == shared, 'Shared archive differs from its explicit module selection')
     for name in allowed:
         require(re.fullmatch(r'[a-z][a-z0-9-]+', name) and name not in ('main', 'hello', 'instance-install'), 'Unsafe selected Function')
         require((stage / name).is_dir() and not (stage / name).is_symlink(), 'Missing selected Function directory')
@@ -94,18 +109,17 @@ def stage(current, stage, manifest):
         for name in allowed:
             shutil.rmtree(candidate / name)
             shutil.copytree(stage / name, candidate / name)
-        actual = selection(candidate, inventory(current), allowed)
+        for name in shared:
+            require(re.fullmatch(r'_shared/[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)', name), 'Unsafe shared module path')
+            shutil.copy2(stage / name, candidate / name)
+        actual = selection(candidate, inventory(current), allowed, shared)
         require(actual == selected, 'Selected dependency manifest does not match source')
         before, after = inventory(current)['files'], inventory(candidate)['files']
-        unchanged = lambda values: {name: value for name, value in values.items() if name.split('/')[0] not in allowed}
+        unchanged = lambda values: {name: value for name, value in values.items()
+                                    if name.split('/')[0] not in allowed and name not in shared}
         require(unchanged(before) == unchanged(after), 'Unselected Function bytes changed')
-        for path in current.iterdir():
-            if path.name in allowed:
-                continue
-            if path.is_dir():
-                shutil.copytree(path, stage / path.name)
-            else:
-                shutil.copy2(path, stage / path.name)
+        shutil.copytree(candidate, stage, dirs_exist_ok=True)
+        require(inventory(stage) == inventory(candidate), 'Staged Function tree differs from verified candidate')
     finally:
         shutil.rmtree(candidate, ignore_errors=True)
 
@@ -116,13 +130,15 @@ def main():
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--base', type=Path)
     parser.add_argument('--functions')
+    parser.add_argument('--shared-modules', default='')
     parser.add_argument('--stage', type=Path)
     parser.add_argument('--manifest', type=Path)
     args = parser.parse_args()
     if args.command == 'inventory':
         print(json.dumps(inventory(args.root), sort_keys=True))
     elif args.command == 'select':
-        print(json.dumps(selection(args.root, json.loads(args.base.read_text()), args.functions.split(',')), sort_keys=True))
+        print(json.dumps(selection(args.root, json.loads(args.base.read_text()), args.functions.split(','),
+                                   args.shared_modules.split(',') if args.shared_modules else []), sort_keys=True))
     else:
         stage(args.root, args.stage, json.loads(args.manifest.read_text()))
 

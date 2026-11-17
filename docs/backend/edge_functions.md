@@ -167,7 +167,8 @@ Canonical production uses the reviewed self-hosted Function bundle, not
 
 The same canonical builder/installer can release a bounded set of Function
 directories without activating unrelated pending schema-dependent code. This
-mode never replaces `_shared`, the Deno lock, assets or the installed router.
+mode preserves the Deno lock, assets and installed router. Shared code is
+preserved unless an existing direct code module is explicitly selected.
 
 Collect an inventory with `function-bundle-selection.py inventory --root
 <installed-functions>` through the protected backend channel. On clean,
@@ -179,6 +180,15 @@ selected import closure must match the installed bytes. Dynamic module or
 filesystem dependencies require a full coordinated release. Missing or changed
 shared dependencies are a release blocker, never a reason to copy a private
 helper into the selected Function.
+
+For a separately reviewed shared-module edit, set
+`FESTAPP_FUNCTION_BUNDLE_SHARED_MODULES` to the comma-separated exact existing
+`_shared/*.ts`/`.js`/`.mjs` paths. The builder records each module hash, includes
+its import closure and packages only those files. New modules, nested paths,
+symlinks, changed unselected dependencies and changed locks are rejected. The
+installer verifies the exact shared-file set and hashes, then proves every other
+installed byte unchanged against the pinned base before activation. This permits
+an isolated renderer correction without replacing schema-dependent workers.
 
 The ordinary installer rechecks the complete installed tree digest under its
 existing runtime upgrade lock, recomputes the selected source's closure and

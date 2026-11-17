@@ -240,3 +240,10 @@ and operation validation consume the same shared rule. The API checker recognize
 only the provable response-narrowing case where an allOf member is exactly the
 complete old schema; request narrowing, unions and partial matches still fail.
 No schema-digest waiver or weakened release check is used.
+
+Selected production Function scope: `probe-complianz` plus the existing direct
+shared module `_shared/measurementApprovalEmail.ts` (only corrected domain-review
+wording). Canonical selected packaging explicitly pins that module's hash and
+closure; it preserves installed email workers, all other shared modules, router,
+lock and Wallet code byte-for-byte. Actual builder/archive/stager tests cover this
+path and reject traversal, extra files, tampering and changed dependencies.
