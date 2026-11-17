@@ -158,3 +158,10 @@ Validate owner-label cleanup refusal, image pins, version separation and the
 complete canonical image/seat/Wix mirror, then measure exact-source hosted CI
 before publication to main. The authorized review exception applies; required
 CI checks still apply. Report full versus reused execution separately.
+
+The first native attempt passed image/seat checks but refused an absent Docker
+volume because Docker uses lowercase `no such volume`; no CMS browser case ran.
+The guard now accepts absence case-insensitively while still rejecting daemon
+failures and foreign labels. A direct real-runtime startup/cleanup probe then
+verified both core/PHP pairs in 23.263 s locally, versus the previous local
+56.2 s WordPress start. This isolated probe is not a hosted or full-matrix claim.

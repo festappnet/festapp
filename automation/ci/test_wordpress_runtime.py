@@ -67,3 +67,12 @@ class WordPressRuntimeTest(unittest.TestCase):
         with patch('wordpress_runtime.subprocess.run', return_value=failed):
             with self.assertRaisesRegex(RuntimeError, 'Cannot inspect'):
                 runtime.stop()
+
+
+    def test_absent_volume_docker_message_is_case_insensitive(self):
+        runtime = WordPress(self.root, self.project, lambda *args: None)
+        for message in ['No such container: fixture', 'get fixture: no such volume', 'network fixture not found']:
+            with self.subTest(message=message):
+                failed = subprocess.CompletedProcess([], 1, '[]', message)
+                with patch('wordpress_runtime.subprocess.run', return_value=failed):
+                    self.assertIsNone(runtime._inspect('volume', 'fixture'))

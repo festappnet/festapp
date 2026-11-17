@@ -31,7 +31,7 @@ class WordPress:
         self.network = project + '-wordpress'
         self.database = self.network + '-db'
         self.private = self.root / '.private/wordpress'
-        self.private.mkdir(parents=True, mode=0o700)
+        self.private.mkdir(parents=True, mode=0o700, exist_ok=True)
         self.versions = {}
         for name, overrides in [('cli', {}), ('tests-cli', config['env']['tests'])]:
             current = {**config, **overrides}
@@ -59,7 +59,7 @@ class WordPress:
         result = subprocess.run(['docker', kind, 'inspect', name], capture_output=True, text=True)
         if result.returncode:
             # Distinguish an absent resource from a failed Docker daemon.
-            if 'No such' not in result.stderr and 'not found' not in result.stderr:
+            if 'no such' not in result.stderr.lower() and 'not found' not in result.stderr.lower():
                 raise RuntimeError('Cannot inspect owned WordPress resource')
             return None
         row = json.loads(result.stdout)[0]
@@ -91,11 +91,11 @@ class WordPress:
         for row in self.versions.values():
             self.run(['docker', 'volume', 'create', '--label', LABEL + '=' + self.project, row['volume']])
             extra = '\n'.join('define(' + json.dumps(key) + ',' + json.dumps(value) + ');'
-                for key, value in row['config'].items())
+                for key, value in row['config'].items() if key != 'WP_DEBUG')
             # Docker env files cannot contain multiline values. PHP accepts spaces.
             row['env'].write_text('\n'.join(['WORDPRESS_DB_HOST=' + self.database,
                 'WORDPRESS_DB_USER=root', 'WORDPRESS_DB_PASSWORD=' + password,
-                'WORDPRESS_DB_NAME=' + row['database'], 'WORDPRESS_CONFIG_EXTRA=' + extra.replace('\n', ' ')]) + '\n')
+                'WORDPRESS_DB_NAME=' + row['database'], 'WORDPRESS_DEBUG=' + ('1' if row['config'].get('WP_DEBUG') else ''), 'WORDPRESS_CONFIG_EXTRA=' + extra.replace('\n', ' ')]) + '\n')
             row['env'].chmod(0o600)
             self.run(['docker', 'run', '-d', '--name', row['container'], '--label', LABEL + '=' + self.project,
                 '--network', self.network, '--env-file', row['env'], '-p', '127.0.0.1:' + str(row['port']) + ':80',
