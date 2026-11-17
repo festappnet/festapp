@@ -96,7 +96,12 @@ Standalone uses the real Klaro UI with analytics and marketing services, off by
 default. The translated notice offers Decline, Accept and Settings in both bar and modal
 layouts, with equal prominence for Decline and Accept, a privacy URL and plain
 custom text. Settings opens the per-purpose dialog before any decision; the
-floating Consent settings button remains available for later changes.
+floating Consent settings button remains available for later changes on top-level
+pages, including a new tab opened through a consent link. It is never rendered
+in embeds. Embedded forms use the host bridge directly for consent, renewal
+and revocation; they never create a local Klaro controller or read a standalone
+choice cookie. Unknown or disconnected host choices remain denied without
+blocking checkout. The host website owns consent there.
 The dialog also shows an always-on, disabled necessary-data row for form
 operation, security and remembering the choice. This informational row is not a
 Klaro service, adds nothing to stored consent and maps to no Consent Mode signal. The notice blocks the page, not measurement. Saved choice belongs to
@@ -374,8 +379,8 @@ this purpose together with advertising.
 The initial central notice is blocking: Escape focuses the notice without saving
 a choice or closing it. Decline is available for a decision without optional
 consent. Escape in Settings discards the draft. Reopened Settings always offer
-Decline; after a saved decision focus returns to the floating Consent settings
-button. The button is fixed at the bottom left, with reserved scroll clearance.
+Decline; on top-level pages, after a saved decision focus returns to the floating
+Consent settings button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
 
 ## Live consent transfer to a new tab
@@ -605,8 +610,8 @@ are retired before publishing choices. Explicit local saves use the existing
 saved local decision wins when the link checks it; ordinary open Klaro tabs are
 not continuously synchronized.
 
-Successful transfer shows the floating settings button. Saving there makes a
-local decision; Escape closes settings without saving. Link helpers preserve
+Successful transfer to a top-level new tab shows the floating settings button.
+Saving there makes a local decision; Escape closes settings without saving. Link helpers preserve
 modifier clicks, downloads, noreferrer and referrer policies. A bare noopener
 does not opt out: browsers imply it for new tabs and CMS/SEO plugins (e.g. Rank
 Math) add it to every external link. Remove the marker to opt a link out.
