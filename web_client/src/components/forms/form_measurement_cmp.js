@@ -4,6 +4,7 @@ import {applyKlaroVisitChoice, bindKlaroConsent} from './form_measurement_consen
 import {FormStrings} from './form_strings.js';
 import {AppConfig} from '../../app_config.js';
 import {ColorUtils} from '../../utils/color_utils.js';
+import {isEmbed} from '../../services/embed_context.js';
 
 const channel = value => { const c = value / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
 const luminance = ({r, g, b}) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
@@ -42,6 +43,9 @@ function privacyUrl(value) {
 }
 
 export function startMeasurementConsent({win = window, model, setConsent, host, remoteSource}) {
+    let topLevel = false;
+    try { topLevel = win.self === win.top; } catch { /* Restricted frames remain embedded. */ }
+    const embedded = !topLevel || isEmbed(win.location);
     prepareConsentLink(win);
     const policy = model.data?.analytics;
     if (!Number.isSafeInteger(policy?.organization) || !Number.isSafeInteger(policy?.unit)) return () => {};
@@ -84,7 +88,7 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
     // Remote choice lives only in this controller; local saves keep Klaro storage.
     let imported = false;
     const hadConsentSpace = win.document.body.classList.contains('festapp-consent-space');
-    win.document.body.classList.add('festapp-consent-space');
+    if (!embedded) win.document.body.classList.add('festapp-consent-space');
     let focusTimer, disposed = false;
     const inertNodes = new Map();
     // Informational only: registering another Klaro service would change the
@@ -122,7 +126,7 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
         if (list && necessary.parentNode !== list) list.prepend(necessary);
         // On the standalone form the privacy policy opens in a new tab, so the
         // visitor does not leave a form in progress. Embedded forms show no bar.
-        if (win.self === win.top) root?.querySelectorAll('a[href]').forEach(link => {
+        if (topLevel) root?.querySelectorAll('a[href]').forEach(link => {
             if (link.target !== '_blank') link.target = '_blank';
             if (!link.relList.contains('noopener')) link.relList.add('noopener');
         });
@@ -333,7 +337,7 @@ ${layout}`;
         stopLink?.();
         imported = false;
         unlock(); style.remove();
-        if (!hadConsentSpace) win.document.body.classList.remove('festapp-consent-space');
+        if (!embedded && !hadConsentSpace) win.document.body.classList.remove('festapp-consent-space');
         win.document.getElementById(config.elementID)?.remove();
         try { manager?.unwatch(watcher); } catch { /* A broken CMP cannot retain permission. */ }
         try { unbind?.(); } catch { /* Cleanup still restores the page. */ }
@@ -363,28 +367,30 @@ ${layout}`;
         fail(true);
         return () => setConsent(false);
     }
-    // Floating, unobtrusive way to change the choice later (the notice itself
-    // links the privacy policy). Icon only; the label expands on hover/focus.
-    choices = win.document.createElement('button');
-    choices.hidden = true;
-    choices.setAttribute('aria-haspopup', 'dialog');
-    choices.type = 'button'; choices.className = 'festapp-consent-fab';
-    choices.setAttribute('aria-label', FormStrings.measurementConsentChoices);
-    choices.title = FormStrings.measurementConsentChoices;
-    const svg = win.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 -960 960 960'); svg.setAttribute('width', '24'); svg.setAttribute('height', '24'); svg.setAttribute('aria-hidden', 'true');
-    const path = win.document.createElementNS(svg.namespaceURI, 'path'); path.setAttribute('fill', 'currentColor');
-    path.setAttribute('d', 'M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-75 29-147t81-128.5q52-56.5 125-91T475-881q21 0 43 2t45 7q-9 45 6 85t45 66.5q30 26.5 71.5 36.5t85.5-5q-26 59 7.5 113t99.5 56q1 11 1.5 20.5t.5 20.5q0 82-31.5 154.5t-85.5 127q-54 54.5-127 86T480-80Zm-60-480q25 0 42.5-17.5T480-620q0-25-17.5-42.5T420-680q-25 0-42.5 17.5T360-620q0 25 17.5 42.5T420-560Zm-80 200q25 0 42.5-17.5T400-420q0-25-17.5-42.5T340-480q-25 0-42.5 17.5T280-420q0 25 17.5 42.5T340-360Zm260 40q17 0 28.5-11.5T640-360q0-17-11.5-28.5T600-400q-17 0-28.5 11.5T560-360q0 17 11.5 28.5T600-320ZM480-160q122 0 216.5-84T800-458q-50-22-78.5-60T683-603q-77-11-132-66t-68-132q-80-2-140.5 29t-101 79.5Q201-644 180.5-587T160-480q0 133 93.5 226.5T480-160Z');
-    svg.append(path);
-    const fabLabel = win.document.createElement('span');
-    fabLabel.className = 'festapp-consent-fab-label'; fabLabel.textContent = FormStrings.measurementConsentChoices;
-    choices.append(svg, fabLabel);
-    choices.addEventListener('click', () => {
-        try { klaro.show(config,true); } catch { fail(true); choices.remove(); }
-    });
-    // Body, not the form host: transformed form containers would anchor a
-    // fixed element to themselves instead of the viewport.
-    (win.document.body || host).append(choices);
+    if (!embedded) {
+        // Floating, unobtrusive way to change the choice later (the notice itself
+        // links the privacy policy). Icon only; the label expands on hover/focus.
+        choices = win.document.createElement('button');
+        choices.hidden = true;
+        choices.setAttribute('aria-haspopup', 'dialog');
+        choices.type = 'button'; choices.className = 'festapp-consent-fab';
+        choices.setAttribute('aria-label', FormStrings.measurementConsentChoices);
+        choices.title = FormStrings.measurementConsentChoices;
+        const svg = win.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 -960 960 960'); svg.setAttribute('width', '24'); svg.setAttribute('height', '24'); svg.setAttribute('aria-hidden', 'true');
+        const path = win.document.createElementNS(svg.namespaceURI, 'path'); path.setAttribute('fill', 'currentColor');
+        path.setAttribute('d', 'M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-75 29-147t81-128.5q52-56.5 125-91T475-881q21 0 43 2t45 7q-9 45 6 85t45 66.5q30 26.5 71.5 36.5t85.5-5q-26 59 7.5 113t99.5 56q1 11 1.5 20.5t.5 20.5q0 82-31.5 154.5t-85.5 127q-54 54.5-127 86T480-80Zm-60-480q25 0 42.5-17.5T480-620q0-25-17.5-42.5T420-680q-25 0-42.5 17.5T360-620q0 25 17.5 42.5T420-560Zm-80 200q25 0 42.5-17.5T400-420q0-25-17.5-42.5T340-480q-25 0-42.5 17.5T280-420q0 25 17.5 42.5T340-360Zm260 40q17 0 28.5-11.5T640-360q0-17-11.5-28.5T600-400q-17 0-28.5 11.5T560-360q0 17 11.5 28.5T600-320ZM480-160q122 0 216.5-84T800-458q-50-22-78.5-60T683-603q-77-11-132-66t-68-132q-80-2-140.5 29t-101 79.5Q201-644 180.5-587T160-480q0 133 93.5 226.5T480-160Z');
+        svg.append(path);
+        const fabLabel = win.document.createElement('span');
+        fabLabel.className = 'festapp-consent-fab-label'; fabLabel.textContent = FormStrings.measurementConsentChoices;
+        choices.append(svg, fabLabel);
+        choices.addEventListener('click', () => {
+            try { klaro.show(config,true); } catch { fail(true); choices.remove(); }
+        });
+        // Body, not the form host: transformed form containers would anchor a
+        // fixed element to themselves instead of the viewport.
+        (win.document.body || host).append(choices);
+    }
     const showNormal = () => {
         if (manager.confirmed) return;
         try {
@@ -423,5 +429,5 @@ ${layout}`;
         stopLink = remoteSource ? remoteSource.connect(remoteOptions) : requestLinkedConsent(remoteOptions);
         if (!stopLink.pending) showNormal();
     } catch { showNormal(); }
-    return () => {fail(); choices.remove();};
+    return () => {fail(); choices?.remove();};
 }

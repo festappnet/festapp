@@ -7,9 +7,9 @@ import {JSDOM} from 'jsdom';
 const bundle = await build({stdin:{contents:`
 import {startMeasurementConsent} from './src/components/forms/form_measurement_cmp.js';
 import {LocalizationService} from './src/services/localization_service.js';
-window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice, approved_hosts, measurement_consent_bridge = true) => {
+window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice, approved_hosts, measurement_consent_bridge = true, remoteSource, win = window) => {
  LocalizationService.translations = translations;
- return startMeasurementConsent({model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice,approved_hosts,measurement_consent_bridge}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
+ return startMeasurementConsent({win,remoteSource,model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice,approved_hosts,measurement_consent_bridge}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
 };`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
 const settle=()=>new Promise(resolve=>setTimeout(resolve,30));
 const none={analytics:false,marketing:false},both={analytics:true,marketing:true};
@@ -645,4 +645,75 @@ test('source disconnect removes imported grant and restores normal choice',async
  assert.deepEqual(f.grants.at(-1),none);assert.ok(f.win.document.querySelector('.cookie-modal-notice'));assert.equal(f.win.document.cookie,'');
  f.reply(true,true);await settle();assert.deepEqual(f.grants.at(-1),none);clean();
  }finally{f.close()}
+});
+
+for (const context of ['iframe', 'embed URL', 'restricted frame']) {
+ for (const state of ['accepted', 'declined', 'pending host', 'no source', 'local cookie']) {
+  test(`no floating settings in ${context} with ${state}`,async()=>{
+   const dom=new JSDOM('<html lang="cs"><body style="overflow:auto"><main></main></body></html>',{
+    url:'https://tickets.example/form/test'+(context==='embed URL'?'?embed=1':''),runScripts:'outside-only',pretendToBeVisual:true});
+   const win=dom.window,grants=[];
+   if(context==='iframe')dom.reconfigure({windowTop:{}});
+   const controllerWin=context==='restricted frame'?new Proxy(win,{get(target,key){
+    if(key==='top')throw new Error('Restricted WindowProxy');
+    const value=Reflect.get(target,key);
+    return typeof value==='function'?value.bind(target):value;
+   }}):win;
+   if(state==='local cookie')win.document.cookie='festapp-measurement-1-2-a='+encodeURIComponent(JSON.stringify(both))+'; Path=/';
+   const cookie=win.document.cookie;
+   let options,cleaned=0,cleanup;
+   const source=state==='no source'?undefined:{connect(input){
+    options=input;
+    const stop=()=>cleaned++;
+    stop.pending=true;
+    return stop;
+   }};
+   const absent=()=>{
+    assert.equal(win.document.querySelector('.festapp-consent-fab'),null);
+    assert.equal(win.document.body.classList.contains('festapp-consent-space'),false);
+   };
+   try {
+    win.eval(bundle.outputFiles[0].text);
+    cleanup=win.startFixture(cs(),{setConsent:value=>grants.push(plain(value))},
+     'https://organizer.example/privacy',undefined,undefined,true,source,controllerWin);
+    absent();await settle();absent();
+    if(state==='accepted' || state==='declined') {
+     const metadata={leaseId:'host',expiresAt:Date.now()+60000};
+     options.accept(state==='accepted'?both:none,metadata);
+     await settle();absent();
+     assert.deepEqual(grants.at(-1),{...(state==='accepted'?both:none),...metadata});
+     assert.equal(win.document.querySelector('.cookie-modal-notice'),null);
+    } else if(state==='local cookie') {
+     assert.equal(options.hasChoice(),true);
+     await settle();absent();assert.deepEqual(grants.at(-1),both);
+    } else {
+     if(options)options.settled();
+     await settle();absent();assert.deepEqual(grants.at(-1),none);
+     const root=win.document.querySelector('#festapp-measurement-consent');
+     assert.ok(root.querySelector('.cookie-modal-notice'));
+     root.querySelector('.cm-btn-lern-more').click();await settle();
+     key(win,win.document.activeElement,'Escape');await settle();absent();
+    }
+    assert.equal(win.document.cookie,cookie,'hiding the FAB never changes consent storage');
+    cleanup();cleanup=undefined;absent();
+    assert.equal(win.document.body.style.overflow,'auto');
+    if(source)assert.ok(cleaned>0);
+   } finally {cleanup?.();win.close();}
+  });
+ }
+}
+
+for (const embedded of [false,true]) test(`cleanup preserves pre-existing consent clearance (${embedded?'embed':'top-level'})`,async()=>{
+ const dom=new JSDOM('<html lang="cs"><body class="festapp-consent-space"><main></main></body></html>',{
+  url:'https://tickets.example/form/test'+(embedded?'?embed=1':''),runScripts:'outside-only',pretendToBeVisual:true});
+ const win=dom.window;
+ let cleanup;
+ try {
+  win.eval(bundle.outputFiles[0].text);
+  cleanup=win.startFixture(cs(),{setConsent(){}});
+  await settle();
+  assert.equal(win.document.body.classList.contains('festapp-consent-space'),true);
+  cleanup();cleanup=undefined;
+  assert.equal(win.document.body.classList.contains('festapp-consent-space'),true);
+ } finally {cleanup?.();win.close();}
 });
