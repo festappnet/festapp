@@ -153,7 +153,7 @@ try:
   cache_before=cache_bytes();browser_started=time.monotonic()
   run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps','chromium','firefox','webkit'],label='browsers.install')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
- with ThreadPoolExecutor(max_workers=3) as workers:
+ with ThreadPoolExecutor(max_workers=4) as workers:
   pending=[(name,workers.submit(prepare)) for name,prepare in [('backend',prepare_backend),('wordpress',prepare_wordpress),('joomla',prepare_joomla),('browsers',prepare_browsers)]]
   failures=[]
   for name,future in pending:
@@ -206,7 +206,7 @@ finally:
     os.killpg(p.pid,signal.SIGTERM)
     try:p.wait(timeout=10)
     except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
-  cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['node','scripts/environment.mjs','destroy','--force'],wp,'wordpress'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
+  cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['node','scripts/environment.mjs','cleanup','--force'],wp,'wordpress'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
   with ThreadPoolExecutor(max_workers=3) as workers:
    pending=[(key,workers.submit(run,command,cwd,label='cleanup.'+key)) for command,cwd,key in cleanup if started[key]]
    for key,future in pending:

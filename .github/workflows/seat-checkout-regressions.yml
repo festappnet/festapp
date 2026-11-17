@@ -41,13 +41,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: web_client/pnpm-lock.yaml
       - uses: supabase/setup-cli@v3
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.sql == 'true'
         with:
           version: 2.111.0
       - run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.sql == 'true'
       - name: Prepare isolated browser and database image
         if: steps.selection.outputs.run == 'true'
+        env:
+          FESTAPP_CI_NEEDS_DATABASE: ${{ steps.selection.outputs.sql }}
+          FESTAPP_CI_NEEDS_BROWSER: ${{ steps.selection.outputs.browser }}
         run: bash automation/ci/prepare-seat.sh
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
@@ -92,15 +95,15 @@ jobs:
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh
       - id: sdk
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.flutter == 'true'
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
       - uses: subosito/flutter-action@v2
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.flutter == 'true'
         with:
           flutter-version: ${{ steps.sdk.outputs.version }}
           cache: true
       - name: Use the installed SDK through FVM
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.flutter == 'true'
         run: |
           dart pub global activate fvm 4.1.2
           echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
