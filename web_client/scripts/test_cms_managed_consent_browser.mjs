@@ -33,16 +33,16 @@ try {
       await host.locator('iframe').first().waitFor({timeout:15000});const frame=host.frameLocator('iframe').first();
       await frame.locator('form').waitFor({timeout:30000});
       await frame.locator('body').evaluate(()=>new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{clearInterval(timer);reject(new Error('initial embed consent missing'));},15000);const timer=setInterval(()=>{if(window.__testEmbedMessages.includes('measurement-consent')){clearTimeout(timeout);clearInterval(timer);resolve();}},100);}));
-      const choices=frame.locator('.festapp-consent-fab');
-      await choices.waitFor({timeout:15000});await choices.evaluate(button=>button.click());
-      await frame.locator('.cm-modal .cm-btn-decline').first().evaluate(button=>button.click());
-      await frame.locator('.festapp-consent-fab').waitFor();
-      assert.ok((await frame.locator('body').evaluate(()=>document.cookie)).includes('festapp-measurement-'),'local choice was not stored');
+      // The host website owns consent in an embed: no floating settings button
+      // and no scroll clearance reserved for it.
+      assert.equal(await frame.locator('.festapp-consent-fab').count(),0,'embed rendered the consent settings button');
+      assert.equal(await frame.locator('body').evaluate(body=>body.classList.contains('festapp-consent-space')),false,'embed reserved consent button clearance');
       const count=await frame.locator('body').evaluate(()=>window.__testEmbedMessages.filter(type=>type==='measurement-consent').length);
       // Exercise the real 20s renewal interval without spending 20 wall seconds.
       // The browser timer, postMessage bridge and backend remain the real code.
       await host.clock.fastForward(21000);
-      await frame.locator('body').evaluate((_element,before)=>new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{clearInterval(timer);reject(new Error('embed renewal stopped after local save: before='+before+' messages='+JSON.stringify(window.__testEmbedMessages)));},30000);const timer=setInterval(()=>{if(window.__testEmbedMessages.filter(type=>type==='measurement-consent').length>before){clearTimeout(timeout);clearInterval(timer);resolve();}},250);}),count);
+      await frame.locator('body').evaluate((_element,before)=>new Promise((resolve,reject)=>{const timeout=setTimeout(()=>{clearInterval(timer);reject(new Error('embed renewal stopped: before='+before+' messages='+JSON.stringify(window.__testEmbedMessages)));},30000);const timer=setInterval(()=>{if(window.__testEmbedMessages.filter(type=>type==='measurement-consent').length>before){clearTimeout(timeout);clearInterval(timer);resolve();}},250);}),count);
+      assert.equal(await frame.locator('.festapp-consent-fab').count(),0,'embed rendered the consent settings button after renewal');
     } finally { await iframeContext.close(); }
   }
   const context=await owner.context({ignoreHTTPSErrors:true});
