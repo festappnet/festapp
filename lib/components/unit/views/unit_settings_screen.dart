@@ -213,19 +213,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
         );
   }
 
-  List<String> get _approvedMeasurementWebsites {
-    final approval = _measurementApproval;
-    if (_isLoadingMeasurementApproval ||
-        _measurementApprovalLoadFailed ||
-        approval == null ||
-        !approval.approved) {
-      return const [];
-    }
-    return approval.approvedOrigins
-        .where(approval.savedOrigins.contains)
-        .toList();
-  }
-
   Future<void> _loadMeasurementApproval() async {
     if (_isLoadingMeasurementApproval || _unit.id == null) return;
     setState(() {
@@ -837,8 +824,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                                               _measurementWebsitesController
                                                   .text,
                                             ),
-                                        approvedWebsites:
-                                            _approvedMeasurementWebsites,
                                         saved: _measurementSaved,
                                       )
                                     : null,
@@ -848,6 +833,10 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                                 ),
                                 websitesController:
                                     _measurementWebsitesController,
+                                savedWebsites: List<String>.from(
+                                  _unit.data?['measurement_websites'] ??
+                                      const [],
+                                ),
                                 approval: _measurementApproval,
                                 loadingApproval: _isLoadingMeasurementApproval,
                                 approvalLoadFailed:

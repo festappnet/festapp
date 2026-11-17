@@ -24,9 +24,6 @@ class UnitWebsiteConsentSettings extends StatefulWidget {
   final int unitId;
   final List<String> websites;
 
-  /// Saved, currently approved origins supplied by the owning settings screen.
-  /// Unknown or unavailable approval must not start an external website probe.
-  final List<String> approvedWebsites;
   final bool saved;
   final Future<UnitWebsiteConsent> Function()? load;
   final Future<UnitWebsiteConsent> Function(
@@ -45,7 +42,6 @@ class UnitWebsiteConsentSettings extends StatefulWidget {
     super.key,
     required this.unitId,
     required this.websites,
-    this.approvedWebsites = const [],
     required this.saved,
     this.load,
     this.detectPolicy,
@@ -79,7 +75,6 @@ class _UnitWebsiteConsentSettingsState
       widget.saved &&
       _origin != null &&
       widget.websites.contains(_origin) &&
-      widget.approvedWebsites.contains(_origin) &&
       _provider == 'complianz';
 
   void _cancelDetection() {
@@ -132,12 +127,9 @@ class _UnitWebsiteConsentSettingsState
   @override
   void didUpdateWidget(covariant UnitWebsiteConsentSettings oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final wasApproved = oldWidget.approvedWebsites.contains(_origin);
-    final isApproved = widget.approvedWebsites.contains(_origin);
-    if (!widget.saved || !isApproved) {
+    final isSaved = widget.saved && widget.websites.contains(_origin);
+    if (!isSaved) {
       _cancelDetection();
-    } else if (!wasApproved) {
-      _scheduleDetection();
     }
     if (!widget.saved) {
       _coverage = false;

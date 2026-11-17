@@ -31,6 +31,7 @@ class UnitMeasurementSettings extends StatelessWidget {
   final ValueChanged<bool> onEnabledChanged;
   final ValueChanged<String> onConsentLayoutChanged;
   final UnitMeasurementApproval? approval;
+  final List<String> savedWebsites;
   final bool loadingApproval;
   final bool approvalLoadFailed;
   final VoidCallback? onRetryApproval;
@@ -57,6 +58,7 @@ class UnitMeasurementSettings extends StatelessWidget {
     required this.onEnabledChanged,
     required this.onConsentLayoutChanged,
     this.approval,
+    this.savedWebsites = const [],
     this.loadingApproval = false,
     this.approvalLoadFailed = false,
     this.onRetryApproval,
@@ -111,18 +113,9 @@ class UnitMeasurementSettings extends StatelessWidget {
         websitesController != null &&
         !setEquals(sites.toSet(), approval!.savedOrigins.toSet());
     String websiteStatus(String site) {
-      if (!statusKnown) return FormStrings.measurementWebsiteUnknown;
-      if (!approval!.savedOrigins.contains(site)) {
-        return FormStrings.measurementWebsiteDraft;
-      }
-      if (approval!.approvedOrigins.contains(site)) {
-        return FormStrings.measurementWebsiteApproved;
-      }
-      if (approval!.requestState == MeasurementRequestState.requested &&
-          approval!.requestedOrigins.contains(site)) {
-        return FormStrings.measurementWebsitePending;
-      }
-      return FormStrings.measurementWebsiteUnrequested;
+      return savedWebsites.contains(site)
+          ? FormStrings.measurementWebsiteSaved
+          : FormStrings.measurementWebsiteDraft;
     }
 
     const gap = SizedBox(height: 24);
@@ -190,7 +183,7 @@ class UnitMeasurementSettings extends StatelessWidget {
               child: Text(CommonStrings.retry),
             ),
           ),
-        ] else if (enabled && statusKnown) ...[
+        ] else if (enabled && statusKnown && !approval!.approved) ...[
           const SizedBox(height: 8),
           if (!approval!.approved)
             Text(FormStrings.measurementApprovalRequired),
@@ -200,8 +193,6 @@ class UnitMeasurementSettings extends StatelessWidget {
                   MeasurementRequestState.retryAvailable &&
               approval!.canRequest)
             Text(FormStrings.measurementApprovalRetry)
-          else if (approval!.canRequest && approval!.approved)
-            Text(FormStrings.measurementWebsitesReady)
           else if (approval!.requestState ==
                   MeasurementRequestState.requested &&
               approval!.requestedAt != null)

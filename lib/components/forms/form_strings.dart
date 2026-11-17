@@ -99,20 +99,12 @@ class FormStrings {
       'FeatureFormSettings.measurementWebsitesHelp'.tr();
   static String get measurementWebsitesInvalid =>
       'FeatureFormSettings.measurementWebsitesInvalid'.tr();
-  static String get measurementWebsiteApproved =>
-      'FeatureFormSettings.measurementWebsiteApproved'.tr();
-  static String get measurementWebsitePending =>
-      'FeatureFormSettings.measurementWebsitePending'.tr();
+  static String get measurementWebsiteSaved =>
+      'FeatureFormSettings.measurementWebsiteSaved'.tr();
   static String get measurementWebsiteDraft =>
       'FeatureFormSettings.measurementWebsiteDraft'.tr();
-  static String get measurementWebsiteUnrequested =>
-      'FeatureFormSettings.measurementWebsiteUnrequested'.tr();
-  static String get measurementWebsiteUnknown =>
-      'FeatureFormSettings.measurementWebsiteUnknown'.tr();
   static String get measurementWebsitesSaveFirst =>
       'FeatureFormSettings.measurementWebsitesSaveFirst'.tr();
-  static String get measurementWebsitesReady =>
-      'FeatureFormSettings.measurementWebsitesReady'.tr();
   static String get measurementApprovalRetry =>
       'FeatureFormSettings.measurementApprovalRetry'.tr();
   static String get measurementConsentBridge =>

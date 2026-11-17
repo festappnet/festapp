@@ -15,11 +15,9 @@ function fixture(overrides: Record<string, unknown> = {}) {
       );
       return Promise.resolve(
         new Response(JSON.stringify(
-          name === "get_unit_measurement_approval"
+          name === "get_unit_website_consent_bindings"
             ? {
-              approved: true,
               saved_origins: [origin],
-              approved_origins: [origin],
               ...overrides,
             }
             : name === "save_unit_website_consent_binding"
@@ -50,11 +48,12 @@ function fixture(overrides: Record<string, unknown> = {}) {
     });
   return { deps, calls, request };
 }
-Deno.test("authorized saved approved origin detects; confirmation pins fresh server value", async () => {
+Deno.test("manager saved origin detects without measurement approval; confirmation pins fresh server value", async () => {
   const f = fixture();
   const response = await handleProbe(f.request(), f.deps);
   assertEquals(response.status, 200);
   assertEquals(await response.json(), { policyId: "42" });
+  assertEquals(f.calls, ["get_unit_website_consent_bindings", origin + "/"]);
   const saved = await handleProbe(
     f.request({
       confirm: true,
@@ -80,15 +79,13 @@ Deno.test("authorized saved approved origin detects; confirmation pins fresh ser
   );
   assertEquals(f.calls.includes("save_unit_website_consent_binding"), false);
 });
-Deno.test("missing auth, manager denial, unsaved and unapproved origins never fetch website", async () => {
+Deno.test("missing auth, manager denial and unsaved origins never fetch website", async () => {
   for (
-    const scope of [{ saved_origins: [] }, { approved_origins: [] }, {
-      approved: false,
-    }]
+    const scope of [{ saved_origins: [] }, { saved_origins: null }, { saved_origins: ["https://other.example"] }]
   ) {
     const f = fixture(scope);
     assertEquals((await handleProbe(f.request(), f.deps)).status, 403);
-    assertEquals(f.calls.length, 2);
+    assertEquals(f.calls.length, 1);
   }
   const f = fixture();
   assertEquals((await handleProbe(f.request({}, false), f.deps)).status, 401);

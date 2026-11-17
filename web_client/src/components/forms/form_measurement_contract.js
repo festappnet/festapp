@@ -152,7 +152,7 @@ export function measurementDataLayerPayload(input, {embedded = false, pageContex
 
 // Identity of the SQL snapshot that actually supplies the runtime code.
 export function measurementManifest(policy, formLink) {
-    if (!policy || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization<1 || policy.unit<1 ||
+    if (!policy || policy.consent_only === true || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization<1 || policy.unit<1 ||
         !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision<1 ||
         !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision<1 ||
         typeof policy.processing_revision !== 'string' || !policy.processing_revision || policy.processing_revision.length>128 ||
@@ -166,6 +166,24 @@ export function measurementManifest(policy, formLink) {
         policy_revision:policy.policy_revision, profile:policy.profile, required_purposes:['analytics','marketing']};
 }
 export const sameMeasurementManifest = (a,b) => !!a && !!b &&
-    ['website_consent_bindings','measurement_protocol','organization','unit','form_link','processing_revision','consent_revision','runtime_revision','policy_revision','profile','required_purposes']
+    ['consent_only','website_consent_bindings','measurement_protocol','organization','unit','form_link','processing_revision','consent_revision','runtime_revision','policy_revision','profile','required_purposes']
         .every(key => JSON.stringify(a[key]) === JSON.stringify(b[key])) &&
     (a.measurement_consent_bridge === true) === (b.measurement_consent_bridge === true);
+
+// Consent transport may exist before platform runtime provisioning. Its explicit
+// marker is rejected by measurementManifest and can never authorize activation.
+export function consentTransportManifest(policy, formLink) {
+    const runtime = measurementManifest(policy, formLink);
+    if (runtime) return runtime;
+    if (!policy || policy.measurement_consent_bridge !== true ||
+        !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision < 0 ||
+        !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision < 0 ||
+        ![null, 'gtm-v1'].includes(policy.profile ?? null) ||
+        typeof policy.consent_revision !== 'string' ||
+        !Array.isArray(policy.website_consent_bindings) ||
+        !policy.website_consent_bindings.some(b => b.effective === true)) return null;
+    const scope = measurementManifest({...policy, consent_only:false,
+        runtime_revision:1, policy_revision:1, profile:'gtm-v1'}, formLink);
+    return scope ? {...scope, consent_only:true, runtime_revision:policy.runtime_revision,
+        policy_revision:policy.policy_revision, profile:policy.profile ?? null} : null;
+}

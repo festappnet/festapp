@@ -75,11 +75,11 @@ BEGIN
  PERFORM assert_eq(public.get_form_measurement_policy(slug)->>'visitor_role','visitor','a former manager is an ordinary visitor');
  UPDATE public.units SET data=data-'measurement_privacy_url' WHERE id=un;
  PERFORM assert_eq(public.form_measurement_runtime_internal(fid)->'approved_hosts','[]'::jsonb,'ineligible policy approves no host');
- PERFORM assert_true(public.form_measurement_runtime_internal(fid)->'consent_notice' = 'null'::jsonb,'ineligible policy redacts notice settings');
+ PERFORM assert_true(public.form_measurement_runtime_internal(fid)->'consent_notice' = 'null'::jsonb,'disabled measurement without effective transfer exposes no notice');
  UPDATE public.units SET data=data||'{"measurement_privacy_url":"https://organizer.example/updated"}' WHERE id=un;
  UPDATE public.organizations SET data=data||'{"FORM_MEASUREMENT_ENABLED":false}' WHERE id=org;
  PERFORM assert_false((public.form_measurement_status_internal(fid)->>'eligible')::boolean,'organization off dominates Unit + form');
- PERFORM assert_true(public.get_form_measurement_policy(slug)->>'privacy_url' IS NULL,'ineligible policy redacts URL');
+ PERFORM assert_true(public.get_form_measurement_policy(slug)->>'privacy_url' IS NULL,'disabled measurement without effective transfer exposes no consent UI');
  UPDATE public.organizations SET data=data||'{"FORM_MEASUREMENT_ENABLED":true}' WHERE id=org;
  UPDATE public.units SET data=data||'{"measurement_enabled":false}' WHERE id=un;
  PERFORM assert_false((public.form_measurement_status_internal(fid)->>'eligible')::boolean,'Unit off dominates form');

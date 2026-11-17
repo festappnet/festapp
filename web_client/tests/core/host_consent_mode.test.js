@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 import {readHostConsentMode, createHostConsentMode} from '../../src/embed/host_consent_mode.js';
-import {measurementProtocol, measurementManifest} from '../../src/components/forms/form_measurement_contract.js';
+import {measurementProtocol, measurementManifest, consentTransportManifest} from '../../src/components/forms/form_measurement_contract.js';
 import {complianzFixture,complianzConfig,consentRevision} from '../support/complianz_fixture.js';
 import {policy} from '../support/measurement_fixture.js';
 const denied = {analytics:false, marketing:false};
@@ -257,4 +257,25 @@ test('invalid script configuration cannot restore iframe GCM grants',t=>{
  const {win,context,choice,poll}=host(t,false,'{');
  win.google_tag_data={ics:{entries:{analytics_storage:{default:true},ad_storage:{default:true},ad_user_data:{default:true},ad_personalization:{default:true}}}};
  context();poll();assert.deepEqual(choice(),denied);
+});
+
+
+test('generated host helper accepts consent-only scope and rejects activation and analytics', t => {
+ const {win,frame,context,sent}=host(t);
+ const binding={id:'11111111-1111-1111-1111-111111111111',version:1,websiteOrigin:'https://host.invalid',effective:true};
+ const manifest=consentTransportManifest({...policy,measurement_consent_bridge:true,runtime_revision:0,policy_revision:0,profile:null,
+  consent_revision:'a'.repeat(32),website_consent_bindings:[binding]},'summer');
+ win.FestappEmbed.connectMeasurementConsent(frame,{read:()=>({...granted,consentRevision:manifest.consent_revision,
+  binding:{id:binding.id,version:1}}),subscribe:()=>()=>{}});
+ context(manifest);
+ const response=sent.findLast(m=>m.type==='measurement-consent').measurement;
+ assert.deepEqual(JSON.parse(JSON.stringify(response.consent)),granted);
+ assert.equal(response.manifest.consent_only,true);
+ for(const type of ['measurement-activate','analytics']) {
+  win.dispatchEvent(new win.MessageEvent('message',{source:frame.contentWindow,origin:'https://tickets.invalid',
+   data:{namespace:'festapp-embed',protocol:1,instance:sent[0].instance,type,
+    measurement:{protocol:measurementProtocol,manifest,leaseId:response.leaseId,generation:1},payload:{event:'page_view'}}}));
+ }
+ assert.equal(sent.some(m=>m.type==='measurement-ack'),false);
+ assert.equal(win.dataLayer,undefined);
 });

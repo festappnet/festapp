@@ -118,3 +118,19 @@ test('a terminal end from an unloading website revokes even without the peer sou
  g.reply({type:'end',sequence:3,nonce:'wrong'},null);assert.equal(g.revoked,0,'end still needs the nonce');
  }finally{g.close()}
 });
+
+test('managed linked consent needs its live binding, independently of runtime host approval',()=>{
+ const binding={id:'11111111-1111-1111-1111-111111111111',version:1,websiteOrigin:'https://host.example',effective:true};
+ const managed={...policy,approved_hosts:[],eligible:false,organization_allowed:false,runtime_supported:false,
+  consent_revision:'a'.repeat(32),website_consent_bindings:[binding]};
+ const f=childFixture({policy:managed});try{
+  assert.equal(f.sent.length,1,'no runtime/domain review needed');
+  f.reply({scope:f.sent[0].scope});assert.equal(f.accepted.length,1);
+  f.reply({sequence:2,scope:{...f.sent[0].scope,binding:{id:binding.id,version:2}}});
+  assert.equal(f.accepted.length,1,'stale/wrong binding cannot grant');
+ }finally{f.close()}
+ for(const record of [{...binding,effective:false},{...binding,websiteOrigin:'https://foreign.example'}]) {
+  const denied=childFixture({policy:{...managed,website_consent_bindings:[record]}});
+  try{assert.equal(denied.sent.length,0,'only effective exact-origin binding admits link')}finally{denied.close()}
+ }
+});

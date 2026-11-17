@@ -93,8 +93,8 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'runtime_supported',s->'runtime_supported','eligible',s->'eligible','organization',o.organization,'unit',u.id,
   'runtime_origin',CASE WHEN s->'eligible'='true'::jsonb THEN r.runtime_origin END,
   'measurement_consent_bridge',coalesce(u.data->'measurement_consent_bridge'='true'::jsonb,false),
-  'privacy_url',CASE WHEN s->'eligible'='true'::jsonb THEN u.data->>'measurement_privacy_url' END,
-  'consent_notice',CASE WHEN s->'eligible'='true'::jsonb THEN jsonb_build_object('layout',coalesce(u.data->>'measurement_consent_layout','bar'),
+  'privacy_url',CASE WHEN notice.available THEN u.data->>'measurement_privacy_url' END,
+  'consent_notice',CASE WHEN notice.available THEN jsonb_build_object('layout',coalesce(u.data->>'measurement_consent_layout','bar'),
    'title',nullif(btrim(u.data->>'measurement_consent_title'),''),'text',nullif(btrim(u.data->>'measurement_consent_text'),'')) END,
   'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
   -- Stable notice/processing scope, independent of runtime deployment and approved hosts.
@@ -122,6 +122,10 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  LEFT JOIN analytics.organization_policy p ON p.organization=o.organization
   LEFT JOIN analytics.unit_runtime r ON r.unit=u.id
  CROSS JOIN status
+ -- A configured notice is useful without tags only for an effective transfer.
+ -- Otherwise disabled measurement must not create an unsolicited cookie banner.
+ CROSS JOIN LATERAL (SELECT s->'eligible'='true'::jsonb OR
+  public.website_consent_bindings_policy_internal(u.id) @> '[{"effective":true}]'::jsonb AS available) notice
  WHERE f.id=p_form;
 $$;
 REVOKE ALL ON FUNCTION public.form_measurement_runtime_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;

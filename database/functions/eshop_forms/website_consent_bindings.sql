@@ -21,13 +21,9 @@ CREATE OR REPLACE FUNCTION public.website_consent_binding_effective_internal(p_b
 RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT coalesce(b.enabled AND b.confirmed_revision=public.unit_measurement_consent_scope_internal(u.id)->>'consentRevision'
   AND u.data->'measurement_consent_bridge'='true'::jsonb
-  AND u.data->'measurement_enabled'='true'::jsonb
-  AND org.data->'FORM_MEASUREMENT_ENABLED'='true'::jsonb AND p.enabled
-  AND b.website_origin=ANY(r.parent_origins)
+  AND NOT public.is_demo_unit(u.id)
   AND coalesce(u.data->'measurement_websites','[]'::jsonb) ? b.website_origin,false)
- FROM public.units u JOIN public.organizations org ON org.id=u.organization
- LEFT JOIN analytics.organization_policy p ON p.organization=org.id
- LEFT JOIN analytics.unit_runtime r ON r.unit=u.id
+ FROM public.units u
  CROSS JOIN LATERAL (SELECT (p_binding).*) b WHERE u.id=b.unit;
 $$;
 REVOKE ALL ON FUNCTION public.website_consent_binding_effective_internal(analytics.website_consent_bindings) FROM PUBLIC,anon,authenticated,service_role;
@@ -73,14 +69,14 @@ CREATE OR REPLACE FUNCTION public.get_unit_website_consent_bindings(p_unit bigin
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  IF auth.uid() IS NULL OR NOT public.can_manage_unit_configuration(p_unit) THEN RAISE insufficient_privilege; END IF;
- RETURN public.unit_measurement_consent_scope_internal(p_unit)||jsonb_build_object('bindings',
+ RETURN public.unit_measurement_consent_scope_internal(p_unit)||jsonb_build_object(
+  'saved_origins',(SELECT coalesce(data->'measurement_websites','[]'::jsonb) FROM public.units WHERE id=p_unit),'bindings',
   coalesce((SELECT jsonb_agg(jsonb_build_object('id',b.id,'websiteOrigin',b.website_origin,'platform',b.platform,
    'providerConfig',b.provider_config,'version',b.version,'confirmedRevision',b.confirmed_revision,
    'state',CASE WHEN NOT b.enabled THEN CASE WHEN b.confirmed_revision IS NULL THEN 'draft' ELSE 'disabled' END
-     WHEN NOT coalesce(r.parent_origins @> ARRAY[b.website_origin],false) THEN 'approval_required'
      WHEN b.confirmed_revision IS DISTINCT FROM public.unit_measurement_consent_scope_internal(p_unit)->>'consentRevision' THEN 'confirmation_required'
      WHEN public.website_consent_binding_effective_internal(b) THEN 'ready' ELSE 'unavailable' END)
-    ORDER BY b.website_origin) FROM analytics.website_consent_bindings b LEFT JOIN analytics.unit_runtime r ON r.unit=b.unit WHERE b.unit=p_unit),'[]'::jsonb));
+    ORDER BY b.website_origin) FROM analytics.website_consent_bindings b WHERE b.unit=p_unit),'[]'::jsonb));
 END $$;
 REVOKE ALL ON FUNCTION public.get_unit_website_consent_bindings(bigint) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.get_unit_website_consent_bindings(bigint) TO authenticated;

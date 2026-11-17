@@ -79,18 +79,11 @@ export async function handleProbe(
         error: "forbidden",
       });
     }
-    await permission.body?.cancel();
-    const approval = await rpc("get_unit_measurement_approval", {
-      p_unit: body.unitId,
-    });
-    if (!approval.ok) return reply(403, { error: "forbidden" });
-    const scope = await approval.json();
+    const scope = await permission.json();
     if (
-      scope.approved !== true || !Array.isArray(scope.saved_origins) ||
-      !scope.saved_origins.includes(body.origin) ||
-      !Array.isArray(scope.approved_origins) ||
-      !scope.approved_origins.includes(body.origin)
-    ) return reply(403, { error: "origin_not_approved" });
+      !Array.isArray(scope.saved_origins) ||
+      !scope.saved_origins.includes(body.origin)
+    ) return reply(403, { error: "origin_not_saved" });
     const { bytes } = await fetchPublicBinary(
       body.origin,
       {

@@ -35,13 +35,13 @@
     invalid: `Paste a saved public form link such as ${origin}/form/your-form, without query parameters or a # fragment.`,
     title: 'Order form', link: 'Open the form in a new tab',
     ready: 'Your code is ready. Copy it into a custom HTML block on your website.',
-    invalidExport: 'Paste a valid Festapp export for this service. Current website approval is checked by the form.',
+    invalidExport: 'Paste a valid Festapp export for this service. The form checks the current website binding and consent coverage.',
     copied: 'Code copied.', manual: 'Code selected. Copy it with Ctrl+C or ⌘C.'
   } : {
     invalid: `Vložte veřejný odkaz uloženého formuláře ve tvaru ${origin}/form/vas-formular, bez parametrů a bez části za #.`,
     title: 'Objednávkový formulář', link: 'Otevřít formulář v nové kartě',
     ready: 'Kód je připravený. Zkopírujte ho do HTML bloku svého webu.',
-    invalidExport: 'Vložte platný export z Festappu pro tuto službu. Aktuální schválení webu ověří formulář.',
+    invalidExport: 'Vložte platný export z Festappu pro tuto službu. Formulář ověří aktuální propojení webu a pokrytí souhlasu.',
     copied: 'Kód byl zkopírován.', manual: 'Kód je označený. Zkopírujte ho pomocí Ctrl+C nebo ⌘C.'
   };
   const urlInput = form.querySelector('[name="form-url"]');
