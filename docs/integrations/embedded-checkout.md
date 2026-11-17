@@ -431,8 +431,11 @@ přesný kontrakt je v dokumentaci měření. Bez adaptéru se odkaz řídí mí
 Dosavadní GCM cesta vložených formulářů bez napojeného zdroje se nemění.
 
 Skript načtěte přímo z originu formuláře. Helper zachytí běžné kliknutí do nové
-karty a formulář hned zruší veřejný opener. Odkazy s noopener/noreferrer,
-referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Bez
+karty a formulář hned zruší veřejný opener. Odkazy s noreferrer,
+referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Samotné
+noopener převzetí nevypíná: prohlížeče ho u nové karty předpokládají a CMS či SEO
+pluginy (např. Rank Math) ho přidávají ke všem externím odkazům. Pro vypnutí
+odeberte z odkazu atribut data-festapp-consent-link. Bez
 referreru, propojení oken nebo při omezení COOP se zobrazí běžná místní lišta.
 Povoleny jsou HTTPS originy; HTTP loopback pouze při lokálním vývoji.
 

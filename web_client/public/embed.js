@@ -231,7 +231,7 @@
     const click = (event) => {
       try {
         const link = event.target.closest("a[data-festapp-consent-link]");
-        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target !== "_blank" || link.hasAttribute("download") || /(?:^|\s)(?:noopener|noreferrer)(?:\s|$)/i.test(link.rel) || // Any explicit referrer policy (on the link or the page) keeps native
+        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target !== "_blank" || link.hasAttribute("download") || /(?:^|\s)noreferrer(?:\s|$)/i.test(link.rel) || // Any explicit referrer policy (on the link or the page) keeps native
         // navigation: window.open() would not carry the link's own policy.
         link.hasAttribute("referrerpolicy") || [...win.document.querySelectorAll("meta[name]")].some((meta) => meta.name.toLowerCase() === "referrer")) return;
         const url = new URL(link.href, win.document.baseURI);
