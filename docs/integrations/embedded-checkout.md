@@ -446,10 +446,17 @@ ukončí převzetí a obnoví místní lištu. Žádné převzaté souhlasy se n
 cookies. Obnovená nebo další karta vyžaduje nové předání. Vlastní volba uložená
 ve formuláři má přednost a zůstává v cookie na 180 dní.
 
-Po převzetí je dostupné plovoucí tlačítko nastavení. Uložení odpojí vzdálený zdroj;
+Po převzetí v nové samostatné záložce je dostupné plovoucí tlačítko nastavení.
+Uložení odpojí vzdálený zdroj;
 Escape zavře neuložené nastavení. Obnovení vazby nepřepíše rozpracovanou volbu.
 Klaro místní volby mezi již otevřenými kartami nepřenáší průběžně. Kliknutí helperu
 může potlačit GTM Just Links trigger s validací; nákup měřte událostmi formuláře.
+
+Ve vloženém formuláři se plovoucí tlačítko nastavení nikdy nezobrazuje, bez ohledu
+na zdroj souhlasu nebo dříve uloženou volbu. Nevytváří se ani místní dialog
+Klaro a nečte se volba uložená pro samostatný formulář. Souhlas, jeho obnovování
+a odvolání spravuje stávající most hostitelského webu. Neznámý nebo odpojený
+zdroj neudělí souhlas s volitelnými účely a neblokuje vyplnění formuláře.
 
 Přesný kontrakt zdroje a protokolu je v
 [dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).

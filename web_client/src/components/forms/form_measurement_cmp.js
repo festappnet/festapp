@@ -4,6 +4,7 @@ import {applyKlaroVisitChoice, bindKlaroConsent} from './form_measurement_consen
 import {FormStrings} from './form_strings.js';
 import {AppConfig} from '../../app_config.js';
 import {ColorUtils} from '../../utils/color_utils.js';
+import {isEmbed} from '../../services/embed_context.js';
 
 const channel = value => { const c = value / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
 const luminance = ({r, g, b}) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
@@ -41,8 +42,16 @@ function privacyUrl(value) {
     } catch { return null; }
 }
 
-export function startMeasurementConsent({win = window, model, setConsent, host, remoteSource}) {
+export function startMeasurementConsent({win = window, model, setConsent, host}) {
+    let topLevel = false;
+    try { topLevel = win.self === win.top; } catch { /* Restricted frames remain embedded. */ }
     prepareConsentLink(win);
+    // The host bridge owns embedded choices, leases and revocation. Never read
+    // a standalone cookie or create a second notice inside the checkout frame.
+    if (!topLevel || isEmbed(win.location)) {
+        setConsent(false);
+        return () => {};
+    }
     const policy = model.data?.analytics;
     if (!Number.isSafeInteger(policy?.organization) || !Number.isSafeInteger(policy?.unit)) return () => {};
     const privacy = privacyUrl(policy.privacy_url);
@@ -122,7 +131,7 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
         if (list && necessary.parentNode !== list) list.prepend(necessary);
         // On the standalone form the privacy policy opens in a new tab, so the
         // visitor does not leave a form in progress. Embedded forms show no bar.
-        if (win.self === win.top) root?.querySelectorAll('a[href]').forEach(link => {
+        if (topLevel) root?.querySelectorAll('a[href]').forEach(link => {
             if (link.target !== '_blank') link.target = '_blank';
             if (!link.relList.contains('noopener')) link.relList.add('noopener');
         });
@@ -420,7 +429,7 @@ ${layout}`;
                 // never restores a switch the visitor has just turned off.
                 applyKlaroVisitChoice(manager, choice, editing ? previousDraft : null);
             }};
-        stopLink = remoteSource ? remoteSource.connect(remoteOptions) : requestLinkedConsent(remoteOptions);
+        stopLink = requestLinkedConsent(remoteOptions);
         if (!stopLink.pending) showNormal();
     } catch { showNormal(); }
     return () => {fail(); choices.remove();};
