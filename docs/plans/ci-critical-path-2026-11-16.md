@@ -165,3 +165,9 @@ The guard now accepts absence case-insensitively while still rejecting daemon
 failures and foreign labels. A direct real-runtime startup/cleanup probe then
 verified both core/PHP pairs in 23.263 s locally, versus the previous local
 56.2 s WordPress start. This isolated probe is not a hosted or full-matrix claim.
+
+Final native source `e98530228` passed the complete affected image/seat/Wix mirror,
+including all 283 MCP tests and nine installed CMS cases, with unchanged inputs:
+`20261117T095730-cee542c99a37`. CMS took 76.5 s (previous local 123.2 s), and
+WordPress startup took 16.1 s (previous 56.2 s). These are local samples; final
+exact-source hosted measurement remains required before main publication.
