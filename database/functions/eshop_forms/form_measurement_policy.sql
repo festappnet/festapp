@@ -52,7 +52,7 @@ RETURNS text[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
    SELECT value origin,ordinality priority FROM unnest(parent_origins) WITH ORDINALITY AS baseline(value,ordinality)
    UNION ALL
    SELECT value,2147483647 FROM jsonb_array_elements_text(websites) AS saved(value)
-    WHERE length(value)<=2048 AND value ~ (public.configuration_settings_contract_internal_v1()#>>'{unit,measurement_websites,items,pattern}')
+    WHERE length(value)<=2048 AND value ~ (public.configuration_settings_contract_internal_v1()#>>'{unit,measurement_websites,items,allOf,0,pattern}')
   ) origins GROUP BY origin
  ) SELECT coalesce(array_agg(origin ORDER BY priority,origin),'{}'::text[]) FROM allowed;
 $$;

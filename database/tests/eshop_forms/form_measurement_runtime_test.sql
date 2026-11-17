@@ -65,8 +65,10 @@ BEGIN
  UPDATE public.units SET data=data||'{"measurement_websites":[]}'::jsonb WHERE id=un;
  PERFORM assert_eq(public.form_measurement_runtime_internal(fid),config,'removing saved websites revokes only the self-service grants');
  PERFORM assert_false(public.can_read_form_measurement_runtime(fid,org,un,origin,'https://new.example'),'removed website loses server admission');
- UPDATE public.units SET data=data||'{"measurement_websites":["https://new.example","http://unsafe.example","https://example/path",7]}'::jsonb WHERE id=un;
+ UPDATE public.units SET data=data||'{"measurement_websites":["https://new.example","http://unsafe.example","https://example/path","https://127.1","https://2130706433","https://0x7f000001","https://example.123",7]}'::jsonb WHERE id=un;
  PERFORM assert_eq(public.unit_measurement_parent_origins_internal(un),ARRAY['https://tickets.example','https://new.example'],'corrupt saved entries never widen origin grants');
+ UPDATE public.units SET data=data||'{"measurement_websites":["https://NEW.example:0443","https://new.example","https://other.example:0844"]}'::jsonb WHERE id=un;
+ PERFORM assert_eq(public.unit_measurement_parent_origins_internal(un),ARRAY['https://tickets.example','https://new.example'],'noncanonical saved origins never poison CSP or disagree with binding identity');
  UPDATE public.units SET data=data||'{"measurement_websites":{}}'::jsonb WHERE id=un;
  PERFORM assert_eq(public.unit_measurement_parent_origins_internal(un),ARRAY['https://tickets.example'],'malformed saved list fails closed without breaking existing runtime');
  UPDATE analytics.unit_runtime SET parent_origins=ARRAY(SELECT 'https://operator-'||n||'.example' FROM generate_series(1,32)n) WHERE unit=un;

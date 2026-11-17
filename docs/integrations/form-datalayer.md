@@ -652,7 +652,11 @@ settings contract accepts at most ten exact HTTPS origins (no path, query,
 fragment or trailing slash). These are the canonical saved websites for managed
 consent bindings, not proposals requiring platform review. Managers can confirm
 and export bindings immediately. The URLs do not themselves prove ownership or
-visitor consent and never widen `analytics.unit_runtime.parent_origins`.
+visitor consent. Saving a website confirms organizer operation. After initial
+platform/runtime approval, one SQL effective-origin projection admits the saved
+websites alongside explicit application origins without rewriting
+`analytics.unit_runtime.parent_origins`. Only canonical browser origins are
+admitted; the settings editor normalizes casing/default ports before saving.
 
 `get_unit_website_consent_bindings` owns saved-origin membership for consent setup
 and external CMP probes. `get_unit_measurement_approval` separately reports
@@ -670,7 +674,7 @@ measurement requests regardless of differences in saved websites.
 
 Platform policy and runtime execution are provisioned separately through the
 controlled SQL release procedure. No consent-authoring RPC writes those tables.
-Older external unmanaged adapters retain their established approved-host boundary;
+External unmanaged adapters retain the same effective approved-host boundary;
 all managed CMS integrations use the single binding authority.
 
 ### Managed CMS consent configuration (schema 1)

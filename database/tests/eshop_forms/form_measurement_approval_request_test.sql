@@ -149,10 +149,10 @@ BEGIN
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  END LOOP;
  UPDATE public.units SET data=public.merge_configuration_settings_internal_v1(data,
-  '{"measurement_websites":["https://example.invalid","https://www.example.invalid:443"]}','unit') WHERE id=un;
+  '{"measurement_websites":["https://example.invalid","https://www.example.invalid:1443"]}','unit') WHERE id=un;
  r:=public.request_unit_measurement_approval(un);
  PERFORM assert_eq(r->'approved_origins','[]'::jsonb,'proposals grant no approval');
- PERFORM assert_eq(r->'requested_origins','["https://example.invalid","https://www.example.invalid:443"]'::jsonb,'request snapshots websites');
+ PERFORM assert_eq(r->'requested_origins','["https://example.invalid","https://www.example.invalid:1443"]'::jsonb,'request snapshots websites');
  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason) VALUES(org,true,1,'test','approval');
  INSERT INTO analytics.unit_runtime(unit,runtime_origin,runtime_profile,parent_origins,revision,operator,reason)
  VALUES(un,'https://request-'||un||'.pages.dev','gtm-v1',ARRAY['https://example.invalid'],1,'test','approval');

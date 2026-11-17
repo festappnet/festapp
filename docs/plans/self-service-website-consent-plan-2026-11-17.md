@@ -225,3 +225,18 @@ Release tooling also needs selected Function closure recognition of Deno's
 `node:` built-ins. This does not permit changed shared dependencies/locks or a full
 Functions/Wallet rollout. Preserve all canonical source, SQL, Function, Worker and
 web release checks and recovery evidence.
+
+Review hardening: the shared configuration contract now requires browser-canonical
+HTTPS origins. The editor normalizes ordinary casing/default-port input before
+saving. Numeric IPv4 shorthands/noncanonical ports are rejected at authoring and
+filtered from old saved data; invalid historical binding identities remain
+unavailable and are omitted from public manifests. This prevents a single bad
+website from poisoning the whole receiver CSP or splitting consent/runtime IDs.
+No old confirmation is silently normalized into a new effective permission.
+
+API-v1 compatibility: retain the released lexical website constraint and express
+the canonical-origin rule as a standard JSON Schema allOf intersection. SQL, Dart
+and operation validation consume the same shared rule. The API checker recognizes
+only the provable response-narrowing case where an allOf member is exactly the
+complete old schema; request narrowing, unions and partial matches still fail.
+No schema-digest waiver or weakened release check is used.

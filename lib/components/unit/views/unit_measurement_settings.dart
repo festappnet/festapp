@@ -88,6 +88,19 @@ class UnitMeasurementSettings extends StatelessWidget {
       .split('\n')
       .map((s) => s.trim())
       .where((s) => s.isNotEmpty)
+      .map((site) {
+        final uri = Uri.tryParse(site);
+        if (uri != null &&
+            uri.scheme == 'https' &&
+            uri.host.isNotEmpty &&
+            uri.userInfo.isEmpty &&
+            uri.path.isEmpty &&
+            !uri.hasQuery &&
+            !uri.hasFragment) {
+          return uri.origin;
+        }
+        return site;
+      })
       .toSet()
       .toList();
 

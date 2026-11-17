@@ -1195,7 +1195,17 @@ void main() {
           ),
           isNull,
         );
+        expect(
+          UnitMeasurementSettings.parseWebsites(
+            'https://NEW.example:0443\nhttps://new.example',
+          ),
+          ['https://new.example'],
+        );
         for (final invalid in [
+          'https://127.1',
+          'https://2130706433',
+          'https://0x7f000001',
+          'https://example.123',
           'http://example.com',
           'https://example.com/',
           'https://example.com/path',

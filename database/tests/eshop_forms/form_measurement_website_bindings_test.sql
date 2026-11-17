@@ -133,3 +133,21 @@ BEGIN
  BEGIN PERFORM public.export_unit_website_consent_binding((b->>'id')::uuid,1); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
  PERFORM assert_true(rejected,'removed website cannot export');
 END $$;
+
+-- Imported/old noncanonical strings cannot create split binding/runtime identities.
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; b analytics.website_consent_bindings; rejected boolean:=false;
+BEGIN
+ UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://NEW.example:443"]}' WHERE id=un;
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(un,(x->>'actor')::uuid,true) ON CONFLICT(unit,"user") DO UPDATE SET is_manager=true;
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision)
+ VALUES(un,'https://NEW.example:443','html','{"provider":"cookiebot"}',1,true,public.unit_measurement_consent_scope_internal(un)->>'consentRevision') RETURNING * INTO b;
+ PERFORM assert_false(public.website_consent_binding_effective_internal(b),'old noncanonical identity cannot become an effective consent grant');
+ PERFORM assert_eq(public.website_consent_bindings_policy_internal(un),'[]'::jsonb,'invalid old identity cannot poison a browser manifest');
+ BEGIN PERFORM public.export_unit_website_consent_binding(b.id,1);EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'invalid old binding cannot export mismatched website origin');
+ UPDATE public.units SET data=data||'{"measurement_websites":["https://new.example"]}' WHERE id=un;
+ PERFORM public.save_unit_website_consent_binding(un,'https://new.example','html','{"provider":"cookiebot"}',0,public.unit_measurement_consent_scope_internal(un)->>'consentRevision',true);
+ PERFORM assert_eq(public.website_consent_bindings_policy_internal(un)#>>'{0,websiteOrigin}','https://new.example','authoring and browser policy share the canonical identity');
+END $$;

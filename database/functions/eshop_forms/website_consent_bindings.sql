@@ -19,7 +19,8 @@ REVOKE ALL ON analytics.website_consent_bindings FROM PUBLIC,anon,authenticated,
 
 CREATE OR REPLACE FUNCTION public.website_consent_binding_effective_internal(p_binding analytics.website_consent_bindings)
 RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT coalesce(b.enabled AND b.confirmed_revision=public.unit_measurement_consent_scope_internal(u.id)->>'consentRevision'
+ SELECT coalesce(b.enabled AND b.website_origin ~ (public.configuration_settings_contract_internal_v1()#>>'{unit,measurement_websites,items,allOf,0,pattern}')
+  AND b.confirmed_revision=public.unit_measurement_consent_scope_internal(u.id)->>'consentRevision'
   AND u.data->'measurement_consent_bridge'='true'::jsonb
   AND NOT public.is_demo_unit(u.id)
   AND coalesce(u.data->'measurement_websites','[]'::jsonb) ? b.website_origin,false)
@@ -32,7 +33,8 @@ CREATE OR REPLACE FUNCTION public.website_consent_bindings_policy_internal(p_uni
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',b.id,'version',b.version,'websiteOrigin',b.website_origin,
   'effective',public.website_consent_binding_effective_internal(b)) ORDER BY b.website_origin),'[]'::jsonb)
- FROM analytics.website_consent_bindings b WHERE b.unit=p_unit;
+ FROM analytics.website_consent_bindings b WHERE b.unit=p_unit
+  AND b.website_origin ~ (public.configuration_settings_contract_internal_v1()#>>'{unit,measurement_websites,items,allOf,0,pattern}');
 $$;
 REVOKE ALL ON FUNCTION public.website_consent_bindings_policy_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

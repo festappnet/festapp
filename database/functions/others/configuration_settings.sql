@@ -38,6 +38,11 @@ BEGIN
    PERFORM public.validate_configuration_value_internal_v1(item,rule->'items');
   END LOOP;
  ELSE RAISE invalid_parameter_value USING MESSAGE='unsupported settings type'; END IF;
+ -- Standard intersections express stricter authoring rules while retaining
+ -- the released lexical constraint in existing API response schemas.
+ FOR item IN SELECT * FROM jsonb_array_elements(coalesce(rule->'allOf','[]'::jsonb)) LOOP
+  PERFORM public.validate_configuration_value_internal_v1(value,item);
+ END LOOP;
  IF rule ? 'enum' AND NOT (rule->'enum' @> jsonb_build_array(value)) THEN RAISE invalid_parameter_value USING MESSAGE='invalid settings choice'; END IF;
  IF rule ? 'pattern' AND (value#>>'{}') !~ (rule->>'pattern') THEN RAISE invalid_parameter_value USING MESSAGE='invalid settings format'; END IF;
 END $$;
