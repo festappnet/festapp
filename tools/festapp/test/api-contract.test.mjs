@@ -81,3 +81,12 @@ test('schema 3 requires explicit API policy and preserves Make identity, regiona
  const preview=spec.paths['/operations/ticket_layouts.preview'].post.responses['200'].content['application/json'].example;
  assert.equal(preview.data.image.mimeType,'image/png');assert.equal(preview.data.pdf.mimeType,'application/pdf');
  });
+
+test('response intersections retain the complete released schema while request narrowing still fails',()=>{
+ const previous={type:'string',maxLength:2048,pattern:'^https://[A-Za-z0-9.]+$'};
+ const tighter={allOf:[structuredClone(previous),{type:'string',pattern:'^https://[a-z.]+$'}]};
+ assert.deepEqual(schemaBreaks(previous,tighter,'response'),[]);
+ assert.ok(schemaBreaks(previous,tighter,'request').length);
+ assert.ok(schemaBreaks(previous,{anyOf:tighter.allOf},'response').length,'unions may widen and are not exempt');
+ assert.ok(schemaBreaks(previous,{allOf:[{type:'string',pattern:previous.pattern}]},'response').length,'a partial previous schema proves no containment');
+});

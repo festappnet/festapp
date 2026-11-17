@@ -38,7 +38,6 @@ void main() {
   });
   Future<void> pumpConsent(
     WidgetTester tester, {
-    List<String> approved = const [],
     Future<String> Function(String)? detect,
     List<Map<String, dynamic>> bindings = const [],
     Future<UnitWebsiteConsent> Function(
@@ -60,13 +59,13 @@ void main() {
           child: UnitWebsiteConsentSettings(
             unitId: 2,
             websites: const ['https://poradatel.cz'],
-            approvedWebsites: approved,
             saved: true,
             load: () async => UnitWebsiteConsent.fromJson({
               'consentRevision': 'a' * 32,
               'bindings': bindings,
             }),
-            detectPolicy: detect,
+            detectPolicy:
+                detect ?? (_) async => throw StateError("fixture unavailable"),
             save: save,
             confirmDetected: confirmDetected,
           ),
@@ -75,47 +74,43 @@ void main() {
     ),
   );
 
-  testWidgets('Complianz manual draft is editable before website approval', (
-    tester,
-  ) async {
-    Map<String, dynamic>? draft;
-    await pumpConsent(
-      tester,
-      detect: (_) async =>
-          throw StateError('unapproved website must never be fetched'),
-      save: (_, _, config, _, _, confirm) async {
-        expect(confirm, false);
-        draft = config;
-        return UnitWebsiteConsent.fromJson({
-          'consentRevision': 'a' * 32,
-          'bindings': [],
-        });
-      },
-    );
-    await tester.pumpAndSettle();
-    expect(find.text(CommonStrings.loading), findsNothing);
-    await tester.tap(find.text(FormStrings.cmsPolicyManual));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextField, FormStrings.cmsPolicyId),
-      '42',
-    );
-    await tester.pump();
-    await tester.ensureVisible(find.text(FormStrings.cmsSaveDraft));
-    await tester.tap(find.text(FormStrings.cmsSaveDraft));
-    await tester.pumpAndSettle();
-    expect(draft, {'provider': 'complianz', 'policyId': '42'});
-  });
+  testWidgets(
+    'Complianz failed automatic detection leaves manual draft editable',
+    (tester) async {
+      Map<String, dynamic>? draft;
+      await pumpConsent(
+        tester,
+        detect: (_) async => throw StateError('website unavailable'),
+        save: (_, _, config, _, _, confirm) async {
+          expect(confirm, false);
+          draft = config;
+          return UnitWebsiteConsent.fromJson({
+            'consentRevision': 'a' * 32,
+            'bindings': [],
+          });
+        },
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(CommonStrings.loading), findsNothing);
+      await tester.tap(find.text(FormStrings.cmsPolicyManual));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+        '42',
+      );
+      await tester.pump();
+      await tester.ensureVisible(find.text(FormStrings.cmsSaveDraft));
+      await tester.tap(find.text(FormStrings.cmsSaveDraft));
+      await tester.pumpAndSettle();
+      expect(draft, {'provider': 'complianz', 'policyId': '42'});
+    },
+  );
 
   testWidgets(
     'Complianz pending probe does not block changing provider and ignores late result',
     (tester) async {
       final pending = Completer<String>();
-      await pumpConsent(
-        tester,
-        approved: const ['https://poradatel.cz'],
-        detect: (_) => pending.future,
-      );
+      await pumpConsent(tester, detect: (_) => pending.future);
       await tester.pumpAndSettle();
       final selectors = tester
           .widgetList<DropdownButtonFormField<String>>(
@@ -139,7 +134,6 @@ void main() {
     (tester) async {
       await pumpConsent(
         tester,
-        approved: const ['https://poradatel.cz'],
         detect: (_) async => throw StateError('blocked'),
         bindings: [
           {
@@ -173,7 +167,6 @@ void main() {
       var confirmations = 0;
       await pumpConsent(
         tester,
-        approved: const ['https://poradatel.cz'],
         detect: (_) async => ++probes == 1 ? '42' : '43',
         save: (_, _, _, _, _, _) async =>
             throw StateError('detected confirmation must use probe'),
@@ -231,7 +224,6 @@ void main() {
       final pending = Completer<String>();
       await pumpConsent(
         tester,
-        approved: const ['https://poradatel.cz'],
         detect: (_) => ++attempts == 1 ? Future.value('42') : pending.future,
         confirmDetected: (_, _, _, _, _) async =>
             throw const ComplianzPolicyChanged(),
@@ -268,11 +260,10 @@ void main() {
   );
 
   testWidgets(
-    'Complianz probes only saved approved origins and ignores revoked results',
+    'Complianz probes saved websites without approval and ignores unsaved results',
     (tester) async {
       const site = 'https://poradatel.cz';
-      var saved = true;
-      var approved = false;
+      var saved = false;
       var attempts = 0;
       final pending = Completer<String>();
       Future<void> pump() => tester.pumpWidget(
@@ -284,7 +275,7 @@ void main() {
                 key: const ValueKey('eligibility'),
                 unitId: 2,
                 websites: const [site],
-                approvedWebsites: approved ? const [site] : const [],
+
                 saved: saved,
                 load: () async => UnitWebsiteConsent.fromJson({
                   'consentRevision': 'a' * 32,
@@ -301,26 +292,17 @@ void main() {
       );
       await pump();
       await tester.pumpAndSettle();
-      expect(
-        attempts,
-        0,
-        reason: 'saved websites alone do not authorize a probe',
-      );
-      saved = false;
-      approved = true;
-      await pump();
-      await tester.pumpAndSettle();
-      expect(attempts, 0, reason: 'unsaved changes cannot start a probe');
+      expect(attempts, 0, reason: 'unsaved websites cannot start a probe');
       saved = true;
       await pump();
       await tester.pumpAndSettle();
       expect(
         attempts,
         1,
-        reason: 'a new approved website needs no existing binding',
+        reason: 'saved website needs neither platform approval nor existing binding',
       );
       expect(find.text(CommonStrings.loading), findsOneWidget);
-      approved = false;
+      saved = false;
       await pump();
       await tester.pumpAndSettle();
       expect(find.text(CommonStrings.loading), findsNothing);
@@ -343,7 +325,7 @@ void main() {
               child: UnitWebsiteConsentSettings(
                 unitId: 2,
                 websites: const ['https://poradatel.cz'],
-                approvedWebsites: const ['https://poradatel.cz'],
+
                 saved: true,
                 load: () async => UnitWebsiteConsent.fromJson({
                   'consentRevision': 'a' * 32,
@@ -392,7 +374,7 @@ void main() {
               child: UnitWebsiteConsentSettings(
                 unitId: 2,
                 websites: const ['https://poradatel.cz'],
-                approvedWebsites: const ['https://poradatel.cz'],
+
                 saved: true,
                 load: () async => UnitWebsiteConsent.fromJson({
                   'consentRevision': 'a' * 32,
@@ -481,7 +463,7 @@ void main() {
                 key: ValueKey('consent-$state'),
                 unitId: 2,
                 websites: const [site],
-                approvedWebsites: const [site],
+
                 saved: saved,
                 load: () async => data(),
                 save:
@@ -657,7 +639,7 @@ void main() {
                 detectPolicy: (_) async => throw StateError('blocked'),
                 unitId: 2,
                 websites: const ['https://poradatel.cz'],
-                approvedWebsites: const ['https://poradatel.cz'],
+
                 saved: true,
                 load: () => pending.future,
               ),
@@ -745,7 +727,7 @@ void main() {
                 detectPolicy: (_) async => throw StateError('blocked'),
                 unitId: 2,
                 websites: const ['https://poradatel.cz'],
-                approvedWebsites: const ['https://poradatel.cz'],
+
                 saved: true,
                 load: () async {
                   loads++;
@@ -818,7 +800,7 @@ void main() {
                 key: const ValueKey('same-unit'),
                 unitId: 2,
                 websites: sites,
-                approvedWebsites: sites,
+
                 saved: saved,
                 load: () async {
                   loads++;
@@ -890,7 +872,7 @@ void main() {
                     detectPolicy: (_) async => throw StateError('blocked'),
                     unitId: 2,
                     websites: const ['https://poradatel.cz'],
-                    approvedWebsites: const ['https://poradatel.cz'],
+
                     saved: true,
                     load: () async => UnitWebsiteConsent.fromJson({
                       'consentRevision': 'a' * 32,
@@ -952,7 +934,9 @@ void main() {
     'desktop',
     'large text',
   ]) {
-    testWidgets('website request lifecycle UX: $state', (tester) async {
+    testWidgets('saved website UX independent of runtime approval: $state', (
+      tester,
+    ) async {
       tester.view.physicalSize = Size(state == 'desktop' ? 1000 : 390, 1100);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -1015,6 +999,7 @@ void main() {
                   child: Form(
                     child: UnitMeasurementSettings(
                       websitesController: controllers[0],
+                      savedWebsites: saved,
                       gtmController: controllers[1],
                       scriptsController: controllers[2],
                       privacyUrlController: controllers[3],
@@ -1054,33 +1039,19 @@ void main() {
         OutlinedButton,
         FormStrings.measurementApprovalRequest,
       );
-      final actionable = [
-        'unrequested',
-        'retry',
-        'desktop',
-        'large text',
-      ].contains(state);
-      if (state == 'unavailable' || state == 'approved') {
-        expect(button, findsNothing);
-      } else {
-        expect(button, findsOneWidget);
-        expect(
-          tester.widget<OutlinedButton>(button).onPressed != null,
-          actionable,
-        );
-        if (actionable) {
-          await tester.ensureVisible(button);
-          await tester.tap(button);
-          expect(requests, 1);
-        }
-      }
+      expect(
+        button,
+        findsNothing,
+        reason: 'saved websites need no platform review',
+      );
+      expect(requests, 0);
       final label = switch (state) {
         'draft' => FormStrings.measurementWebsiteDraft,
-        'unrequested' => FormStrings.measurementWebsiteUnrequested,
-        'requested' => FormStrings.measurementWebsitePending,
-        'retry' => FormStrings.measurementWebsiteUnrequested,
-        'unavailable' => FormStrings.measurementWebsiteUnknown,
-        'approved' => FormStrings.measurementWebsiteApproved,
+        'unrequested' => FormStrings.measurementWebsiteSaved,
+        'requested' => FormStrings.measurementWebsiteSaved,
+        'retry' => FormStrings.measurementWebsiteSaved,
+        'unavailable' => FormStrings.measurementWebsiteSaved,
+        'approved' => FormStrings.measurementWebsiteSaved,
         _ => null,
       };
       if (label != null) expect(find.text('$site: $label'), findsOneWidget);
@@ -1089,11 +1060,7 @@ void main() {
         findsNothing,
         reason: 'Adding an origin must not revoke overall Unit approval',
       );
-      if (['draft', 'removed', 'invalid'].contains(state))
-        expect(
-          find.text(FormStrings.measurementWebsitesSaveFirst),
-          findsOneWidget,
-        );
+      expect(find.text(FormStrings.measurementWebsitesSaveFirst), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpAndSettle();
       if (Platform.environment['MEASUREMENT_REVIEW_ARTIFACT_DIR']
@@ -1156,6 +1123,10 @@ void main() {
                   builder: (context, setState) => Form(
                     child: UnitMeasurementSettings(
                       websitesController: websites,
+                      savedWebsites: const [
+                        "https://approved.example",
+                        "https://pending.example",
+                      ],
                       approval: const UnitMeasurementApproval(
                         approved: true,
                         organizationAllowed: true,
@@ -1166,7 +1137,6 @@ void main() {
                           'https://approved.example',
                           'https://pending.example',
                         ],
-                        approvedOrigins: ['https://approved.example'],
                       ),
                       enabled: enabled,
                       consentBridge: consentBridge,
@@ -1203,13 +1173,13 @@ void main() {
         expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
         expect(
           find.text(
-            'https://approved.example: ${FormStrings.measurementWebsiteApproved}',
+            'https://approved.example: ${FormStrings.measurementWebsiteSaved}',
           ),
           findsOneWidget,
         );
         expect(
           find.text(
-            'https://pending.example: ${FormStrings.measurementWebsiteUnrequested}',
+            'https://pending.example: ${FormStrings.measurementWebsiteSaved}',
           ),
           findsOneWidget,
         );
@@ -1225,7 +1195,17 @@ void main() {
           ),
           isNull,
         );
+        expect(
+          UnitMeasurementSettings.parseWebsites(
+            'https://NEW.example:0443\nhttps://new.example',
+          ),
+          ['https://new.example'],
+        );
         for (final invalid in [
+          'https://127.1',
+          'https://2130706433',
+          'https://0x7f000001',
+          'https://example.123',
           'http://example.com',
           'https://example.com/',
           'https://example.com/path',
@@ -1492,9 +1472,7 @@ void main() {
                   'organization_allowed': approved,
                   'runtime_supported': approved,
                   'request_state': requested ? 'requested' : 'not_requested',
-                  'can_request':
-                      (!approved && !requested) ||
-                      name == 'new website after approval',
+                  'can_request': !approved && !requested,
                   'saved_origins': name == 'new website after approval'
                       ? ['https://new.example']
                       : <String>[],
@@ -1513,18 +1491,15 @@ void main() {
         OutlinedButton,
         FormStrings.measurementApprovalRequest,
       );
-      final newWebsite = name == 'new website after approval';
-      if (enabled && (!approved || newWebsite)) {
+      if (enabled && !approved) {
         expect(button, findsOneWidget);
         expect(
           tester.widget<OutlinedButton>(button).onPressed != null,
-          canEdit && (!requested || newWebsite) && !busy,
+          canEdit && !requested && !busy,
         );
         expect(
           find.text(
-            newWebsite
-                ? FormStrings.measurementWebsitesReady
-                : requested
+            requested
                 ? FormStrings.measurementApprovalRequested(
                     DateFormat.yMd('cs').format(requestedAt.toLocal()),
                   )
@@ -1532,7 +1507,7 @@ void main() {
           ),
           findsOneWidget,
         );
-        if (canEdit && (!requested || newWebsite) && !busy) {
+        if (canEdit && !requested && !busy) {
           await tester.ensureVisible(button);
           await tester.tap(button);
           expect(requests, 1);

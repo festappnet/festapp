@@ -40,7 +40,7 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
    JOIN public.units u ON u.id=o.unit AND u.organization=o.organization
    JOIN analytics.unit_runtime r ON r.unit=u.id
    WHERE f.id=p_form AND o.organization=p_organization AND u.id=p_unit AND r.runtime_origin=p_runtime_origin
-   AND p_parent_origin=ANY(r.parent_origins)
+   AND p_parent_origin=ANY(public.unit_measurement_parent_origins_internal(u.id))
    AND public.form_measurement_status_internal(f.id)->'eligible'='true'::jsonb);
 $$;
 REVOKE ALL ON FUNCTION public.can_read_form_measurement_runtime(bigint,bigint,bigint,text,text) FROM PUBLIC,anon,authenticated,service_role;

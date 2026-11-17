@@ -22,7 +22,7 @@ BEGIN
  END IF;
  SELECT jsonb_build_object('organization',o.organization,'unit',u.id,'form_id',f.id,'form_link',f.link,
   'runtime_origin',r.runtime_origin,'parent_origin',p_parent_origin,'profile',r.runtime_profile,
-  'ancestor_origins',r.parent_origins,'collector_origins',r.collector_origins,'policy',public.form_measurement_runtime_internal(f.id)-ARRAY['privacy_url','consent_notice','approved_hosts'],
+  'ancestor_origins',public.unit_measurement_parent_origins_internal(u.id),'collector_origins',r.collector_origins,'policy',public.form_measurement_runtime_internal(f.id)-ARRAY['privacy_url','consent_notice','approved_hosts'],
   'gtm_container',u.data->>'measurement_gtm_container','scripts',u.data->>'measurement_scripts') INTO result
  FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
  JOIN public.units u ON u.id=o.unit AND u.organization=o.organization
