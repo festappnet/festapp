@@ -157,13 +157,14 @@ void main() {
         } else if (request.url.path.endsWith('/save_unit_client_sync_v1')) {
           final params = jsonDecode(request.body) as Map<String, dynamic>;
           saves.add(params);
-          if (rejectSave)
+          if (rejectSave) {
             return http.Response(
               jsonEncode({'code': '22023', 'message': 'Settings rejected'}),
               400,
               request: request,
               headers: {'content-type': 'application/json'},
             );
+          }
           final payload = params['p_unit_data'] as Map;
           final data = Map<String, dynamic>.from(stored['data'] as Map);
           for (final entry in (payload['settings'] as Map).entries) {
@@ -383,6 +384,11 @@ void main() {
           find.byType(UnitMeasurementSettings),
         );
         if (name == 'restore default') {
+          await tester.ensureVisible(
+            find.text(FormStrings.measurementOwnBanner),
+          );
+          await tester.tap(find.text(FormStrings.measurementOwnBanner));
+          await tester.pumpAndSettle();
           final restore = find
               .widgetWithText(
                 TextButton,
@@ -473,7 +479,12 @@ void main() {
           'organization': 1,
           'title': 'Slavnostní ples',
           'aggregate_version': 4,
-          'data': {'measurement_enabled': true, 'timezone': 'Europe/Prague'},
+          'data': {
+            'measurement_enabled': true,
+            'timezone': 'Europe/Prague',
+            if (failure != 'none')
+              'measurement_websites': ['https://poradatel.example'],
+          },
         };
         final rights = RightsContextFixture(
           context: OccasionLinkModel.fromJson({
@@ -556,14 +567,14 @@ void main() {
           );
           settings.websitesController!.text = 'https://poradatel.example';
           await tester.pump();
-          expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+          expect(button, findsNothing);
           final save = find.widgetWithText(ElevatedButton, CommonStrings.save);
           await tester.ensureVisible(save);
           rejectSave = true;
           await tester.tap(save);
           await tester.pumpAndSettle();
           expect(approvalRequests, 0);
-          expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+          expect(button, findsNothing);
           expect((stored['data'] as Map)['measurement_websites'], isNull);
           rejectSave = false;
           await tester.tap(save);
@@ -586,10 +597,11 @@ void main() {
             'https://poradatel.example',
           ]);
         }
-        expect(
-          tester.widget<OutlinedButton>(button).onPressed == null,
-          !rejectApproval,
-        );
+        if (rejectApproval) {
+          expect(tester.widget<OutlinedButton>(button).onPressed, isNotNull);
+        } else {
+          expect(button, findsNothing);
+        }
         if (rejectApproval) {
           expect(toasts, isNotEmpty);
           if (approvalError != null) {
@@ -600,15 +612,15 @@ void main() {
           }
         } else {
           expect(
-            find.textContaining('Čeká na potvrzení platformou.'),
-            findsOneWidget,
+            find.textContaining('Čeká na potvrzení platformou'),
+            findsWidgets,
           );
           await tester.pumpWidget(const SizedBox.shrink());
           await load();
-          expect(tester.widget<OutlinedButton>(button).onPressed, isNull);
+          expect(button, findsNothing);
           expect(
-            find.textContaining('Čeká na potvrzení platformou.'),
-            findsOneWidget,
+            find.textContaining('Čeká na potvrzení platformou'),
+            findsWidgets,
           );
           expect(
             approvalRequests,

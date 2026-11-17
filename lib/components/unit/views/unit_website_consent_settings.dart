@@ -62,6 +62,7 @@ class UnitWebsiteConsentSettings extends StatefulWidget {
 
 class _UnitWebsiteConsentSettingsState
     extends State<UnitWebsiteConsentSettings> {
+  bool _expanded = false;
   UnitWebsiteConsent? _data;
   String? _origin;
   String _platform = 'wordpress', _provider = 'complianz';
@@ -348,311 +349,486 @@ class _UnitWebsiteConsentSettingsState
       onChanged: (_) => _changed(),
     ),
   );
+  Future<void> _exportConfiguration() => _run(() async {
+    final b = _binding!;
+    final data =
+        await (widget.export?.call(b.id, b.version) ??
+            DbUnits.exportWebsiteConsent(b.id, b.version));
+    if (mounted) {
+      setState(
+        () => _export = const JsonEncoder.withIndent('  ').convert(data),
+      );
+    }
+  });
+  String _platformName(String value) => switch (value) {
+    'wordpress' => 'WordPress',
+    'joomla' => 'Joomla',
+    'wix' => 'Wix',
+    'html' => FormStrings.cmsHtml,
+    _ => value,
+  };
+  String _providerName(String? value) => switch (value) {
+    'complianz' => 'Complianz',
+    'cookiebot' => 'Cookiebot',
+    'cookieconsent' => 'CookieConsent v3',
+    'wix' => 'Wix',
+    _ => value ?? '',
+  };
   @override
   Widget build(BuildContext context) {
     final allowed =
         widget.saved && !_busy && !_failed && _data != null && _origin != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SizedBox(height: 24),
-        Text(
-          FormStrings.cmsTransfer,
-          style: Theme.of(context).textTheme.titleMedium,
+    return TextButtonTheme(
+      data: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(48, 48),
+          alignment: Alignment.centerLeft,
         ),
-        const SizedBox(height: 8),
-        Text(FormStrings.cmsTransferHelp),
-        if (!widget.saved) Text(FormStrings.measurementWebsitesSaveFirst),
-        if (_failed) ...[
-          Semantics(liveRegion: true, child: Text(FormStrings.cmsUnavailable)),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton(
-              onPressed: _busy ? null : _load,
-              child: Text(CommonStrings.retry),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!widget.saved) Text(FormStrings.measurementWebsitesSaveFirst),
+          if (_failed) ...[
+            Semantics(
+              liveRegion: true,
+              child: Text(FormStrings.cmsUnavailable),
             ),
-          ),
-        ],
-        if (_busy) const LinearProgressIndicator(),
-        if (_data != null && widget.websites.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            key: ValueKey('website-${widget.websites.join("\n")}'),
-            initialValue: _origin,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: FormStrings.measurementWebsites,
-              border: const OutlineInputBorder(),
-            ),
-            items: widget.websites
-                .map(
-                  (origin) => DropdownMenuItem(
-                    value: origin,
-                    child: Tooltip(
-                      message: origin,
-                      child: Text(
-                        origin,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: allowed ? (v) => setState(() => _select(v!)) : null,
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            key: ValueKey('platform-$_platform'),
-            initialValue: _platform,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: FormStrings.cmsPlatform,
-              border: const OutlineInputBorder(),
-            ),
-            items: [
-              DropdownMenuItem(value: 'wordpress', child: Text('WordPress')),
-              DropdownMenuItem(value: 'joomla', child: Text('Joomla')),
-              DropdownMenuItem(value: 'wix', child: Text('Wix')),
-              DropdownMenuItem(
-                value: 'html',
-                child: Text(
-                  FormStrings.cmsHtml,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-            onChanged: allowed
-                ? (v) {
-                    _platform = v!;
-                    if (_platform == 'wix') _provider = 'wix';
-                    if (_platform != 'wix' && _provider == 'wix') {
-                      _provider = 'complianz';
-                    }
-                    _changed();
-                    _scheduleDetection();
-                  }
-                : null,
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            key: ValueKey('provider-$_provider'),
-            initialValue: _provider,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: FormStrings.cmsProvider,
-              border: const OutlineInputBorder(),
-            ),
-            items: [
-              const DropdownMenuItem(
-                value: 'complianz',
-                child: Text('Complianz'),
-              ),
-              const DropdownMenuItem(
-                value: 'cookiebot',
-                child: Text('Cookiebot'),
-              ),
-              if (_platform == 'wix' || _provider == 'wix')
-                const DropdownMenuItem(value: 'wix', child: Text('Wix')),
-              const DropdownMenuItem(
-                value: 'cookieconsent',
-                child: Text('CookieConsent v3'),
-              ),
-            ],
-            onChanged: allowed
-                ? (v) {
-                    _provider = v!;
-                    _changed();
-                    _scheduleDetection();
-                  }
-                : null,
-          ),
-          if (_provider == 'complianz') ...[
-            if (_binding?.providerConfig['provider'] == 'complianz')
-              Text(
-                '${FormStrings.cmsPolicySaved}: ${_binding!.providerConfig['policyId']}',
-              ),
-            if (_policyChanged)
-              Semantics(
-                liveRegion: true,
-                child: Text(FormStrings.cmsPolicyChanged),
-              ),
-            if (_detecting)
-              Semantics(liveRegion: true, child: Text(CommonStrings.loading)),
-            if (_detectedPolicy != null) ...[
-              Text('${FormStrings.cmsPolicyId}: $_detectedPolicy'),
-              Text(FormStrings.cmsPolicyDetected),
-            ],
-            if (_detectionFailed)
-              Semantics(
-                liveRegion: true,
-                child: Text(FormStrings.cmsPolicyDetectionFailed),
-              ),
-            if (_detectedPolicy == null && !_detecting)
-              ExpansionTile(
-                title: Text(FormStrings.cmsPolicyManual),
-                children: [
-                  _field(
-                    _policy,
-                    FormStrings.cmsPolicyId,
-                    helper: FormStrings.cmsPolicyIdHelp,
-                    error: (_edited || _coverage) && !_validPolicy
-                        ? FormStrings.cmsPolicyIdInvalid
-                        : null,
-                    keyboardType: TextInputType.number,
-                  ),
-                ],
-              ),
-            TextButton(
-              onPressed: _canDetect && !_busy && !_detecting ? _detect : null,
-              child: Text(FormStrings.cmsPolicyReload),
-            ),
-          ],
-          if (_provider == 'cookieconsent')
-            ExpansionTile(
-              title: Text(FormStrings.cmsAdvancedCategories),
-              children: [
-                _field(_analytics, FormStrings.cmsAnalyticsCategory),
-                _field(
-                  _marketing,
-                  FormStrings.cmsMarketingCategory,
-                  error: _edited && !_validCategories
-                      ? FormStrings.cmsCategoriesInvalid
-                      : null,
-                ),
-              ],
-            ),
-          const SizedBox(height: 16),
-          Semantics(
-            liveRegion: true,
-            child: Text(
-              FormStrings.cmsState(
-                _edited ? 'draft' : _binding?.state ?? 'draft',
-              ),
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ),
-          if (_edited && !_canSaveDraft) ...[
-            const SizedBox(height: 8),
-            Text(FormStrings.cmsChangesPending),
-          ],
-          if (_needsConfirmation) ...[
-            const SizedBox(height: 8),
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              value: _coverage,
-              title: Text(FormStrings.cmsCoverage),
-              onChanged: allowed && !_detecting
-                  ? (v) => setState(() => _coverage = v == true)
-                  : null,
-            ),
-            Text(
-              FormStrings.cmsCoverageDetails,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-          if (_provider != 'complianz') ...[
-            const SizedBox(height: 8),
-            Text(FormStrings.cmsFreshChoiceHelp),
-          ],
-          const SizedBox(height: 12),
-          if (_export != null && widget.saved) ...[
-            Text(FormStrings.cmsExportHelp),
-            const SizedBox(height: 12),
             Align(
               alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
-                onPressed: _busy ? null : _copyConfiguration,
-                icon: const Icon(Icons.copy),
-                label: Text(FormStrings.cmsCopy),
+              child: OutlinedButton(
+                onPressed: _busy ? null : _load,
+                child: Text(CommonStrings.retry),
               ),
             ),
-            ExpansionTile(
-              key: const PageStorageKey('website-consent-export-details'),
-              title: Text(FormStrings.cmsShowConfiguration),
-              children: [
-                SelectableText(
-                  _export!,
-                  key: const PageStorageKey('website-consent-export-text'),
-                ),
-              ],
-            ),
           ],
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: [
-              if (_needsConfirmation)
-                FilledButton(
-                  onPressed: allowed && !_detecting && _validConfig && _coverage
-                      ? () => _save(true)
-                      : null,
-                  child: Text(FormStrings.cmsConfirm),
+          if (_busy) const LinearProgressIndicator(),
+          if (_export != null && !_expanded && widget.saved)
+            ExpansionTile(
+              key: const PageStorageKey('website-consent-summary-export'),
+              title: Text(FormStrings.cmsShowConfiguration),
+              children: [SelectableText(_export!)],
+            ),
+          if (_data != null && widget.websites.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            for (final origin in widget.websites) ...[
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                color: widget.approvedWebsites.contains(origin)
+                    ? null
+                    : Theme.of(context).colorScheme.surfaceContainerLowest,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        origin.replaceFirst('https://', ''),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: widget.approvedWebsites.contains(origin)
+                              ? null
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (_data?.forWebsite(origin) case final binding?) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_platformName(binding.platform)} · ${_providerName(binding.providerConfig['provider'] as String?)}'
+                          '${binding.providerConfig['policyId'] == null ? '' : ' · ${FormStrings.cmsPolicyNumber(binding.providerConfig['policyId'].toString())}'}',
+                        ),
+                        Semantics(
+                          liveRegion: true,
+                          child: Chip(
+                            avatar: Icon(
+                              binding.state == 'ready'
+                                  ? Icons.check_circle_outline
+                                  : Icons.info_outline,
+                              size: 18,
+                            ),
+                            label: Text(FormStrings.cmsState(binding.state)),
+                          ),
+                        ),
+                      ],
+                      if (!widget.approvedWebsites.contains(origin))
+                        Text(
+                          FormStrings.measurementTransferAfterApproval,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (_data?.forWebsite(origin)?.state == 'ready' &&
+                              widget.approvedWebsites.contains(origin) &&
+                              (_origin != origin || !_needsConfirmation))
+                            FilledButton(
+                              onPressed: allowed && !_detecting
+                                  ? () {
+                                      if (_origin != origin) {
+                                        setState(
+                                          () => _select(origin, detect: false),
+                                        );
+                                      }
+                                      if (_export != null) {
+                                        _copyConfiguration();
+                                      } else {
+                                        _exportConfiguration();
+                                      }
+                                    }
+                                  : null,
+                              child: Text(
+                                _origin == origin && _export != null
+                                    ? FormStrings.cmsCopy
+                                    : FormStrings.cmsExport,
+                              ),
+                            ),
+                          if (_origin != origin || !_expanded)
+                            TextButton(
+                              onPressed: !_busy && !_failed
+                                  ? () => setState(() {
+                                      if (_origin == origin) {
+                                        _expanded = !_expanded;
+                                      } else {
+                                        _select(origin);
+                                        _expanded = true;
+                                      }
+                                    })
+                                  : null,
+                              child: Text(
+                                widget.approvedWebsites.contains(origin)
+                                    ? CommonStrings.edit
+                                    : FormStrings.measurementPrepareDraft,
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (_origin == origin)
+                        Offstage(
+                          offstage: !_expanded,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                key: ValueKey('platform-$_platform'),
+                                initialValue: _platform,
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.cmsPlatform,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                items: [
+                                  DropdownMenuItem(
+                                    value: 'wordpress',
+                                    child: Text('WordPress'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'joomla',
+                                    child: Text('Joomla'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'wix',
+                                    child: Text('Wix'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'html',
+                                    child: Text(
+                                      FormStrings.cmsHtml,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                                onChanged: allowed
+                                    ? (v) {
+                                        _platform = v!;
+                                        if (_platform == 'wix') {
+                                          _provider = 'wix';
+                                        }
+                                        if (_platform != 'wix' &&
+                                            _provider == 'wix') {
+                                          _provider = 'complianz';
+                                        }
+                                        _changed();
+                                        _scheduleDetection();
+                                      }
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                key: ValueKey('provider-$_provider'),
+                                initialValue: _provider,
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: FormStrings.cmsProvider,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                items: [
+                                  const DropdownMenuItem(
+                                    value: 'complianz',
+                                    child: Text('Complianz'),
+                                  ),
+                                  const DropdownMenuItem(
+                                    value: 'cookiebot',
+                                    child: Text('Cookiebot'),
+                                  ),
+                                  if (_platform == 'wix' || _provider == 'wix')
+                                    const DropdownMenuItem(
+                                      value: 'wix',
+                                      child: Text('Wix'),
+                                    ),
+                                  const DropdownMenuItem(
+                                    value: 'cookieconsent',
+                                    child: Text('CookieConsent v3'),
+                                  ),
+                                ],
+                                onChanged: allowed
+                                    ? (v) {
+                                        _provider = v!;
+                                        _changed();
+                                        _scheduleDetection();
+                                      }
+                                    : null,
+                              ),
+                              if (_provider == 'complianz') ...[
+                                if (_binding?.providerConfig['provider'] ==
+                                        'complianz' &&
+                                    _binding!.providerConfig['policyId'] !=
+                                        _detectedPolicy)
+                                  Text(
+                                    '${FormStrings.cmsPolicySaved}: ${_binding!.providerConfig['policyId']}',
+                                  ),
+                                if (_policyChanged)
+                                  Semantics(
+                                    liveRegion: true,
+                                    child: Text(FormStrings.cmsPolicyChanged),
+                                  ),
+                                if (_detecting)
+                                  Semantics(
+                                    liveRegion: true,
+                                    child: Text(CommonStrings.loading),
+                                  ),
+                                if (_detectionFailed)
+                                  Semantics(
+                                    liveRegion: true,
+                                    child: Text(
+                                      FormStrings.cmsPolicyDetectionFailed,
+                                    ),
+                                  ),
+                                if (_detectedPolicy == null && !_detecting)
+                                  ExpansionTile(
+                                    key: PageStorageKey(
+                                      "consent-$_origin-manual",
+                                    ),
+                                    title: Text(FormStrings.cmsPolicyManual),
+                                    children: [
+                                      _field(
+                                        _policy,
+                                        FormStrings.cmsPolicyId,
+                                        helper: FormStrings.cmsPolicyIdHelp,
+                                        error:
+                                            (_edited || _coverage) &&
+                                                !_validPolicy
+                                            ? FormStrings.cmsPolicyIdInvalid
+                                            : null,
+                                        keyboardType: TextInputType.number,
+                                      ),
+                                    ],
+                                  ),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    if (_detectedPolicy != null) ...[
+                                      Semantics(
+                                        liveRegion: true,
+                                        child: Text(
+                                          '${FormStrings.cmsPolicyNumber(_detectedPolicy!)} · ${FormStrings.cmsPolicyFromWebsite}',
+                                        ),
+                                      ),
+                                    ],
+                                    TextButton(
+                                      onPressed:
+                                          _canDetect && !_busy && !_detecting
+                                          ? _detect
+                                          : null,
+                                      child: Text(FormStrings.cmsPolicyReload),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (_provider == 'cookieconsent')
+                                ExpansionTile(
+                                  key: PageStorageKey(
+                                    "consent-$_origin-categories",
+                                  ),
+                                  title: Text(
+                                    FormStrings.cmsAdvancedCategories,
+                                  ),
+                                  children: [
+                                    _field(
+                                      _analytics,
+                                      FormStrings.cmsAnalyticsCategory,
+                                    ),
+                                    _field(
+                                      _marketing,
+                                      FormStrings.cmsMarketingCategory,
+                                      error: _edited && !_validCategories
+                                          ? FormStrings.cmsCategoriesInvalid
+                                          : null,
+                                    ),
+                                  ],
+                                ),
+                              if (_edited || _binding == null) ...[
+                                const SizedBox(height: 8),
+                                Semantics(
+                                  liveRegion: true,
+                                  child: Text(
+                                    FormStrings.cmsState(
+                                      _edited
+                                          ? 'draft'
+                                          : _binding?.state ?? 'draft',
+                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall,
+                                  ),
+                                ),
+                              ],
+                              if (_edited && !_canSaveDraft) ...[
+                                const SizedBox(height: 8),
+                                Text(FormStrings.cmsChangesPending),
+                              ],
+                              if (_needsConfirmation) ...[
+                                const SizedBox(height: 8),
+                                CheckboxListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                  value: _coverage,
+                                  title: Text(FormStrings.cmsCoverage),
+                                  onChanged: allowed && !_detecting
+                                      ? (v) => setState(
+                                          () => _coverage = v == true,
+                                        )
+                                      : null,
+                                ),
+                                Text(
+                                  FormStrings.cmsCoverageDetails,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                              if (_provider != 'complianz') ...[
+                                const SizedBox(height: 8),
+                                Text(FormStrings.cmsFreshChoiceHelp),
+                              ],
+                              if (_export != null && widget.saved) ...[
+                                Text(FormStrings.cmsExportHelp),
+                                const SizedBox(height: 12),
+                                ExpansionTile(
+                                  key: const PageStorageKey(
+                                    'website-consent-export-details',
+                                  ),
+                                  title: Text(FormStrings.cmsShowConfiguration),
+                                  children: [
+                                    SelectableText(
+                                      _export!,
+                                      key: const PageStorageKey(
+                                        'website-consent-export-text',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: [
+                                  if (_needsConfirmation)
+                                    FilledButton(
+                                      onPressed:
+                                          allowed &&
+                                              !_detecting &&
+                                              _validConfig &&
+                                              _coverage
+                                          ? () => _save(true)
+                                          : null,
+                                      child: Text(FormStrings.cmsConfirm),
+                                    ),
+                                  if (_needsConfirmation && _canSaveDraft)
+                                    OutlinedButton(
+                                      onPressed:
+                                          allowed &&
+                                              !_detecting &&
+                                              _validConfig &&
+                                              _edited
+                                          ? () => _save(false)
+                                          : null,
+                                      child: Text(FormStrings.cmsSaveDraft),
+                                    ),
+                                  if (_edited && _binding != null)
+                                    TextButton(
+                                      onPressed: allowed
+                                          ? () => setState(
+                                              () => _select(
+                                                _origin!,
+                                                detect: false,
+                                              ),
+                                            )
+                                          : null,
+                                      child: Text(CommonStrings.discardChanges),
+                                    ),
+                                  if (_binding != null &&
+                                      !{
+                                        'draft',
+                                        'disabled',
+                                      }.contains(_binding!.state))
+                                    TextButton(
+                                      onPressed: allowed && !_detecting
+                                          ? () => _run(() async {
+                                              final b = _binding!;
+                                              final data =
+                                                  await (widget.disable?.call(
+                                                        b.id,
+                                                        b.version,
+                                                      ) ??
+                                                      DbUnits.disableWebsiteConsent(
+                                                        b.id,
+                                                        b.version,
+                                                      ));
+                                              if (mounted) {
+                                                setState(() {
+                                                  _data = data;
+                                                  _select(_origin!);
+                                                });
+                                              }
+                                            })
+                                          : null,
+                                      child: Text(FormStrings.cmsDisable),
+                                    ),
+                                  TextButton(
+                                    onPressed: _busy
+                                        ? null
+                                        : () =>
+                                              setState(() => _expanded = false),
+                                    child: Text(CommonStrings.close),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              if (_needsConfirmation && _canSaveDraft)
-                OutlinedButton(
-                  onPressed: allowed && !_detecting && _validConfig && _edited
-                      ? () => _save(false)
-                      : null,
-                  child: Text(FormStrings.cmsSaveDraft),
-                ),
-              if (!_needsConfirmation && _export == null)
-                FilledButton(
-                  onPressed: allowed && !_detecting
-                      ? () => _run(() async {
-                          final b = _binding!;
-                          final data =
-                              await (widget.export?.call(b.id, b.version) ??
-                                  DbUnits.exportWebsiteConsent(
-                                    b.id,
-                                    b.version,
-                                  ));
-                          if (mounted) {
-                            setState(
-                              () =>
-                                  _export = const JsonEncoder.withIndent('  ')
-                                      .convert(data),
-                            );
-                          }
-                        })
-                      : null,
-                  child: Text(FormStrings.cmsExport),
-                ),
-              if (_edited && _binding != null)
-                TextButton(
-                  onPressed: allowed
-                      ? () => setState(() => _select(_origin!, detect: false))
-                      : null,
-                  child: Text(CommonStrings.discardChanges),
-                ),
-              if (_binding != null &&
-                  !{'draft', 'disabled'}.contains(_binding!.state))
-                TextButton(
-                  onPressed: allowed && !_detecting
-                      ? () => _run(() async {
-                          final b = _binding!;
-                          final data =
-                              await (widget.disable?.call(b.id, b.version) ??
-                                  DbUnits.disableWebsiteConsent(
-                                    b.id,
-                                    b.version,
-                                  ));
-                          if (mounted) {
-                            setState(() {
-                              _data = data;
-                              _select(_origin!);
-                            });
-                          }
-                        })
-                      : null,
-                  child: Text(FormStrings.cmsDisable),
-                ),
+              ),
             ],
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

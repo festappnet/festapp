@@ -4,6 +4,55 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String measurementPendingCount(int count, String locale) =>
+      _measurementCount('measurementPendingCount', count, locale);
+  static String measurementRunningCount(int count, String locale) =>
+      _measurementCount('measurementRunningCount', count, locale);
+  // EasyLocalization skips few/many by default; explicitly use CLDR rules.
+  static String _measurementCount(String key, int count, String locale) {
+    String form(String category) =>
+        'FeatureFormSettings.$key.$category'.tr(namedArgs: {'count': '$count'});
+    return Intl.plural(
+      count,
+      locale: locale,
+      one: form('one'),
+      few: form('few'),
+      many: form('many'),
+      other: form('other'),
+    );
+  }
+
+  static String get measurementPolicySummary =>
+      'FeatureFormSettings.measurementPolicySummary'.tr();
+  static String get measurementPrepareDraft =>
+      'FeatureFormSettings.measurementPrepareDraft'.tr();
+  static String get measurementBannerFallback =>
+      'FeatureFormSettings.measurementBannerFallback'.tr();
+
+  static String get measurementBasics =>
+      'FeatureFormSettings.measurementBasics'.tr();
+  static String get measurementOn => 'FeatureFormSettings.measurementOn'.tr();
+  static String get measurementOff => 'FeatureFormSettings.measurementOff'.tr();
+  static String get measurementAddWebsite =>
+      'FeatureFormSettings.measurementAddWebsite'.tr();
+  static String get measurementRemoveWebsite =>
+      'FeatureFormSettings.measurementRemoveWebsite'.tr();
+  static String get measurementBridgeHelp =>
+      'FeatureFormSettings.measurementBridgeHelp'.tr();
+  static String get measurementTermsAccepted =>
+      'FeatureFormSettings.measurementTermsAccepted'.tr();
+  static String get measurementShowTerms =>
+      'FeatureFormSettings.measurementShowTerms'.tr();
+  static String get measurementOwnBanner =>
+      'FeatureFormSettings.measurementOwnBanner'.tr();
+  static String get measurementHowItWorks =>
+      'FeatureFormSettings.measurementHowItWorks'.tr();
+  static String get measurementTransferAfterApproval =>
+      'FeatureFormSettings.measurementTransferAfterApproval'.tr();
+  static String get cmsPolicyFromWebsite =>
+      'FeatureFormSettings.cmsPolicyFromWebsite'.tr();
+  static String cmsPolicyNumber(String id) =>
+      'FeatureFormSettings.cmsPolicyNumber'.tr(namedArgs: {'id': id});
   static String get cmsEnableImport =>
       'FeatureFormSettings.cmsEnableImport'.tr();
   static String get cmsImportLabel => 'FeatureFormSettings.cmsImportLabel'.tr();

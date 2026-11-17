@@ -816,13 +816,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                               bottom: 16,
                             ),
                             title: Text(FormStrings.measurementTitle),
-                            subtitle: Text(
-                              _measurementEnabled
-                                  ? UnitSettingsStrings
-                                        .measurementSummaryEnabled
-                                  : UnitSettingsStrings
-                                        .measurementSummaryDisabled,
-                            ),
                             children: [
                               UnitMeasurementSettings(
                                 websiteConsentBuilder:

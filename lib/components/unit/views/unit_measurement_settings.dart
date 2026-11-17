@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show setEquals;
 
 import '../unit_settings_fields.dart';
 
+import 'package:fstapp/widgets/app_dialog.dart';
+
 import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
@@ -125,11 +127,88 @@ class UnitMeasurementSettings extends StatelessWidget {
       return FormStrings.measurementWebsiteUnrequested;
     }
 
+    final running =
+        enabled &&
+        statusKnown &&
+        !unsaved &&
+        sites.isNotEmpty &&
+        approval!.approved &&
+        approval!.organizationAllowed &&
+        approval!.runtimeSupported &&
+        sites.every(approval!.approvedOrigins.contains) &&
+        privacyUrlController.text.trim().isNotEmpty &&
+        (gtmController.text.trim().isNotEmpty ||
+            scriptsController.text.trim().isNotEmpty);
     const gap = SizedBox(height: 24);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(FormStrings.measurementTitle, style: theme.textTheme.titleMedium),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            if (running)
+              Chip(
+                avatar: const Icon(Icons.check_circle_outline, size: 18),
+                label: Text(
+                  FormStrings.measurementRunningCount(
+                    sites.length,
+                    Localizations.localeOf(context).toLanguageTag(),
+                  ),
+                ),
+              )
+            else ...[
+              Chip(
+                avatar: Icon(
+                  enabled
+                      ? Icons.check_circle_outline
+                      : Icons.pause_circle_outline,
+                  size: 18,
+                ),
+                label: Text(
+                  enabled
+                      ? FormStrings.measurementOn
+                      : FormStrings.measurementOff,
+                ),
+              ),
+              if (privacyUrlController.text.trim().isNotEmpty)
+                Chip(
+                  avatar: const Icon(Icons.check, size: 18),
+                  label: Text(FormStrings.measurementPolicySummary),
+                ),
+              if (gtmController.text.trim().isNotEmpty)
+                const Chip(
+                  avatar: Icon(Icons.check, size: 18),
+                  label: Text('GTM'),
+                ),
+              if (sites.any(
+                (site) =>
+                    websiteStatus(site) ==
+                    FormStrings.measurementWebsitePending,
+              ))
+                Chip(
+                  avatar: const Icon(Icons.schedule, size: 18),
+                  label: Text(
+                    FormStrings.measurementPendingCount(
+                      sites
+                          .where(
+                            (site) =>
+                                websiteStatus(site) ==
+                                FormStrings.measurementWebsitePending,
+                          )
+                          .length,
+                      Localizations.localeOf(context).toLanguageTag(),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+        gap,
+        Text(
+          '1  ${FormStrings.measurementBasics}',
+          style: theme.textTheme.titleMedium,
+        ),
         const SizedBox(height: 8),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
@@ -147,33 +226,132 @@ class UnitMeasurementSettings extends StatelessWidget {
             ),
           ),
         ],
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(FormStrings.measurementConsentBridge),
-          subtitle: Text(FormStrings.measurementConsentBridgeConfirmation),
-          value: consentBridge,
-          onChanged: canEdit ? onConsentBridgeChanged : null,
+        gap,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final fields = <Widget>[
+              TextFormField(
+                key: const PageStorageKey("measurement-gtmController"),
+                controller: gtmController,
+                enabled: canEdit,
+                maxLength: 36,
+                decoration: InputDecoration(
+                  labelText: FormStrings.gtmContainer,
+                  hintText: 'GTM-XXXX',
+                  helperText: FormStrings.gtmHelp,
+                  helperMaxLines: 6,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) =>
+                    value == null ||
+                        value.trim().isEmpty ||
+                        RegExp(r'^GTM-[A-Z0-9]{4,32}$').hasMatch(value.trim())
+                    ? null
+                    : FormStrings.gtmInvalid,
+              ),
+              TextFormField(
+                key: const PageStorageKey("measurement-privacyUrlController"),
+                controller: privacyUrlController,
+                enabled: canEdit,
+                maxLength: 2048,
+                keyboardType: TextInputType.url,
+                decoration: InputDecoration(
+                  labelText: FormStrings.measurementPrivacyUrl,
+                  helperText: FormStrings.measurementPrivacyUrlHelp,
+                  helperMaxLines: 6,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  final text = value?.trim() ?? '';
+                  if (text.isEmpty) {
+                    return _privacyUrlRequired
+                        ? FormStrings.measurementPrivacyUrlRequired
+                        : null;
+                  }
+                  return text.length <= 2048 &&
+                          RegExp(
+                            r'^https://[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*(:([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?([/?#][^\s\\]*)?$',
+                          ).hasMatch(text)
+                      ? null
+                      : FormStrings.measurementPrivacyUrlInvalid;
+                },
+              ),
+            ];
+            return constraints.maxWidth >= 800
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: fields[0]),
+                      const SizedBox(width: 24),
+                      Expanded(child: fields[1]),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [fields[0], gap, fields[1]],
+                  );
+          },
         ),
         if (websitesController != null) ...[
           gap,
-          TextFormField(
-            controller: websitesController,
-            enabled: canEdit,
-            minLines: 2,
-            maxLines: 10,
-            decoration: InputDecoration(
-              labelText: FormStrings.measurementWebsites,
-              helperText: FormStrings.measurementWebsitesHelp,
-              helperMaxLines: 12,
-              errorMaxLines: 4,
-              border: const OutlineInputBorder(),
-            ),
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: validateWebsites,
+          Text(
+            '2  ${FormStrings.measurementWebsites}',
+            style: theme.textTheme.titleMedium,
           ),
-          for (final site in sites) Text('$site: ${websiteStatus(site)}'),
-          if (canEdit && websiteConsentBuilder != null)
-            websiteConsentBuilder!(),
+          const SizedBox(height: 12),
+          for (final site in sites)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          SizedBox(
+                            width: constraints.maxWidth < 600
+                                ? constraints.maxWidth
+                                : null,
+                            child: Text(site.replaceFirst('https://', '')),
+                          ),
+                          Chip(
+                            avatar: Icon(
+                              approval?.approvedOrigins.contains(site) == true
+                                  ? Icons.check_circle_outline
+                                  : Icons.schedule,
+                              size: 18,
+                            ),
+                            label: Text(
+                              websiteStatus(site) ==
+                                          FormStrings
+                                              .measurementWebsitePending &&
+                                      approval?.requestedAt != null
+                                  ? '${websiteStatus(site)} · ${DateFormat.Md(Localizations.localeOf(context).toString()).format(approval!.requestedAt!.toLocal())}'
+                                  : websiteStatus(site),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (canEdit)
+                    IconButton(
+                      tooltip: FormStrings.measurementRemoveWebsite,
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        websitesController!.text = sites
+                            .where((value) => value != site)
+                            .join('\n');
+                      },
+                    ),
+                ],
+              ),
+            ),
+          _WebsiteAdder(controller: websitesController!, canEdit: canEdit),
         ],
         if (enabled && loadingApproval) ...[
           const SizedBox(height: 8),
@@ -201,19 +379,11 @@ class UnitMeasurementSettings extends StatelessWidget {
               approval!.canRequest)
             Text(FormStrings.measurementApprovalRetry)
           else if (approval!.canRequest && approval!.approved)
-            Text(FormStrings.measurementWebsitesReady)
-          else if (approval!.requestState ==
-                  MeasurementRequestState.requested &&
-              approval!.requestedAt != null)
-            Text(
-              FormStrings.measurementApprovalRequested(
-                DateFormat.yMd(Localizations.localeOf(context).toString())
-                    .format(approval!.requestedAt!.toLocal()),
-              ),
-            ),
-          if (approval!.canRequest ||
-              approval!.requestState == MeasurementRequestState.requested ||
-              unsaved) ...[
+            Text(FormStrings.measurementWebsitesReady),
+          if (canEdit &&
+              !unsaved &&
+              approval!.canRequest &&
+              validateWebsites(websitesController?.text) == null) ...[
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
@@ -241,109 +411,107 @@ class UnitMeasurementSettings extends StatelessWidget {
           ),
         ],
         gap,
-        TextFormField(
-          controller: gtmController,
-          enabled: canEdit,
-          maxLength: 36,
-          decoration: InputDecoration(
-            labelText: FormStrings.gtmContainer,
-            hintText: 'GTM-XXXX',
-            helperText: FormStrings.gtmHelp,
-            helperMaxLines: 6,
-            border: const OutlineInputBorder(),
-          ),
-          validator: (value) =>
-              value == null ||
-                  value.trim().isEmpty ||
-                  RegExp(r'^GTM-[A-Z0-9]{4,32}$').hasMatch(value.trim())
-              ? null
-              : FormStrings.gtmInvalid,
-        ),
-        gap,
-        TextFormField(
-          controller: privacyUrlController,
-          enabled: canEdit,
-          maxLength: 2048,
-          keyboardType: TextInputType.url,
-          decoration: InputDecoration(
-            labelText: FormStrings.measurementPrivacyUrl,
-            helperText: FormStrings.measurementPrivacyUrlHelp,
-            helperMaxLines: 6,
-            border: const OutlineInputBorder(),
-          ),
-          validator: (value) {
-            final text = value?.trim() ?? '';
-            if (text.isEmpty) {
-              return _privacyUrlRequired
-                  ? FormStrings.measurementPrivacyUrlRequired
-                  : null;
-            }
-            return text.length <= 2048 &&
-                    RegExp(
-                      r'^https://[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*(:([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5]))?([/?#][^\s\\]*)?$',
-                    ).hasMatch(text)
-                ? null
-                : FormStrings.measurementPrivacyUrlInvalid;
-          },
-        ),
-        gap,
-        DropdownButtonFormField<String>(
-          isExpanded: true,
-          key: ValueKey(consentLayout),
-          initialValue: consentLayout,
-          decoration: InputDecoration(
-            labelText: FormStrings.measurementConsentLayout,
-            border: const OutlineInputBorder(),
-          ),
-          items: [
-            DropdownMenuItem(
-              value: 'bar',
-              child: Text(FormStrings.measurementConsentLayoutBar),
-            ),
-            DropdownMenuItem(
-              value: 'modal',
-              child: Text(FormStrings.measurementConsentLayoutModal),
-            ),
-          ],
-          onChanged: canEdit
-              ? (value) {
-                  if (value != null) onConsentLayoutChanged(value);
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text('3  ${FormStrings.measurementConsentBridge}'),
+          subtitle: Text(FormStrings.measurementBridgeHelp),
+          value: consentBridge,
+          onChanged: canEdit && onConsentBridgeChanged != null
+              ? (value) async {
+                  if (!value) {
+                    onConsentBridgeChanged!(false);
+                    return;
+                  }
+                  final confirmed = await _terms(context, confirm: true);
+                  if (confirmed == true) onConsentBridgeChanged!(true);
                 }
               : null,
         ),
-        gap,
-        TextFormField(
-          controller: consentTitleController,
-          enabled: canEdit,
-          maxLength: 80,
-          decoration: InputDecoration(
-            labelText: FormStrings.measurementConsentCustomTitle,
-            helperText: FormStrings.measurementConsentCustomTitleHelp,
-            helperMaxLines: 3,
-            border: const OutlineInputBorder(),
+        if (consentBridge)
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            children: [
+              Text(
+                FormStrings.measurementTermsAccepted,
+                style: theme.textTheme.bodySmall,
+              ),
+              TextButton(
+                onPressed: () => _terms(context),
+                child: Text(FormStrings.measurementShowTerms),
+              ),
+            ],
           ),
-        ),
-        _restore(
-          consentTitleController,
-          FormStrings.measurementConsentDefaultTitle,
-        ),
+        if (canEdit && websiteConsentBuilder != null) websiteConsentBuilder!(),
         gap,
-        TextFormField(
-          controller: consentTextController,
-          enabled: canEdit,
-          minLines: 3,
-          maxLines: 8,
-          maxLength: 500,
-          decoration: InputDecoration(
-            labelText: FormStrings.measurementConsentCustomText,
-            helperText: FormStrings.measurementConsentCustomTextHelp,
-            helperMaxLines: 3,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        _restore(
-          consentTextController,
-          FormStrings.measurementConsentDefaultText,
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          maintainState: true,
+          key: const PageStorageKey("measurement-section-banner"),
+          title: Text(FormStrings.measurementOwnBanner),
+          subtitle: Text(FormStrings.measurementBannerFallback),
+          children: [
+            DropdownButtonFormField<String>(
+              isExpanded: true,
+              key: ValueKey(consentLayout),
+              initialValue: consentLayout,
+              decoration: InputDecoration(
+                labelText: FormStrings.measurementConsentLayout,
+                border: const OutlineInputBorder(),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: 'bar',
+                  child: Text(FormStrings.measurementConsentLayoutBar),
+                ),
+                DropdownMenuItem(
+                  value: 'modal',
+                  child: Text(FormStrings.measurementConsentLayoutModal),
+                ),
+              ],
+              onChanged: canEdit
+                  ? (value) {
+                      if (value != null) onConsentLayoutChanged(value);
+                    }
+                  : null,
+            ),
+            gap,
+            TextFormField(
+              key: const PageStorageKey("measurement-consentTitleController"),
+              controller: consentTitleController,
+              enabled: canEdit,
+              maxLength: 80,
+              decoration: InputDecoration(
+                labelText: FormStrings.measurementConsentCustomTitle,
+                helperText: FormStrings.measurementConsentCustomTitleHelp,
+                helperMaxLines: 3,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            _restore(
+              consentTitleController,
+              FormStrings.measurementConsentDefaultTitle,
+            ),
+            gap,
+            TextFormField(
+              key: const PageStorageKey("measurement-consentTextController"),
+              controller: consentTextController,
+              enabled: canEdit,
+              minLines: 3,
+              maxLines: 8,
+              maxLength: 500,
+              decoration: InputDecoration(
+                labelText: FormStrings.measurementConsentCustomText,
+                helperText: FormStrings.measurementConsentCustomTextHelp,
+                helperMaxLines: 3,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            _restore(
+              consentTextController,
+              FormStrings.measurementConsentDefaultText,
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         ExpansionTile(
@@ -351,9 +519,11 @@ class UnitMeasurementSettings extends StatelessWidget {
           childrenPadding: const EdgeInsets.only(top: 8),
           // Collapsed scripts must stay in the Form so the validator runs.
           maintainState: true,
+          key: const PageStorageKey("measurement-section-scripts"),
           title: Text(FormStrings.measurementAdvanced),
           children: [
             TextFormField(
+              key: const PageStorageKey("measurement-scriptsController"),
               controller: scriptsController,
               enabled: canEdit,
               minLines: 5,
@@ -373,15 +543,43 @@ class UnitMeasurementSettings extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
-        Text(
-          FormStrings.measurementActivationHelp,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          key: const PageStorageKey("measurement-section-help"),
+          title: Text(FormStrings.measurementHowItWorks),
+          children: [
+            Text(
+              FormStrings.measurementActivationHelp,
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
         ),
       ],
     );
   }
+
+  Future<bool?> _terms(BuildContext context, {bool confirm = false}) =>
+      showDialog<bool>(
+        context: context,
+        builder: (context) => AppAlertDialog(
+          title: Text(FormStrings.measurementConsentBridge),
+          onClose: () => Navigator.of(context).pop(),
+          content: SingleChildScrollView(
+            child: Text(FormStrings.measurementConsentBridgeConfirmation),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(CommonStrings.cancel),
+            ),
+            if (confirm)
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(CommonStrings.confirm),
+              ),
+          ],
+        ),
+      );
 
   /// Stored overrides can be cleared even when identical to the localized default.
   Widget _restore(TextEditingController controller, String fallback) =>
@@ -402,4 +600,97 @@ class UnitMeasurementSettings extends StatelessWidget {
           ),
         )
       : const SizedBox.shrink();
+}
+
+class _WebsiteAdder extends StatefulWidget {
+  final TextEditingController controller;
+  final bool canEdit;
+  const _WebsiteAdder({required this.controller, required this.canEdit});
+  @override
+  State<_WebsiteAdder> createState() => _WebsiteAdderState();
+}
+
+class _WebsiteAdderState extends State<_WebsiteAdder> {
+  final _input = TextEditingController();
+  String? _error;
+  @override
+  void dispose() {
+    _input.dispose();
+    super.dispose();
+  }
+
+  void _add() {
+    final value = _input.text.trim();
+    final sites = UnitMeasurementSettings.parseWebsites(widget.controller.text);
+    final error = value.isEmpty
+        ? FormStrings.measurementWebsitesInvalid
+        : UnitMeasurementSettings.validateWebsites(
+            [...sites, value].join('\n'),
+          );
+    setState(() => _error = error);
+    if (error != null) return;
+    widget.controller.text = {...sites, value}.join('\n');
+    _input.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      // Keep the canonical controller in the form's validation lifecycle.
+      FormField<String>(
+        validator: (_) =>
+            UnitMeasurementSettings.validateWebsites(widget.controller.text),
+        builder: (state) => state.hasError
+            ? Text(
+                state.errorText!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              )
+            : const SizedBox.shrink(),
+      ),
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final field = TextField(
+            key: const PageStorageKey("measurement-add-website"),
+            controller: _input,
+            enabled: widget.canEdit,
+            onSubmitted: widget.canEdit ? (_) => _add() : null,
+            decoration: InputDecoration(
+              labelText: FormStrings.measurementAddWebsite,
+              hintText: 'https://',
+              errorText: _error,
+              errorMaxLines: 4,
+              helperText: FormStrings.measurementWebsitesHelp,
+              helperMaxLines: 8,
+              border: const OutlineInputBorder(),
+            ),
+          );
+          final button = Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: widget.canEdit ? _add : null,
+              icon: const Icon(Icons.add),
+              label: Text(CommonStrings.add),
+            ),
+          );
+          return constraints.maxWidth >= 800
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: field),
+                    const SizedBox(width: 16),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: button,
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [field, button],
+                );
+        },
+      ),
+    ],
+  );
 }
