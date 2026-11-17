@@ -145,8 +145,11 @@ GitHub SHA-256; the digest is verified again on every read.
 Wix has quick contracts/build, PHP adapter smoke and an installed CMS unit.
 Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix
-reinstalls shared package dependencies. CMS uses one frozen WordPress tool
-installation within the run, keeping all copied environment state private.
+reinstalls shared package dependencies. Installed CMS uses digest-pinned official
+WordPress and WP-CLI images directly, avoiding wp-env's unused Composer/PHPUnit
+image builds. Both configured core/PHP pairs are verified at runtime, with
+separate volumes and databases. Owner labels fence creation and cleanup; private
+state is never cached. Developer wp-env tooling and its dependency tests remain.
 Pinned browser binaries are cached on GitHub; system browser libraries and all
 private CMS/database state are prepared normally. A measured upstream Docker
 image archive cache was removed: even a verified warm hit did not improve the

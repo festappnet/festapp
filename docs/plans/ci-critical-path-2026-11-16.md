@@ -136,3 +136,25 @@ canonical image + Wix mirror (eight units), complete=true and
 inputsUnchanged=true: `20261116T193514-7945f9afa6f2`. All nine installed CMS cases
 passed; CMS was 123.2 s and the combined local mirror 155.1 s. Hosted validation
 for the final published source remains a separate gate.
+
+
+## Follow-up: remove unused WordPress build tooling (2026-11-17)
+
+The previous final source passed all eight exact-head jobs: full window 352 s,
+Wix 348 s, installed CMS 273.1 s, all nine cases. The approved review exception
+allowed PR903 to merge as `22aae8694c29a9bb252713a97636ffdb1bea0948`.
+
+The dominant WordPress startup (176.1 s hosted) builds four derivative images,
+installing Composer, PHPUnit and compiler dependencies even though this matrix
+uses only WP-CLI and browser assertions. Replace only the CI fixture's wp-env
+bootstrap with digest-pinned official WordPress/WP-CLI images, using the existing
+image manifest and exact core/PHP versions from `.wp-env.json`. Keep separate
+core volumes/databases, both installed products, actual plugin checks, all nine
+browser cases and the existing real Supabase backend. Remove unused storage-api
+from that backend's service list. No cached private state or new runtime image
+builds. Developer wp-env commands and dependency compatibility tests remain.
+
+Validate owner-label cleanup refusal, image pins, version separation and the
+complete canonical image/seat/Wix mirror, then measure exact-source hosted CI
+before publication to main. The authorized review exception applies; required
+CI checks still apply. Report full versus reused execution separately.
