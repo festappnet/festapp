@@ -456,7 +456,7 @@ Ve vloženém formuláři se plovoucí tlačítko nastavení nikdy nezobrazuje, 
 na zdroj souhlasu nebo dříve uloženou volbu. Nevytváří se ani místní dialog
 Klaro a nečte se volba uložená pro samostatný formulář. Souhlas, jeho obnovování
 a odvolání spravuje stávající most hostitelského webu. Neznámý nebo odpojený
-zdroj nepovolí měření a neblokuje vyplnění formuláře.
+zdroj neudělí souhlas s volitelnými účely a neblokuje vyplnění formuláře.
 
 Přesný kontrakt zdroje a protokolu je v
 [dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).
