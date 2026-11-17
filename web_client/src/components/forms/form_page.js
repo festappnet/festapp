@@ -583,7 +583,7 @@ export class FormPage extends Component {
                 this.embedBridge.setMeasurementRuntime(runtime);
             }
             let identity=hasBrowserSession(window)?'authenticated':'anonymous';
-            const consentSource=this.embedBridge ? createEmbedConsentSource({bridge:this.embedBridge,model:formModel,host:this.host}) : {
+            const consentSource=this.embedBridge ? createEmbedConsentSource({bridge:this.embedBridge}) : {
                 connect:(policy,notify)=>{
                     let disposed=false,cleanup;
                     if(policy?.visitor_role!=='staff') import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{

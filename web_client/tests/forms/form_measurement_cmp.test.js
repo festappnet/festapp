@@ -6,10 +6,17 @@ import {JSDOM} from 'jsdom';
 
 const bundle = await build({stdin:{contents:`
 import {startMeasurementConsent} from './src/components/forms/form_measurement_cmp.js';
+import {createEmbedConsentSource} from './src/components/forms/form_measurement_embed_consent.js';
 import {LocalizationService} from './src/services/localization_service.js';
-window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice, approved_hosts, measurement_consent_bridge = true, remoteSource, win = window) => {
+window.startManagedEmbed = (translations, bridge, notify) => {
  LocalizationService.translations = translations;
- return startMeasurementConsent({win,remoteSource,model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice,approved_hosts,measurement_consent_bridge}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
+ const model = {data:{analytics:{organization:1,unit:2,processing_revision:'a',privacy_url:'https://organizer.example/privacy',
+  website_consent_bindings:[{websiteOrigin:bridge.origin}]}}};
+ return createEmbedConsentSource({bridge}).connect(model.data.analytics,notify);
+};
+window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice, approved_hosts, measurement_consent_bridge = true, win = window) => {
+ LocalizationService.translations = translations;
+ return startMeasurementConsent({win,model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice,approved_hosts,measurement_consent_bridge}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
 };`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
 const settle=()=>new Promise(resolve=>setTimeout(resolve,30));
 const none={analytics:false,marketing:false},both={analytics:true,marketing:true};
@@ -647,61 +654,35 @@ test('source disconnect removes imported grant and restores normal choice',async
  }finally{f.close()}
 });
 
-for (const context of ['iframe', 'embed URL', 'restricted frame']) {
- for (const state of ['accepted', 'declined', 'pending host', 'no source', 'local cookie']) {
-  test(`no floating settings in ${context} with ${state}`,async()=>{
-   const dom=new JSDOM('<html lang="cs"><body style="overflow:auto"><main></main></body></html>',{
-    url:'https://tickets.example/form/test'+(context==='embed URL'?'?embed=1':''),runScripts:'outside-only',pretendToBeVisual:true});
-   const win=dom.window,grants=[];
-   if(context==='iframe')dom.reconfigure({windowTop:{}});
-   const controllerWin=context==='restricted frame'?new Proxy(win,{get(target,key){
-    if(key==='top')throw new Error('Restricted WindowProxy');
-    const value=Reflect.get(target,key);
-    return typeof value==='function'?value.bind(target):value;
-   }}):win;
-   if(state==='local cookie')win.document.cookie='festapp-measurement-1-2-a='+encodeURIComponent(JSON.stringify(both))+'; Path=/';
-   const cookie=win.document.cookie;
-   let options,cleaned=0,cleanup;
-   const source=state==='no source'?undefined:{connect(input){
-    options=input;
-    const stop=()=>cleaned++;
-    stop.pending=true;
-    return stop;
-   }};
-   const absent=()=>{
-    assert.equal(win.document.querySelector('.festapp-consent-fab'),null);
-    assert.equal(win.document.body.classList.contains('festapp-consent-space'),false);
-   };
-   try {
-    win.eval(bundle.outputFiles[0].text);
-    cleanup=win.startFixture(cs(),{setConsent:value=>grants.push(plain(value))},
-     'https://organizer.example/privacy',undefined,undefined,true,source,controllerWin);
-    absent();await settle();absent();
-    if(state==='accepted' || state==='declined') {
-     const metadata={leaseId:'host',expiresAt:Date.now()+60000};
-     options.accept(state==='accepted'?both:none,metadata);
-     await settle();absent();
-     assert.deepEqual(grants.at(-1),{...(state==='accepted'?both:none),...metadata});
-     assert.equal(win.document.querySelector('.cookie-modal-notice'),null);
-    } else if(state==='local cookie') {
-     assert.equal(options.hasChoice(),true);
-     await settle();absent();assert.deepEqual(grants.at(-1),both);
-    } else {
-     if(options)options.settled();
-     await settle();absent();assert.deepEqual(grants.at(-1),none);
-     const root=win.document.querySelector('#festapp-measurement-consent');
-     assert.ok(root.querySelector('.cookie-modal-notice'));
-     root.querySelector('.cm-btn-lern-more').click();await settle();
-     key(win,win.document.activeElement,'Escape');await settle();absent();
-    }
-    assert.equal(win.document.cookie,cookie,'hiding the FAB never changes consent storage');
-    cleanup();cleanup=undefined;absent();
-    assert.equal(win.document.body.style.overflow,'auto');
-    if(source)assert.ok(cleaned>0);
-   } finally {cleanup?.();win.close();}
-  });
- }
-}
+for (const context of ['iframe', 'embed URL', 'restricted frame']) test(`standalone CMP stays inert in ${context}`,async()=>{
+ const dom=new JSDOM('<html lang="cs"><body style="overflow:auto"><main><input aria-label="Jméno"></main></body></html>',{
+  url:'https://tickets.example/form/test'+(context==='embed URL'?'?embed=1':''),runScripts:'outside-only',pretendToBeVisual:true});
+ const win=dom.window,grants=[];
+ if(context==='iframe')dom.reconfigure({windowTop:{}});
+ const controllerWin=context==='restricted frame'?new Proxy(win,{get(target,key){
+  if(key==='top')throw new Error('Restricted WindowProxy');
+  const value=Reflect.get(target,key);
+  return typeof value==='function'?value.bind(target):value;
+ }}):win;
+ win.document.cookie='festapp-measurement-1-2-a='+encodeURIComponent(JSON.stringify(both))+'; Path=/';
+ const cookie=win.document.cookie;
+ let cleanup;
+ try{
+  const input=win.document.querySelector('input');input.focus();
+  win.eval(bundle.outputFiles[0].text);
+  cleanup=win.startFixture(cs(),{setConsent:value=>grants.push(plain(value))},
+   'https://organizer.example/privacy',undefined,undefined,true,controllerWin);
+  await settle();
+  assert.deepEqual(grants,[false],'an accidental standalone controller cannot grant embedded consent');
+  assert.equal(win.document.querySelector('#festapp-measurement-consent'),null);
+  assert.equal(win.document.querySelector('.festapp-consent-fab'),null);
+  assert.equal(win.document.body.classList.contains('festapp-consent-space'),false);
+  assert.equal(win.document.body.style.overflow,'auto');
+  assert.equal(win.document.activeElement,input,'embedded checkout keeps keyboard focus');
+  assert.equal(win.document.cookie,cookie);
+  cleanup();cleanup=undefined;
+ }finally{cleanup?.();win.close();}
+});
 
 for (const embedded of [false,true]) test(`cleanup preserves pre-existing consent clearance (${embedded?'embed':'top-level'})`,async()=>{
  const dom=new JSDOM('<html lang="cs"><body class="festapp-consent-space"><main></main></body></html>',{
@@ -716,4 +697,35 @@ for (const embedded of [false,true]) test(`cleanup preserves pre-existing consen
   cleanup();cleanup=undefined;
   assert.equal(win.document.body.classList.contains('festapp-consent-space'),true);
  } finally {cleanup?.();win.close();}
+});
+
+for (const localChoice of [undefined, none, both]) test(`managed embed follows host withdrawal without local CMP (${JSON.stringify(localChoice)})`,async()=>{
+ const dom=new JSDOM('<html lang="cs"><body style="overflow:auto"><main><input aria-label="Jméno"></main></body></html>',{
+  url:'https://tickets.example/form/test?embed=1',runScripts:'outside-only',pretendToBeVisual:true});
+ const win=dom.window,values=[];
+ dom.reconfigure({windowTop:{}});
+ if(localChoice)win.document.cookie='festapp-measurement-1-2-a='+encodeURIComponent(JSON.stringify(localChoice))+'; Path=/';
+ const cookie=win.document.cookie;
+ let receive,disconnected=0,cleanup;
+ const bridge={origin:'https://host.example',leaseId:'host',leaseUntil:Date.now()+60000,
+  connectConsent(_policy,notify){receive=notify;notify(false);return ()=>disconnected++;}};
+ const clearUI=()=>{
+  assert.equal(win.document.querySelector('#festapp-measurement-consent'),null,'the iframe never creates a local notice');
+  assert.equal(win.document.querySelector('.festapp-consent-fab'),null);
+  assert.equal(win.document.body.classList.contains('festapp-consent-space'),false);
+  assert.equal(win.document.body.style.overflow,'auto');
+  assert.equal(win.document.querySelector('[inert]'),null,'host consent never blocks checkout');
+ };
+ try{
+  win.eval(bundle.outputFiles[0].text);
+  cleanup=win.startManagedEmbed(cs(),bridge,value=>values.push(plain(value)));
+  await settle();clearUI();assert.equal(values.at(-1),false);
+  for(const choice of [both,none]){
+   const hostChoice={...choice,leaseId:'host',expiresAt:bridge.leaseUntil};
+   receive(hostChoice);await settle();clearUI();assert.deepEqual(values.at(-1),hostChoice);
+  }
+  receive(false);await settle();clearUI();assert.equal(values.at(-1),false,'source loss revokes host consent');
+  assert.equal(win.document.cookie,cookie,'host consent neither reads into nor overwrites the local choice');
+  cleanup();cleanup=undefined;assert.equal(disconnected,1);clearUI();
+ }finally{cleanup?.();win.close();}
 });

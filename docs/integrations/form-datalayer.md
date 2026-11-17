@@ -98,8 +98,10 @@ layouts, with equal prominence for Decline and Accept, a privacy URL and plain
 custom text. Settings opens the per-purpose dialog before any decision; the
 floating Consent settings button remains available for later changes on top-level
 pages, including a new tab opened through a consent link. It is never rendered
-in embeds, regardless of consent source or saved choices; the host website owns
-consent there.
+in embeds. Embedded forms use the host bridge directly for consent, renewal
+and revocation; they never create a local Klaro controller or read a standalone
+choice cookie. Unknown or disconnected host choices remain denied without
+blocking checkout. The host website owns consent there.
 The dialog also shows an always-on, disabled necessary-data row for form
 operation, security and remembering the choice. This informational row is not a
 Klaro service, adds nothing to stored consent and maps to no Consent Mode signal. The notice blocks the page, not measurement. Saved choice belongs to

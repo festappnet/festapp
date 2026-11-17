@@ -453,7 +453,10 @@ Klaro místní volby mezi již otevřenými kartami nepřenáší průběžně. 
 může potlačit GTM Just Links trigger s validací; nákup měřte událostmi formuláře.
 
 Ve vloženém formuláři se plovoucí tlačítko nastavení nikdy nezobrazuje, bez ohledu
-na zdroj souhlasu nebo dříve uloženou volbu; souhlas zde spravuje hostitelský web.
+na zdroj souhlasu nebo dříve uloženou volbu. Nevytváří se ani místní dialog
+Klaro a nečte se volba uložená pro samostatný formulář. Souhlas, jeho obnovování
+a odvolání spravuje stávající most hostitelského webu. Neznámý nebo odpojený
+zdroj nepovolí měření a neblokuje vyplnění formuláře.
 
 Přesný kontrakt zdroje a protokolu je v
 [dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).
