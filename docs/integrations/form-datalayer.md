@@ -790,3 +790,14 @@ coverage for every Wix editor or account.
 Primary Wix contracts: [consent requirements](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/gdpr-compliance/implement-cookie-consent-requirements),
 [consent apps and default policy](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/about-consent-apps),
 [consent policy manager](https://dev.wix.com/docs/sdk/host-modules/site/consent-policy-manager/introduction).
+
+
+### Automatic measurement on saved websites
+
+After the organizer's initial platform/runtime approval, every exact HTTPS
+website saved by its manager is automatically eligible as a measurement host.
+Saving confirms that the organizer operates those websites; it never grants
+visitor consent. The existing organization/Unit/form switches, privacy notice,
+runtime and consent checks remain. No additional domain-approval request is sent.
+Removing a saved website withdraws its self-service grant on policy renewal.
+Explicit operator-owned application origins remain separately configured.

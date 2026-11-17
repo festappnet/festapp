@@ -21,7 +21,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   SELECT u.id,u.organization,coalesce(p.enabled,false) allowed,
    public.form_measurement_runtime_supported_internal(r.runtime_profile,r.runtime_origin,r.parent_origins)
     AND NOT public.is_demo_unit(u.id) supported,q.requested_at,
-   coalesce(to_jsonb(r.parent_origins),'[]'::jsonb) approved_origins,
+   to_jsonb(public.unit_measurement_parent_origins_internal(u.id)) approved_origins,
    coalesce(u.data->'measurement_websites','[]'::jsonb) saved_origins,
    coalesce(q.requested_origins,'[]'::jsonb) requested_origins,
    EXISTS(SELECT FROM public.email_messages m

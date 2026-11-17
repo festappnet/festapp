@@ -197,3 +197,31 @@ delivered history is retained.
 The main branch requires one GitHub approving review. This is a real publication
 gate; no admin bypass or forged approval is included in authorization. Prepare
 and validate the concrete PR before reporting a missing-review blocker.
+
+## Authorized automatic website measurement - 2026-11-17
+
+The user explicitly selected automatic admission for every manager-saved website
+after the initial platform/runtime approval, then requested commits and a verified
+production release to vstupenky.online. This supersedes the earlier per-host
+runtime-provisioning restriction and manual Unit17 test-domain patch.
+
+`unit_measurement_parent_origins_internal` owns the effective exact-origin set:
+operator-owned application/runtime origins plus at most ten validated saved Unit
+websites. Public policy, typed runtime authorization, bootstrap/CSP and manager
+status consume this same projection. Manager changes never rewrite runtime rows.
+Removing a self-service website revokes that grant; explicit operator grants remain
+explicit. Reordering/duplicates preserve the technical revision; an effective host
+change refreshes it while retaining the semantic notice revision.
+
+Initial platform permission, supported provisioned runtime, tenant/Unit/form
+switches, destinations, privacy URL, binding/peer/revision checks and visitor
+consent remain independent requirements. Website authoring retains the existing
+manager predicate and ownership statement. Unknown/invalid origins fail closed.
+The Worker admits the bounded32+10 origin projection; only the registered org3
+receiver is in this production rollout. The reviewed907 embedded-consent fix is
+included; the909 layout proposal remains a separate design follow-up on this model.
+
+Release tooling also needs selected Function closure recognition of Deno's
+`node:` built-ins. This does not permit changed shared dependencies/locks or a full
+Functions/Wallet rollout. Preserve all canonical source, SQL, Function, Worker and
+web release checks and recovery evidence.

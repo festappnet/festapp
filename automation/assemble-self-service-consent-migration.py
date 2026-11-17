@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble self-service consent from canonical SQL without altering runtime grants."""
+"""Assemble self-service consent from canonical SQL and automatic manager-owned website origins."""
 import argparse
 from pathlib import Path
 from generate_canonical_source_contract import render, TARGET as PARITY
@@ -7,7 +7,10 @@ ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / 'supabase/migrations/20261117160000_self_service_website_consent.sql'
 FUNCTIONS = {
     'eshop_forms/website_consent_bindings.sql': ['website_consent_binding_effective_internal', 'get_unit_website_consent_bindings'],
-    'eshop_forms/form_measurement_policy.sql': ['form_measurement_runtime_internal'],
+    'eshop_forms/form_measurement_support.sql': ['form_measurement_runtime_supported_internal'],
+    'eshop_forms/form_measurement_policy.sql': ['unit_measurement_parent_origins_internal', 'form_measurement_runtime_internal'],
+    'user_permissions/form_measurement.sql': ['can_read_form_measurement_runtime'],
+    'eshop_forms/form_measurement_runtime.sql': ['get_form_measurement_runtime_config'],
     'eshop_forms/unit_measurement_approval.sql': ['unit_measurement_approval_internal'],
     'emails/email_queue.sql': ['email_intent_valid'],
 }

@@ -330,3 +330,11 @@ bound to its first processing revision. After changing processing configuration,
 reload the host page to create a new frame record; another CMP accept click
 alone does not authorize the replacement revision. Unknown/mixed manifests
 remain denied. Deploy the new receiver before exposing the bridge setting.
+
+
+The canonical SQL effective-origin projection combines up to32 operator-owned
+application origins with ten validated manager-saved websites after initial Unit
+runtime/platform approval. Policy admission, runtime RPC authorization and CSP
+share that projection. Saved-host changes are read dynamically; they do not
+require a receiver redeployment or operator runtime-row edits. Receiver code
+changes still require the canonical selected-project release and drift checks.

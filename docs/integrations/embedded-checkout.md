@@ -501,3 +501,14 @@ Takový manifest se přijímá pouze pro přenos souhlasu. Hostitel i klient jej
 pro aktivaci měření a analytické události. `approved_hosts` nadále řídí spuštění
 měřicího transportu a starší nespravované adaptéry. Přidání webu nemění runtime
 allowlist ani oprávnění platformy a po zprovoznění měření neposílá další žádost.
+
+
+### Automatické měření na uložených webech
+
+Po prvním povolení měření pořadatele a zprovoznění jeho runtime se automaticky
+povolí každý přesný HTTPS web uložený správcem pořadatele. Uložením správce
+potvrzuje, že uvedené weby provozuje; nejde o souhlas návštěvníka. Nadále platí
+přepínače organizace, pořadatele a formuláře, informace o soukromí, runtime
+a kontroly souhlasu. Další žádost o schválení domény se neposílá.
+Odebrání uloženého webu při obnově politiky odvolá jeho samoobslužné povolení.
+Výslovně nastavené aplikační domény platformy zůstávají samostatně spravované.

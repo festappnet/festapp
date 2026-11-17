@@ -163,9 +163,10 @@ BEGIN
  UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}',data->'measurement_websites'||'"https://new.example.invalid"'::jsonb) WHERE id=un;
  r:=public.request_unit_measurement_approval(un);
  PERFORM assert_false((r->>'can_request')::boolean,'adding websites never requires another platform review');
+ PERFORM assert_true(r->'approved_origins' @> '["https://new.example.invalid"]'::jsonb,'manager status exposes the automatically admitted website');
  PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),1,'website changes do not create a request generation');
  PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST'),2::bigint,'no additional domain approval mail');
- PERFORM assert_eq((SELECT parent_origins FROM analytics.unit_runtime WHERE unit=un),ARRAY['https://example.invalid'],'self-service website changes do not widen runtime allowlist');
+ PERFORM assert_eq((SELECT parent_origins FROM analytics.unit_runtime WHERE unit=un),ARRAY['https://example.invalid'],'self-service preserves explicit operator grants');
 END $$;
 
 -- A historical snapshot is not an active request after worker cancellation.

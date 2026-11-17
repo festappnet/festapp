@@ -509,7 +509,7 @@
   },
   "FeatureFormSettings": {
     "measurementWebsites": "My websites",
-    "measurementWebsitesHelp": "Wpisz do 10 dokładnych adresów HTTPS swoich witryn, po jednym w wierszu, z www, jeśli jest używane, bez ścieżki i końcowego ukośnika. Po zapisaniu możesz skonfigurować przenoszenie zgody bez zatwierdzenia przez platformę.",
+    "measurementWebsitesHelp": "Proszę podać do 10 dokładnych adresów HTTPS, po jednym w wierszu, z ewentualnym www, bez ścieżki i końcowego ukośnika. Zapisując te strony, potwierdzają Państwo, że prowadzą je jako administrator danych. Po pierwszym włączeniu pomiaru dla organizatora działa on automatycznie na wszystkich zapisanych stronach. Przekazywanie zgody można skonfigurować po zapisaniu bez kolejnego zatwierdzenia.",
     "measurementWebsitesInvalid": "Enter up to 10 valid HTTPS origins without paths, queries or trailing slashes.",
     "measurementWebsiteSaved": "Zapisano",
     "measurementWebsiteDraft": "Niezapisane",
@@ -586,7 +586,7 @@
     "embedAction": "Osadź na swojej stronie",
     "embedTitle": "Formularz zamówienia",
     "embedFallback": "Otwórz zamówienie w nowej karcie",
-    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód. Pomiar musi być włączony dla organizatora; samo połączenie strony lub przekazanie zgody go nie włącza. Zdarzenia konwersji przekazują skryptom witryny także e-mail, telefon i identyfikator transakcji. Proszę sprawdzić tagi i informacje o prywatności. W trybie jednostki mogą Państwo w ustawieniach pomiaru organizatora włączyć przejmowanie zgody z banera połączonych stron; w przeciwnym razie przekazywany jest brak zgody.",
+    "embedHelp": "Wklej kod do HTML swojej strony. Automatyczna wysokość i przejęcie wyglądu wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i wygląd formularza. Włączony pomiar korzysta z dataLayer strony, jej GTM i menedżera zgód. Wyłącz opcję poniżej, aby korzystać z GTM skonfigurowanego w Festapp. Osadzony formularz nie wyświetla paska zgód. Po pierwszym włączeniu pomiaru dla organizatora działa on automatycznie na wszystkich jego zapisanych stronach. Zdarzenia konwersji przekazują skryptom witryny także e-mail, telefon i identyfikator transakcji. Proszę sprawdzić tagi i informacje o prywatności. W trybie jednostki mogą Państwo w ustawieniach pomiaru organizatora włączyć przejmowanie zgody z banera połączonych stron; w przeciwnym razie przekazywany jest brak zgody.",
     "embedSaveFirst": "Zapisz formularz przed osadzeniem.",
     "embedAutomatic": "Automatyczna wysokość (zalecana)",
     "embedFixed": "Stała wysokość",

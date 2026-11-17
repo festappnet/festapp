@@ -57,7 +57,7 @@ def module_closure(root, functions):
             if target.startswith('.'):
                 pending.append(path.parent / target)
             else:
-                require(target.startswith(('https://', 'jsr:', 'npm:')), 'Unresolved module dependency requires a full release')
+                require(target.startswith(('https://', 'jsr:', 'npm:', 'node:')), 'Unresolved module dependency requires a full release')
                 external.add(target)
     return seen, external
 

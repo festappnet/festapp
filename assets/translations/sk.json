@@ -527,7 +527,7 @@
   },
   "FeatureFormSettings": {
     "measurementWebsites": "My websites",
-    "measurementWebsitesHelp": "Zadajte najviac 10 presných HTTPS adries svojich webov, každú na samostatný riadok, vrátane prípadného www, bez cesty a koncovej lomky. Prenos súhlasu nastavíte po uložení bez schválenia platformou.",
+    "measurementWebsitesHelp": "Zadajte najviac 10 presných HTTPS adries, každú na samostatný riadok, vrátane prípadného www, bez cesty a koncovej lomky. Uložením potvrdzujete, že tieto weby prevádzkujete Vy ako správca. Po prvom povolení merania organizátora funguje na všetkých uložených weboch automaticky. Prenos súhlasu nastavíte po uložení bez ďalšieho schvaľovania.",
     "measurementWebsitesInvalid": "Enter up to 10 valid HTTPS origins without paths, queries or trailing slashes.",
     "measurementWebsiteSaved": "Uložené",
     "measurementWebsiteDraft": "Neuložené",
@@ -604,7 +604,7 @@
     "embedAction": "Vložiť na vlastný web",
     "embedTitle": "Objednávkový formulár",
     "embedFallback": "Otvoriť objednávku na novej karte",
-    "embedHelp": "Vložte kód do HTML svojho webu. Automatická výška a prevzatie vzhľadu vyžadujú povolený externý skript. Ak ho web blokuje, použite pevnú výšku a vlastný vzhľad formulára. Meranie posiela udalosti do dataLayer Vášho webu, súhlas riadi GTM a lišta súhlasu webu. Meranie musí byť povolené pre organizátora; samotné prepojenie webu a prenos súhlasu ho nezapnú. Voľbou nižšie možno meranie prepnúť na GTM nastavený vo Festappe. Pri konverzii sa skriptom webu odovzdáva aj e-mail, telefón a identifikátor transakcie. Skontrolujte nastavenie značiek a informácie o súkromí. V režime jednotky môžete v nastaveniach merania organizátora zapnúť prevzatie súhlasu z lišty prepojených webov, inak sa odovzdáva stav neudelené.",
+    "embedHelp": "Vložte kód do HTML svojho webu. Automatická výška a prevzatie vzhľadu vyžadujú povolený externý skript. Ak ho web blokuje, použite pevnú výšku a vlastný vzhľad formulára. Meranie posiela udalosti do dataLayer Vášho webu, súhlas riadi GTM a lišta súhlasu webu. Po prvom povolení merania organizátora funguje meranie na všetkých jeho uložených weboch automaticky. Voľbou nižšie možno meranie prepnúť na GTM nastavený vo Festappe. Pri konverzii sa skriptom webu odovzdáva aj e-mail, telefón a identifikátor transakcie. Skontrolujte nastavenie značiek a informácie o súkromí. V režime jednotky môžete v nastaveniach merania organizátora zapnúť prevzatie súhlasu z lišty prepojených webov, inak sa odovzdáva stav neudelené.",
     "embedSaveFirst": "Pred vložením na web formulár uložte.",
     "embedAutomatic": "Automatická výška (odporúčané)",
     "embedFixed": "Pevná výška",

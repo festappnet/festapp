@@ -28,6 +28,34 @@ GRANT EXECUTE ON FUNCTION public.get_unit_website_consent_bindings(bigint) TO au
 
 -- A Unit lock serializes authoring with the canonical Unit aggregate save.
 -- Version zero means absent. Every write advances the version, including off.
+CREATE OR REPLACE FUNCTION public.form_measurement_runtime_supported_internal(
+ p_profile text,p_origin text,p_parents text[])
+RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
+ SELECT coalesce(p_profile='gtm-v1'
+  AND p_origin ~ '^https://[a-z0-9][a-z0-9-]{0,61}[a-z0-9]\.pages\.dev$'
+  AND cardinality(p_parents) BETWEEN 1 AND 32,false);
+$$;
+REVOKE ALL ON FUNCTION public.form_measurement_runtime_supported_internal(text,text,text[])
+ FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.unit_measurement_parent_origins_internal(p_unit bigint)
+RETURNS text[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ WITH scope AS (
+  SELECT r.parent_origins,CASE WHEN jsonb_typeof(u.data->'measurement_websites')='array'
+   THEN CASE WHEN jsonb_array_length(u.data->'measurement_websites')<=10
+    THEN u.data->'measurement_websites' ELSE '[]'::jsonb END ELSE '[]'::jsonb END websites
+  FROM public.units u JOIN analytics.unit_runtime r ON r.unit=u.id WHERE u.id=p_unit
+ ), allowed AS (
+  SELECT origin,min(priority) priority FROM scope CROSS JOIN LATERAL (
+   SELECT value origin,ordinality priority FROM unnest(parent_origins) WITH ORDINALITY AS baseline(value,ordinality)
+   UNION ALL
+   SELECT value,2147483647 FROM jsonb_array_elements_text(websites) AS saved(value)
+    WHERE length(value)<=2048 AND value ~ (public.configuration_settings_contract_internal_v1()#>>'{unit,measurement_websites,items,pattern}')
+  ) origins GROUP BY origin
+ ) SELECT coalesce(array_agg(origin ORDER BY priority,origin),'{}'::text[]) FROM allowed;
+$$;
+REVOKE ALL ON FUNCTION public.unit_measurement_parent_origins_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+-- One semantic notice owner for admin exports and public form policy.
 CREATE OR REPLACE FUNCTION public.form_measurement_runtime_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH status AS MATERIALIZED (
@@ -40,8 +68,8 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'privacy_url',CASE WHEN notice.available THEN u.data->>'measurement_privacy_url' END,
   'consent_notice',CASE WHEN notice.available THEN jsonb_build_object('layout',coalesce(u.data->>'measurement_consent_layout','bar'),
    'title',nullif(btrim(u.data->>'measurement_consent_title'),''),'text',nullif(btrim(u.data->>'measurement_consent_text'),'')) END,
-  'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(r.parent_origins) ELSE '[]'::jsonb END,
-  -- Stable notice/processing scope, independent of runtime deployment and approved hosts.
+  'approved_hosts',CASE WHEN s->'eligible'='true'::jsonb THEN to_jsonb(public.unit_measurement_parent_origins_internal(u.id)) ELSE '[]'::jsonb END,
+  -- Semantic notice scope is independent of runtime deployment and effective hosts.
   -- Changes behind an unchanged GTM ID/privacy URL require a consent-version increment.
   'consent_revision',public.unit_measurement_consent_scope_internal(u.id)->>'consentRevision',
   'website_consent_bindings',public.website_consent_bindings_policy_internal(u.id),
@@ -50,7 +78,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   -- Append the opt-in only when enabled to preserve existing saved choices.
   'processing_revision',md5((jsonb_build_array(3,o.organization,u.id,u.data->'measurement_gtm_container',u.data->'measurement_scripts',
    u.data->'measurement_privacy_url',coalesce(u.data->'measurement_consent_version','1'::jsonb),r.runtime_profile,r.runtime_origin,
-   r.parent_origins,r.collector_origins,r.revision,s->'policy_revision',u.data->'measurement_enabled',
+   public.unit_measurement_parent_origins_internal(u.id),r.collector_origins,r.revision,s->'policy_revision',u.data->'measurement_enabled',
    org.data->'FORM_MEASUREMENT_ENABLED',s->'requested_enabled')
    ||CASE WHEN u.data->'measurement_consent_bridge'='true'::jsonb THEN jsonb_build_array(true) ELSE '[]'::jsonb END
    ||CASE WHEN nullif(u.data->>'measurement_consent_title','') IS NOT NULL OR nullif(u.data->>'measurement_consent_text','') IS NOT NULL
@@ -84,13 +112,44 @@ CREATE TABLE IF NOT EXISTS analytics.conversion_facts (
 );
 ALTER TABLE analytics.conversion_facts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON analytics.conversion_facts FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.can_read_form_measurement_runtime(p_form bigint,p_organization bigint,p_unit bigint,p_runtime_origin text,p_parent_origin text)
+RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT auth.role()='service_role' AND public.can_read_public_form_measurement(p_form) AND
+  EXISTS(SELECT 1 FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+   JOIN public.units u ON u.id=o.unit AND u.organization=o.organization
+   JOIN analytics.unit_runtime r ON r.unit=u.id
+   WHERE f.id=p_form AND o.organization=p_organization AND u.id=p_unit AND r.runtime_origin=p_runtime_origin
+   AND p_parent_origin=ANY(public.unit_measurement_parent_origins_internal(u.id))
+   AND public.form_measurement_status_internal(f.id)->'eligible'='true'::jsonb);
+$$;
+REVOKE ALL ON FUNCTION public.can_read_form_measurement_runtime(bigint,bigint,bigint,text,text) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.get_form_measurement_runtime_config(
+ p_form_link text,p_organization bigint,p_unit bigint,p_runtime_origin text,p_parent_origin text)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE fid bigint:=public.resolve_form_link_internal(p_form_link); result jsonb;
+BEGIN
+ IF NOT public.can_read_form_measurement_runtime(fid,p_organization,p_unit,p_runtime_origin,p_parent_origin) THEN
+  RAISE insufficient_privilege USING MESSAGE='form measurement runtime unavailable';
+ END IF;
+ SELECT jsonb_build_object('organization',o.organization,'unit',u.id,'form_id',f.id,'form_link',f.link,
+  'runtime_origin',r.runtime_origin,'parent_origin',p_parent_origin,'profile',r.runtime_profile,
+  'ancestor_origins',public.unit_measurement_parent_origins_internal(u.id),'collector_origins',r.collector_origins,'policy',public.form_measurement_runtime_internal(f.id)-ARRAY['privacy_url','consent_notice','approved_hosts'],
+  'gtm_container',u.data->>'measurement_gtm_container','scripts',u.data->>'measurement_scripts') INTO result
+ FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+ JOIN public.units u ON u.id=o.unit AND u.organization=o.organization
+ JOIN analytics.unit_runtime r ON r.unit=u.id
+ WHERE f.id=fid;
+ RETURN result;
+END $$;
+REVOKE ALL ON FUNCTION public.get_form_measurement_runtime_config(text,bigint,bigint,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_form_measurement_runtime_config(text,bigint,bigint,text,text) TO service_role;
 CREATE OR REPLACE FUNCTION public.unit_measurement_approval_internal(p_unit bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH status AS (
   SELECT u.id,u.organization,coalesce(p.enabled,false) allowed,
    public.form_measurement_runtime_supported_internal(r.runtime_profile,r.runtime_origin,r.parent_origins)
     AND NOT public.is_demo_unit(u.id) supported,q.requested_at,
-   coalesce(to_jsonb(r.parent_origins),'[]'::jsonb) approved_origins,
+   to_jsonb(public.unit_measurement_parent_origins_internal(u.id)) approved_origins,
    coalesce(u.data->'measurement_websites','[]'::jsonb) saved_origins,
    coalesce(q.requested_origins,'[]'::jsonb) requested_origins,
    EXISTS(SELECT FROM public.email_messages m

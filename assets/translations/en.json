@@ -432,7 +432,7 @@
   },
   "FeatureFormSettings": {
     "measurementWebsites": "My websites",
-    "measurementWebsitesHelp": "Enter up to 10 exact HTTPS origins of your websites, one per line, including www where used, without a path or trailing slash. Set up consent transfer after saving. No platform approval is needed.",
+    "measurementWebsitesHelp": "Enter up to 10 exact HTTPS website addresses, one per line, including any www, without a path or trailing slash. By saving these websites, you confirm that you operate them as the controller. Once measurement is first enabled for the organizer, it works automatically on every saved website. Consent transfer can be configured after saving without further approval.",
     "measurementWebsitesInvalid": "Enter up to 10 valid HTTPS origins without paths, queries or trailing slashes.",
     "measurementWebsiteSaved": "Saved",
     "measurementWebsiteDraft": "Not saved",
@@ -613,7 +613,7 @@
     "embedAction": "Embed on your website",
     "embedTitle": "Order form",
     "embedFallback": "Open order in a new tab",
-    "embedHelp": "Paste the code into your website HTML. Automatic height and website appearance require an external script. If your website blocks it, use fixed height and the form appearance. Enabled measurement uses the website dataLayer, GTM and consent manager. Turn the option below off to use the GTM configured in Festapp. Embeds show no consent bar. Measurement must be enabled for the organizer; connecting a website or transferring consent alone does not enable it. Conversion events also share email, phone and transaction identifiers with website scripts. Review your tags and privacy notice. In Unit mode, you can enable taking over consent from the banner of connected websites in the organizer measurement settings; otherwise consent is passed as denied.",
+    "embedHelp": "Paste the code into your website HTML. Automatic height and website appearance require an external script. If your website blocks it, use fixed height and the form appearance. Enabled measurement uses the website dataLayer, GTM and consent manager. Turn the option below off to use the GTM configured in Festapp. Embeds show no consent bar. Once measurement is first enabled for the organizer, it works automatically on all their saved websites. Conversion events also share email, phone and transaction identifiers with website scripts. Review your tags and privacy notice. In Unit mode, you can enable taking over consent from the banner of connected websites in the organizer measurement settings; otherwise consent is passed as denied.",
     "embedSaveFirst": "Save the form before embedding it.",
     "embedAutomatic": "Automatic height (recommended)",
     "embedFixed": "Fixed height",

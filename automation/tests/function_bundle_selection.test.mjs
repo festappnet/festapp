@@ -94,3 +94,13 @@ test('full bundle installer upgrades observed legacy router limits and rejects u
  assert.notEqual(run('1024','400_000').status,0);
  assert.notEqual(run('512','300_000').status,0);
 });
+
+test('selected source closure accepts built-in Node modules without adding shared files or changing the lock',t=>{
+ const f=fixture(t);
+ const entry=join(f.source,'alpha/index.ts');
+ writeFileSync(entry,'import net from "node:net";\n'+readFileSync(entry,'utf8'));
+ const result=f.select();assert.equal(result.status,0,result.stderr);
+ const selected=JSON.parse(result.stdout);
+ assert.deepEqual(selected.external_imports,['node:net']);
+ assert.deepEqual(Object.keys(selected.dependencies),['_shared/common.ts']);
+});
