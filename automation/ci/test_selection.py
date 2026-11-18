@@ -31,8 +31,9 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
         independent={'seat-authorization','seat-payments','seat-orders','seat-delivery','seat-browser'}
         for path in ['tools/festapp/src/remote/views.mjs', 'tools/festapp/src/operations/orders.mjs']:
             self.assertTrue(independent.isdisjoint(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
-            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'}
+            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts-1'}
                             .issubset(selection.unit_owners(path,'mcp-database-contracts',CONTRACT)),path)
+            self.assertIn('seat-mcp-contracts-2', selection.unit_owners(path,'database-service-regressions',CONTRACT))
         for path in ['database/functions/eshop/finalize_ticket_order.sql','database/tests/helpers/reset_owned_sequences.sql']:
             self.assertTrue(independent.issubset(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
         self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','database-service-regressions',CONTRACT))
@@ -94,14 +95,16 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
             self.assertIn(backend, selection.unit_owners(sql,'database-regressions',CONTRACT))
 
     def test_mcp_database_groups_follow_backend_inputs_without_checkout_ui(self):
-        lane='mcp-database-contracts'
-        groups={'seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'}
-        self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
-        for path in ['database/functions/eshop/finalize_ticket_order.sql',
-                     'tools/festapp/src/operations.mjs',
-                     'tools/festapp/scripts/test-postgres.mjs',
-                     'database/tests/helpers/authorization_context_reference.sql']:
-            self.assertTrue(groups.issubset(selection.unit_owners(path,lane,CONTRACT)),path)
+        for lane, groups in (
+            ('mcp-database-contracts', {'seat-mcp-authorization','seat-mcp-contracts-1'}),
+            ('database-service-regressions', {'seat-mcp-contracts-2'}),
+        ):
+            self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
+            for path in ['database/functions/eshop/finalize_ticket_order.sql',
+                         'tools/festapp/src/operations.mjs',
+                         'tools/festapp/scripts/test-postgres.mjs',
+                         'database/tests/helpers/authorization_context_reference.sql']:
+                self.assertTrue(groups.issubset(selection.unit_owners(path,lane,CONTRACT)),path)
 
 
 class VersionProjectionTest(unittest.TestCase):
@@ -122,7 +125,7 @@ class VersionProjectionTest(unittest.TestCase):
             with patch.object(selection,'ROOT',root),selection.lookup():
                 for lane,unit in [('wix-checkout-compatibility','wix-cms'),('mcp-database-contracts','seat-mcp-prepare'),
                                   ('mcp-database-contracts','seat-mcp-authorization'),('mcp-database-contracts','seat-mcp-contracts-1'),
-                                  ('mcp-database-contracts','seat-mcp-contracts-2')]:
+                                  ('database-service-regressions','seat-mcp-contracts-2')]:
                     self.assertEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)
                 for lane,unit in [('web-startup','web-startup'),('seat-checkout','seat-browser')]:
                     self.assertNotEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)

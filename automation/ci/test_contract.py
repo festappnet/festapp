@@ -123,6 +123,11 @@ class MirrorContractTest(unittest.TestCase):
                 cross_lane = set(runner.CONTRACT['steps'][unit]['after']) - set(lane['steps'])
                 allowed = {
                     'seat-mcp-prepare': {'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract'},
+                    'database-services-mcp-prepare': {
+                        'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract',
+                        'seat-mcp-authorization', 'seat-mcp-contracts-1',
+                    },
+                    'seat-mcp-contracts-2': {'seat-database'},
                     'seat-database': {'seat-runtime-contract'},
                     'seat-services': {'seat-database'},
                 }.get(unit, {'seat-database'} if name == 'mcp-database-contracts' else set())
@@ -165,12 +170,14 @@ class MirrorContractTest(unittest.TestCase):
             for resource, limit in limits.items():
                 self.assertLessEqual(sum(units[name]['resources'].get(resource, 0) for name in concurrent),
                                      limit, (lane, resource))
-        mcp_units = runner.selected_units(['mcp-database-contracts'])
-        sql_units = [name for name, unit in mcp_units.items() if unit['resources'].get('dbCluster')]
-        self.assertEqual(sql_units[0], 'seat-mcp-contracts-2')
-        service_units = runner.selected_units(['database-service-regressions'])
-        self.assertEqual(set(service_units), {'seat-services', 'database-services-install'})
-        self.assertEqual(service_units['seat-services']['after'], ['database-services-install'])
+        for lane, pair in (
+            ('mcp-database-contracts', ('seat-mcp-authorization', 'seat-mcp-contracts-1')),
+            ('database-service-regressions', ('seat-services', 'seat-mcp-contracts-2')),
+        ):
+            units = runner.selected_units([lane])
+            self.assertEqual({name for name, unit in units.items() if unit['resources'].get('dbCluster')}, set(pair))
+            self.assertEqual(sum(units[name]['resources']['dbCluster'] for name in pair),
+                             runner.CONTRACT['resources']['dbCluster'])
 
     def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
         steps=runner.CONTRACT['steps']
@@ -178,8 +185,9 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual(steps['ticket-edge']['requires'],[])
         self.assertEqual(steps['ticket-core']['requires'],[])
         self.assertEqual(steps['seat-browser']['requires'],['seat-install'])
-        for index in (1, 2):
-            self.assertEqual(steps[f'seat-mcp-contracts-{index}']['requires'], ['mcp-database-install','seat-mcp-prepare'])
+        self.assertEqual(steps['seat-mcp-contracts-1']['requires'], ['mcp-database-install','seat-mcp-prepare'])
+        self.assertEqual(steps['seat-mcp-contracts-2']['requires'], ['database-services-mcp-prepare'])
+        self.assertEqual(steps['database-services-mcp-prepare']['requires'], ['database-services-install'])
         self.assertEqual(steps['seat-mcp-prepare']['requires'],['mcp-database-install'])
         # Full runs retain the canonical order and its independent proofs.
         self.assertIn('seat-database',steps['seat-browser']['after'])

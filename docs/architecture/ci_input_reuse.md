@@ -49,8 +49,10 @@ MCP PostgreSQL tests use three independent leased databases: the canonical
 authorization matrix and two partitions of the remaining contracts. Files
 within each group stay serial because fixtures may commit, analyze tables or
 replace functions.
-`seat-mcp-prepare` installs dependencies, prepares immutable API contracts once
-and verifies the dynamic partition covers every `*-postgres.test.mjs` file.
+The slower contract partition runs alongside the database service regressions
+on their existing hosted runner. Both runners prepare the same immutable API
+contracts, and `seat-mcp-prepare` verifies the dynamic partition covers every
+`*-postgres.test.mjs` file.
 The ordinary `test:postgres` command still runs the complete suite. All CI
 groups retain the marked-database and paused-delivery guard. Each group claims one
 of two database slots. Whole-cluster units reserve both slots.
