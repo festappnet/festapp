@@ -85,7 +85,9 @@
         "automation/lib/**",
         "automation/release/help/help.js",
         "automation/release/help/en/embed-generator.html",
-        "automation/testing/cms_fixture_rest.py"
+        "automation/testing/cms_fixture_rest.py",
+        "automation/testing/cms_fixture_postgres.py",
+        "automation/local_db/**"
       ],
       "hostedResources": {
         "ramMiB": 5000
@@ -263,10 +265,7 @@
         "automation/testing/ticket_default_ci.dart",
         "database/fixtures/**",
         "automation/lib/**"
-      ],
-      "hostedResources": {
-        "ramMiB": 5000
-      }
+      ]
     },
     "database-regressions": {
       "workflow": "seat-checkout-regressions.yml",
@@ -420,7 +419,50 @@
         "web_client/index.html",
         "automation/testing/wordpress_runtime.py",
         "automation/lib/**",
-        "automation/testing/cms_fixture_rest.py"
+        "automation/testing/cms_fixture_rest.py",
+        "automation/testing/cms_fixture_postgres.py",
+        "automation/local_db/**"
+      ]
+    },
+    "ticket-rendering-contracts": {
+      "workflow": "seat-checkout-regressions.yml",
+      "node": "22.23.4",
+      "steps": [
+        "ticket-rendering-install",
+        "ticket-rendering-client"
+      ],
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "supabase/functions/**",
+        "automation/tickets/**",
+        "automation/client_test_inventory*",
+        "automation/project.conf",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_contracts/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "automation/testing/ticket_default_ci.dart",
+        "database/fixtures/**",
+        "automation/lib/**"
       ]
     }
   },
@@ -538,7 +580,9 @@
         "seat-mcp-contracts-2",
         "database-regressions-install",
         "mcp-database-install",
-        "image-browser-install"
+        "image-browser-install",
+        "ticket-rendering-install",
+        "ticket-rendering-client"
       ],
       "resources": {
         "ramMiB": 256
@@ -1109,7 +1153,7 @@
       "requires": []
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -1402,7 +1446,9 @@
         "automation/lib/**",
         "automation/release/help/help.js",
         "automation/release/help/en/embed-generator.html",
-        "automation/testing/cms_fixture_rest.py"
+        "automation/testing/cms_fixture_rest.py",
+        "automation/testing/cms_fixture_postgres.py",
+        "automation/local_db/**"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",
@@ -1604,7 +1650,9 @@
         "database-regressions-install",
         "mcp-database-install",
         "image-browser-install",
-        "wix-install"
+        "wix-install",
+        "ticket-rendering-install",
+        "ticket-rendering-client"
       ],
       "inputs": [
         "web_client/package.json",
@@ -1649,13 +1697,82 @@
         "web_client/index.html",
         "automation/testing/wordpress_runtime.py",
         "automation/lib/**",
-        "automation/testing/cms_fixture_rest.py"
+        "automation/testing/cms_fixture_rest.py",
+        "automation/testing/cms_fixture_postgres.py",
+        "automation/local_db/**"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",
         "web_client/src/version.js": "generated-web-version",
         "web_client/index.html": "html-build-version"
       }
+    },
+    "ticket-rendering-install": {
+      "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 2000,
+        "flutter": 1,
+        "sourceGeneration": 1
+      },
+      "inputs": [
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf",
+        "automation/configure_fonts.js",
+        "automation/lib/**",
+        "fonts/**",
+        "assets/**",
+        "packages/**/pubspec.*"
+      ]
+    },
+    "ticket-rendering-client": {
+      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart\n",
+      "after": [
+        "ticket-rendering-install"
+      ],
+      "resources": {
+        "ramMiB": 2600,
+        "flutter": 1
+      },
+      "requires": [
+        "ticket-rendering-install"
+      ],
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "supabase/functions/**",
+        "automation/tickets/**",
+        "automation/client_test_inventory*",
+        "automation/project.conf",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "automation/testing/ticket_default_ci.dart",
+        "test/sessions/ticket_czech_cases.dart",
+        "test/sessions/ticket_futura_cases.dart",
+        "test/sessions/ticket_palette_cases.dart",
+        "test/support/**",
+        "test/fixtures/**"
+      ]
     }
   },
   "sqlGroups": {

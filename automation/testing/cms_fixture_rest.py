@@ -46,15 +46,9 @@ def prepare_rest_image(run):
     return platform
 
 
-def start_rest(platform, wp, project, port, run):
+def start_rest(platform, wp, project, container, network, port, run):
     if not re.fullmatch(r'festapp-cms-consent-[a-f0-9]{12}', project):
         raise ValueError('Owned CMS project required')
-    container = 'supabase_db_' + project
-    network = 'supabase_network_' + project
-    owner = run(['docker', 'inspect', '--format', '{{index .Config.Labels "com.supabase.cli.project"}}',
-                 container], capture=True).strip()
-    if owner != project:
-        raise ValueError('Foreign CMS database refused')
     secret = secrets.token_hex(32)
     token = anon_token(secret)
     private = wp/'.private'

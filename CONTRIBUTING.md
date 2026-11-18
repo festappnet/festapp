@@ -582,13 +582,15 @@ local receipts keep the same structure under the documented CI cache.
 
 ### Flutter CI session ownership
 
-`client-contract` owns both Flutter Chrome contract files in one invocation:
+`client-browser-contract` runs the Flutter Chrome contracts in one invocation:
 `test/browser/browser_preference_store_test.dart` and
 `test/components/html/html_image_preview_cases.dart`. `navigation-interactions`
 retains its VM and unsupported-application variant; its compatible default
 suites register through `automation/testing/navigation_default.dart` and the
 existing scoped `registerClientSuites` helper. Root backend/service environments
 and different locale/compile/browser environments keep their original boundaries.
+The ticket rendering root runs in `ticket-rendering-contracts`. The remaining
+ticket cases run in `ticket-preview-and-delivery`.
 The CI subset entrypoint lives outside default test discovery; full-client
 registrations remain authoritative for their existing roots.
 

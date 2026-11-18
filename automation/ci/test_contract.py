@@ -152,7 +152,6 @@ class MirrorContractTest(unittest.TestCase):
     def test_hosted_lanes_have_capacity_to_overlap_independent_checks(self):
         for lane, concurrent in [
             ('wix-checkout-compatibility', ('wix-quick', 'wix-adapters', 'wix-cms')),
-            ('ticket-preview-and-delivery', ('ticket-edge', 'ticket-client')),
         ]:
             units = runner.selected_units([lane])
             limits = runner.CONTRACT['jobs'][lane]['hostedResources']
@@ -279,7 +278,7 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_semantic_inventory_changes_trigger_all_owning_workflows(self):
         pattern='automation/client_test_inventory.*'
-        for name in ('navigation-interactions','client-contract','ticket-preview-and-delivery'):
+        for name in ('navigation-interactions','client-contract','ticket-preview-and-delivery','ticket-rendering-contracts'):
             lane=runner.CONTRACT['jobs'][name]
             self.assertIn(pattern,lane['inputs'])
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
@@ -411,6 +410,14 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
                 expected=('image inspect '+image) if not image_exit else ('pull '+image.replace('public.ecr.aws/','docker.io/',1))
                 self.assertEqual((root/'docker.started').read_text(),expected)
                 self.assertIn('--only-shell chromium',(root/'pnpm.started').read_text())
+
+    def test_ticket_rendering_has_a_single_hosted_owner(self):
+        contract = runner.CONTRACT
+        root = 'automation/testing/ticket_default_ci.dart'
+        owners = [name for name, row in contract['steps'].items() if root in row['script']]
+        self.assertEqual(owners, ['ticket-rendering-client'])
+        self.assertEqual(contract['steps']['ticket-rendering-client']['requires'], ['ticket-rendering-install'])
+        self.assertIn('ticket-rendering-client', contract['jobs']['ticket-rendering-contracts']['steps'])
 
     def test_ticket_preparation_can_overlap_edge_without_overlapping_flutter(self):
         units=runner.selected_units(['ticket-preview-and-delivery'])

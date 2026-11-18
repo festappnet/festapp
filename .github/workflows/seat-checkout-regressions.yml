@@ -94,7 +94,7 @@ jobs:
     timeout-minutes: 15
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
-    steps:
+    steps: &ticket-lane-steps
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -102,7 +102,7 @@ jobs:
         id: selection
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/selection.py ticket-preview-and-delivery
+        run: python3 automation/ci/selection.py ${{ github.job }}
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh
@@ -132,7 +132,7 @@ jobs:
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/run.py lane ticket-preview-and-delivery
+        run: python3 automation/ci/run.py lane ${{ github.job }}
       - name: All lane tests executed
         if: steps.selection.outputs.full == 'true'
         run: echo 'All lane tests executed'
@@ -149,3 +149,11 @@ jobs:
           path: ~/.cache/festapp-ci/runs
           retention-days: 7
           if-no-files-found: ignore
+
+  ticket-rendering-contracts:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FVM_CACHE_PATH: /tmp/festapp-fvm
+    steps: *ticket-lane-steps

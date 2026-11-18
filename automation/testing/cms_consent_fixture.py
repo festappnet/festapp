@@ -22,9 +22,11 @@ import uuid
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'automation/ci'))
+sys.path.insert(0,str(ROOT/'automation'))
 from telemetry import phase as timed_phase, emit
 from wordpress_runtime import WordPress
 from cms_fixture_rest import prepare_rest_image, start_rest, stop_rest
+from cms_fixture_postgres import CmsPostgres
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--base-port',type=int,default=int(os.environ.get('FESTAPP_CMS_FIXTURE_BASE_PORT','61000')))
 parser.add_argument('--suite', choices=('all', 'wordpress', 'joomla-wix-html'), default='all')
@@ -64,7 +66,7 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
@@ -90,6 +92,7 @@ def sql(query):
 
 wp=fixture/'integrations/wordpress';joomla=fixture/'integrations/joomla'
 wordpress=None
+database=CmsPostgres(project, base+22, run)
 try:
  phase('Preparing owned CMS package copies and frozen dependencies')
  for cms in (['wordpress','joomla'] if needs_joomla else ['wordpress']):
@@ -122,15 +125,15 @@ try:
   wordpress=WordPress(wp,project,run)
   run(['python3','scripts/package.py'],wp)
  if needs_joomla:run(['python3','scripts/package.py'],joomla)
- run(['node','scripts/setup-backend.mjs','--database-only'],wp)
+ (wp/'.private').mkdir(mode=0o700,exist_ok=True)
  phase('Starting independent owned services and browser dependencies concurrently')
  jprefix=project+'-joomla'
  def prepare_backend(rest_platform):
   started['backend']=True
-  run(['supabase','db','start','--workdir','.private/backend'],wp,label='backend.start')
+  with timed_phase('cms.backend.start'):database.start()
   run(['bash','scripts/bootstrap-backend.sh','--database-only'],wp,label='backend.bootstrap')
   sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
-  start_rest(rest_platform.result(), wp, project, base + 21, run)
+  start_rest(rest_platform.result(), wp, project, database.runtime.container, database.network, base + 21, run)
  def prepare_wordpress():
   started['wordpress']=True
   with timed_phase('cms.wordpress.start'):wordpress.start()
@@ -212,10 +215,16 @@ finally:
     os.killpg(p.pid,signal.SIGTERM)
     try:p.wait(timeout=10)
     except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
-  cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
+  def stop_backend():
+   try:
+    stop_rest(project, run)
+   finally:
+    with timed_phase('cms.cleanup.backend'):database.close()
   cleanup_errors=[]
   with ThreadPoolExecutor(max_workers=3) as workers:
-   pending=[(key,workers.submit(run,command,cwd,label='cleanup.'+key)) for command,cwd,key in cleanup if started[key]]
+   pending=[]
+   if started['backend']:pending.append(('backend',workers.submit(stop_backend)))
+   if started['joomla']:pending.append(('joomla',workers.submit(run,['python3','scripts/environment.py','stop'],joomla,label='cleanup.joomla')))
    if started['wordpress']:pending.append(('wordpress',workers.submit(wordpress.stop)))
    for key,future in pending:
     try:future.result()

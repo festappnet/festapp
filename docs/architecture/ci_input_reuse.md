@@ -160,12 +160,15 @@ Wix has quick contracts/build, PHP adapter smoke and an installed Joomla,
 Wix and generated HTML unit. The installed WordPress suite has its own required
 job. Each installed suite starts only its CMS platforms and browser engines,
 using a separate disposable Supabase PostgreSQL instance and the pinned
-PostgREST image. The fixture's HTTPS transport serves the browser's public
+PostgREST image. PostgreSQL starts through the canonical local runtime's pinned
+image and readiness probe. Each fixture removes its container, volume and
+bridge after its browser and PostgREST services stop. The fixture's HTTPS transport serves the browser's public
 `/rest/v1` requests, and readiness requires the actual anonymous form policy
 RPC. Wix's hosted units can run together
 within the 5000 MiB admission budget.
-Ticket preview and delivery uses the same hosted budget so its independent
-Deno checks can overlap the Flutter tests. The local mirror retains 3500 MiB.
+The local mirror retains 3500 MiB. The ticket rendering root has its own
+required hosted runner and semantic inventory. Delivery and the other ticket
+client roots use independent verification with the original fixture boundaries.
 Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix
 reinstalls shared package dependencies. Installed CMS uses digest-pinned official

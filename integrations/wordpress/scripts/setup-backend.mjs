@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {randomBytes} from 'node:crypto';
-const databaseOnly=process.argv.includes('--database-only');
 const project=process.env.FESTAPP_CMS_TEST_PROJECT || 'festapp-vo-wordpress-20261023';
 if (project !== 'festapp-vo-wordpress-20261023' && !/^festapp-cms-consent-[a-z0-9-]+$/.test(project)) throw Error('Refusing unowned test project');
 const base=Number(process.env.FESTAPP_CMS_TEST_BASE_PORT || 59820);
@@ -15,11 +14,10 @@ if(!fs.existsSync(config)){
  let s=fs.readFileSync(config,'utf8').replace(/^project_id = .*$/m,`project_id = "${project}"`).replace('major_version = 17','major_version = 15');
  for(const [a,b] of [[54321,base+1],[54322,base+2],[54320,base],[54323,base+3],[54324,base+4],[54327,base+7],[54329,base+9]])s=s.replaceAll(String(a),String(b));
  for(const section of ['db.seed','realtime','studio','inbucket','analytics','edge_runtime'])s=s.replace(new RegExp(`(\\[${section.replaceAll('.','\\.')}\\][\\s\\S]*?enabled = )true`),'$1false');
- if(!databaseOnly)s+='\n[functions.preview-ticket-layout]\nstatic_files = ["./functions/_shared/ticket-assets/*.ttf"]\n[functions.vo-local-capture]\nstatic_files = ["./functions/_shared/ticket-assets/*.ttf"]\n';
+ s+='\n[functions.preview-ticket-layout]\nstatic_files = ["./functions/_shared/ticket-assets/*.ttf"]\n[functions.vo-local-capture]\nstatic_files = ["./functions/_shared/ticket-assets/*.ttf"]\n';
  fs.writeFileSync(config,s);
 }
 if(!fs.readFileSync(config,'utf8').includes(`project_id = "${project}"`))throw Error('Refusing foreign backend');
-if(databaseOnly)process.exit(0);
 if(!fs.existsSync('.private/edge.env'))fs.writeFileSync('.private/edge.env',`EMAIL_PAYLOAD_KEY=${randomBytes(32).toString('base64')}\nVO_LOCAL_CAPTURE=1\nVO_CAPTURE_SECRET=${randomBytes(32).toString('hex')}\nDEFAULT_EMAIL=local@example.invalid\nFESTAPP_ALLOWED_WEB_ORIGINS=http://127.0.0.1:59801,http://127.0.0.1:59802,https://localhost:59803,http://127.0.0.1:59804\n`,{mode:0o600});
 fs.cpSync('../../supabase/functions',`${workdir}/supabase/functions`,{recursive:true});
 fs.mkdirSync(`${workdir}/supabase/functions/vo-local-capture`,{recursive:true});
