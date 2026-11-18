@@ -9,6 +9,7 @@ function initHeroSketch(root, win, preference) {
   let origin;
   let disposed = false;
   let visible = !win.IntersectionObserver;
+  const shown = [null, null];
   function compose() {
     svg.setAttribute('viewBox', compact.matches ? '0 0 350 650' : '0 0 1200 650');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
@@ -41,15 +42,23 @@ function initHeroSketch(root, win, preference) {
     lanes.flat().forEach((scene, index) => { scene.element.style.strokeWidth = String(widths[index]); });
   }
   function render(scene, progress, fill, showPen = false) {
-    scene.element.style.opacity = '1';
+    if (scene.progress === progress && scene.fill === fill) return;
+    if (scene.fill !== fill) {
+      scene.fill = fill;
+      scene.element.style.setProperty('--sketch-fill', String(fill));
+    }
+    if (scene.progress === progress) return;
+    scene.progress = progress;
     scene.element.dataset.progress = progress.toFixed(3);
-    scene.element.style.setProperty('--sketch-fill', String(fill));
     const distance = scene.total * progress;
     let head = scene.paths[0];
     scene.paths.forEach(item => {
       const local = Math.max(0, Math.min(1, (distance - item.start) / item.length));
-      item.path.style.visibility = local > 0 ? 'visible' : 'hidden';
-      item.path.style.strokeDashoffset = String(1 - local);
+      if (item.progress !== local) {
+        item.progress = local;
+        item.path.style.visibility = local > 0 ? 'visible' : 'hidden';
+        item.path.style.strokeDashoffset = String(1 - local);
+      }
       if (distance >= item.start) head = item;
     });
     if (showPen && progress > 0 && progress < 1) {
@@ -60,55 +69,74 @@ function initHeroSketch(root, win, preference) {
       const mapped = point.matrixTransform(scene.matrix);
       pen.setAttribute('cx', String(mapped.x));
       pen.setAttribute('cy', String(mapped.y));
-      pen.style.opacity = '1';
     }
+  }
+  function show(laneIndex, scene) {
+    if (shown[laneIndex] === scene) return;
+    if (shown[laneIndex]) shown[laneIndex].element.style.opacity = '0';
+    shown[laneIndex] = scene;
+    scene.element.style.opacity = '1';
   }
   function clear() {
     lanes.flat().forEach(scene => { scene.element.style.opacity = '0'; });
+    shown.fill(null);
     pen.style.opacity = '0';
   }
   function still() {
     svg.removeAttribute('data-sketch-active');
     clear();
-    lanes.forEach(lane => render(lane[0], 1, 1));
+    lanes.forEach((lane, index) => {
+      show(index, lane[0]);
+      render(lane[0], 1, 1);
+    });
   }
   function draw(now) {
     if (disposed || !visible || root.hidden || preference.matches) return;
-    origin ??= now;
+    if (origin === undefined) {
+      origin = now;
+      clear();
+      svg.setAttribute('data-sketch-active', '');
+    }
     const elapsed = (now - origin) / 1000;
     const step = Math.floor(elapsed / 4.8);
     const time = elapsed % 4.8;
     const active = step % 2;
-    clear();
-    svg.setAttribute('data-sketch-active', '');
-    svg.dataset.scene = String(step);
-    svg.dataset.side = active === 0 ? 'left' : 'right';
+    if (svg.dataset.scene !== String(step)) {
+      svg.dataset.scene = String(step);
+      svg.dataset.side = active === 0 ? 'left' : 'right';
+    }
     lanes.forEach((lane, laneIndex) => {
       const latest = step - (step % 2 === laneIndex ? 0 : 1);
       if (latest < 0) return;
       const index = Math.floor(latest / 2) % lane.length;
       const isActive = laneIndex === active;
       if (!isActive) {
+        show(laneIndex, lane[index]);
         render(lane[index], 1, 1);
         return;
       }
       // Only this side clears; its partner stays fully drawn throughout.
       const erase = latest >= 2 ? .5 : 0;
-      let progress, fill, phase;
+      let progress, fill, phase, scene;
       if (time < erase) {
         progress = 1 - time / erase;
         fill = Math.max(0, 1 - time / .25);
         phase = 'erase';
-        render(lane[(index + lane.length - 1) % lane.length], progress, fill, true);
+        scene = lane[(index + lane.length - 1) % lane.length];
       } else {
         const local = time - erase;
         progress = Math.min(1, local / 2.2);
         fill = Math.max(0, Math.min(1, (local - 2.2) / .35));
         phase = local < 2.2 ? 'draw' : local < 2.55 ? 'fill' : 'hold';
-        render(lane[index], progress, fill, true);
+        scene = lane[index];
       }
-      svg.dataset.phase = phase;
-      svg.dataset.drawProgress = progress.toFixed(3);
+      show(laneIndex, scene);
+      const penOpacity = progress > 0 && progress < 1 ? '1' : '0';
+      if (pen.style.opacity !== penOpacity) pen.style.opacity = penOpacity;
+      render(scene, progress, fill, true);
+      if (svg.dataset.phase !== phase) svg.dataset.phase = phase;
+      const drawProgress = progress.toFixed(3);
+      if (svg.dataset.drawProgress !== drawProgress) svg.dataset.drawProgress = drawProgress;
     });
     frame = win.requestAnimationFrame(draw);
   }
@@ -117,26 +145,26 @@ function initHeroSketch(root, win, preference) {
     if (preference.matches) still();
     else if (visible && !root.hidden && !disposed) { origin = undefined; frame = win.requestAnimationFrame(draw); }
   }
-  function resize() { compose(); measureScale(); preferences(); }
+  function changeLayout() { compose(); measureScale(); preferences(); }
   const observer = win.IntersectionObserver ? new win.IntersectionObserver(entries => {
     visible = entries.some(entry => entry.isIntersecting); preferences();
   }) : null;
   compose();
   measureScale();
   observer?.observe(svg);
-  win.addEventListener('resize', resize);
+  win.addEventListener('resize', measureScale);
   root.addEventListener('visibilitychange', preferences);
-  compact.addEventListener('change', resize);
+  compact.addEventListener('change', changeLayout);
   preference.addEventListener('change', preferences);
   preferences();
   return () => {
     disposed = true;
     win.cancelAnimationFrame(frame);
     observer?.disconnect();
-    win.removeEventListener('resize', resize);
+    win.removeEventListener('resize', measureScale);
     root.removeEventListener('visibilitychange', preferences);
     preference.removeEventListener('change', preferences);
-    compact.removeEventListener('change', resize);
+    compact.removeEventListener('change', changeLayout);
     still();
   };
 }

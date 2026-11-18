@@ -1753,7 +1753,7 @@
       ]
     },
     "seat-delivery": {
-      "script": "node web_client/scripts/run_db_tests.js --group seat-delivery-email\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\npython3 automation/assemble-ticket-wallet-queue-migrations.py --check\nnode --test database/tests/occasion_setup/wallet_queue_concurrency.test.mjs\nnode --test database/tests/occasion_setup/wallet_queue_upgrade.test.mjs\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\npython3 automation/assemble-apple-ticket-wallet-updates-migration.py --check\npython3 -m unittest automation/tests/test_apple_wallet_runtime.py\npython3 automation/assemble-order-item-terminology-migration.py --check\npnpm --dir web_client exec node --test tests/forms/order_item_terminology.test.js\n",
+      "script": "node web_client/scripts/run_db_tests.js --group seat-delivery-email\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env=EMAIL_PAYLOAD_KEY supabase/functions/organizer-contact/handler_test.ts\nnode automation/email-delivery/rehearse-ticket-delivery.mjs\npython3 automation/assemble-ticket-wallet-queue-migrations.py --check\nnode --test database/tests/occasion_setup/wallet_queue_concurrency.test.mjs\nnode --test database/tests/occasion_setup/wallet_queue_upgrade.test.mjs\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\npython3 automation/assemble-apple-ticket-wallet-updates-migration.py --check\npython3 -m unittest automation/tests/test_apple_wallet_runtime.py\npython3 automation/assemble-order-item-terminology-migration.py --check\npnpm --dir web_client exec node --test tests/forms/order_item_terminology.test.js\n",
       "after": [
         "seat-database"
       ],
@@ -1783,6 +1783,7 @@
         "*database/tests/sale_opening_notifications/contracts_test.sql*",
         "*database/tests/emails/delivered_tickets_resolve_confirmation_test.sql*",
         "*database/tests/emails/order_email_bulk_reporting_test.sql*",
+        "*database/tests/emails/organizer_contact_test.sql*",
         "*database/tests/order_item_terminology_test.sql*",
         "database/tests/**/fixtures*",
         "web_client/tests/fixtures/**",
@@ -2086,6 +2087,7 @@
         "database/tests/sale_opening_notifications/contracts_test.sql",
         "database/tests/emails/delivered_tickets_resolve_confirmation_test.sql",
         "database/tests/emails/order_email_bulk_reporting_test.sql",
+        "database/tests/emails/organizer_contact_test.sql",
         "database/tests/order_item_terminology_test.sql"
       ]
     },
@@ -2270,6 +2272,7 @@
       "database/tests/emails/order_change_summary_test.sql",
       "database/tests/emails/order_delete_email_cleanup_test.sql",
       "database/tests/emails/order_email_bulk_reporting_test.sql",
+      "database/tests/emails/organizer_contact_test.sql",
       "database/tests/emails/order_email_form_access_test.sql",
       "database/tests/emails/order_email_recovery_test.sql",
       "database/tests/emails/order_email_service_role_permissions_test.sql",
@@ -2842,6 +2845,7 @@
     "database/tests/emails/order_change_summary_test.sql",
     "database/tests/emails/order_delete_email_cleanup_test.sql",
     "database/tests/emails/order_email_bulk_reporting_test.sql",
+    "database/tests/emails/organizer_contact_test.sql",
     "database/tests/emails/order_email_form_access_test.sql",
     "database/tests/emails/order_email_recovery_concurrency.test.mjs",
     "database/tests/emails/order_email_recovery_test.sql",
@@ -3368,6 +3372,7 @@
     "supabase/functions/probe-complianz/policy_test.ts",
     "supabase/functions/register/registrationFlow_test.ts",
     "supabase/functions/report-exchange-rates/handler_test.ts",
+    "supabase/functions/organizer-contact/handler_test.ts",
     "supabase/functions/sale-opening-notifications/handler_test.ts",
     "supabase/functions/sale-opening-notifications/protection_test.ts",
     "supabase/functions/send-custom-email/authoringContext_test.ts",

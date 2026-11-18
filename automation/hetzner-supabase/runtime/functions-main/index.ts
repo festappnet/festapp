@@ -313,7 +313,7 @@ async function isValidHybridJWT(jwt: string): Promise<AuthFailure | null> {
 
 startRuntimeResourceMetrics(); /* festapp-runtime-resource-metrics-v1 */
 Deno.serve({ onError }, async (req: Request) => {
-  if (req.method !== "OPTIONS" && VERIFY_JWT && !["google-auth-start", "google-auth-callback", "google-auth-complete", "auth-email-hook", "email-provider-events", "email-confirmation-status", "process-email-queue", "bank-sync-webhook", "bank-sync-reconcile", "mcp-session-exchange", "notification-center-maintain", "stripe-checkout", "stripe-return", "stripe-webhook", "stripe-reconcile", "wix-checkout-context", "sale-opening-notifications", "payment-operation", "ticket-wallet", "sync-ticket-wallet", "apple-wallet"].includes(new URL(req.url).pathname.split("/")[1])) /* festapp-google-proof-v1 */ {
+  if (req.method !== "OPTIONS" && VERIFY_JWT && !["google-auth-start", "google-auth-callback", "google-auth-complete", "auth-email-hook", "email-provider-events", "email-confirmation-status", "process-email-queue", "bank-sync-webhook", "bank-sync-reconcile", "mcp-session-exchange", "notification-center-maintain", "stripe-checkout", "stripe-return", "stripe-webhook", "stripe-reconcile", "wix-checkout-context", "sale-opening-notifications", "payment-operation", "ticket-wallet", "sync-ticket-wallet", "apple-wallet", "organizer-contact"].includes(new URL(req.url).pathname.split("/")[1])) /* festapp-google-proof-v1 */ {
     const token = getAuthToken(req)
     if (typeof token !== 'string') {
       return getAuthErrorResponse(token)

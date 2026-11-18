@@ -36,6 +36,16 @@ export function initDemoPlayers(root = document) {
     const label=player.button.querySelector('[data-playback-label]');
     if (label) label.textContent=text;
   }
+  function updateMedia(player) {
+    const { video, variant, stage } = player;
+    if (variant.poster) video.poster = variant.poster;
+    if (variant.width) video.width = variant.width;
+    if (variant.height) video.height = variant.height;
+    stage.toggleAttribute('data-portrait', variant.height > variant.width);
+    video.setAttribute('aria-label', variant.description);
+    const download = stage.querySelector('[data-media-download]');
+    if (download) download.href = variant.src;
+  }
   function load(player) {
     if (!player.variant.src) return false;
     if (player.video.getAttribute('src') !== player.variant.src) {
@@ -92,9 +102,7 @@ export function initDemoPlayers(root = document) {
       if (video.getAttribute('src') && video.getAttribute('src') !== player.variant.src) {
         video.pause();video.removeAttribute('src');video.load();
       }
-      if (player.variant.poster) video.poster=player.variant.poster;
-      if (player.variant.width) video.width=player.variant.width;
-      if (player.variant.height) video.height=player.variant.height;
+      updateMedia(player);
       updateButton(player);schedule();
     };
     resizeMedia();
@@ -110,10 +118,7 @@ export function initDemoPlayers(root = document) {
       if (automatic() && !player.manualPause && player.ratio >= .5 && !root.hidden) {
         if (player.variants.length > 1) {
           player.variant = player.variants[(player.variants.indexOf(player.variant) + 1) % player.variants.length];
-          video.poster = player.variant.poster;
-          video.setAttribute('aria-label', player.variant.description);
-          const download = stage.querySelector('[data-media-download]');
-          if (download) download.href = player.variant.src;
+          updateMedia(player);
         } else video.currentTime = 0;
         play(player);
       } else { player.ended = true; updateButton(player); }

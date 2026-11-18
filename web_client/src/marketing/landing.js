@@ -3,6 +3,8 @@ import { initDemoPlayers } from './demo_player.js';
 import { initMotion } from './motion.js';
 import { initReferenceCarousels } from './reference_carousel.js';
 import { initAccountHeader } from './account_header.js';
+import { initOrganizerContact } from './organizer_contact.js';
+import { initSeatDemo } from './seat_demo_entry.js';
 
 // Legacy app/scanner hash links still enter through the marketing root.
 const current = new URL(window.location.href);
@@ -16,4 +18,6 @@ if (target) {
     initMotion();
     initReferenceCarousels();
     initTopicTools();
+    initOrganizerContact();
+    initSeatDemo();
 }

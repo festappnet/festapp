@@ -132,9 +132,21 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
   let body = illustrated ? expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8')) : template;
   const pageCss = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.css'), 'utf8') : css;
   if (projection.locale === 'cs') {
+    body = body
+      .replace('{{PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN}}<br>{{PAGE_CARD_PAYMENTS_WITH_STRIPE}}', '{{PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN}} {{PAGE_CARD_PAYMENTS_WITH_STRIPE}}')
+      .replace('<a href="{{DEMO_BOOKING_HREF}}" class="text-link">{{PAGE_BOOK_A_DEMO}}</a>', '')
+      .replace('<a class="button primary" href="/events">{{PAGE_BROWSE_ALL_EVENTS}}</a>', '<a class="topic-text-link" href="/events">{{PAGE_BROWSE_ALL_EVENTS}}</a>')
+      .replace(/<p class="eyebrow">{{PAGE_(?:EVENTS_ON_FESTAPP_TICKETS|FROM_THE_FIRST_TABLE_TO_THE_LAST_GUEST|PRICING_AND_SUPPORT)}}<\/p>/g, '')
+      .replace(/<section class="payments wrap reveal"[\s\S]*?<\/section>/, '')
+      .replace('<div class="pricing-note">{{PRICING_FACTS}}', '<div class="pricing-note" id="platby">{{PRICING_FACTS}}')
+      .replace('<h2>{{PAGE_ONE_EVENT}}<br><span class="ink">{{PAGE_EVERYTHING_IN_ITS_PLACE}}</span></h2>', '<h2>{{PAGE_ONE_EVENT}}</h2>')
+      .replace('<p class="lead">{{PAGE_BOOK_A_30_MINUTE_WALKTHROUGH_OF_THE_SERVICE_AND_}}</p>', '')
+      .replace('<h2 id="price-title">{{PAGE_LET_S_SET_UP_TICKETS_FOR_YOUR_EVENT}}</h2>', '<h2 id="price-title">{{PAGE_LET_S_SET_UP_TICKETS_FOR_YOUR_EVENT}}</h2><p class="lead">Pro konkrétní nabídku nám napište typ akce, počet míst a co s prodejem potřebujete zařídit.</p>')
+      .replace('<div class="actions"><a class="button primary" href="{{DEMO_BOOKING_HREF}}">{{PAGE_BOOK_A_DEMO}}</a><a class="text-link" href="mailto:{{CONTACT_EMAIL}}">{{CONTACT_EMAIL}}</a></div><p class="small-note">{{PAGE_ONLINE_VIA_GOOGLE_MEET_WE_WILL_ALSO_DISCUSS_SERV}}</p>', '<a class="topic-text-link" href="#kontakt">Napsat kvůli ceně</a>')
+      .replace('<h3>{{PAGE_YOU_CONTROL_YOUR_EVENT}}</h3><p>{{PAGE_YOU_SET_PRICES_SEAT_AVAILABILITY_AND_SALES_TERMS}}</p>', '')
+      .replace(/<section class="faq wrap reveal"[\s\S]*?<\/section>/, '{{HOME_FAQ}}');
     body=body.replace(/<a href="#(?:vstupenka|vyber-mist|odbaveni)">[\s\S]*?<\/a>/g,'');
     body=body.replace(/<section class="steps wrap reveal"[\s\S]*?<\/section>/,'').replace(/<section class="technical-options wrap"[\s\S]*?<\/section>/,'');
-    body=body.replace(/<details><summary>{{PAGE_(?:CAN_GUESTS_CHOOSE_SPECIFIC_SEATS|WHAT_CAN_I_CUSTOMIZE|HOW_DO_I_CHECK_TICKETS_AT_THE_DOOR)}}<\/summary>[\s\S]*?<\/details>/g,'');
   }
 
   if (!projection.references?.length) body = body.replace(/<section id="reference"[\s\S]*?<\/section>/, "");

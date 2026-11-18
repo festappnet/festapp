@@ -3,6 +3,11 @@ export const pageDefinitions = Object.freeze({
   home: { asset: '/organizers-page' },
   press: { asset: '/organizers/press' },
   'seating-reservations': { asset: '/organizers/seating-reservations' },
+  'ticket-sales': { asset: '/organizers/ticket-sales' },
+  'payments-and-orders': { asset: '/organizers/payments-and-orders' },
+  'in-person-sales': { asset: '/organizers/in-person-sales' },
+  'ticket-check-in': { asset: '/organizers/ticket-check-in' },
+  'website-embed': { asset: '/organizers/website-embed' },
 });
 const reserved = /^\/(?:napoveda|bank-accounts|events|login|login-qr|admin|transfer|unit|signup|settings|install|map-editor|reset-password|forgot-password|google-auth|app|auth_bridge|form|stripe|scan|check|web-assets|organizers-media|assets|canvaskit|privacy|terms|support|delete-account|flutter|webclient|organizers|organizers-page|pro-poradatele|sitemap\.xml|robots\.txt)(?:\/|$)/;
 export function resolvePages(pages, origin) {
@@ -20,7 +25,10 @@ export function resolvePages(pages, origin) {
         if (!page.press?.summary || !page.press.features?.length || !page.press.usage?.length) throw new Error('Press page requires project copy and logo guidance');
       } else if (page.feature) {
         if (!page.feature.layouts?.length || !page.feature.editor || !page.feature.buyer) throw new Error('Feature requires examples and demonstrations');
-      } else if (!page.stepsHeading || !page.steps?.length || !page.faq?.length || !page.faqHeading) throw new Error('Topic requires steps and questions');
+      } else {
+        if (!page.stepsHeading || !page.steps?.length || !page.faq?.length || !page.faqHeading) throw new Error('Topic requires steps and questions');
+        if (page.workflow && (!page.overview || !page.workflow.capabilities?.length || !page.workflow.demos?.length || !page.workflow.guides?.length)) throw new Error('Workflow requires capabilities, demonstrations and guides');
+      }
     }
     ids.add(page.id); paths.add(page.path);
     return { ...page, ...definition, canonical: new URL(page.path, origin).href };
