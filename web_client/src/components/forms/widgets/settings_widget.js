@@ -40,10 +40,10 @@ export class SettingsWidget {
         // Language Section
         this.renderSection({
             title: CommonStrings.language,
-            options: AppConfig.supportedLanguages.map(lang => ({
-                id: lang,
-                label: lang === 'cs' ? 'Čeština' : 'English'
-            })),
+            options: AppConfig.supportedLanguages.map(lang => {
+                const name = new Intl.DisplayNames([lang], { type: 'language' }).of(lang);
+                return { id: lang, label: name[0].toLocaleUpperCase(lang) + name.slice(1) };
+            }),
             currentValue: LocalizationService.currentLocale,
             onSelect: (val) => {
                 if (val !== LocalizationService.currentLocale) {

@@ -79,6 +79,21 @@
           diagnostic: "Support code"
         }
       },
+      es: {
+        "new-version": {
+          message: "Hay una nueva versi\xF3n de la aplicaci\xF3n.",
+          reload: "Recargar",
+          later: "M\xE1s tarde",
+          loading: "Cargando..."
+        },
+        "legacy-cache": {
+          message: "Ya puedes actualizar la aplicaci\xF3n.",
+          reload: "Actualizar",
+          later: "M\xE1s tarde",
+          loading: "Actualizando...",
+          diagnostic: "C\xF3digo de soporte"
+        }
+      },
       sk: {
         "new-version": {
           message: "Je dostupn\xE1 nov\xE1 verzia aplik\xE1cie.",

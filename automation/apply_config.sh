@@ -1045,7 +1045,7 @@ from write_if_changed import write_text
 from pathlib import Path
 import re,sys
 p=Path(sys.argv[1])
-names={'cs':'Čeština','en':'English','de':'Deutsch','pl':'Polski','sk':'Slovenčina','uk':'Українська'}
+names={'cs':'Čeština','en':'English','es':'Español','de':'Deutsch','pl':'Polski','sk':'Slovenčina','uk':'Українська'}
 languages=sys.argv[2].split(',')
 if not languages or any(code not in names for code in languages): raise SystemExit('Unsupported Flutter language')
 entries='\n'.join('        LanguageModel(const Locale("'+code+'"), "'+names[code]+'"),' for code in languages)

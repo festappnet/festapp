@@ -60,6 +60,21 @@ export function createUpdatePresentation({currentVersion, canShow, onReload}) {
         diagnostic: 'Support code'
       }
     },
+    es: {
+      'new-version': {
+        message: 'Hay una nueva versión de la aplicación.',
+        reload: 'Recargar',
+        later: 'Más tarde',
+        loading: 'Cargando...'
+      },
+      'legacy-cache': {
+        message: 'Ya puedes actualizar la aplicación.',
+        reload: 'Actualizar',
+        later: 'Más tarde',
+        loading: 'Actualizando...',
+        diagnostic: 'Código de soporte'
+      }
+    },
     sk: {
       'new-version': {
         message: 'Je dostupná nová verzia aplikácie.',

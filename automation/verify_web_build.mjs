@@ -311,7 +311,7 @@ assert.match(
 assert.match(worker, /FESTAPP_QUERY_BUILD_VERSION/);
 
 // Validate the actual published catalogs, not only Flutter's source strings.
-for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
+for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk', 'es']) {
   const published = JSON.parse(await readFile(path.join(buildDir, 'assets/translations', `${locale}.json`), 'utf8'));
   const canonical = JSON.parse(await readFile(path.resolve(path.dirname(configPath), '..', 'assets/translations', `${locale}.json`), 'utf8'));
   for (const namespace of ['Waitlist', 'CustomerSelfService', 'FeatureCustomerSelfService']) {

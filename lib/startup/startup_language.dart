@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/locale_preference/locale_preference_stub.dart'
     if (dart.library.js_interop) '../services/locale_preference/locale_preference_web.dart';
 
-const startupLanguages = {'cs', 'en', 'sk', 'de', 'pl', 'uk'};
+const startupLanguages = {'cs', 'en', 'sk', 'de', 'pl', 'uk', 'es'};
 
 /// Migrate the former public-client choice before EasyLocalization caches it.
 Future<void> prepareSharedLocale() async {
