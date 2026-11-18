@@ -35,7 +35,7 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
                             .issubset(selection.unit_owners(path,'mcp-database-contracts',CONTRACT)),path)
         for path in ['database/functions/eshop/finalize_ticket_order.sql','database/tests/helpers/reset_owned_sequences.sql']:
             self.assertTrue(independent.issubset(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
-        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','mcp-database-contracts',CONTRACT))
+        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','database-service-regressions',CONTRACT))
 
     def test_ticket_core_and_edge_have_only_their_actual_platform_inputs(self):
         lane='ticket-preview-and-delivery'

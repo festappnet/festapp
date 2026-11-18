@@ -84,7 +84,7 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
-        self.assertTrue({'seat-checkout','database-regressions','mcp-database-contracts','client-browser-contract'}
+        self.assertTrue({'seat-checkout','database-regressions','mcp-database-contracts','database-service-regressions','client-browser-contract'}
                         .issubset(contract['jobs']))
         for name,lane in contract['jobs'].items():
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
@@ -122,6 +122,7 @@ class MirrorContractTest(unittest.TestCase):
                 allowed = {
                     'seat-mcp-prepare': {'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract'},
                     'seat-database': {'seat-runtime-contract'},
+                    'seat-services': {'seat-database'},
                 }.get(unit, {'seat-database'} if name == 'mcp-database-contracts' else set())
                 self.assertLessEqual(cross_lane, allowed, unit)
         self.assertTrue({'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract'}
@@ -156,7 +157,6 @@ class MirrorContractTest(unittest.TestCase):
         for lane, concurrent in [
             ('wix-checkout-compatibility', ('wix-quick', 'wix-adapters', 'wix-cms')),
             ('ticket-preview-and-delivery', ('ticket-client', 'ticket-edge')),
-            ('mcp-database-contracts', ('seat-mcp-contracts-2', 'seat-mcp-authorization', 'seat-mcp-contracts-1')),
         ]:
             units = runner.selected_units([lane])
             limits = {**runner.CONTRACT['resources'], **runner.CONTRACT['jobs'][lane]['hostedResources']}
@@ -166,6 +166,9 @@ class MirrorContractTest(unittest.TestCase):
         mcp_units = runner.selected_units(['mcp-database-contracts'])
         sql_units = [name for name, unit in mcp_units.items() if unit['resources'].get('dbCluster')]
         self.assertEqual(sql_units[0], 'seat-mcp-contracts-2')
+        service_units = runner.selected_units(['database-service-regressions'])
+        self.assertEqual(set(service_units), {'seat-services', 'database-services-install'})
+        self.assertEqual(service_units['seat-services']['after'], ['database-services-install'])
 
     def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
         steps=runner.CONTRACT['steps']
@@ -362,7 +365,7 @@ class UnitSplitContractTest(unittest.TestCase):
                      'automation/lib/historical_sql.mjs',
                      'test/fixtures/order_item_terminology.json']:
             for unit in ['seat-payments','seat-orders','seat-delivery','seat-services']:
-                lane = 'mcp-database-contracts' if unit == 'seat-services' else 'seat-checkout'
+                lane = 'database-service-regressions' if unit == 'seat-services' else 'seat-checkout'
                 self.assertIn(unit,unit_owners(path,lane,runner.CONTRACT),(unit,path))
         self.assertIn('wix-cms',unit_owners('automation/lib/migration_inputs.py',
                                           'wix-checkout-compatibility',runner.CONTRACT))

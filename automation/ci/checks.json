@@ -336,8 +336,7 @@
         "seat-mcp-prepare",
         "seat-mcp-authorization",
         "seat-mcp-contracts-1",
-        "seat-mcp-contracts-2",
-        "seat-services"
+        "seat-mcp-contracts-2"
       ],
       "inputs": [
         "database/**",
@@ -354,14 +353,6 @@
         "web_client/pnpm*",
         "web_client/.npmrc",
         "web_client/tests/database/**",
-        "web_client/src/components/users/connection_page_styles.js",
-        "web_client/src/theme_config.css",
-        "web_client/src/**",
-        "web_client/scripts/**",
-        "web_client/tests/database/retired_waitlist_registry.test.js",
-        "web_client/tests/database/sql_runner.test.js",
-        "web_client/tests/database/customer_order_changes_concurrency.test.js",
-        "web_client/tests/forms/customer_order_changes.test.js",
         "web_client/tests/fixtures/**",
         "web_client/tests/database/disposable_database.js",
         "web_client/tests/database/runtime_workspace.js",
@@ -374,9 +365,48 @@
         "assets/translations/**",
         "automation/lib/**",
         "test/fixtures/**"
+      ]
+    },
+    "database-service-regressions": {
+      "workflow": "seat-checkout-regressions.yml",
+      "node": "22.23.4",
+      "steps": [
+        "database-services-install",
+        "seat-services"
       ],
-      "hostedResources": {
-        "dbCluster": 3
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "automation/migration_forward_owners.py",
+        "automation/migration-forward-owners.json",
+        "automation/generate_canonical_source_contract.py",
+        "automation/seed_demo_occasions.sql",
+        "automation/lib/**",
+        "automation/authorization/benchmark.mjs",
+        "automation/authorization/evidence.mjs",
+        "automation/tests/customer_cancellation_cutover.test.mjs",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/.npmrc",
+        "web_client/src/**",
+        "web_client/scripts/**",
+        "web_client/tests/database/**",
+        "web_client/tests/forms/customer_order_changes.test.js",
+        "web_client/tests/fixtures/**",
+        "tools/festapp/test/postgres-guard.test.mjs",
+        "tools/festapp/test/postgres.mjs",
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "test/fixtures/**"
+      ],
+      "inputProjections": {
+        "web_client/package.json": "package-version",
+        "web_client/src/version.js": "generated-web-version"
       }
     },
     "client-browser-contract": {
@@ -609,6 +639,7 @@
         "seat-payments",
         "seat-orders",
         "seat-delivery",
+        "database-services-install",
         "seat-services",
         "seat-mcp-prepare",
         "seat-mcp-authorization",
@@ -945,10 +976,22 @@
         "seat-mcp-prepare"
       ]
     },
+    "database-services-install": {
+      "script": "cd web_client\npython3 ../automation/ci/run.py install .\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 256
+      },
+      "inputs": [
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/.npmrc"
+      ]
+    },
     "seat-services": {
-      "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
+      "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" node --test --test-concurrency=1 tools/festapp/test/postgres-guard.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
       "after": [
-        "seat-mcp-prepare",
+        "database-services-install",
         "seat-database"
       ],
       "resources": {
@@ -1000,8 +1043,7 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "mcp-database-install",
-        "seat-mcp-prepare"
+        "database-services-install"
       ]
     },
     "seat-authorization": {
@@ -1731,6 +1773,7 @@
         "seat-payments",
         "seat-orders",
         "seat-delivery",
+        "database-services-install",
         "seat-services",
         "seat-mcp-prepare",
         "seat-mcp-authorization",

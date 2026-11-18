@@ -244,7 +244,7 @@ def local(names):
                 call([sys.executable,'-m','venv',str(venv)])
                 call([str(venv/'bin/pip'),'--quiet','install','PyYAML==6.0.3'])
                 os.environ['PATH']=str(venv/'bin')+os.pathsep+os.environ['PATH']
-            if {'seat-checkout','database-regressions','mcp-database-contracts'}.intersection(names):
+            if {'seat-checkout','database-regressions','mcp-database-contracts','database-service-regressions'}.intersection(names):
                 require_version(['supabase','--version'],'2.111.0')
             return _execute(names,pinned=True,command_started=command_started)
     finally:os.environ.clear();os.environ.update(previous)
