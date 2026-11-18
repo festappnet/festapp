@@ -182,7 +182,8 @@
       "steps": [
         "image-client-install",
         "image-client-adapter",
-        "image-client-widgets"
+        "image-client-widgets",
+        "ticketing-catalog-contract"
       ],
       "inputs": [
         "lib/**",
@@ -489,8 +490,7 @@
       "node": "22.23.4",
       "steps": [
         "ticket-rendering-install",
-        "ticket-rendering-client",
-        "ticketing-catalog-contract"
+        "ticket-rendering-client"
       ],
       "inputs": [
         "lib/**",
@@ -523,8 +523,7 @@
         "packages/windows_file_picker/**",
         "automation/testing/ticket_default_ci.dart",
         "database/fixtures/**",
-        "automation/lib/**",
-        "test_dart/**"
+        "automation/lib/**"
       ]
     }
   },
@@ -1910,14 +1909,14 @@
     "ticketing-catalog-contract": {
       "script": "fvm flutter test --no-pub --concurrency=1 --dart-define=FESTAPP_APP_SUPPORTED=false test/components/navigation/ticketing_catalog_boundary_cases.dart\n",
       "after": [
-        "ticket-rendering-client"
+        "image-client-widgets"
       ],
       "resources": {
         "ramMiB": 2600,
         "flutter": 1
       },
       "requires": [
-        "ticket-rendering-install"
+        "image-client-install"
       ],
       "inputs": [
         "lib/**",

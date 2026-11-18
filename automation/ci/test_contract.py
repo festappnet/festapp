@@ -94,7 +94,7 @@ class MirrorContractTest(unittest.TestCase):
             for command in commands:
                 self.assertTrue(command=='python3 automation/ci/run.py lane '+name or
                     (name == 'server-policy' and command == GROWTH_GUARD) or any(marker in command for marker in
-                    ('automation/ci/selection.py ',"echo 'All lane tests executed'","echo 'Some lane tests executed'","echo 'Lane coverage verified'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh')),command)
+                    ('automation/ci/selection.py ',"echo 'All lane tests executed'","echo 'Some lane tests executed'","echo 'Lane coverage verified'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh','bash automation/ci/supabase.sh')),command)
             self.assertFalse(any('run.py step ' in command for command in commands))
             node=[step['with']['node-version'] for step in steps if step.get('uses','').startswith('actions/setup-node@')]
             self.assertEqual(node,[lane['node']])
@@ -206,7 +206,7 @@ class MirrorContractTest(unittest.TestCase):
     def test_runtime_provisioning_conditions_match_their_consumers(self):
         workflow=yaml.safe_load((ROOT/'.github/workflows/seat-checkout-regressions.yml').read_text())
         seat=workflow['jobs']['seat-checkout']['steps']
-        supabase=next(s for s in seat if s.get('uses','').startswith('supabase/setup-cli'))
+        supabase=next(s for s in seat if s.get('run') == 'bash automation/ci/supabase.sh')
         self.assertEqual(supabase['if'],"steps.selection.outputs.sql == 'true'")
         prepare=next(s for s in seat if s.get('name')=='Prepare isolated browser and database image')
         self.assertEqual(prepare['env'],{'FESTAPP_CI_NEEDS_DATABASE':'${{ steps.selection.outputs.sql }}',
