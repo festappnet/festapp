@@ -9,7 +9,12 @@ import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:festapp_core/time.dart';
+import 'package:fstapp/components/features/ticket_feature.dart';
+import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/ticket_layout/google_wallet_appearance.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_wallet_appearance_editor.dart';
+import 'package:fstapp/theme_config.dart';
+import 'package:fstapp/widgets/drop_file.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_wallet_card_preview.dart';
 
@@ -19,6 +24,9 @@ void main() {
   WidgetEnvironmentFixture.register();
   setUpAll(() async {
     OccasionTimeContext.initializeTimeZones();
+    await (FontLoader(
+      'MaterialIcons',
+    )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
     await (FontLoader('WalletPreviewSans')..addFont(
           rootBundle.load(
             'supabase/functions/_shared/ticket-assets/roboto.ttf',
@@ -127,6 +135,128 @@ void main() {
       }
     });
   }
+  testWidgets('Wallet artwork editor fits its hint and keeps removal compact', (
+    tester,
+  ) async {
+    final environment = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
+    final bytes = File(
+      'test/fixtures/ticket_layout/historical/forest-clean.png',
+    ).readAsBytesSync();
+    debugNetworkImageHttpClientProvider = () => _ArtworkClient(bytes);
+    addTearDown(() {
+      debugNetworkImageHttpClientProvider = null;
+      PaintingBinding.instance.imageCache.clear();
+    });
+    final capture = GlobalKey();
+    final feature = TicketFeature(
+      code: 'ticket',
+      walletAppearance: {
+        'logo': null,
+        'hero_image': 'https://img.festapp.net/images/sample.png',
+      },
+    );
+    for (final width in [440.0, 260.0]) {
+      await environment.pumpWidget(
+        tester,
+        MaterialApp(
+          locale: const Locale('cs'),
+          supportedLocales: const [Locale('cs')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          theme: ThemeConfig.theme(),
+          home: Scaffold(
+            body: Center(
+              child: RepaintBoundary(
+                key: capture,
+                child: Material(
+                  child: SizedBox(
+                    width: width,
+                    child: MediaQuery(
+                      data: MediaQueryData(
+                        textScaler: TextScaler.linear(width == 440 ? 1 : 1.6),
+                      ),
+                      child: SingleChildScrollView(
+                        child: StatefulBuilder(
+                          builder: (context, setState) =>
+                              TicketWalletAppearanceEditor(
+                                feature: feature,
+                                occasionId: 1,
+                                occasion: const {'title': 'Slavnostní večer'},
+                                onChanged: (value) => setState(() {
+                                  feature.walletAppearance = value;
+                                }),
+                              ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      if (find.byType(DropFile).evaluate().isEmpty) {
+        await tester.tap(find.text('Vzhled v Google Wallet a Apple Peněžence'));
+        await tester.pumpAndSettle();
+      }
+      final preview = find.descendant(
+        of: find.byType(ImageArea).last,
+        matching: find.byType(Image),
+      );
+      final artwork = tester.widget<Image>(preview);
+      await tester.runAsync(
+        () => precacheImage(artwork.image, tester.element(preview)),
+      );
+      await tester.pumpAndSettle();
+      final drop = find.byType(DropFile);
+      final hint = find.textContaining('Okolo loga');
+      final dropRect = tester.getRect(drop);
+      final hintRect = tester.getRect(hint);
+      expect(dropRect.deflate(8).contains(hintRect.bottomRight), isTrue);
+      expect(dropRect.deflate(8).contains(hintRect.topLeft), isTrue);
+      final previewRect = tester.getRect(preview);
+      expect(
+        previewRect.height,
+        closeTo((previewRect.width * 941 / 1672).clamp(0, 200), 1),
+      );
+      final remove = find.widgetWithIcon(IconButton, Icons.close);
+      expect(tester.getSize(remove), const Size.square(48));
+      expect(tester.widget<Icon>(find.byIcon(Icons.close)).size, 18);
+      expect(tester.getRect(remove).left - previewRect.right, closeTo(4, 1));
+      expect(tester.takeException(), isNull);
+
+      const output = String.fromEnvironment('UI_SCREENSHOT_DIR');
+      if (output.isNotEmpty) {
+        await Scrollable.ensureVisible(tester.element(drop), alignment: .08);
+        await tester.pumpAndSettle();
+        final boundary =
+            capture.currentContext!.findRenderObject() as RenderRepaintBoundary;
+        final image = (await tester.runAsync(() => boundary.toImage()))!;
+        try {
+          final bytes = (await tester.runAsync(
+            () => image.toByteData(format: ui.ImageByteFormat.png),
+          ))!;
+          Directory(output).createSync(recursive: true);
+          File('$output/wallet-artwork-${width.toInt()}-cs.png')
+              .writeAsBytesSync(bytes.buffer.asUint8List());
+        } finally {
+          image.dispose();
+        }
+      }
+    }
+    final remove = find.widgetWithIcon(IconButton, Icons.close);
+    await tester.ensureVisible(remove);
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(feature.walletAppearance!['hero_image'], isNull);
+    expect(find.byType(DropFile), findsNWidgets(2));
+  });
+
   testWidgets(
     'artwork uses a Google image and an Apple cropped primary strip',
     (tester) async {
