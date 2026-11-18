@@ -452,6 +452,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('SECOND DAY'), findsOneWidget);
   });
+  testWidgets('authorization refresh preserves the form draft and URL', (
+    tester,
+  ) async {
+    final access = Access();
+    final router = FixtureRouter(access)..tabsRequireAccess = true;
+    const path = '/occasion-a/reservations/forms/second/editor';
+    await mount(tester, router, path);
+    final draft = find.byKey(const Key('draft-field'));
+    await tester.enterText(draft, 'Unacknowledged changes');
+    final refresh = Completer<void>();
+    access.beforeLoad = (_) => refresh.future;
+
+    access.allowed = false;
+    access.notifyListeners();
+    await tester.pump();
+    await tester.pump();
+    expect(router.currentUrl, path);
+    expect(draft, findsNothing);
+
+    access.allowed = true;
+    refresh.complete();
+    await tester.pumpAndSettle();
+    expect(router.currentUrl, path);
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(of: draft, matching: find.byType(EditableText)),
+          )
+          .controller
+          .text,
+      'Unacknowledged changes',
+    );
+  });
   testWidgets(
       'rights revocation hides retained content and restored access reloads it',
       (tester) async {

@@ -4,6 +4,7 @@ import 'package:fstapp/components/single_data_grid/admin_tab_activity.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/app_panel_helper.dart';
+import 'package:fstapp/components/navigation/occasion_administration_boundary.dart';
 import 'package:fstapp/components/_shared/red_strip_widget.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_helper.dart';
 import 'package:fstapp/theme_config.dart';
@@ -42,7 +43,7 @@ class RoutedTabDefinition {
   });
 }
 
-class RoutedTabScaffold extends StatelessWidget {
+class RoutedTabScaffold extends StatefulWidget {
   final List<RoutedTabDefinition> tabs;
   final bool administration;
   final bool reservations;
@@ -56,9 +57,21 @@ class RoutedTabScaffold extends StatelessWidget {
   });
 
   @override
+  State<RoutedTabScaffold> createState() => _RoutedTabScaffoldState();
+}
+
+class _RoutedTabScaffoldState extends State<RoutedTabScaffold> {
+  List<RoutedTabDefinition> _authorizedTabs = const [];
+
+  @override
   Widget build(BuildContext context) {
     context.dependOnInheritedWidgetOfExactType<RouteDataScope>();
     final parentActive = AdminTabActivity.isActive(context);
+    final scope = OccasionAdministrationScope.maybeOf(context);
+    final canShowTabs = scope?.canShowTabs() ?? true;
+    // Empty capabilities during a refresh must not change the retained router.
+    if (canShowTabs) _authorizedTabs = widget.tabs;
+    final tabs = _authorizedTabs;
     if (tabs.isEmpty) return const Center(child: Text('Unavailable'));
     // A disabled, known section is normalized before any child is constructed.
     final pending = context.routeData.pendingChildren;
@@ -70,7 +83,7 @@ class RoutedTabScaffold extends StatelessWidget {
         : retained?.current.name;
     if (requested != null && !tabs.any((t) => t.route.routeName == requested)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
+        if (!context.mounted || !(scope?.canShowTabs() ?? true)) return;
         final parent = context.routeData;
         context.router.replace(
           PageRouteInfo(
@@ -94,8 +107,10 @@ class RoutedTabScaffold extends StatelessWidget {
           parentActive: parentActive,
           child: child,
         );
-        if (builder != null) return builder!(context, child, controller);
-        if (administration) {
+        if (widget.builder != null) {
+          return widget.builder!(context, child, controller);
+        }
+        if (widget.administration) {
           final scaffold = Scaffold(
             appBar: AppPanelHelper.buildAdaptiveAdminAppBar(
               context,
@@ -104,7 +119,7 @@ class RoutedTabScaffold extends StatelessWidget {
             ),
             body: SafeArea(top: false, child: child),
           );
-          final page = reservations
+          final page = widget.reservations
               ? Column(
                   children: [
                     const SafeArea(bottom: false, child: RedStripWidget()),
