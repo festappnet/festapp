@@ -38,9 +38,9 @@ from pathlib import Path
 import sys
 root=Path(sys.argv[1])
 contract=json.loads((root/'automation/ci/checks.json').read_text())
-job=contract['jobs']['web-startup']
+job=contract['jobs']['server-policy']
 workflow=(root/'.github/workflows'/job['workflow']).read_text()
-assert 'python3 automation/ci/run.py lane web-startup' in workflow
+assert 'python3 automation/ci/run.py lane server-policy' in workflow
 assert 'web-startup' in job['steps']
 assert 'bash automation/test_web_startup.sh' in contract['steps']['web-startup']['script'].splitlines()
 WEBVIEW_CONTRACT

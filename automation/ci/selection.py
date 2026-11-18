@@ -83,6 +83,13 @@ def known_tests(contract):
     return cached(('known-tests',id(contract)),lambda:set(contract['knownTestInputs']))
 
 
+def lane_inputs(lane, unit=None):
+    yield from lane.get('inputs', [])
+    for group in lane.get('inputGroups', []):
+        if unit is None or unit in group['steps']:
+            yield from group['inputs']
+
+
 def _owners(path, contract):
     # The same map governs local affected selection and hosted input digests.
     if (path.startswith(('automation/ci/', '.github/workflows/')) or
@@ -90,7 +97,7 @@ def _owners(path, contract):
              and path not in known_tests(contract))):
         return set(contract['jobs'])
     matches = {name for name, lane in contract['jobs'].items()
-               if any(fnmatch.fnmatch(path, pattern) for pattern in lane['inputs'])}
+               if any(fnmatch.fnmatch(path, pattern) for pattern in lane_inputs(lane))}
     if matches:
         return matches
     if any(fnmatch.fnmatch(path, pattern) for pattern in contract.get('independentInputs', [])):
@@ -113,8 +120,9 @@ def _unit_owners(path, lane, policy):
     if (path.startswith(('automation/ci/','.github/workflows/')) or
             (path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart')) and path not in known_tests(policy))):
         return set(units)
+    job = policy['jobs'][lane]
     matches={unit for unit in units if any(fnmatch.fnmatch(path,pattern) for pattern in
-             policy['steps'][unit].get('inputs',policy['jobs'][lane]['inputs']))}
+             policy['steps'][unit].get('inputs',lane_inputs(job, unit)))}
     return matches or set(units)
 
 

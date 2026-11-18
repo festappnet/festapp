@@ -82,7 +82,8 @@ class MirrorContractTest(unittest.TestCase):
                         self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
                     else:
                         self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'",
-                                                  "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'"))
+                                                  "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'",
+                                                  "steps.selection.outputs.browser == 'true'"))
 
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
@@ -96,7 +97,7 @@ class MirrorContractTest(unittest.TestCase):
             for command in commands:
                 self.assertTrue(command=='python3 automation/ci/run.py lane '+name or
                     (name == 'server-policy' and command == GROWTH_GUARD) or any(marker in command for marker in
-                    ('automation/ci/selection.py ',"echo 'All lane tests executed'","echo 'Some lane tests executed'","echo 'Lane coverage verified'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh','bash automation/ci/supabase.sh')),command)
+                    ('automation/ci/selection.py ',"echo 'All lane tests executed'","echo 'Some lane tests executed'","echo 'Lane coverage verified'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh','bash automation/ci/supabase.sh','python3 -m venv')),command)
             self.assertFalse(any('run.py step ' in command for command in commands))
             node=[step['with']['node-version'] for step in steps if step.get('uses','').startswith('actions/setup-node@')]
             self.assertEqual(node,[lane['node']])
@@ -495,12 +496,13 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
     def test_browser_lane_preserves_explicit_executable_and_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             browser=Path(directory)/'Chrome for Testing';browser.touch()
-            with patch.object(runner,'CACHE',Path(directory)),patch.dict(os.environ,{'CHROME_EXECUTABLE':str(browser)},clear=True),\
-                 patch.object(runner,'require_version',return_value='fixture'),patch.object(runner,'_execute',return_value={}) as execute:
-                runner.local(['web-startup'])
+            with patch.object(runner,'CACHE',Path(directory)),patch.dict(os.environ,{'CHROME_EXECUTABLE':str(browser),'PATH':os.defpath},clear=True),\
+                 patch.object(runner,'require_version',return_value='fixture'),patch.object(runner,'call'), \
+                 patch.object(runner,'_execute',return_value={}) as execute:
+                runner.local(['server-policy'])
                 self.assertEqual(os.environ['CHROME_EXECUTABLE'],str(browser))
             execute.assert_called_once()
-            self.assertEqual(execute.call_args.args,(['web-startup'],))
+            self.assertEqual(execute.call_args.args,(['server-policy'],))
             self.assertTrue(execute.call_args.kwargs['pinned'])
             self.assertIsInstance(execute.call_args.kwargs['command_started'],float)
 
@@ -508,7 +510,7 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
         with tempfile.TemporaryDirectory() as directory,patch.object(runner,'CACHE',Path(directory)),\
              patch.dict(os.environ,{'CHROME_EXECUTABLE':'/missing/chrome'},clear=True),\
              patch.object(runner,'require_version'),patch.object(runner,'_execute') as execute:
-            with self.assertRaisesRegex(RuntimeError,'Chrome'):runner.local(['web-startup'])
+            with self.assertRaisesRegex(RuntimeError,'Chrome'):runner.local(['server-policy'])
             execute.assert_not_called()
 
     def test_another_owner_blocks_before_tools_or_database_setup(self):

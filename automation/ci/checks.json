@@ -1,67 +1,5 @@
 {
   "jobs": {
-    "image-contract": {
-      "workflow": "image-service-regressions.yml",
-      "node": "22.23.4",
-      "steps": [
-        "image-install",
-        "image-policy",
-        "image-preflight",
-        "image-storage"
-      ],
-      "inputs": [
-        "workers/image-worker/**",
-        "automation/image-migration/**",
-        "automation/tests/image_service_preflight.test.mjs",
-        "automation/tests/test_*asset*",
-        "automation/tests/test_*backup*",
-        "packages/festapp_contracts/**",
-        "automation/verify_image_service.mjs"
-      ]
-    },
-    "web-startup": {
-      "workflow": "web-startup-regressions.yml",
-      "node": "22.23.4",
-      "steps": [
-        "web-install",
-        "web-startup",
-        "web-measurement",
-        "renderer-install",
-        "deploy-contract"
-      ],
-      "inputs": [
-        "lib/app_config.dart",
-        "web_client/**",
-        "web/**",
-        "automation/test_web_startup.sh",
-        ".github/workflows/android*.yml",
-        "automation/release/android_build_cache.mjs",
-        "automation/release/android_ci_plan.mjs",
-        "automation/tests/android*.test.mjs",
-        "android/**",
-        "packages/*/android/build.gradle*",
-        "packages/super_native_extensions/cargokit/gradle/**",
-        "pubspec.yaml",
-        "automation/lib/**",
-        "automation/release/platform_updates/**",
-        "automation/tests/deploy*",
-        "packages/festapp_contracts/**",
-        "workers/form-measurement/**",
-        "automation/deploy_measurement_runtimes.sh",
-        "automation/verify_measurement_runtimes.mjs",
-        "automation/tests/measurement_runtimes.test.mjs",
-        ".github/workflows/measurement-runtime-drift.yml",
-        "assets/translations/**",
-        "automation/tests/canonical_mutation_inventory.test.mjs",
-        "automation/tests/organizer_context.test.mjs",
-        "automation/client-sync/canonical-mutation-inventory.json",
-        "automation/client-sync/check_canonical_inventory.mjs",
-        "database/operations/canonical_mutation_contraction.sql",
-        "database/functions/blueprint/seating_sync.sql",
-        "automation/release/software-version.conf",
-        "automation/verify_image_service.mjs"
-      ]
-    },
     "wix-checkout-compatibility": {
       "workflow": "wix-checkout-compatibility.yml",
       "node": "24.22.1",
@@ -135,6 +73,15 @@
       "workflow": "image-upload-regressions.yml",
       "node": "22.23.4",
       "steps": [
+        "web-install",
+        "web-startup",
+        "web-measurement",
+        "renderer-install",
+        "deploy-contract",
+        "image-install",
+        "image-policy",
+        "image-preflight",
+        "image-storage",
         "mcp-auth-install",
         "mcp-api-prepare",
         "mcp-auth-contract",
@@ -142,39 +89,112 @@
         "mcp-edge-policy",
         "mcp-api-contract"
       ],
-      "inputs": [
-        "tools/festapp/**",
-        "supabase/functions/mcp-session-exchange/**",
-        "supabase/functions/_shared/issueExistingUserSession*.ts",
-        "supabase/functions/deno.lock",
-        "web_client/**",
-        "packages/festapp_contracts/**",
-        "automation/hetzner-supabase/runtime/*function*bundle*",
-        "automation/tests/function_bundle_selection.test.mjs",
-        "automation/hetzner-supabase/runtime/update-production-function-environment.py",
-        "automation/tests/test_function_environment.py",
-        "integrations/make/**",
-        "automation/hetzner-supabase/runtime/Caddyfile.integrations",
-        "assets/translations/**",
-        "automation/assemble-mcp-completion-migration.py",
-        "automation/assemble-information-authoring-migration.py",
-        "automation/assemble-integration-webhooks-migration.py",
-        "automation/assemble-ticket-layout-contract-refresh-migration.py",
-        "automation/migration_forward_owners.py",
-        "automation/migration-forward-owners.json",
-        "automation/check_api_artifacts.py",
-        "automation/tests/test_api_artifacts.py",
-        "database/functions/inventory/delegated_assignments.sql",
-        "database/functions/authoring/information.sql",
-        "database/functions/user_permissions/webhook_operations.sql",
-        "database/functions/integration_webhooks/webhooks.sql",
-        "database/functions/eshop/create_ticket_order.sql",
-        "database/functions/others/get_ticket_layout_write_contract_v1.sql",
-        "supabase/migrations/20261110110000_mcp_inventory_assignments.sql",
-        "supabase/migrations/20261116160000_information_authoring.sql",
-        "supabase/migrations/20261114120000_integration_webhooks.sql",
-        "supabase/migrations/20261114130000_ticket_layout_contract_refresh.sql"
-      ]
+      "inputGroups": [
+        {
+          "steps": [
+            "web-install",
+            "web-startup",
+            "web-measurement",
+            "renderer-install",
+            "deploy-contract"
+          ],
+          "inputs": [
+            "lib/app_config.dart",
+            "web_client/**",
+            "web/**",
+            "automation/test_web_startup.sh",
+            ".github/workflows/android*.yml",
+            "automation/release/android_build_cache.mjs",
+            "automation/release/android_ci_plan.mjs",
+            "automation/tests/android*.test.mjs",
+            "android/**",
+            "packages/*/android/build.gradle*",
+            "packages/super_native_extensions/cargokit/gradle/**",
+            "pubspec.yaml",
+            "automation/lib/**",
+            "automation/release/platform_updates/**",
+            "automation/tests/deploy*",
+            "packages/festapp_contracts/**",
+            "workers/form-measurement/**",
+            "automation/deploy_measurement_runtimes.sh",
+            "automation/verify_measurement_runtimes.mjs",
+            "automation/tests/measurement_runtimes.test.mjs",
+            ".github/workflows/measurement-runtime-drift.yml",
+            "assets/translations/**",
+            "automation/tests/canonical_mutation_inventory.test.mjs",
+            "automation/tests/organizer_context.test.mjs",
+            "automation/client-sync/canonical-mutation-inventory.json",
+            "automation/client-sync/check_canonical_inventory.mjs",
+            "database/operations/canonical_mutation_contraction.sql",
+            "database/functions/blueprint/seating_sync.sql",
+            "automation/release/software-version.conf",
+            "automation/verify_image_service.mjs"
+          ]
+        },
+        {
+          "steps": [
+            "image-install",
+            "image-policy",
+            "image-preflight",
+            "image-storage"
+          ],
+          "inputs": [
+            "workers/image-worker/**",
+            "automation/image-migration/**",
+            "automation/tests/image_service_preflight.test.mjs",
+            "automation/tests/test_*asset*",
+            "automation/tests/test_*backup*",
+            "packages/festapp_contracts/**",
+            "automation/verify_image_service.mjs"
+          ]
+        },
+        {
+          "steps": [
+            "mcp-auth-install",
+            "mcp-api-prepare",
+            "mcp-auth-contract",
+            "mcp-web-contract",
+            "mcp-edge-policy",
+            "mcp-api-contract"
+          ],
+          "inputs": [
+            "tools/festapp/**",
+            "supabase/functions/mcp-session-exchange/**",
+            "supabase/functions/_shared/issueExistingUserSession*.ts",
+            "supabase/functions/deno.lock",
+            "web_client/**",
+            "packages/festapp_contracts/**",
+            "automation/hetzner-supabase/runtime/*function*bundle*",
+            "automation/tests/function_bundle_selection.test.mjs",
+            "automation/hetzner-supabase/runtime/update-production-function-environment.py",
+            "automation/tests/test_function_environment.py",
+            "integrations/make/**",
+            "automation/hetzner-supabase/runtime/Caddyfile.integrations",
+            "assets/translations/**",
+            "automation/assemble-mcp-completion-migration.py",
+            "automation/assemble-information-authoring-migration.py",
+            "automation/assemble-integration-webhooks-migration.py",
+            "automation/assemble-ticket-layout-contract-refresh-migration.py",
+            "automation/migration_forward_owners.py",
+            "automation/migration-forward-owners.json",
+            "automation/check_api_artifacts.py",
+            "automation/tests/test_api_artifacts.py",
+            "database/functions/inventory/delegated_assignments.sql",
+            "database/functions/authoring/information.sql",
+            "database/functions/user_permissions/webhook_operations.sql",
+            "database/functions/integration_webhooks/webhooks.sql",
+            "database/functions/eshop/create_ticket_order.sql",
+            "database/functions/others/get_ticket_layout_write_contract_v1.sql",
+            "supabase/migrations/20261110110000_mcp_inventory_assignments.sql",
+            "supabase/migrations/20261116160000_information_authoring.sql",
+            "supabase/migrations/20261114120000_integration_webhooks.sql",
+            "supabase/migrations/20261114130000_ticket_layout_contract_refresh.sql"
+          ]
+        }
+      ],
+      "hostedResources": {
+        "ramMiB": 6000
+      }
     },
     "client-contract": {
       "workflow": "image-upload-regressions.yml",
@@ -540,6 +560,53 @@
     }
   },
   "steps": {
+    "web-install": {
+      "script": "cd web_client\npython3 ../automation/ci/run.py install .\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 256
+      }
+    },
+    "web-startup": {
+      "script": "bash automation/test_web_startup.sh\n\npnpm --dir web_client exec node --test tests/components/ticket_wallet_page.test.js\n",
+      "after": [
+        "web-install"
+      ],
+      "resources": {
+        "ramMiB": 1800,
+        "browser": 1
+      }
+    },
+    "web-measurement": {
+      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/core/host_consent_export.test.js web_client/tests/core/host_wix_consent.test.js web_client/tests/core/host_provider_live_state.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
+      "after": [
+        "web-startup"
+      ],
+      "resources": {
+        "ramMiB": 1800,
+        "browser": 1
+      }
+    },
+    "mcp-auth-install": {
+      "script": "python3 automation/ci/run.py install tools/festapp\npython3 automation/ci/run.py install web_client\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 256
+      }
+    },
+    "mcp-api-prepare": {
+      "script": "pnpm --dir tools/festapp run api:prepare\n",
+      "after": [
+        "mcp-auth-install"
+      ],
+      "resources": {
+        "ramMiB": 1280,
+        "sourceGeneration": 1
+      },
+      "requires": [
+        "mcp-auth-install"
+      ]
+    },
     "image-install": {
       "script": "cd workers/image-worker\npython3 ../../automation/ci/run.py install .\n",
       "after": [],
@@ -575,23 +642,6 @@
         "sourceGeneration": 1
       }
     },
-    "web-install": {
-      "script": "cd web_client\npython3 ../automation/ci/run.py install .\n",
-      "after": [],
-      "resources": {
-        "ramMiB": 256
-      }
-    },
-    "web-startup": {
-      "script": "bash automation/test_web_startup.sh\n\npnpm --dir web_client exec node --test tests/components/ticket_wallet_page.test.js\n",
-      "after": [
-        "web-install"
-      ],
-      "resources": {
-        "ramMiB": 1800,
-        "browser": 1
-      }
-    },
     "renderer-install": {
       "script": "cd automation/release/platform_updates\npython3 ../../../automation/ci/run.py install .\n",
       "after": [],
@@ -600,7 +650,7 @@
       }
     },
     "deploy-contract": {
-      "script": "node --test automation/tests/local_release_manifest.test.mjs automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\npython3 -m unittest discover -s automation/ci -p test_release_gate.py\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\nnode --test automation/tests/android_gradle_contract.test.mjs automation/tests/android_ci_release_contract.test.mjs\nnode --test automation/tests/canonical_mutation_inventory.test.mjs automation/tests/organizer_context.test.mjs\n",
+      "script": "node --test automation/tests/local_release_manifest.test.mjs automation/tests/web_build_cache.test.mjs automation/tests/web_build_receipt.test.mjs automation/tests/web_build_generators.test.mjs automation/tests/mcp_reference_digest.test.mjs\nbash automation/tests/deploy_workflow.test.sh\nbash automation/tests/deploy_direct.test.sh\nnode --test automation/tests/measurement_runtimes.test.mjs\nnode --test automation/tests/help_pages.test.mjs automation/tests/help_runtime.test.mjs automation/tests/help_search.test.mjs automation/tests/help_hosting_cache.test.mjs automation/tests/help_login_return.test.mjs automation/tests/help_branding_worker.test.mjs\nnode --test automation/tests/bundle_entries.test.mjs\nnode --test automation/tests/android_gradle_contract.test.mjs automation/tests/android_ci_release_contract.test.mjs\nnode --test automation/tests/canonical_mutation_inventory.test.mjs automation/tests/organizer_context.test.mjs\n",
       "after": [
         "renderer-install",
         "web-install"
@@ -1377,36 +1427,6 @@
       },
       "requires": [
         "database-regressions-install"
-      ]
-    },
-    "web-measurement": {
-      "script": "node --test web_client/tests/forms/form_measurement*.test.js web_client/tests/forms/form_datalayer.test.js web_client/tests/core/embed.test.js web_client/tests/core/embed_analytics.test.js web_client/tests/core/host_consent_mode.test.js web_client/tests/core/host_complianz.test.js web_client/tests/core/host_cookieconsent.test.js web_client/tests/core/host_cookiebot.test.js web_client/tests/core/host_consent_export.test.js web_client/tests/core/host_wix_consent.test.js web_client/tests/core/host_provider_live_state.test.js web_client/tests/forms/form_consent_link.test.js web_client/tests/forms/form_consent_link_cmp.test.js web_client/tests/forms/form_consent_link_cookieconsent.test.js web_client/tests/forms/form_consent_link_cookiebot.test.js web_client/tests/forms/order_submission_result_lifecycle.test.js\npnpm --dir web_client run test:measurement-browser -- --both\npnpm --dir web_client run test:measurement-runtime-browser\npnpm --dir web_client run test:measurement-nested-browser\npnpm --dir web_client run test:measurement-adversarial-browser\n",
-      "after": [
-        "web-startup"
-      ],
-      "resources": {
-        "ramMiB": 1800,
-        "browser": 1
-      }
-    },
-    "mcp-auth-install": {
-      "script": "python3 automation/ci/run.py install tools/festapp\npython3 automation/ci/run.py install web_client\n",
-      "after": [],
-      "resources": {
-        "ramMiB": 256
-      }
-    },
-    "mcp-api-prepare": {
-      "script": "pnpm --dir tools/festapp run api:prepare\n",
-      "after": [
-        "mcp-auth-install"
-      ],
-      "resources": {
-        "ramMiB": 1280,
-        "sourceGeneration": 1
-      },
-      "requires": [
-        "mcp-auth-install"
       ]
     },
     "mcp-auth-contract": {

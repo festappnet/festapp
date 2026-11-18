@@ -45,6 +45,17 @@ jobs:
           cache-dependency-path: |
             tools/festapp/pnpm-lock.yaml
             web_client/pnpm-lock.yaml
+            workers/image-worker/pnpm-lock.yaml
+            automation/release/platform_updates/pnpm-lock.yaml
+      - name: Install Python YAML parser
+        if: steps.selection.outputs.run == 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/festapp-ci-python"
+          "$RUNNER_TEMP/festapp-ci-python/bin/pip" --disable-pip-version-check --quiet install PyYAML==6.0.3
+          echo "$RUNNER_TEMP/festapp-ci-python/bin" >> "$GITHUB_PATH"
+      - name: Install isolated Chromium test runner
+        if: steps.selection.outputs.browser == 'true'
+        run: bash automation/ci/browser.sh
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh

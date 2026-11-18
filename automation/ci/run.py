@@ -234,12 +234,12 @@ def local(names):
             except BlockingIOError:raise RuntimeError('Another local CI mirror is running; wait for it to finish.')
             require_version(['pnpm','--version'],'11.24.0')
             if any(name in names for name in ('seat-checkout','database-regressions','ticket-preview-and-delivery','server-policy')):require_version(['deno','--version'],'2.9.0')
-            if {'seat-checkout','web-startup','client-contract','client-browser-contract'}.intersection(names):
+            if {'seat-checkout','server-policy','client-contract','client-browser-contract'}.intersection(names):
                 browser=(os.environ.get('CHROME_EXECUTABLE') or shutil.which('google-chrome') or shutil.which('chromium'))
                 if not browser and sys.platform=='darwin':browser='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
                 if not browser or not Path(browser).is_file():raise RuntimeError('Install Chrome/Chromium before browser lanes')
                 os.environ['CHROME_EXECUTABLE']=browser
-            if 'image-contract' in names:
+            if 'server-policy' in names:
                 venv=CACHE/'python'
                 call([sys.executable,'-m','venv',str(venv)])
                 call([str(venv/'bin/pip'),'--quiet','install','PyYAML==6.0.3'])
