@@ -38,7 +38,10 @@ test('one registry drives CS HTML, offline topics, sitemap and deterministic gen
   writeFileSync(join(f.root,'web/organizers/ball-ticket-sales'),'retired article');
   const result=f.render(); assert.equal(result.status,0,result.stderr);
   const context=await verifyMarketingBundle(join(f.root,'web'),f.configPath);
-  assert.equal(context.pages.length,5);
+  assert.deepEqual(context.pages.filter(page => !page.type).map(page => page.id), [
+    'home', 'seating-reservations', 'ticket-sales', 'payments-and-orders',
+    'in-person-sales', 'ticket-check-in', 'website-embed', 'press',
+  ]);
   const pressHtml=readFileSync(join(f.root,'web/organizers/press'),'utf8');
   assert.match(pressHtml,/href="\/organizers-media\/press-kit\/vstupenky-online-loga.zip" download/);
   assert.match(pressHtml,/info@vstupenky.online/);
@@ -91,7 +94,8 @@ test('synthetic EN uses same renderer, empty references, own media and optional 
   p.bookingUrl='mailto:support@example.invalid';p.serviceName='Ticket sales';p.serviceType='Event management';
   p.provider={name:'Example Operator',identifier:'123456',identifierLabel:'Business ID'};
   p.cta={href:'/events?create=1',label:'Create event',note:'Sign in to prepare your event.'};
-  p.templateTexts=Object.fromEntries(Object.keys(p.page ?? p.templateTexts).map(key=>[key,'Example event information']));
+  const english = JSON.parse(readFileSync(join(f.profilesDir,'content.en.json'))).publicProjection;
+  p.templateTexts=Object.fromEntries(Object.keys({...p.page,...english.page}).map(key=>[key,'Example event information']));
   p.helpLink=null;p.redirects=[];
   p.templateTexts.TEXT_5='Tickets';p.templateTexts.TEXT_6='for your event.';
   p.page=p.templateTexts;

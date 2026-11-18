@@ -221,6 +221,13 @@
       ],
       "mutates_authority": true
     },
+    "organizer-contact": {
+      "trigger": "client-http",
+      "effects": [
+        "database-rpc"
+      ],
+      "mutates_authority": true
+    },
     "email-confirmation-status": {
       "trigger": "receipt-capability-http",
       "effects": [
@@ -562,6 +569,7 @@
       "auth-email-hook": "standardwebhooks-hmac-and-server-resolved-tenant",
       "process-meta-purchases": "short-lived-machine-proof-bounded-leases-consent-revalidation-and-vault-scoped-destination",
       "email-provider-events": "signature-v2-exact-topic-aws-certificate-and-durable-redacted-journal",
+      "organizer-contact": "exact-first-party-origin-bounded-json-durable-idempotency-transactional-contact-admission-sealed-email",
       "email-confirmation-status": "opaque-hashed-bounded-expiring-capability-only",
       "bank-sync-webhook": "bounded-raw-body-hmac-v2-pinned-package-atomic-inbox-receipt",
       "stripe-checkout": "scoped-expiring-order-pay-or-single-use-handoff-capability-immutable-recipient",

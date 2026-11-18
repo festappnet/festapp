@@ -5,21 +5,6 @@
     "contact": "info@vstupenky.online",
     "references": [
       {
-        "id": "country-bal-2026",
-        "name": "Country bál 2026",
-        "publicUrl": "https://vstupenky.online/form/country_bal_vetrkovice",
-        "sourceType": "public_event_listing",
-        "sourceUrl": "https://vstupenky.online/",
-        "quote": null,
-        "author": null,
-        "metric": null,
-        "image": "/organizers-media/country-bal-2026.jpg",
-        "dateLabel": "14. listopadu 2026",
-        "date": "2026-11-14",
-        "sourceImage": "https://img.festapp.net/images/32316/1772094968899-r0cg0z-1772094968608.jpg",
-        "verifiedAt": "2026-10-22"
-      },
-      {
         "id": "ples-akh-2026",
         "name": "Ples AKH 2026",
         "publicUrl": "https://vstupenky.online/form/4aa0bcbb7d114ceb9f07762cc8660c1b",
@@ -114,18 +99,18 @@
       "PAGE_CREATE_YOUR_OWN_EVENT": "Založit akci zdarma",
       "PAGE_CREATE_EVENT": "Založit zdarma",
       "PAGE_SIGN_IN": "Přihlásit se",
-      "PAGE_TICKETS": "Vstupenky",
-      "PAGE_FOR_YOUR_EVENT": "pro Vaši akci.",
-      "PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN": "Vlastní plánek. Vlastní vstupenka.",
-      "PAGE_CARD_PAYMENTS_WITH_STRIPE": "QR převody bez transakčních poplatků.",
+      "PAGE_TICKETS": "Prodávejte vstupenky",
+      "PAGE_FOR_YOUR_EVENT": "online i na místě",
+      "PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN": "Hosté si vyberou místa přímo na plánku sálu.",
+      "PAGE_CARD_PAYMENTS_WITH_STRIPE": "U vstupu stačí načíst vstupenku z telefonu.",
       "PAGE_CREATE_EVENT_10": "Založit akci zdarma",
       "PAGE_EXPLORE_THE_FEATURES": "Domluvit ukázku",
       "PAGE_EVENTS_ON_FESTAPP_TICKETS": "Ukázky pořadatelů",
       "PAGE_FIND_YOUR_NEXT_EVENT": "Akce se vstupenky.online",
       "PAGE_BROWSE_ALL_EVENTS": "Najít akci",
       "PAGE_FROM_THE_FIRST_TABLE_TO_THE_LAST_GUEST": "Od prvního stolu po posledního hosta",
-      "PAGE_ONE_EVENT": "Jedna akce.",
-      "PAGE_EVERYTHING_IN_ITS_PLACE": "Všechno na svém místě.",
+      "PAGE_ONE_EVENT": "Jak probíhá prodej",
+      "PAGE_EVERYTHING_IN_ITS_PLACE": "z pohledu pořadatele",
       "PAGE_PRODUCT_FEATURES": "Ukázky funkcí",
       "PAGE_01_SEATING_PLAN": "Plánek sálu",
       "PAGE_02_FORM": "Prodej a vstupenky",
@@ -158,28 +143,9 @@
       "PAGE_WELCOME_YOUR_GUESTS": "Přivítejte hosty",
       "PAGE_KEEP_TRACK_OF_ORDERS_CHECK_TICKETS_AT_THE_DOOR_U": "Objednávky máte v přehledu. U dveří ověříte vstupenky pomocí QR kódu.",
       "PAGE_PRICING_AND_SUPPORT": "Cena a podpora",
-      "PAGE_LET_S_SET_UP_TICKETS_FOR_YOUR_EVENT": "Nastavíme vstupenky pro Vaši akci.",
-      "PAGE_BOOK_A_30_MINUTE_WALKTHROUGH_OF_THE_SERVICE_AND_": "Za 30 minut Vám ukážeme, jak služba funguje, a můžeme rovnou nastavit vstupenky pro Vaši akci.",
+      "PAGE_LET_S_SET_UP_TICKETS_FOR_YOUR_EVENT": "Cena pro pořadatele",
+      "PAGE_BOOK_A_30_MINUTE_WALKTHROUGH_OF_THE_SERVICE_AND_": "Založení akce je zdarma. Cenu služby domlouváme individuálně podle toho, co pro svou akci potřebujete.",
       "PAGE_BOOK_A_DEMO": "Domluvit ukázku",
-      "PAGE_ONLINE_VIA_GOOGLE_MEET_WE_WILL_ALSO_DISCUSS_SERV": "Online přes Google Meet. Projdeme i cenu služby.",
-      "PAGE_YOU_CONTROL_YOUR_EVENT": "Máte nad akcí plnou kontrolu.",
-      "PAGE_YOU_SET_PRICES_SEAT_AVAILABILITY_AND_SALES_TERMS": "Vy určujete ceny, dostupná místa i podmínky prodeje. Objednávky, platby a vstupenky máte na jednom místě.",
-      "PAGE_MORE_TO_KNOW": "Ještě vás zajímá",
-      "PAGE_GOOD_QUESTIONS": "Dobré otázky.",
-      "PAGE_CLEAR_ANSWERS": "Jasné odpovědi.",
-      "PAGE_DO_I_NEED_AN_ACCOUNT_TO_CREATE_AN_EVENT": "Potřebuji k založení akce účet?",
-      "PAGE_YES_CREATE_EVENT_OPENS_REGISTRATION_OR_EVENT_MAN": "Ano. Tlačítko Založit akci zdarma otevře registraci, nebo správu akcí, pokud už jste přihlášení. Vytvoření účtu není objednávkou vstupenky.",
-      "PAGE_CAN_GUESTS_CHOOSE_SPECIFIC_SEATS": "Mohou si hosté vybrat konkrétní místa?",
-      "PAGE_YES_FOR_EVENTS_WITH_A_SEATING_PLAN_GUESTS_CHOOSE": "Ano, u akce s plánkem vyberou místa v sále. Dostupnost a cenu vidí při výběru.",
-      "PAGE_WHAT_CAN_I_CUSTOMIZE": "Co si mohu přizpůsobit?",
-      "PAGE_YOUR_FORM_S_CONTENT_AND_APPEARANCE_TICKET_TEMPLA": "Obsah a vzhled formuláře, šablonu vstupenky i uspořádání sálu. Ukázky výše představují jednotlivá ovládání a výsledky.",
-      "PAGE_HOW_DO_PAYMENTS_AND_TICKET_DELIVERY_WORK": "Jak fungují platby a doručení vstupenek?",
-      "PAGE_GUESTS_PAY_BY_CARD_THROUGH_STRIPE_CHECKOUT_AFTER": "Host zaplatí bankovním převodem pomocí QR kódu bez transakčního poplatku. Platební karty zpřístupníme po domluvě. Informace k objednávce a vstupenkám dostane zákazník e-mailem.",
-      "PAGE_HOW_DO_I_CHECK_TICKETS_AT_THE_DOOR": "Jak ověřím vstupenku u dveří?",
-      "PAGE_USE_A_PHONE_WITH_A_CAMERA_TO_SCAN_THE_ADMISSION_": "Stačí Váš vlastní telefon s fotoaparátem. Načtete QR kód a potvrdíte vstup. Žádné speciální čtečky. U již použité vstupenky uvidíte upozornění.",
-      "PAGE_HOW_MUCH_DOES_THE_SERVICE_COST": "Kolik služba stojí?",
-      "PAGE_WRITE_TO": "Napište na",
-      "PAGE_OR_BOOK_A_DEMO_WE_WILL_DISCUSS_YOUR_EVENT_AND_A_": "nebo si rezervujte ukázku. Projdeme konkrétní akci a nabídku služby.",
       "PAGE_FOR_TECHNICAL_TEAMS": "Pro technické týmy",
       "PAGE_OPEN_CODE_YOUR_POSSIBILITIES": "Otevřený kód. Vlastní možnosti.",
       "PAGE_ALONGSIDE_OUR_SERVICE_YOU_CAN_USE_THE_OPEN_FESTA": "Vedle naší služby můžete využít i otevřenou platformu Festapp a přizpůsobit ji svému týmu.",
@@ -267,13 +233,128 @@
     ],
     "referencesHeading": "Akce se vstupenky.online",
     "catalogLabel": "Najít akci",
+    "gettingStarted": {
+      "image": "/organizers-media/event-setup-wizard.webp",
+      "imageWidth": 1440,
+      "imageHeight": 1000,
+      "imageAlt": "Nabídka šablon vstupenek v průvodci pro Slavnostní ples U Lípy",
+      "steps": [
+        {
+          "title": "Připravte si základní údaje",
+          "text": "Název, termín, místo a kontaktní e-mail. Pro placenou akci také účet pro příjem plateb."
+        },
+        {
+          "title": "Založte akci a uložte koncept",
+          "text": "V průvodci nastavte nabídku, plánek a vzhled vstupenky. K uloženému konceptu se můžete kdykoli vrátit."
+        },
+        {
+          "title": "Zkontrolujte formulář a otevřete prodej",
+          "text": "Zveřejnění v katalogu a otevření prodeje nastavujete zvlášť. Před sdílením odkazu ověřte nabídku a kapacitu."
+        }
+      ]
+    },
+    "pricingFacts": [
+      [
+        "Založení akce",
+        "Zdarma"
+      ],
+      [
+        "QR bankovní převod",
+        "Přímo na účet pořadatele. Za zpracování převodu neúčtujeme transakční poplatek."
+      ],
+      [
+        "Platby kartou",
+        "Po domluvě. Poplatky a výplaty se řídí podmínkami platební brány."
+      ],
+      [
+        "Cena služby",
+        "V nabídce uvedeme cenu za online prodej a zvlášť případnou přípravu plánku, tisk vstupenek nebo pomoc se spuštěním."
+      ]
+    ],
+    "homeFaq": [
+      {
+        "question": "Co je zdarma a za co jako pořadatel zaplatím?",
+        "answer": "Akci založíte zdarma. Za zpracování QR převodu neúčtujeme transakční poplatek. Cenu služby si dohodneme podle Vaší akce. U plateb kartou se navíc řídíte podmínkami platební brány.",
+        "guide": {"href": "#cena", "label": "Podmínky a cena služby"}
+      },
+      {
+        "question": "Na jaký účet chodí tržby a kdy je dostanu?",
+        "answer": "Při QR převodu platí host přímo na účet pořadatele nastavený u formuláře. Kdy se částka připíše, záleží na bankách. Platby kartou zpřístupňujeme po domluvě a termín výplaty se řídí podmínkami brány.",
+        "guide": {"href": "/platby-a-objednavky", "label": "Platby a přehled tržeb"}
+      },
+      {
+        "question": "Co si mám připravit, než spustím prodej?",
+        "answer": "Připravte údaje o akci, druhy vstupenek, ceny a kapacitu. Pro placenou nabídku nastavte příjem plateb. Prodej můžete připravit v konceptu a otevřít až po kontrole formuláře a ceny v rekapitulaci.",
+        "guide": {"href": "/napoveda/zaciname/#kontrola", "label": "Kontrola před spuštěním prodeje"}
+      },
+      {
+        "question": "Už prodávám jinde. Jak přejdu s rozjetou akcí?",
+        "answer": "Připravte přehled prodaných vstupenek a obsazených míst. Při přechodu se jejich počet musí promítnout do dostupné kapacity. Napište nám, jaká data můžete vyexportovat, a projdeme s Vámi postup.",
+        "guide": {"href": "#kontakt", "label": "Probrat přechod konkrétní akce"}
+      },
+      {
+        "question": "Co když musím stornovat vstupenku a vrátit peníze?",
+        "answer": "U objednávky můžete stornovat jednu vstupenku nebo celou objednávku. Peníze vraťte ve zvláštním kroku podle způsobu platby a výsledek ověřte v detailu objednávky.",
+        "guide": {"href": "/napoveda/objednavky/#zmena", "label": "Storno vstupenky nebo objednávky"}
+      },
+      {
+        "question": "Můžu prodávat z vlastního webu a sdílet stejný formulář i jinde?",
+        "answer": "Ano. Formulář můžete vložit do vlastního webu a jeho veřejnou adresu sdílet i v e-mailu nebo na sociálních sítích. Objednávky z obou cest uvidíte u stejné akce a čerpají stejnou kapacitu.",
+        "guide": {"href": "/prodej-vstupenek-na-vlastnim-webu", "label": "Jak vložit prodej na vlastní web"}
+      },
+      {
+        "question": "Co když u vstupu vypadne internet?",
+        "answer": "Odbavení offline povolte a připravte na každém telefonu ještě na internetu. Při výpadku skener pracuje s uloženými daty. Nové vstupy z ostatních telefonů se projeví po synchronizaci.",
+        "guide": {"href": "/napoveda/odbaveni/#offline", "label": "Příprava skeneru na výpadek internetu"}
+      },
+      {
+        "question": "Kdo odpovídá za údaje, které od hostů sbírám?",
+        "answer": "Pořadatel určuje, jaké údaje ve formuláři potřebuje a k čemu je použije. Podmínky ochrany osobních údajů popisují, jak údaje dále zpracovává vstupenky.online.",
+        "guide": {"href": "/privacy/", "label": "Ochrana osobních údajů"}
+      }
+    ],
+    "referenceCase": {
+      "title": "Divadlo s balkonem a lóžemi",
+      "text": "V editoru uspořádáte sedadla do oblouku před jevištěm a přidáte samostatná místa na balkoně a v lóžích.",
+      "image": "/organizers-media/layout-theatre.jpg",
+      "width": 794,
+      "height": 760,
+      "alt": "Plánek z editoru s obloukovými řadami v přízemí, postranními lóžemi a samostatným balkonem.",
+      "href": "/rezervacni-system-s-planem-salu#usporadani",
+      "label": "Prohlédnout šablony sálů"
+    },
+    "productProof": [
+      {
+        "role": "Co vidí host",
+        "recording": true,
+        "caption": "Host si na telefonu vybere místa u jednoho stolu."
+      },
+      {
+        "role": "Co vidí pořadatel",
+        "image": "/organizers-media/order-payment-detail.webp",
+        "width": 720,
+        "height": 540,
+        "alt": "Přehled platebních údajů, úhrady a případné vratky v detailu objednávky.",
+        "caption": "Platba u konkrétní objednávky.",
+        "label": "Prohlédnout platby a doručení vstupenek",
+        "href": "/platby-a-objednavky"
+      }
+    ],
     "pages": [
       {
         "id": "home",
-        "path": "/"
+        "path": "/",
+        "purchasePreviewClip": "seat-select"
       },
       {
         "id": "seating-reservations",
+        "overview": {
+          "points": [
+            "Kulaté stoly, řady i vlastní rozložení",
+            "Přiřazení vstupenek k místům",
+            "Výběr místa přímo v objednávce"
+          ]
+        },
         "path": "/rezervacni-system-s-planem-salu",
         "title": "Rezervační systém s vlastním plánkem sálu | vstupenky.online",
         "heading": "Rezervace míst podle Vašeho sálu",
@@ -321,23 +402,22 @@
           "editor": {
             "id": "navrh-salu",
             "title": "Sál sestavíte tak, jak ho opravdu chystáte",
-            "text": "Upravte stoly, židle, pódium i parket podle skutečného sálu. Polohu, velikost a natočení měníte přímo v editoru.",
+            "text": "Otevřete Plánek → Úprava plánku → Šablony sálů. Vyberte nejbližší uspořádání a upravte stoly i počet židlí. V režimu Rezervace a objednávky potom ověřte, že je u míst správný produkt a cena.",
             "clips": [
-              "layout-build",
-              "layout-refine"
+              "layout-build"
             ],
-            "helpHref": "/napoveda/planek-salu/",
-            "helpLabel": "Podrobný návod k editoru plánku"
+            "helpHref": "/napoveda/planek-salu/#sablona",
+            "helpLabel": "Vybrat šablonu a upravit plánek"
           },
           "buyer": {
             "id": "vyber-hosta",
             "title": "Host vybírá místo, ne číslo z dlouhého seznamu",
-            "text": "Host si přiblíží sál, vybere konkrétní sedadla a před objednáním vidí jejich označení i cenu.",
+            "text": "Ve veřejném formuláři otevřete Výběr místa a vyberte sedadlo. V rekapitulaci ověřte označení, druh vstupenky a cenu. Zkuste to i na telefonu.",
             "clips": [
               "seat-select"
             ],
-            "helpHref": "/napoveda/prodejni-formular/",
-            "helpLabel": "Jak propojit výběr s formulářem"
+            "helpHref": "/napoveda/planek-salu/#ulozeni",
+            "helpLabel": "Ověřit výběr míst před prodejem"
           },
           "ending": {
             "title": "Projděme společně Váš sál",
@@ -348,7 +428,565 @@
           "zoomLabel": "Otevřít plánek v plné velikosti"
         },
         "heroWidth": 894,
-        "heroHeight": 716
+        "heroHeight": 716,
+        "faqHeading": "Co ověřit u rezervací míst",
+        "faq": [
+          {
+            "question": "Proč místo na plánku nejde koupit?",
+            "answer": "V režimu Rezervace a objednávky zkontrolujte přiřazený produkt, cenu a prodejní stav místa.",
+            "guide": {"href": "/napoveda/planek-salu/#produkty", "label": "Zkontrolovat nabídku u míst"}
+          },
+          {
+            "question": "Co když musím změnit sál po otevření prodeje?",
+            "answer": "Objednaná a rezervovaná místa jsou chráněná. Nejdřív projděte dotčené objednávky v části Vstupenky a místa.",
+            "guide": {"href": "/napoveda/planek-salu/#behem-prodeje", "label": "Úpravy plánku během prodeje"}
+          }
+        ]
+      },
+      {
+        "id": "ticket-sales",
+        "path": "/online-prodej-vstupenek",
+        "linkLabel": "Online prodej vstupenek",
+        "title": "Online prodej vstupenek | vstupenky.online",
+        "description": "Nastavte vstupné a doplňky. Sdílejte odkaz, přes který hosté objednají QR vstupenky.",
+        "heading": "Prodávejte vstupenky podle pravidel své akce",
+        "intro": "Nastavte vstupné a doplňky. Sdílejte odkaz, přes který hosté objednají QR vstupenky.",
+        "overview": {
+          "points": [
+            "Druhy vstupenek a společné kapacity",
+            "Vlastní otázky a doplňkové produkty",
+            "Grafika vstupenky a PDF"
+          ]
+        },
+        "heroImage": "/organizers-media/form-build.webp",
+        "heroWidth": 1200,
+        "heroHeight": 804,
+        "heroImageAlt": "Nastavení prodejního formuláře s výběrem večeře",
+        "heroCaption": "Nastavení prodejního formuláře s výběrem večeře",
+        "heroMobileImage": {
+          "src": "/organizers-media/order-summary-mobile.webp",
+          "width": 390,
+          "height": 844,
+          "caption": "Rekapitulace vstupenky a celkové ceny před odesláním objednávky."
+        },
+        "stepsHeading": "Jak otevřít online prodej",
+        "steps": [
+          "V administraci akce otevřete Formuláře a zvolte Vytvořit/Zkopírovat formulář. Přes Přidat vstupenku nastavte druhy vstupenek, ceny a počty.",
+          "Přes Přidat pole doplňte údaje od kupujících. V části Rozvrh a Limity nastavte začátek a konec prodeje a změny uložte.",
+          "Zkopírujte Současný uložený odkaz. V anonymním okně projděte výběr a povinná pole až k rekapitulaci, kde ověříte celkovou cenu."
+        ],
+        "workflow": {
+          "capabilitiesHeading": "Vstupné, doplňky a vlastní vstupenka",
+          "capabilities": [
+            {
+              "title": "Varianty vstupného",
+              "text": "Nabídněte například základní a zvýhodněné vstupné. Varianty mohou čerpat ze stejné kapacity sálu."
+            },
+            {
+              "title": "Večeře i další doplňky",
+              "text": "Vedle vstupenek přidejte třeba večeři. Limit porcí můžete nastavit nezávisle na počtu míst."
+            },
+            {
+              "title": "Vlastní formulář a QR vstupenka",
+              "text": "Zeptejte se na údaje k celé objednávce nebo ke každé vstupence. Vstupenku upravte pro e-mail i tisk."
+            }
+          ],
+          "demos": [
+            {
+              "title": "Z nabídky na objednávkovou stránku",
+              "text": "Nastavení cen večeří a přidání pole pro poznámku.",
+              "clips": [
+                "form-build"
+              ],
+              "guide": {
+                "href": "/napoveda/prodejni-formular/",
+                "label": "Jak připravit formulář"
+              }
+            },
+            {
+              "title": "Co host zkontroluje před objednáním",
+              "text": "V rekapitulaci na telefonu vidí vybrané místo, údaje a celkovou cenu.",
+              "image": {
+                "src": "/organizers-media/order-summary-mobile.webp",
+                "width": 390,
+                "height": 844,
+                "alt": "Mobilní souhrn objednávky na ukázkový ples s místem 8 a celkovou cenou 350 Kč."
+              },
+              "guide": {
+                "href": "/napoveda/prodejni-formular/#overeni",
+                "label": "Ověřit nákup jako návštěvník"
+              }
+            },
+            {
+              "title": "Vstupenka s Vaší grafikou",
+              "text": "Úprava podkladu, textu a QR kódu v editoru vstupenky.",
+              "clips": [
+                "ticket-design"
+              ],
+              "guide": {
+                "href": "/napoveda/vzhled-vstupenky/",
+                "label": "Jak upravit vzhled vstupenky"
+              }
+            }
+          ],
+          "guides": [
+            {
+              "href": "/napoveda/zaciname/",
+              "label": "Založení akce"
+            },
+            {
+              "href": "/napoveda/prodejni-formular/",
+              "label": "Prodejní formulář"
+            },
+            {
+              "href": "/napoveda/ceny-a-kapacity/",
+              "label": "Ceny a kapacity"
+            },
+            {
+              "href": "/napoveda/vzhled-vstupenky/",
+              "label": "Vzhled vstupenky"
+            }
+          ]
+        },
+        "faqHeading": "Časté otázky",
+        "faq": [
+          {
+            "question": "Musím mít plánek sálu?",
+            "answer": "Ne. Hosté mohou vybírat pouze druh a počet vstupenek. Plánek využijete tam, kde chcete prodávat konkrétní sedadla."
+          },
+          {
+            "question": "Můžu připravenou akci zveřejnit hned a prodej otevřít až později?",
+            "answer": "Ano. Zveřejnění v katalogu a dostupnost prodeje nastavujete zvlášť. Začátek a konec objednávek určíte u formuláře v části Rozvrh a Limity.",
+            "guide": {"href": "/napoveda/prodejni-formular/#prodej", "label": "Nastavit začátek a konec prodeje"}
+          },
+          {
+            "question": "Jak hlídat místa a porce zvlášť?",
+            "answer": "Nastavte společný limit pro vstupné a samostatný limit pro doplňkový produkt, například pro počet porcí večeře.",
+            "guide": {"href": "/napoveda/ceny-a-kapacity/", "label": "Nastavit ceny a limity nabídky"}
+          },
+          {
+            "question": "Co s dalšími zájemci po vyprodání?",
+            "answer": "Můžete evidovat zájemce na čekací listině a nabídnout jim uvolněná místa."
+          }
+        ]
+      },
+      {
+        "id": "payments-and-orders",
+        "path": "/platby-a-objednavky",
+        "linkLabel": "Platby a objednávky",
+        "title": "Platby a objednávky | vstupenky.online",
+        "description": "Přijímejte QR převody přímo na svůj účet. Úhrady a doručení sledujte u objednávek.",
+        "heading": "Zjistěte, kdo zaplatil a komu dorazila vstupenka",
+        "intro": "Přijímejte QR převody přímo na svůj účet. Úhrady a doručení sledujte u objednávek.",
+        "overview": {
+          "points": [
+            "QR převod přímo na Váš účet",
+            "Párování převodů a přehled úhrad",
+            "Doručení a opětovné odeslání vstupenek"
+          ]
+        },
+        "heroImage": "/organizers-media/order-payment-detail.webp",
+        "heroWidth": 720,
+        "heroHeight": 540,
+        "heroImageAlt": "Detail platebních údajů a úhrady ukázkové objednávky.",
+        "heroCaption": "V detailu objednávky vidíte částku k úhradě, přijaté platby i případné vratky.",
+        "stepsHeading": "Jak nastavit platby a dohledat vstupenku",
+        "steps": [
+          "U uloženého formuláře otevřete Nastavení → Platební údaje. Zkontrolujte účet pořadatele, variabilní symbol, splatnost a volbu Zobrazit QR platbu po objednávce.",
+          "V Objednávkách najděte nákup podle symbolu nebo e-mailu. V detailu otevřete Platby a ověřte přijatou částku a zbývající úhradu.",
+          "V detailu objednávky otevřete E-maily. Zkontrolujte doručení, případně opravte adresu a odešlete vstupenku znovu."
+        ],
+        "workflow": {
+          "capabilitiesHeading": "Úhrady, párování a doručení",
+          "capabilities": [
+            {
+              "title": "Peníze přímo na Váš účet",
+              "text": "Při QR převodu se platba neposílá přes vstupenky.online. Za zpracování převodu neúčtujeme transakční poplatek. Cenu služby řešíme zvlášť."
+            },
+            {
+              "title": "Úhrady a nesrovnalosti",
+              "text": "Propojte podporovaný účet pro automatické párování. Platbu s chybným variabilním symbolem můžete dohledat a připojit ručně."
+            },
+            {
+              "title": "Stav prodeje a doručení",
+              "text": "Vyhledejte objednávku, zkontrolujte úhradu a stav e-mailu nebo exportujte tabulku vstupenek."
+            }
+          ],
+          "demos": [
+            {
+              "title": "Jak platí kupující",
+              "portrait": true,
+              "text": "Rozbalení platebních údajů u zkušební objednávky.",
+              "clips": [
+                "payment-qr"
+              ],
+              "guide": {
+                "href": "/napoveda/platby/",
+                "label": "Nastavení plateb"
+              }
+            },
+            {
+              "title": "Když e-mail s objednávkou nedorazí",
+              "text": "V záložce E-maily zjistíte důvod nedoručení. V ukázce pořadatel opravuje adresu, aby mohl potvrzení poslat znovu.",
+              "image": {
+                "src": "/organizers-media/order-delivery-detail.webp",
+                "width": 720,
+                "height": 660,
+                "alt": "Detail E-maily s upozorněním na nedoručení a polem pro opravu adresy."
+              },
+              "guide": {
+                "href": "/napoveda/objednavky/#doruceni",
+                "label": "Dohledat doručení a opravit e-mail"
+              }
+            }
+          ],
+          "guides": [
+            {
+              "href": "/napoveda/bankovni-ucet/",
+              "label": "Bankovní účet pořadatele"
+            },
+            {
+              "href": "/napoveda/fio-api-token/",
+              "label": "Propojení účtu Fio"
+            },
+            {
+              "href": "/napoveda/nesparovana-platba/",
+              "label": "Nespárované platby"
+            },
+            {
+              "href": "/napoveda/objednavky/",
+              "label": "Odesílání a doručení vstupenek"
+            }
+          ]
+        },
+        "faqHeading": "Časté otázky",
+        "faq": [
+          {
+            "question": "Host zaplatil, ale objednávka je pořád neuhrazená. Co ověřit?",
+            "answer": "V detailu objednávky otevřete Platby a zkontrolujte částku, měnu a variabilní symbol. Bankovní správce může skutečný převod dohledat mezi nespárovanými platbami a přiřadit ho.",
+            "guide": {"href": "/napoveda/nesparovana-platba/", "label": "Dohledat a přiřadit převod"}
+          },
+          {
+            "question": "Je možné platit kartou?",
+            "answer": "Ano, platby kartou zpřístupníme po domluvě. Podmínky platební brány řešíme zvlášť."
+          },
+          {
+            "question": "Uvolní se místo samo, když host nezaplatí včas?",
+            "answer": "Nezaplacenou objednávku po splatnosti zkontrolujte v administraci a případně ji stornujte. Samotné uplynutí splatnosti rezervaci neuvolní.",
+            "guide": {"href": "/napoveda/platby/#podminky", "label": "Jak funguje splatnost a připomínky"}
+          },
+          {
+            "question": "Můžu vybírat zálohu?",
+            "answer": "Ano. U nabídky lze nastavit zálohu, zbývající doplatek a jeho termín nebo úhradu na místě."
+          },
+          {
+            "question": "Jak vrátím peníze za stornovanou objednávku?",
+            "answer": "Platbu vraťte podle toho, jak host zaplatil. Storno objednávky a vrácení peněz jsou samostatné kroky. Výsledek ověřte v detailu objednávky.",
+            "guide": {"href": "/napoveda/objednavky/#zmena", "label": "Postup při stornu objednávky"}
+          }
+        ]
+      },
+      {
+        "id": "in-person-sales",
+        "path": "/prodej-vstupenek-na-miste",
+        "linkLabel": "Prodej vstupenek na místě",
+        "title": "Prodej vstupenek na místě | vstupenky.online",
+        "description": "Rezervujte část kapacity pro pokladnu, vytiskněte vstupenky a evidujte prodej za hotové.",
+        "heading": "Připravte vstupenky i pro prodej za hotové",
+        "intro": "Rezervujte část kapacity pro pokladnu, vytiskněte vstupenky a evidujte prodej za hotové.",
+        "overview": {
+          "points": [
+            "Tiskové PDF nebo ZIP jednotlivých vstupenek",
+            "Evidence hotovosti",
+            "Uvolnění neprodaných míst"
+          ]
+        },
+        "heroImage": "/organizers-media/ticket-batch-print.webp",
+        "heroWidth": 595,
+        "heroHeight": 842,
+        "heroPortrait": true,
+        "heroImageAlt": "Tiskový arch A4 se čtyřmi ukázkovými vstupenkami.",
+        "heroCaption": "Skutečný výstup tisku dávky. Ukázkové vstupenky neplatí pro vstup.",
+        "heroDocument": {"href": "/organizers-media/ticket-batch-print.pdf", "label": "Otevřít ukázkové PDF"},
+        "stepsHeading": "Od tisku k platné vstupence",
+        "steps": [
+          "V Objednávkách otevřete Předgenerované → Vytvořit dávku. Vyberte formulář, vstupenku a počet. Před vytvořením zvolte Zkontrolovat cenu.",
+          "Otevřete Detail a tisk → Připravit / obnovit tisk. Stáhněte PDF s více kusy na A4 nebo ZIP s jednotlivými vstupenkami.",
+          "Po převzetí hotovosti vyberte vstupenku nebo načtěte její QR a zvolte Zapsat prodej. Nepoužité kusy přes Zneplatnit neprodané vrátíte do dostupné kapacity."
+        ],
+        "workflow": {
+          "capabilitiesHeading": "Co máte pod kontrolou při prodeji na místě",
+          "capabilities": [
+            {
+              "title": "Kapacita pro pokladnu",
+              "text": "Část kapacity si rezervujte v dávce pro osobní předprodej, zatímco zbytek můžete prodávat online."
+            },
+            {
+              "title": "Tisk podle potřeby",
+              "text": "Připravte jednotlivé vstupenky nebo více kusů na stránku. Grafiku a formát zkontrolujte v PDF."
+            },
+            {
+              "title": "Přehled prodaných i volných míst",
+              "text": "Hotovostní prodej se eviduje vedle online objednávek. Neprodané kusy můžete zneplatnit a kapacitu uvolnit."
+            }
+          ],
+          "demos": [
+            {
+              "title": "Hotovost u běžné objednávky",
+              "text": "Když host na místě zaplatí za už vytvořenou objednávku, v jejím detailu použijte Platby → Přidat platbu. U předgenerovaných kusů použijte Zapsat prodej v dávce.",
+              "image": {
+                "src": "/organizers-media/order-cash-dialog.webp",
+                "width": 330,
+                "height": 404,
+                "alt": "Dialog Přidat platbu v hotovosti u běžné objednávky."
+              },
+              "guide": {
+                "href": "/napoveda/platby/#hotovost",
+                "label": "Evidovat hotovost u objednávky"
+              }
+            }
+          ],
+          "guides": [
+            {
+              "href": "/napoveda/vzhled-vstupenky/",
+              "label": "Grafika a tisk PDF"
+            },
+            {
+              "href": "/napoveda/ceny-a-kapacity/",
+              "label": "Kapacita nabídky"
+            },
+            {
+              "href": "/napoveda/odbaveni/",
+              "label": "Kontrola při vstupu"
+            }
+          ]
+        },
+        "faqHeading": "Časté otázky",
+        "faq": [
+          {
+            "question": "Je QR kód platný hned po vytištění?",
+            "answer": "U předem vytvořené dávky začne platit po zaznamenání hotovostního prodeje."
+          },
+          {
+            "question": "Proč nevidím záložku Předgenerované?",
+            "answer": "Zobrazí se u akcí se zapnutou funkcí předgenerovaných vstupenek. Pro dávku vyberte šablonu, která nepotřebuje jméno kupujícího."
+          },
+          {
+            "question": "Sníží vytištěná dávka dostupnou kapacitu?",
+            "answer": "Ano. Dávka rezervuje kapacitu při vytvoření. Neprodané kusy můžete zneplatnit a kapacitu vrátit do nabídky."
+          },
+          {
+            "question": "Musím při prodeji na pokladně vyžadovat e-mail kupujícího?",
+            "answer": "Při zápisu hotovostního prodeje je e-mail nepovinný. Když ho host poskytne, můžete zaškrtnout Poslat vstupenky na e-mail."
+          }
+        ]
+      },
+      {
+        "id": "ticket-check-in",
+        "path": "/odbaveni-vstupenek",
+        "linkLabel": "Odbavení hostů přes QR",
+        "title": "Odbavení hostů přes QR | vstupenky.online",
+        "description": "Obsluha telefonem načte QR kód, ověří vstupenku a potvrdí vstup.",
+        "heading": "Zkontrolujte vstupenku telefonem u dveří",
+        "intro": "Obsluha telefonem načte QR kód, ověří vstupenku a potvrdí vstup.",
+        "overview": {
+          "points": [
+            "Ověření úhrady a předchozího použití",
+            "Ruční zadání kódu",
+            "Nastavení údajů pro obsluhu"
+          ]
+        },
+        "heroImage": "/organizers-media/check-in-live-portrait.webp",
+        "heroWidth": 430,
+        "heroHeight": 900,
+        "heroPortrait": true,
+        "heroImageAlt": "Potvrzení platné vstupenky na obrazovce skeneru",
+        "heroCaption": "Potvrzení platné vstupenky na obrazovce skeneru",
+        "stepsHeading": "Příprava obsluhy a vstupu",
+        "steps": [
+          "V administraci akce otevřete Vstupenky → Skenovat vstupenky. Odkaz nebo přístupový kód předejte pouze obsluze.",
+          "Na telefonu otevřete skener, ověřte název akce a povolte kameru. Načtěte celý QR kód nebo zadejte symbol vstupenky ručně.",
+          "U platné vstupenky zvolte Potvrdit vstup, potom Další vstupenka. U použitého nebo neuhrazeného lístku ověřte historii či platbu s pořadatelem."
+        ],
+        "workflow": {
+          "capabilitiesHeading": "Co obsluha u vstupu vidí",
+          "capabilities": [
+            {
+              "title": "Telefon jako skener",
+              "text": "Odbavení funguje kamerou telefonu. Při potížích se čtením můžete místo QR zadat symbol vstupenky."
+            },
+            {
+              "title": "Přehled o stavu",
+              "text": "Skener upozorní na předchozí použití či problém s úhradou. Obsluha má podklady pro řešení přímo u vstupu."
+            },
+            {
+              "title": "Údaje podle role obsluhy",
+              "text": "Zvolte, které produkty a údaje z formuláře potřebuje obsluha vidět, například objednanou večeři."
+            }
+          ],
+          "demos": [
+            {
+              "title": "Od QR kódu k potvrzenému vstupu",
+              "portrait": true,
+              "text": "Obsluha potvrdí vstup. Při druhém načtení skener hlásí „Vstupenka už byla použita“.",
+              "clips": [
+                "check-in"
+              ],
+              "guide": {
+                "href": "/napoveda/odbaveni/",
+                "label": "Příprava odbavení"
+              }
+            }
+          ],
+          "guides": [
+            {
+              "href": "/napoveda/odbaveni/",
+              "label": "Postup odbavení a řešení potíží"
+            },
+            {
+              "href": "/napoveda/nastaveni-skeneru/",
+              "label": "Nastavení zobrazení skeneru"
+            },
+            {
+              "href": "/napoveda/objednavky/",
+              "label": "Ověření úhrady a vstupenky"
+            }
+          ]
+        },
+        "faqHeading": "Časté otázky",
+        "faq": [
+          {
+            "question": "Co když už byla vstupenka použitá?",
+            "answer": "Skener zobrazí upozornění na předchozí odbavení, aby obsluha mohla situaci ověřit."
+          },
+          {
+            "question": "Může víc lidí odbavovat stejnou akci najednou?",
+            "answer": "Ano. Každému pracovníkovi připravte přístup ke skeneru správné akce. Při výpadku internetu se záznamy z více telefonů sejdou až po synchronizaci.",
+            "guide": {"href": "/napoveda/odbaveni/#priprava", "label": "Připravit telefony a přístupy obsluhy"}
+          },
+          {
+            "question": "Co když QR kód nejde načíst?",
+            "answer": "Zadejte symbol konkrétní vstupenky ručně. Pokud skener hlásí Vstupenka nenalezena, ověřte název akce a celý symbol.",
+            "guide": {"href": "/napoveda/odbaveni/#chybny-kod", "label": "Co ověřit, když skener kód nenajde"}
+          },
+          {
+            "question": "Co potřebujeme připravit při slabém internetu?",
+            "answer": "Odbavení bez připojení musí být povolené a každý telefon je potřeba připravit předem. Bez připojení neuvidíte nové vstupy z jiných zařízení. Po návratu internetu nechte skener otevřený, dokud se čekající záznamy neodešlou."
+          }
+        ]
+      },
+      {
+        "id": "website-embed",
+        "path": "/prodej-vstupenek-na-vlastnim-webu",
+        "linkLabel": "Prodej na vlastním webu",
+        "title": "Prodej na vlastním webu | vstupenky.online",
+        "description": "Vložte formulář na svůj web. Objednávky a platby spravujete ve vstupenky.online.",
+        "heading": "Přidejte nákup vstupenek na web své akce",
+        "intro": "Vložte formulář na svůj web. Objednávky a platby spravujete ve vstupenky.online.",
+        "overview": {
+          "points": [
+            "Vložení přes HTML",
+            "WordPress, Wix, Joomla a Webnode",
+            "Přímý odkaz pro e-mail a sítě"
+          ]
+        },
+        "heroImage": "/organizers-media/joomla-embedded-form.webp",
+        "heroWidth": 1440,
+        "heroHeight": 1100,
+        "heroImageAlt": "Česká stránka v Joomle se skutečně vloženým prodejním formulářem.",
+        "heroCaption": "Prodej vstupenek na ukázkový ples přímo v článku na webu v Joomle",
+        "heroMobileImage": {
+          "src": "/organizers-media/joomla-embedded-form-mobile.webp",
+          "width": 358,
+          "height": 979,
+          "caption": "Formulář v publikovaném článku Joomla na telefonu."
+        },
+        "stepsHeading": "Jak vložit prodejní formulář",
+        "steps": [
+          "V administraci akce otevřete Formuláře, uložte svou nabídku a zkopírujte Současný uložený odkaz s /form/.",
+          "Použijte postup pro svůj web výše. Do bloku, modulu či widgetu vložte adresu formuláře. Do bloku Vlastní HTML vložte celý kód z generátoru.",
+          "Zveřejněte stránku. V anonymním okně a na telefonu vyberte vstupenku a projděte povinná pole až k rekapitulaci. Pro tuto kontrolu objednávku nemusíte odesílat."
+        ],
+        "workflow": {
+          "capabilitiesHeading": "Postup podle typu webu",
+          "capabilities": [
+            {
+              "title": "WordPress",
+              "text": "Otevřete Pluginy → Instalace pluginů a vyhledejte vstupenky.online od festappnet. Po aktivaci přidejte stejnojmenný blok a vyplňte pole Odkaz formuláře.",
+              "guide": {"href": "/napoveda/wordpress/#blok", "label": "Instalace a vložení ve WordPressu"}
+            },
+            {
+              "title": "Joomla",
+              "text": "Po instalaci modulu otevřete Obsah → Moduly stránek → Nový → vstupenky.online. Vložte veřejný odkaz formuláře a vyberte pozici v šabloně nebo vložení do článku.",
+              "guide": {"href": "/napoveda/joomla/#instalace", "label": "Instalace a vložení v Joomle"}
+            },
+            {
+              "title": "Wix",
+              "text": "Přidejte aplikaci z Wix App Marketu. V nastavení widgetu vyplňte Odkaz formuláře a zveřejněte stránku.",
+              "guide": {"href": "/napoveda/wix/#instalace", "label": "Přidat aplikaci do Wixu"}
+            },
+            {
+              "title": "Webnode",
+              "text": "Pokud projekt umožňuje vložit HTML, přidejte blok HTML na stránku akce a vložte vygenerovaný kód.",
+              "guide": {"href": "/napoveda/webnode/#postup", "label": "Vložit formulář do Webnode"}
+            },
+            {
+              "title": "Vlastní HTML",
+              "text": "Ve formuláři otevřete Nastavení → Vložit na vlastní web. Zkopírujte celý kód do bloku Vlastní HTML. Pro automatickou výšku ponechte v kódu pomocný skript.",
+              "guide": {"href": "/napoveda/vlozeni-na-web/#priprava-kodu", "label": "Připravit HTML kód"}
+            }
+          ],
+          "demos": [
+            {
+              "title": "Jak vypadá formulář uvnitř stránky",
+              "text": "Na ukázkové stránce Ples U Lípy ve WordPressu vidíte nabídku s cenou, povinné údaje i tlačítko pro pokračování.",
+              "image": {
+                "src": "/organizers-media/wordpress-published-form.webp",
+                "width": 656,
+                "height": 820,
+                "alt": "Publikovaná stránka Ples U Lípy ve WordPressu s vloženým formulářem, vstupenkou za 290 Kč a tlačítkem Pokračovat."
+              },
+              "guide": {
+                "href": "/napoveda/wordpress/#nastaveni-bloku",
+                "label": "Vložit stejný blok do WordPressu"
+              }
+            }
+          ],
+          "guides": [
+            {
+              "href": "/napoveda/vlozeni-na-web/#vzhled",
+              "label": "Nastavit vzhled vloženého formuláře"
+            },
+            {
+              "href": "/napoveda/prodejni-formular/#overeni",
+              "label": "Ověřit výběr a cenu jako návštěvník"
+            },
+            {
+              "href": "/napoveda/vlozeni-na-web/#vyska",
+              "label": "Automatická výška, pevná výška a zobrazení na mobilu"
+            }
+          ]
+        },
+        "faqHeading": "Časté otázky",
+        "faq": [
+          {
+            "question": "Musím znovu měnit kód na webu, když upravím cenu nebo nabídku?",
+            "answer": "Změnu uložte ve formuláři ve vstupenky.online. Při dalším načtení vloženého formuláře se použije uložená nabídka. Před sdílením zkontrolujte zveřejněnou stránku v anonymním okně.",
+            "guide": {"href": "/napoveda/vlozeni-na-web/#vlozeni", "label": "Ověřit vložený formulář na zveřejněné stránce"}
+          },
+          {
+            "question": "Co když můj web nepovoluje HTML kód?",
+            "answer": "Přidejte tlačítko vedoucí na veřejný formulář. V některých editorech může vložení HTML záviset na tarifu."
+          },
+          {
+            "question": "Kde uvidím objednávky z vloženého formuláře?",
+            "answer": "Ve správě stejné akce ve vstupenky.online. Vložený formulář používá stejnou nabídku a kapacitu."
+          },
+          {
+            "question": "Co když se formulář na telefonu ořezává?",
+            "answer": "U automatické výšky ověřte, že editor po zveřejnění ponechal pomocný skript. Pokud web skript nepovoluje, zvolte pevnou výšku a ověřte, že lze posouvat obsah uvnitř formuláře."
+          }
+        ]
       },
       {
         "id": "press",

@@ -107,8 +107,10 @@ def stage(current, stage, manifest):
     try:
         shutil.copytree(current, candidate)
         for name in allowed:
-            shutil.rmtree(candidate / name)
-            shutil.copytree(stage / name, candidate / name)
+            function = candidate / name
+            if function.exists():
+                shutil.rmtree(function)
+            shutil.copytree(stage / name, function)
         for name in shared:
             require(re.fullmatch(r'_shared/[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)', name), 'Unsafe shared module path')
             shutil.copy2(stage / name, candidate / name)

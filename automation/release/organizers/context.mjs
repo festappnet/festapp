@@ -4,6 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { resolveUpdates } from '../platform_updates/context.mjs';
 import { resolvePages, resolveRedirects } from './page_definitions.mjs';
 const directory = path.dirname(fileURLToPath(import.meta.url));
+const pageClipIds = page => [
+  ...(page.id === 'home' && page.purchasePreviewClip ? [page.purchasePreviewClip] : []),
+  ...(page.feature?.editor?.clips ?? []),
+  ...(page.feature?.buyer?.clips ?? []),
+  ...(page.workflow?.demos ?? []).flatMap(demo => demo.clips ?? []),
+];
 export function readConfig(file) {
   return Object.fromEntries([...fs.readFileSync(file,'utf8').matchAll(/^([A-Z_0-9]+)=(.*)$/gm)].map(([,key,value]) => [key,value.trim().replace(/^(['"])(.*)\1$/, '$2')]));
 }
@@ -47,7 +53,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
     if (!ref.name || !ref.dateLabel || !/^\d{4}-\d{2}-\d{2}$/.test(ref.date ?? '')) throw new Error('Reference requires date');
     safeLink(ref.publicUrl);
   }
-  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page=>[...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])])].filter(Boolean));
+  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(pageClipIds)].filter(Boolean));
   const clipIds = new Set();
   for (const clip of clips.clips ?? []) {
     if (clip.captureStatus === "pending" && usedClips.has(clip.id) && !preview) throw new Error("English product recordings are incomplete");
@@ -56,7 +62,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   }
   for (const section of clips.sections ?? []) for (const id of [...(section.clips ?? []), ...(section.secondaryClips ?? [])]) if (!clipIds.has(id)) throw new Error(`Missing required clip ${id}`);
   for (const page of pages) for (const id of page.sections ?? []) if (!(clips.sections ?? []).some(section => section.id === id)) throw new Error(`Missing required section ${id}`);
-  for (const page of pages) for (const id of [...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])]) if (!clipIds.has(id)) throw new Error(`Missing required feature clip ${id}`);
+  for (const page of pages) for (const id of pageClipIds(page)) if (!clipIds.has(id)) throw new Error(`Missing required feature clip ${id}`);
   if (profile.platformUpdates !== undefined && typeof profile.platformUpdates !== 'boolean') throw new Error('Invalid platformUpdates capability');
   const updates=profile.platformUpdates===true ? resolveUpdates(context.origin,updatesOptions) : null;
   for (const page of updates?.pages ?? []) {
@@ -68,8 +74,9 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
 export function marketingMedia(context) {
   if (!context.enabled) return [];
   const {projection, clips, pages} = context;
-  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page=>[...(page.feature?.editor?.clips ?? []), ...(page.feature?.buyer?.clips ?? [])])].filter(Boolean));
-  return [...new Set([...(projection.homeMedia ?? []), projection.seo.image, ...pages.flatMap(page=>[page.heroImage,...(page.feature?.layouts ?? []).map(layout=>layout.image)]), ...(projection.references ?? []).map(ref=>ref.image),
+  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(pageClipIds)].filter(Boolean));
+  return [...new Set([...(projection.homeMedia ?? []), projection.seo.image, ...pages.flatMap(page=>[page.heroImage,page.heroMobileImage?.src,page.heroDocument?.href,...(page.feature?.layouts ?? []).map(layout=>layout.image),...(page.workflow?.demos ?? []).map(demo=>demo.image?.src)]), ...(projection.references ?? []).map(ref=>ref.image), ...(projection.productProof ?? []).map(card=>card.image), projection.gettingStarted?.image, projection.referenceCase?.image,
+    projection.locale === 'cs' ? '/organizers-media/scout-reference-plan.webp' : undefined,
     ...(clips.clips ?? []).filter(clip=>usedClips.has(clip.id)).flatMap(clip=>[clip.src,clip.poster,clip.mobileSrc,clip.mobilePoster]),
     ...(clips.sections ?? []).flatMap(section=>[section.companion?.image,...(section.showcase?.items ?? []).map(item=>item.image)]), ...(context.updates?.assets ?? [])].filter(Boolean))];
 }

@@ -549,6 +549,26 @@
       ],
       "abusePolicy": []
     },
+    "customer-order-changes": {
+      "smokeTests": [
+        "supabase/functions/_shared/customerOrderChanges_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/customerOrderChanges_test.ts"
+      ]
+    },
+    "organizer-contact": {
+      "smokeTests": [
+        "supabase/functions/organizer-contact/handler_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/organizer-contact/handler_test.ts"
+      ],
+      "abusePolicy": [
+        "bounded-body",
+        "transactional-contact-admission"
+      ]
+    },
     "sale-opening-notifications": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"

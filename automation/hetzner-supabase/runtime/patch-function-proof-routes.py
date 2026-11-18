@@ -30,7 +30,8 @@ proof_routes = re.search(r'!\[(.*?)\]\.includes\(new URL\(req.url\)\.pathname\.s
 if proof_routes is None:
     raise SystemExit('installed Function proof routing contract changed')
 entries = proof_routes.group(1)
-for route in stripe_routes:
+# The homepage contact handler owns the exact origin, payload and admission policy.
+for route in (*stripe_routes, "organizer-contact"):
     if f'"{route}"' not in entries:
         entries += f', "{route}"'
 source = source[:proof_routes.start(1)] + entries + source[proof_routes.end(1):]

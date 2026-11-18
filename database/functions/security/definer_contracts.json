@@ -509,6 +509,10 @@
     "ffee32988b916feb2144ff71f42089ce4808d00233ccb0b8fbcf108de8bc2140"
   ],
   "declared": {
+    "38e8157c8a9bdcee697a5b89894f20e2420e2f31248d3dc178446487c3de27cf": {
+      "signature": "public.enqueue_organizer_contact_v1(uuid,text,jsonb,text)",
+      "source": "database/functions/emails/organizer_contact.sql"
+    },
     "0d872c0cd081653ffc55aa22929c4fcf4a47ef9ac1ec2e2ac8c3965285c3f11f": {
       "signature": "public.update_spot_assignments(jsonb)",
       "source": "database/functions/inventory/update_spots_assignments.sql"

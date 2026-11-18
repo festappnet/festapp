@@ -3,7 +3,7 @@ import {readConfig,resolveContext,publicManifest} from '../release/organizers/co
 import { helpActionWorkerSource } from '../lib/help_action_worker_source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { symlinkSync, mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { symlinkSync, mkdtempSync, mkdirSync, cpSync, readFileSync, writeFileSync, existsSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -32,8 +32,14 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
     const run = spawnSync(process.execPath, [join(root, 'automation/release/render_organizer_page.mjs'), '--config', config], { encoding: 'utf8' });
     assert.equal(run.status, 0, run.stderr);
   };
+  const prepare=spawnSync(process.execPath,[join(root,'automation/release/render_organizer_page.mjs'),'--config',config,'--catalog-only'],{encoding:'utf8'});
+  assert.equal(prepare.status,0,prepare.stderr);
+  assert.equal(existsSync(join(root,'web/organizers-page')),false,'compiler preparation does not render public documents');
   render();
   const output = join(root, 'web/organizers-page');
+  const mtime=statSync(output).mtimeMs;
+  render();
+  assert.equal(statSync(output).mtimeMs,mtime,'unchanged organizer HTML retains mtime');
   const html = readFileSync(output, 'utf8');
   assert.ok(html.includes('Tickets &amp; events'));
   assert.ok(html.includes('href="https://vstupenky.online/"'));
@@ -65,15 +71,76 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.ok(!catalog.includes('class="catalog-navigation"'), 'generated catalogue must not duplicate shared header navigation');
 
   assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
+  assert.match(html, /class="hero-outlines" aria-hidden="true"><svg[^>]*data-hero-sketch/);
+  assert.match(html, /data-sketch-motif="modern-ball-template"/);
+  assert.match(html, /data-sketch-motif="concert-ticket"/);
+  const purchase = html.slice(html.indexOf('id="ukazka-nakupu"'), html.indexOf('</section>', html.indexOf('id="ukazka-nakupu"')));
+  assert.ok(purchase.includes('data-demo-player') && purchase.includes('/organizers-media/seat-select-landing-cut.mp4'));
+  assert.ok(purchase.includes('data-portrait') && purchase.includes('width="426" height="900"'));
+  assert.ok(html.includes('id="prvni-akce"'));
+  const hero = html.slice(html.indexOf('<div class="hero-copy">'), html.indexOf('id="ukazka-nakupu"'));
+  assert.equal((hero.match(/class="button primary"/g) ?? []).length, 1);
+  assert.ok(hero.includes('class="text-link" href="https://cal.com/michael-bujnovsky-5srszz/ukazka">Domluvit ukázku'));
+  assert.ok(hero.includes('Prodávejte vstupenky') && hero.includes('online i na místě'));
+  for (const target of ['ukazka-nakupu', 'funkce', 'cena']) assert.ok(hero.includes(`href="#${target}"`));
+  assert.ok(purchase.includes('data-seat-demo') && purchase.includes('data-seat-map') && purchase.includes('/organizers-media/scout-reference-plan.webp'));
+  assert.match(purchase, /V ukázce se místa nerezervují a nic se neplatí/);
+  assert.ok(html.indexOf('id="ukazka-nakupu"') < html.indexOf('id="funkce"'));
+  assert.match(html, /Divadlo s balkonem a lóžemi/);
+  assert.match(html, /src="\/organizers-media\/layout-theatre\.jpg"/);
+  assert.doesNotMatch(html, /country_bal_vetrkovice|Otevřít plánek Country bálu/);
+  assert.ok(html.includes('class="pricing-facts"'));
+  const productPages = [
+    ['ticket-sales', '/online-prodej-vstupenek'],
+    ['payments-and-orders', '/platby-a-objednavky'],
+    ['in-person-sales', '/prodej-vstupenek-na-miste'],
+    ['ticket-check-in', '/odbaveni-vstupenek'],
+    ['website-embed', '/prodej-vstupenek-na-vlastnim-webu'],
+  ];
+  const registry = JSON.parse(readFileSync(join(root, 'web/organizer-pages.json'), 'utf8'));
+  for (const [asset, route] of productPages) {
+    assert.ok(html.includes(`href="${route}"`), `${route} is discoverable from the landing page`);
+    assert.ok(registry.pages.some(page => page.path === route && page.asset === `/organizers/${asset}`));
+    const product = readFileSync(join(root, 'web/organizers', asset), 'utf8');
+    assert.ok(product.includes(`rel="canonical" href="https://vstupenky.online${route}"`));
+    assert.ok(product.includes('id="workflow-steps-title"') && product.includes('id="workflow-guides-title"'));
+    assert.ok(product.includes('<details>'));
+    if (asset === 'website-embed') {
+      assert.match(product, /src="\/organizers-media\/wordpress-published-form\.webp"/);
+      assert.match(product, /href="\/napoveda\/wordpress\/#nastaveni-bloku"/);
+      assert.match(product, /srcset="\/organizers-media\/joomla-embedded-form-mobile\.webp"/);
+    } else if (asset === 'in-person-sales') {
+      assert.match(product, /href="\/organizers-media\/ticket-batch-print\.pdf"/);
+      assert.match(product, /src="\/organizers-media\/order-cash-dialog\.webp"/);
+    } else {
+      assert.ok(product.includes('data-demo-player'));
+    }
+    if (asset === 'ticket-check-in') {
+      assert.ok(product.includes('poster="/organizers-media/check-in-live-portrait.webp" width="430" height="900"'));
+    }
+  }
   assert.ok(html.includes('href="/login"'));
   const footer = html.slice(html.indexOf('<footer'));
   for (const route of ['/rezervacni-system-s-planem-salu']) assert.ok(footer.includes(`href="${route}"`),'topic is discoverable from shared footer');
   const seatingSection = html.slice(html.indexOf('id="planek"'), html.indexOf('id="formular"'));
   assert.ok(seatingSection.includes('href="/rezervacni-system-s-planem-salu"'),'seating demo links to its detail');
+  assert.ok(seatingSection.includes('/organizers-media/layout-build-assembly.mp4'));
+  assert.ok(seatingSection.includes('/organizers-media/layout-build-assembly-mobile.mp4'));
   assert.equal(existsSync(join(root,'web/organizers/ball-ticket-sales')),false,'retired article is removed');
   assert.ok(!html.includes('href="/prodej-vstupenek-na-ples"'));
 
   assert.ok(html.includes('info@vstupenky.online'));
+  assert.match(html, /href="#kontakt">Napsat kvůli ceně/);
+  assert.match(html, /<form data-organizer-contact method="post" action="https:\/\/api\.festapp\.net\/functions\/v1\/organizer-contact" hidden>/);
+  assert.match(html, /<input id="contact-email" name="email" type="email" autocomplete="email" maxlength="254" required>/);
+  assert.match(html, /<p data-contact-status role="status" aria-live="polite"><\/p>/);
+  const faq = html.slice(html.indexOf('id="faq"'), html.indexOf('id="kontakt"'));
+  assert.match(faq, /Co je zdarma a za co jako pořadatel zaplatím\?/);
+  assert.match(faq, /Už prodávám jinde\. Jak přejdu s rozjetou akcí\?/);
+  assert.match(faq, /href="\/napoveda\/objednavky\/#zmena"/);
+  assert.match(faq, /href="\/napoveda\/odbaveni\/#offline"/);
+  assert.doesNotMatch(faq, /Potřebuji k založení akce účet\?/);
+  assert.match(html, /<textarea id="contact-message" name="message" rows="4" maxlength="1000" required>/);
   assert.ok(html.includes('https://cal.com/michael-bujnovsky-5srszz/ukazka'));
   // Shared documents never own a beacon: only resolved public responses do.
   for (const document of [html, catalog]) {
@@ -142,9 +209,13 @@ test('actual build stamping uses configured canonical origin and the shared clas
   writeFileSync(worker, script.match(/<<'WORKER'\n([\s\S]*?)\nWORKER/)[1].replace('// HELP_ACTION_ROUTE_POLICY', () => helpActionWorkerSource));
   writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nAPP_NAME=Tickets\nIS_APP_SUPPORTED=true\nFORCE_OCCASION_LINK=\n');
   writeFileSync(config, readFileSync(new URL('../project.conf',import.meta.url),'utf8'));
-  for(const asset of ['organizers-page','organizers/ball-ticket-sales','organizers/seating-reservations','organizers/press']) { mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture'); }
-  for (const asset of ['organizers/updates/cs/index','organizers/updates/en/index']) {mkdirSync(join(root,asset,'..'),{recursive:true});writeFileSync(join(root,asset),'fixture');}
-  writeFileSync(join(root,'organizer-pages.json'),JSON.stringify(publicManifest(resolveContext(readConfig(config)))));
+  const registry = publicManifest(resolveContext(readConfig(config)));
+  for (const {asset} of registry.pages) {
+    const file = join(root, asset.slice(1));
+    mkdirSync(join(file, '..'), {recursive: true});
+    writeFileSync(file, 'fixture');
+  }
+  writeFileSync(join(root,'organizer-pages.json'),JSON.stringify(registry));
   writeFileSync(join(root,'platform-updates.json'),JSON.stringify({schemaVersion:1,items:[]}));
   const python = script.match(/python3 - build\/web\/_worker.js automation\/project.conf <<'PY'\n([\s\S]*?)\nPY/)[1];
   const result = spawnSync('python3', ['-', worker, config], { input: python, encoding: 'utf8' });

@@ -13,12 +13,15 @@ const basicSeatFills = {
 
 /** Public commerce/session adapter. All geometry and gestures belong to the package. */
 export class BlueprintLayoutAdapter {
-    constructor(data, { session, initialSeats = [], seatFills = {} } = {}) {
+    constructor(data, { session, initialSeats = [], seatFills = {},
+        locale = LocalizationService.currentLocale, priceLabel = CommonStrings.price } = {}) {
         if (!data?.layout) throw new Error('Blueprint V2 layout unavailable');
         this.document = data.layout;
         this.authoredFills = seatFills;
         this.resources = data.layoutResources || {};
         this.session = session;
+        this.locale = locale;
+        this.priceLabel = priceLabel;
         this.disposed = false;
         this.pending = new Set();
         this.models = new Map();
@@ -35,7 +38,7 @@ export class BlueprintLayoutAdapter {
             const selected = spot.state === SeatStates.SELECTED_BY_ME;
             const currency = product?.currency_code;
             const priceLabel = typeof product?.price === 'number' && Number.isFinite(product.price) && /^[A-Z]{3}$/.test(currency || '')
-                ? formatPrice(product.price, currency, 0, LocalizationService.currentLocale) : null;
+                ? formatPrice(product.price, currency, 0, this.locale) : null;
             this.bindings.set(binding.nodeId, { ...binding });
             // Explicit allowlist: no order/customer/internal-note data crosses
             // the generic public renderer boundary, even if a caller errs.
@@ -92,7 +95,7 @@ export class BlueprintLayoutAdapter {
                 stateMarker: [SeatStates.USED, SeatStates.TAKEN].includes(model.state) ? 'check' : 'auto',
                 selected: own, label: model.title,
                 ...(fill != null ? {fill} : {}),
-                tooltip: `${[model.productModel?.title, model.title].filter(Boolean).join(' ')}\n${CommonStrings.price}: ${model.priceLabel ?? formatPrice(0, 'CZK', 0, LocalizationService.currentLocale)}`,
+                tooltip: `${[model.productModel?.title, model.title].filter(Boolean).join(' ')}\n${this.priceLabel}: ${model.priceLabel ?? formatPrice(0, 'CZK', 0, this.locale)}`,
             }];
         }));
     }
@@ -111,7 +114,7 @@ export class BlueprintLayoutAdapter {
                 quantity,
                 selectedQuantity: quantity,
                 priceLabel: typeof product?.price === 'number' && /^[A-Z]{3}$/.test(product.currency_code || '')
-                    ? formatPrice(product.price, product.currency_code, 0, LocalizationService.currentLocale) : null,
+                    ? formatPrice(product.price, product.currency_code, 0, this.locale) : null,
                 status: selectable ? 'available' : 'unavailable',
                 selectable,
                 tooltip: selectable ? '' : LocalizationService.tr(`FeatureBlueprint.viewer.${reason}`, {}, 'Standing places are unavailable.'),
