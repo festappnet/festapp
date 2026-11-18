@@ -66,7 +66,7 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','integrations/wordpress/core-archives.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
@@ -75,7 +75,10 @@ started={'backend':False,'wordpress':False,'joomla':False}
 
 def run(command,cwd=ROOT,extra=None,capture=False,label='command'):
  with timed_phase('cms.'+label), log.open('a') as output:
-  result=subprocess.run([str(v) for v in command],cwd=cwd,env={**env,**(extra or {})},stdout=subprocess.PIPE if capture else output,stderr=output,text=True)
+  try:
+   result=subprocess.run([str(v) for v in command],cwd=cwd,env={**env,**(extra or {})},stdout=subprocess.PIPE if capture else output,stderr=output,text=True,timeout=180)
+  except subprocess.TimeoutExpired as error:
+   raise RuntimeError(f'{label} exceeded 180 seconds; private log: {log}') from error
   if result.returncode:raise RuntimeError(f'{Path(str(command[0])).name} failed ({result.returncode}); private log: {log}')
  return result.stdout if capture else ''
 
@@ -99,7 +102,7 @@ try:
   target=fixture/'integrations'/cms;target.mkdir(parents=True)
   for name in ['scripts','shared','tests']:
    shutil.copytree(ROOT/'integrations'/cms/name,target/name,ignore=shutil.ignore_patterns('__pycache__','node_modules'))
-  for name in ['products.json','translations.json','package.json','pnpm-lock.yaml','pnpm-workspace.yaml','.wp-env.json','docker-images.json']:
+  for name in ['products.json','translations.json','package.json','pnpm-lock.yaml','pnpm-workspace.yaml','.wp-env.json','docker-images.json','core-archives.json']:
    source=ROOT/'integrations'/cms/name
    if source.is_file():shutil.copy2(source,target/name)
   (target/'evidence').mkdir()
@@ -134,9 +137,9 @@ try:
   run(['bash','scripts/bootstrap-backend.sh','--database-only'],wp,label='backend.bootstrap')
   sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
   start_rest(rest_platform.result(), wp, project, database.runtime.container, database.network, base + 21, run)
- def prepare_wordpress():
+ def prepare_wordpress(core_archive):
   started['wordpress']=True
-  with timed_phase('cms.wordpress.start'):wordpress.start()
+  with timed_phase('cms.wordpress.start'):wordpress.start(core_archive)
   products=json.loads((wp/'products.json').read_text())
   for cli in ['cli','tests-cli']:
    archives=[f'/var/www/html/wp-content/vo-artifacts/{p["slug"]}-{p["version"]}.zip' for p in products]
@@ -159,15 +162,23 @@ try:
   cache_before=cache_bytes();browser_started=time.monotonic()
   engines = list(dict.fromkeys(case[4] for case in cases))
   shell_only = ['--only-shell'] if engines == ['chromium'] else []
-  run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps',*shell_only,*engines],label='browsers.install')
+  playwright=['pnpm','--dir',ROOT/'web_client','exec','playwright']
+  if sys.platform.startswith('linux'):
+   try:
+    run([*playwright,'install-deps','--dry-run',*engines],label='browsers.system-dependencies-check')
+   except RuntimeError:
+    run([*playwright,'install-deps',*engines],label='browsers.system-dependencies')
+  run([*playwright,'install',*shell_only,*engines],label='browsers.install')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
  preparation = [('browsers',prepare_browsers)]
- if needs_wordpress:preparation.append(('wordpress',prepare_wordpress))
  if needs_joomla:preparation.append(('joomla',prepare_joomla))
- with ThreadPoolExecutor(max_workers=len(preparation)+2) as workers:
+ with ThreadPoolExecutor(max_workers=len(preparation)+2+2*needs_wordpress) as workers:
   rest_platform = workers.submit(prepare_rest_image, run)
   pending = [('backend', workers.submit(prepare_backend, rest_platform))]
   pending.extend((name,workers.submit(prepare)) for name,prepare in preparation)
+  if needs_wordpress:
+   core_archive = workers.submit(wordpress.prepare_core_cache)
+   pending.append(('wordpress',workers.submit(prepare_wordpress,core_archive)))
   failures=[]
   for name,future in pending:
    try:future.result()

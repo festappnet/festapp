@@ -50,6 +50,7 @@ try {
   await context.addInitScript(()=>{window.__testConsentMessages=[];addEventListener('message',event=>{if(event.data?.namespace==='festapp-consent-link')window.__testConsentMessages.push({origin:event.origin,data:event.data});});});
   const page=await context.newPage();
   const siteResponse=await page.goto(site+(process.env.FESTAPP_CMS_TEST_PATH || '/'));
+  assert.ok(siteResponse?.ok(), `CMS fixture page returned ${siteResponse?.status()}`);
   await page.locator('[data-festapp-consent-link]').first().waitFor({timeout:15000});
   assert.equal(await page.locator('[data-festapp-consent-link]').count(),1,'fixture owns one marked link');
   const [child]=await Promise.all([page.waitForEvent('popup'),page.locator('[data-festapp-consent-link]').click()]);

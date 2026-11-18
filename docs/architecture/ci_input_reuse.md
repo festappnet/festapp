@@ -176,6 +176,9 @@ WordPress and WP-CLI images directly, avoiding wp-env's unused Composer/PHPUnit
 image builds. Both configured core/PHP pairs are verified at runtime, with
 separate volumes and databases. The two core containers start concurrently.
 Their installations run concurrently once MariaDB creates both databases.
+The older core release is staged from its SHA-256-pinned archive. WP-CLI
+reads that archive offline. Hosted browser setup checks existing system
+dependencies before installing any missing packages.
 Owner labels fence creation and cleanup. Private state is never cached. Developer wp-env tooling and its dependency tests remain.
 Pinned browser binaries are cached on GitHub; system browser libraries and all
 private CMS/database state are prepared normally. A measured upstream Docker

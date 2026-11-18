@@ -76,6 +76,8 @@ class MirrorContractTest(unittest.TestCase):
                         self.assertEqual(step['if'],"steps.selection.outputs.full == 'true'")
                     elif step.get('name')=='Some lane tests executed':
                         self.assertEqual(step['if'],"steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'")
+                    elif step.get('name') == 'Restore pinned WordPress core archive':
+                        self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
                     else:
                         self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'",
                                                   "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'"))

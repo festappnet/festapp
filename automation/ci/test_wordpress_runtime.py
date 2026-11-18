@@ -21,7 +21,7 @@ class WordPressRuntimeTest(unittest.TestCase):
         self.root = Path(self.directory.name) / self.project / 'integrations/wordpress'
         self.root.mkdir(parents=True)
         (self.root.parent / 'joomla').mkdir()
-        for relative in ['wordpress/.wp-env.json', 'wordpress/docker-images.json', 'joomla/docker-images.json']:
+        for relative in ['wordpress/.wp-env.json', 'wordpress/docker-images.json', 'wordpress/core-archives.json', 'joomla/docker-images.json']:
             target = self.root.parent / relative
             target.write_text((ROOT / 'integrations' / relative).read_text())
         self.config = json.loads((self.root / '.wp-env.json').read_text())
@@ -54,7 +54,7 @@ class WordPressRuntimeTest(unittest.TestCase):
 
         runtime = WordPress(self.root, self.project, run)
 
-        def start_core(row, password):
+        def start_core(row, password, core_archive):
             self.assertFalse(databases_ready.is_set())
             starting.wait()
 
@@ -67,7 +67,7 @@ class WordPressRuntimeTest(unittest.TestCase):
              patch.object(runtime, '_start_core', side_effect=start_core) as starts, \
              patch.object(runtime, '_install_core', side_effect=install_core) as installs, \
              patch('wordpress_runtime.subprocess.run', return_value=healthy):
-            runtime.start()
+            runtime.start(None)
         self.assertEqual(starts.call_count, 2)
         self.assertEqual({call.args[0] for call in installs.call_args_list}, set(runtime.versions))
 

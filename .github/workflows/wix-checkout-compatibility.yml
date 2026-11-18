@@ -20,6 +20,7 @@ jobs:
   wix-checkout-compatibility:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps: &cms-lane-steps
       - uses: actions/checkout@v7
         with:
@@ -63,6 +64,12 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ steps.cms-browser-key.outputs.key }}
+      - name: Restore pinned WordPress core archive
+        if: github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/festapp-wordpress-core
+          key: wordpress-core-${{ hashFiles('integrations/wordpress/core-archives.json') }}
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
@@ -87,4 +94,5 @@ jobs:
   wordpress-checkout-compatibility:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps: *cms-lane-steps
