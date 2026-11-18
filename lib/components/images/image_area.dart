@@ -22,12 +22,13 @@ class ImageArea extends StatefulWidget {
   /// Called when the user wants to remove the current image.
   final VoidCallback onRemove;
 
-  /// Optional hint text to display above the drop zone.
+  /// Optional file guidance displayed in the drop zone.
   final String? hint;
 
   /// Controls if the user can change or remove the image.
   final bool enabled;
   final double dropHeight;
+  final EdgeInsetsGeometry dropMargin;
   final bool dropEnabled;
   final List<String>? allowedExtensions;
 
@@ -38,6 +39,7 @@ class ImageArea extends StatefulWidget {
     required this.onRemove,
     this.hint,
     this.dropHeight = 250,
+    this.dropMargin = const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
     this.preview,
     this.enabled = true,
     this.dropEnabled = true,
@@ -113,14 +115,21 @@ class _ImageAreaState extends State<ImageArea> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 40, color: ThemeConfig.redColor(context)),
+              Icon(
+                Icons.error_outline,
+                size: 40,
+                color: ThemeConfig.redColor(context),
+              ),
               const SizedBox(height: 8),
               Text(
                 _error!,
                 textAlign: TextAlign.center,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: ThemeConfig.redColor(context), fontSize: 13),
+                style: TextStyle(
+                  color: ThemeConfig.redColor(context),
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 8),
               TextButton(
@@ -136,54 +145,67 @@ class _ImageAreaState extends State<ImageArea> {
     // If we have a URL (either initial or newly uploaded), show it
     if (_currentUrl != null && _currentUrl!.isNotEmpty) {
       final colors = Theme.of(context).colorScheme;
-      return Stack(
-        clipBehavior: Clip.none,
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Keep the action clear of the image, including custom crop previews.
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 56),
+          Flexible(
+            fit: widget.preview == null ? FlexFit.loose : FlexFit.tight,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: widget.preview ?? Image.network(
-                ImageUrlHelper.transformImageUrl(_currentUrl!, width: ImageUrlHelper.mediumWidth),
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return SizedBox(
-                    height: 200,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.broken_image, size: 40, color: ThemeConfig.grey600(context)),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Failed to load image',
-                            style: TextStyle(color: ThemeConfig.grey600(context)),
-                          ),
-                        ],
+              child:
+                  widget.preview ??
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    child: Image.network(
+                      ImageUrlHelper.transformImageUrl(
+                        _currentUrl!,
+                        width: ImageUrlHelper.mediumWidth,
                       ),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return SizedBox(
+                          width: double.infinity,
+                          height: 200,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.broken_image,
+                                  size: 40,
+                                  color: ThemeConfig.grey600(context),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Failed to load image',
+                                  style: TextStyle(
+                                    color: ThemeConfig.grey600(context),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+                  ),
             ),
           ),
-          PositionedDirectional(
-            top: 0,
-            end: 0,
-            child: IconButton.filled(
-              tooltip: CommonStrings.delete,
-              icon: const Icon(Icons.close),
-              onPressed: widget.enabled ? widget.onRemove : null,
-              style: IconButton.styleFrom(
-                backgroundColor: colors.surfaceContainerHighest,
-                foregroundColor: colors.onSurface,
-                shape: CircleBorder(side: BorderSide(color: colors.outline)),
-                minimumSize: const Size(48, 48),
-                maximumSize: const Size(48, 48),
-              ),
+          const SizedBox(width: 4),
+          IconButton.filled(
+            tooltip: CommonStrings.delete,
+            icon: const Icon(Icons.close, size: 18),
+            onPressed: widget.enabled ? widget.onRemove : null,
+            style: IconButton.styleFrom(
+              backgroundColor: colors.surfaceContainerHighest,
+              foregroundColor: colors.onSurface,
+              shape: const CircleBorder(),
+              fixedSize: const Size.square(32),
+              minimumSize: const Size.square(32),
+              maximumSize: const Size.square(32),
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.standard,
+              tapTargetSize: MaterialTapTargetSize.padded,
             ),
           ),
         ],
@@ -198,9 +220,11 @@ class _ImageAreaState extends State<ImageArea> {
         opacity: widget.enabled ? 1.0 : 0.5,
         child: DropFile(
           height: widget.dropHeight,
+          margin: widget.dropMargin,
           hint: widget.hint,
           dropEnabled: widget.enabled && widget.dropEnabled,
-          allowedExtensions: widget.allowedExtensions ??
+          allowedExtensions:
+              widget.allowedExtensions ??
               const ['jpg', 'jpeg', 'png', 'webp', 'heic'],
           onFilePathChanged: (file) => _handleFileSelected(file),
         ),

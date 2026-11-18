@@ -62,7 +62,8 @@ class _TicketWalletAppearanceEditorState
                   ? overrides[key] as String?
                   : effective?.split('?').first,
               enabled: uploadAllowed,
-              dropHeight: 120,
+              dropHeight: 96,
+              dropMargin: EdgeInsets.zero,
               allowedExtensions: const ['png', 'jpg', 'jpeg'],
               hint: help,
               onFileSelected: (file) async {
@@ -186,9 +187,12 @@ class _TicketWalletAppearanceEditorState
               t('walletHero'),
               t('walletHeroHelp'),
             ),
-            TextButton(
-              onPressed: widget.readOnly ? null : () => widget.onChanged({}),
-              child: Text(t('walletInherit')),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                onPressed: widget.readOnly ? null : () => widget.onChanged({}),
+                child: Text(t('walletInherit')),
+              ),
             ),
           ],
         ),
