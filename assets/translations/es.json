@@ -5741,7 +5741,7 @@
     },
     "FeatureBlueprint": {
       "ticketLabel": "Solicitud",
-      "swapSummaryCustomer": "Solicitud: {applicationsymbol} ({customerName})",
+      "swapSummaryCustomer": "Solicitud: {ticketSymbol} ({customerName})",
       "swapUsedGroup": "No se puede intercambiar un grupo indivisible que contenga una solicitud usada.",
       "releaseTemporaryReservationProtected": "Algunos asientos ya pertenecen a un pedido. Gestiona sus solicitudes por separado.",
       "maxTicketsReached": "Se ha alcanzado el número máximo de solicitudes",

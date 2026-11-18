@@ -5741,7 +5741,7 @@
     },
     "FeatureBlueprint": {
       "ticketLabel": "Application",
-      "swapSummaryCustomer": "Application: {applicationsymbol} ({customerName})",
+      "swapSummaryCustomer": "Application: {ticketSymbol} ({customerName})",
       "swapUsedGroup": "An atomic group containing a used application cannot be swapped.",
       "releaseTemporaryReservationProtected": "Some seats now belong to an order. Manage their applications separately.",
       "maxTicketsReached": "Maximum number of applications reached",
