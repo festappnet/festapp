@@ -834,7 +834,32 @@
   };
 
   // src/components/forms/meta_purchase_consent.js
+  var matchingTimestamp = Date.now();
   var purposes = ["ad_storage", "ad_user_data", "ad_personalization"];
+  function validMetaBrowserId(value) {
+    return typeof value === "string" && value.length <= 1024 && !/[\u0000-\u001f\u007f]/.test(value) && /^fb\.[0-9]{1,3}\.[0-9]{13}\.[A-Za-z0-9_-]{1,500}$/.test(value);
+  }
+  function metaBrowserMatching(snapshot, win) {
+    if (!hasCurrentPurchaseConsent({ purchaseConsent: snapshot, expiresAt: snapshot?.transportExpiresAt }) || snapshot.websiteOrigin !== win.location.origin) return {};
+    const cookies = /* @__PURE__ */ new Map();
+    if (snapshot.source !== "klaro") try {
+      for (const part of win.document.cookie.split(";")) {
+        const [key, ...value] = part.trim().split("=");
+        if (!["_fbp", "_fbc"].includes(key)) continue;
+        try {
+          cookies.set(key, decodeURIComponent(value.join("=")));
+        } catch {
+        }
+      }
+    } catch {
+    }
+    const fbp = cookies.get("_fbp");
+    let fbc = cookies.get("_fbc");
+    const click = new URL(win.location.href).searchParams.get("fbclid");
+    if (/^[A-Za-z0-9_-]{1,500}$/.test(click || "") && (!validMetaBrowserId(fbc) || fbc.split(".")[3] !== click))
+      fbc = `fb.1.${Math.floor(win.performance?.timeOrigin || matchingTimestamp)}.${click}`;
+    return { ...validMetaBrowserId(fbp) ? { fbp } : {}, ...validMetaBrowserId(fbc) ? { fbc } : {} };
+  }
   function hasCurrentDecision(choice, now) {
     const snapshot = choice?.purchaseConsent;
     const timestamp2 = Date.parse(snapshot?.timestamp);
@@ -999,7 +1024,8 @@
         const choice = record.choice?.read(record.manifest);
         const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
         record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : void 0;
-        return { ...measurementConsent(choice), ...choice?.purchaseConsent || saved?.purchaseConsent ? { purchaseConsent: choice?.purchaseConsent || saved.purchaseConsent } : {} };
+        const snapshot = choice?.purchaseConsent || saved?.purchaseConsent;
+        return { ...measurementConsent(choice), ...snapshot ? { purchaseConsent: { ...snapshot, matching: hasCurrentPurchaseConsent(choice?.purchaseConsent ? choice : saved) ? metaBrowserMatching(snapshot, window) : {} } } : {} };
       } catch {
         return measurementConsent(false);
       }

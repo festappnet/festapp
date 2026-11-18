@@ -75,6 +75,8 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
     const bundle=await build({stdin:{contents:`import {createHostMeasurement} from './src/embed/host_measurement.js'; window.createHostMeasurement=createHostMeasurement;`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
     const win=new JSDOM('',{url:notice.origin,runScripts:'outside-only'}).window;
     try {
+        win.document.cookie='_fbp=fb.1.1795000000000.1234; path=/';
+        win.document.cookie='_fbc=fb.1.1795000000000.Click_123; path=/';
         win.eval(bundle.outputFiles[0].text);
         const messages=[],frame=win.document.createElement('iframe');frame.setAttribute('data-festapp-datalayer','');
         const record={manifest:{organization:1,unit:2,processing_revision:'revision',consent_revision:'b'.repeat(32),measurement_consent_bridge:true,
@@ -87,7 +89,8 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
         assert.equal(messages.at(-1).consent.marketing,false,'the host owns tag consent');
         assert.equal(messages.at(-1).consent.purchaseConsent.timestamp,saved.purchaseConsent.timestamp);
         assert.equal(messages.at(-1).binding.version,1);
-        assert.ok(purchaseConsentSnapshot(messages.at(-1).consent,notice,now));
+        assert.deepEqual(purchaseConsentSnapshot(messages.at(-1).consent,notice,now).matching,
+            {fbp:'fb.1.1795000000000.1234',fbc:'fb.1.1795000000000.Click_123'});
         saved=null;notify();
         assert.equal(messages.at(-1).consent.purchaseConsent,undefined,'source loss cannot retain a snapshot');
         const {policy,purchase}=await import('../support/measurement_fixture.js');
@@ -109,6 +112,7 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
             const retained=Object.assign({},...win.dataLayer,{event:'native_event'});
             for (const key of ['meta_purchase_allowed','event_id','ecommerce','user_data','page_type']) assert.equal(retained[key],null);
         }
+        assert.equal(JSON.stringify(win.dataLayer).includes('fb.1.'),false,'browser identifiers never enter dataLayer');
         host.stopHeartbeat(record);
     } finally {win.close();}
 });
@@ -195,4 +199,34 @@ test('embedded delayed-payment overview uses current host consent and handshake 
  } finally {
   stopOrderOverview(host);SupabaseService.getClient=oldClient;DbForms.getMeasurementPolicy=oldPolicy;globalThis.window=oldWindow;globalThis.document=oldDocument;dom.window.close();
  }
+});
+
+test('matching reads only the consented source origin, validates cookies and derives stable click identity',async()=>{
+ const {metaBrowserMatching}=await import('../../src/components/forms/meta_purchase_consent.js');
+ const snapshot=choice().purchaseConsent;
+ let reads=0;
+ const win={location:{origin:notice.origin,href:notice.origin+'/?fbclid=Click_123'},performance:{timeOrigin:1795000000000},
+  document:{get cookie(){reads++;return '_fbp=fb.1.1795000000000.1234; _fbc=invalid';}}};
+ assert.deepEqual(metaBrowserMatching(null,win),{});
+ assert.deepEqual(metaBrowserMatching({...snapshot,ad_storage:false},win),{});
+ assert.deepEqual(metaBrowserMatching({...snapshot,websiteOrigin:'https://other.example'},win),{});
+ assert.equal(reads,0,'no cookie access without all purposes and the exact source origin');
+ const matching=metaBrowserMatching(snapshot,win);
+ assert.deepEqual(matching,{fbp:'fb.1.1795000000000.1234',fbc:'fb.1.1795000000000.Click_123'});
+ assert.deepEqual(metaBrowserMatching(snapshot,win),matching,'fallback timestamp does not change on heartbeat');
+ const value=choice();value.purchaseConsent.matching={...matching,email:'private',ip:'192.0.2.1'};
+ assert.deepEqual(purchaseConsentSnapshot(value,notice,now).matching,matching);
+ value.purchaseConsent.matching={fbp:'fb.1.1795000000000.bad\n',fbc:'fb.1.1795000000000.'+'a'.repeat(501)};
+ assert.deepEqual(purchaseConsentSnapshot(value,notice,now).matching,{});
+ win.document={cookie:'_fbc=fb.1.1795000000001.Click_123'};
+ assert.deepEqual(metaBrowserMatching(snapshot,win),{fbc:'fb.1.1795000000001.Click_123'},'the cookie keeps the original click time');
+ win.document={cookie:'_fbc=fb.1.1795000000001.OldClick'};
+ assert.deepEqual(metaBrowserMatching(snapshot,win),{fbc:'fb.1.1795000000000.Click_123'},'a newer URL click replaces an older cookie');
+ win.location.href=notice.origin;
+ assert.deepEqual(metaBrowserMatching(snapshot,win),{fbc:'fb.1.1795000000001.OldClick'},'without a URL click the cookie is used');
+ win.location.href=notice.origin+'/?fbclid=Click_123';
+ win.document={get cookie(){throw new Error('blocked');}};
+ assert.deepEqual(metaBrowserMatching(snapshot,win),{fbc:'fb.1.1795000000000.Click_123'},'blocked cookies still allow consented URL fallback');
+ win.document={cookie:''};win.location.href=notice.origin;
+ assert.deepEqual(metaBrowserMatching(snapshot,win),{},'no invented browser identifier');
 });

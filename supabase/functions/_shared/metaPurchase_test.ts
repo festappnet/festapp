@@ -76,3 +76,37 @@ Deno.test("Meta response determines retry, credential pause or permanent failure
     "retry",
   );
 });
+
+Deno.test("Meta matching payload includes only optional prepared identifiers", async () => {
+  for (
+    const matching of [{}, {
+      phoneHash: "b".repeat(64),
+      fbp: "fb.1.1795000000000.1234",
+      fbc: "fb.1.1795000000000.Click_123",
+      clientIp: "2001:db8::1",
+    }]
+  ) {
+    assertEquals(
+      await sendMetaPurchase(
+        { ...purchase, ...matching },
+        async (_url, options) => {
+          const user = JSON.parse(String(options?.body)).data[0].user_data;
+          assertEquals(user, {
+            em: [purchase.emailHash],
+            client_user_agent: purchase.clientAgent,
+            ...("phoneHash" in matching
+              ? {
+                ph: [matching.phoneHash],
+                fbp: matching.fbp,
+                fbc: matching.fbc,
+                client_ip_address: matching.clientIp,
+              }
+              : {}),
+          });
+          return Response.json({ events_received: 1 });
+        },
+      ),
+      "sent",
+    );
+  }
+});

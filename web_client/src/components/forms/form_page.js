@@ -1,4 +1,4 @@
-import {purchaseConsentSnapshot, PurchaseConsentOrders} from './meta_purchase_consent.js';
+import {metaBrowserMatching, purchaseConsentSnapshot, PurchaseConsentOrders} from './meta_purchase_consent.js';
 import { DiscountCode } from './discount_code.js';
 import {createEmbedConsentSource} from './form_measurement_embed_consent.js';
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
@@ -910,7 +910,7 @@ export class FormPage extends Component {
                      this._pendingPaymentQuote = paymentQuote;
                      const snapshot = purchaseConsentSnapshot(this.measurementSession?.consent, metaConsent);
                      this.submitOrder(form, formModel, overlay || document.body, null,
-                         snapshot ? {...snapshot, userAgent:window.navigator.userAgent} : null);
+                         snapshot ? {...snapshot, matching:snapshot.source === 'klaro' ? metaBrowserMatching(snapshot,window) : snapshot.matching, userAgent:window.navigator.userAgent} : null);
                  }, () => {
                      this.analytics?.page('product');
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);

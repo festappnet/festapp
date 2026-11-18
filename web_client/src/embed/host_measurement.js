@@ -1,4 +1,4 @@
-import {hasCurrentPurchaseConsent} from '../components/forms/meta_purchase_consent.js';
+import {hasCurrentPurchaseConsent, metaBrowserMatching} from '../components/forms/meta_purchase_consent.js';
 import {consentScope, readConsentSource, managedConsentOrigin} from '../components/forms/measurement_consent_source.js';
 import {measurementProtocol, measurementConsent, measurementManifest, consentTransportManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
@@ -19,7 +19,8 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             const choice = record.choice?.read(record.manifest);
             const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
             record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : undefined;
-            return {...measurementConsent(choice), ...((choice?.purchaseConsent || saved?.purchaseConsent) ? {purchaseConsent:choice?.purchaseConsent || saved.purchaseConsent} : {})};
+            const snapshot = choice?.purchaseConsent || saved?.purchaseConsent;
+            return {...measurementConsent(choice), ...(snapshot ? {purchaseConsent:{...snapshot, matching:hasCurrentPurchaseConsent(choice?.purchaseConsent ? choice : saved) ? metaBrowserMatching(snapshot,window) : {}}} : {})};
         }
         catch { return measurementConsent(false); }
     };

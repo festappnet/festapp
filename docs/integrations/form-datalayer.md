@@ -351,9 +351,28 @@ The Edge worker claims only the original CAPI-enabled paid cohort after a full
 payment fact exists. Before sending, it rechecks the saved snapshot, live binding,
 destination and eligible balance. It sends the normalized email hash, checkout
 user agent, canonical source URL, amount and currency with the first settlement
-time and stable event ID. Retries keep that ID and time. No client IP, phone or
-Meta cookie IDs are stored for this pilot. Snapshot and matching data are erased
-on terminal outcomes and expire after 30 days. Operational receipts without those
+time and stable event ID. Retries keep that ID and time. With a valid saved
+advertising choice, matching also includes a SHA-256 phone hash (digits including
+the country code), validated `fbp`/`fbc`, and the checkout IP. National phone
+numbers use the form's sole configured prefix, otherwise CZ (+420); invalid
+numbers are omitted. The host helper reads its first-party `_fbp`/`_fbc` through
+the existing origin- and website-binding-checked consent bridge. Missing `_fbc`
+can be derived from `fbclid` on that page. These identifiers are captured for the
+submitted order and never enter dataLayer, checkout receipts or order responses.
+
+Standalone forms read only cookies on their own origin and derive `fbc` from
+`fbclid` in the form URL. The organizer's GTM/Pixel runs on an isolated runtime
+origin: its `_fbp` is inaccessible to the form and is omitted unless a readable
+cookie already exists on the form origin. No identity transfer is added to the
+new-tab consent link.
+
+The checkout Edge function forwards only `X-Festapp-Client-IP`, which canonical
+Caddy configuration replaces from trusted proxy resolution and the gateway/router
+preserves. SQL validates the address; JSON payloads and untrusted forwarded-IP
+headers do not supply it. Raw IP expires after seven days, including unpaid and
+paused deliveries; prepare independently scrubs it before returning a payload.
+Snapshot, cookie IDs and contact hashes expire after 30 days. All matching data
+are erased on terminal outcomes or authorized consent withdrawal. Operational receipts without those
 identifiers remain for 90 days, with the non-contact decision timestamp and a
 digest of its consent scope to check later refusals.
 
@@ -366,7 +385,8 @@ test event code and actual HTTPS checkout origin, then allow the one pilot form
 in `analytics.meta_purchase_forms` before enabling it. Verify the consent notice
 and privacy policy cover Meta and disable earlier Festapp Purchase tags in the
 organizer's container. Activate only the `festapp_meta_purchase_delivery` cron
-job after the proof endpoint validates. During testing, use a dedicated Meta
+job after the proof endpoint validates, and before enabling the connector: the
+same job enforces the seven-day IP and 30-day matching-data expiry. During testing, use a dedicated Meta
 dataset and test the bank balance payment, a card payment, and withdrawal
 before settlement. Compare the stable event ID and value in Meta Test Events
 with the private settlement record.

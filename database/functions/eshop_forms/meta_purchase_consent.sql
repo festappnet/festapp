@@ -69,7 +69,7 @@ RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
 DECLARE
  details record;
  agent text:=p_consent->>'userAgent';
- email text;
+ email text; phone text; prefixes jsonb; address inet; fbp text; fbc text;
 BEGIN
  IF jsonb_typeof(p_consent) IS DISTINCT FROM 'object'
     OR coalesce(length(agent),0) NOT BETWEEN 1 AND 512 OR agent ~ '[[:cntrl:]]'
@@ -93,14 +93,33 @@ BEGIN
  THEN RETURN; END IF;
  email:=lower(btrim(details.data->>'email'));
  IF coalesce(length(email),0) NOT BETWEEN 3 AND 254 OR email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' THEN RETURN; END IF;
- INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_scope,consent_decided_at,consent_snapshot,email_hash,client_agent,source_url)
+ -- Optional matching data can only degrade to NULL; it never fails checkout.
+ BEGIN
+  prefixes:=public.get_effective_form_data(details.form)->'phone_prefixes';
+  phone:=public.meta_purchase_phone_internal(details.data->>'phone',coalesce(
+   CASE WHEN jsonb_typeof(prefixes)='array' THEN CASE WHEN jsonb_array_length(prefixes)=1 THEN prefixes->>0 END END,'+420'));
+ EXCEPTION WHEN OTHERS THEN phone:=NULL;
+ END;
+ BEGIN
+  -- This header is replaced at the public Caddy boundary, including REST RPCs.
+  address:=public.meta_purchase_ip_internal(nullif(current_setting('request.headers',true),'')::jsonb->>'x-festapp-client-ip');
+ EXCEPTION WHEN OTHERS THEN address:=NULL;
+ END;
+ BEGIN
+  fbp:=public.meta_purchase_browser_id_internal(p_consent#>>'{matching,fbp}');
+  fbc:=public.meta_purchase_browser_id_internal(p_consent#>>'{matching,fbc}');
+ EXCEPTION WHEN OTHERS THEN fbp:=NULL; fbc:=NULL;
+ END;
+ INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_scope,consent_decided_at,consent_snapshot,email_hash,client_agent,source_url,phone_hash,fbp,fbc,client_ip)
  VALUES (p_order,details.unit,details.revision,p_consent->>'revision',
    public.meta_purchase_consent_scope_internal(p_consent),(p_consent->>'timestamp')::timestamptz,
    jsonb_build_object('source',p_consent->'source','timestamp',p_consent->'timestamp',
      'consentRevision',p_consent->'consentRevision','websiteOrigin',details.website_origin,
      'ad_storage',true,'ad_user_data',true,'ad_personalization',true)
      || CASE WHEN p_consent ? 'binding' THEN jsonb_build_object('binding',jsonb_build_object('id',p_consent#>'{binding,id}','version',p_consent#>'{binding,version}')) ELSE '{}'::jsonb END,
-   encode(extensions.digest(email,'sha256'),'hex'),agent,CASE WHEN p_consent->>'source'='klaro' THEN details.website_origin||'/form/'||details.link ELSE details.website_origin||'/' END)
+   encode(extensions.digest(email,'sha256'),'hex'),agent,CASE WHEN p_consent->>'source'='klaro' THEN details.website_origin||'/form/'||details.link ELSE details.website_origin||'/' END,
+   CASE WHEN phone IS NOT NULL THEN encode(extensions.digest(phone,'sha256'),'hex') END,
+   fbp,fbc,address)
  ON CONFLICT(order_id) DO NOTHING;
 END $$;
 REVOKE ALL ON FUNCTION public.capture_meta_purchase_consent_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
@@ -124,7 +143,7 @@ BEGIN
   scope_hash:=public.meta_purchase_consent_scope_internal(p_denial);
  END IF;
  UPDATE analytics.meta_purchase_deliveries SET revoked_at=clock_timestamp(),status=CASE WHEN status='pending' THEN 'revoked' ELSE status END,
-  done_at=clock_timestamp(),lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
+  done_at=clock_timestamp(),lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
  WHERE order_id IN(SELECT (value->>'id')::bigint FROM jsonb_array_elements(overview->'orders'))
    AND revoked_at IS NULL
    AND (p_denial IS NULL OR (consent_scope=scope_hash AND consent_decided_at<decision));
