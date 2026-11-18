@@ -55,11 +55,13 @@ const formMetadata={id,occasion:id,aggregate_version:version,
  blueprint:id.nullable().optional(),participant_capacity:z.number().int().nullable().optional(),
  waitlist_enabled:z.boolean().nullable().optional(),show_remaining_capacity:z.boolean().nullable().optional(),
  waitlist_offer_duration_seconds:z.number().int().nullable().optional(),capacity:z.json().optional(),registrationMode:z.string().nullable().optional().describe('Effective server state at read time: closed = manual switch off or outside the scheduled window (even when is_open is true); blueprint = seating flow; regular = standard registration; waitlist = no public capacity, waitlist enabled; full = no public capacity and waitlist disabled. Modes do not guarantee a later checkout succeeds.')};
-const measurementStatus=z.strictObject({requested_enabled:z.boolean(),organization_allowed:z.boolean(),organization_enabled:z.boolean(),unit_enabled:z.boolean(),
+const measurementStatusCore=z.strictObject({requested_enabled:z.boolean(),organization_allowed:z.boolean(),organization_enabled:z.boolean(),unit_enabled:z.boolean(),
  runtime_supported:z.boolean(),eligible:z.boolean(),blocked_reasons:z.array(z.enum(['disabled','organization_not_enabled','organization_disabled','unit_disabled','runtime_unavailable','no_destination','no_privacy_policy'])),
- policy_revision:version,consent_required:z.literal(true),enhanced_conversions_unavailable:z.boolean(),
- // Historical receipts predate purchase timing and Meta CAPI status.
- meta_purchase_enabled:z.boolean().optional(),purchase_timing:z.enum(['order','paid']).optional()});
+ policy_revision:version,consent_required:z.literal(true),enhanced_conversions_unavailable:z.boolean()});
+// The released API keeps this status shape. Newer internal UI fields (for example
+// purchase timing or Meta CAPI state) are projected out before strict validation.
+const measurementStatus=z.preprocess(value=>value&&typeof value==='object'&&!Array.isArray(value)
+ ?Object.fromEntries(Object.entries(value).filter(([key])=>Object.hasOwn(measurementStatusCore.shape,key))):value,measurementStatusCore);
 const measurementStatusOrUnknown=measurementStatus.nullish().default(null);
 // The UI snapshot can gain internal fields independently. Project only the MCP
 // allowlist; unknown fields never reach the tool response. Missing status is unknown.
