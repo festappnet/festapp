@@ -60,6 +60,11 @@ web/organizers-page
 
 web/organizers/ball-ticket-sales
 web/organizers/seating-reservations
+web/organizers/in-person-sales
+web/organizers/payments-and-orders
+web/organizers/ticket-check-in
+web/organizers/ticket-sales
+web/organizers/website-embed
 # The organizer generator owns both presence and cleanup for each profile.
 web/organizers/press
 web/organizers-media/press-kit/*
