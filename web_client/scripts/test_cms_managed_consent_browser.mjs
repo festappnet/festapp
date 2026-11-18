@@ -50,6 +50,7 @@ try {
   await context.addInitScript(()=>{window.__testConsentMessages=[];addEventListener('message',event=>{if(event.data?.namespace==='festapp-consent-link')window.__testConsentMessages.push({origin:event.origin,data:event.data});});});
   const page=await context.newPage();
   const siteResponse=await page.goto(site+(process.env.FESTAPP_CMS_TEST_PATH || '/'));
+  assert.ok(siteResponse?.ok(), `CMS fixture page returned ${siteResponse?.status()}`);
   await page.locator('[data-festapp-consent-link]').first().waitFor({timeout:15000});
   assert.equal(await page.locator('[data-festapp-consent-link]').count(),1,'fixture owns one marked link');
   const [child]=await Promise.all([page.waitForEvent('popup'),page.locator('[data-festapp-consent-link]').click()]);
@@ -90,7 +91,7 @@ try {
   const [stale]=await Promise.all([page.waitForEvent('popup'),page.locator('[data-festapp-consent-link]').click()]);
   await stale.waitForSelector('form',{timeout:30000});const policy=await (await policyResponse).json();
   assert.ok(policy.website_consent_bindings?.some(item=>item.id===binding.id && item.effective===false && item.version>binding.version),'disabled binding missing from public policy');
-  await stale.waitForTimeout(1500);
+  await stale.locator('#festapp-measurement-consent .cn-decline').waitFor({state:'visible',timeout:15000});
   assert.equal(await stale.evaluate(()=>window.__testConsentMessages.some(x=>x.data.type==='response')),false,'stale export granted after disable');
   console.log(`PASS ${engine} real CMS/form grant, refusal${process.env.FESTAPP_CMS_TEST_WITHDRAWAL === '1' ? ', source withdrawal' : ''}, disable refresh and stale export (modeled CMP)`);
   }

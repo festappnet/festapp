@@ -37,6 +37,8 @@ class MirrorContractTest(unittest.TestCase):
             self.assertEqual(original,key(app='2.0.0'))
             self.assertNotEqual(original,key(browser='1.66.0'))
             self.assertNotEqual(original,key(ImageOS='ubuntu26'))
+            self.assertNotEqual(original,key(GITHUB_JOB='wix-checkout-compatibility'))
+            self.assertEqual(original,key(GITHUB_JOB='wordpress-checkout-compatibility'))
             self.assertNotEqual(original,key(RUNNER_ARCH='ARM64'))
             self.assertNotEqual(key(browser='^1.65.0')[0],0)
             self.assertNotEqual(key(ImageOS='')[0],0)
@@ -74,22 +76,31 @@ class MirrorContractTest(unittest.TestCase):
                         self.assertEqual(step['if'],"steps.selection.outputs.full == 'true'")
                     elif step.get('name')=='Some lane tests executed':
                         self.assertEqual(step['if'],"steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'")
+                    elif name in ('client-contract', 'client-browser-contract') and step.get('uses', '').startswith('pnpm/action-setup@'):
+                        self.assertEqual(step['if'], "github.job == 'client-contract' && steps.selection.outputs.run == 'true'")
+                    elif name == 'server-policy' and step.get('name') in ('Install Python YAML parser', 'Install pinned Deno'):
+                        outputs = {'Install Python YAML parser': 'python_yaml', 'Install pinned Deno': 'deno'}
+                        self.assertEqual(step['if'], f"steps.selection.outputs.{outputs[step['name']]} == 'true'")
+                    elif step.get('name') == 'Restore pinned WordPress core archive':
+                        self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
                     else:
                         self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'",
-                                                  "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'"))
+                                                  "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'",
+                                                  "steps.selection.outputs.browser == 'true'"))
 
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
-        self.assertEqual(len(contract['jobs']),8)
+        self.assertTrue({'seat-checkout','database-regressions','mcp-database-contracts','database-service-regressions','client-browser-contract'}
+                        .issubset(contract['jobs']))
         for name,lane in contract['jobs'].items():
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
             steps=workflow['jobs'][name]['steps']
-            commands=[step['run'].strip() for step in steps if 'run' in step]
+            commands=[step['run'].strip().replace('${{ github.job }}', name) for step in steps if 'run' in step]
             self.assertIn('python3 automation/ci/run.py lane '+name,commands)
             for command in commands:
                 self.assertTrue(command=='python3 automation/ci/run.py lane '+name or
                     (name == 'server-policy' and command == GROWTH_GUARD) or any(marker in command for marker in
-                    ('automation/ci/selection.py ',"echo 'All lane tests executed'","echo 'Some lane tests executed'","echo 'Lane coverage verified'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh')),command)
+                    ('automation/ci/selection.py ',"echo 'All lane tests executed'","echo 'Some lane tests executed'","echo 'Lane coverage verified'",'GITHUB_OUTPUT','dart pub global activate fvm','sudo apt-get','bash automation/ci/browser.sh','bash automation/ci/prepare-seat.sh','bash automation/ci/deno.sh','bash automation/ci/supabase.sh','python3 -m venv')),command)
             self.assertFalse(any('run.py step ' in command for command in commands))
             node=[step['with']['node-version'] for step in steps if step.get('uses','').startswith('actions/setup-node@')]
             self.assertEqual(node,[lane['node']])
@@ -111,10 +122,23 @@ class MirrorContractTest(unittest.TestCase):
             for unit in lane['steps']:
                 # Serialize shared installs/API generation in the local mirror.
                 # Hosted jobs filter dependencies to their isolated worktree.
-                if unit not in ('wix-install','seat-mcp-prepare'):
-                    self.assertTrue(set(runner.CONTRACT['steps'][unit]['after']) <= set(lane['steps']))
-        self.assertIn('mcp-auth-contract',runner.CONTRACT['steps']['seat-mcp-prepare']['after'])
-        for unit in ('seat-mcp-authorization','seat-mcp-contracts'):
+                if unit in ('wix-install','wordpress-cms-install'):
+                    continue
+                cross_lane = set(runner.CONTRACT['steps'][unit]['after']) - set(lane['steps'])
+                allowed = {
+                    'seat-mcp-prepare': {'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract'},
+                    'database-services-mcp-prepare': {
+                        'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract',
+                        'seat-mcp-authorization', 'seat-mcp-contracts-1',
+                    },
+                    'seat-mcp-contracts-2': {'seat-database'},
+                    'seat-database': {'seat-runtime-contract'},
+                    'seat-services': {'seat-database'},
+                }.get(unit, {'seat-database'} if name == 'mcp-database-contracts' else set())
+                self.assertLessEqual(cross_lane, allowed, unit)
+        self.assertTrue({'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract'}
+                        .issubset(runner.CONTRACT['steps']['seat-mcp-prepare']['after']))
+        for unit in ('seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'):
             self.assertIn(unit,runner.CONTRACT['steps']['wix-install']['after'])
         for entrypoint in ('automation/cloudflare_build.sh','automation/ci_build.sh'):
             self.assertIn('automation/build_web_bundle.sh',(ROOT/entrypoint).read_text())
@@ -127,17 +151,37 @@ class MirrorContractTest(unittest.TestCase):
         for name,script in scripts.items():
             self.assertNotRegex(script,r'test/[\w-]+-postgres\.test\.mjs',name)
         owners={name for name,script in scripts.items() if 'scripts/test-postgres.mjs ' in script}
-        self.assertEqual(owners,{'seat-mcp-authorization','seat-mcp-contracts'})
+        self.assertEqual(owners,{'seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'})
         self.assertIn('test-postgres.mjs authorization',scripts['seat-mcp-authorization'])
-        self.assertIn('test-postgres.mjs contracts',scripts['seat-mcp-contracts'])
-        self.assertIn('assemble-information-authoring-migration.py --check',scripts['mcp-auth-contract'])
+        for index in (1, 2):
+            self.assertIn(f'test-postgres.mjs contracts-{index}', scripts[f'seat-mcp-contracts-{index}'])
+        self.assertIn('assemble-information-authoring-migration.py --check',scripts['mcp-api-contract'])
 
     def test_cluster_mutators_reserve_the_complete_admission_capacity(self):
         contract=runner.CONTRACT
         self.assertEqual(contract['resources']['ramMiB'],3500)
-        for name in ['seat-upgrade','seat-runtime-contract','seat-database','seat-payments','wix-cms']:
+        for name in ['seat-upgrade','seat-runtime-contract','seat-database','wix-cms']:
             self.assertEqual(contract['steps'][name]['resources']['dbCluster'],
                              contract['resources']['dbCluster'],name)
+
+    def test_hosted_lanes_have_capacity_to_overlap_independent_checks(self):
+        for lane, concurrent in [
+            ('wix-checkout-compatibility', ('wix-quick', 'wix-adapters', 'wix-cms')),
+            ('ticket-preview-and-delivery', ('ticket-client', 'ticket-edge')),
+        ]:
+            units = runner.selected_units([lane])
+            limits = {**runner.CONTRACT['resources'], **runner.CONTRACT['jobs'][lane]['hostedResources']}
+            for resource, limit in limits.items():
+                self.assertLessEqual(sum(units[name]['resources'].get(resource, 0) for name in concurrent),
+                                     limit, (lane, resource))
+        for lane, pair in (
+            ('mcp-database-contracts', ('seat-mcp-authorization', 'seat-mcp-contracts-1')),
+            ('database-service-regressions', ('seat-services', 'seat-mcp-contracts-2')),
+        ):
+            units = runner.selected_units([lane])
+            self.assertEqual({name for name, unit in units.items() if unit['resources'].get('dbCluster')}, set(pair))
+            self.assertEqual(sum(units[name]['resources']['dbCluster'] for name in pair),
+                             runner.CONTRACT['resources']['dbCluster'])
 
     def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
         steps=runner.CONTRACT['steps']
@@ -145,8 +189,10 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual(steps['ticket-edge']['requires'],[])
         self.assertEqual(steps['ticket-core']['requires'],[])
         self.assertEqual(steps['seat-browser']['requires'],['seat-install'])
-        self.assertEqual(steps['seat-mcp-contracts']['requires'],['seat-install','seat-mcp-prepare'])
-        self.assertEqual(steps['seat-mcp-prepare']['requires'],['seat-install'])
+        self.assertEqual(steps['seat-mcp-contracts-1']['requires'], ['mcp-database-install','seat-mcp-prepare'])
+        self.assertEqual(steps['seat-mcp-contracts-2']['requires'], ['database-services-mcp-prepare'])
+        self.assertEqual(steps['database-services-mcp-prepare']['requires'], ['database-services-install'])
+        self.assertEqual(steps['seat-mcp-prepare']['requires'],['mcp-database-install'])
         # Full runs retain the canonical order and its independent proofs.
         self.assertIn('seat-database',steps['seat-browser']['after'])
         self.assertIn('seat-runtime-contract',steps['seat-database']['after'])
@@ -174,7 +220,7 @@ class MirrorContractTest(unittest.TestCase):
     def test_runtime_provisioning_conditions_match_their_consumers(self):
         workflow=yaml.safe_load((ROOT/'.github/workflows/seat-checkout-regressions.yml').read_text())
         seat=workflow['jobs']['seat-checkout']['steps']
-        supabase=next(s for s in seat if s.get('uses','').startswith('supabase/setup-cli'))
+        supabase=next(s for s in seat if s.get('run') == 'bash automation/ci/supabase.sh')
         self.assertEqual(supabase['if'],"steps.selection.outputs.sql == 'true'")
         prepare=next(s for s in seat if s.get('name')=='Prepare isolated browser and database image')
         self.assertEqual(prepare['env'],{'FESTAPP_CI_NEEDS_DATABASE':'${{ steps.selection.outputs.sql }}',
@@ -239,19 +285,20 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_flutter_browser_contracts_have_one_owner_and_semantic_inventory(self):
         steps=runner.CONTRACT['steps']
-        for source in ('test/browser/browser_preference_store_test.dart',
-                       'test/components/html/html_image_preview_cases.dart',
-                       'test/components/navigation/platform_route_parser_cases.dart'):
-            owners=[name for name,unit in steps.items() if source in unit['script']]
-            self.assertEqual(owners,['image-client-browser'])
-        command=steps['image-client-browser']['script'].splitlines()
-        self.assertEqual(len(command),1)
-        self.assertIn('--platform chrome',command[0])
-        self.assertIn('--concurrency=1',command[0])
-        inventory=json.loads((ROOT/'automation/client_test_inventory.json').read_text())
-        self.assertTrue({'ticket-client','navigation-contract','image-client-browser'}
-                        .issubset(inventory['ci_cases']))
-        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']),10)
+        entrypoint = 'test/browser/client_browser_ci_cases.dart'
+        owners = [name for name, unit in steps.items() if entrypoint in unit['script']]
+        self.assertEqual(owners, ['image-client-browser'])
+        command = steps['image-client-browser']['script'].splitlines()
+        self.assertEqual(len(command), 1)
+        self.assertIn('--platform chrome', command[0])
+        self.assertIn('--concurrency=1', command[0])
+        inventory = json.loads((ROOT/'automation/client_test_inventory.json').read_text())
+        self.assertEqual({row['source'] for row in inventory['ci_moves']['image-client-browser'].values()}, {
+            'test/browser/browser_preference_store_test.dart',
+            'test/components/html/html_image_preview_cases.dart',
+            'test/components/navigation/platform_route_parser_cases.dart',
+        })
+        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']), 10)
         self.assertIn('automation/testing/navigation_ci.dart',
                       steps['navigation-contract']['script'])
         self.assertIn('automation/testing/navigation_default.dart',
@@ -259,7 +306,7 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_semantic_inventory_changes_trigger_all_owning_workflows(self):
         pattern='automation/client_test_inventory.*'
-        for name in ('navigation-interactions','client-contract','ticket-preview-and-delivery'):
+        for name in ('navigation-interactions','client-contract','client-browser-contract','ticket-preview-and-delivery','ticket-rendering-contracts'):
             lane=runner.CONTRACT['jobs'][name]
             self.assertIn(pattern,lane['inputs'])
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
@@ -286,7 +333,7 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_actual_upgrade_and_email_recovery_are_required(self):
         contract=runner.CONTRACT
-        self.assertIn('seat-upgrade',contract['jobs']['seat-checkout']['steps'])
+        self.assertIn('seat-upgrade',contract['jobs']['database-regressions']['steps'])
         self.assertIn('runtime.py upgrade',contract['steps']['seat-upgrade']['script'])
         filters=[filter for value in contract['sqlGroups'].values() for filter in value['filters']]
         self.assertIn('database/tests/emails/delivered_tickets_resolve_confirmation_test.sql',filters)
@@ -309,13 +356,20 @@ class UnitSplitContractTest(unittest.TestCase):
         self.assertNotIn('wix-contract',contract['steps'])
         self.assertNotIn('seat-contract',contract['steps'])
         self.assertEqual(contract['steps']['wix-cms']['resources']['browser'],1)
-        self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'],contract['resources']['dbCluster'])
+        self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'], 1)
         for name in ['seat-payments','seat-orders','seat-delivery','seat-services']:
             self.assertIn(name,contract['databaseUnits'])
-        fixture=(ROOT/'automation/testing/cms_consent_fixture.py').read_text()
-        self.assertIn("('wordpress',31,'cli','firefox')",fixture)
-        self.assertIn("('wordpress',31,'cli','webkit')",fixture)
-        self.assertIn("coop=case_index==len(cases)-1",fixture)
+        def cases(suite):
+            return json.loads(subprocess.check_output(
+                ['python3', 'automation/testing/cms_consent_fixture.py', '--list-cases', '--suite', suite],
+                cwd=ROOT, text=True))
+        wordpress, other = cases('wordpress'), cases('joomla-wix-html')
+        self.assertEqual(len(wordpress), 4)
+        self.assertEqual(len(other), 5)
+        self.assertEqual(wordpress + other, cases('all'))
+        self.assertEqual({case[4] for case in wordpress}, {'firefox','webkit','chromium'})
+        self.assertEqual({case[4] for case in other}, {'chromium'})
+        self.assertEqual([case[1] for case in other if case[5]], ['joomla'])
 
     def test_shared_sql_helpers_and_cross_client_fixtures_invalidate_consumers(self):
         from selection import unit_owners
@@ -326,7 +380,8 @@ class UnitSplitContractTest(unittest.TestCase):
                      'automation/lib/historical_sql.mjs',
                      'test/fixtures/order_item_terminology.json']:
             for unit in ['seat-payments','seat-orders','seat-delivery','seat-services']:
-                self.assertIn(unit,unit_owners(path,'seat-checkout',runner.CONTRACT),(unit,path))
+                lane = 'database-service-regressions' if unit == 'seat-services' else 'seat-checkout'
+                self.assertIn(unit,unit_owners(path,lane,runner.CONTRACT),(unit,path))
         self.assertIn('wix-cms',unit_owners('automation/lib/migration_inputs.py',
                                           'wix-checkout-compatibility',runner.CONTRACT))
 
@@ -384,6 +439,14 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
                 self.assertEqual((root/'docker.started').read_text(),expected)
                 self.assertIn('--only-shell chromium',(root/'pnpm.started').read_text())
 
+    def test_ticket_rendering_has_a_single_hosted_owner(self):
+        contract = runner.CONTRACT
+        root = 'automation/testing/ticket_default_ci.dart'
+        owners = [name for name, row in contract['steps'].items() if root in row['script']]
+        self.assertEqual(owners, ['ticket-rendering-client'])
+        self.assertEqual(contract['steps']['ticket-rendering-client']['requires'], ['ticket-rendering-install'])
+        self.assertIn('ticket-rendering-client', contract['jobs']['ticket-rendering-contracts']['steps'])
+
     def test_ticket_preparation_can_overlap_edge_without_overlapping_flutter(self):
         units=runner.selected_units(['ticket-preview-and-delivery'])
         self.assertEqual(units['ticket-install']['after'],[])
@@ -436,12 +499,13 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
     def test_browser_lane_preserves_explicit_executable_and_environment(self):
         with tempfile.TemporaryDirectory() as directory:
             browser=Path(directory)/'Chrome for Testing';browser.touch()
-            with patch.object(runner,'CACHE',Path(directory)),patch.dict(os.environ,{'CHROME_EXECUTABLE':str(browser)},clear=True),\
-                 patch.object(runner,'require_version',return_value='fixture'),patch.object(runner,'_execute',return_value={}) as execute:
-                runner.local(['web-startup'])
+            with patch.object(runner,'CACHE',Path(directory)),patch.dict(os.environ,{'CHROME_EXECUTABLE':str(browser),'PATH':os.defpath},clear=True),\
+                 patch.object(runner,'require_version',return_value='fixture'),patch.object(runner,'call'), \
+                 patch.object(runner,'_execute',return_value={}) as execute:
+                runner.local(['server-policy'])
                 self.assertEqual(os.environ['CHROME_EXECUTABLE'],str(browser))
             execute.assert_called_once()
-            self.assertEqual(execute.call_args.args,(['web-startup'],))
+            self.assertEqual(execute.call_args.args,(['server-policy'],))
             self.assertTrue(execute.call_args.kwargs['pinned'])
             self.assertIsInstance(execute.call_args.kwargs['command_started'],float)
 
@@ -449,7 +513,7 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
         with tempfile.TemporaryDirectory() as directory,patch.object(runner,'CACHE',Path(directory)),\
              patch.dict(os.environ,{'CHROME_EXECUTABLE':'/missing/chrome'},clear=True),\
              patch.object(runner,'require_version'),patch.object(runner,'_execute') as execute:
-            with self.assertRaisesRegex(RuntimeError,'Chrome'):runner.local(['web-startup'])
+            with self.assertRaisesRegex(RuntimeError,'Chrome'):runner.local(['server-policy'])
             execute.assert_not_called()
 
     def test_another_owner_blocks_before_tools_or_database_setup(self):

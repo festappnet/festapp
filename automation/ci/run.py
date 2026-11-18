@@ -145,6 +145,10 @@ def _execute(names, *, pinned=False, command_started=None):
     reused={} if plan is None else {unit:{'status':'PASS','state':'reused','inputSha256':proof['inputSha256'],'origin':proof,'seconds':0} for unit,proof in plan['reuse'].items()}
     if plan is not None:
         units={unit:{**row,'after':[dep for dep in row['after'] if dep in plan['execute']]} for unit,row in units.items() if unit in plan['execute']}
+    capacities = CONTRACT['resources']
+    if len(names) == 1 and not pinned and os.environ.get('GITHUB_ACTIONS') == 'true':
+        capacities = {**capacities, **CONTRACT['jobs'][names[0]].get('hostedResources', {})}
+    receipt['resourceCapacities'] = capacities
     execution_started=time.monotonic()
     receipt['preparationSeconds']=execution_started-started
     receipt['preparationScope']='command preflight, Python environment and pinned Node resolution; hosted action provisioning is outside the lane'
@@ -186,7 +190,7 @@ def _execute(names, *, pinned=False, command_started=None):
         import runtime as runtime_module
         runtime=runtime_module.Runtime()
     try:
-        receipt['units']=execute_dag(units,CONTRACT['resources'],execute,workers=3)
+        receipt['units']=execute_dag(units,capacities,execute,workers=3)
         with lookup(seconds=120):
             for unit,row in receipt['units'].items():
                 row['state']='executed'
@@ -229,18 +233,18 @@ def local(names):
             try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
             except BlockingIOError:raise RuntimeError('Another local CI mirror is running; wait for it to finish.')
             require_version(['pnpm','--version'],'11.24.0')
-            if any(name in names for name in ('seat-checkout','ticket-preview-and-delivery','server-policy')):require_version(['deno','--version'],'2.9.0')
-            if {'seat-checkout','web-startup','client-contract'}.intersection(names):
+            if any(name in names for name in ('seat-checkout','database-regressions','ticket-preview-and-delivery','server-policy')):require_version(['deno','--version'],'2.9.0')
+            if {'seat-checkout','server-policy','client-contract','client-browser-contract'}.intersection(names):
                 browser=(os.environ.get('CHROME_EXECUTABLE') or shutil.which('google-chrome') or shutil.which('chromium'))
                 if not browser and sys.platform=='darwin':browser='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
                 if not browser or not Path(browser).is_file():raise RuntimeError('Install Chrome/Chromium before browser lanes')
                 os.environ['CHROME_EXECUTABLE']=browser
-            if 'image-contract' in names:
+            if 'server-policy' in names:
                 venv=CACHE/'python'
                 call([sys.executable,'-m','venv',str(venv)])
                 call([str(venv/'bin/pip'),'--quiet','install','PyYAML==6.0.3'])
                 os.environ['PATH']=str(venv/'bin')+os.pathsep+os.environ['PATH']
-            if 'seat-checkout' in names:
+            if {'seat-checkout','database-regressions','mcp-database-contracts','database-service-regressions'}.intersection(names):
                 require_version(['supabase','--version'],'2.111.0')
             return _execute(names,pinned=True,command_started=command_started)
     finally:os.environ.clear();os.environ.update(previous)

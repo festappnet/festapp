@@ -3,9 +3,11 @@ import { execFileSync } from 'node:child_process';
 import { generate, facades } from './generate-api-reference.mjs';
 import { publicCatalog, readiness, scopesForOperation, problemSchema } from '../src/remote/api-contract.mjs';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { z } from 'zod';
 generate({ check: true });
+const specifications = [];
 for (const facade of facades) for (const profile of API_DATA_PROFILES) for (const proofProfile of API_PROOF_PROFILES) {
     const relative = apiProjectionDirectory(facade.endpointId,profile,proofProfile) + '/openapi.json';
     const url = new URL('../contracts/api-v1/' + relative, import.meta.url);
@@ -18,6 +20,16 @@ for (const facade of facades) for (const profile of API_DATA_PROFILES) for (cons
         for (const media of Object.values(operation.requestBody.content)) if (media.example !== undefined) descriptor.input.parse(media.example);
         for (const response of Object.values(operation.responses)) for (const media of Object.values(response.content ?? {})) if (media.example !== undefined) { if (response === operation.responses['200']) descriptor.output.parse(media.example); else problemSchema.parse(media.example); }
     }
-    try { execFileSync('pnpm', ['exec','redocly','lint',url.pathname,'--config',new URL('../redocly.yaml',import.meta.url).pathname], { env: { ...process.env, REDOCLY_TELEMETRY:'off' }, stdio: ['ignore','pipe','pipe'] }); } catch (error) { throw new Error(error.stdout?.toString() + error.stderr?.toString()); }
+    specifications.push(fileURLToPath(url));
+}
+try {
+    const config = fileURLToPath(new URL('../redocly.yaml', import.meta.url));
+    execFileSync('pnpm', ['exec', 'redocly', 'lint', ...specifications, '--config', config], {
+        env: { ...process.env, REDOCLY_TELEMETRY: 'off' },
+        stdio: ['ignore', 'pipe', 'pipe'],
+    });
+} catch (error) {
+    const diagnostics = [error.stdout, error.stderr].filter(Boolean).join('');
+    throw new Error(diagnostics || error.message, { cause: error });
 }
 console.log('API contracts: schemas, parity, examples and lint passed (8 projections).');

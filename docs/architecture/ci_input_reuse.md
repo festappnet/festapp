@@ -1,6 +1,6 @@
 # CI input reuse
 
-All eight canonical check names remain required on the exact release main SHA.
+Every job in the canonical CI registry is required on the exact release main SHA.
 A green job means complete coverage of its current unit inventory. Each unit executed or has independently verified direct execution evidence with identical inputs. Targeted local tests precede
 publication. GitHub owns complete authoritative verification. The full local
 mirror remains available explicitly for diagnosis and offline work.
@@ -12,7 +12,7 @@ and the seven-day reuse limit. `run.py affected` and `selection.py fingerprint`
 use the same `owners()` function. Unknown paths and unregistered tests select
 all jobs. Shared contracts have all consumers. Known Flutter package paths include
 locks and manifests; unknown packages remain conservative. Git tree entries bind
-content, path, mode, additions, removals and renames. Unit inputs live alongside their scripts in the same contract. Units without explicit inputs retain the conservative lane inputs. Unknown paths/tests select every unit. `after` orders verification, while optional `requires` names preparation that must execute with a consumer; default preparation closure follows `after`. The selected DAG removes only already verified ordering checks and always keeps
+content, path, mode, additions, removals and renames. Unit inputs live alongside their scripts in the same contract. Units without explicit inputs retain the conservative lane or input-group inputs. Combined jobs retain the original groups. Unit fingerprints include the groups that cover the unit and its setup dependencies. Unknown paths/tests select every unit. `after` orders verification, while optional `requires` names preparation that must execute with a consumer; default preparation closure follows `after`. The selected DAG removes only already verified ordering checks and always keeps
 runtime requirements as actual scheduler edges. SQL workspaces call canonical
 prepare before cloning, so a behavior test need not rerun independent full-replay
 checks whose exact-input execution evidence remains valid. Selected commands and
@@ -31,23 +31,37 @@ at its original source commit, then its directly executed unit fingerprint must
 match today's inputs. Executable CI code and every workflow remain protected
 by the global trusted definition digest.
 
-`image-policy` owns the image worker typecheck and unit suite once. Server policy
-retains MCP/auth tests. All source startup/WebView scenarios remain in CI;
+The combined server-policy job covers image storage, MCP/auth and web startup.
+`image-policy` owns the image worker typecheck and unit suite once. Chromium,
+Deno and PyYAML are provisioned only when their consumers execute. All source
+startup/WebView scenarios remain in CI;
 production builders verify their exact canonical CI source and assembled tenant
 artifact instead of repeating that source suite.
 
 ## Direct execution evidence
 
-MCP PostgreSQL tests use two independent leased databases: the canonical
-authorization matrix and the remaining contracts. Files within each group stay
-serial because fixtures may commit, analyze tables or replace functions.
-`seat-mcp-prepare` installs dependencies, prepares immutable API contracts once
-and verifies the dynamic partition covers every `*-postgres.test.mjs` file.
-The ordinary `test:postgres` command still runs the complete suite. Both CI
-groups retain the marked-database and paused-delivery guard, and each claims one
-of two admitted DB slots within the unchanged 3500 MiB/three-worker budget.
-Whole-cluster mutation units reserve both slots. API generation finishes before either consumer;
-the local mirror also waits for the server-policy API writer. Backend changes
+Hosted checkout, database regression and MCP database checks run on independent
+runners. Each builds its own disposable database when needed. Cold history and
+runtime lifecycle proofs run in the database regression job. The local mirror
+shares one owned database runtime and orders the cluster-wide operations before
+other SQL units. The Flutter native and browser client checks have independent
+hosted runners and retain the single Flutter slot in the local mirror.
+
+MCP PostgreSQL tests use three independent leased databases: the canonical
+authorization matrix and two partitions of the remaining contracts. Files
+within each group stay serial because fixtures may commit, analyze tables or
+replace functions.
+The slower contract partition runs alongside the database service regressions
+on their existing hosted runner. Both runners prepare the same immutable API
+contracts, and `seat-mcp-prepare` verifies the dynamic partition covers every
+`*-postgres.test.mjs` file.
+The ordinary `test:postgres` command still runs the complete suite. All CI
+groups retain the marked-database and paused-delivery guard. Each group claims one
+of two database slots. Whole-cluster units reserve both slots.
+Payment checks use one slot. Upgrade and Stripe concurrency fixtures acquire
+their own marked clones, and the remaining payment checks use the unit's lease.
+API generation finishes before all MCP groups. The local mirror also waits for
+the server-policy API writer. Backend changes
 invalidate MCP proofs; standalone checkout UI changes do not.
 
 The existing immutable receipt includes repository ID, workflow definition digest,
@@ -75,8 +89,14 @@ The selector independently verifies GitHub repository/run/attempt/job/artifact
 bindings, the job's final success and execution step, artifact expiry and GitHub's
 SHA-256 digest of the downloaded archive. It reads bounded JSON without extracting
 ZIP paths. Receipt claims alone never authorize reuse. Missing/deleted artifacts,
-API errors, unknown origins, malformed evidence or a newer unresolved failed or
-pending run cause execution. Reuse never turns a reused row into direct execution and never refreshes the original run's seven-day age. Mixed aggregates can supply their executed rows only. `All lane tests executed` marks a full execution; `Some lane tests executed` marks a mixed run; `Lane coverage verified` is emitted only after the canonical runner admits complete coverage. Reuse-only jobs have no execution marker and are ignored before ZIP downloads.
+API errors, unknown origins and malformed evidence cause unresolved units to
+execute. A completed workflow with a failed sibling can still supply direct
+evidence from a successful job. Verification checks that job's current attempt
+and receipt in both selection and consumption. A failed or pending matching main
+job blocks older evidence only for matching units. An unresolved PR can have an
+unknown merge checkout and blocks older evidence for all unresolved units. A completed skipped workflow
+whose lane job is confirmed skipped with no steps does not block older evidence.
+Units already verified against newer runs retain that evidence. Reuse never turns a reused row into direct execution and never refreshes the original run's seven-day age. Mixed aggregates can supply their executed rows only. `All lane tests executed` marks a full execution; `Some lane tests executed` marks a mixed run; `Lane coverage verified` is emitted only after the canonical runner admits complete coverage. Reuse-only jobs have no execution marker and are ignored before ZIP downloads.
 
 Internal PR evidence can be consumed on subsequent PR updates or main even when
 merge, squash or rebase changes commit identities. The actual checkout digest
@@ -142,14 +162,30 @@ The consumer rechecks the selection partition and its provenance before running
 the DAG. Immutable archives may be retained within the hosted job under their
 GitHub SHA-256; the digest is verified again on every read.
 
-Wix has quick contracts/build, PHP adapter smoke and an installed CMS unit.
+Wix has quick contracts/build, PHP adapter smoke and an installed Joomla,
+Wix and generated HTML unit. The installed WordPress suite has its own required
+job. Each installed suite starts only its CMS platforms and browser engines,
+using a separate disposable Supabase PostgreSQL instance and the pinned
+PostgREST image. PostgreSQL starts through the canonical local runtime's pinned
+image and readiness probe. Each fixture removes its container, volume and
+bridge after its browser and PostgREST services stop. The fixture's HTTPS transport serves the browser's public
+`/rest/v1` requests, and readiness requires the actual anonymous form policy
+RPC. Wix's hosted units can run together
+within the 5000 MiB admission budget.
+The local mirror retains 3500 MiB. The ticket rendering root has its own
+required hosted runner and semantic inventory. Delivery and the other ticket
+client roots use independent verification with the original fixture boundaries.
 Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix
 reinstalls shared package dependencies. Installed CMS uses digest-pinned official
 WordPress and WP-CLI images directly, avoiding wp-env's unused Composer/PHPUnit
 image builds. Both configured core/PHP pairs are verified at runtime, with
-separate volumes and databases. Owner labels fence creation and cleanup; private
-state is never cached. Developer wp-env tooling and its dependency tests remain.
+separate volumes and databases. The two core containers start concurrently.
+Their installations run concurrently once MariaDB creates both databases.
+The older core release is staged from its SHA-256-pinned archive. WP-CLI
+reads that archive offline. Hosted browser setup checks existing system
+dependencies before installing any missing packages.
+Owner labels fence creation and cleanup. Private state is never cached. Developer wp-env tooling and its dependency tests remain.
 Pinned browser binaries are cached on GitHub; system browser libraries and all
 private CMS/database state are prepared normally. A measured upstream Docker
 image archive cache was removed: even a verified warm hit did not improve the

@@ -668,7 +668,7 @@ try {
   assert.match(sharedBuild, /python3 automation\/ci\/release_gate\.py/);
   assert.doesNotMatch(sharedBuild, /bash automation\/test_web_startup\.sh/);
   const ciContract = JSON.parse(await readFile(path.join(projectRoot, 'automation/ci/checks.json'), 'utf8'));
-  assert.ok(ciContract.jobs['web-startup'].steps.includes('web-startup'));
+  assert.ok(ciContract.jobs['server-policy'].steps.includes('web-startup'));
   assert.match(ciContract.steps['web-startup'].script, /bash automation\/test_web_startup\.sh/);
   assert.match(sharedBuild, /release\.web-client-build node automation\/lib\/web_build_cache\.mjs component vite/);
   assert.match(sharedBuild, /cd web_client && pnpm run compile/);

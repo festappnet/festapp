@@ -103,9 +103,9 @@ def atomic_json(path, value):
 
 
 class Runtime:
-    def __init__(self):
-        self.project = os.environ.get('FESTAPP_LOCAL_DB_PROJECT_ID', 'festapp-sql-runtime')
-        self.port = int(os.environ.get('FESTAPP_LOCAL_DB_PORT', '55542'))
+    def __init__(self, *, project=None, port=None):
+        self.project = project if project is not None else os.environ.get('FESTAPP_LOCAL_DB_PROJECT_ID', 'festapp-sql-runtime')
+        self.port = port if port is not None else int(os.environ.get('FESTAPP_LOCAL_DB_PORT', '55542'))
         self.profile=os.environ.get('FESTAPP_TEST_DATA_PROFILE','demo')
         if self.profile not in CONFIG['profiles']:raise ValueError('Unsupported explicit test data profile')
         if not re.fullmatch(r'festapp-[a-z0-9-]+', self.project) or not 1024 <= self.port <= 65535:

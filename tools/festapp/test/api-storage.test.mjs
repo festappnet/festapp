@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { copyFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { setup, connect, apiRequest } from './api-fixture.mjs';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { digest } from '../src/context/profile.mjs';
@@ -34,16 +35,36 @@ test('pinned provider refresh retains consumed evidence; capacity stays bounded 
     assert.equal(f.storage.stats().byModel.RefreshToken,initial);
     assert.equal(f.storage.values('RefreshReplay').reduce((n,b)=>n+Object.keys(b.entries).length,0),12);
     const first=await f.storage.adapter('RefreshToken').find(tokens.refresh_token);assert(first.consumed);
-    // Freeze only the synchronous capacity exercise so a 60s auth-code expiry
-    // cannot change the record count while 20,000 fsync writes are performed.
-    const originalNow=Date.now,at=Date.now();Date.now=()=>at;
+    const capacity = 20_000;
+    const originalNow = Date.now;
+    const now = originalNow();
+    Date.now = () => now;
     try {
-        const before=f.storage.stats().records;
-        for(let i=before;i<20000;i++)f.storage.put('CapacityFixture','record-'+i,{i},3600);
-        assert.equal(f.storage.stats().records,20000);
-        assert.throws(()=>f.storage.put('CapacityFixture','overflow',{rejected:true},3600),/REMOTE_STORAGE_FULL/);
+        // These filler rows are counted but never read or decrypted. Seed just
+        // below the limit in one SQLite statement and exercise admission via the store.
+        const fillerCount = capacity - 1 - f.storage.stats().records;
+        const db = new DatabaseSync(join(f.root, 'remote.sqlite'));
+        try {
+            db.prepare(`
+                WITH RECURSIVE filler(i) AS (
+                    SELECT 1 WHERE ? > 0 UNION ALL SELECT i + 1 FROM filler WHERE i < ?
+                )
+                INSERT INTO records (model, id, value, expires)
+                SELECT 'CapacityFiller', CAST(i AS TEXT), zeroblob(28), ? FROM filler
+            `).run(fillerCount, fillerCount, now + 3_600_000);
+        } finally {
+            db.close();
+        }
+        assert.equal(f.storage.stats().records, capacity - 1);
+        f.storage.put('CapacityFixture', 'last', { admitted: true }, 3600);
+        assert.deepEqual(f.storage.get('CapacityFixture', 'last'), { admitted: true });
+        assert.throws(() => f.storage.put('CapacityFixture', 'overflow', { rejected: true }, 3600), /REMOTE_STORAGE_FULL/);
+        assert.equal(f.storage.stats().records, capacity);
         assert.equal(f.storage.values('RefreshReplay').reduce((n,b)=>n+Object.keys(b.entries).length,0),12);
-    } finally {Date.now=originalNow;}
+        assert((await f.storage.adapter('RefreshToken').find(tokens.refresh_token)).consumed);
+    } finally {
+        Date.now = originalNow;
+    }
     // Public default consent stays seven days; longer durations remain explicit policy.
     assert.equal(f.config.clients.find(c=>c.id==='api-fixture').maxConsentDays,7);
 });
@@ -82,7 +103,6 @@ test('replay packing spans a full consent year, expires only old evidence and re
 });
 
 test('offline storage rekey retains exact active and replay records, rolls back corrupt input and rejects the old key',async t=>{
- const {DatabaseSync}=await import('node:sqlite');
  const f=await setup(t),{tokens}=await connect(f);await f.storage.adapter('RefreshToken').consume(tokens.refresh_token);
  const old=f.storage.get('Metadata','encryption'),newKey=randomBytes(32),before=await f.storage.adapter('RefreshToken').find(tokens.refresh_token);
  // Corruption after a valid row forces rollback after an earlier row was

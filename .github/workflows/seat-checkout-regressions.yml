@@ -21,7 +21,7 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    steps:
+    steps: &database-lane-steps
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -29,7 +29,7 @@ jobs:
         id: selection
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/selection.py seat-checkout
+        run: python3 automation/ci/selection.py ${{ github.job }}
       - uses: pnpm/action-setup@v6
         if: steps.selection.outputs.run == 'true'
         with:
@@ -40,10 +40,9 @@ jobs:
           node-version: '22.23.4'
           cache: pnpm
           cache-dependency-path: web_client/pnpm-lock.yaml
-      - uses: supabase/setup-cli@v3
+      - name: Install pinned Supabase CLI
         if: steps.selection.outputs.sql == 'true'
-        with:
-          version: 2.111.0
+        run: bash automation/ci/supabase.sh
       - run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
         if: steps.selection.outputs.sql == 'true'
       - name: Prepare isolated browser and database image
@@ -58,7 +57,7 @@ jobs:
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/run.py lane seat-checkout
+        run: python3 automation/ci/run.py lane ${{ github.job }}
       - name: All lane tests executed
         if: steps.selection.outputs.full == 'true'
         run: echo 'All lane tests executed'
@@ -76,13 +75,31 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  database-regressions:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps: *database-lane-steps
+
+  mcp-database-contracts:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps: *database-lane-steps
+
+  database-service-regressions:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps: *database-lane-steps
+
   ticket-preview-and-delivery:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
-    steps:
+    steps: &ticket-lane-steps
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -90,7 +107,7 @@ jobs:
         id: selection
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/selection.py ticket-preview-and-delivery
+        run: python3 automation/ci/selection.py ${{ github.job }}
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh
@@ -120,7 +137,7 @@ jobs:
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/run.py lane ticket-preview-and-delivery
+        run: python3 automation/ci/run.py lane ${{ github.job }}
       - name: All lane tests executed
         if: steps.selection.outputs.full == 'true'
         run: echo 'All lane tests executed'
@@ -137,3 +154,11 @@ jobs:
           path: ~/.cache/festapp-ci/runs
           retention-days: 7
           if-no-files-found: ignore
+
+  ticket-rendering-contracts:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FVM_CACHE_PATH: /tmp/festapp-fvm
+    steps: *ticket-lane-steps

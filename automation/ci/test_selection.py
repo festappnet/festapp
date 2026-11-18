@@ -21,24 +21,35 @@ URL = 'https://github.com/fixture/repo/actions/runs/123'
 
 class CanonicalTranslationOwnershipTest(unittest.TestCase):
     def test_every_web_catalog_consumer_is_invalidated_by_the_canonical_source(self):
-        consumers={name for name,job in CONTRACT['jobs'].items() if 'web_client/**' in job['inputs']}
+        consumers={name for name,job in CONTRACT['jobs'].items() if 'web_client/**' in selection.lane_inputs(job)}
         for locale in ['cs','en','sk','de','pl','uk']:
             self.assertTrue(consumers.issubset(selection.owners(f'assets/translations/{locale}.json',CONTRACT)))
 
 
 class CmsDependencyOwnershipTest(unittest.TestCase):
+    def test_combined_server_job_retains_independent_input_groups(self):
+        lane = 'server-policy'
+        job = CONTRACT['jobs'][lane]
+        groups = [unit for group in job['inputGroups'] for unit in group['steps']]
+        self.assertCountEqual(groups, job['steps'])
+        for path, expected in (
+            ('workers/image-worker/src/index.ts', {'image-install', 'image-policy', 'image-preflight', 'image-storage'}),
+            ('automation/release/software-version.conf', {'web-install', 'web-startup', 'web-measurement', 'renderer-install', 'deploy-contract'}),
+            ('tools/festapp/src/remote/config.mjs', {unit for unit in job['steps'] if unit.startswith('mcp-')}),
+        ):
+            self.assertIn(lane, selection.owners(path, CONTRACT))
+            self.assertEqual(selection.unit_owners(path, lane, CONTRACT), expected)
+
     def test_mcp_source_does_not_invalidate_independent_sql_executors(self):
-        independent={'occasion-lifecycle','seat-authorization','seat-google-auth',
-                     'seat-payments','seat-orders','seat-delivery','seat-notifications','seat-browser'}
-        for path in ['tools/festapp/src/remote/views.mjs',
-                     'tools/festapp/src/operations/orders.mjs']:
-            units=selection.unit_owners(path,'seat-checkout',CONTRACT)
-            self.assertTrue(independent.isdisjoint(units),path)
-            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts'}.issubset(units),path)
-        for path in ['database/functions/eshop/finalize_ticket_order.sql',
-                     'database/tests/helpers/reset_owned_sequences.sql']:
+        independent={'seat-authorization','seat-payments','seat-orders','seat-delivery','seat-browser'}
+        for path in ['tools/festapp/src/remote/views.mjs', 'tools/festapp/src/operations/orders.mjs']:
+            self.assertTrue(independent.isdisjoint(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
+            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts-1'}
+                            .issubset(selection.unit_owners(path,'mcp-database-contracts',CONTRACT)),path)
+            self.assertIn('seat-mcp-contracts-2', selection.unit_owners(path,'database-service-regressions',CONTRACT))
+        for path in ['database/functions/eshop/finalize_ticket_order.sql','database/tests/helpers/reset_owned_sequences.sql']:
             self.assertTrue(independent.issubset(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
-        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','seat-checkout',CONTRACT))
+        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','database-service-regressions',CONTRACT))
 
     def test_ticket_core_and_edge_have_only_their_actual_platform_inputs(self):
         lane='ticket-preview-and-delivery'
@@ -59,7 +70,7 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
 
     def test_image_health_checker_has_only_actual_consumers(self):
         self.assertEqual(selection.owners('automation/verify_image_service.mjs',CONTRACT),
-                         {'image-contract','web-startup'})
+                         {'server-policy'})
 
     def fingerprints(self, changed):
         import hashlib
@@ -85,24 +96,28 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
                 self.assertNotEqual(*self.fingerprints(path)['wix-cms'])
 
     def test_canonical_software_version_has_an_explicit_release_contract_owner(self):
-        self.assertEqual(selection.owners('automation/release/software-version.conf',CONTRACT),{'web-startup'})
+        self.assertEqual(selection.owners('automation/release/software-version.conf',CONTRACT),{'server-policy'})
 
     def test_checkout_ui_does_not_reexecute_unrelated_backend_contracts(self):
         units=selection.unit_owners('web_client/src/components/forms/order_result.js','seat-checkout',CONTRACT)
         self.assertIn('seat-browser',units)
-        for backend in ['seat-authorization','seat-google-auth','seat-notifications','occasion-lifecycle']:
-            self.assertNotIn(backend,units)
-            self.assertIn(backend,selection.unit_owners('database/functions/eshop/finalize_ticket_order.sql','seat-checkout',CONTRACT))
+        self.assertNotIn('seat-authorization', units)
+        sql = 'database/functions/eshop/finalize_ticket_order.sql'
+        self.assertIn('seat-authorization', selection.unit_owners(sql,'seat-checkout',CONTRACT))
+        for backend in ['seat-google-auth','seat-notifications','occasion-lifecycle']:
+            self.assertIn(backend, selection.unit_owners(sql,'database-regressions',CONTRACT))
 
     def test_mcp_database_groups_follow_backend_inputs_without_checkout_ui(self):
-        lane='seat-checkout'
-        groups={'seat-mcp-authorization','seat-mcp-contracts'}
-        self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
-        for path in ['database/functions/eshop/finalize_ticket_order.sql',
-                     'tools/festapp/src/operations.mjs',
-                     'tools/festapp/scripts/test-postgres.mjs',
-                     'database/tests/helpers/authorization_context_reference.sql']:
-            self.assertTrue(groups.issubset(selection.unit_owners(path,lane,CONTRACT)),path)
+        for lane, groups in (
+            ('mcp-database-contracts', {'seat-mcp-authorization','seat-mcp-contracts-1'}),
+            ('database-service-regressions', {'seat-mcp-contracts-2'}),
+        ):
+            self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
+            for path in ['database/functions/eshop/finalize_ticket_order.sql',
+                         'tools/festapp/src/operations.mjs',
+                         'tools/festapp/scripts/test-postgres.mjs',
+                         'database/tests/helpers/authorization_context_reference.sql']:
+                self.assertTrue(groups.issubset(selection.unit_owners(path,lane,CONTRACT)),path)
 
 
 class VersionProjectionTest(unittest.TestCase):
@@ -121,10 +136,11 @@ class VersionProjectionTest(unittest.TestCase):
                 git('add','.');git('commit','-qm',version);return git('rev-parse','HEAD')
             before=commit('0.20.625');after=commit('0.20.626')
             with patch.object(selection,'ROOT',root),selection.lookup():
-                for lane,unit in [('wix-checkout-compatibility','wix-cms'),('seat-checkout','seat-mcp-prepare'),
-                                  ('seat-checkout','seat-mcp-authorization'),('seat-checkout','seat-mcp-contracts')]:
+                for lane,unit in [('wix-checkout-compatibility','wix-cms'),('mcp-database-contracts','seat-mcp-prepare'),
+                                  ('mcp-database-contracts','seat-mcp-authorization'),('mcp-database-contracts','seat-mcp-contracts-1'),
+                                  ('database-service-regressions','seat-mcp-contracts-2')]:
                     self.assertEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)
-                for lane,unit in [('web-startup','web-startup'),('seat-checkout','seat-browser')]:
+                for lane,unit in [('server-policy','web-startup'),('seat-checkout','seat-browser')]:
                     self.assertNotEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)
 
     def entry(self,body,path='web_client/package.json',rule='package-version',mode=b'100644'):
@@ -192,6 +208,17 @@ class ScopedPolicyTest(unittest.TestCase):
             self.assertNotEqual(selection.fingerprint(BASE,'wix-checkout-compatibility',CONTRACT),
                                 selection.fingerprint(SHA,'wix-checkout-compatibility',changed))
 
+    def test_independent_group_input_edit_preserves_sibling_proof(self):
+        changed = copy.deepcopy(CONTRACT)
+        job = changed['jobs']['server-policy']
+        image = next(group for group in job['inputGroups'] if 'image-storage' in group['steps'])
+        image['inputs'].append('automation/image-migration/example.txt')
+        with selection.lookup(), patch.object(selection, 'tree', return_value=[]):
+            self.assertEqual(selection.fingerprint(BASE,'server-policy',CONTRACT,'web-startup'),
+                             selection.fingerprint(SHA,'server-policy',changed,'web-startup'))
+            self.assertNotEqual(selection.fingerprint(BASE,'server-policy',CONTRACT,'image-storage'),
+                                selection.fingerprint(SHA,'server-policy',changed,'image-storage'))
+
     def test_raw_registry_is_projected_but_executable_ci_remains_trusted(self):
         def entries(sha):
             return b'100644 blob '+sha.encode()+b'\t'+selection.POLICY.encode()+b'\0'+b'100644 blob stable\tautomation/ci/run.py\0'
@@ -208,11 +235,14 @@ class ScopedPolicyTest(unittest.TestCase):
 class InventoryPreflightTest(unittest.TestCase):
     def test_provisioning_follows_selected_executors(self):
         flags=selection.provisioning_flags
-        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False))
-        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False))
+        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=True,python_yaml=False))
         self.assertTrue(flags(['ticket-core'],CONTRACT)['flutter'])
-        self.assertEqual(flags(['seat-mcp-contracts'],CONTRACT),dict(flutter=False,sql=True,browser=False))
-        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True))
+        self.assertTrue(flags(['image-storage'],CONTRACT)['python_yaml'])
+        self.assertTrue(flags(['mcp-edge-policy'],CONTRACT)['deno'])
+        self.assertFalse(flags(['web-startup'],CONTRACT)['deno'])
+        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True,deno=False,python_yaml=False))
         with self.assertRaises(KeyError):flags(['unregistered-executor'],CONTRACT)
 
     def test_registration_failure_prevents_selection_and_reuse(self):
@@ -351,25 +381,29 @@ class ReusePolicyTest(unittest.TestCase):
     def setUp(self):
         import copy
         self.contract = copy.deepcopy(CONTRACT)
+        lane = self.contract['jobs']['server-policy']
+        image_group = next(group for group in lane['inputGroups'] if 'image-storage' in group['steps'])
+        lane['steps'] = image_group['steps'][:]
+        lane['inputGroups'] = [image_group]
         self.source = BASE
         self.run = dict(id=123, run_number=1, run_attempt=1, head_sha=BASE,
                         repository={'id':7}, head_repository={'id':7}, head_branch='main',
                         event='push', status='completed', conclusion='success',
-                        path='.github/workflows/image-service-regressions.yml',
+                        path='.github/workflows/image-upload-regressions.yml',
                         created_at=datetime.now(timezone.utc).isoformat(), html_url=URL)
-        self.job = dict(id=456, run_id=123, run_attempt=1, name='image-contract',
+        self.job = dict(id=456, run_id=123, run_attempt=1, name='server-policy',
                         status='completed', conclusion='success', html_url=URL+'/job/456',
                         steps=[dict(name='All lane tests executed', conclusion='success'),dict(name='Lane coverage verified',conclusion='success')])
         self.tools = dict(RUNNER_OS='Linux',RUNNER_ARCH='X64',ImageOS='ubuntu24',ImageVersion='fixture',
                           node='22.23.4',pnpm='11.24.0',python='fixture')
         self.receipt = dict(complete=True, dirty=False, inputsUnchanged=True,
-                            selectedJobs=['image-contract'],
-                            units={unit: {'status':'PASS','state':'executed','inputSha256':'same-inputs'} for unit in CONTRACT['jobs']['image-contract']['steps']},
+                            selectedJobs=['server-policy'],
+                            units={unit: {'status':'PASS','state':'executed','inputSha256':'same-inputs'} for unit in lane['steps']},
                             execution=dict(schemaVersion=2,state='executed',repositoryId=7,runId=123,
-                                attempt=1,jobId=456,lane='image-contract',event='push',workflow=self.run['path'],
+                                attempt=1,jobId=456,lane='server-policy',event='push',workflow=self.run['path'],
                                 definition='trusted',checkoutSha=BASE,tree='tested-tree',toolchain=self.tools,
                                 inputSha256='same-inputs',inventory=CONTRACT['knownTestInputs']))
-        self.artifact = dict(id=99,name='ci-image-contract-1',expired=False,
+        self.artifact = dict(id=99,name='ci-server-policy-1',expired=False,
                              workflow_run=dict(id=123,repository_id=7,head_repository_id=7,head_sha=BASE))
         self.missing = False
         self.corrupt = False
@@ -378,7 +412,7 @@ class ReusePolicyTest(unittest.TestCase):
         self.original_contract=copy.deepcopy(self.contract)
 
     def evaluate(self, fingerprint=None, runs=None, definition=None, consume=False,
-                 expire_endpoint=None, expire_unit=None):
+                 expire_endpoint=None, expire_unit=None, jobs=None):
         import hashlib, io, zipfile
         archive = io.BytesIO()
         with zipfile.ZipFile(archive,'w') as bundle:
@@ -390,12 +424,18 @@ class ReusePolicyTest(unittest.TestCase):
                 selection.LOOKUP.get()['deadline']=0
                 raise selection.BudgetExpired('fixture lookup deadline')
             if not endpoint: return {'id':7}
-            if endpoint=='actions/runs/123': return self.run
+            if endpoint.startswith('actions/runs/') and endpoint.count('/') == 2:
+                run_id = int(endpoint.rsplit('/', 1)[1])
+                if run_id == self.run['id']:
+                    return self.run
+                return next(run for run in runs if run['id'] == run_id)
             if endpoint.startswith('actions/workflows/'):
                 return {'workflow_runs':runs if runs is not None else [self.run]}
             if endpoint.endswith('/artifacts?per_page=100'):
                 return {'artifacts':[] if self.missing else [self.artifact]}
-            if '/jobs?' in endpoint:return {'jobs':[self.job]}
+            if '/jobs?' in endpoint:
+                run_id = int(endpoint.split('/')[2])
+                return {'jobs': (jobs or {}).get(run_id, [self.job])}
             raise AssertionError(endpoint)
         def git(*args):
             if args[:2] == ('rev-parse',BASE+'^{tree}'):return b'tested-tree'
@@ -423,11 +463,11 @@ class ReusePolicyTest(unittest.TestCase):
              patch.object(selection,'toolchain',return_value=self.tools), \
              patch.object(selection,'api',side_effect=api), \
              patch.object(selection,'command',return_value=payload+(b'changed' if self.corrupt else b'')):
-            result=selection.decide('image-contract','push',None,'refs/heads/main',SHA,
+            result=selection.decide('server-policy','push',None,'refs/heads/main',SHA,
                                     'fixture/repo',self.contract,self.contract)
             if consume:
-                result.update(schemaVersion=2,sha=SHA,lane='image-contract',definition='trusted')
-                with selection.lookup():selection.verify_plan(result,'image-contract',SHA,'fixture/repo',self.contract)
+                result.update(schemaVersion=2,sha=SHA,lane='server-policy',definition='trusted')
+                with selection.lookup():selection.verify_plan(result,'server-policy',SHA,'fixture/repo',self.contract)
             return result
 
     def test_direct_executed_receipt_and_identical_inputs(self):
@@ -460,9 +500,9 @@ class ReusePolicyTest(unittest.TestCase):
         import hashlib
         def digest(sha,lane,policy,unit=None):
             return hashlib.sha256(selection.policy_inputs(lane,policy,unit)).hexdigest()
-        self.receipt['execution']['inputSha256']=digest(BASE,'image-contract',self.original_contract)
+        self.receipt['execution']['inputSha256']=digest(BASE,'server-policy',self.original_contract)
         for name,row in self.receipt['units'].items():
-            row['inputSha256']=digest(BASE,'image-contract',self.original_contract,name)
+            row['inputSha256']=digest(BASE,'server-policy',self.original_contract,name)
         self.contract['steps']['image-policy']['script']+='\nnew meaningful test'
         result=self.evaluate(fingerprint=digest,consume=True)
         self.assertIn('image-policy',result['execute'])
@@ -490,12 +530,58 @@ class ReusePolicyTest(unittest.TestCase):
                 self.assertTrue(self.evaluate()['run']);self.run[field]=old
 
     def test_pending_failure_skipped_and_newer_attempt_never_hide_behind_old_success(self):
-        for field,value in [('status','in_progress'),('conclusion','failure'),('conclusion','skipped')]:
+        for field,value in [('status','in_progress'),('conclusion','skipped'),('conclusion','cancelled')]:
             old=self.run[field];self.run[field]=value
             self.assertTrue(self.evaluate()['run']);self.run[field]=old
         older=dict(self.run)
         self.run['run_attempt']=2;self.run['conclusion']='failure'
         self.assertTrue(self.evaluate(runs=[older,self.run])['run'])
+
+    def test_completed_successful_lane_can_reuse_despite_a_failed_sibling(self):
+        self.run['conclusion'] = 'failure'
+        sibling = {**self.job, 'id': 457, 'name': 'client-contract', 'conclusion': 'failure'}
+        result = self.evaluate(jobs={123: [self.job, sibling]}, consume=True)
+        self.assertFalse(result['run'])
+        self.assertEqual(set(result['reuse']), set(self.receipt['units']))
+        self.job['conclusion'] = 'failure'
+        self.assertTrue(self.evaluate(jobs={123: [self.job, sibling]})['run'])
+
+    def test_skipped_pr_without_regression_steps_does_not_block_valid_evidence(self):
+        draft = {**self.run, 'id':124, 'run_number':2, 'event':'pull_request',
+                 'conclusion':'skipped'}
+        job = {**self.job, 'run_id':124, 'conclusion':'skipped', 'steps':[]}
+        result = self.evaluate(runs=[self.run, draft], jobs={124:[job]}, consume=True)
+        self.assertFalse(result['run'])
+        self.assertEqual({proof['runId'] for proof in result['reuse'].values()}, {123})
+        for change in ({'steps':self.job['steps']}, {'run_attempt':2}):
+            result = self.evaluate(runs=[self.run, draft], jobs={124:[{**job, **change}]})
+            self.assertTrue(result['run'])
+            self.assertFalse(result['reuse'])
+
+    def test_failed_main_blocks_only_matching_units(self):
+        for policy in (self.contract, self.original_contract):
+            policy['steps']['image-storage']['after'] = []
+        failed = {**self.run, 'id':124, 'run_number':2, 'head_sha':'d'*40,
+                  'conclusion':'failure'}
+        def digest(sha, lane, policy, unit=None):
+            return 'other-inputs' if sha == failed['head_sha'] and unit != 'image-storage' else 'same-inputs'
+        failed_job = {**self.job, 'run_id': failed['id'], 'conclusion': 'failure'}
+        result = self.evaluate(fingerprint=digest, runs=[self.run, failed], jobs={124: [failed_job]}, consume=True)
+        self.assertEqual(result['execute'], ['image-storage'])
+        self.assertEqual(set(result['reuse']), {'image-install','image-policy','image-preflight'})
+
+    def test_older_failed_pr_does_not_invalidate_newer_verified_coverage(self):
+        for policy in (self.contract, self.original_contract):
+            policy['steps']['image-storage']['after'] = []
+        self.run['run_number'] = 2
+        failed = {**self.run, 'id':122, 'run_number':1, 'event':'pull_request',
+                  'conclusion':'failure'}
+        def digest(sha, lane, policy, unit=None):
+            return 'changed' if sha == SHA and unit == 'image-storage' else 'same-inputs'
+        failed_job = {**self.job, 'run_id': failed['id'], 'conclusion': 'failure'}
+        result = self.evaluate(fingerprint=digest, runs=[failed, self.run], jobs={122: [failed_job]}, consume=True)
+        self.assertEqual(result['execute'], ['image-storage'])
+        self.assertEqual(set(result['reuse']), {'image-install','image-policy','image-preflight'})
 
     def test_artifact_api_binding_digest_deletion_and_payload(self):
         self.missing=True;self.assertTrue(self.evaluate()['run']);self.missing=False
@@ -530,7 +616,7 @@ class ReusePolicyTest(unittest.TestCase):
         for error in [OSError('offline'),ValueError('bad JSON'),KeyError('missing'),
                       subprocess.CalledProcessError(1,['gh','api'])]:
             with patch.object(selection,'reusable',side_effect=error):
-                self.assertTrue(selection.decide('image-contract','push',None,'refs/heads/main',SHA,
+                self.assertTrue(selection.decide('server-policy','push',None,'refs/heads/main',SHA,
                                                 'fixture/repo',CONTRACT,CONTRACT)['run'])
 
     def test_mixed_coverage_consumes_only_direct_unit_proofs(self):
@@ -541,7 +627,7 @@ class ReusePolicyTest(unittest.TestCase):
             return 'changed' if sha==SHA and unit=='image-storage' else 'same-inputs'
         result=self.evaluate(fingerprint=digest,consume=True)
         self.assertEqual(result['execute'],['image-storage'])
-        self.assertEqual(set(result['reuse']),set(self.contract['jobs']['image-contract']['steps'])-{'image-storage'})
+        self.assertEqual(set(result['reuse']),set(self.contract['jobs']['server-policy']['steps'])-{'image-storage'})
 
     def test_check_order_is_not_an_unnecessary_runtime_dependency(self):
         import copy
@@ -559,7 +645,7 @@ class ReusePolicyTest(unittest.TestCase):
         result['reuse']['image-install']=baseline['reuse']['image-install']
         with patch.object(selection,'definition',return_value='trusted'):
             with self.assertRaisesRegex(ValueError,'Missing execution dependency'):
-                selection.verify_plan(result,'image-contract',SHA,'fixture/repo',self.contract)
+                selection.verify_plan(result,'server-policy',SHA,'fixture/repo',self.contract)
 
     def test_budget_expiry_keeps_verified_units_and_executes_changed_remainder(self):
         self.contract['steps']['image-storage']['after']=[]
@@ -577,13 +663,13 @@ class ReusePolicyTest(unittest.TestCase):
 
     def test_budget_never_admits_a_unit_whose_verification_did_not_finish(self):
         for policy in (self.contract,self.original_contract):
-            for unit in policy['jobs']['image-contract']['steps']:policy['steps'][unit]['after']=[]
+            for unit in policy['jobs']['server-policy']['steps']:policy['steps'][unit]['after']=[]
         result=self.evaluate(expire_unit='image-policy',consume=True)
         self.assertEqual(set(result['reuse']),{'image-install'})
         self.assertEqual(set(result['execute']),{'image-policy','image-preflight','image-storage'})
         result=self.evaluate(expire_endpoint='actions/runs/123',consume=True)
         self.assertFalse(result['reuse'])
-        self.assertEqual(set(result['execute']),set(self.contract['jobs']['image-contract']['steps']))
+        self.assertEqual(set(result['execute']),set(self.contract['jobs']['server-policy']['steps']))
 
     def test_mixed_receipt_cannot_refresh_a_reused_units_origin(self):
         self.receipt['units']['image-storage']['state']='reused'
@@ -618,23 +704,23 @@ class ReusePolicyTest(unittest.TestCase):
         self.assertGreater(result['metrics']['downloadedBytes'],0)
 
     def test_plan_requires_complete_disjoint_coverage_and_dependency_closure(self):
-        units=self.contract['jobs']['image-contract']['steps']
-        plan=dict(schemaVersion=2,sha=SHA,lane='image-contract',definition='trusted',execute=units,reuse={})
+        units=self.contract['jobs']['server-policy']['steps']
+        plan=dict(schemaVersion=2,sha=SHA,lane='server-policy',definition='trusted',execute=units,reuse={})
         import copy
         with patch.object(selection,'definition',return_value='trusted'):
-            selection.verify_plan(plan,'image-contract',SHA,'fixture/repo',self.contract)
+            selection.verify_plan(plan,'server-policy',SHA,'fixture/repo',self.contract)
             for field,value in [('execute',[]),('execute',[units[-1]]),('sha',BASE),('schemaVersion',1),('lane','other')]:
                 changed=copy.deepcopy(plan);changed[field]=value
-                with self.assertRaises(ValueError):selection.verify_plan(changed,'image-contract',SHA,'fixture/repo',self.contract)
+                with self.assertRaises(ValueError):selection.verify_plan(changed,'server-policy',SHA,'fixture/repo',self.contract)
 
     def test_manual_review_transition_and_merge_queue_execute(self):
         with patch.object(selection,'reusable') as reuse:
             for event,action,ref in [('pull_request','ready_for_review','refs/pull/1/merge'),
                                      ('workflow_dispatch',None,'refs/heads/main'),
                                      ('merge_group',None,'refs/heads/queue')]:
-                self.assertTrue(selection.decide('image-contract',event,action,ref,SHA,
+                self.assertTrue(selection.decide('server-policy',event,action,ref,SHA,
                                                 'fixture/repo',CONTRACT,CONTRACT)['run'])
-            self.assertTrue(selection.decide('image-contract','push',None,'refs/heads/main',SHA,
+            self.assertTrue(selection.decide('server-policy','push',None,'refs/heads/main',SHA,
                                             'fixture/repo',CONTRACT,CONTRACT,attempt=2)['run'])
             reuse.assert_not_called()
 
@@ -653,16 +739,16 @@ class SelectorBudgetTest(unittest.TestCase):
             time.sleep(.5)
             self.assertFalse(marker.exists())
         with patch.object(selection,'reusable',side_effect=selection.BudgetExpired()):
-            result=selection.decide('image-contract','push',None,'refs/heads/main',SHA,'fixture/repo',CONTRACT,CONTRACT)
+            result=selection.decide('server-policy','push',None,'refs/heads/main',SHA,'fixture/repo',CONTRACT,CONTRACT)
             self.assertTrue(result['run']);self.assertIn('budget',result['reason'])
 
     def test_tree_cache_is_scoped_to_one_lookup(self):
         with patch.object(selection,'git',return_value=b'') as git:
             with selection.lookup():
-                for unit in CONTRACT['jobs']['image-contract']['steps']:
-                    selection.fingerprint(SHA,'image-contract',CONTRACT,unit)
+                for unit in CONTRACT['jobs']['server-policy']['steps']:
+                    selection.fingerprint(SHA,'server-policy',CONTRACT,unit)
             self.assertEqual(git.call_count,1)
-            with selection.lookup():selection.fingerprint(SHA,'image-contract',CONTRACT)
+            with selection.lookup():selection.fingerprint(SHA,'server-policy',CONTRACT)
             self.assertEqual(git.call_count,2)
 
 

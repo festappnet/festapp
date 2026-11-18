@@ -83,6 +83,12 @@ def known_tests(contract):
     return cached(('known-tests',id(contract)),lambda:set(contract['knownTestInputs']))
 
 
+def lane_inputs(lane):
+    yield from lane.get('inputs', [])
+    for group in lane.get('inputGroups', []):
+        yield from group['inputs']
+
+
 def _owners(path, contract):
     # The same map governs local affected selection and hosted input digests.
     if (path.startswith(('automation/ci/', '.github/workflows/')) or
@@ -90,7 +96,7 @@ def _owners(path, contract):
              and path not in known_tests(contract))):
         return set(contract['jobs'])
     matches = {name for name, lane in contract['jobs'].items()
-               if any(fnmatch.fnmatch(path, pattern) for pattern in lane['inputs'])}
+               if any(fnmatch.fnmatch(path, pattern) for pattern in lane_inputs(lane))}
     if matches:
         return matches
     if any(fnmatch.fnmatch(path, pattern) for pattern in contract.get('independentInputs', [])):
@@ -113,8 +119,22 @@ def _unit_owners(path, lane, policy):
     if (path.startswith(('automation/ci/','.github/workflows/')) or
             (path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart')) and path not in known_tests(policy))):
         return set(units)
-    matches={unit for unit in units if any(fnmatch.fnmatch(path,pattern) for pattern in
-             policy['steps'][unit].get('inputs',policy['jobs'][lane]['inputs']))}
+    job = policy['jobs'][lane]
+    def matches_inputs(patterns):
+        return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+
+    def group_owners(group):
+        inputs = group['inputs']
+        matched = {unit for unit in group['steps']
+                   if matches_inputs(policy['steps'][unit].get('inputs', inputs))}
+        return matched or set(group['steps'])
+
+    if 'inputGroups' not in job:
+        return group_owners(job)
+    matches = set()
+    for group in job['inputGroups']:
+        if matches_inputs(group['inputs']):
+            matches.update(group_owners(group))
     return matches or set(units)
 
 
@@ -134,7 +154,13 @@ def policy_inputs(lane, policy, unit=None):
             if expanded==selected: break
             selected=expanded
         result={key:value for key,value in policy.items() if key not in ('jobs','steps','knownTestInputs')}
-        result['job']={key:value for key,value in policy['jobs'][lane].items() if key!='steps'}
+        job = policy['jobs'][lane]
+        result['job'] = {key: value for key, value in job.items() if key != 'steps'}
+        if unit is not None and 'inputGroups' in job:
+            result['job']['inputGroups'] = [
+                {**group, 'steps': sorted(selected.intersection(group['steps']))}
+                for group in job['inputGroups'] if selected.intersection(group['steps'])
+            ]
         result['steps']={name:{**policy['steps'][name],
             'after':[dep for dep in policy['steps'][name].get('after',[]) if dep in units]}
             for name in sorted(selected)}
@@ -332,13 +358,19 @@ def validate_checkout(source, run):
         git('merge-base', '--is-ancestor', source, 'origin/main')
 
 
-def job_for(repository, run, lane):
+def lane_job(repository, run, lane):
     jobs=api(repository,f'actions/runs/{run["id"]}/attempts/{run["run_attempt"]}/jobs?per_page=100')['jobs']
     matches=[job for job in jobs if job['name']==lane]
     if len(matches)!=1: raise ValueError('Execution job identity unavailable')
     job=matches[0]
-    if (job['run_id']!=run['id'] or job['run_attempt']!=run['run_attempt'] or
-            job['status']!='completed' or job['conclusion']!='success'):
+    if job['run_id'] != run['id'] or job['run_attempt'] != run['run_attempt']:
+        raise ValueError('Lane job belongs to a different run or attempt')
+    return job
+
+
+def job_for(repository, run, lane):
+    job = lane_job(repository, run, lane)
+    if job['status'] != 'completed' or job['conclusion'] != 'success':
         raise ValueError('Latest lane attempt did not pass')
     return job
 
@@ -359,7 +391,7 @@ def reusable(lane, sha, repository, contract, policy):
     workflow=contract['jobs'][lane]['workflow']
     runs=api(repository,f'actions/workflows/{workflow}/runs?per_page=100')['workflow_runs']
     cutoff=datetime.now(timezone.utc)-timedelta(days=policy['reusePolicy']['maxAgeDays'])
-    expired=False
+    stop_reason = None
     try:
         for run in sorted(runs,key=lambda r:(r['run_number'],r['run_attempt']),reverse=True):
             if str(run['id'])==os.environ.get('GITHUB_RUN_ID'): continue
@@ -376,18 +408,28 @@ def reusable(lane, sha, repository, contract, policy):
             if (run['id']!=expected_id or run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or run['event'] not in ('push','workflow_dispatch','pull_request') or run['path']!=f'.github/workflows/{workflow}'):
                 raise ValueError('Fresh run binding changed')
             if datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff: continue
+            if run['status'] == 'completed' and run['conclusion'] == 'skipped':
+                job = lane_job(repository, run, lane)
+                if job['status'] == 'completed' and job['conclusion'] == 'skipped' and job['steps'] == []:
+                    # Draft workflows never entered the regression job.
+                    continue
             ensure_commit(run['head_sha'])
-            if run['status']!='completed' or run['conclusion']!='success':
-                if run['event']=='pull_request' or any(fingerprint(run['head_sha'],lane,policy,u)==current[u] for u in remaining):
-                    return {'run':True,'reason':'Newer matching or unresolved workflow did not pass'}
-                continue
             # For main the API SHA is the checkout. Reject mismatches before ZIP
             # download. PRs MUST use the receipt's validated synthetic merge tree.
             candidates=remaining if run['event']=='pull_request' else {
                 u for u in remaining if fingerprint(run['head_sha'],lane,policy,u)==current[u]}
             if not candidates: continue
+            job = None
+            if run['status'] == 'completed' and run['conclusion'] in ('success','failure'):
+                job = lane_job(repository, run, lane)
+            if job is None or job['status'] != 'completed' or job['conclusion'] != 'success':
+                # Block older evidence only for unresolved inputs this run may
+                # have tested. Evidence from newer runs is already verified.
+                remaining.difference_update(candidates)
+                stop_reason = 'Newer matching or unresolved workflow did not pass'
+                if not remaining: break
+                continue
             if run['event']!='pull_request' and definition(run['head_sha'])!=trusted: continue
-            job=job_for(repository,run,lane)
             if not direct_marker(job): continue
             receipt,artifact=read_artifact(repository,run,lane)
             # Old lane receipts never supply unit evidence. Mixed receipts supply
@@ -404,10 +446,15 @@ def reusable(lane, sha, repository, contract, policy):
     except BudgetExpired:
         # Only fully verified proofs have been admitted. Older, unvisited runs
         # cannot supersede them; unresolved units and their preparation execute.
-        expired=True
+        stop_reason = 'Selector budget exhausted'
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError, AttributeError,
+            IndexError, RuntimeError, zipfile.BadZipFile):
+        # A historical candidate with unavailable or invalid provenance cannot
+        # supply evidence. Run unresolved units, retaining verified newer rows.
+        stop_reason = 'Reuse evidence unavailable'
     # Environment preparation cannot be reused as installed state. Any selected
     # consumer reruns its dependency closure even if a dependency has a PASS.
-    selected=set(remaining)
+    selected=set(units)-proofs.keys()
     while True:
         expanded=selected|{dep for u in selected for dep in contract['steps'][u].get('requires',contract['steps'][u].get('after',[])) if dep in units}
         if expanded==selected: break
@@ -415,9 +462,11 @@ def reusable(lane, sha, repository, contract, policy):
     proofs={u:p for u,p in proofs.items() if u not in selected}
     result={'run':bool(selected),'reason':'Verified unit coverage' if proofs else 'No verified direct unit evidence',
             'execute':[u for u in units if u in selected],'reuse':proofs}
-    if expired:
-        result['reason']='Selector budget exhausted; retained verified coverage' if proofs else 'Selector budget exhausted; running tests'
-        result['budgetExhausted']=True
+    if stop_reason and selected:
+        outcome = 'retained verified coverage' if proofs else 'running tests'
+        result['reason'] = f'{stop_reason}; {outcome}'
+        if stop_reason == 'Selector budget exhausted':
+            result['budgetExhausted'] = True
     if not selected:
         first=next(iter(proofs.values()))
         result.update(source=first['source'],fingerprint=lane_input,url=first['url'],
@@ -442,7 +491,7 @@ def verify_plan(plan, lane, sha, repository, contract):
         run=cached(('run',proof['runId']),lambda:api(repository,f'actions/runs/{proof["runId"]}'))
         if (run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or
                 run['event'] not in ('push','workflow_dispatch','pull_request') or run['status']!='completed' or
-                run['conclusion']!='success' or run['run_attempt']!=proof['attempt'] or
+                run['conclusion'] not in ('success','failure') or run['run_attempt']!=proof['attempt'] or
                 run['path']!='.github/workflows/'+contract['jobs'][lane]['workflow'] or
                 datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<datetime.now(timezone.utc)-timedelta(days=contract['reusePolicy']['maxAgeDays'])):
             raise ValueError('Unit source run is stale or foreign')
@@ -482,7 +531,9 @@ def provisioning_flags(execute, contract):
                          'fvm flutter ' in row['script'] or 'fvm dart ' in row['script'] for row in rows),
             'sql':any(unit in contract.get('databaseUnits',[]) or
                       contract['steps'][unit].get('resources',{}).get('dbCluster') for unit in execute),
-            'browser':any(row.get('resources',{}).get('browser') for row in rows)}
+            'browser':any(row.get('resources',{}).get('browser') for row in rows),
+            'deno':any(re.search(r'\bdeno (?:test|check|run)\b', row['script']) for row in rows),
+            'python_yaml':bool({'image-storage','deploy-contract'}.intersection(execute))}
 
 
 def main():
@@ -524,7 +575,7 @@ def main():
     print(json.dumps(result, sort_keys=True))
     if os.environ.get('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-            output.write(f'run={str(result["run"]).lower()}\nfull={str(len(result["execute"])==len(units)).lower()}\ncms={str("wix-cms" in result["execute"]).lower()}\n')
+            output.write(f'run={str(result["run"]).lower()}\nfull={str(len(result["execute"])==len(units)).lower()}\ncms={str(bool({"wix-cms", "wordpress-cms"}.intersection(result["execute"]))).lower()}\n')
             for name,value in provisioning_flags(result['execute'],contract).items():
                 output.write(f'{name}={str(bool(value)).lower()}\n')
     if os.environ.get('GITHUB_STEP_SUMMARY'):

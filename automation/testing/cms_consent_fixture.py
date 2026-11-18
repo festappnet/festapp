@@ -22,12 +22,33 @@ import uuid
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'automation/ci'))
+sys.path.insert(0,str(ROOT/'automation'))
 from telemetry import phase as timed_phase, emit
 from wordpress_runtime import WordPress
+from cms_fixture_rest import prepare_rest_image, start_rest, stop_rest
+from cms_fixture_postgres import CmsPostgres
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--base-port',type=int,default=int(os.environ.get('FESTAPP_CMS_FIXTURE_BASE_PORT','61000')))
+parser.add_argument('--suite', choices=('all', 'wordpress', 'joomla-wix-html'), default='all')
+parser.add_argument('--list-cases', action='store_true', help='List the selected cases without starting services')
 parser.add_argument('--keep',action='store_true',help='Keep only this owned environment after verification for diagnosis')
 args=parser.parse_args()
+matrix = [
+ (0,'wordpress',31,'cli','chromium',False),
+ (1,'wordpress',31,'cli','firefox',False),
+ (2,'wordpress',31,'cli','webkit',False),
+ (3,'wordpress',36,'tests-cli','chromium',False),
+ (4,'joomla',34,'5','chromium',False),
+ (5,'joomla',35,'6','chromium',False),
+ (6,'wix',37,None,'chromium',False),
+ (7,'html',38,None,'chromium',False),
+ (8,'joomla',34,'5','chromium',True),
+]
+cases = [case for case in matrix if args.suite == 'all' or (case[1] == 'wordpress') == (args.suite == 'wordpress')]
+if args.list_cases:
+ print(json.dumps(cases));sys.exit(0)
+needs_wordpress = any(case[1] == 'wordpress' for case in cases)
+needs_joomla = any(case[1] == 'joomla' for case in cases)
 base=args.base_port
 if base<1024 or base>65480:raise SystemExit('Invalid loopback port block')
 for offset in [1,11,12,15,16,20,21,22,23,24,27,29,31,32,33,34,35,36,37,38]:
@@ -45,7 +66,7 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','integrations/wordpress/core-archives.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
@@ -54,7 +75,10 @@ started={'backend':False,'wordpress':False,'joomla':False}
 
 def run(command,cwd=ROOT,extra=None,capture=False,label='command'):
  with timed_phase('cms.'+label), log.open('a') as output:
-  result=subprocess.run([str(v) for v in command],cwd=cwd,env={**env,**(extra or {})},stdout=subprocess.PIPE if capture else output,stderr=output,text=True)
+  try:
+   result=subprocess.run([str(v) for v in command],cwd=cwd,env={**env,**(extra or {})},stdout=subprocess.PIPE if capture else output,stderr=output,text=True,timeout=180)
+  except subprocess.TimeoutExpired as error:
+   raise RuntimeError(f'{label} exceeded 180 seconds; private log: {log}') from error
   if result.returncode:raise RuntimeError(f'{Path(str(command[0])).name} failed ({result.returncode}); private log: {log}')
  return result.stdout if capture else ''
 
@@ -71,13 +95,14 @@ def sql(query):
 
 wp=fixture/'integrations/wordpress';joomla=fixture/'integrations/joomla'
 wordpress=None
+database=CmsPostgres(project, base+22, run)
 try:
  phase('Preparing owned CMS package copies and frozen dependencies')
- for cms in ['wordpress','joomla']:
+ for cms in (['wordpress','joomla'] if needs_joomla else ['wordpress']):
   target=fixture/'integrations'/cms;target.mkdir(parents=True)
   for name in ['scripts','shared','tests']:
    shutil.copytree(ROOT/'integrations'/cms/name,target/name,ignore=shutil.ignore_patterns('__pycache__','node_modules'))
-  for name in ['products.json','translations.json','package.json','pnpm-lock.yaml','pnpm-workspace.yaml','.wp-env.json','docker-images.json']:
+  for name in ['products.json','translations.json','package.json','pnpm-lock.yaml','pnpm-workspace.yaml','.wp-env.json','docker-images.json','core-archives.json']:
    source=ROOT/'integrations'/cms/name
    if source.is_file():shutil.copy2(source,target/name)
   (target/'evidence').mkdir()
@@ -88,30 +113,33 @@ try:
  (fixture/'integrations/measurement').mkdir()
  shutil.copy2(ROOT/'integrations/measurement/consent-export.php',fixture/'integrations/measurement/consent-export.php')
  service=f'https://127.0.0.1:{base+32}'
- for cms in ['wordpress','joomla']:
+ for cms in [name for name, enabled in [('wordpress',needs_wordpress),('joomla',needs_joomla)] if enabled]:
   p=fixture/'integrations'/cms/'products.json';products=json.loads(p.read_text())
   for product in products:product['origin']=service
   p.write_text(json.dumps(products,indent=2)+'\n')
- # Test product origin has a loopback port; renderer/parser/runtime stay unchanged.
- build=wp/'scripts/build-plugins.py';text=build.read_text();old="r'https://[a-z0-9.-]+'";assert old in text
- build.write_text(text.replace(old,"r'https://[a-z0-9.-]+(?::[0-9]+)?'"))
- config=json.loads((wp/'.wp-env.json').read_text());config['port']=base+11;config['testsPort']=base+12
- config['config'].update({'WP_HOME':f'https://127.0.0.1:{base+31}','WP_SITEURL':f'https://127.0.0.1:{base+31}'})
- config['env']['tests']['config']={'WP_HOME':f'https://127.0.0.1:{base+36}','WP_SITEURL':f'https://127.0.0.1:{base+36}'}
- (wp/'.wp-env.json').write_text(json.dumps(config,indent=2)+'\n')
- wordpress=WordPress(wp,project,run)
- run(['python3','scripts/package.py'],wp);run(['python3','scripts/package.py'],joomla)
- run(['node','scripts/setup-backend.mjs'],wp)
+ if needs_wordpress:
+  # Test product origin has a loopback port; renderer/parser/runtime stay unchanged.
+  build=wp/'scripts/build-plugins.py';text=build.read_text();old="r'https://[a-z0-9.-]+'";assert old in text
+  build.write_text(text.replace(old,"r'https://[a-z0-9.-]+(?::[0-9]+)?'"))
+  config=json.loads((wp/'.wp-env.json').read_text());config['port']=base+11;config['testsPort']=base+12
+  config['config'].update({'WP_HOME':f'https://127.0.0.1:{base+31}','WP_SITEURL':f'https://127.0.0.1:{base+31}'})
+  config['env']['tests']['config']={'WP_HOME':f'https://127.0.0.1:{base+36}','WP_SITEURL':f'https://127.0.0.1:{base+36}'}
+  (wp/'.wp-env.json').write_text(json.dumps(config,indent=2)+'\n')
+  wordpress=WordPress(wp,project,run)
+  run(['python3','scripts/package.py'],wp)
+ if needs_joomla:run(['python3','scripts/package.py'],joomla)
+ (wp/'.private').mkdir(mode=0o700,exist_ok=True)
  phase('Starting independent owned services and browser dependencies concurrently')
  jprefix=project+'-joomla'
- def prepare_backend():
+ def prepare_backend(rest_platform):
   started['backend']=True
-  run(['supabase','start','--workdir','.private/backend','--exclude','realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp,label='backend.start')
-  run(['bash','scripts/bootstrap-backend.sh'],wp,label='backend.bootstrap')
+  with timed_phase('cms.backend.start'):database.start()
+  run(['bash','scripts/bootstrap-backend.sh','--database-only'],wp,label='backend.bootstrap')
   sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
- def prepare_wordpress():
+  start_rest(rest_platform.result(), wp, project, database.runtime.container, database.network, base + 21, run)
+ def prepare_wordpress(core_archive):
   started['wordpress']=True
-  with timed_phase('cms.wordpress.start'):wordpress.start()
+  with timed_phase('cms.wordpress.start'):wordpress.start(core_archive)
   products=json.loads((wp/'products.json').read_text())
   for cli in ['cli','tests-cli']:
    archives=[f'/var/www/html/wp-content/vo-artifacts/{p["slug"]}-{p["version"]}.zip' for p in products]
@@ -132,10 +160,44 @@ try:
   browser_cache=Path(os.environ.get('PLAYWRIGHT_BROWSERS_PATH',Path.home()/('Library/Caches/ms-playwright' if sys.platform=='darwin' else '.cache/ms-playwright')))
   def cache_bytes():return sum(p.stat().st_size for p in browser_cache.rglob('*') if p.is_file()) if browser_cache.exists() else 0
   cache_before=cache_bytes();browser_started=time.monotonic()
-  run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps','chromium','firefox','webkit'],label='browsers.install')
+  engines = list(dict.fromkeys(case[4] for case in cases))
+  shell_only = ['--only-shell'] if engines == ['chromium'] else []
+  playwright=['pnpm','--dir',ROOT/'web_client','exec','playwright']
+  run([*playwright,'install',*shell_only,*engines],label='browsers.install')
+  if sys.platform.startswith('linux'):
+   # Package checks may flag optional dependencies on newer runner images.
+   # Verify the exact pinned browser and launch configuration used by the suite.
+   probe = [
+    'node', '--input-type=module', '-e',
+    '''import {createNativeBrowser} from './scripts/native_browser.mjs';
+const owner = await createNativeBrowser({engine: process.argv[1]});
+try {
+  const context = await owner.context();
+  await context.newPage();
+} finally {
+  await owner.close();
+}''',
+   ]
+   missing = []
+   for engine in engines:
+    try:
+     run([*probe, engine], ROOT/'web_client', label=f'browsers.probe.{engine}')
+    except RuntimeError:
+     missing.append(engine)
+   if missing:
+    run([*playwright, 'install-deps', *missing], label='browsers.system-dependencies')
+    for engine in missing:
+     run([*probe, engine], ROOT/'web_client', label=f'browsers.probe.after-install.{engine}')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
- with ThreadPoolExecutor(max_workers=4) as workers:
-  pending=[(name,workers.submit(prepare)) for name,prepare in [('backend',prepare_backend),('wordpress',prepare_wordpress),('joomla',prepare_joomla),('browsers',prepare_browsers)]]
+ preparation = [('browsers',prepare_browsers)]
+ if needs_joomla:preparation.append(('joomla',prepare_joomla))
+ with ThreadPoolExecutor(max_workers=len(preparation)+2+2*needs_wordpress) as workers:
+  rest_platform = workers.submit(prepare_rest_image, run)
+  pending = [('backend', workers.submit(prepare_backend, rest_platform))]
+  pending.extend((name,workers.submit(prepare)) for name,prepare in preparation)
+  if needs_wordpress:
+   core_archive = workers.submit(wordpress.prepare_core_cache)
+   pending.append(('wordpress',workers.submit(prepare_wordpress,core_archive)))
   failures=[]
   for name,future in pending:
    try:future.result()
@@ -152,12 +214,8 @@ try:
   if server.poll() is not None:raise RuntimeError('Fixture transport exited; inspect private owner log')
   time.sleep(.5)
  else:raise RuntimeError('Fixture transport readiness timeout')
- cases=[('wordpress',31,'cli','chromium'),('wordpress',31,'cli','firefox'),('wordpress',31,'cli','webkit'),
-        ('wordpress',36,'tests-cli','chromium'),('joomla',34,'5','chromium'),('joomla',35,'6','chromium'),
-        ('wix',37,None,'chromium'),('html',38,None,'chromium'),('joomla',34,'5','chromium')]
  results=[]
- for case_index,(platform,offset,variant,engine) in enumerate(cases):
-  coop=case_index==len(cases)-1
+ for case_index,platform,offset,variant,engine,coop in cases:
   state_file=fixture/'fixture-state.json';state=json.loads(state_file.read_text());state['coop']=coop;state_file.write_text(json.dumps(state))
   phase(f'Verifying {platform} {variant or "generated"} with {engine}')
   prepared=json.loads(run(['node','web_client/scripts/cms_consent_fixture_prepare.mjs',fixture,str(base),str(offset),platform],capture=True))
@@ -178,7 +236,7 @@ try:
   for line in lines:phase(line)
   results.append({'platform':platform,'variant':variant,'engine':engine,'result':'passed','scenario':'blocked COOP fallback' if coop else 'grant/refusal/withdrawal/disable/stale export','boundary':'modeled CMP; modeled Wix Site mode'})
  if input_digests()!=source_inputs:raise RuntimeError('Fixture source changed during verification; repeat affected checks')
- (fixture/'result.json').write_text(json.dumps({'sourceInputs':source_inputs,'project':project,'basePort':base,'cases':results,'state':'passed','productionWrites':False},indent=2)+'\n')
+ (fixture/'result.json').write_text(json.dumps({'sourceInputs':source_inputs,'project':project,'basePort':base,'suite':args.suite,'cases':results,'state':'passed','productionWrites':False},indent=2)+'\n')
  phase(f'PASS complete owned CMS/backend matrix: {len(results)} cases; receipt {fixture}/result.json')
 finally:
  if not args.keep:
@@ -187,10 +245,16 @@ finally:
     os.killpg(p.pid,signal.SIGTERM)
     try:p.wait(timeout=10)
     except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
-  cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
+  def stop_backend():
+   try:
+    stop_rest(project, run)
+   finally:
+    with timed_phase('cms.cleanup.backend'):database.close()
   cleanup_errors=[]
   with ThreadPoolExecutor(max_workers=3) as workers:
-   pending=[(key,workers.submit(run,command,cwd,label='cleanup.'+key)) for command,cwd,key in cleanup if started[key]]
+   pending=[]
+   if started['backend']:pending.append(('backend',workers.submit(stop_backend)))
+   if started['joomla']:pending.append(('joomla',workers.submit(run,['python3','scripts/environment.py','stop'],joomla,label='cleanup.joomla')))
    if started['wordpress']:pending.append(('wordpress',workers.submit(wordpress.stop)))
    for key,future in pending:
     try:future.result()
