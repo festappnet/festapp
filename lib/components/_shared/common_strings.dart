@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 
 class CommonStrings {
+  static String get refresh => 'Common.refresh'.tr();
   static String get platformUpdates => 'Common.platformUpdates'.tr();
   static String get accountConnections => 'FeatureUser.accountConnections'.tr();
   static String get accountConnectionsHint =>

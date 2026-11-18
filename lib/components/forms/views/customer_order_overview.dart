@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/discount_codes/discount_summary.dart';
 
 import '../customer_order_changes.dart';
@@ -98,7 +99,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
       return Column(
         children: [
           Semantics(liveRegion: true, child: Text(text('failed'))),
-          TextButton(onPressed: _refresh, child: Text(text('refresh'))),
+          TextButton(onPressed: _refresh, child: Text(CommonStrings.refresh)),
         ],
       );
     }
@@ -121,7 +122,7 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                 alignment: Alignment.centerLeft,
                 child: TextButton(
                   onPressed: _refresh,
-                  child: Text(text('refresh')),
+                  child: Text(CommonStrings.refresh),
                 ),
               ),
               if (widget.scope != null)

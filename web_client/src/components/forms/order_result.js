@@ -4,6 +4,7 @@ import { FormStrings } from './form_strings.js';
 import { FeatureService } from '../features/feature_service.js';
 import { overviewText } from './order_overview.js';
 import { WaitlistStrings } from './waitlist_strings.js';
+import { CommonStrings } from '../shared/common_strings.js';
 import { observeOrderDelivery } from './order_delivery_status.js';
 import { OrdersStrings } from '../eshop/orders_strings.js';
 import { PublicOrderStrings } from './public_order_strings.js';
@@ -87,7 +88,7 @@ export class OrderResult {
             icon = 'info';
             colorClass = 'error-color';
         } else if (resultData?.errorCode === 'STRIPE_RECIPIENT_CHANGED') {
-            title=paymentMethodText('reason_recipient_changed');subtitle=WaitlistStrings.refresh;icon='error';colorClass='error-color';
+            title=paymentMethodText('reason_recipient_changed');subtitle=CommonStrings.refresh;icon='error';colorClass='error-color';
         } else if (['ORDER_RECOVERY_REQUIRED','PAYMENT_RECOVERY_REQUIRED','PAYMENT_RECOVERY_PRINCIPAL_CHANGED'].includes(resultData?.errorCode)) {
             title=LocalizationService.tr('DiscountCodes.recoveryUnavailable');subtitle='';icon='error';colorClass='error-color';
         } else if (['DISCOUNT_QUOTE_CHANGED','DISCOUNT_INVALID'].includes(resultData?.errorCode)) {

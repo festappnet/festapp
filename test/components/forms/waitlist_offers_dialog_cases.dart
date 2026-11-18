@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
@@ -292,9 +293,9 @@ void main() {
         expect(result, isNull);
         expect(find.byType(WaitlistOffersDialog), findsOneWidget);
         expect(find.text(WaitlistStrings.stale), findsOneWidget);
-        expect(find.text(WaitlistStrings.refresh), findsOneWidget);
+        expect(find.text(CommonStrings.refresh), findsOneWidget);
         expect(find.byType(SnackBar), findsNothing);
-        await tester.tap(find.text(WaitlistStrings.refresh));
+        await tester.tap(find.text(CommonStrings.refresh));
         await tester.pumpAndSettle();
         expect(find.text(WaitlistStrings.stale), findsNothing);
         await tester

@@ -98,6 +98,8 @@ Future<void> startApplication({Future<void> Function()? initialize}) async {
             .map((e) => e.locale)
             .first,
         useOnlyLangCode: true,
+        useFallbackTranslations: true,
+        useFallbackTranslationsForEmptyResources: true,
         saveLocale: true,
         child: SyncedLocale(child: MyApp(initialRoute: initialRoute)),
       ),

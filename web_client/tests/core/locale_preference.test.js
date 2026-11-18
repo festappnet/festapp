@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import { AppConfig } from '../../src/app_config.js';
 import { LocalizationService } from '../../src/services/localization_service.js';
 
-function fixture(t) {
+function fixture(t, catalogs = {}) {
     const dom = new JSDOM('<!doctype html><html lang="cs"><body></body></html>', {url: 'https://fixture.invalid'});
     const previous = Object.fromEntries(['window', 'document', 'navigator', 'localStorage'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
     let reloads = 0;
@@ -17,7 +18,8 @@ function fixture(t) {
     }
     LocalizationService._initialization = null;
     LocalizationService.currentLocale = 'cs';
-    t.mock.method(globalThis, 'fetch', async () => Response.json({label: 'translated'}));
+    t.mock.method(globalThis, 'fetch', async url =>
+        Response.json(catalogs[url] ?? {label: 'translated'}));
     t.after(() => {
         LocalizationService._stopPreferenceSync?.();
         LocalizationService._initialization = null;
@@ -80,4 +82,18 @@ test('explicit marketing document locale does not replace the shared choice or r
     localStorage.setItem('flutter.locale', JSON.stringify('sk'));
     f.dom.window.dispatchEvent(new f.dom.window.StorageEvent('storage', {key: 'flutter.locale'}));
     assert.equal(f.reloads(), 0);
+});
+
+test('a partial catalog uses the default without overriding available text or optional variants', async t => {
+    const base = AppConfig.defaultLanguage;
+    const selected = AppConfig.supportedLanguages.find(locale => locale !== base);
+    fixture(t, {
+        [`/assets/translations/${base}.json`]: {Form: {label: 'Default', help: 'Hello {name}', optional: 'Default variant'}},
+        [`/assets/translations/${selected}.json`]: {Form: {label: 'Localized'}},
+    });
+    await LocalizationService.init({locale: selected});
+    assert.equal(document.documentElement.lang, selected);
+    assert.equal(LocalizationService.tr('Form.label'), 'Localized');
+    assert.equal(LocalizationService.tr('Form.help', {name: 'Alex'}), 'Hello Alex');
+    assert.equal(LocalizationService.tr('Form.optional', {}, null), null);
 });

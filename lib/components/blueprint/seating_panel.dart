@@ -273,7 +273,7 @@ class _SeatingPanelState extends State<SeatingPanel> {
             TextButton.icon(
               onPressed: c.busy ? null : () => c.load(discover: true),
               icon: const Icon(Icons.refresh),
-              label: Text(_t('refresh')),
+              label: Text(CommonStrings.refresh),
             ),
           if (c.notice != null) Text(_t(c.notice!)),
           if (data == null)
