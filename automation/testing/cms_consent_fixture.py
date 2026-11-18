@@ -64,7 +64,7 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/wordpress_runtime.py','automation/hetzner-supabase/runtime/pins.json','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
@@ -125,12 +125,12 @@ try:
  run(['node','scripts/setup-backend.mjs','--database-only'],wp)
  phase('Starting independent owned services and browser dependencies concurrently')
  jprefix=project+'-joomla'
- def prepare_backend(rest_image):
+ def prepare_backend(rest_platform):
   started['backend']=True
   run(['supabase','db','start','--workdir','.private/backend'],wp,label='backend.start')
   run(['bash','scripts/bootstrap-backend.sh','--database-only'],wp,label='backend.bootstrap')
   sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
-  start_rest(rest_image.result(), wp, project, base + 21, run)
+  start_rest(rest_platform.result(), wp, project, base + 21, run)
  def prepare_wordpress():
   started['wordpress']=True
   with timed_phase('cms.wordpress.start'):wordpress.start()
@@ -162,8 +162,8 @@ try:
  if needs_wordpress:preparation.append(('wordpress',prepare_wordpress))
  if needs_joomla:preparation.append(('joomla',prepare_joomla))
  with ThreadPoolExecutor(max_workers=len(preparation)+2) as workers:
-  rest_image = workers.submit(prepare_rest_image, ROOT, run)
-  pending = [('backend', workers.submit(prepare_backend, rest_image))]
+  rest_platform = workers.submit(prepare_rest_image, run)
+  pending = [('backend', workers.submit(prepare_backend, rest_platform))]
   pending.extend((name,workers.submit(prepare)) for name,prepare in preparation)
   failures=[]
   for name,future in pending:

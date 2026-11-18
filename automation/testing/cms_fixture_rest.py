@@ -13,6 +13,8 @@ from urllib.request import ProxyHandler, Request, build_opener
 
 
 OWNER_LABEL = 'net.festapp.cms-rest'
+# The OCI index contains Linux amd64 for Actions and arm64 for Apple Silicon.
+POSTGREST_IMAGE = 'postgrest/postgrest:v14.18@sha256:c7cd7e265a85b05248abf53f4473fcec7e327c282d0bd0cf60f1551996d09fcf'
 
 
 def anon_token(secret):
@@ -32,20 +34,19 @@ def write_private(path, data):
         output.write(data)
 
 
-def prepare_rest_image(root, run):
-    pins = json.loads((root/'automation/hetzner-supabase/runtime/pins.json').read_text())
-    image = pins['supabase']['images']['rest']
-    if not re.fullmatch(r'postgrest/postgrest:[A-Za-z0-9._-]+@sha256:[a-f0-9]{64}', image):
-        raise ValueError('PostgREST image must be pinned by digest')
+def prepare_rest_image(run):
+    architecture = run(['docker', 'version', '--format', '{{.Server.Arch}}'], capture=True).strip()
+    if architecture not in ('amd64', 'arm64'):
+        raise RuntimeError(f'Unsupported PostgREST test architecture: {architecture}')
+    platform = f'linux/{architecture}'
+    present = subprocess.run(['docker', 'image', 'inspect', '--format', '{{.Architecture}}', POSTGREST_IMAGE],
+                             capture_output=True, text=True)
+    if present.returncode or present.stdout.strip() != architecture:
+        run(['docker', 'pull', '--platform', platform, POSTGREST_IMAGE], label='backend.postgrest-image')
+    return platform
 
-    present = subprocess.run(['docker', 'image', 'inspect', image],
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if present.returncode:
-        run(['docker', 'pull', image], label='backend.postgrest-image')
-    return image
 
-
-def start_rest(image, wp, project, port, run):
+def start_rest(platform, wp, project, port, run):
     if not re.fullmatch(r'festapp-cms-consent-[a-f0-9]{12}', project):
         raise ValueError('Owned CMS project required')
     container = 'supabase_db_' + project
@@ -64,9 +65,9 @@ def start_rest(image, wp, project, port, run):
         'PGRST_DB_ANON_ROLE=anon', 'PGRST_DB_MAX_ROWS=1000', f'PGRST_JWT_SECRET={secret}',
     ]) + '\n')
     try:
-        run(['docker', 'run', '-d', '--pull=never', '--name', project+'-rest', '--label', OWNER_LABEL+'='+project,
+        run(['docker', 'run', '-d', '--pull=never', '--platform', platform, '--name', project+'-rest', '--label', OWNER_LABEL+'='+project,
              '--network', network, '--publish', f'127.0.0.1:{port}:3000',
-             '--env-file', environment, image], label='backend.postgrest')
+             '--env-file', environment, POSTGREST_IMAGE], label='backend.postgrest')
     finally:
         environment.unlink()
 
@@ -82,7 +83,13 @@ def start_rest(image, wp, project, port, run):
                 json.load(response)
             break
         except (URLError, ConnectionError, TimeoutError) as error:
+            state = run(['docker', 'inspect', '--format', '{{.State.Status}} {{.State.ExitCode}}',
+                         project+'-rest'], capture=True).strip()
+            if not state.startswith('running '):
+                run(['docker', 'logs', project+'-rest'], label='backend.postgrest-diagnostics')
+                raise RuntimeError(f'Owned PostgREST stopped before readiness ({state})') from error
             if time.monotonic() >= deadline:
+                run(['docker', 'logs', project+'-rest'], label='backend.postgrest-diagnostics')
                 raise RuntimeError('Owned PostgREST never served the public form RPC') from error
             time.sleep(.2)
     write_private(private/'backend-status.json', json.dumps({'API_URL': url, 'ANON_KEY': token}))

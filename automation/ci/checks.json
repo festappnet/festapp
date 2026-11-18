@@ -85,8 +85,7 @@
         "automation/lib/**",
         "automation/release/help/help.js",
         "automation/release/help/en/embed-generator.html",
-        "automation/testing/cms_fixture_rest.py",
-        "automation/hetzner-supabase/runtime/pins.json"
+        "automation/testing/cms_fixture_rest.py"
       ],
       "hostedResources": {
         "ramMiB": 5000
@@ -421,8 +420,7 @@
         "web_client/index.html",
         "automation/testing/wordpress_runtime.py",
         "automation/lib/**",
-        "automation/testing/cms_fixture_rest.py",
-        "automation/hetzner-supabase/runtime/pins.json"
+        "automation/testing/cms_fixture_rest.py"
       ]
     }
   },
@@ -1404,8 +1402,7 @@
         "automation/lib/**",
         "automation/release/help/help.js",
         "automation/release/help/en/embed-generator.html",
-        "automation/testing/cms_fixture_rest.py",
-        "automation/hetzner-supabase/runtime/pins.json"
+        "automation/testing/cms_fixture_rest.py"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",
@@ -1652,8 +1649,7 @@
         "web_client/index.html",
         "automation/testing/wordpress_runtime.py",
         "automation/lib/**",
-        "automation/testing/cms_fixture_rest.py",
-        "automation/hetzner-supabase/runtime/pins.json"
+        "automation/testing/cms_fixture_rest.py"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",
