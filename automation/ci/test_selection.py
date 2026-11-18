@@ -378,7 +378,7 @@ class ReusePolicyTest(unittest.TestCase):
         self.original_contract=copy.deepcopy(self.contract)
 
     def evaluate(self, fingerprint=None, runs=None, definition=None, consume=False,
-                 expire_endpoint=None, expire_unit=None):
+                 expire_endpoint=None, expire_unit=None, jobs=None):
         import hashlib, io, zipfile
         archive = io.BytesIO()
         with zipfile.ZipFile(archive,'w') as bundle:
@@ -390,12 +390,18 @@ class ReusePolicyTest(unittest.TestCase):
                 selection.LOOKUP.get()['deadline']=0
                 raise selection.BudgetExpired('fixture lookup deadline')
             if not endpoint: return {'id':7}
-            if endpoint=='actions/runs/123': return self.run
+            if endpoint.startswith('actions/runs/') and endpoint.count('/') == 2:
+                run_id = int(endpoint.rsplit('/', 1)[1])
+                if run_id == self.run['id']:
+                    return self.run
+                return next(run for run in runs if run['id'] == run_id)
             if endpoint.startswith('actions/workflows/'):
                 return {'workflow_runs':runs if runs is not None else [self.run]}
             if endpoint.endswith('/artifacts?per_page=100'):
                 return {'artifacts':[] if self.missing else [self.artifact]}
-            if '/jobs?' in endpoint:return {'jobs':[self.job]}
+            if '/jobs?' in endpoint:
+                run_id = int(endpoint.split('/')[2])
+                return {'jobs': (jobs or {}).get(run_id, [self.job])}
             raise AssertionError(endpoint)
         def git(*args):
             if args[:2] == ('rev-parse',BASE+'^{tree}'):return b'tested-tree'
@@ -496,6 +502,41 @@ class ReusePolicyTest(unittest.TestCase):
         older=dict(self.run)
         self.run['run_attempt']=2;self.run['conclusion']='failure'
         self.assertTrue(self.evaluate(runs=[older,self.run])['run'])
+
+    def test_skipped_pr_without_regression_steps_does_not_block_valid_evidence(self):
+        draft = {**self.run, 'id':124, 'run_number':2, 'event':'pull_request',
+                 'conclusion':'skipped'}
+        job = {**self.job, 'run_id':124, 'conclusion':'skipped', 'steps':[]}
+        result = self.evaluate(runs=[self.run, draft], jobs={124:[job]}, consume=True)
+        self.assertFalse(result['run'])
+        self.assertEqual({proof['runId'] for proof in result['reuse'].values()}, {123})
+        for change in ({'steps':self.job['steps']}, {'run_attempt':2}):
+            result = self.evaluate(runs=[self.run, draft], jobs={124:[{**job, **change}]})
+            self.assertTrue(result['run'])
+            self.assertFalse(result['reuse'])
+
+    def test_failed_main_blocks_only_matching_units(self):
+        for policy in (self.contract, self.original_contract):
+            policy['steps']['image-storage']['after'] = []
+        failed = {**self.run, 'id':124, 'run_number':2, 'head_sha':'d'*40,
+                  'conclusion':'failure'}
+        def digest(sha, lane, policy, unit=None):
+            return 'other-inputs' if sha == failed['head_sha'] and unit != 'image-storage' else 'same-inputs'
+        result = self.evaluate(fingerprint=digest, runs=[self.run, failed], consume=True)
+        self.assertEqual(result['execute'], ['image-storage'])
+        self.assertEqual(set(result['reuse']), {'image-install','image-policy','image-preflight'})
+
+    def test_older_failed_pr_does_not_invalidate_newer_verified_coverage(self):
+        for policy in (self.contract, self.original_contract):
+            policy['steps']['image-storage']['after'] = []
+        self.run['run_number'] = 2
+        failed = {**self.run, 'id':122, 'run_number':1, 'event':'pull_request',
+                  'conclusion':'failure'}
+        def digest(sha, lane, policy, unit=None):
+            return 'changed' if sha == SHA and unit == 'image-storage' else 'same-inputs'
+        result = self.evaluate(fingerprint=digest, runs=[failed, self.run], consume=True)
+        self.assertEqual(result['execute'], ['image-storage'])
+        self.assertEqual(set(result['reuse']), {'image-install','image-policy','image-preflight'})
 
     def test_artifact_api_binding_digest_deletion_and_payload(self):
         self.missing=True;self.assertTrue(self.evaluate()['run']);self.missing=False

@@ -75,8 +75,12 @@ The selector independently verifies GitHub repository/run/attempt/job/artifact
 bindings, the job's final success and execution step, artifact expiry and GitHub's
 SHA-256 digest of the downloaded archive. It reads bounded JSON without extracting
 ZIP paths. Receipt claims alone never authorize reuse. Missing/deleted artifacts,
-API errors, unknown origins, malformed evidence or a newer unresolved failed or
-pending run cause execution. Reuse never turns a reused row into direct execution and never refreshes the original run's seven-day age. Mixed aggregates can supply their executed rows only. `All lane tests executed` marks a full execution; `Some lane tests executed` marks a mixed run; `Lane coverage verified` is emitted only after the canonical runner admits complete coverage. Reuse-only jobs have no execution marker and are ignored before ZIP downloads.
+API errors, unknown origins and malformed evidence cause unresolved units to
+execute. A newer failed or pending main run blocks older evidence only for
+matching units. A failed or pending PR can have an unknown merge checkout and
+blocks older evidence for all unresolved units. A completed skipped workflow
+whose lane job is confirmed skipped with no steps does not block older evidence.
+Units already verified against newer runs retain that evidence. Reuse never turns a reused row into direct execution and never refreshes the original run's seven-day age. Mixed aggregates can supply their executed rows only. `All lane tests executed` marks a full execution; `Some lane tests executed` marks a mixed run; `Lane coverage verified` is emitted only after the canonical runner admits complete coverage. Reuse-only jobs have no execution marker and are ignored before ZIP downloads.
 
 Internal PR evidence can be consumed on subsequent PR updates or main even when
 merge, squash or rebase changes commit identities. The actual checkout digest

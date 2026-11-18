@@ -332,13 +332,19 @@ def validate_checkout(source, run):
         git('merge-base', '--is-ancestor', source, 'origin/main')
 
 
-def job_for(repository, run, lane):
+def lane_job(repository, run, lane):
     jobs=api(repository,f'actions/runs/{run["id"]}/attempts/{run["run_attempt"]}/jobs?per_page=100')['jobs']
     matches=[job for job in jobs if job['name']==lane]
     if len(matches)!=1: raise ValueError('Execution job identity unavailable')
     job=matches[0]
-    if (job['run_id']!=run['id'] or job['run_attempt']!=run['run_attempt'] or
-            job['status']!='completed' or job['conclusion']!='success'):
+    if job['run_id'] != run['id'] or job['run_attempt'] != run['run_attempt']:
+        raise ValueError('Lane job belongs to a different run or attempt')
+    return job
+
+
+def job_for(repository, run, lane):
+    job = lane_job(repository, run, lane)
+    if job['status'] != 'completed' or job['conclusion'] != 'success':
         raise ValueError('Latest lane attempt did not pass')
     return job
 
@@ -359,7 +365,7 @@ def reusable(lane, sha, repository, contract, policy):
     workflow=contract['jobs'][lane]['workflow']
     runs=api(repository,f'actions/workflows/{workflow}/runs?per_page=100')['workflow_runs']
     cutoff=datetime.now(timezone.utc)-timedelta(days=policy['reusePolicy']['maxAgeDays'])
-    expired=False
+    stop_reason = None
     try:
         for run in sorted(runs,key=lambda r:(r['run_number'],r['run_attempt']),reverse=True):
             if str(run['id'])==os.environ.get('GITHUB_RUN_ID'): continue
@@ -376,16 +382,24 @@ def reusable(lane, sha, repository, contract, policy):
             if (run['id']!=expected_id or run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or run['event'] not in ('push','workflow_dispatch','pull_request') or run['path']!=f'.github/workflows/{workflow}'):
                 raise ValueError('Fresh run binding changed')
             if datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff: continue
+            if run['status'] == 'completed' and run['conclusion'] == 'skipped':
+                job = lane_job(repository, run, lane)
+                if job['status'] == 'completed' and job['conclusion'] == 'skipped' and job['steps'] == []:
+                    # Draft workflows never entered the regression job.
+                    continue
             ensure_commit(run['head_sha'])
-            if run['status']!='completed' or run['conclusion']!='success':
-                if run['event']=='pull_request' or any(fingerprint(run['head_sha'],lane,policy,u)==current[u] for u in remaining):
-                    return {'run':True,'reason':'Newer matching or unresolved workflow did not pass'}
-                continue
             # For main the API SHA is the checkout. Reject mismatches before ZIP
             # download. PRs MUST use the receipt's validated synthetic merge tree.
             candidates=remaining if run['event']=='pull_request' else {
                 u for u in remaining if fingerprint(run['head_sha'],lane,policy,u)==current[u]}
             if not candidates: continue
+            if run['status'] != 'completed' or run['conclusion'] != 'success':
+                # Block older evidence only for unresolved inputs this run may
+                # have tested. Evidence from newer runs is already verified.
+                remaining.difference_update(candidates)
+                stop_reason = 'Newer matching or unresolved workflow did not pass'
+                if not remaining: break
+                continue
             if run['event']!='pull_request' and definition(run['head_sha'])!=trusted: continue
             job=job_for(repository,run,lane)
             if not direct_marker(job): continue
@@ -404,10 +418,15 @@ def reusable(lane, sha, repository, contract, policy):
     except BudgetExpired:
         # Only fully verified proofs have been admitted. Older, unvisited runs
         # cannot supersede them; unresolved units and their preparation execute.
-        expired=True
+        stop_reason = 'Selector budget exhausted'
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError, AttributeError,
+            IndexError, RuntimeError, zipfile.BadZipFile):
+        # A historical candidate with unavailable or invalid provenance cannot
+        # supply evidence. Run unresolved units, retaining verified newer rows.
+        stop_reason = 'Reuse evidence unavailable'
     # Environment preparation cannot be reused as installed state. Any selected
     # consumer reruns its dependency closure even if a dependency has a PASS.
-    selected=set(remaining)
+    selected=set(units)-proofs.keys()
     while True:
         expanded=selected|{dep for u in selected for dep in contract['steps'][u].get('requires',contract['steps'][u].get('after',[])) if dep in units}
         if expanded==selected: break
@@ -415,9 +434,11 @@ def reusable(lane, sha, repository, contract, policy):
     proofs={u:p for u,p in proofs.items() if u not in selected}
     result={'run':bool(selected),'reason':'Verified unit coverage' if proofs else 'No verified direct unit evidence',
             'execute':[u for u in units if u in selected],'reuse':proofs}
-    if expired:
-        result['reason']='Selector budget exhausted; retained verified coverage' if proofs else 'Selector budget exhausted; running tests'
-        result['budgetExhausted']=True
+    if stop_reason and selected:
+        outcome = 'retained verified coverage' if proofs else 'running tests'
+        result['reason'] = f'{stop_reason}; {outcome}'
+        if stop_reason == 'Selector budget exhausted':
+            result['budgetExhausted'] = True
     if not selected:
         first=next(iter(proofs.values()))
         result.update(source=first['source'],fingerprint=lane_input,url=first['url'],
