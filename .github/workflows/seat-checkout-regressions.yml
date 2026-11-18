@@ -50,7 +50,8 @@ jobs:
       - name: Prepare isolated browser and database image
         if: steps.selection.outputs.run == 'true'
         env:
-          FESTAPP_CI_NEEDS_DATABASE: ${{ steps.selection.outputs.sql }}
+          # The combined checkout job pulls inside the DAG alongside Flutter.
+          FESTAPP_CI_NEEDS_DATABASE: ${{ github.job != 'seat-checkout' && steps.selection.outputs.sql == 'true' }}
           FESTAPP_CI_NEEDS_BROWSER: ${{ steps.selection.outputs.browser }}
         run: bash automation/ci/prepare-seat.sh
       - name: Install pinned Deno

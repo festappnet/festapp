@@ -221,7 +221,7 @@ class MirrorContractTest(unittest.TestCase):
         supabase=next(s for s in seat if s.get('run') == 'bash automation/ci/supabase.sh')
         self.assertEqual(supabase['if'],"steps.selection.outputs.sql == 'true'")
         prepare=next(s for s in seat if s.get('name')=='Prepare isolated browser and database image')
-        self.assertEqual(prepare['env'],{'FESTAPP_CI_NEEDS_DATABASE':'${{ steps.selection.outputs.sql }}',
+        self.assertEqual(prepare['env'],{'FESTAPP_CI_NEEDS_DATABASE':"${{ github.job != 'seat-checkout' && steps.selection.outputs.sql == 'true' }}",
                                         'FESTAPP_CI_NEEDS_BROWSER':'${{ steps.selection.outputs.browser }}'})
         ticket=workflow['jobs']['ticket-preview-and-delivery']['steps']
         sdk=next(s for s in ticket if s.get('uses','').startswith('subosito/flutter-action'))
