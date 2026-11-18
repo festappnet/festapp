@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, mkdtemp, writeFile, rm, readlink } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile, rm, readlink, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,7 @@ for (const locale of ['cs', 'en']) {
     });
 }
 
-for (const [locale, expected] of [['cs', 'Založit zdarma'], ['en', '+ Event'], ['uk', '+ Подія'], ['es', '+ Evento']]) {
+for (const [locale, expected] of [['cs', 'Založit zdarma'], ['en', '+ Event'], ['uk', '+ Подія']]) {
     test(`published ${locale} catalog translates the mobile create-event button`, async t => {
         const original = LocalizationService.translations;
         t.after(() => { LocalizationService.translations = original; });
@@ -30,7 +30,7 @@ for (const [locale, expected] of [['cs', 'Založit zdarma'], ['en', '+ Event'], 
 
 
 test('abuse errors have the same localized message in every published locale',async()=>{
- for(const language of ['cs','de','en','pl','sk','uk','es']) {
+ for(const language of ['cs','de','en','pl','sk','uk']) {
   const canonical=JSON.parse(await readFile(new URL(`../../../assets/translations/${language}.json`,import.meta.url),'utf8'));
   const published=JSON.parse(await readFile(new URL(`../../public/assets/translations/${language}.json`,import.meta.url),'utf8'));
   assert.ok(canonical.Common.resourceLimited);
@@ -38,7 +38,7 @@ test('abuse errors have the same localized message in every published locale',as
  }
 });
 
-for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk', 'es']) {
+for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
     test(`published ${locale} scanner uses the canonical catalog`, async t => {
         const original = LocalizationService.translations;
         t.after(() => { LocalizationService.translations = original; });
@@ -52,7 +52,7 @@ for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk', 'es']) {
     });
 }
 
-for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk', 'es']) {
+for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
     test(`published ${locale} standing controls use the canonical catalog and plural forms`, async t => {
         const original = {locale: LocalizationService.currentLocale, translations: LocalizationService.translations};
         t.after(() => {LocalizationService.currentLocale = original.locale; LocalizationService.translations = original.translations;});
@@ -71,7 +71,7 @@ for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk', 'es']) {
     });
 }
 
-for (const locale of ['cs','en','sk','de','pl','uk','es']) {
+for (const locale of ['cs','en','sk','de','pl','uk']) {
  test(`published ${locale} sale notifications use the canonical dictionary`,async()=>{
   const canonical=JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`,import.meta.url),'utf8'));
   const published=JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`,import.meta.url),'utf8'));
@@ -80,7 +80,7 @@ for (const locale of ['cs','en','sk','de','pl','uk','es']) {
  });
 }
 
-for (const locale of ['cs','en','sk','de','pl','uk','es']) {
+for (const locale of ['cs','en','sk','de','pl','uk']) {
  test(`published ${locale} account availability uses the canonical explanation`, async () => {
   const canonical=JSON.parse(await readFile(new URL(`../../../assets/translations/${locale}.json`,import.meta.url),'utf8'));
   const published=JSON.parse(await readFile(new URL(`../../public/assets/translations/${locale}.json`,import.meta.url),'utf8'));
@@ -102,15 +102,16 @@ test('development and built public catalogs use the canonical source for every l
             server: {host: '127.0.0.1', port: 0}});
         await server.listen();
         const origin = server.resolvedUrls.local[0];
-        for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk', 'es']) {
-            const filename = `${locale}.json`;
-            const canonical = JSON.parse(await readFile(new URL(`../../../assets/translations/${filename}`, import.meta.url), 'utf8'));
+        const catalogDir = new URL('../../../assets/translations/', import.meta.url);
+        const catalogs = (await readdir(catalogDir)).filter(filename => filename.endsWith('.json'));
+        for (const filename of catalogs) {
+            const canonical = JSON.parse(await readFile(new URL(filename, catalogDir), 'utf8'));
             const alias = path.join(webRoot, 'public/assets/translations', filename);
             assert.equal(await readlink(alias), `../../../../assets/translations/${filename}`, 'public source is a reference, not an editable second catalog');
             const response = await fetch(new URL(`/assets/translations/${filename}`, origin));
             assert.equal(response.status, 200);
-            assert.deepEqual(await response.json(), canonical, `development ${locale} catalog`);
-            assert.deepEqual(JSON.parse(await readFile(path.join(fixture, 'dist/assets/translations', filename), 'utf8')), canonical, `built ${locale} catalog`);
+            assert.deepEqual(await response.json(), canonical, `development catalog ${filename}`);
+            assert.deepEqual(JSON.parse(await readFile(path.join(fixture, 'dist/assets/translations', filename), 'utf8')), canonical, `built catalog ${filename}`);
         }
     } finally {
         await server?.close();

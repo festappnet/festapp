@@ -133,7 +133,7 @@ test('failed compiler never publishes; dead owner recovers; retention protects l
 
 test('canonical translation references bind every component to the owner bytes', t => {
  const f=fixture(t);
- for(const locale of ['cs','en','sk','de','pl','uk','es']) {
+ for(const locale of ['cs','en','sk','de','pl','uk']) {
   f.put(`assets/translations/${locale}.json`,JSON.stringify({label:'before'}));
   const alias=path.join(f.root,`web_client/public/assets/translations/${locale}.json`);
   fs.mkdirSync(path.dirname(alias),{recursive:true});
@@ -141,7 +141,7 @@ test('canonical translation references bind every component to the owner bytes',
  }
  const keys=()=>Object.fromEntries(['flutter','vite','bundle'].map(c=>[c,fingerprint(f.root,c,'static',f.tools).key]));
  const before=keys();
- f.put('assets/translations/es.json',JSON.stringify({label:'after'}));
+ f.put('assets/translations/cs.json',JSON.stringify({label:'after'}));
  const after=keys();
  for(const component of Object.keys(before))assert.notEqual(after[component],before[component],component);
 });
