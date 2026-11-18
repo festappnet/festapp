@@ -38,19 +38,23 @@ test('equivalent renewal keeps generation; processing, runtime and policy revisi
   assert.equal(old({event:'form_start'}),false);assert.equal(f.session.state,'active');
  }
 });
-test('a replaced grant never revives captured submit or reservations; conversions carry the contact once',async t=>{
+test('a replaced grant recovers only the conversion fact, never contacts or reservations',async t=>{
  const f=fixture(t);await f.start();f.sent.length=0;
  const contact={fields:[{5:' Buyer@Example.TEST '},{6:'+420601234567'},{7:'PRIVATE'}]};
  const submit=f.layer.captureSubmission(contact);let finish;
  const checkout={payload:{fields:[{4:11}]},awaitPendingReservations:()=>new Promise(r=>finish=r)};
- f.layer.observe(checkout);await settle();f.choose({analytics:true,marketing:true,leaseId:'next'});finish();await settle();
- submit(true,{ticketOrder:{analytics:purchase}});assert.equal(f.sent.some(p=>['purchase','add_to_cart'].includes(p.event)),false);
- f.choose(false);const current=f.layer.captureSubmission(contact);current(true,{ticketOrder:{analytics:{...purchase,private:'SECRET'}}});
- current(true,{ticketOrder:{analytics:purchase}});const sent=f.sent.filter(p=>p.event==='purchase');assert.equal(sent.length,1);
+ f.layer.observe(checkout);await settle();f.choose({analytics:true,marketing:true,leaseId:'next',expiresAt:Date.now()+30000});finish();await settle();
+ submit(true,{ticketOrder:{analytics:purchase}});await settle();
+ assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);
+ assert.equal(f.sent.find(p=>p.event==='purchase').user_data,undefined);
+ assert.equal(f.sent.some(p=>p.event==='add_to_cart'),false);
+ f.choose(false);const current=f.layer.captureSubmission(contact);
+ const second={...purchase,ecommerce:{...purchase.ecommerce,transaction_id:'d5c624bd-01b6-4dcf-9bf9-00dcb73a7b44'}};current(true,{ticketOrder:{analytics:{...second,private:'SECRET'}}});
+ current(true,{ticketOrder:{analytics:purchase}});const sent=f.sent.filter(p=>p.event==='purchase' && p.user_data);assert.equal(sent.length,1);
  assert.deepEqual(sent[0].user_data,{email:'buyer@example.test',phone_number:'+420601234567'},'a refusal does not remove the contact');
  assert.doesNotMatch(JSON.stringify(f.sent),/SECRET|PRIVATE/);
  f.layer.captureSubmission(contact)(true,{ticketOrder:{analytics:purchase}});
- assert.equal(f.sent.filter(p=>p.event==='purchase').length,1,'dedupe survives grant changes');
+ assert.equal(f.sent.filter(p=>p.event==='purchase').length,2,'dedupe survives grant changes');
 });
 test('an unusable contact is left out without touching the conversion',async t=>{
  const f=fixture(t);await f.start();f.sent.length=0;
@@ -86,7 +90,7 @@ for(const url of ['https://tickets.test/admin','https://tickets.test/form/summer
 test('transport errors cannot reach checkout callbacks or consume conversion identity',async t=>{
  const f=fixture(t);await f.start();f.sent.length=0;f.delivery(false);
  const outcome=f.layer.captureSubmission();assert.doesNotThrow(()=>outcome(true,{ticketOrder:{analytics:purchase}}));
- f.delivery(true);outcome(true,{ticketOrder:{analytics:purchase}});assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);
+ f.delivery(true);outcome(true,{ticketOrder:{analytics:purchase}});await settle();assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);
 });
 test('staff-to-visitor policy recovery reconnects the previously suppressed CMP source',async t=>{
  let answer={...policy,visitor_role:'staff'};const f=fixture(t,{identity:'user',source:async()=>answer});
@@ -156,4 +160,64 @@ test('managed binding changes retire live senders even when semantic notice is u
  await f.session.refresh();
  assert.equal(first({event:'form_start'}),false,'manifest boundary also guards peers missing technical fingerprint updates');
  assert.equal(f.session.policy.consent_revision,'a'.repeat(32));
+});
+
+for(const event of ['purchase','generate_lead'])test('pending '+event+' waits for verified ready transport and uses the current denied consent',async t=>{
+ const f=fixture(t,{autoReady:false});await f.start();f.transport.grant.onReady();
+ const fact=event==='purchase'?purchase:{event,event_id:purchase.ecommerce.transaction_id,lead_source:'waitlist',value:0,currency:'CZK'};
+ const outcome=f.layer.captureSubmission({fields:[{5:'buyer@example.test'}]});
+ f.choose({analytics:false,marketing:false,leaseId:'replacement',expiresAt:Date.now()+30000});
+ outcome(true,{ticketOrder:{analytics:fact}});outcome(true,{ticketOrder:{analytics:fact}});
+ await settle();assert.equal(f.sent.some(p=>p.event===event),false);
+ assert.equal(f.session.pendingConversions.size,1);
+ assert.doesNotMatch(JSON.stringify([...f.session.pendingConversions.values()]),/buyer@example/);
+ const send=f.session.capture();f.transport.grant.onReady();
+ assert.equal(send({event:'form_start'}),false,'old sender remains invalid');
+ const delivered=f.sent.filter(p=>p.event===event);assert.equal(delivered.length,1);assert.equal(delivered[0].user_data,undefined);
+ assert.deepEqual(f.transport.grant.consent,{analytics:false,marketing:false});
+ assert.equal(f.session.pendingConversions.size,0);
+ await f.session.refresh();assert.equal(f.sent.filter(p=>p.event===event).length,1);
+});
+for(const change of ['identity','policy','host','dispose'])test('pending conversion cannot cross '+change+' boundary',async t=>{
+ let answer={...policy};const f=fixture(t,{autoReady:false,source:async()=>answer});
+ let host={origin:'https://host.test',instance:'one'};
+ if(change==='host'){answer.approved_hosts=[host.origin];f.transport.hostContext=()=>host;}
+ await f.start();f.transport.grant.onReady();const outcome=f.layer.captureSubmission();
+ f.choose({analytics:false,marketing:false,leaseId:'replacement',expiresAt:Date.now()+30000});
+ outcome(true,{ticketOrder:{analytics:purchase}});
+ if(change==='identity')f.identity('staff');
+ if(change==='policy')answer={...answer,enabled:false};
+ if(change==='host')host={...host,instance:'two'};
+ if(change==='dispose')f.session.dispose();
+ await settle();await f.session.refresh();f.transport.grant?.onReady();
+ assert.equal(f.sent.some(p=>p.event==='purchase'),false);
+});
+
+for(const key of ['unrelated-preference','festapp-consent'])test('storage change for '+key+' preserves an in-flight conversion across lease renewal',async t=>{
+ const f=fixture(t,{autoReady:false});await f.start();f.transport.grant.onReady();
+ const outcome=f.layer.captureSubmission({fields:[{5:'buyer@example.test'}]});
+ const epoch=f.session.contextEpoch;
+ f.dom.window.dispatchEvent(new f.dom.window.StorageEvent('storage',{key,newValue:'changed'}));
+ assert.equal(f.session.contextEpoch,epoch);
+ f.choose({analytics:false,marketing:false,leaseId:'renewed',expiresAt:Date.now()+30000});
+ outcome(true,{ticketOrder:{analytics:purchase}});await settle();
+ assert.equal(f.session.pendingConversions.size,1);
+ f.transport.grant.onReady();
+ const delivered=f.sent.filter(p=>p.event==='purchase');assert.equal(delivered.length,1);
+ assert.equal(delivered[0].user_data,undefined);
+ assert.deepEqual(f.transport.grant.consent,{analytics:false,marketing:false});
+});
+test('storage-observed identity change discards the in-flight conversion even if the identity returns',async t=>{
+ let identity='anonymous';const f=fixture(t,{autoReady:false});
+ f.session.identitySource.read=()=>identity;
+ await f.start();f.transport.grant.onReady();const outcome=f.layer.captureSubmission();
+ identity='other-user';
+ f.dom.window.dispatchEvent(new f.dom.window.StorageEvent('storage',{key:'auth-token',newValue:'changed'}));
+ assert.equal(f.session.contextEpoch,1);
+ identity='anonymous';
+ f.dom.window.dispatchEvent(new f.dom.window.StorageEvent('storage',{key:'auth-token',newValue:null}));
+ outcome(true,{ticketOrder:{analytics:purchase}});await settle();
+ f.transport.grant?.onReady();
+ assert.equal(f.sent.some(p=>p.event==='purchase'),false);
+ assert.equal(f.session.pendingConversions.size,0);
 });

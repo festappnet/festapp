@@ -55,6 +55,7 @@ export class FormDataLayer {
     }
     captureSubmission(payload) {
         const send=this.sink.capture();
+        const sendConversion=this.sink.captureConversion?.() || send;
         const contact=this.contact(payload);
         return (success,data)=>{
             if(this.disposed)return;
@@ -63,9 +64,8 @@ export class FormDataLayer {
             if(!conversion || !['purchase','generate_lead'].includes(conversion.event))return;
             const identity=conversion.ecommerce?.transaction_id||conversion.event_id;
             if(this.conversions.has(identity))return;
-            if(!this.#publishPage('confirmation',send))return;
-            this.pageType='confirmation';
-            if(send(contact?{...conversion,user_data:contact}:conversion))this.conversions.add(identity);
+            if(this.#publishPage('confirmation',send))this.pageType='confirmation';
+            if(sendConversion(contact?{...conversion,user_data:contact}:conversion))this.conversions.add(identity);
         };
     }
 

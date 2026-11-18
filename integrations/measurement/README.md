@@ -117,3 +117,86 @@ References: [GTM import/export](https://support.google.com/tagmanager/answer/610
 [GA4 native user-provided data](https://support.google.com/analytics/answer/14179229?hl=en),
 [GA4 prerequisites](https://support.google.com/analytics/answer/14077171?hl=en),
 [official Meta template](https://github.com/meta/GoogleTagManager-WebTemplate-For-FacebookPixel).
+
+## Complete conversion payload examples
+
+These complete example payloads use fictional contacts. `transaction_id` is the
+server-generated UUID of the immutable purchase fact, not the order number or
+payment reference. Order leads use a server-generated `event_id`; notification
+subscriptions use a client UUID created for that submission. Replays keep the
+same fact ID. Deduplicate by that ID; do not generate a new ID on retry. Product
+IDs identify catalog products. Example IDs must be replaced with actual event
+IDs, never reused for real conversions. `user_data` is optional when no usable
+contact is available; sale-opening subscriptions provide email only. Successful
+recovery after transport replacement contains the conversion fact without
+`user_data`. Consent remains the current state passed to tags, including denial.
+
+```json
+{
+  "event": "purchase",
+  "ecommerce": {
+    "transaction_id": "c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+    "currency": "CZK",
+    "value": 1000,
+    "payment_type": "bank_transfer",
+    "items": [
+      {
+        "item_id": "product_11",
+        "item_name": "Concert ticket",
+        "price": 500,
+        "quantity": 2,
+        "item_category": "Tickets",
+        "item_brand": "Summer festival"
+      }
+    ]
+  },
+  "user_data": {
+    "email": "buyer@example.test",
+    "phone_number": "+420601234567"
+  }
+}
+```
+
+```json
+{
+  "event": "generate_lead",
+  "lead_source": "free_registration",
+  "event_id": "d5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+  "currency": "CZK",
+  "value": 0,
+  "user_data": {
+    "email": "buyer@example.test",
+    "phone_number": "+420601234567"
+  }
+}
+```
+
+```json
+{
+  "event": "generate_lead",
+  "lead_source": "waitlist",
+  "event_id": "e5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+  "currency": "CZK",
+  "value": 0,
+  "user_data": {
+    "email": "buyer@example.test",
+    "phone_number": "+420601234567"
+  }
+}
+```
+
+```json
+{
+  "event": "generate_lead",
+  "lead_source": "sale_opening_notification",
+  "event_id": "f5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+  "currency": "CZK",
+  "value": 0,
+  "user_data": {
+    "email": "buyer@example.test"
+  }
+}
+```
+
+Initial measurement approval is handled manually by the platform administrator,
+who replies by email. No standard processing time is specified.

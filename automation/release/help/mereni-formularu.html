@@ -4,7 +4,7 @@
 <p><strong>GTM pořadatele ve Festappu</strong> spouští kontejner GTM nebo skripty nastavené u pořadatele v odděleném měřicím rámci. Používá lištu formuláře, případně výslovně povolené převzetí souhlasu z webu. Samostatný odkaz používá tento režim. Prohlížeč odděluje úložiště rámce od Vašeho webu: shodné G-ID nezaručuje stejnou návštěvu ani zdroj kampaně. Festapp nekopíruje cookies GA, Google Ads ani Mety a neprodlužuje jejich platnost.</p>
 <p><strong>Pro co nejpřesnější měření doporučujeme vložit formulář přímo na Váš web s událostmi do dataLayer Vašeho webu.</strong> Měření pak běží v GTM Vašeho webu a souhlas řídí Vaše lišta, takže zdroj návštěvy i konverze odpovídají ostatnímu měření webu. Samostatný odkaz na formulář používá vlastní lištu formuláře. Převzetí souhlasu z lišty Vašeho webu podporujeme u vybraných lišt (nyní Complianz, CookieConsent v3 od orestbida, Cookiebot a nativní lišta Wixu). Podporu se snažíme průběžně udržovat aktuální, ale po změně nebo aktualizaci lišty na Vašem webu může nějakou dobu trvat, než převzetí znovu funguje. Pokud vložený formulář volbu nedostane, souhlas zůstane neudělený. Samostatně otevřený formulář může zobrazit vlastní lištu.</p>
 <h2 id="zapnuti">Zapněte měření u pořadatele a formuláře</h2>
-<ol><li>V administraci otevřete nastavení pořadatele a sekci <strong>Měření</strong>. Nastavte <strong>Povolit měření pro tohoto pořadatele</strong>. Zadejte <strong>ID kontejneru Google Tag Manager</strong> ve tvaru <code>GTM-XXXX</code>, nikoli instalační kód, a úplný HTTPS <strong>Odkaz na zásady ochrany osobních údajů</strong>.<span class="guide-step-link">{{APP_LINK:organization}}</span></li><li>Upravte vzhled cookie lišty a případně vlastní nadpis a text. Obnovení výchozího textu vrátí překlady podle jazyka návštěvníka. Vlastní text je společný pro jazyky. <strong>Vlastní skripty (pokročilé)</strong> nastavujte pouze se správcem měření a s odpovídajícími podmínkami souhlasu.</li><li>Pokud pořadatel ještě nemá povolené měření, v části <strong>Základ</strong> použijte <strong>Požádat o povolení měření</strong>. Žádost platí pro první povolení posílat události do dataLayer Vašeho webu nebo spustit GTM pořadatele ve Festappu. Po odeslání uvidíte datum žádosti. Při chybě odeslání kontaktujte podporu.</li><li>Otevřete svůj uložený formulář, zapněte jeho <strong>Povolit měření</strong> a uložte ho. Každý formulář se zapíná zvlášť. Zkontrolujte stav: vypnuto, chybějící cíl, zásady, blokace platformou nebo neověřené prostředí vysvětlují, proč měření neběží.<span class="guide-step-link">{{APP_LINK:forms}}</span></li></ol>
+<ol><li>V administraci otevřete nastavení pořadatele a sekci <strong>Měření</strong>. Nastavte <strong>Povolit měření pro tohoto pořadatele</strong>. Zadejte <strong>ID kontejneru Google Tag Manager</strong> ve tvaru <code>GTM-XXXX</code>, nikoli instalační kód, a úplný HTTPS <strong>Odkaz na zásady ochrany osobních údajů</strong>.<span class="guide-step-link">{{APP_LINK:organization}}</span></li><li>Upravte vzhled cookie lišty a případně vlastní nadpis a text. Obnovení výchozího textu vrátí překlady podle jazyka návštěvníka. Vlastní text je společný pro jazyky. <strong>Vlastní skripty (pokročilé)</strong> nastavujte pouze se správcem měření a s odpovídajícími podmínkami souhlasu.</li><li>Pokud pořadatel ještě nemá povolené měření, v části <strong>Základ</strong> použijte <strong>Požádat o povolení měření</strong>. Žádost platí pro první povolení posílat události do dataLayer Vašeho webu nebo spustit GTM pořadatele ve Festappu. Po odeslání uvidíte datum žádosti. Správce platformy žádost vyřizuje ručně a ozve se Vám e-mailem. Při chybě odeslání kontaktujte podporu.</li><li>Otevřete svůj uložený formulář, zapněte jeho <strong>Povolit měření</strong> a uložte ho. Každý formulář se zapíná zvlášť. Zkontrolujte stav: vypnuto, chybějící cíl, zásady, blokace platformou nebo neověřené prostředí vysvětlují, proč měření neběží.<span class="guide-step-link">{{APP_LINK:forms}}</span></li></ol>
 <h2 id="weby">Přidejte své weby</h2>
 <p>V části <strong>Weby</strong> zadejte přesnou HTTPS adresu, včetně případného <code>www</code>, bez cesty a koncového lomítka. Klikněte na <strong>Přidat</strong> a uložte nastavení pořadatele. Takto můžete přidat až 10 webů, které provozujete. Po povolení měření pořadatele se všechny uložené weby povolí automaticky.</p>
 <h2 id="souhlas">Souhlas návštěvníka</h2>
@@ -20,6 +20,63 @@
 <table><thead><tr><th>Události</th><th>Význam a údaje</th></tr></thead><tbody><tr><td><code>form_page_view</code>, <code>page_view</code></td><td>Zobrazení vloženého formuláře v obou režimech, respektive samostatného formuláře. Veřejný kontext obsahuje typ stránky a jazyk.</td></tr><tr><td><code>form_start</code>, <code>form_submit_error</code></td><td>Začátek vyplňování nebo chyba odeslání, bez obsahu polí a chybových zpráv návštěvníka.</td></tr><tr><td><code>view_item</code>, <code>add_to_cart</code>, <code>remove_from_cart</code></td><td>Veřejné položky, množství, ceny a měna v <code>ecommerce</code>.</td></tr><tr><td><code>begin_checkout</code>, <code>add_payment_info</code></td><td>Průchod objednávkou a volba způsobu platby, nikoli potvrzení platby.</td></tr><tr><td><code>purchase</code></td><td>Dokončená objednávka, hodnota, měna a jedinečné <code>transaction_id</code>. Samotná událost nepotvrzuje přijetí peněz.</td></tr><tr><td><code>generate_lead</code></td><td>Bezplatná registrace, čekací listina či zájem o otevření prodeje; <code>lead_source</code>, <code>event_id</code>, měna a nulová hodnota. Nejde o nákup.</td></tr></tbody></table>
 <p><code>user_data</code> obsahuje jen omezený e-mail a telefon dostupný u konverze. Nativní proměnnou User-Provided Data používají GA4 u nákupu a leadu a obě konverze Google Ads. Nejprve nastavte podporu těchto údajů a příslušné podmínky v účtech GA4 a Ads; import účty ani podmínky nemění. Meta Purchase a Lead používají Advanced Matching. Google dostává telefon v E.164, Meta číslice s předvolbou bez úvodního <code>+</code>. Automatické hledání kontaktů v obsahu stránky se nezapíná. Vymazání údajů z aktuálního stavu dataLayer nemaže jeho historii ani stav Mety. V Unit runtime je technický stav souhlasu v <code>festapp_consent</code>; není dokladem uložené volby CMP.</p>
 <p>Šablona používá pokročilý Google Consent Mode: značky Google mají <strong>Žádný další souhlas není vyžadován</strong> a řídí se vestavěnými kontrolami a volbou z lišty webu. Web musí nastavit souhlasy před značkami; šablona žádné souhlasy sama neuděluje. Meta má další podmínku <code>ad_storage</code>, kterou musí Vaše lišta mapovat na souhlas s Metou a případným párováním kontaktů, včetně odvolání. Meta-enabled Conversions API je výslovně vypnuté. Konverze Ads <strong>Registrace</strong> počítá pouze dokončené bezplatné registrace; čekací listina a zájem o otevření prodeje zůstávají jinými leady. Pro publikovanou verzi můžete použít název <em>Added Festapp form tracking for GA4, Google Ads and Meta</em>.</p>
+<h2 id="conversion-examples">Ukázkové konverzní události</h2>
+<p>Úplné ukázky používají smyšlené kontakty. Nákup má serverové UUID <code>transaction_id</code>, nikoli číslo objednávky nebo variabilní symbol. Registrace a čekací listina mají serverové <code>event_id</code>; zájem o otevření prodeje má UUID vytvořené pro dané odeslání v prohlížeči. Při opakování stejného faktu zůstává ID stejné a slouží k odstranění duplicit. ID produktů označují položky katalogu. Ukázková ID nahraďte skutečnými konverzními ID. <code>user_data</code> chybí, pokud kontakt není použitelný, a při obnově konverze po výměně transportu. Aktuální stav souhlasu včetně odmítnutí nadále dostávají značky. Ceny položek po slevě jsou čisté ceny ze serverového ocenění; <code>coupon</code> ani <code>discount</code> se neexportují.</p>
+<pre><code tabindex="0">{
+  &quot;event&quot;: &quot;purchase&quot;,
+  &quot;ecommerce&quot;: {
+    &quot;transaction_id&quot;: &quot;c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44&quot;,
+    &quot;currency&quot;: &quot;CZK&quot;,
+    &quot;value&quot;: 1000,
+    &quot;payment_type&quot;: &quot;bank_transfer&quot;,
+    &quot;items&quot;: [
+      {
+        &quot;item_id&quot;: &quot;product_11&quot;,
+        &quot;item_name&quot;: &quot;Vstupenka na koncert&quot;,
+        &quot;price&quot;: 500,
+        &quot;quantity&quot;: 2,
+        &quot;item_category&quot;: &quot;Vstupenky&quot;,
+        &quot;item_brand&quot;: &quot;Letní festival&quot;
+      }
+    ]
+  },
+  &quot;user_data&quot;: {
+    &quot;email&quot;: &quot;zakaznik@example.test&quot;,
+    &quot;phone_number&quot;: &quot;+420601234567&quot;
+  }
+}</code></pre>
+<pre><code tabindex="0">{
+  &quot;event&quot;: &quot;generate_lead&quot;,
+  &quot;lead_source&quot;: &quot;free_registration&quot;,
+  &quot;event_id&quot;: &quot;d5c624bd-01b6-4dcf-9bf9-00dcb73a7b44&quot;,
+  &quot;currency&quot;: &quot;CZK&quot;,
+  &quot;value&quot;: 0,
+  &quot;user_data&quot;: {
+    &quot;email&quot;: &quot;zakaznik@example.test&quot;,
+    &quot;phone_number&quot;: &quot;+420601234567&quot;
+  }
+}</code></pre>
+<pre><code tabindex="0">{
+  &quot;event&quot;: &quot;generate_lead&quot;,
+  &quot;lead_source&quot;: &quot;waitlist&quot;,
+  &quot;event_id&quot;: &quot;e5c624bd-01b6-4dcf-9bf9-00dcb73a7b44&quot;,
+  &quot;currency&quot;: &quot;CZK&quot;,
+  &quot;value&quot;: 0,
+  &quot;user_data&quot;: {
+    &quot;email&quot;: &quot;zakaznik@example.test&quot;,
+    &quot;phone_number&quot;: &quot;+420601234567&quot;
+  }
+}</code></pre>
+<pre><code tabindex="0">{
+  &quot;event&quot;: &quot;generate_lead&quot;,
+  &quot;lead_source&quot;: &quot;sale_opening_notification&quot;,
+  &quot;event_id&quot;: &quot;f5c624bd-01b6-4dcf-9bf9-00dcb73a7b44&quot;,
+  &quot;currency&quot;: &quot;CZK&quot;,
+  &quot;value&quot;: 0,
+  &quot;user_data&quot;: {
+    &quot;email&quot;: &quot;zakaznik@example.test&quot;
+  }
+}</code></pre>
 <h2 id="zasady">Co popsat v liště a zásadách</h2>
 <p>Popište pořadatele jako správce a Festapp jako zpracovatele, účely měření a reklamy, skutečné služby a příjemce a případné předání e-mailu a telefonu z objednávky reklamním systémům. U Unit měření uveďte také oddělenou doménu <code>*.pages.dev</code>. Doby uložení a další předávání určete podle své skutečné konfigurace služeb. U převzetí souhlasu výslovně zahrňte nákup ve formuláři, rozsah volby, její platnost a odvolání na webu i ve formuláři. Uchovejte odpovídající znění lišty a revizi uložené volby; změna textu sama neopravňuje použít starý souhlas.</p>
 <h2 id="overeni">Ověření a časté potíže</h2>

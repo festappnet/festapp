@@ -126,3 +126,16 @@ test('HTML/Webnode invalid or foreign export blocks stale output and copy',t=>{
   assert.equal(form.querySelector('[name=consent-export]').getAttribute('aria-invalid'),'true');
  }
 });
+
+test('WordPress HTML examples match the complete default generator output',t=>{
+ for(const english of [false,true]) {
+  const {form,submit}=fixture(t,english);
+  const origin=english?'https://example.test':'https://vstupenky.online';
+  const slug=english?'YOUR-FORM':'VAS-FORMULAR';
+  submit(`${origin}/form/${slug}`);
+  const guide=new JSDOM(readFileSync(new URL('../../../automation/release/help/'+(english?'en/':'')+'wordpress.html',import.meta.url),'utf8'));
+  t.after(()=>guide.window.close());
+  const snippet=guide.window.document.querySelector('[data-code-example] code').textContent;
+  assert.equal(snippet.replaceAll('https://vstupenky.online',origin),form.querySelector('[data-embed-output] textarea').value);
+ }
+});

@@ -22,6 +22,7 @@ export class FormMeasurementSession {
         entryAllowed, onActive=()=>{}, clock=()=>Date.now()}) {
         Object.assign(this,{win,model,policySource,consentSource,identitySource,transport,onActive,clock});
         this.entryAllowed=(entryAllowed ?? publicFormLocation(win.location,{entry:true})) && documentEntryAllowed(win);
+        this.policyVerification=0; this.contextEpoch=0; this.pendingConversions=new Map(); this.deliveredConversions=new Set();
         this.generation=0; this.state='blocked'; this.consent=measurementConsent(false);
     }
     start() {
@@ -31,10 +32,18 @@ export class FormMeasurementSession {
         this.visibility=()=>{if (!this.win.document.hidden) this.refresh();};
         this.pagehide=()=>{this.suspended=true; this.invalidate();};
         this.pageshow=()=>{this.suspended=false; this.invalidate(); this.refresh();};
-        this.contextChanged=()=>{this.invalidate(); this.refresh();};
+        this.observedIdentity=this.identity();
+        this.contextChanged=()=>{this.observedIdentity=this.identity(); this.contextEpoch++; this.pendingConversions.clear(); this.invalidate(); this.refresh();};
         this.win.document.addEventListener('visibilitychange',this.visibility);
         this.win.addEventListener('pagehide',this.pagehide); this.win.addEventListener('pageshow',this.pageshow);
-        for (const event of ['storage','popstate','hashchange']) this.win.addEventListener(event,this.contextChanged);
+        // Consent sources own their storage updates. Other tabs can change unrelated
+        // keys without changing the visitor or invalidating an in-flight order fact.
+        this.storageChanged=()=>{
+            if(this.identity()!==this.observedIdentity)this.contextChanged();
+            else this.refresh();
+        };
+        this.win.addEventListener('storage',this.storageChanged);
+        for (const event of ['popstate','hashchange']) this.win.addEventListener(event,this.contextChanged);
         this.unsubscribeIdentity=this.identitySource?.subscribe?.(()=>this.contextChanged());
         this.unsubscribeTransport=this.transport.subscribe?.(()=>this.reconcile());
         this.timer=this.win.setInterval(()=>this.refresh(),20000);
@@ -65,7 +74,9 @@ export class FormMeasurementSession {
             this.win.clearTimeout(this.expiry);
             this.expiry=this.win.setTimeout(()=>{this.invalidate();},Math.max(0,this.until-this.clock()));
             this.transport.renew?.(this.consentDeadline());
+            this.policyVerification++;
             this.reconcile();
+            this.flushConversions();
         }).catch(()=>{
             if (!this.disposed && generation===this.generation) {this.until=0; this.invalidate();}
         }).finally(()=>{if(this.inflight===request)this.inflight=null;});
@@ -116,7 +127,7 @@ export class FormMeasurementSession {
             consent:measurementConsent(this.consent),leaseId:this.consent.leaseId};
         this.state='starting';
         try {this.transport.activate({...grant,expiresAt:this.consentDeadline(),
-            onReady:()=>{if(this.grant===grant && this.permitted() && this.state==='starting'){this.state='active';this.onActive();}},
+            onReady:()=>{if(this.grant===grant && this.permitted() && this.state==='starting'){this.state='active';this.onActive();this.flushConversions();}},
             onMismatch:()=>{if(this.grant===grant){this.failureUntil=this.clock()+20000;this.invalidate();this.refresh();}}});}
         catch {this.invalidate();}
     }
@@ -128,13 +139,48 @@ export class FormMeasurementSession {
             try {return !!payload && this.transport.track(payload)===true;} catch {return false;}
         };
     }
+    // Only immutable conversion facts may cross a grant boundary. Never retain contacts.
+    captureConversion() {
+        const send=this.capture(), manifest=this.manifest, identity=this.identity();
+        const host=this.transport.hostContext?.() || null;
+        const selection=this.grant?.selection, epoch=this.contextEpoch;
+        const eligible=this.state==='active' && this.permitted();
+        return input=>{
+            const payload=analyticsPayload(input);
+            if(this.disposed || !eligible || !payload || !['purchase','generate_lead'].includes(payload.event))return false;
+            const key=payload.ecommerce?.transaction_id || payload.event_id;
+            if(this.deliveredConversions.has(key) || this.pendingConversions.has(key))return true;
+            if(send(payload)){this.deliveredConversions.add(key);return true;}
+            const {user_data, ...fact}=payload;
+            const pending={fact,manifest,identity,host,selection,epoch,verification:this.policyVerification};
+            this.pendingConversions.set(key,pending);
+            this.refresh();
+            return true;
+        };
+    }
+    flushConversions() {
+        for(const [key,pending] of this.pendingConversions) {
+            const host=this.transport.hostContext?.() || null;
+            if(pending.epoch!==this.contextEpoch || pending.identity!==this.identity() || !sameMeasurementManifest(pending.manifest,this.manifest) ||
+                pending.host?.origin!==host?.origin || pending.host?.instance!==host?.instance ||
+                (this.grant && pending.selection!==this.grant.selection)) {
+                this.pendingConversions.delete(key);continue;
+            }
+            // record checks the current policy, identity, lease and consent deadline again.
+            // Denied consent remains a state supplied to tags, as for immediate delivery.
+            if(this.policyVerification>pending.verification && this.record(pending.fact)) {
+                this.pendingConversions.delete(key);this.deliveredConversions.add(key);
+            }
+        }
+    }
     record(input) {return this.capture()(input);}
     dispose() {
         if(this.disposed)return;
-        this.disposed=true; this.invalidate(); this.win.clearTimeout(this.expiry); this.consentBinding=null; this.disconnectConsent?.();
+        this.disposed=true; this.pendingConversions.clear(); this.invalidate(); this.win.clearTimeout(this.expiry); this.consentBinding=null; this.disconnectConsent?.();
         this.unsubscribeIdentity?.();this.unsubscribeTransport?.();this.win.clearInterval(this.timer);
         this.win.document.removeEventListener('visibilitychange',this.visibility);
         this.win.removeEventListener('pagehide',this.pagehide);this.win.removeEventListener('pageshow',this.pageshow);
-        for(const event of ['storage','popstate','hashchange'])this.win.removeEventListener(event,this.contextChanged);
+        this.win.removeEventListener('storage',this.storageChanged);
+        for(const event of ['popstate','hashchange'])this.win.removeEventListener(event,this.contextChanged);
     }
 }
