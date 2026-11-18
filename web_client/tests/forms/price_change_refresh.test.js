@@ -101,9 +101,9 @@ test('failed refresh preserves draft and permits explicit retry', async () => {
   } finally { DbForms.getFormByLink = read; }
 });
 test('recipient change mandates fresh catalog/recipient review, preserves answers and never resubmits', async () => {
-  const [{paymentMethodText}, {WaitlistStrings}, {OrderResult}] = await Promise.all([
+  const [{paymentMethodText}, {CommonStrings}, {OrderResult}] = await Promise.all([
     import('../../src/components/forms/payment_method_strings.js'),
-    import('../../src/components/forms/waitlist_strings.js'),
+    import('../../src/components/shared/common_strings.js'),
     import('../../src/components/forms/order_result.js'),
   ]);
   const read = DbForms.getFormByLink;
@@ -123,7 +123,7 @@ test('recipient change mandates fresh catalog/recipient review, preserves answer
     assert.equal(reads, 0);
     assert.equal(page._paymentReviewPending, true);
     assert.equal(page.host.querySelector('p').textContent, paymentMethodText('reason_recipient_changed'));
-    assert.equal(page.host.querySelector('button').textContent, WaitlistStrings.refresh);
+    assert.equal(page.host.querySelector('button').textContent, CommonStrings.refresh);
     // The ordinary continue action must also go through mandatory refresh.
     page.validateAndSubmit(document.createElement('form'), old.formModel);
     await new Promise(resolve => setImmediate(resolve));
@@ -138,6 +138,6 @@ test('recipient change mandates fresh catalog/recipient review, preserves answer
     const error = document.createElement('section');
     OrderResult.render(error, false, {errorCode: 'STRIPE_RECIPIENT_CHANGED'}, {...model(), visibleFields: [], communicationTone: 'formal'}, () => {});
     assert.equal(error.querySelector('.result-title').textContent, paymentMethodText('reason_recipient_changed'));
-    assert.equal(error.querySelector('.result-subtitle').textContent, WaitlistStrings.refresh);
+    assert.equal(error.querySelector('.result-subtitle').textContent, CommonStrings.refresh);
   } finally { DbForms.getFormByLink = read; }
 });

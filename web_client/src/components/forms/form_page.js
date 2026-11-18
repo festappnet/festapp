@@ -323,7 +323,7 @@ export class FormPage extends Component {
                 await loadOrderOverview(section, this.waitlistCommands, viewScope, null, true);
             } catch {
                 const error = document.createElement('p'); error.textContent = overviewText('failed'); error.setAttribute('role', 'alert');
-                const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = overviewText('refresh'); retry.onclick = load;
+                const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = CommonStrings.refresh; retry.onclick = load;
                 section.replaceChildren(error, retry);
             }
         };
@@ -364,7 +364,7 @@ export class FormPage extends Component {
         const text = document.createElement('p');
         text.textContent = recipientChanged ? paymentMethodText('reason_recipient_changed') : priceChanged ? paymentMethodText('priceChanged') : WaitlistStrings.text(reason);
         const button = document.createElement('button'); button.type = 'button';
-        button.textContent = priceChanged ? paymentMethodText('reviewCurrentPrices') : WaitlistStrings.refresh;
+        button.textContent = priceChanged ? paymentMethodText('reviewCurrentPrices') : CommonStrings.refresh;
         if (reviewRequired) button.dataset.refreshPayment = 'true';
         button.onclick = async () => {
             button.disabled = true;

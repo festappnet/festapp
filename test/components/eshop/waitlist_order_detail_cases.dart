@@ -414,7 +414,7 @@ void main() {
         .first;
     expect(find.descendant(of: participantCard, matching: withdrawButton),
         findsOneWidget);
-    expect(find.text(WaitlistStrings.refresh), findsNothing);
+    expect(find.text(CommonStrings.refresh), findsNothing);
     expect(find.text(WaitlistStrings.text('adminWithdrawHelp')), findsNothing);
     await tester.tap(offerButton);
     await tester.pumpAndSettle();
@@ -759,7 +759,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(opened, ['offer-one']);
       expect(loads, 1, reason: 'Opening a new tab does not imply completion');
-      expect(find.text(WaitlistStrings.refresh), findsNothing);
+      expect(find.text(CommonStrings.refresh), findsNothing);
       expect(find.text(CommonStrings.retry), findsNothing);
       expect(find.text(WaitlistStrings.text('retractOffer')), findsNothing);
       expect(find.text(WaitlistStrings.text('recordDecline')), findsNothing);

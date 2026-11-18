@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/discount_codes/discount_strings.dart';
 import 'package:festapp_core/payments.dart';
 
@@ -418,7 +419,7 @@ class _FinishOrderScreenState extends State<FinishOrderScreen>
       );
     } else if (_orderData?['errorCode'] == 'STRIPE_RECIPIENT_CHANGED') {
       title = PaymentMethodStrings.reason('recipient_changed');
-      subtitle = WaitlistStrings.refresh;
+      subtitle = CommonStrings.refresh;
     } else if ([
       'DISCOUNT_QUOTE_CHANGED',
       'DISCOUNT_INVALID',

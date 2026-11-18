@@ -31,7 +31,6 @@ export class WaitlistStrings {
     static get cancel() { return LocalizationService.tr('Waitlist.cancel'); }
     static get linkedOrders() { return LocalizationService.tr('Waitlist.linkedOrders'); }
     static get invalid() { return LocalizationService.tr('Waitlist.invalid'); }
-    static get refresh() { return LocalizationService.tr('Waitlist.refresh'); }
     static get count() { return LocalizationService.tr('Waitlist.count'); }
     static get expiresAt() { return LocalizationService.tr('Waitlist.expiresAt'); }
 }

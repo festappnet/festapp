@@ -1,3 +1,4 @@
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/communication_tone.dart';
 import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -522,7 +523,7 @@ class _WaitlistOffersDialogState extends State<WaitlistOffersDialog> {
         if (_proposal == null)
           TextButton(
             onPressed: _busy ? null : _load,
-            child: Text(WaitlistStrings.refresh),
+            child: Text(CommonStrings.refresh),
           ),
         if (_proposal != null)
           FilledButton(

@@ -64,7 +64,6 @@ class WaitlistStrings {
   static String get cancel => text('cancel');
   static String get linkedOrders => text('linkedOrders');
   static String get invalid => text('invalid');
-  static String get refresh => text('refresh');
   static String get count => text('count');
   static String get expiresAt => text('expiresAt');
 }
