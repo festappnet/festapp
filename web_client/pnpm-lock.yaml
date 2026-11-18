@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  picomatch@4.0.7: aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3
+
 importers:
 
   .:
@@ -1978,7 +1981,7 @@ snapshots:
       detect-libc: 2.1.2
       is-glob: 4.0.3
       node-addon-api: 7.1.1
-      picomatch: 4.0.7
+      picomatch: 4.0.7(patch_hash=aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3)
     optionalDependencies:
       '@parcel/watcher-android-arm64': 2.6.0
       '@parcel/watcher-darwin-arm64': 2.6.0
@@ -2341,9 +2344,9 @@ snapshots:
 
   fast-levenshtein@2.0.6: {}
 
-  fdir@6.5.0(picomatch@4.0.7):
+  fdir@6.5.0(picomatch@4.0.7(patch_hash=aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3)):
     optionalDependencies:
-      picomatch: 4.0.7
+      picomatch: 4.0.7(patch_hash=aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3)
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -2663,7 +2666,7 @@ snapshots:
 
   picocolors@1.1.1: {}
 
-  picomatch@4.0.7: {}
+  picomatch@4.0.7(patch_hash=aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3): {}
 
   playwright-core@1.65.0: {}
 
@@ -2783,8 +2786,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.7)
-      picomatch: 4.0.7
+      fdir: 6.5.0(picomatch@4.0.7(patch_hash=aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3))
+      picomatch: 4.0.7(patch_hash=aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3)
 
   tldts-core@7.4.19: {}
 
@@ -2827,7 +2830,7 @@ snapshots:
   vite@8.3.8(esbuild@0.28.2)(sass@1.107.1):
     dependencies:
       lightningcss: 1.33.0
-      picomatch: 4.0.7
+      picomatch: 4.0.7(patch_hash=aa994182ccc72f2ee8af4231b1d88df2d1af7b4132b0134cceb05e5b15bad4d3)
       postcss: 8.5.32
       rolldown: 1.2.19
       tinyglobby: 0.2.17

@@ -4,3 +4,6 @@ allowBuilds:
   '@parcel/watcher': false
   esbuild: true
   workerd: true
+
+patchedDependencies:
+  picomatch@4.0.7: pnpm-patches/picomatch@4.0.7.patch
