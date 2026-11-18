@@ -240,8 +240,6 @@
       "workflow": "seat-checkout-regressions.yml",
       "node": "22.23.4",
       "steps": [
-        "ticket-rendering-install",
-        "ticket-rendering-client",
         "seat-install",
         "seat-database",
         "seat-authorization",
@@ -250,81 +248,26 @@
         "seat-delivery",
         "seat-browser"
       ],
-      "inputGroups": [
-        {
-          "steps": [
-            "seat-install",
-            "seat-database",
-            "seat-authorization",
-            "seat-payments",
-            "seat-orders",
-            "seat-delivery",
-            "seat-browser"
-          ],
-          "inputs": [
-            "database/**",
-            "supabase/**",
-            "automation/local_db/**",
-            "automation/baseline.py",
-            "automation/historical-sql-manifest.json",
-            "automation/*manifest*",
-            "automation/assemble-*.py",
-            "automation/email-delivery/**",
-            "automation/tests/authorization_read_phase.test.mjs",
-            "automation/payments/**",
-            "web_client/**",
-            "workers/image-worker/**",
-            "packages/festapp_contracts/**",
-            "integrations/make/**",
-            "automation/hetzner-supabase/runtime/Caddyfile.integrations",
-            "assets/translations/**",
-            "automation/lib/**",
-            "test/fixtures/**"
-          ]
-        },
-        {
-          "steps": [
-            "ticket-rendering-install",
-            "ticket-rendering-client"
-          ],
-          "inputs": [
-            "lib/**",
-            "test/**",
-            "assets/**",
-            "fonts/**",
-            "pubspec.*",
-            ".fvmrc",
-            "supabase/functions/**",
-            "automation/tickets/**",
-            "automation/client_test_inventory*",
-            "automation/project.conf",
-            "automation/client_test_inventory.*",
-            "packages/festapp_contracts/**",
-            "packages/android_file_picker/**",
-            "packages/desktop_drop/**",
-            "packages/festapp_contracts/**",
-            "packages/festapp_core/**",
-            "packages/file_picker/**",
-            "packages/file_picker_darwin/**",
-            "packages/file_picker_linux/**",
-            "packages/file_picker_platform_interface/**",
-            "packages/file_picker_web/**",
-            "packages/maplibre_android/**",
-            "packages/maplibre_ios/**",
-            "packages/maplibre_platform_interface/**",
-            "packages/nm/**",
-            "packages/super_native_extensions/**",
-            "packages/irondash_engine_context/**",
-            "packages/windows_file_picker/**",
-            "automation/testing/ticket_default_ci.dart",
-            "database/fixtures/**",
-            "automation/lib/**"
-          ]
-        }
-      ],
-      "hostedResources": {
-        "ramMiB": 6500
-      }
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/historical-sql-manifest.json",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "automation/email-delivery/**",
+        "automation/tests/authorization_read_phase.test.mjs",
+        "automation/payments/**",
+        "web_client/**",
+        "workers/image-worker/**",
+        "packages/festapp_contracts/**",
+        "integrations/make/**",
+        "automation/hetzner-supabase/runtime/Caddyfile.integrations",
+        "assets/translations/**",
+        "automation/lib/**",
+        "test/fixtures/**"
+      ]
     },
     "ticket-preview-and-delivery": {
       "workflow": "seat-checkout-regressions.yml",
@@ -572,6 +515,47 @@
         "automation/testing/cms_fixture_rest.py",
         "automation/testing/cms_fixture_postgres.py",
         "automation/local_db/**"
+      ]
+    },
+    "ticket-rendering-contracts": {
+      "workflow": "seat-checkout-regressions.yml",
+      "node": "22.23.4",
+      "steps": [
+        "ticket-rendering-install",
+        "ticket-rendering-client"
+      ],
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "supabase/functions/**",
+        "automation/tickets/**",
+        "automation/client_test_inventory*",
+        "automation/project.conf",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_contracts/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "automation/testing/ticket_default_ci.dart",
+        "database/fixtures/**",
+        "automation/lib/**"
       ]
     }
   },
@@ -857,73 +841,6 @@
         "image-browser-install"
       ]
     },
-    "ticket-rendering-install": {
-      "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
-      "after": [],
-      "resources": {
-        "ramMiB": 2000,
-        "flutter": 1,
-        "sourceGeneration": 1
-      },
-      "inputs": [
-        "pubspec.*",
-        ".fvmrc",
-        "automation/project.conf",
-        "automation/configure_fonts.js",
-        "automation/lib/**",
-        "fonts/**",
-        "assets/**",
-        "packages/**/pubspec.*"
-      ]
-    },
-    "ticket-rendering-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart test/sessions/ticket_czech_cases.dart test/sessions/ticket_palette_cases.dart\n",
-      "after": [
-        "ticket-rendering-install"
-      ],
-      "resources": {
-        "ramMiB": 2600,
-        "flutter": 1
-      },
-      "requires": [
-        "ticket-rendering-install"
-      ],
-      "inputs": [
-        "lib/**",
-        "test/**",
-        "assets/**",
-        "fonts/**",
-        "pubspec.*",
-        ".fvmrc",
-        "supabase/functions/**",
-        "automation/tickets/**",
-        "automation/client_test_inventory*",
-        "automation/project.conf",
-        "automation/client_test_inventory.*",
-        "packages/festapp_contracts/**",
-        "packages/android_file_picker/**",
-        "packages/desktop_drop/**",
-        "packages/festapp_core/**",
-        "packages/file_picker/**",
-        "packages/file_picker_darwin/**",
-        "packages/file_picker_linux/**",
-        "packages/file_picker_platform_interface/**",
-        "packages/file_picker_web/**",
-        "packages/maplibre_android/**",
-        "packages/maplibre_ios/**",
-        "packages/maplibre_platform_interface/**",
-        "packages/nm/**",
-        "packages/super_native_extensions/**",
-        "packages/irondash_engine_context/**",
-        "packages/windows_file_picker/**",
-        "automation/testing/ticket_default_ci.dart",
-        "test/sessions/ticket_czech_cases.dart",
-        "test/sessions/ticket_futura_cases.dart",
-        "test/sessions/ticket_palette_cases.dart",
-        "test/support/**",
-        "test/fixtures/**"
-      ]
-    },
     "seat-install": {
       "script": "cd web_client\npython3 ../automation/ci/run.py install .\n",
       "after": [],
@@ -934,38 +851,6 @@
         "web_client/package.json",
         "web_client/pnpm*",
         "web_client/.npmrc"
-      ]
-    },
-    "seat-database": {
-      "script": "python3 automation/ci/run.py inventory\npython3 automation/local_db/runtime.py prepare\n\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\n",
-      "after": [
-        "seat-install",
-        "seat-runtime-contract"
-      ],
-      "resources": {
-        "ramMiB": 1000,
-        "dbCluster": 2
-      },
-      "inputs": [
-        "database/**",
-        "supabase/migrations/**",
-        "automation/local_db/**",
-        "automation/baseline.py",
-        "automation/baselines/**",
-        "automation/historical-sql-manifest.json",
-        "automation/*manifest*",
-        "automation/assemble-*.py",
-        "web_client/scripts/run_db_tests.js",
-        "web_client/scripts/local_db_runtime.mjs",
-        "web_client/package.json",
-        "web_client/pnpm*",
-        "automation/tests/test_migration_compaction.py",
-        "automation/tests/migration_compaction.test.mjs",
-        "automation/tests/test_baseline_contract.py",
-        "automation/tests/test_historical_inputs.py"
-      ],
-      "requires": [
-        "seat-install"
       ]
     },
     "mcp-database-install": {
@@ -1024,6 +909,38 @@
       "inputProjections": {
         "web_client/package.json": "package-version"
       }
+    },
+    "seat-database": {
+      "script": "python3 automation/ci/run.py inventory\npython3 automation/local_db/runtime.py prepare\n\npython3 automation/assemble-apple-ticket-wallet-migration.py --check\n",
+      "after": [
+        "seat-install",
+        "seat-runtime-contract"
+      ],
+      "resources": {
+        "ramMiB": 1000,
+        "dbCluster": 2
+      },
+      "inputs": [
+        "database/**",
+        "supabase/migrations/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "automation/historical-sql-manifest.json",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "web_client/scripts/run_db_tests.js",
+        "web_client/scripts/local_db_runtime.mjs",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "automation/tests/test_migration_compaction.py",
+        "automation/tests/migration_compaction.test.mjs",
+        "automation/tests/test_baseline_contract.py",
+        "automation/tests/test_historical_inputs.py"
+      ],
+      "requires": [
+        "seat-install"
+      ]
     },
     "database-services-mcp-prepare": {
       "script": "bash automation/ci/prepare-mcp-postgres.sh\n",
@@ -1989,6 +1906,73 @@
         "web_client/src/version.js": "generated-web-version",
         "web_client/index.html": "html-build-version"
       }
+    },
+    "ticket-rendering-install": {
+      "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 2000,
+        "flutter": 1,
+        "sourceGeneration": 1
+      },
+      "inputs": [
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf",
+        "automation/configure_fonts.js",
+        "automation/lib/**",
+        "fonts/**",
+        "assets/**",
+        "packages/**/pubspec.*"
+      ]
+    },
+    "ticket-rendering-client": {
+      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart test/sessions/ticket_czech_cases.dart test/sessions/ticket_palette_cases.dart\n",
+      "after": [
+        "ticket-rendering-install"
+      ],
+      "resources": {
+        "ramMiB": 2600,
+        "flutter": 1
+      },
+      "requires": [
+        "ticket-rendering-install"
+      ],
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "supabase/functions/**",
+        "automation/tickets/**",
+        "automation/client_test_inventory*",
+        "automation/project.conf",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "automation/testing/ticket_default_ci.dart",
+        "test/sessions/ticket_czech_cases.dart",
+        "test/sessions/ticket_futura_cases.dart",
+        "test/sessions/ticket_palette_cases.dart",
+        "test/support/**",
+        "test/fixtures/**"
+      ]
     },
     "ticketing-catalog-contract": {
       "script": "fvm flutter test --no-pub --concurrency=1 --dart-define=FESTAPP_APP_SUPPORTED=false test/components/navigation/ticketing_catalog_boundary_cases.dart\n",

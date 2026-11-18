@@ -208,6 +208,17 @@ class ScopedPolicyTest(unittest.TestCase):
             self.assertNotEqual(selection.fingerprint(BASE,'wix-checkout-compatibility',CONTRACT),
                                 selection.fingerprint(SHA,'wix-checkout-compatibility',changed))
 
+    def test_independent_group_input_edit_preserves_sibling_proof(self):
+        changed = copy.deepcopy(CONTRACT)
+        job = changed['jobs']['server-policy']
+        image = next(group for group in job['inputGroups'] if 'image-storage' in group['steps'])
+        image['inputs'].append('automation/image-migration/example.txt')
+        with selection.lookup(), patch.object(selection, 'tree', return_value=[]):
+            self.assertEqual(selection.fingerprint(BASE,'server-policy',CONTRACT,'web-startup'),
+                             selection.fingerprint(SHA,'server-policy',changed,'web-startup'))
+            self.assertNotEqual(selection.fingerprint(BASE,'server-policy',CONTRACT,'image-storage'),
+                                selection.fingerprint(SHA,'server-policy',changed,'image-storage'))
+
     def test_raw_registry_is_projected_but_executable_ci_remains_trusted(self):
         def entries(sha):
             return b'100644 blob '+sha.encode()+b'\t'+selection.POLICY.encode()+b'\0'+b'100644 blob stable\tautomation/ci/run.py\0'
@@ -224,11 +235,14 @@ class ScopedPolicyTest(unittest.TestCase):
 class InventoryPreflightTest(unittest.TestCase):
     def test_provisioning_follows_selected_executors(self):
         flags=selection.provisioning_flags
-        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False))
-        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False))
+        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=True,python_yaml=False))
         self.assertTrue(flags(['ticket-core'],CONTRACT)['flutter'])
-        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False))
-        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True))
+        self.assertTrue(flags(['image-storage'],CONTRACT)['python_yaml'])
+        self.assertTrue(flags(['mcp-edge-policy'],CONTRACT)['deno'])
+        self.assertFalse(flags(['web-startup'],CONTRACT)['deno'])
+        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True,deno=False,python_yaml=False))
         with self.assertRaises(KeyError):flags(['unregistered-executor'],CONTRACT)
 
     def test_registration_failure_prevents_selection_and_reuse(self):
@@ -358,8 +372,7 @@ class InputTreeTest(unittest.TestCase):
                      'database/functions/example.sql', 'docs/guide.md', 'unknown',
                      'packages/festapp_contracts/payments.json']:
             self.assertEqual(set(runner.affected([path])), selection.owners(path, CONTRACT))
-        self.assertEqual(selection.unit_owners('lib/screen.dart', 'seat-checkout', CONTRACT),
-                         {'ticket-rendering-client'})
+        self.assertNotIn('seat-checkout', selection.owners('lib/screen.dart', CONTRACT))
         self.assertNotIn('wix-checkout-compatibility', selection.owners('lib/screen.dart', CONTRACT))
 
 
@@ -517,12 +530,21 @@ class ReusePolicyTest(unittest.TestCase):
                 self.assertTrue(self.evaluate()['run']);self.run[field]=old
 
     def test_pending_failure_skipped_and_newer_attempt_never_hide_behind_old_success(self):
-        for field,value in [('status','in_progress'),('conclusion','failure'),('conclusion','skipped')]:
+        for field,value in [('status','in_progress'),('conclusion','skipped'),('conclusion','cancelled')]:
             old=self.run[field];self.run[field]=value
             self.assertTrue(self.evaluate()['run']);self.run[field]=old
         older=dict(self.run)
         self.run['run_attempt']=2;self.run['conclusion']='failure'
         self.assertTrue(self.evaluate(runs=[older,self.run])['run'])
+
+    def test_completed_successful_lane_can_reuse_despite_a_failed_sibling(self):
+        self.run['conclusion'] = 'failure'
+        sibling = {**self.job, 'id': 457, 'name': 'client-contract', 'conclusion': 'failure'}
+        result = self.evaluate(jobs={123: [self.job, sibling]}, consume=True)
+        self.assertFalse(result['run'])
+        self.assertEqual(set(result['reuse']), set(self.receipt['units']))
+        self.job['conclusion'] = 'failure'
+        self.assertTrue(self.evaluate(jobs={123: [self.job, sibling]})['run'])
 
     def test_skipped_pr_without_regression_steps_does_not_block_valid_evidence(self):
         draft = {**self.run, 'id':124, 'run_number':2, 'event':'pull_request',
@@ -543,7 +565,8 @@ class ReusePolicyTest(unittest.TestCase):
                   'conclusion':'failure'}
         def digest(sha, lane, policy, unit=None):
             return 'other-inputs' if sha == failed['head_sha'] and unit != 'image-storage' else 'same-inputs'
-        result = self.evaluate(fingerprint=digest, runs=[self.run, failed], consume=True)
+        failed_job = {**self.job, 'run_id': failed['id'], 'conclusion': 'failure'}
+        result = self.evaluate(fingerprint=digest, runs=[self.run, failed], jobs={124: [failed_job]}, consume=True)
         self.assertEqual(result['execute'], ['image-storage'])
         self.assertEqual(set(result['reuse']), {'image-install','image-policy','image-preflight'})
 
@@ -555,7 +578,8 @@ class ReusePolicyTest(unittest.TestCase):
                   'conclusion':'failure'}
         def digest(sha, lane, policy, unit=None):
             return 'changed' if sha == SHA and unit == 'image-storage' else 'same-inputs'
-        result = self.evaluate(fingerprint=digest, runs=[failed, self.run], consume=True)
+        failed_job = {**self.job, 'run_id': failed['id'], 'conclusion': 'failure'}
+        result = self.evaluate(fingerprint=digest, runs=[failed, self.run], jobs={122: [failed_job]}, consume=True)
         self.assertEqual(result['execute'], ['image-storage'])
         self.assertEqual(set(result['reuse']), {'image-install','image-policy','image-preflight'})
 

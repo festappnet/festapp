@@ -78,6 +78,9 @@ class MirrorContractTest(unittest.TestCase):
                         self.assertEqual(step['if'],"steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'")
                     elif name in ('client-contract', 'client-browser-contract') and step.get('uses', '').startswith('pnpm/action-setup@'):
                         self.assertEqual(step['if'], "github.job == 'client-contract' && steps.selection.outputs.run == 'true'")
+                    elif name == 'server-policy' and step.get('name') in ('Install Python YAML parser', 'Install pinned Deno'):
+                        outputs = {'Install Python YAML parser': 'python_yaml', 'Install pinned Deno': 'deno'}
+                        self.assertEqual(step['if'], f"steps.selection.outputs.{outputs[step['name']]} == 'true'")
                     elif step.get('name') == 'Restore pinned WordPress core archive':
                         self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
                     else:
@@ -164,7 +167,6 @@ class MirrorContractTest(unittest.TestCase):
     def test_hosted_lanes_have_capacity_to_overlap_independent_checks(self):
         for lane, concurrent in [
             ('wix-checkout-compatibility', ('wix-quick', 'wix-adapters', 'wix-cms')),
-            ('seat-checkout', ('ticket-rendering-client', 'seat-browser', 'seat-orders')),
             ('ticket-preview-and-delivery', ('ticket-client', 'ticket-edge')),
         ]:
             units = runner.selected_units([lane])
@@ -221,7 +223,7 @@ class MirrorContractTest(unittest.TestCase):
         supabase=next(s for s in seat if s.get('run') == 'bash automation/ci/supabase.sh')
         self.assertEqual(supabase['if'],"steps.selection.outputs.sql == 'true'")
         prepare=next(s for s in seat if s.get('name')=='Prepare isolated browser and database image')
-        self.assertEqual(prepare['env'],{'FESTAPP_CI_NEEDS_DATABASE':"${{ github.job != 'seat-checkout' && steps.selection.outputs.sql == 'true' }}",
+        self.assertEqual(prepare['env'],{'FESTAPP_CI_NEEDS_DATABASE':'${{ steps.selection.outputs.sql }}',
                                         'FESTAPP_CI_NEEDS_BROWSER':'${{ steps.selection.outputs.browser }}'})
         ticket=workflow['jobs']['ticket-preview-and-delivery']['steps']
         sdk=next(s for s in ticket if s.get('uses','').startswith('subosito/flutter-action'))
@@ -303,11 +305,10 @@ class MirrorContractTest(unittest.TestCase):
                       steps['navigation-contract']['script'])
 
     def test_semantic_inventory_changes_trigger_all_owning_workflows(self):
-        from selection import lane_inputs
         pattern='automation/client_test_inventory.*'
-        for name in ('navigation-interactions','client-contract','client-browser-contract','ticket-preview-and-delivery','seat-checkout'):
+        for name in ('navigation-interactions','client-contract','client-browser-contract','ticket-preview-and-delivery','ticket-rendering-contracts'):
             lane=runner.CONTRACT['jobs'][name]
-            self.assertIn(pattern,lane_inputs(lane))
+            self.assertIn(pattern,lane['inputs'])
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
             triggers=workflow.get('on',workflow.get(True))
             for event in ('push','pull_request'):
@@ -444,7 +445,7 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
         owners = [name for name, row in contract['steps'].items() if root in row['script']]
         self.assertEqual(owners, ['ticket-rendering-client'])
         self.assertEqual(contract['steps']['ticket-rendering-client']['requires'], ['ticket-rendering-install'])
-        self.assertIn('ticket-rendering-client', contract['jobs']['seat-checkout']['steps'])
+        self.assertIn('ticket-rendering-client', contract['jobs']['ticket-rendering-contracts']['steps'])
 
     def test_ticket_preparation_can_overlap_edge_without_overlapping_flutter(self):
         units=runner.selected_units(['ticket-preview-and-delivery'])

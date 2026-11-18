@@ -16,8 +16,6 @@ permissions:
   contents: read
   actions: read
   checks: read
-env:
-  FVM_CACHE_PATH: /tmp/festapp-fvm
 jobs:
   seat-checkout:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
@@ -50,31 +48,12 @@ jobs:
       - name: Prepare isolated browser and database image
         if: steps.selection.outputs.run == 'true'
         env:
-          # The combined checkout job pulls inside the DAG alongside Flutter.
-          FESTAPP_CI_NEEDS_DATABASE: ${{ github.job != 'seat-checkout' && steps.selection.outputs.sql == 'true' }}
+          FESTAPP_CI_NEEDS_DATABASE: ${{ steps.selection.outputs.sql }}
           FESTAPP_CI_NEEDS_BROWSER: ${{ steps.selection.outputs.browser }}
         run: bash automation/ci/prepare-seat.sh
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh
-      - &flutter-sdk-version
-        id: sdk
-        if: steps.selection.outputs.flutter == 'true'
-        run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
-      - &flutter-sdk-cache
-        uses: subosito/flutter-action@v2
-        if: steps.selection.outputs.flutter == 'true'
-        with:
-          flutter-version: ${{ steps.sdk.outputs.version }}
-          cache: true
-      - &flutter-fvm
-        name: Use the installed SDK through FVM
-        if: steps.selection.outputs.flutter == 'true'
-        run: |
-          dart pub global activate fvm 4.1.2
-          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
-          mkdir -p "$FVM_CACHE_PATH/versions"
-          ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
@@ -118,7 +97,9 @@ jobs:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    steps:
+    env:
+      FVM_CACHE_PATH: /tmp/festapp-fvm
+    steps: &ticket-lane-steps
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -130,9 +111,21 @@ jobs:
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh
-      - *flutter-sdk-version
-      - *flutter-sdk-cache
-      - *flutter-fvm
+      - id: sdk
+        if: steps.selection.outputs.flutter == 'true'
+        run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        if: steps.selection.outputs.flutter == 'true'
+        with:
+          flutter-version: ${{ steps.sdk.outputs.version }}
+          cache: true
+      - name: Use the installed SDK through FVM
+        if: steps.selection.outputs.flutter == 'true'
+        run: |
+          dart pub global activate fvm 4.1.2
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+          mkdir -p "$FVM_CACHE_PATH/versions"
+          ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
       - uses: pnpm/action-setup@v6
         if: steps.selection.outputs.run == 'true'
         with:
@@ -161,3 +154,11 @@ jobs:
           path: ~/.cache/festapp-ci/runs
           retention-days: 7
           if-no-files-found: ignore
+
+  ticket-rendering-contracts:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FVM_CACHE_PATH: /tmp/festapp-fvm
+    steps: *ticket-lane-steps

@@ -154,7 +154,13 @@ def policy_inputs(lane, policy, unit=None):
             if expanded==selected: break
             selected=expanded
         result={key:value for key,value in policy.items() if key not in ('jobs','steps','knownTestInputs')}
-        result['job']={key:value for key,value in policy['jobs'][lane].items() if key!='steps'}
+        job = policy['jobs'][lane]
+        result['job'] = {key: value for key, value in job.items() if key != 'steps'}
+        if unit is not None and 'inputGroups' in job:
+            result['job']['inputGroups'] = [
+                {**group, 'steps': sorted(selected.intersection(group['steps']))}
+                for group in job['inputGroups'] if selected.intersection(group['steps'])
+            ]
         result['steps']={name:{**policy['steps'][name],
             'after':[dep for dep in policy['steps'][name].get('after',[]) if dep in units]}
             for name in sorted(selected)}
@@ -413,7 +419,10 @@ def reusable(lane, sha, repository, contract, policy):
             candidates=remaining if run['event']=='pull_request' else {
                 u for u in remaining if fingerprint(run['head_sha'],lane,policy,u)==current[u]}
             if not candidates: continue
-            if run['status'] != 'completed' or run['conclusion'] != 'success':
+            job = None
+            if run['status'] == 'completed' and run['conclusion'] in ('success','failure'):
+                job = lane_job(repository, run, lane)
+            if job is None or job['status'] != 'completed' or job['conclusion'] != 'success':
                 # Block older evidence only for unresolved inputs this run may
                 # have tested. Evidence from newer runs is already verified.
                 remaining.difference_update(candidates)
@@ -421,7 +430,6 @@ def reusable(lane, sha, repository, contract, policy):
                 if not remaining: break
                 continue
             if run['event']!='pull_request' and definition(run['head_sha'])!=trusted: continue
-            job=job_for(repository,run,lane)
             if not direct_marker(job): continue
             receipt,artifact=read_artifact(repository,run,lane)
             # Old lane receipts never supply unit evidence. Mixed receipts supply
@@ -483,7 +491,7 @@ def verify_plan(plan, lane, sha, repository, contract):
         run=cached(('run',proof['runId']),lambda:api(repository,f'actions/runs/{proof["runId"]}'))
         if (run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or
                 run['event'] not in ('push','workflow_dispatch','pull_request') or run['status']!='completed' or
-                run['conclusion']!='success' or run['run_attempt']!=proof['attempt'] or
+                run['conclusion'] not in ('success','failure') or run['run_attempt']!=proof['attempt'] or
                 run['path']!='.github/workflows/'+contract['jobs'][lane]['workflow'] or
                 datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<datetime.now(timezone.utc)-timedelta(days=contract['reusePolicy']['maxAgeDays'])):
             raise ValueError('Unit source run is stale or foreign')
@@ -523,7 +531,9 @@ def provisioning_flags(execute, contract):
                          'fvm flutter ' in row['script'] or 'fvm dart ' in row['script'] for row in rows),
             'sql':any(unit in contract.get('databaseUnits',[]) or
                       contract['steps'][unit].get('resources',{}).get('dbCluster') for unit in execute),
-            'browser':any(row.get('resources',{}).get('browser') for row in rows)}
+            'browser':any(row.get('resources',{}).get('browser') for row in rows),
+            'deno':any(re.search(r'\bdeno (?:test|check|run)\b', row['script']) for row in rows),
+            'python_yaml':bool({'image-storage','deploy-contract'}.intersection(execute))}
 
 
 def main():

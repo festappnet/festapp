@@ -12,7 +12,7 @@ and the seven-day reuse limit. `run.py affected` and `selection.py fingerprint`
 use the same `owners()` function. Unknown paths and unregistered tests select
 all jobs. Shared contracts have all consumers. Known Flutter package paths include
 locks and manifests; unknown packages remain conservative. Git tree entries bind
-content, path, mode, additions, removals and renames. Unit inputs live alongside their scripts in the same contract. Units without explicit inputs retain the conservative lane inputs. Unknown paths/tests select every unit. `after` orders verification, while optional `requires` names preparation that must execute with a consumer; default preparation closure follows `after`. The selected DAG removes only already verified ordering checks and always keeps
+content, path, mode, additions, removals and renames. Unit inputs live alongside their scripts in the same contract. Units without explicit inputs retain the conservative lane or input-group inputs. Combined jobs retain the original groups. Unit fingerprints include the groups that cover the unit and its setup dependencies. Unknown paths/tests select every unit. `after` orders verification, while optional `requires` names preparation that must execute with a consumer; default preparation closure follows `after`. The selected DAG removes only already verified ordering checks and always keeps
 runtime requirements as actual scheduler edges. SQL workspaces call canonical
 prepare before cloning, so a behavior test need not rerun independent full-replay
 checks whose exact-input execution evidence remains valid. Selected commands and
@@ -31,8 +31,10 @@ at its original source commit, then its directly executed unit fingerprint must
 match today's inputs. Executable CI code and every workflow remain protected
 by the global trusted definition digest.
 
-`image-policy` owns the image worker typecheck and unit suite once. Server policy
-retains MCP/auth tests. All source startup/WebView scenarios remain in CI;
+The combined server-policy job covers image storage, MCP/auth and web startup.
+`image-policy` owns the image worker typecheck and unit suite once. Chromium,
+Deno and PyYAML are provisioned only when their consumers execute. All source
+startup/WebView scenarios remain in CI;
 production builders verify their exact canonical CI source and assembled tenant
 artifact instead of repeating that source suite.
 
@@ -88,9 +90,11 @@ bindings, the job's final success and execution step, artifact expiry and GitHub
 SHA-256 digest of the downloaded archive. It reads bounded JSON without extracting
 ZIP paths. Receipt claims alone never authorize reuse. Missing/deleted artifacts,
 API errors, unknown origins and malformed evidence cause unresolved units to
-execute. A newer failed or pending main run blocks older evidence only for
-matching units. A failed or pending PR can have an unknown merge checkout and
-blocks older evidence for all unresolved units. A completed skipped workflow
+execute. A completed workflow with a failed sibling can still supply direct
+evidence from a successful job. Verification checks that job's current attempt
+and receipt in both selection and consumption. A failed or pending matching main
+job blocks older evidence only for matching units. An unresolved PR can have an
+unknown merge checkout and blocks older evidence for all unresolved units. A completed skipped workflow
 whose lane job is confirmed skipped with no steps does not block older evidence.
 Units already verified against newer runs retain that evidence. Reuse never turns a reused row into direct execution and never refreshes the original run's seven-day age. Mixed aggregates can supply their executed rows only. `All lane tests executed` marks a full execution; `Some lane tests executed` marks a mixed run; `Lane coverage verified` is emitted only after the canonical runner admits complete coverage. Reuse-only jobs have no execution marker and are ignored before ZIP downloads.
 

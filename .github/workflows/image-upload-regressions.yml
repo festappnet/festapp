@@ -48,7 +48,7 @@ jobs:
             workers/image-worker/pnpm-lock.yaml
             automation/release/platform_updates/pnpm-lock.yaml
       - name: Install Python YAML parser
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.python_yaml == 'true'
         run: |
           python3 -m venv "$RUNNER_TEMP/festapp-ci-python"
           "$RUNNER_TEMP/festapp-ci-python/bin/pip" --disable-pip-version-check --quiet install PyYAML==6.0.3
@@ -57,7 +57,7 @@ jobs:
         if: steps.selection.outputs.browser == 'true'
         run: bash automation/ci/browser.sh
       - name: Install pinned Deno
-        if: steps.selection.outputs.run == 'true'
+        if: steps.selection.outputs.deno == 'true'
         run: bash automation/ci/deno.sh
       - name: Run canonical regression DAG
         env:
