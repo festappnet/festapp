@@ -59,7 +59,7 @@ export function inventory(root, excluded = new Set(), prefix = '') {
 }
 
 function translationReference(root,file) {
-  const match=/^web_client\/public\/assets\/translations\/(cs|en|sk|de|pl|uk)\.json$/.exec(file);
+  const match=/^web_client\/public\/assets\/translations\/(cs|en|sk|de|pl|uk|es)\.json$/.exec(file);
   if(!match)throw new Error(`Unsupported build input: ${file}`);
   const owner=`assets/translations/${match[1]}.json`;
   const expected=path.join(fs.realpathSync(root),owner);

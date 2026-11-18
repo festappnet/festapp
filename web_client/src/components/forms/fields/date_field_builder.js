@@ -1,7 +1,7 @@
 import { sanitizeHtml } from '../../../utils/html.js';
 import flatpickr from "flatpickr";
 // import 'flatpickr/dist/flatpickr.min.css'; // Commented out for Node.js test runner (JSDOM) compatibility
-import { Czech } from "flatpickr/dist/l10n/cs.js";
+import { dateFieldDisplay } from './date_field_display.js';
 import { ThemeService } from '../../../services/theme_service.js';
 import { FormStrings } from '../form_strings.js';
 import { LocalizationService } from '../../../services/localization_service.js';
@@ -36,9 +36,10 @@ export class DateFieldBuilder {
         wrapper.className = 'input-wrapper';
 
         // Date format hint
+        const display = dateFieldDisplay(LocalizationService.currentLocale, 'MM/DD/YYYY');
         const hint = document.createElement('div');
         hint.className = 'form-field-hint';
-        hint.textContent = FormStrings.birthDateFormatHint;
+        hint.textContent = display.hint;
         wrapper.appendChild(hint);
 
         // Input
@@ -160,10 +161,10 @@ export class DateFieldBuilder {
         const fpInstance = flatpickr(input, {
                 dateFormat: 'Y-m-d',
                 altInput: true,
-                altFormat: LocalizationService.currentLocale === 'cs' ? 'j. n. Y' : 'F j, Y',
+                altFormat: display.altFormat,
                 allowInput: true,
                 disableMobile: true,
-                locale: LocalizationService.currentLocale === 'cs' ? Czech : 'default',
+                locale: display.locale,
                 parseDate: (datestr, format) => {
                     try {
                         const defaultDate = flatpickr.parseDate(datestr, format);

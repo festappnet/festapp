@@ -311,9 +311,12 @@ assert.match(
 assert.match(worker, /FESTAPP_QUERY_BUILD_VERSION/);
 
 // Validate the actual published catalogs, not only Flutter's source strings.
-for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
-  const published = JSON.parse(await readFile(path.join(buildDir, 'assets/translations', `${locale}.json`), 'utf8'));
-  const canonical = JSON.parse(await readFile(path.resolve(path.dirname(configPath), '..', 'assets/translations', `${locale}.json`), 'utf8'));
+const catalogDir = path.resolve(path.dirname(configPath), '..', 'assets/translations');
+const catalogs = (await readdir(catalogDir)).filter(filename => filename.endsWith('.json'));
+for (const filename of catalogs) {
+  const locale = path.basename(filename, '.json');
+  const published = JSON.parse(await readFile(path.join(buildDir, 'assets/translations', filename), 'utf8'));
+  const canonical = JSON.parse(await readFile(path.join(catalogDir, filename), 'utf8'));
   for (const namespace of ['Waitlist', 'CustomerSelfService', 'FeatureCustomerSelfService']) {
     assert.deepEqual(published[namespace], canonical[namespace], `published ${locale} ${namespace} translations differ from canonical source`);
   }

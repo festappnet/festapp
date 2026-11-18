@@ -21,6 +21,11 @@ class StartupFailureScreen extends StatelessWidget {
           'Zkusit znovu',
           'Kód pro podporu'
         ),
+      'es' => (
+          'No se pudo iniciar la aplicación. Vuelve a abrirla.',
+          'Volver a intentar',
+          'Código de soporte'
+        ),
       'sk' => (
           'Aplikáciu sa nepodarilo spustiť. Skúste ju znovu otvoriť.',
           'Skúsiť znova',
@@ -52,6 +57,8 @@ class StartupFailureScreen extends StatelessWidget {
         : switch (language) {
             'cs' =>
               'Úložiště aplikace se neotevřelo. Zavřete ostatní karty Festapp a zkuste to znovu.',
+            'es' =>
+              'No se pudo abrir el almacenamiento de la aplicación. Cierra las demás pestañas de Festapp y vuelve a intentarlo.',
             'sk' =>
               'Úložisko aplikácie sa neotvorilo. Zavrite ostatné karty Festapp a skúste to znova.',
             'de' =>

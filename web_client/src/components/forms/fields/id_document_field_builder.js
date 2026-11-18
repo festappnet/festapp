@@ -1,7 +1,7 @@
 import { sanitizeHtml } from '../../../utils/html.js';
 import flatpickr from "flatpickr";
 // import 'flatpickr/dist/flatpickr.min.css'; // Commented out for Node.js test runner (JSDOM) compatibility
-import { Czech } from "flatpickr/dist/l10n/cs.js";
+import { dateFieldDisplay } from './date_field_display.js';
 import { LocalizationService } from '../../../services/localization_service.js';
 import { FormStrings } from '../form_strings.js';
 import { TextFieldBuilder } from './text_field_builder.js';
@@ -66,7 +66,8 @@ export class IdDocumentFieldBuilder {
                 expiryInput.required = true;
                 expiryInput.dataset.required = 'true';
             }
-            expiryInput.placeholder = LocalizationService.currentLocale === 'cs' ? 'D. M. RRRR' : 'YYYY-MM-DD';
+            const display = dateFieldDisplay(LocalizationService.currentLocale, 'YYYY-MM-DD');
+            expiryInput.placeholder = display.hint;
             expiryInput.autocomplete = 'off'; // Let Flatpickr handle it
             expiryWrapper.appendChild(expiryInput);
 
@@ -100,11 +101,11 @@ export class IdDocumentFieldBuilder {
             flatpickr(expiryInput, {
                 dateFormat: 'Y-m-d',
                 altInput: true,
-                altFormat: LocalizationService.currentLocale === 'cs' ? 'j. n. Y' : 'F j, Y',
+                altFormat: display.altFormat,
                 allowInput: true,
                 minDate: 'today',
                 disableMobile: true, // Force custom picker (User Requirement: Same as Birthdate)
-                locale: LocalizationService.currentLocale === 'cs' ? Czech : 'default',
+                locale: display.locale,
                 parseDate: (datestr, format) => {
                     // Custom parser to allow more flexible input (e.g. "1.1.2000" -> "1. 1. 2000")
                     try {

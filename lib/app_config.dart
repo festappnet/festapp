@@ -94,6 +94,7 @@ class AppConfig {
   static List<LanguageModel> availableLanguages() => [
         LanguageModel(const Locale("cs"), "Čeština"),
         LanguageModel(const Locale("en"), "English"),
+        LanguageModel(const Locale("es"), "Español"),
       ];
 
   /// This is the single definition place for the prefix structure.

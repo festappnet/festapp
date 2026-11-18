@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, mkdtemp, writeFile, rm, readlink } from 'node:fs/promises';
+import { readFile, mkdtemp, writeFile, rm, readlink, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -102,15 +102,16 @@ test('development and built public catalogs use the canonical source for every l
             server: {host: '127.0.0.1', port: 0}});
         await server.listen();
         const origin = server.resolvedUrls.local[0];
-        for (const locale of ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
-            const filename = `${locale}.json`;
-            const canonical = JSON.parse(await readFile(new URL(`../../../assets/translations/${filename}`, import.meta.url), 'utf8'));
+        const catalogDir = new URL('../../../assets/translations/', import.meta.url);
+        const catalogs = (await readdir(catalogDir)).filter(filename => filename.endsWith('.json'));
+        for (const filename of catalogs) {
+            const canonical = JSON.parse(await readFile(new URL(filename, catalogDir), 'utf8'));
             const alias = path.join(webRoot, 'public/assets/translations', filename);
             assert.equal(await readlink(alias), `../../../../assets/translations/${filename}`, 'public source is a reference, not an editable second catalog');
             const response = await fetch(new URL(`/assets/translations/${filename}`, origin));
             assert.equal(response.status, 200);
-            assert.deepEqual(await response.json(), canonical, `development ${locale} catalog`);
-            assert.deepEqual(JSON.parse(await readFile(path.join(fixture, 'dist/assets/translations', filename), 'utf8')), canonical, `built ${locale} catalog`);
+            assert.deepEqual(await response.json(), canonical, `development catalog ${filename}`);
+            assert.deepEqual(JSON.parse(await readFile(path.join(fixture, 'dist/assets/translations', filename), 'utf8')), canonical, `built catalog ${filename}`);
         }
     } finally {
         await server?.close();
