@@ -287,6 +287,15 @@
         "existing-provider-fence"
       ]
     },
+    "process-meta-purchases": {
+      "smokeTests": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/_shared/metaPurchase_test.ts"
+      ],
+      "abusePolicy": []
+    },
     "email-provider-events": {
       "smokeTests": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts"
