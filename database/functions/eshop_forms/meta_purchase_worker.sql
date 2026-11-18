@@ -122,6 +122,9 @@ BEGIN
   JOIN analytics.conversion_facts f ON f."order"=d.order_id AND f.kind='order_fully_paid'
   WHERE d.status='pending' AND d.next_attempt_at<=clock_timestamp()
    AND (d.lease_until IS NULL OR d.lease_until<=clock_timestamp())
+   -- Same cohort filter as claiming, so unclaimable rows do not wake the worker.
+   AND public.form_order_purchase_timing_internal(d.order_id)='paid'
+   AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE
  ) AND NOT EXISTS(
   SELECT FROM analytics.meta_purchase_deliveries WHERE status='pending' AND consent_at<clock_timestamp()-interval '30 days'
      OR done_at<clock_timestamp()-interval '90 days'

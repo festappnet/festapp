@@ -1007,7 +1007,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_measurement_unit_data_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='d8bdf8e36fc2d73cae19d4c730e5feaf'),'current SQL source parity: public.form_measurement_unit_data_internal(bigint,jsonb)');
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_meta_purchase_datalayer_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a51967b976f2605010306a5d9d1dbe4b'),'current SQL source parity: public.form_meta_purchase_datalayer_internal(bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_meta_purchase_datalayer_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f82791533c60b3c5068c57ffc4c3f6ce'),'current SQL source parity: public.form_meta_purchase_datalayer_internal(bigint)');
 -- supabase/migrations/20261115120000_discount_codes.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_order_facts_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df505b9805ea5e7146b4d0de5ab58ebe'),'current SQL source parity: public.form_order_facts_internal(bigint)');
 -- supabase/migrations/20261115120000_discount_codes.sql
@@ -1023,7 +1023,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_payment_availability_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='dee6c6618480655d0516b90dbc38d121'),'current SQL source parity: public.form_payment_availability_internal(bigint)');
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_purchase_datalayer_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='305d3464c01a33dfe93b188a7cc371e1'),'current SQL source parity: public.form_purchase_datalayer_internal(bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_purchase_datalayer_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='85ea75b4e02da6b9ce9451e55c19d73e'),'current SQL source parity: public.form_purchase_datalayer_internal(bigint)');
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_purchase_timing_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='20fa2a6cfb7b73be9855d5bd0b6232e4'),'current SQL source parity: public.form_purchase_timing_internal(bigint)');
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
@@ -2683,7 +2683,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.wake_email_worker()') AND md5(btrim(prosrc,E' \n\r\t'))='4531eb32982da1b913b302bec9fa1096'),'current SQL source parity: public.wake_email_worker()');
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.wake_meta_purchase_worker()') AND md5(btrim(prosrc,E' \n\r\t'))='0a01dc76bffc4aeaf26f2b58b89e2af0'),'current SQL source parity: public.wake_meta_purchase_worker()');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.wake_meta_purchase_worker()') AND md5(btrim(prosrc,E' \n\r\t'))='716e44faee8c8afa1197e3f6dad978c7'),'current SQL source parity: public.wake_meta_purchase_worker()');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.wake_notification_center()') AND md5(btrim(prosrc,E' \n\r\t'))='8faabf13dff6c2fc35ccbf260d2c1fbb'),'current SQL source parity: public.wake_notification_center()');
 -- supabase/migrations/20261113190000_apple_ticket_wallet_updates.sql

@@ -39,7 +39,10 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  THEN snapshot.payload||jsonb_build_object('event_id',snapshot.event_id)
  ELSE jsonb_set(snapshot.payload,'{ecommerce,transaction_id}',to_jsonb(paid.event_id::text))
    ||jsonb_build_object('event_id',paid.event_id)
- END ||jsonb_build_object('meta_purchase_allowed',NOT public.form_order_purchase_capi_required_internal(o.id)) FROM eshop.orders o
+ END ||jsonb_build_object('meta_purchase_allowed',NOT public.form_order_purchase_capi_required_internal(o.id)
+   -- Meta deduplicates only for 48 hours; a later overview visit must not add a second Pixel Purchase.
+   AND coalesce(CASE WHEN public.form_order_purchase_timing_internal(o.id)='order' THEN snapshot.created_at ELSE paid.created_at END,'-infinity')
+     >statement_timestamp()-interval '47 hours') FROM eshop.orders o
  JOIN analytics.conversion_facts snapshot ON snapshot."order"=o.id AND snapshot.kind='purchase'
  LEFT JOIN analytics.conversion_facts paid ON paid."order"=o.id AND paid.kind='order_fully_paid'
  WHERE o.id=p_order AND public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(o.form))
@@ -60,7 +63,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  AND public.form_order_purchase_capi_required_internal(p_order)
  AND EXISTS(SELECT FROM analytics.meta_purchase_deliveries d
    JOIN analytics.conversion_facts c ON c."order"=d.order_id AND c.kind='order_fully_paid'
-   WHERE d.order_id=p_order AND d.status='sent' AND c.created_at>statement_timestamp()-interval '47 hours');
+   WHERE d.order_id=p_order AND d.status='sent' AND d.revoked_at IS NULL AND c.created_at>statement_timestamp()-interval '47 hours');
 $$;
 REVOKE ALL ON FUNCTION public.form_meta_purchase_datalayer_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

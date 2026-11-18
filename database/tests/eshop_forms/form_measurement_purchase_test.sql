@@ -48,6 +48,11 @@ BEGIN
  UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}','"paid"') WHERE id=form_id;
  PERFORM assert_eq(public.form_order_purchase_timing_internal(unconsented_id),'order','editing timing cannot change an existing order cohort');
  PERFORM assert_true(public.form_purchase_datalayer_internal(unconsented_id) IS NOT NULL,'old cohort retains accepted-order event');
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(unconsented_id)->'meta_purchase_allowed','true'::jsonb,'fresh non-CAPI purchase may reach Pixel');
+ UPDATE analytics.conversion_facts SET created_at=created_at-interval '48 hours' WHERE "order"=unconsented_id AND kind='purchase';
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(unconsented_id)->'meta_purchase_allowed','false'::jsonb,'a later overview visit cannot repeat Pixel Purchase beyond Meta deduplication');
+ PERFORM assert_true(public.form_purchase_datalayer_internal(unconsented_id) IS NOT NULL,'a later overview visit keeps general purchase analytics');
+ UPDATE analytics.conversion_facts SET created_at=created_at+interval '48 hours' WHERE "order"=unconsented_id AND kind='purchase';
  UPDATE analytics.conversion_facts SET payload=payload-'purchase_timing' WHERE "order"=unconsented_id AND kind='purchase';
  PERFORM assert_eq(public.form_order_purchase_timing_internal(unconsented_id),'order','legacy snapshots remain order cohort');
  UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}','"order"') WHERE id=form_id;
@@ -197,5 +202,9 @@ BEGIN
  PERFORM assert_eq(public.form_meta_purchase_datalayer_internal(second_order_id)->>'event_id',paid_id::text,'restoring original paid timestamp restores sent Meta companion');
  PERFORM assert_true((SELECT status='sent' AND email_hash IS NULL AND client_agent IS NULL
   FROM analytics.meta_purchase_deliveries d WHERE d.order_id=second_order_id),'success retains only operational evidence');
+ PERFORM assert_true(public.revoke_meta_purchase_consent(repeat('c',64),second_order_id),'buyer can withdraw after a successful send');
+ PERFORM assert_true(public.form_meta_purchase_datalayer_internal(second_order_id) IS NULL,'withdrawal after send blocks the Meta companion');
+ PERFORM assert_eq(coalesce(jsonb_typeof(public.get_customer_order_overview_internal(repeat('c',64),second_order_id)#>'{orders,0,metaAnalytics}'),'null'),'null','overview stops recovering a withdrawn Meta companion');
+ PERFORM assert_true(public.form_purchase_datalayer_internal(second_order_id) IS NOT NULL,'withdrawal keeps general purchase analytics');
 
 END $$;

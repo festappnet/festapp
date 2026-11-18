@@ -401,20 +401,22 @@
     },
     {
       "migration": "20261115140000_discount_code_projections.sql",
-      "active": true,
+      "active": false,
       "header": "-- Discount sale snapshots in customer overviews, after shared customer-policy projection owners.",
       "sources": [
         "eshop_waitlist/order_overview.sql",
         "others/get_ticket_layout_write_contract_v1.sql"
-      ]
+      ],
+      "sha256": "6ffdfc4124e5edea172269e791464acd52295355b5da03171f8d33b5195dc86c"
     },
     {
       "migration": "20261115150000_waitlist_count_setting.sql",
-      "active": true,
+      "active": false,
       "header": "-- Public waitlist counter visibility, enabled by default in the reader.",
       "sources": [
         "eshop_forms/form_settings.sql"
-      ]
+      ],
+      "sha256": "e309d974533395b25b247ee9d4eae706113d5bc4d1c951aceb7ab68f90e21610"
     },
     {
       "migration": "20261115160000_customer_self_service_completion.sql",
