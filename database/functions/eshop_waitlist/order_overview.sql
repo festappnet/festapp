@@ -180,6 +180,10 @@ BEGIN
    'usageStatus',CASE t.state WHEN 'ordered' THEN 'unused' WHEN 'paid' THEN 'unused' WHEN 'sent' THEN 'unused' WHEN 'used' THEN 'used' WHEN 'storno' THEN 'cancelled' ELSE 'unknown' END) ORDER BY t.id),'[]')
    FROM public.get_order_tickets_internal(o.id) t)) ORDER BY o.id),'[]')
   FROM eshop.orders o WHERE o.id=ANY(ids) AND o.state IS DISTINCT FROM 'waitlisted')) INTO result;
+ IF EXISTS(SELECT FROM analytics.meta_purchase_deliveries d
+   WHERE d.order_id=ANY(ids) AND d.revoked_at IS NULL AND d.status IN ('pending','sent')) THEN
+  result:=result||'{"metaPurchaseConsent":true}'::jsonb;
+ END IF;
  RETURN result;
 EXCEPTION WHEN OTHERS THEN RETURN jsonb_build_object('code',403,'errorCode','INVALID_CAPABILITY');
 END $$;

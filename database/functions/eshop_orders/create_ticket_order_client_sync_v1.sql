@@ -34,7 +34,7 @@ BEGIN
       END IF;
     END IF;
     IF v_actor IS NULL AND p_context IS NULL THEN
-      v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,CASE WHEN (v_result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+      v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,'free_registration'),'null'::jsonb));
     END IF;
     RETURN public.project_local_payment_reference_order_internal(v_result);
   END IF;
@@ -48,11 +48,14 @@ BEGIN
   END IF;
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
     FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
-  v_result:=public.create_ticket_order_internal_v1((public.strip_payment_sources_internal(p_order)-ARRAY['checkoutOrigin','discount_command_id'])||CASE WHEN p_order ? 'discount' THEN jsonb_build_object('discount_command_id',p_command_id) ELSE '{}'::jsonb END);
+  v_result:=public.create_ticket_order_internal_v1((public.strip_payment_sources_internal(p_order)-ARRAY['checkoutOrigin','discount_command_id','metaPurchaseConsent'])||CASE WHEN p_order ? 'discount' THEN jsonb_build_object('discount_command_id',p_command_id) ELSE '{}'::jsonb END);
   IF COALESCE((v_result->>'code')::integer,500)<>200 THEN
     RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',
       CASE WHEN COALESCE((v_result->>'code')::integer,500) BETWEEN 100 AND 599
         THEN (v_result->>'code')::integer ELSE 400 END,v_result); END IF;
+  IF p_context IS NULL AND p_order ? 'metaPurchaseConsent' THEN
+    PERFORM public.capture_meta_purchase_consent_internal((v_result#>>'{order,id}')::bigint,p_order->'metaPurchaseConsent');
+  END IF;
   PERFORM public.attach_checkout_origin_internal((v_result#>>'{order,id}')::bigint,v_origin);
   PERFORM public.attach_provider_order_source_internal((v_result#>>'{order,id}')::bigint,p_command_id,p_order);
   PERFORM public.enqueue_ticket_order_confirmation_v1(
@@ -69,7 +72,7 @@ BEGIN
   IF v_actor IS NULL AND p_context IS NULL THEN
     PERFORM public.record_form_conversion_internal((v_result#>>'{data,order,id}')::bigint);
     v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(
-      public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,CASE WHEN (v_result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+      public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,'free_registration'),'null'::jsonb));
   END IF;
   RETURN v_result;
 END; $$;

@@ -10,8 +10,8 @@ none of these.
 GTM and Unit scripts as soon as the form loads, and dataLayer is always filled. The
 choice in the consent notice is state for Google Consent Mode, evaluated by the
 organizer's container, which the organizer configures and answers for. Missing or
-broken consent sources report denied state and measurement continues. `purchase` and
-`generate_lead` carry available `user_data` on immediate delivery; contact-free
+broken consent sources report denied state and measurement continues.
+`generate_lead` can carry available `user_data` on immediate delivery; contact-free
 recovery is described below. See [Contact in conversions](#contact-in-conversions).
 
 ## Configuration and ownership
@@ -66,7 +66,7 @@ The private `analytics` schema contains exactly these measurement tables:
   parent/ancestor and collector origins, revision and operator evidence.
 - `analytics.unit_measurement_request`: one request per Unit, with its timestamp
   and requesting user; deleted with the Unit.
-- `analytics.conversion_facts`: immutable finalizer facts with non-authorizing
+- `analytics.conversion_facts`: immutable conversion facts with non-authorizing
   event UUIDs, keyed by order and conversion kind.
 
 Browser/API roles, including service_role, have no direct schema/table access.
@@ -184,7 +184,7 @@ TCF is never read or forwarded, while analytics follows Consent Mode.
 
 ICS is polled every 250 ms; dataLayer every second, scanning only new entries and
 resetting state when replaced or shortened. Withdrawal can therefore race a
-purchase within the remaining 250 ms or 1 s window, and browser suspension can
+conversion within the remaining 250 ms or 1 s window, and browser suspension can
 extend it. Already delivered data cannot be recalled. Switching to website mode
 unsubscribes the source; returning to Unit mode subscribes again. Choices bind to
 the first organization, Unit and processing revision; a changed scope stays
@@ -255,8 +255,7 @@ prove Google/Meta delivery or arbitrary future container compatibility.
 
 ## Contact in conversions
 
-**dataLayer contains the readable e-mail and phone.** Immediate `purchase` and
-`generate_lead` delivery carries available `user_data: {email, phone_number}`, whatever the visitor chose,
+**dataLayer contains the readable e-mail and phone.** Immediate `generate_lead` delivery carries available `user_data: {email, phone_number}`, whatever the visitor chose,
 so every tag and Unit script in the container can read them. Being in dataLayer is
 not the same as being sent: Google tags honour `ad_user_data`, and the organizer is
 responsible for how tags use the values and for describing it in its privacy policy.
@@ -285,27 +284,71 @@ and its countdown. GA4's automatic form-interaction event uses a session-level
 scope and cannot observe the form from our isolated runtime. Map the supplied
 event once in GTM; do not add another collector for the same interaction.
 
-`purchase` means an accepted paid-price order, not proof of payment. Finalizer
-snapshots own charged prices/items/currency. Client receivers reject totals
-that cannot be represented with exact, safe integer-cent arithmetic. Existing authorized command replay
-returns the same immutable facts under current stored gates; the browser
-suppresses duplicate callbacks within its lifecycle. Free registration/waitlist
-use distinct lead identities, including later paid waitlist acceptance.
+The browser reports the confirmation page when checkout succeeds. Remove any
+GTM trigger that counts order acceptance as a purchase. Existing authorized
+replays recover the same free-registration or waitlist lead under current form
+policy, and the browser suppresses duplicate lead callbacks within its lifecycle.
+
+The bank-pairing and online-payment owners record a private `order_fully_paid`
+fact only when eligible funds cover the full order price. It has one event ID
+per order, a recorded timestamp, the exact amount and currency. A deposit can
+release tickets before this threshold. Cash and administrative external-payment
+records are outside the measurement scope. Payment changes and fact creation
+commit together. An unsuccessful write leaves payment processing retryable.
+The checkout receipt never projects this fact.
+
+### Meta CAPI pilot
+
+The standalone purchase review offers a separate opt-in for the pilot forms
+configured by the operator. Existing website or embedded cookie choices do
+not grant it. The opt-in is attached to the order and scoped to the organizer,
+dataset and notice revision. Customers can withdraw in the order overview
+linked from their confirmation email, including after closing checkout.
+Withdrawal applies to pending delivery. A request that has already started
+may complete.
+
+The Edge worker claims the consent row only after a full-payment fact exists.
+Before sending, it checks consent, current destination and the current eligible
+balance. It sends Meta the normalized e-mail hash, checkout user agent, form URL,
+amount and currency. The payload includes the first settlement time and stable
+event ID, reused on retry. It stores no client IP, phone or Meta cookie IDs for
+this pilot. Matching data is scrubbed on terminal outcomes and expires after 30
+days. Delivery receipts are retained for 90 days.
+
+For the first test run, deploy the migration, proof-only `process-meta-purchases`
+function and web client on the same canonical release. The migration leaves the
+scheduler inactive and provisions no destinations. Use the canonical backend
+operator workflow to register the token in Vault, configure a connector in
+`analytics.meta_purchase_connectors` with the organizer Unit, test dataset,
+test event code and actual HTTPS checkout origin, then allow the one pilot form
+in `analytics.meta_purchase_forms` before enabling it. Verify the consent notice
+and privacy policy cover Meta and disable earlier Festapp Purchase tags in the
+organizer's container. Activate only the `festapp_meta_purchase_delivery` cron
+job after the proof endpoint validates. During testing, use a dedicated Meta
+dataset and test the bank balance payment, a card payment, and withdrawal
+before settlement. Compare the stable event ID and value in Meta Test Events
+with the private settlement record.
+
+On token errors the worker pauses that connector, leaving eligible work
+pending. Replace the token in the same Vault entry, clear `paused_at` and verify
+the result in `analytics.meta_purchase_deliveries`. Inspect status, attempts
+and error code without exporting matching data or the Vault credential. A
+dataset, test-mode or notice change requires fresh checkout consent and never
+backfills earlier orders.
 
 Items carry `item_id`, `item_name`, `price` and `quantity`. Two optional public catalog labels
-are added when they exist, in browser events and in the server `purchase`:
+are added when they exist in browser ecommerce events:
 
 - `item_category`: the product type title. Browser events read it from the form catalog or the
-  seat/area product catalog, `purchase` from `type_title` in the finalizer's snapshot.
+  seat/area product catalog.
 - `item_brand`: the occasion title. GA4 `affiliation` means the supplying company or store, so
   the event belongs in the brand of what is sold. One Unit runtime is one organizer, and a Unit
   title can be a natural person's name, so no organizer value is exported.
 
 Labels are limited to 100 characters. A label with controls or `@` is omitted while the item
-remains. They never affect `value` or the `total=o.price` check, and they do not split a charged
-line. Conversion facts recorded earlier stay immutable without these labels and remain valid.
+remains. The labels never affect `value`.
 `item_variant`, `coupon` and `discount` are not exported. Discounted cart items use
-net prices from the server quote; purchase items use the final charged-price snapshot.
+net prices from the server quote.
 Discount codes themselves are never exported. A product is the selected option;
 a seat section is not known consistently in the cart. The negative `meta_surcharge`
 is informational and does not change the charged price.
@@ -378,15 +421,14 @@ available form currency (the same default as checkout, CZK if none), a fresh UUI
 `event_id` and `user_data: {email}` trimmed and lowercased. The sender is captured
 before the request; a revoked/replaced measurement grant cannot send its result.
 Failures, preview and unsubscribe never emit a lead. These client subscription
-leads do not create an order or an `analytics.conversion_facts` record; that SQL
-kind constraint applies only to immutable order finalizer facts.
+leads do not create an order or an `analytics.conversion_facts` record. The SQL
+ledger stores order leads and private settlement facts.
 
 
 ## Complete conversion payload examples
 
-These complete example payloads use fictional contacts. `transaction_id` is the
-server-generated UUID of the immutable purchase fact, not the order number or
-payment reference. Order leads use a server-generated `event_id`; notification
+These example payloads use fictional contacts. Order leads use a
+server-generated `event_id`; notification
 subscriptions use a client UUID created for that submission. Replays keep the
 same fact ID. Deduplicate by that ID; do not generate a new ID on retry. Product
 IDs identify catalog products. Example IDs must be replaced with actual event
@@ -394,32 +436,6 @@ IDs, never reused for real conversions. `user_data` is optional when no usable
 contact is available; sale-opening subscriptions provide email only. Successful
 recovery after transport replacement contains the conversion fact without
 `user_data`. Consent remains the current state passed to tags, including denial.
-
-```json
-{
-  "event": "purchase",
-  "ecommerce": {
-    "transaction_id": "c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
-    "currency": "CZK",
-    "value": 1000,
-    "payment_type": "bank_transfer",
-    "items": [
-      {
-        "item_id": "product_11",
-        "item_name": "Concert ticket",
-        "price": 500,
-        "quantity": 2,
-        "item_category": "Tickets",
-        "item_brand": "Summer festival"
-      }
-    ]
-  },
-  "user_data": {
-    "email": "buyer@example.test",
-    "phone_number": "+420601234567"
-  }
-}
-```
 
 ```json
 {

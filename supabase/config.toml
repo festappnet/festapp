@@ -315,6 +315,9 @@ verify_jwt = false
 [functions.process-email-queue]
 verify_jwt = false
 
+[functions.process-meta-purchases]
+verify_jwt = false
+
 [functions.bank-sync-webhook]
 verify_jwt = false
 [functions.bank-sync-manage]

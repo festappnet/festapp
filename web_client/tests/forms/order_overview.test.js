@@ -414,3 +414,29 @@ test('discounted overview shows original admission then one three-row reduction 
  assert.match(host.querySelector('.discount-summary-total').textContent,/70/);
  assert.match(host.querySelector('.overview-order-total').textContent,/0/);
 });
+
+test('Meta consent is withdrawn using the scoped buyer capability and supports retry', async t => {
+    const host = setup(t);
+    const scope = { orderId: 1, token: 'a'.repeat(64) };
+    const data = { ...fixture(), metaPurchaseConsent: true };
+    const calls = [];
+    const commands = {
+        overview: async () => data,
+        client: { rpc: async (name, params) => {
+            calls.push({ name, params });
+            return { data: calls.length === 2 };
+        } },
+    };
+    await loadOrderOverview(host, commands, scope);
+    const control = [...host.querySelectorAll('button')].find(button =>
+        button.textContent.includes('metaPurchaseConsentWithdraw'));
+    assert.ok(control);
+    await control.onclick();
+    assert.equal(control.disabled, false, 'a failure leaves withdrawal available to retry');
+    await control.onclick();
+    assert.equal(control.hidden, true);
+    assert.deepEqual(calls, Array(2).fill({
+        name: 'revoke_meta_purchase_consent',
+        params: { p_token: scope.token, p_order_id: scope.orderId },
+    }));
+});

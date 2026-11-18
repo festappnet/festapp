@@ -296,6 +296,7 @@ try {
                         ...(scenario.startsWith('embed-') ? [{id:2, type:'birth_date', title:'Datum narození', is_required:true},
                             ...(scenario === 'embed-long' ? Array.from({length:18}, (_,i) => ({id:i+3,type:'text',title:`Otázka ${i+1}`,is_required:false})) : [])] : [])],
                 } };
+                else if (name === 'get_meta_purchase_consent') data = null;
                 else if (name === 'get_available_occasions') data = [];
                 else if (name === 'google-auth-start') data = args.operation === 'capability'
                     ? { enabled: true } : { attempt: 'fixture-attempt', url: `http://${req.headers.host}/functions/v1/google-auth-start?bootstrap=fixture` };

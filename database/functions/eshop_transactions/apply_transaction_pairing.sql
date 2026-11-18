@@ -117,7 +117,13 @@ BEGIN
   IF p_payment_info_id IS NOT NULL THEN
     PERFORM public.refresh_payment_info_totals_internal(p_payment_info_id);
     SELECT o.id INTO v_order_id FROM eshop.orders o WHERE o.payment_info = p_payment_info_id;
-    IF v_order_id IS NOT NULL THEN PERFORM public.recalculate_order_payment_status(v_order_id); END IF;
+    IF v_order_id IS NOT NULL THEN
+      PERFORM public.recalculate_order_payment_status(v_order_id);
+      IF v_transaction.amount>0 AND v_transaction.transaction_type IS DISTINCT FROM 'manual'
+        AND v_transaction.ingest_source IS DISTINCT FROM 'manual' THEN
+        PERFORM public.record_form_paid_conversion_internal(v_order_id);
+      END IF;
+    END IF;
   END IF;
 
 

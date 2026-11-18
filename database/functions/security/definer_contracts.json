@@ -3374,6 +3374,26 @@
     "cfe239223fbb2783b80df53876d0d0822427487721c53ff9b19768e71a10f140": {
       "signature": "public.manage_information_authoring(bigint,bigint,bigint,text,jsonb,uuid)",
       "source": "database/functions/authoring/information.sql"
+    },
+    "4c1ca9ed5cec614c09e701a236800ebc30782dce4769b9dedf39838e1c90087f": {
+      "signature": "public.get_meta_purchase_consent(text)",
+      "source": "database/functions/eshop_forms/meta_purchase_consent.sql"
+    },
+    "2938cc764dd3f06d7a9bacf1585188ec72368d9a1b34a42349cb96394f95aba5": {
+      "signature": "public.revoke_meta_purchase_consent(text,bigint)",
+      "source": "database/functions/eshop_forms/meta_purchase_consent.sql"
+    },
+    "66790632828c8be8f771e1265a5f9a2574a94ad77cfdd9b8dffce20f7051d47d": {
+      "signature": "public.claim_meta_purchase_deliveries(integer)",
+      "source": "database/functions/eshop_forms/meta_purchase_worker.sql"
+    },
+    "4b64b222bd1162662f369c44f48bbafebfa7da213e2ad96b584a3a2fd2cf8dde": {
+      "signature": "public.prepare_meta_purchase_delivery(bigint,uuid)",
+      "source": "database/functions/eshop_forms/meta_purchase_worker.sql"
+    },
+    "f075ae77c09eeb8249d1db56fca90f076116ecec84ca1e7cf9757dcf4b0e70b2": {
+      "signature": "public.finish_meta_purchase_delivery(bigint,uuid,text)",
+      "source": "database/functions/eshop_forms/meta_purchase_worker.sql"
     }
   }
 }
