@@ -304,6 +304,23 @@ void main() {
       find.descendant(of: exportCard, matching: find.text('concert.example')),
       findsOneWidget,
     );
+    final editOther = find.descendant(
+      of: exportCard.first,
+      matching: find.widgetWithText(TextButton, CommonStrings.edit),
+    );
+    await tester.tap(editOther);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(CommonStrings.keepEditing));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(category).controller!.text, 'my-draft');
+
+    await tester.tap(editOther);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, CommonStrings.discardChanges),
+    );
+    await tester.pumpAndSettle();
+    expect(category, findsNothing);
   });
 
   Future<void> pumpConsent(

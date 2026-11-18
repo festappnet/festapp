@@ -8,6 +8,7 @@ import 'unit_measurement_help.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/_shared/copy_button.dart';
+import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
@@ -73,6 +74,7 @@ class _UnitWebsiteConsentSettingsState
   int _scopeGeneration = 0;
   bool _reloadWhenIdle = false;
   bool _policyChanged = false;
+  bool _hasLocalEdits = false;
   late final _probe = ComplianzPolicyProbe(onChanged: _probeChanged);
   int _scheduledProbe = 0;
   bool get _detecting => _probe.status == ComplianzProbeStatus.loading;
@@ -213,6 +215,7 @@ class _UnitWebsiteConsentSettingsState
     _coverage = false;
     _exports.remove(_origin);
     _edited = false;
+    _hasLocalEdits = false;
     if (detect) {
       _scheduleDetection();
     } else {
@@ -265,6 +268,22 @@ class _UnitWebsiteConsentSettingsState
       }
     });
   });
+
+  Future<void> _openEditor(String origin) async {
+    if (_origin != origin && (_hasLocalEdits || _coverage)) {
+      final generation = _scopeGeneration;
+      if (!await confirmDiscardChanges(context) ||
+          !mounted ||
+          _scopeGeneration != generation ||
+          _busy) {
+        return;
+      }
+    }
+    setState(() {
+      if (_origin != origin) _select(origin);
+      _expanded = true;
+    });
+  }
 
   void _closeEditor() {
     setState(() => _expanded = false);
@@ -371,6 +390,7 @@ class _UnitWebsiteConsentSettingsState
     _coverage = false;
     _exports.remove(_origin);
     _edited = true;
+    _hasLocalEdits = true;
   });
   Widget _field(
     TextEditingController controller,
@@ -596,14 +616,7 @@ class _UnitWebsiteConsentSettingsState
                       TextButton(
                         focusNode: selected ? _editFocus : null,
                         onPressed: !_busy && !_failed
-                            ? () => setState(() {
-                                if (_origin == origin) {
-                                  _expanded = !_expanded;
-                                } else {
-                                  _select(origin);
-                                  _expanded = true;
-                                }
-                              })
+                            ? () => _openEditor(origin)
                             : null,
                         child: Text(CommonStrings.edit),
                       ),
