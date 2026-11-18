@@ -1,5 +1,5 @@
 import { AuthError, authorizeRequest } from "../_shared/auth.ts";
-import { sendMetaPurchase } from "../_shared/metaPurchase.ts";
+import { sendMetaPurchase } from "./metaPurchase.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 
 Deno.serve(async (request) => {
