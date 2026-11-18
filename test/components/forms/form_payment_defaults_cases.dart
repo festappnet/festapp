@@ -182,7 +182,7 @@ void main() {
               findsOneWidget,
             );
             await save();
-            expect(saved.last?['analytics'], {'enabled': true});
+            expect(saved.last?['analytics'], {'enabled': true, 'purchase_timing': 'order'});
             expect(RightsService.currentUnit()?.data, {
               'measurement_enabled': unitEnabled,
             });
@@ -190,7 +190,7 @@ void main() {
             await tester.tap(toggle);
             await tester.pumpAndSettle();
             await save();
-            expect(saved.last?['analytics'], {'enabled': false});
+            expect(saved.last?['analytics'], {'enabled': false, 'purchase_timing': 'order'});
             rights(false);
             await tester.pumpAndSettle();
             expect(tester.widget<SwitchListTile>(toggle).onChanged, isNull);
@@ -201,7 +201,7 @@ void main() {
             await tester.ensureVisible(title);
             await tester.enterText(title, 'Podzimní koncert');
             await save();
-            expect(saved.last?['analytics'], {'enabled': false});
+            expect(saved.last?['analytics'], {'enabled': false, 'purchase_timing': 'order'});
           }
           expect(tester.takeException(), isNull);
         },
