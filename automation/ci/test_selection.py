@@ -358,7 +358,8 @@ class InputTreeTest(unittest.TestCase):
                      'database/functions/example.sql', 'docs/guide.md', 'unknown',
                      'packages/festapp_contracts/payments.json']:
             self.assertEqual(set(runner.affected([path])), selection.owners(path, CONTRACT))
-        self.assertNotIn('seat-checkout', selection.owners('lib/screen.dart', CONTRACT))
+        self.assertEqual(selection.unit_owners('lib/screen.dart', 'seat-checkout', CONTRACT),
+                         {'ticket-rendering-client'})
         self.assertNotIn('wix-checkout-compatibility', selection.owners('lib/screen.dart', CONTRACT))
 
 

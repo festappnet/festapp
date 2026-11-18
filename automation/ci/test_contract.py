@@ -164,6 +164,7 @@ class MirrorContractTest(unittest.TestCase):
     def test_hosted_lanes_have_capacity_to_overlap_independent_checks(self):
         for lane, concurrent in [
             ('wix-checkout-compatibility', ('wix-quick', 'wix-adapters', 'wix-cms')),
+            ('seat-checkout', ('ticket-rendering-client', 'seat-browser', 'seat-orders')),
             ('ticket-preview-and-delivery', ('ticket-client', 'ticket-edge')),
         ]:
             units = runner.selected_units([lane])
@@ -302,10 +303,11 @@ class MirrorContractTest(unittest.TestCase):
                       steps['navigation-contract']['script'])
 
     def test_semantic_inventory_changes_trigger_all_owning_workflows(self):
+        from selection import lane_inputs
         pattern='automation/client_test_inventory.*'
-        for name in ('navigation-interactions','client-contract','client-browser-contract','ticket-preview-and-delivery','ticket-rendering-contracts'):
+        for name in ('navigation-interactions','client-contract','client-browser-contract','ticket-preview-and-delivery','seat-checkout'):
             lane=runner.CONTRACT['jobs'][name]
-            self.assertIn(pattern,lane['inputs'])
+            self.assertIn(pattern,lane_inputs(lane))
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
             triggers=workflow.get('on',workflow.get(True))
             for event in ('push','pull_request'):
@@ -442,7 +444,7 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
         owners = [name for name, row in contract['steps'].items() if root in row['script']]
         self.assertEqual(owners, ['ticket-rendering-client'])
         self.assertEqual(contract['steps']['ticket-rendering-client']['requires'], ['ticket-rendering-install'])
-        self.assertIn('ticket-rendering-client', contract['jobs']['ticket-rendering-contracts']['steps'])
+        self.assertIn('ticket-rendering-client', contract['jobs']['seat-checkout']['steps'])
 
     def test_ticket_preparation_can_overlap_edge_without_overlapping_flutter(self):
         units=runner.selected_units(['ticket-preview-and-delivery'])

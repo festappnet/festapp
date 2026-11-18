@@ -83,11 +83,10 @@ def known_tests(contract):
     return cached(('known-tests',id(contract)),lambda:set(contract['knownTestInputs']))
 
 
-def lane_inputs(lane, unit=None):
+def lane_inputs(lane):
     yield from lane.get('inputs', [])
     for group in lane.get('inputGroups', []):
-        if unit is None or unit in group['steps']:
-            yield from group['inputs']
+        yield from group['inputs']
 
 
 def _owners(path, contract):
@@ -121,8 +120,21 @@ def _unit_owners(path, lane, policy):
             (path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart')) and path not in known_tests(policy))):
         return set(units)
     job = policy['jobs'][lane]
-    matches={unit for unit in units if any(fnmatch.fnmatch(path,pattern) for pattern in
-             policy['steps'][unit].get('inputs',lane_inputs(job, unit)))}
+    def matches_inputs(patterns):
+        return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+
+    def group_owners(group):
+        inputs = group['inputs']
+        matched = {unit for unit in group['steps']
+                   if matches_inputs(policy['steps'][unit].get('inputs', inputs))}
+        return matched or set(group['steps'])
+
+    if 'inputGroups' not in job:
+        return group_owners(job)
+    matches = set()
+    for group in job['inputGroups']:
+        if matches_inputs(group['inputs']):
+            matches.update(group_owners(group))
     return matches or set(units)
 
 
