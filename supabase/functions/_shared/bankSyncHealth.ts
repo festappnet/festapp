@@ -4,12 +4,24 @@ import { supabaseAdmin } from "./supabaseUtil.ts";
 
 // This observes the owning bank service. It never polls the bank or sends email.
 export async function monitorBankSyncHealth(organizationId: number) {
-  async function rpc(name: string, params: Record<string, unknown>) {
-    const { data, error } = await supabaseAdmin.rpc(name, params).abortSignal(
-      AbortSignal.timeout(10_000),
-    );
-    if (error) throw new Error("bank_sync_health_database_failed");
-    return data;
+  async function rpc(
+    name: "get_bank_sync_health_targets" | "record_bank_sync_health",
+    params: Record<string, unknown>,
+  ) {
+    const request = () =>
+      supabaseAdmin.rpc(name, params).abortSignal(AbortSignal.timeout(10_000));
+    let result = await request();
+    // The health write is fenced by its observation ID. Keep the same ID
+    // when a transient transport failure leaves its outcome unknown.
+    if (result.error && [0, 408, 502, 503, 504].includes(result.status)) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      result = await request();
+    }
+    if (result.error) {
+      console.warn("bank_sync_health_rpc_failed", name, result.status);
+      throw new Error("bank_sync_health_database_failed");
+    }
+    return result.data;
   }
   const targets = await rpc("get_bank_sync_health_targets", {
     p_organization_id: organizationId,
@@ -21,7 +33,11 @@ export async function monitorBankSyncHealth(organizationId: number) {
     if (!/^[0-9]+$/.test(target.remote_bank_account_id)) {
       throw new Error("invalid_remote_mapping");
     }
-    const observationId = await beginBankSyncObservation(target.connection_id);
+    const observationId = await beginBankSyncObservation(target.connection_id)
+      .catch((error) => {
+        console.warn("bank_sync_health_observation_failed");
+        throw error;
+      });
     let success = null;
     let error: string | null = null;
     let ingress: boolean | null = null;
