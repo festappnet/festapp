@@ -47,7 +47,7 @@ export class DbForms {
     static async getMetaPurchaseConsent(link) {
         const { data } = await SupabaseService.getClient().rpc('get_meta_purchase_consent', {p_form_link:link})
             .abortSignal(AbortSignal.timeout(1500));
-        return data?.origin === window.location.origin ? data : null;
+        return data;
     }
 
     static async getMeasurementPolicy(link) {

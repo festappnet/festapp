@@ -7,9 +7,9 @@ import {preset} from '../../../integrations/measurement/build_gtm_preset.mjs';
 const root=new URL('../../../',import.meta.url),cv=preset.containerVersion;
 const parameters=object=>Object.fromEntries((object.parameter??[]).map(entry=>[entry.key,entry]));
 const simple=object=>Object.fromEntries((object.parameter??[]).filter(entry=>'value'in entry).map(entry=>[entry.key,entry.type==='BOOLEAN'?entry.value==='true':entry.value]));
-const eventNames=['form_page_view','form_start','form_submit_error','view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','generate_lead'];
-const ecommerceEvents=['view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info'];
-const contactEvents=['generate_lead'];
+const eventNames=['form_page_view','form_start','form_submit_error','view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','generate_lead','purchase'];
+const ecommerceEvents=['view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','purchase'];
+const contactEvents=['generate_lead','purchase'];
 const clean=value=>JSON.parse(JSON.stringify(value));
 const get=(object,path)=>path.split('.').reduce((value,key)=>value?.[key],object);
 
@@ -39,27 +39,27 @@ const triggerMatches=(trigger,event,layer)=>{
   return String(read(args.arg0.slice(2,-2)))===args.arg1;
  });
 };
-const conversionLayer=()=>({form_embedded:true,page_type:'confirmation',user_type:'b2c',language:'cs',
+const conversionLayer=()=>({form_embedded:true,meta_purchase_allowed:true,page_type:'confirmation',user_type:'b2c',language:'cs',
  ecommerce:{currency:'CZK',value:200,transaction_id:'order',items:[{item_id:'product_1',quantity:2,price:100,email:'never-export'}]},
  user_data:{email:'buyer@example.test',phone_number:'+420777123456'},currency:'CZK',value:0,lead_source:'free_registration',event_id:'lead-id'});
 
 test('paused import owns one folder, constants, valid references and scoped event triggers',()=>{
- assert.equal(cv.tag.length,15);assert.ok(cv.tag.every(tag=>tag.paused));
+ assert.equal(cv.tag.length,18);assert.ok(cv.tag.every(tag=>tag.paused));
  assert.deepEqual(cv.folder,[{folderId:'1',name:'Festapp'}]);
  for(const item of [...cv.tag,...cv.trigger,...cv.variable])assert.equal(item.parentFolderId,'1');
- for(const trigger of cv.trigger){assert.equal(trigger.type,'CUSTOM_EVENT');assert.equal(triggerMatches(trigger,'purchase',{form_embedded:true}),false);}
+ for(const trigger of cv.trigger){assert.equal(trigger.type,'CUSTOM_EVENT');assert.equal(triggerMatches(trigger,'native_event',{form_embedded:true}),false);}
  assert.ok(cv.tag.every(tag=>tag.firingTriggerId.every(id=>cv.trigger.some(trigger=>trigger.triggerId===id))));
  const names=new Set([...cv.variable.map(variable=>variable.name),'Event','_event']);
  const config=JSON.stringify({tags:cv.tag,triggers:cv.trigger,variables:cv.variable});
  for(const [,name]of config.matchAll(/\{\{([^}]+)\}\}/g))assert.ok(names.has(name),name);
- assert.equal(cv.variable.filter(variable=>variable.type==='c').length,4);
+ assert.equal(cv.variable.filter(variable=>variable.type==='c').length,5);
  for(const tag of cv.tag){const p=simple(tag);for(const key of ['measurementIdOverride','conversionId','conversionLabel','pixelId'])if(p[key])assert.match(p[key],/^\{\{.+\}\}$/);}
  assert.ok(cv.tag.every(tag=>tag.type!=='html'));
  assert.doesNotMatch(JSON.stringify(preset),/GTM-W9WRHWT9|6402899907|285468732/);
  assert.deepEqual(JSON.parse(readFileSync(new URL('integrations/measurement/festapp-host-gtm.json',root),'utf8')),preset);
 });
 test('GA4 uses fixed per-event names and ecommerce only on ecommerce events',()=>{
- const ga=cv.tag.filter(tag=>tag.type==='gaawe');assert.equal(ga.length,9);
+ const ga=cv.tag.filter(tag=>tag.type==='gaawe');assert.equal(ga.length,10);
  assert.deepEqual(ga.map(tag=>simple(tag).eventName).sort(),[...eventNames].sort());
  for(const tag of ga){const p=simple(tag),event=p.eventName;
   assert.equal(p.sendEcommerceData,ecommerceEvents.includes(event));
@@ -85,7 +85,7 @@ test('Google contact mapping is native/manual and present only on conversion tag
  }
 });
 test('Ads Registration excludes waitlist and opening-interest leads',()=>{
- const ads=cv.tag.filter(tag=>tag.type==='awct');assert.equal(ads.length,1);
+ const ads=cv.tag.filter(tag=>tag.type==='awct');assert.equal(ads.length,2);
  const registration=ads[0];assert.ok(registration.name.endsWith('Registrace'));
  const trigger=cv.trigger.find(trigger=>trigger.triggerId===registration.firingTriggerId[0]);
  for(const lead_source of ['free_registration','waitlist','sale_opening_notification'])
@@ -123,15 +123,15 @@ test('official Meta template keeps upstream executable/permissions and genuine g
   if(section==='SANDBOXED_JS_FOR_WEB_TEMPLATE')assert.equal(part(template.templateData),part(source),section+' is unmodified');
   else assert.deepEqual(JSON.parse(part(template.templateData)),JSON.parse(part(source)),section+' is unchanged after GTM serialization');
  }
- assert.equal(cv.tag.filter(tag=>tag.type==='cvt_0_'+template.templateId).length,5);
+ assert.equal(cv.tag.filter(tag=>tag.type==='cvt_0_'+template.templateId).length,6);
 });
 test('Meta matching inputs belong only to Lead; CAPI and automatic ecommerce stay off',()=>{
  const tags=cv.tag.filter(tag=>tag.type.startsWith('cvt_'));
- assert.deepEqual(tags.map(tag=>simple(tag).standardEventName).sort(),['ViewContent','AddToCart','InitiateCheckout','AddPaymentInfo','Lead'].sort());
- for(const tag of tags){const p=simple(tag),contact=p.standardEventName==='Lead';
+ assert.deepEqual(tags.map(tag=>simple(tag).standardEventName).sort(),['ViewContent','AddToCart','InitiateCheckout','AddPaymentInfo','Lead','Purchase'].sort());
+ for(const tag of tags){const p=simple(tag),contact=['Lead','Purchase'].includes(p.standardEventName);
   assert.equal(p.optInMetaCAPI,false);assert.equal(p.enhancedEcommerce,false);assert.equal(p.useGA4Ecommerce,false);
   assert.equal(p.advancedMatching,contact);assert.equal(Boolean(parameters(tag).advancedMatchingList),contact);
-  assert.equal(p.eventId,undefined);
+  assert.equal(p.eventId,p.standardEventName==='Purchase'?'{{dl.ecommerce.transaction_id}}':undefined);
  }
 });
 
@@ -195,4 +195,24 @@ test('real template can queue a missing SDK and CAPI opt-out is not a no-depende
  const builder=metaHarness({builderGate:true});builder.run(data);
  assert.ok(builder.scripts.some(url=>url.startsWith('https://cdn.jsdelivr.net/')));
  assert.ok(builder.calls.every(call=>call[0]!=='optinMetaEnabledCapi'));
+});
+
+test('paid Pixel Purchase uses the server fact UUID as eventID',()=>{
+ const harness=metaHarness(),tag=cv.tag.find(tag=>tag.name==='Meta Pixel - Festapp - Purchase');
+ const layer=conversionLayer();layer.ecommerce.transaction_id='50c990cf-c85d-4539-b856-9f9c4ccce0a8';
+ harness.run(templateData(tag,'purchase',layer));
+ const call=harness.calls.find(call=>call[0]==='trackSingle'&&call[2]==='Purchase');
+ assert.deepEqual(clean(call[4]),{eventID:layer.ecommerce.transaction_id});
+ assert.equal(call[3].value,200); assert.equal(call[3].currency,'CZK');
+});
+
+test('Meta companion never fires GA4 or Ads; original CAPI purchase waits only for Pixel',()=>{
+ const layer=conversionLayer();layer.meta_purchase_allowed=false;
+ const fires=(tag,event)=>tag.firingTriggerId.some(id=>triggerMatches(cv.trigger.find(t=>t.triggerId===id),event,layer));
+ const pixel=cv.tag.find(t=>t.name==='Meta Pixel - Festapp - Purchase');
+ assert.equal(fires(pixel,'purchase'),false);
+ assert.ok(cv.tag.filter(t=>['gaawe','awct'].includes(t.type)).some(t=>fires(t,'purchase')),'general analytics still receives purchase');
+ assert.equal(fires(pixel,'meta_purchase'),true);
+ assert.ok(cv.tag.filter(t=>['gaawe','awct'].includes(t.type)).every(t=>!fires(t,'meta_purchase')));
+ layer.meta_purchase_allowed=true;assert.equal(fires(pixel,'purchase'),true);
 });

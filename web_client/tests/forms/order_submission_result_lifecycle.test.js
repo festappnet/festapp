@@ -139,7 +139,7 @@ for (const scenario of ['success', 'server-error', 'transport-error', 'demo', 'r
   });
 }
 
-test('real dataLayer reports the confirmation page without a legacy purchase after a result-render failure', async () => {
+test('real dataLayer preserves confirmed Purchase exactly once after a result-render failure', async () => {
   const dom=new JSDOM('<body><div id="form-page-container"></div></body>',{url:'https://example.test/form/summer'});
   global.window=dom.window;global.document=dom.window.document;global.HTMLElement=dom.window.HTMLElement;global.CustomEvent=dom.window.CustomEvent;
   window.scrollTo=()=>{};
@@ -160,7 +160,9 @@ test('real dataLayer reports the confirmation page without a legacy purchase aft
     await new Promise(resolve=>setImmediate(resolve));assert.equal(window.dataLayer,undefined);
     confirm({success:true,data:{ticketOrder:{order:{payment_info:{amount:200}},analytics:{event:'purchase',ecommerce:{transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',payment_type:'bank_transfer',items:[{item_id:'product_12',item_name:'Concert ticket',price:100,quantity:2}]}}}}});
     await finished;
-    assert.deepEqual(sent.filter(item=>item.event).map(item=>item.event),['page_view']);
+    assert.deepEqual(sent.filter(item=>item.event).map(item=>item.event),['page_view','purchase']);
+    assert.equal(sent.find(item=>item.event==='purchase').event_id,'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44');
+    assert.equal(sent.find(item=>item.event==='purchase').ecommerce.value,200);
     assert.equal(JSON.stringify(sent).includes('private'),false);
   }finally{FormNetwork.submitOrder=original;dom.window.close();}
 });

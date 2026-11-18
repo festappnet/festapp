@@ -1,7 +1,7 @@
 // Advanced measurement with consent state and bounded conversion contacts.
 export const measurementProtocol = 3;
 // Pure contract. Every receiver rebuilds the payload independently.
-const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'add_payment_info', 'purchase']);
+const ecommerceEvents = new Set(['view_item', 'add_to_cart', 'remove_from_cart', 'begin_checkout', 'add_payment_info', 'purchase', 'meta_purchase']);
 export const currencies = value => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
 const productId = value => typeof value === 'string' && /^product_[1-9]\d{0,15}$/.test(value);
 const eventIdentity = value => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -99,6 +99,12 @@ export function analyticsPayload(input) {
         if (!['free_registration', 'waitlist', 'sale_opening_notification'].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
         return withUserData({event: 'generate_lead', currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id});
     }
+    const conversion=['purchase','meta_purchase'].includes(input.event);
+    if(conversion && input.meta_purchase_allowed !== undefined && typeof input.meta_purchase_allowed !== 'boolean')return null;
+    const metaExpiry=input.meta_purchase_expires_at;
+    const hasMetaExpiry=Number.isSafeInteger(metaExpiry) && metaExpiry>0;
+    if(conversion && metaExpiry!==undefined && !hasMetaExpiry)return null;
+    if(input.event==='meta_purchase' && (input.meta_purchase_allowed!==true || !hasMetaExpiry))return null;
     const source = input.ecommerce;
     if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) ||
         !Array.isArray(source.items) || !source.items.length || source.items.length > 200) return null;
@@ -120,23 +126,34 @@ export function analyticsPayload(input) {
     const value = cents / 100;
     if (Math.round(value * 100) !== cents) return null;
     const ecommerce = {currency: source.currency, items, value};
-    if (input.event === 'add_payment_info' || input.event === 'purchase') {
+    if (input.event === 'add_payment_info' || ['purchase','meta_purchase'].includes(input.event)) {
         if (!['bank_transfer', 'card', 'free'].includes(source.payment_type)) return null;
         ecommerce.payment_type = source.payment_type;
     }
-    if (input.event === 'purchase') {
-        if (!eventIdentity(source.transaction_id)) return null;
+    if (['purchase','meta_purchase'].includes(input.event)) {
+        if (!eventIdentity(source.transaction_id) ||
+            (input.event_id !== undefined && input.event_id !== source.transaction_id)) return null;
         ecommerce.transaction_id = source.transaction_id;
     }
     const result = {event: input.event, ecommerce};
-    return input.event === 'purchase' ? withUserData(result) : result;
+    // Released payloads omitted event_id; normalize them at the wire boundary.
+    return conversion ? withUserData({...result,event_id:source.transaction_id,meta_purchase_allowed:input.meta_purchase_allowed ?? true,
+        ...(hasMetaExpiry ? {meta_purchase_expires_at:metaExpiry} : {})}) : result;
+}
+
+// Keep general analytics deliverable after the Meta-only deduplication window.
+export function currentMetaPurchaseRouting(payload, now = Date.now()) {
+    if (payload.meta_purchase_expires_at === undefined || payload.meta_purchase_expires_at > now) return payload;
+    return payload.event === 'meta_purchase' ? null : {...payload,meta_purchase_allowed:false};
 }
 
 // The sole projection from the stable wire contract to the destination dataLayer.
 // Transport peers keep page_view on the wire, including across rolling upgrades.
 export function measurementDataLayerPayload(input, {embedded = false, pageContext = null} = {}) {
-    const payload = analyticsPayload(input);
-    if (!payload) return null;
+    const wire = analyticsPayload(input);
+    const routed = wire && currentMetaPurchaseRouting(wire);
+    if (!routed) return null;
+    const {meta_purchase_expires_at: _deadline, ...payload}=routed;
     // A shared host layer cannot infer an event's context from its last push:
     // another embed may have published in between. Rebuild only public fields.
     const page = payload.event

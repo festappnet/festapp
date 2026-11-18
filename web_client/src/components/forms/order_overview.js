@@ -1,3 +1,10 @@
+import {currentPurchaseDenial} from './meta_purchase_consent.js';
+import {createEmbedConsentSource} from './form_measurement_embed_consent.js';
+import {isEmbed} from '../../services/embed_context.js';
+import {SupabaseService} from '../../services/supabase_service.js';
+import {FormMeasurementSession,hasBrowserSession} from './form_measurement_session.js';
+import {FormMeasurementRuntime} from './form_measurement_runtime.js';
+import {DbForms} from './db_forms.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { FormStrings } from './form_strings.js';
 import {discountSummaryHtml} from './discount_summary.js';
@@ -245,6 +252,9 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
 }
 
 export function stopOrderOverview(host) {
+    host._purchaseSession?.dispose(); host._purchaseRuntime?.destroy();
+    delete host._purchaseSession; delete host._purchaseRuntime; delete host._purchaseScope;
+    delete host._purchaseWithdrawal;
     delete host._customerChangeSession;
     delete host._customerChangeScope;
     delete host.dataset.customerEditing;
@@ -286,6 +296,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
         onIdentity(data.organizationIdentity);
+        updateOverviewPurchases(host, data, scope, commands.client);
         const snapshot = JSON.stringify({ ...data, serverTime: null });
         // Keep expanded details and keyboard focus stable when nothing changed.
         // A focused control may be in use: defer replacing it until the next poll.
@@ -311,6 +322,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
                 status.setAttribute('role', 'status');
                 button.onclick = async () => {
                     button.disabled = true;
+                    if (host._purchaseWithdrawal) host._purchaseWithdrawal.confirmed=true;
                     try {
                         const { data: withdrawn, error } = await commands.client.rpc('revoke_meta_purchase_consent', {
                             p_token: scope.token, p_order_id: scope.orderId,
@@ -333,6 +345,8 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         return data;
     } catch (error) {
         if (host._overviewGeneration !== generation) return;
+        host._purchaseSession?.dispose(); host._purchaseRuntime?.destroy();
+        delete host._purchaseSession; delete host._purchaseRuntime; delete host._purchaseScope;
         onIdentity(null);
         unavailable = error.message === 'OVERVIEW_UNAVAILABLE';
         host._overviewSnapshot = null;
@@ -351,4 +365,92 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
             if (!unavailable) scheduleOverviewRefresh(host, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, true, onIdentity));
         }
     }
+}
+
+// Only a current saved denial is a candidate. The server matches the captured
+// site, source and decision time before doing any durable withdrawal.
+export function withdrawOverviewPurchaseConsent(host, choice) {
+    const state=host._purchaseWithdrawal;
+    if(!state)return;
+    const denial=currentPurchaseDenial(choice);
+    if(denial) {
+        const key=JSON.stringify(denial);
+        if(key!==state.checked && key!==state.pending?.key)state.pending={key,denial};
+    }
+    const pending=state.pending;
+    if(!state.active || state.inflight || !state.revoke || !pending)return;
+    state.inflight=true;
+    Promise.resolve().then(()=>state.revoke(pending.denial)).then(withdrawn=>{
+        state.checked=pending.key;
+        if(state.pending===pending)state.pending=null;
+        if(withdrawn)state.confirmed=true;
+    }).catch(()=>{ /* Retry the same saved denial on the next overview poll. */ })
+      .finally(()=>{state.inflight=false;});
+}
+
+// Only successful capability responses reach this adapter. The existing session
+// rechecks current visitor policy and CMP consent; no direct dataLayer writes.
+function updateOverviewPurchases(host, data, scope, client) {
+    const withdrawalScope=JSON.stringify([scope.orderId,scope.token]);
+    if(host._purchaseWithdrawal?.scope!==withdrawalScope)host._purchaseWithdrawal={scope:withdrawalScope};
+    const withdrawal=host._purchaseWithdrawal;
+    withdrawal.active=data.metaPurchaseConsent===true;
+    withdrawal.revoke=client ? async denial=>{
+        const {data: withdrawn, error}=await client.rpc('revoke_meta_purchase_consent', {
+            p_token:scope.token,p_order_id:scope.orderId,p_denial:denial,
+        });
+        if(error)throw error;
+        return withdrawn===true;
+    } : null;
+    const link=data.measurementFormLink;
+    if(typeof link!=='string' || !/^[a-zA-Z0-9_-]+$/.test(link))return;
+    const key=JSON.stringify([scope.orderId,scope.token,link]);
+    if(host._purchaseScope!==key) {
+        host._purchaseSession?.dispose(); host._purchaseRuntime?.destroy();
+        const model={link,data:{},visibleFields:[]};
+        const win=host.ownerDocument.defaultView;
+        let framed=true;
+        try {framed=win.self!==win.top;} catch { /* Restricted frames stay embedded. */ }
+        const embedded=framed || isEmbed(win.location);
+        const bridge=embedded ? host._overviewEmbedBridge : null;
+        const runtime=host._purchaseRuntime=new FormMeasurementRuntime({win,model,embedded,campaign:()=>bridge?.measurementCampaign||{}});
+        bridge?.setMeasurementRuntime(runtime);
+        const transport=bridge || runtime;
+        const publish=()=>{
+            const session=host._purchaseSession;
+            if(!session)return;
+            session.record({page_type:'confirmation'});
+            for(const order of host._purchaseOrders||[])for(const payload of [order.analytics,order.metaAnalytics])
+                if(payload)session.captureConversion()(payload);
+        };
+        let identity=hasBrowserSession(win)?'authenticated':'anonymous';
+        host._purchaseSession=new FormMeasurementSession({win,model,transport,
+            identitySource:{
+                read:()=>identity,
+                subscribe:notify=>{
+                    const subscription=SupabaseService.getClient().auth?.onAuthStateChange?.((_event,value)=>{
+                        const next=value?.user?.id||'anonymous';
+                        if(identity!==next){identity=next;notify();}
+                    })?.data?.subscription;
+                    return ()=>subscription?.unsubscribe();
+                }
+            },
+            authorizedOrderScope:{...scope},policySource:()=>DbForms.getMeasurementPolicy(link),
+            consentSource:bridge ? createEmbedConsentSource({bridge}) : {connect:(_policy,notify)=>{
+                // An unavailable host bridge must not open a standalone CMP.
+                if (embedded) {notify(null);return ()=>{};}
+                let disposed=false,cleanup;
+                import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{
+                    if(!disposed)cleanup=startMeasurementConsent({model,setConsent:notify,host,includePurchaseConsent:true});
+                }).catch(()=>{if(!disposed)notify(null);});
+                return ()=>{disposed=true;cleanup?.();};
+            }},onConsent:choice=>withdrawOverviewPurchaseConsent(host,choice),
+            allowMetaPurchase:()=>!withdrawal.confirmed && !withdrawal.pending && !withdrawal.inflight,onActive:publish});
+        host._purchasePublish=publish; host._purchaseScope=key;
+        host._purchaseSession.start();
+    }
+    host._purchaseOrders=data.orders;
+    // Retry a failed withdrawal on the next poll while the server still reports consent.
+    withdrawOverviewPurchaseConsent(host);
+    if(host._purchaseSession?.state==='active')host._purchasePublish();
 }

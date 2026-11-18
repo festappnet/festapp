@@ -37,7 +37,7 @@ are not changed to grants by the preset. `ad_personalization` governs personaliz
 advertising, not an extra firing condition for the conversion tags. A merchant
 choosing basic Consent Mode needs a separately reviewed website setup.
 
-GA4 `generate_lead` and the Ads registration tag use the native
+GA4 `purchase` / `generate_lead` and the Ads purchase / registration tags use the native
 **User-Provided Data - Festapp - manual** variable. It reads only the existing
 canonical email/phone from those embedded conversion events. Configure GA4's
 user-provided-data feature, required Ads linking/data capabilities and relevant
@@ -48,12 +48,12 @@ GA4 user-provided data an open beta; review its current account prerequisites.
 Never map email/phone as ordinary custom dimensions, ordinary event fields or URLs.
 
 Meta tags require **ad_storage** as an additional GTM check. The merchant CMP
-must map that gate to consent covering Meta tracking and, for Lead,
+must map that gate to consent covering Meta tracking and, for Purchase and Lead,
 customer matching. The name of a Google consent type alone is not proof of that
 coverage. The site CMP owns SDK consent withdrawal too, including queued work
 while the SDK loads; confirm its supported Meta consent/revocation integration.
 
-Only the Meta Lead tag supplies Advanced Matching fields. Google retains
+Only the Meta Purchase and Lead tags supply Advanced Matching fields. Google retains
 canonical E.164 phone numbers; the Meta adapter removes only the leading `+`
 from an already valid E.164 value. It never guesses a country or rewrites source
 contact data. Invalid/missing contacts are omitted. Public Meta properties and
@@ -69,22 +69,20 @@ No access token or server destination is configured. This opt-out does not mean
 that no external library can load: the pinned official template can load its
 client parameter builder from jsDelivr/unpkg behind a Meta SDK gate. Its gallery
 permissions/dependencies are retained and must be included in the site's review.
-The preset does not supply Meta `eventID`; canonical Festapp event and order IDs
-remain available for a separately designed future server integration.
+Pixel Purchase receives `eventID` from the canonical `ecommerce.transaction_id`, equal to top-level `event_id` and the CAPI paid-fact UUID. Do not generate a second ID in GTM.
 
 ## Event meanings
 
-- Nine fixed-name GA4 tags share scoped event triggers; ecommerce is enabled only
-  for view/cart/checkout/payment events. Non-ecommerce events cannot
+- Ten fixed-name GA4 tags share scoped event triggers; ecommerce is enabled only
+  for view/cart/checkout/payment/purchase events. Non-ecommerce events cannot
   inherit the website's earlier ecommerce payload.
-- Remove older Festapp tags that count checkout confirmation as a purchase.
-  The preset sends checkout interactions and registration leads.
+- Remove overlapping Festapp Purchase tags before enabling the preset.
+  The preset sends checkout interactions, Purchase and registration leads.
 - Ads **Registrace** uses a dedicated `generate_lead` trigger restricted to
   `lead_source = free_registration`. Waitlist and sale-opening interest stay
-  generic leads for GA4/Meta and do not count as completed registrations. The
-  ten triggers include nine shared events plus this subtype filter.
+  generic leads for GA4/Meta and do not count as completed registrations. The dedicated subtype filter does not include paid purchases.
 - Meta uses ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo and
-  Lead. It sends no duplicate website PageView. Lead value remains zero.
+  Purchase and Lead. It sends no duplicate website PageView. Lead value remains zero.
 - VAT/net-revenue policy and estimated lead values are separate domain changes.
   The preset preserves the current charged item amounts and never invents a
   VAT rate, subtracts assumed taxes or estimates a lead's commercial value.
@@ -172,3 +170,5 @@ recovery after transport replacement contains the conversion fact without
 
 Initial measurement approval is handled manually by the platform administrator,
 who replies by email. No standard processing time is specified.
+
+Purchase timing is configured per form: order (default) or paid. CAPI forms require paid. The preset restores GA4 purchase, Ads Purchase and Meta Purchase; Meta eventID is ecommerce.transaction_id, the shared paid fact UUID. Paid browser events require a visit to the authorized order overview and current policy and consent. General GA4/Ads purchase does not depend on advertising consent or CAPI success. The original CAPI cohort sets meta_purchase_allowed=false on purchase; only its separate meta_purchase companion can fire Pixel after successful CAPI delivery and within 47 hours after full payment. That companion never fires GA4/Ads tags. Standalone overview events have form_embedded=false and need separate triggers in the isolated container.

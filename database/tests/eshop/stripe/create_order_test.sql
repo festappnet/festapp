@@ -23,7 +23,7 @@ BEGIN
  VALUES(org,false,true,true,true,true,ARRAY['web']);
  INSERT INTO public.forms(occasion,data,is_open,key) VALUES(occ,jsonb_build_object('payments',jsonb_build_object('bankEnabled',false,'stripeConnectionId',conn)),true,extensions.gen_random_uuid()) RETURNING id INTO f;
  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason) VALUES(org,true,1,'test','disposable conversion fixture');
- UPDATE public.forms SET data=data||'{"analytics":{"enabled":true}}'::jsonb WHERE id=f;
+ UPDATE public.forms SET data=data||'{"analytics":{"enabled":true,"purchase_timing":"paid"}}'::jsonb WHERE id=f;
  INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Card tickets','spot') RETURNING id INTO pt;
  INSERT INTO eshop.products(product_type,occasion,title,price,currency_code,is_hidden) VALUES(pt,occ,'Card ticket',123.45,'CZK',false) RETURNING id INTO p;
  INSERT INTO public.form_fields(form,product_type,type) VALUES(f,pt,'product_type');
@@ -34,6 +34,7 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,code}','200','canonical card create succeeds: '||result::text);
  PERFORM assert_eq(result#>'{data,analytics}','null'::jsonb,'card checkout has no purchase before the provider confirms payment');
  oid:=(result#>>'{data,order,id}')::bigint;
+ PERFORM assert_false(public.form_order_purchase_capi_required_internal(oid),'non-CAPI paid cohort requires no server delivery');
  SELECT payment_info INTO pi FROM eshop.orders WHERE id=oid;
  SELECT * INTO STRICT attempt FROM eshop.stripe_checkout_attempts WHERE order_id=oid;
  PERFORM assert_eq(attempt.amount_minor,12345::bigint,'price originates from product catalog');
@@ -98,8 +99,8 @@ BEGIN
  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'paid','canonical paid transition');
  PERFORM assert_eq((SELECT cf.payload FROM analytics.conversion_facts cf WHERE cf."order"=oid AND cf.kind='order_fully_paid'),
   '{"currency":"CZK","value":123.45}'::jsonb,'confirmed card payment records the exact paid amount once');
- PERFORM assert_eq(public.create_ticket_order_client_sync_v1(payload,command,client)#>'{data,analytics}',
-  'null'::jsonb,'paid card facts never reach the browser checkout receipt');
+ PERFORM assert_eq(public.create_ticket_order_client_sync_v1(payload,command,client)#>>'{data,analytics,event_id}',
+  (SELECT cf.event_id::text FROM analytics.conversion_facts cf WHERE cf."order"=oid AND cf.kind='order_fully_paid'),'non-CAPI paid card projection shares the confirmed fact UUID without a delivery row');
  PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi),123.45::numeric,'gross amount exact');
  SELECT count(*) INTO count_before FROM public.email_messages WHERE order_id=oid AND message_kind='order_tickets';
  PERFORM assert_true(count_before>0,'paid transition creates existing ticket email intent');

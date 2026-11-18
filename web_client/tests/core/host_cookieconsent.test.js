@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {measurementConsent} from '../../src/components/forms/form_measurement_contract.js';
 import assert from 'node:assert/strict';
 import {JSDOM, CookieJar} from 'jsdom';
 import {readFileSync} from 'node:fs';
@@ -13,11 +14,11 @@ async function fixture(choice=both, input=cookieconsentConfig, config={}, cookie
  const cmp=await cookieconsentFixture(win,{choice,config});
  const source=createCookieConsentSource(win,input),registry=createConsentSourceRegistry();
  const stop=registry.connect(source);
- return {win,...cmp,source,registry,read:()=>registry.read(scope),close(){stop();win.close()}};
+ return {win,...cmp,source,registry,read:()=>{const value=registry.read(scope);return value ? measurementConsent(value) : value;},close(){stop();win.close()}};
 }
 for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false,marketing:true}])
  test('real CookieConsent saved choice '+JSON.stringify(choice),async()=>{
-  const f=await fixture(choice);try{assert.deepEqual(f.read(),choice);assert.deepEqual(f.registry.read({...scope,processingRevision:'deploy'}),choice)}finally{f.close()}
+  const f=await fixture(choice);try{assert.deepEqual(f.read(),choice);assert.deepEqual(measurementConsent(f.registry.read({...scope,processingRevision:'deploy'})),choice)}finally{f.close()}
  });
 for(const input of ['{',null,{}, {...cookieconsentConfig,provider:'unknown'}, {...cookieconsentConfig,organization:0},
  {...cookieconsentConfig,unit:'2'}, {...cookieconsentConfig,consentRevision:'x'},
@@ -66,7 +67,7 @@ test('missing/broken APIs and non-boolean category responses fail closed',async(
  }finally{f.close()}
 });
 test('TCF preserves analytics and denies marketing',async()=>{
- const f=await fixture();try{f.win.__tcfapi=()=>{};assert.deepEqual(f.read(),{analytics:true,marketing:false})}finally{f.close()}
+ const f=await fixture();try{f.win.__tcfapi=()=>{};assert.deepEqual(f.read(),{analytics:true,marketing:false});assert.equal(f.source.read(scope).purchaseConsent,null)}finally{f.close()}
 });
 test('custom category mapping and localStorage work against real library',async()=>{
  const f=await fixture({statistics:true,ads:false},{...cookieconsentConfig,categories:{analytics:'statistics',marketing:'ads'}},

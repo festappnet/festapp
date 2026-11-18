@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {measurementConsent} from '../../src/components/forms/form_measurement_contract.js';
 import assert from 'node:assert/strict';
 import {JSDOM,CookieJar} from 'jsdom';
 import {readFileSync} from 'node:fs';
@@ -12,12 +13,12 @@ function fixture(choice=both,input=cookiebotConfig,options={}) {
  const win=new JSDOM('',{url:cookiebotConfig.origin,runScripts:'outside-only',...options}).window;
  const cmp=cookiebotFixture(win,{choice});
  const source=createCookiebotSource(win,input),registry=createConsentSourceRegistry(),stop=registry.connect(source);
- return {win,...cmp,source,registry,read:()=>registry.read(scope),close(){stop();win.close()}};
+ return {win,...cmp,source,registry,read:()=>{const value=registry.read(scope);return value ? measurementConsent(value) : value;},close(){stop();win.close()}};
 }
 for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false,marketing:true},{preferences:true,...none}])
  test('Cookiebot transfers saved choice '+JSON.stringify(choice),()=>{
   const f=fixture(choice);try{assert.deepEqual(f.read(),{analytics:choice.analytics,marketing:choice.marketing});
-   assert.deepEqual(f.registry.read({...scope,processingRevision:'new-runtime'}),f.read());
+   assert.deepEqual(measurementConsent(f.registry.read({...scope,processingRevision:'new-runtime'})),f.read());
   }finally{f.close()}
  });
 for(const input of ['{',null,{}, {...cookiebotConfig,provider:'other'},
@@ -107,7 +108,7 @@ test('ordinary embed without data-type, data-level or blocking attributes transf
  const win=new JSDOM('',{url:cookiebotConfig.origin,runScripts:'outside-only'}).window;
  try{const cmp=cookiebotFixture(win,{choice:both,blocking:null});
   assert.deepEqual([...cmp.script.attributes].map(a=>a.name).sort(),['data-cbid','id','src','type']);
-  const registry=createConsentSourceRegistry();registry.connect(createCookiebotSource(win,cookiebotConfig));assert.deepEqual(registry.read(scope),both);
+  const registry=createConsentSourceRegistry();registry.connect(createCookiebotSource(win,cookiebotConfig));assert.deepEqual(measurementConsent(registry.read(scope)),both);
  }finally{win.close()}
 });
 test('CBID query form, matching attribute and query, and auto/none blocking modes',()=>{
@@ -125,7 +126,7 @@ for(const tcf of ['api','IAB','TCF','query'])test('TCF '+tcf+' never grants blan
   if(tcf==='api')f.win.__tcfapi=()=>{};
   else if(tcf==='query')f.script.src+='?data-framework=TCF';
   else f.script.setAttribute('data-framework',tcf);
-  assert.deepEqual(f.read(),{analytics:true,marketing:false});
+  assert.deepEqual(f.read(),{analytics:true,marketing:false});assert.equal(f.source.read(scope).purchaseConsent,null);
  }finally{f.close()}
 });
 test('event bursts coalesce and unchanged events publish no messages',async()=>{

@@ -56,3 +56,30 @@ BEGIN
  PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'receipt is durable despite analytics error');
  PERFORM assert_true(replay#>'{data,analytics}'='null','replay never synthesizes facts after a failed capture');
 END $$;
+
+-- Signed-in visitors receive the same conversion projection as anonymous buyers; staff remains excluded.
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); result jsonb; oid bigint; command uuid:=gen_random_uuid(); client uuid:=gen_random_uuid(); identity text;
+BEGIN
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES((x->>'organization')::bigint,true,1,'fixture','signed-in visitor purchase');
+ UPDATE public.forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":true,"purchase_timing":"paid"}}' WHERE id=(x->>'form')::bigint;
+ PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
+ PERFORM assert_eq(public.form_measurement_visitor_role_internal((x->>'form')::bigint),'visitor','signed-in fixture is a customer, not unit staff');
+ result:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x),command,client);
+ PERFORM assert_eq(result#>>'{data,code}','200','signed-in visitor checkout succeeds');
+ oid:=(result#>>'{data,order,id}')::bigint;
+ PERFORM assert_true(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=oid AND kind='purchase'),'signed-in visitor records immutable purchase snapshot');
+ PERFORM assert_eq(public.form_order_purchase_timing_internal(oid),'paid','signed-in visitor snapshot retains selected timing');
+ PERFORM assert_true(result#>'{data,analytics}' IS NULL OR result#>'{data,analytics}'='null','signed-in paid response waits for payment');
+ UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}','"order"') WHERE id=(x->>'form')::bigint;
+ command:=gen_random_uuid();
+ result:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x)||'{"email":"signed-in-order@example.invalid"}',command,client);
+ PERFORM assert_eq(result#>>'{data,analytics,event}','purchase','signed-in order-mode visitor gets Purchase');
+ identity:=result#>>'{data,analytics,event_id}';
+ PERFORM assert_eq(public.create_ticket_order_client_sync_v1(pg_temp.checkout(x)||'{"email":"signed-in-order@example.invalid"}',command,client)#>>'{data,analytics,event_id}',identity,'signed-in replay retains Purchase UUID');
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES((x->>'unit')::bigint,(x->>'actor')::uuid,true) ON CONFLICT(unit,"user") DO UPDATE SET is_manager=true;
+ PERFORM assert_eq(public.form_measurement_visitor_role_internal((x->>'form')::bigint),'staff','unit manager is staff');
+ result:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x)||'{"email":"signed-in-order@example.invalid"}',command,client);
+ PERFORM assert_true(result#>'{data,analytics}' IS NULL OR result#>'{data,analytics}'='null','staff replay receives no Purchase');
+END $$;

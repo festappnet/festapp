@@ -4,6 +4,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get purchaseTiming => 'FeatureFormSettings.purchaseTiming'.tr();
+  static String get purchaseTimingOrder =>
+      'FeatureFormSettings.purchaseTimingOrder'.tr();
+  static String get purchaseTimingPaid =>
+      'FeatureFormSettings.purchaseTimingPaid'.tr();
+  static String get purchaseTimingHelp =>
+      'FeatureFormSettings.purchaseTimingHelp'.tr();
+  static String get purchaseTimingCapi =>
+      'FeatureFormSettings.purchaseTimingCapi'.tr();
   static String get measurementFirstApprovalHelp =>
       'FeatureFormSettings.measurementFirstApprovalHelp'.tr();
   static String get measurementRuntimePending =>

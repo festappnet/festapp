@@ -1,3 +1,4 @@
+import {purchaseConsentSnapshot, PurchaseConsentOrders} from './meta_purchase_consent.js';
 import { DiscountCode } from './discount_code.js';
 import {createEmbedConsentSource} from './form_measurement_embed_consent.js';
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
@@ -202,6 +203,7 @@ export class FormPage extends Component {
                 this.overviewScope = viewScope;
                 this.host.replaceChildren();
                 const identityFooter = this.identityFooter;
+                this.host._overviewEmbedBridge=this.embedBridge || null;
                 const overview = await loadOrderOverview(this.host, this.waitlistCommands, viewScope,
                     this.continuationScope ? () => this.continueOverviewOffer() : null, false, false, value => { if (loadGeneration === this.loadGeneration) identityFooter.render(value); });
                 if (loadGeneration !== this.loadGeneration) return;
@@ -320,6 +322,7 @@ export class FormPage extends Component {
                 const viewScope = parseOrderLocation(new URL(url));
                 if (!section.isConnected) return;
                 this.overviewScope = viewScope;
+                section._overviewEmbedBridge=this.embedBridge || null;
                 await loadOrderOverview(section, this.waitlistCommands, viewScope, null, true);
             } catch {
                 const error = document.createElement('p'); error.textContent = overviewText('failed'); error.setAttribute('role', 'alert');
@@ -587,13 +590,17 @@ export class FormPage extends Component {
                 connect:(policy,notify)=>{
                     let disposed=false,cleanup;
                     if(policy?.visitor_role!=='staff') import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{
-                        if(!disposed)cleanup=startMeasurementConsent({model:formModel,setConsent:notify,host:this.host});
+                        if(!disposed)cleanup=startMeasurementConsent({model:formModel,setConsent:notify,host:this.host,includePurchaseConsent:true});
                     }).catch(()=>{if(!disposed)notify(null);});
                     return ()=>{disposed=true;cleanup?.();};
                 }
             };
+            this.purchaseConsentOrders ??= new PurchaseConsentOrders({revoke:async scope=>{
+                const {data,error}=await SupabaseService.getClient().rpc('revoke_meta_purchase_consent',{p_token:scope.token,p_order_id:scope.orderId});
+                return !error && data === true;
+            }});
             const measurement=this.measurementSession=new FormMeasurementSession({model:formModel,transport,consentSource,
-                entryAllowed:this.analyticsEntryAllowed,policySource:()=>DbForms.getMeasurementPolicy(formModel.link),
+                onConsent:choice=>this.purchaseConsentOrders.observe(choice), entryAllowed:this.analyticsEntryAllowed,policySource:()=>DbForms.getMeasurementPolicy(formModel.link),
                 identitySource:{read:()=>identity,subscribe:notify=>{
                     const subscription=SupabaseService.getClient().auth?.onAuthStateChange?.((_event,value)=>{
                         const next=value?.user?.id||'anonymous';
@@ -609,7 +616,7 @@ export class FormPage extends Component {
 
     renderForm(formModel, showPreview, restoredDraft = null) {
         this.setOverviewLayout(false);
-        this.metaPurchaseNotice = !showPreview && !this.embedBridge && !formModel.offerBundle &&
+        this.metaPurchaseNotice = !showPreview && !formModel.offerBundle &&
             !formModel.demoSimulation && formModel.registrationMode !== 'waitlist'
             ? { model: formModel, choice: DbForms.getMetaPurchaseConsent(formModel.link).catch(() => null) }
             : null;
@@ -901,13 +908,13 @@ export class FormPage extends Component {
                      this._pendingPaymentType = paymentType || null;
                      this._pendingPaymentMethod = paymentMethod;
                      this._pendingPaymentQuote = paymentQuote;
-                     const granted = metaConsent && overlay?.querySelector('[data-meta-purchase-consent]')?.checked;
+                     const snapshot = purchaseConsentSnapshot(this.measurementSession?.consent, metaConsent);
                      this.submitOrder(form, formModel, overlay || document.body, null,
-                         granted ? {revision: metaConsent.revision, userAgent: window.navigator.userAgent} : null);
+                         snapshot ? {...snapshot, userAgent:window.navigator.userAgent} : null);
                  }, () => {
                      this.analytics?.page('product');
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
-                 }, precalculatedPayload, {metaConsent});
+                 }, precalculatedPayload);
                  this.analytics?.review(precalculatedPayload, this.currentSession);
                  const previewContent = document.querySelector('#order-preview-overlay .order-preview-content');
                  if (previewContent && this.identityFooter) previewContent.append(this.identityFooter.host);
@@ -985,6 +992,12 @@ export class FormPage extends Component {
                 return def && def.type !== 'product_type' ? { ...f, [def.id]: f[def.type] } : f;
             }) })),
         } : null);
+        // Start observing before any request/reservation await. Withdrawal is
+        // sticky for this submission even when a later choice grants again.
+        const consentAttempt=retrySubmission?.consentAttempt ?? this.purchaseConsentOrders?.capture(
+            payload.metaPurchaseConsent, payload.metaPurchaseConsent ? {
+                revision:payload.metaPurchaseConsent.revision,origin:payload.metaPurchaseConsent.websiteOrigin,
+            } : null);
         const submittedSession = this.currentSession;
         const measurementOutcome=this.analytics?.captureSubmission(payload);
         let submittedCapability;
@@ -1004,7 +1017,7 @@ export class FormPage extends Component {
             : FormNetwork.submitOrder(payload, {reusePendingOnly:!!retrySubmission});
         });
         const retryOriginal = () => this.submitOrder(form,formModel,document.body,{
-            payload:retryPayload, capability:submittedCapability, acceptanceOrder,
+            payload:retryPayload, capability:submittedCapability, acceptanceOrder, consentAttempt,
             waitlistScope:pinnedScope, ticketIds:pinnedTicketIds,
         });
         let outcomeReported = false;
@@ -1015,6 +1028,13 @@ export class FormPage extends Component {
         };
         request.then(async result => {
              reportOutcome(result.success === true, result.data);
+             if (result.success && payload.metaPurchaseConsent) {
+                 const url=result.data?.orderOverviewUrl || result.data?.ticketOrder?.orderOverviewUrl || result.data?.ticketOrder?.order?.orderOverviewUrl;
+                 try {
+                     const scope=parseOrderLocation(new URL(url));
+                     this.purchaseConsentOrders?.authorize(consentAttempt,scope);
+                 } catch { /* Missing capability cannot authorize withdrawal. */ }
+             }
              // history.back() is asynchronous. Rendering the result before the
              // preview popstate arrives lets that stale event close the result.
              await previewHistoryClosed;

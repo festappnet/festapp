@@ -1,3 +1,4 @@
+import { orderEmailOverviewUrl } from '../_shared/orderEmailOverview.ts';
 import { executeConfirmedWaitlistOrder } from "./confirmedWaitlistOrder.ts";
 import { executeConfirmedFormOrder } from "./confirmedFormOrder.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
@@ -368,6 +369,24 @@ Deno.serve(async (req) => {
         currency_code: payment.currency,
       }
       : null;
+
+    // The successful RPC has authorized this command (including receipt replay).
+    // Reuse the existing sealed buyer source used by order email. The receipt
+    // stays immutable; neither a retry nor an email rotates the capability.
+    if (!replacement && !waitlistAcceptance && ticketOrder.order?.id) {
+      try {
+        const url = await orderEmailOverviewUrl({
+          order_id: ticketOrder.order.id,
+          recipient: ticketOrder.order.data?.email,
+          message_id: commandId,
+        }, async (name, params) => {
+          const { data, error } = await supabaseAdmin.rpc(name, params);
+          if (error) throw error;
+          return data;
+        });
+        if (url) ticketOrder.orderOverviewUrl = url;
+      } catch { /* A committed order remains successful; email can recover the link. */ }
+    }
 
     // Capability creation is an additive read feature; failure must not fail a committed order.
     let deliveryReceipt: string | undefined;

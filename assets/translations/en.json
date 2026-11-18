@@ -431,6 +431,11 @@
     "updatingUsers": "Updating users"
   },
   "FeatureFormSettings": {
+    "purchaseTiming": "Purchase event",
+    "purchaseTimingOrder": "When the order is placed",
+    "purchaseTimingPaid": "After full payment",
+    "purchaseTimingHelp": "Order mode includes unpaid orders. Paid mode requires an eligible bank or online payment and a return to the order overview within 47 hours.",
+    "purchaseTimingCapi": "Meta Conversions API requires paid mode. Browser and server purchases share the same event ID.",
     "measurementPolicySummary": "Privacy policy",
     "measurementBannerFallback": "Used when the form opens on its own.",
     "measurementBasics": "Basics",

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fixture,policy,registrationLead,settle} from '../support/measurement_fixture.js';
+import {fixture,policy,registrationLead,settle,purchase} from '../support/measurement_fixture.js';
 
 for(const role of ['visitor','staff','anonymous',undefined,'admin'])test('delayed real construction/start and signed-in role '+role,async t=>{
  let resolve,calls=0;const f=fixture(t,{identity:'user',source:()=>{calls++;return new Promise(r=>resolve=r);}});
@@ -221,4 +221,88 @@ test('storage-observed identity change discards the in-flight conversion even if
  f.transport.grant?.onReady();
  assert.equal(f.sent.some(p=>p.event==='generate_lead'),false);
  assert.equal(f.session.pendingConversions.size,0);
+});
+
+for(const role of ['anonymous','staff'])test('buyer overview uses current policy and isolated transport '+role,async t=>{
+ const token='a'.repeat(64),scope={token,orderId:17};
+ const f=fixture(t,{url:`https://tickets.test/order?order_id=17&token=${token}`,authorizedOrderScope:scope,source:async()=>({...policy,visitor_role:role})});
+ await f.start();
+ assert.equal(f.session.record({event:'form_start'}),role==='anonymous');
+ assert.equal(JSON.stringify(f.sent).includes(token),false,'capability stays out of exported events');
+ f.dom.reconfigure({url:`https://tickets.test/order?order_id=18&token=${token}`});
+ assert.equal(f.session.record({event:'form_start'}),false,'changed capability scope invalidates access');
+});
+test('order URL alone cannot activate browser purchases',async t=>{
+ const f=fixture(t,{url:`https://tickets.test/order?order_id=17&token=${'a'.repeat(64)}`});
+ await f.start(); assert.equal(f.starts.length,0);
+});
+
+test('overview purchase polls and repeated transport readiness deliver each UUID once',async t=>{
+ const token='a'.repeat(64);
+ const f=fixture(t,{url:`https://tickets.test/order?order_id=17&token=${token}`,authorizedOrderScope:{orderId:17,token},autoReady:false});
+ const publish=()=>{if(f.session.state==='active')f.session.captureConversion()(purchase);};
+ f.session.onActive=publish;
+ await f.start();publish();assert.equal(f.sent.filter(p=>p.event==='purchase').length,0);
+ f.transport.grant.onReady();publish();publish();f.transport.grant.onReady();
+ assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);
+ f.session.invalidate();await f.session.refresh();f.transport.grant.onReady();publish();
+ assert.equal(f.sent.filter(p=>p.event==='purchase').length,1,'runtime restart preserves delivered UUIDs');
+});
+
+for(const suffix of ['', '&embed=1','&embed=0','&embed=1&embed=1','&unknown=1','&token=duplicate'])test('authorized order query allows only canonical optional embed '+suffix,async t=>{
+ const token='a'.repeat(64),scope={token,orderId:17};
+ const f=fixture(t,{url:`https://tickets.test/order?order_id=17&token=${token}${suffix}`,authorizedOrderScope:scope});
+ await f.start();
+ assert.equal(f.session.contextAllowed(),suffix==='' || suffix==='&embed=1');
+});
+
+test('analytics granted and advertising denied preserves general purchase independently of CAPI',async t=>{
+ const f=fixture(t,{consent:{analytics:true,marketing:false}});await f.start();
+ const general={...purchase,meta_purchase_allowed:false};
+ assert.equal(f.session.captureConversion()(general),true);
+ assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);
+ assert.equal(f.sent.find(p=>p.event==='purchase').meta_purchase_allowed,false);
+ assert.equal(f.transport.grant.consent.analytics,true);assert.equal(f.transport.grant.consent.marketing,false);
+});
+const advertisingChoice = () => ({analytics:true,marketing:true,purchaseConsent:{
+ source:'klaro',timestamp:new Date(Date.now()-1000).toISOString(),consentRevision:'a'.repeat(32),
+ ad_storage:true,ad_user_data:true,ad_personalization:true,
+}});
+
+test('general Purchase and Meta companion deduplicate by event plus shared UUID',async t=>{
+ const f=fixture(t,{consent:advertisingChoice()});await f.start();
+ const general={...purchase,meta_purchase_allowed:false},meta={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000};
+ for(let i=0;i<3;i++){f.session.captureConversion()(general);f.session.captureConversion()(meta);}
+ assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);assert.equal(f.sent.filter(p=>p.event==='meta_purchase').length,1);
+});
+
+
+test('a current advertising denial blocks immediate and queued Meta companions, including after regrant for the withdrawn order',async t=>{
+ const f=fixture(t,{consent:advertisingChoice()});await f.start();
+ const general={...purchase,meta_purchase_allowed:false},meta={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000};
+ f.delivery(false);
+ assert.equal(f.session.captureConversion()(meta),true);
+ const denied=advertisingChoice();denied.purchaseConsent.ad_user_data=false;
+ f.choose(denied);f.delivery(true);
+ await f.session.refresh();
+ assert.equal(f.session.captureConversion()(meta),false);
+ assert.equal(f.session.captureConversion()(general),true);
+ f.session.allowMetaPurchase=()=>false;f.choose(advertisingChoice());await f.session.refresh();
+ assert.equal(f.session.captureConversion()(meta),false);
+ assert.equal(f.sent.filter(payload=>payload.event==='purchase').length,1);
+ assert.equal(f.sent.filter(payload=>payload.event==='meta_purchase').length,0);
+});
+
+test('a queued Meta companion cannot outlive its deduplication deadline',async t=>{
+ let now=Date.now();
+ const f=fixture(t,{consent:advertisingChoice(),clock:()=>now});await f.start();
+ const expiry=now+1000;
+ const companion={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:expiry};
+ f.delivery(false);assert.equal(f.session.captureConversion()(companion),true);
+ f.delivery(true);now=expiry;
+ await f.session.refresh();
+ assert.equal(f.session.captureConversion()(companion),false);
+ assert.equal(f.sent.some(payload=>payload.event==='meta_purchase'),false);
+ assert.equal(f.session.captureConversion()({...purchase,meta_purchase_allowed:true,meta_purchase_expires_at:expiry}),true);
+ assert.equal(f.sent.find(payload=>payload.event==='purchase').meta_purchase_allowed,false);
 });

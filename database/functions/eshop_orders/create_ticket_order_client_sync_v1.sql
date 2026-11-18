@@ -33,8 +33,9 @@ BEGIN
         v_result := jsonb_set(v_result, '{data,order,order_symbol}', to_jsonb(v_symbol));
       END IF;
     END IF;
-    IF v_actor IS NULL AND p_context IS NULL THEN
-      v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,'free_registration'),'null'::jsonb));
+    IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
+      (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN
+      v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_purchase_datalayer_internal((v_result#>>'{data,order,id}')::bigint),public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,'free_registration'),'null'::jsonb));
     END IF;
     RETURN public.project_local_payment_reference_order_internal(v_result);
   END IF;
@@ -69,9 +70,13 @@ BEGIN
     v_actor_kind);
   -- The receipt remains frozen; first response and authorized replay project the
   -- same immutable facts, filtered through current stored form policy.
-  IF v_actor IS NULL AND p_context IS NULL THEN
+  IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
+      (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN
     PERFORM public.record_form_conversion_internal((v_result#>>'{data,order,id}')::bigint);
-    v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(
+  END IF;
+  IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
+      (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN
+    v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_purchase_datalayer_internal((v_result#>>'{data,order,id}')::bigint),
       public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,'free_registration'),'null'::jsonb));
   END IF;
   RETURN v_result;

@@ -60,7 +60,7 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
             until = Math.min(visitUntil, data.expiresAt);
             win.clearTimeout(timer); timer = win.setTimeout(disconnect, until-Date.now());
             peers.delete(win);
-            accept(data.choice, {origin, leaseId:nonce, expiresAt:until});
+            accept({...data.choice, ...(scope.binding && data.choice.purchaseConsent ? {purchaseConsent:{...data.choice.purchaseConsent, binding:scope.binding, websiteOrigin:origin}} : {})}, {origin, leaseId:nonce, expiresAt:until});
         } catch { disconnect(); }
     };
     Object.defineProperty(stop, 'pending', {get:() => requested && active && !connected});

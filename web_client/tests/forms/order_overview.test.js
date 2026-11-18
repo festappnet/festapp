@@ -1,9 +1,11 @@
+import {SupabaseService} from '../../src/services/supabase_service.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 import { LocalizationService } from '../../src/services/localization_service.js';
-import { loadOrderOverview, parseOrderLocation, renderOrderOverview, stopOrderOverview } from '../../src/components/forms/order_overview.js';
+import { loadOrderOverview, parseOrderLocation, renderOrderOverview, stopOrderOverview, withdrawOverviewPurchaseConsent } from '../../src/components/forms/order_overview.js';
+import {DbForms} from '../../src/components/forms/db_forms.js';
 import { WaitlistCommands } from '../../src/components/forms/waitlist_commands.js';
 const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</script>', symbol: 'ROOT', hasTickets: true }, serverTime: '2026-10-15T12:00:00Z',
     people: [{ id: 1, label: 'Waiting', effectiveLifecycle: 'offered' }, { id: 2, currentOrderId: 2, label: 'Accepted', effectiveLifecycle: 'admitted' }],
@@ -11,7 +13,7 @@ const fixture = () => ({ code: 200, root: { id: 1, title: '<script>unsafe</scrip
     orders: [{ id: 2, symbol: 'CHILD', state: 'paid', total: 1000, currency: 'CZK', items: [],
         payment: { status: 'deposit_paid', received: 300, totalOutstanding: 700, dueNow: 700, returned: 0, overpaid: 0, instructionsAvailable: true, publicAccount: '123/0100', referenceKind: 'VS', reference: '123' },
         tickets: [{ id: 2, label: 'Accepted', displayStatus: 'unused' }] }] });
-function setup(t) { const dom = new JSDOM('<main></main>', { url: 'https://tickets.invalid/form/example' }); globalThis.window = dom.window; globalThis.document = dom.window.document; t.after(() => dom.window.close()); return document.querySelector('main'); }
+function setup(t) { const previousClient=SupabaseService.getClient;SupabaseService.getClient=()=>({auth:{onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}});t.after(()=>{SupabaseService.getClient=previousClient;}); const dom = new JSDOM('<main></main>', { url: 'https://tickets.invalid/form/example' }); globalThis.window = dom.window; globalThis.document = dom.window.document; t.after(() => dom.window.close()); return document.querySelector('main'); }
 test('only standalone query capabilities are accepted', () => {
  const token = 'a'.repeat(64);
  for (const path of [`/form/test?order_id=12&token=${token}`, `/form/test#order?order_id=12&token=${token}`, `/order#order?order_id=12&token=${token}`]) {
@@ -439,4 +441,71 @@ test('Meta consent is withdrawn using the scoped buyer capability and supports r
         name: 'revoke_meta_purchase_consent',
         params: { p_token: scope.token, p_order_id: scope.orderId },
     }));
+});
+
+test('a later explicit advertising denial withdraws Meta consent; unknown consent never does', async t => {
+    const host = setup(t);
+    const scope = { orderId: 1, token: 'a'.repeat(64) };
+    const results = [{error: new Error('scope unavailable')}, {data: true}];
+    const calls = [];
+    const commands = {
+        overview: async () => ({ ...fixture(), metaPurchaseConsent: true }),
+        client: { rpc: async (name, params) => { calls.push({ name, params }); return results.shift(); } },
+    };
+    await loadOrderOverview(host, commands, scope);
+    const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+    const granted = {
+        source: 'klaro', timestamp: new Date(Date.now()-1000).toISOString(), consentRevision: 'b'.repeat(32),
+        websiteOrigin: 'https://tickets.example', ad_storage: true, ad_user_data: true, ad_personalization: true,
+    };
+    const denied = {...granted, ad_user_data: false};
+    for (const choice of [null, false, { marketing: false }, { marketing: true, purchaseConsent: null },
+        { marketing: true, purchaseConsent: granted }, { purchaseConsent: {...denied, timestamp:'not a time'} },
+        { purchaseConsent: denied, expiresAt:1 }]) {
+        withdrawOverviewPurchaseConsent(host, choice); await settle();
+    }
+    assert.equal(calls.length, 0, 'missing, disconnected or granted consent keeps the order consent');
+    withdrawOverviewPurchaseConsent(host, { marketing: false, purchaseConsent: denied }); await settle();
+    assert.equal(calls.length, 1);
+    withdrawOverviewPurchaseConsent(host); await settle();
+    assert.equal(calls.length, 2, 'a failed withdrawal is retried on the next poll');
+    withdrawOverviewPurchaseConsent(host); await settle();
+    assert.equal(calls.length, 2, 'a confirmed withdrawal is not repeated');
+    assert.deepEqual(calls[0], { name: 'revoke_meta_purchase_consent', params: { p_token: scope.token, p_order_id: scope.orderId, p_denial: denied } });
+    stopOrderOverview(host);
+});
+
+test('overview cleanup uses runtime destroy on stop and scope change',async t=>{
+ const host=setup(t);let disposed=0,destroyed=0;
+ const attach=()=>{host._purchaseSession={dispose:()=>disposed++};host._purchaseRuntime={destroy:()=>destroyed++};host._purchaseScope='old';};
+ attach();stopOrderOverview(host);
+ assert.equal(disposed,1);assert.equal(destroyed,1);assert.equal(host._purchaseScope,undefined);
+ const original=DbForms.getMeasurementPolicy;DbForms.getMeasurementPolicy=async()=>null;
+ t.after(()=>{stopOrderOverview(host);DbForms.getMeasurementPolicy=original;});
+ attach();const data={...fixture(),measurementFormLink:'summer'};
+ await loadOrderOverview(host,{overview:async()=>data},{orderId:17,token:'a'.repeat(64)});
+ assert.equal(disposed,2);assert.equal(destroyed,2);assert.notEqual(host._purchaseScope,'old');
+});
+test('overview failure clears runtime scope and a successful retry recreates it',async t=>{
+ const host=setup(t);let destroyed=0;
+ const original=DbForms.getMeasurementPolicy;DbForms.getMeasurementPolicy=async()=>null;
+ t.after(()=>{stopOrderOverview(host);DbForms.getMeasurementPolicy=original;});
+ host._purchaseSession={dispose(){}};host._purchaseRuntime={destroy:()=>destroyed++};host._purchaseScope='old';
+ await loadOrderOverview(host,{overview:async()=>{throw new Error('NETWORK');}},{orderId:17,token:'a'.repeat(64)});
+ assert.equal(destroyed,1);assert.equal(host._purchaseScope,undefined);
+ await loadOrderOverview(host,{overview:async()=>({...fixture(),measurementFormLink:'summer'})},{orderId:17,token:'a'.repeat(64)});
+ assert.ok(host._purchaseSession);assert.ok(host._purchaseRuntime);assert.ok(host._purchaseScope);
+});
+
+test('overview subscribes to real auth boundary and account switch immediately retires grant',async t=>{
+ const host=setup(t);let changed,unsubscribed=0;
+ SupabaseService.getClient=()=>({auth:{onAuthStateChange:callback=>{changed=callback;return {data:{subscription:{unsubscribe:()=>unsubscribed++}}};}}});
+ const original=DbForms.getMeasurementPolicy;DbForms.getMeasurementPolicy=async()=>null;
+ t.after(()=>{stopOrderOverview(host);DbForms.getMeasurementPolicy=original;});
+ await loadOrderOverview(host,{overview:async()=>({...fixture(),measurementFormLink:'summer'})},{orderId:17,token:'a'.repeat(64)});
+ const session=host._purchaseSession;assert.ok(session);assert.equal(typeof changed,'function');
+ session.grant={};session.state='active';const epoch=session.contextEpoch;
+ changed('SIGNED_IN',{user:{id:'different-account'}});
+ assert.equal(session.grant,null);assert.equal(session.contextEpoch,epoch+1);assert.equal(session.identity(),'different-account');
+ stopOrderOverview(host);assert.equal(unsubscribed,1);
 });

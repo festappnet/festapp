@@ -401,20 +401,22 @@
     },
     {
       "migration": "20261115140000_discount_code_projections.sql",
-      "active": true,
+      "active": false,
       "header": "-- Discount sale snapshots in customer overviews, after shared customer-policy projection owners.",
       "sources": [
         "eshop_waitlist/order_overview.sql",
         "others/get_ticket_layout_write_contract_v1.sql"
-      ]
+      ],
+      "sha256": "6ffdfc4124e5edea172269e791464acd52295355b5da03171f8d33b5195dc86c"
     },
     {
       "migration": "20261115150000_waitlist_count_setting.sql",
-      "active": true,
+      "active": false,
       "header": "-- Public waitlist counter visibility, enabled by default in the reader.",
       "sources": [
         "eshop_forms/form_settings.sql"
-      ]
+      ],
+      "sha256": "e309d974533395b25b247ee9d4eae706113d5bc4d1c951aceb7ab68f90e21610"
     },
     {
       "migration": "20261115160000_customer_self_service_completion.sql",
@@ -519,7 +521,7 @@
     },
     {
       "migration": "20261118110000_form_paid_conversion.sql",
-      "active": true,
+      "active": false,
       "header": "-- Historical purchase facts remain readable only in the private ledger. The\n-- new kind records settlement; there is no conversion backfill.\nALTER TABLE analytics.conversion_facts DROP CONSTRAINT conversion_facts_kind_check;\nALTER TABLE analytics.conversion_facts ADD CONSTRAINT conversion_facts_kind_check\n CHECK (kind IN ('purchase','waitlist','free_registration','order_fully_paid'));",
       "sources": [
         "eshop_forms/form_datalayer.sql",
@@ -532,6 +534,22 @@
         "eshop_waitlist/commands.sql",
         "eshop_transactions/apply_transaction_pairing.sql",
         "payment_providers/effects.sql"
+      ],
+      "sha256": "84d418bdbc238bc8e105c3b90879dc709e2c1ac2b680c9ed95db8689761b411a"
+    },
+    {
+      "migration": "20261118160000_meta_purchase_followup.sql",
+      "active": true,
+      "header": "-- Restore browser purchases with explicit timing and bind Meta delivery to saved CMP consent.\nALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS consent_snapshot jsonb, ADD COLUMN IF NOT EXISTS consent_scope text, ADD COLUMN IF NOT EXISTS consent_decided_at timestamptz;",
+      "sources": [
+        "eshop_forms/form_settings.sql",
+        "eshop_forms/form_datalayer.sql",
+        "eshop_forms/form_measurement_policy.sql",
+        "eshop_forms/meta_purchase_consent.sql",
+        "eshop_forms/meta_purchase_worker.sql",
+        "eshop_orders/create_ticket_order_client_sync_v1.sql",
+        "eshop_waitlist/commands.sql",
+        "eshop_waitlist/order_overview.sql"
       ]
     }
   ]

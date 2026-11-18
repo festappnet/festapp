@@ -1,3 +1,4 @@
+import {hasCurrentPurchaseConsent} from '../components/forms/meta_purchase_consent.js';
 import {consentScope, readConsentSource, managedConsentOrigin} from '../components/forms/measurement_consent_source.js';
 import {measurementProtocol, measurementConsent, measurementManifest, consentTransportManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
@@ -12,16 +13,17 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
         clearInterval(record.heartbeat);
         record.heartbeat = null;
     };
-    const readChoice = record => {
+    const readChoice = (frame, record) => {
         try {
             const scope = consentScope(record.manifest, window.location.origin);
             const choice = record.choice?.read(record.manifest);
-            record.consentBinding = choice && scope?.binding ? scope.binding : undefined;
-            return measurementConsent(choice);
+            const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
+            record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : undefined;
+            return {...measurementConsent(choice), ...((choice?.purchaseConsent || saved?.purchaseConsent) ? {purchaseConsent:choice?.purchaseConsent || saved.purchaseConsent} : {})};
         }
         catch { return measurementConsent(false); }
     };
-    const sendConsent = (frame, record) => { const choice = readChoice(record); return record.channel.send('measurement-consent', {measurement:{protocol:measurementProtocol, manifest:record.manifest, leaseId:record.lease?.id,
+    const sendConsent = (frame, record) => { const choice = readChoice(frame, record); return record.channel.send('measurement-consent', {measurement:{protocol:measurementProtocol, manifest:record.manifest, leaseId:record.lease?.id,
             ttl:record.lease ? 60000 : 0, binding:record.consentBinding, consent:choice}}); };
     const revoke = (frame, record) => {
         record.lease = null;
@@ -32,7 +34,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
     const syncConsent = (frame, record) => {
         if (!currentRecord(frame, record)) { disposeRecord(frame, record); return; }
         if (suspended || !record.manifest) return;
-        const automatic = !record.explicitChoice && !usesHostDataLayer(frame) && record.manifest.measurement_consent_bridge === true;
+        const automatic = !record.explicitChoice && (!usesHostDataLayer(frame) || consentSource?.configured) && record.manifest.measurement_consent_bridge === true;
         if (!automatic && !record.explicitChoice && record.choice) record.choice.dispose();
         if (!record.choice && automatic) {
             const legacyRead = scopedChoice(record, () => consentMode.read());
@@ -144,13 +146,17 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
                 if(record.lease.generation!==m.generation)return true;
                 if(usesHostDataLayer(frame)) {
                     const payload=measurementDataLayerPayload(data.payload,{embedded:true,pageContext:record.pageContext});if(!payload)return true;
+                    // A denial can reach the parent before the iframe sees its updated choice.
+                    if(payload.event==='meta_purchase' && !hasCurrentPurchaseConsent(readChoice(frame,record)))return true;
                     if(!payload.event)record.pageContext=payload;
                     window.dataLayer=window.dataLayer||[];
-                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null});
+                    if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null,meta_purchase_allowed:null,event_id:null});
                     window.dataLayer.push(payload);
                     // The website shares this retained model. Scope our marker to
                     // this push so later native website events cannot inherit it.
-                    window.dataLayer.push({...(['purchase','generate_lead'].includes(payload.event)?{user_data:null}:{}),form_embedded:false});
+                    window.dataLayer.push({...(['purchase','meta_purchase'].includes(payload.event)
+                        ? {user_data:null,ecommerce:null,event_id:null,meta_purchase_allowed:null,page_type:null,user_type:null,language:null}
+                        : payload.event==='generate_lead' ? {user_data:null} : {}),form_embedded:false});
                 }
                 return true;
             }

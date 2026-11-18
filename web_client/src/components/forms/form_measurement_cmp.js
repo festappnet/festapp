@@ -42,7 +42,7 @@ function privacyUrl(value) {
     } catch { return null; }
 }
 
-export function startMeasurementConsent({win = window, model, setConsent, host}) {
+export function startMeasurementConsent({win = window, model, setConsent, host, includePurchaseConsent = false}) {
     let topLevel = false;
     try { topLevel = win.self === win.top; } catch { /* Restricted frames remain embedded. */ }
     prepareConsentLink(win);
@@ -253,7 +253,17 @@ export function startMeasurementConsent({win = window, model, setConsent, host})
     };
     const publishChoice = choice => {
         effectiveChoice = choice;
-        setConsent(imported ? {...choice, ...remoteLease} : choice);
+        if (!choice || typeof choice !== 'object') { setConsent(choice); return; }
+        let purchaseConsent = imported ? remoteChoice?.purchaseConsent : null;
+        if (!imported) {
+            try {
+                const record = JSON.parse(decodeURIComponent(win.document.cookie.split('; ').find(c => c.startsWith(config.storageName+'-decision='))?.split('=').slice(1).join('=') || 'null'));
+                if (manager.confirmed && record?.marketing === manager.savedConsents?.marketing && record?.analytics === manager.savedConsents?.analytics)
+                    purchaseConsent = {source:'klaro', timestamp:record.timestamp, consentRevision:policy.consent_revision,
+                        websiteOrigin:win.location.origin, ad_storage:record.marketing, ad_user_data:record.marketing, ad_personalization:record.marketing};
+            } catch { /* An unversioned old choice has no verifiable decision time. */ }
+        }
+        setConsent({...choice, ...(includePurchaseConsent ? {purchaseConsent} : {}), ...(imported ? remoteLease : {})});
     };
     const style = win.document.createElement('style');
     const colors = noticeColors(win);
@@ -350,7 +360,12 @@ ${layout}`;
     };
     const watcher = {update:(_manager, event) => {
         win.queueMicrotask(enhance);
-        if (event === 'saveConsents') { retireImport(); stopLink?.(); }
+        if (event === 'saveConsents') {
+            retireImport(); stopLink?.();
+            if (!includePurchaseConsent) return;
+            const record = {timestamp:new Date().toISOString(), analytics:manager.savedConsents.analytics === true, marketing:manager.savedConsents.marketing === true};
+            win.document.cookie = `${config.storageName}-decision=${encodeURIComponent(JSON.stringify(record))}; Max-Age=15552000; Path=/; SameSite=Lax; Secure`;
+        }
     }};
     try {
         win.document.head.append(style);
