@@ -15,6 +15,7 @@ for (
     "fio-rate-limited",
     "fio-timeout",
     "transport-failure",
+    "health-write-transport-failure",
     "missing-token",
     "email",
   ] as const
@@ -40,6 +41,11 @@ for (
           }]);
         }
         if (name === "begin_bank_sync_observation") return response("123");
+        if (
+          scenario === "health-write-transport-failure" &&
+          name === "record_bank_sync_health" &&
+          calls.filter((call) => call.name === name).length === 1
+        ) throw new TypeError("fixture connection reset");
         return response(null);
       }
       assertEquals(init?.method, "GET");
@@ -82,6 +88,14 @@ for (
     )!.body;
     assertEquals(observed.p_organization_id, 3);
     assertEquals(observed.p_observation_id, "123");
+    assertEquals(
+      calls.filter((call) => call.name === "record_bank_sync_health").map((
+        call,
+      ) => call.body),
+      scenario === "health-write-transport-failure"
+        ? [observed, observed]
+        : [observed],
+    );
     assertEquals(
       observed.p_error,
       scenario === "inactive"
