@@ -289,7 +289,10 @@
         "automation/testing/ticket_default_ci.dart",
         "database/fixtures/**",
         "automation/lib/**"
-      ]
+      ],
+      "hostedResources": {
+        "ramMiB": 5000
+      }
     },
     "database-regressions": {
       "workflow": "seat-checkout-regressions.yml",
@@ -371,7 +374,10 @@
         "assets/translations/**",
         "automation/lib/**",
         "test/fixtures/**"
-      ]
+      ],
+      "hostedResources": {
+        "dbCluster": 3
+      }
     },
     "client-browser-contract": {
       "workflow": "image-upload-regressions.yml",
@@ -843,6 +849,38 @@
         "seat-install"
       ]
     },
+    "seat-mcp-contracts-2": {
+      "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts-2\n",
+      "after": [
+        "seat-mcp-prepare",
+        "seat-database"
+      ],
+      "resources": {
+        "ramMiB": 1024,
+        "dbCluster": 1
+      },
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/**",
+        "tools/festapp/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/tests/database/**",
+        "packages/festapp_contracts/**",
+        "assets/**",
+        "test/fixtures/**",
+        "web_client/src/components/users/connection_page_styles.js",
+        "web_client/src/theme_config.css"
+      ],
+      "inputProjections": {
+        "web_client/package.json": "package-version"
+      },
+      "requires": [
+        "mcp-database-install",
+        "seat-mcp-prepare"
+      ]
+    },
     "seat-mcp-authorization": {
       "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs authorization\n",
       "after": [
@@ -877,38 +915,6 @@
     },
     "seat-mcp-contracts-1": {
       "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts-1\n",
-      "after": [
-        "seat-mcp-prepare",
-        "seat-database"
-      ],
-      "resources": {
-        "ramMiB": 1024,
-        "dbCluster": 1
-      },
-      "inputs": [
-        "database/**",
-        "supabase/**",
-        "automation/**",
-        "tools/festapp/**",
-        "web_client/package.json",
-        "web_client/pnpm*",
-        "web_client/tests/database/**",
-        "packages/festapp_contracts/**",
-        "assets/**",
-        "test/fixtures/**",
-        "web_client/src/components/users/connection_page_styles.js",
-        "web_client/src/theme_config.css"
-      ],
-      "inputProjections": {
-        "web_client/package.json": "package-version"
-      },
-      "requires": [
-        "mcp-database-install",
-        "seat-mcp-prepare"
-      ]
-    },
-    "seat-mcp-contracts-2": {
-      "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts-2\n",
       "after": [
         "seat-mcp-prepare",
         "seat-database"

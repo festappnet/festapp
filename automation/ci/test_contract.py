@@ -155,10 +155,17 @@ class MirrorContractTest(unittest.TestCase):
     def test_hosted_lanes_have_capacity_to_overlap_independent_checks(self):
         for lane, concurrent in [
             ('wix-checkout-compatibility', ('wix-quick', 'wix-adapters', 'wix-cms')),
+            ('ticket-preview-and-delivery', ('ticket-client', 'ticket-edge')),
+            ('mcp-database-contracts', ('seat-mcp-contracts-2', 'seat-mcp-authorization', 'seat-mcp-contracts-1')),
         ]:
             units = runner.selected_units([lane])
-            limits = runner.CONTRACT['jobs'][lane]['hostedResources']
-            self.assertLessEqual(sum(units[name]['resources']['ramMiB'] for name in concurrent), limits['ramMiB'])
+            limits = {**runner.CONTRACT['resources'], **runner.CONTRACT['jobs'][lane]['hostedResources']}
+            for resource, limit in limits.items():
+                self.assertLessEqual(sum(units[name]['resources'].get(resource, 0) for name in concurrent),
+                                     limit, (lane, resource))
+        mcp_units = runner.selected_units(['mcp-database-contracts'])
+        sql_units = [name for name, unit in mcp_units.items() if unit['resources'].get('dbCluster')]
+        self.assertEqual(sql_units[0], 'seat-mcp-contracts-2')
 
     def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
         steps=runner.CONTRACT['steps']
