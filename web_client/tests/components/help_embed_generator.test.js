@@ -65,13 +65,18 @@ test('copy action copies the current prepared code',async t=>{
   assert.equal(copied,form.querySelector('[data-embed-output] textarea').value);assert.match(form.querySelector('[role=status]').textContent,/zkopírován/);
 });
 
-test('both generator guides explain the measurement option and approved domain',t=>{
+test('both generator guides distinguish organizer approval from saving a website',t=>{
  for(const english of [false,true]) {
   const {dom}=fixture(t,english);
   assert.match(dom.window.document.body.textContent,/dataLayer/);
   assert.doesNotMatch(dom.window.document.body.textContent,/data-festapp-datalayer/);
-  assert.match(dom.window.document.body.textContent,/Doména webu musí být schválená|domain must be approved/);
-  assert.match(dom.window.document.body.textContent,/GTM nastavený ve Festappu|GTM configured in Festapp/);
+  assert.match(dom.window.document.body.textContent,english
+    ? /After initial organizer approval, save the website address/
+    : /Po prvním povolení pořadatele stačí uložit adresu webu/);
+  assert.match(dom.window.document.body.textContent,english
+    ? /run the organizer’s GTM in Festapp/
+    : /spustíte GTM pořadatele ve Festappu/);
+  assert.doesNotMatch(dom.window.document.body.textContent,/Doména webu musí být schválená|domain must be approved/);
  }
 });
 
@@ -80,7 +85,7 @@ for(const english of [false,true])test('measurement option defaults to host and 
   const option=form.querySelector('[name=host-datalayer]'),mode=form.querySelector('[name=height-mode]');
   const url=english?'https://example.test/form/my-event':'https://vstupenky.online/form/ples';
   assert.equal(option.type,'checkbox');assert.equal(option.checked,true);
-  assert.match(option.closest('label').textContent,english?/Send measurement to the website dataLayer/:/Posílat měření do dataLayer webu/);
+  assert.match(option.closest('label').textContent,english?/Send events to your website’s dataLayer/:/Posílat události do dataLayer Vašeho webu/);
   for(const height of ['automatic','fixed']) {
     mode.value=height;mode.dispatchEvent(new win.Event('change'));
     submit(url);const host=form.querySelector('[data-embed-output] textarea').value;

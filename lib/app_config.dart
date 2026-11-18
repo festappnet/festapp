@@ -6,6 +6,7 @@ import 'package:fstapp/components/navigation/navigation_paths.dart';
 
 class AppConfig {
   static const bool organizerLandingEnabled = true;
+  static const String organizerHelpLanguage = "cs";
   static const int maxTicketsPerOrder = 20;
   // The web build enables the optional step-by-step creation menu.
   static const bool occasionSetupEnabled =

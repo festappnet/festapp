@@ -76,3 +76,26 @@ test('live host/runtime switches revoke old grants and activate the selected tra
     assert.equal(oldRuntime({event:'page_view'}),false);ack();assert.equal(session.state,'active');
     assert.equal(session.record({event:'page_view'}),true);assert.equal(sent.at(-1)[0].payload.event,'page_view');
 });
+
+test('iframe consent exchange works before runtime provisioning and cannot activate measurement',async t=>{
+ const {dom,bridge,sent,message}=fixture(t);
+ const binding={id:'11111111-1111-1111-1111-111111111111',version:1,websiteOrigin:'https://host.invalid',effective:true};
+ const consentPolicy={...policy,form_link:'summer',measurement_consent_bridge:true,eligible:false,organization_allowed:false,
+  runtime_supported:false,runtime_origin:null,runtime_revision:0,policy_revision:0,profile:null,
+  consent_revision:'a'.repeat(32),approved_hosts:[],website_consent_bindings:[binding]};
+ message('init',{viewportHeight:600,dataLayer:false,measurementProtocol});
+ const model={link:'summer',data:{analytics:consentPolicy}};
+ const session=new FormMeasurementSession({win:dom.window,model,transport:bridge,policySource:async()=>consentPolicy,
+  consentSource:{connect:(p,notify)=>bridge.connectConsent(p,notify)},identitySource:{read:()=> 'anonymous'}});
+ t.after(()=>session.dispose());session.start();await settle();
+ const context=sent.findLast(([m])=>m.type==='measurement-context')[0].measurement;
+ assert.equal(context.manifest.consent_only,true);
+ assert.equal(measurementManifest(context.manifest,'summer'),null,'transport snapshot is not a runtime grant');
+ message('measurement-consent',{measurement:{protocol:measurementProtocol,manifest:context.manifest,binding:{id:binding.id,version:1},
+  leaseId:'live',ttl:60000,consent:{analytics:true,marketing:false}}});
+ assert.equal(session.consent.analytics,true);assert.equal(session.state,'blocked');
+ assert.equal(sent.some(([m])=>m.type==='measurement-activate'),false);
+ assert.equal(session.record({event:'page_view'}),false);
+ bridge.activate({manifest:context.manifest});
+ assert.equal(sent.some(([m])=>m.type==='measurement-activate'),false,'consent-only direct transport activation is rejected');
+});

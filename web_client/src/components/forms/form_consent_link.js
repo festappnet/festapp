@@ -71,7 +71,8 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
         scope = consentScope(policy, origin);
         if (!scope || !isConsentLinkWindow(win) || win.parent !== win || !peer || policy.measurement_consent_bridge !== true || hasChoice()) { stop(); return stop; }
         origin = new URL(win.document.referrer).origin;
-        if (!isConsentLinkOrigin(origin, isLocalConsentLink(win)) || !policy.approved_hosts?.includes(origin)) { stop(); return stop; }
+        if (!isConsentLinkOrigin(origin, isLocalConsentLink(win)) ||
+            !(scope.binding && scope.websiteOrigin === origin) && !policy.approved_hosts?.includes(origin)) { stop(); return stop; }
         nonce = win.crypto.randomUUID(); until = Date.now() + 1500; visitUntil = Date.now()+24*60*60*1000;
         win.addEventListener('message', receive);
         win.addEventListener('pagehide', disconnect);

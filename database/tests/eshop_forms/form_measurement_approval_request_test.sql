@@ -149,35 +149,24 @@ BEGIN
   EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  END LOOP;
  UPDATE public.units SET data=public.merge_configuration_settings_internal_v1(data,
-  '{"measurement_websites":["https://example.invalid","https://www.example.invalid:443"]}','unit') WHERE id=un;
+  '{"measurement_websites":["https://example.invalid","https://www.example.invalid:1443"]}','unit') WHERE id=un;
  r:=public.request_unit_measurement_approval(un);
  PERFORM assert_eq(r->'approved_origins','[]'::jsonb,'proposals grant no approval');
- PERFORM assert_eq(r->'requested_origins','["https://example.invalid","https://www.example.invalid:443"]'::jsonb,'request snapshots websites');
+ PERFORM assert_eq(r->'requested_origins','["https://example.invalid","https://www.example.invalid:1443"]'::jsonb,'request snapshots websites');
  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason) VALUES(org,true,1,'test','approval');
  INSERT INTO analytics.unit_runtime(unit,runtime_origin,runtime_profile,parent_origins,revision,operator,reason)
  VALUES(un,'https://request-'||un||'.pages.dev','gtm-v1',ARRAY['https://example.invalid'],1,'test','approval');
  SELECT * INTO m FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST' LIMIT 1;
  PERFORM set_config('request.jwt.claim.role','service_role',true);
- PERFORM assert_true(public.email_intent_valid(m),'pending origin keeps mail valid after runtime approval');
+ PERFORM assert_false(public.email_intent_valid(m),'runtime approval retires mail regardless of unmatched saved websites');
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}',data->'measurement_websites'||'"https://new.example.invalid"'::jsonb) WHERE id=un;
  r:=public.request_unit_measurement_approval(un);
- PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),2,'new website creates another request after approval');
- PERFORM set_config('request.jwt.claim.role','service_role',true);
- PERFORM assert_false(public.email_intent_valid(m),'superseded mail is obsolete');
- PERFORM set_config('request.jwt.claim.role','authenticated',true);
- PERFORM assert_eq(r->'approved_origins','["https://example.invalid"]'::jsonb,'new request does not approve websites');
- PERFORM public.request_unit_measurement_approval(un);
- PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST'),4::bigint,'repeat request is idempotent');
- SELECT * INTO m FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST' AND data->>'request_revision'='2' LIMIT 1;
- PERFORM assert_eq(m.data->'proposed_websites',r->'requested_origins','email carries all proposals');
- PERFORM set_config('request.jwt.claim.role','service_role',true);
- PERFORM assert_true(public.email_intent_valid(m),'new request is deliverable after runtime approval');
- PERFORM set_config('request.jwt.claim.role','authenticated',true);
- UPDATE analytics.unit_runtime SET parent_origins=ARRAY['https://example.invalid','https://www.example.invalid:443','https://new.example.invalid'] WHERE unit=un;
- PERFORM set_config('request.jwt.claim.role','service_role',true);
- PERFORM assert_false(public.email_intent_valid(m),'platform approval obsoletes request');
- PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ PERFORM assert_false((r->>'can_request')::boolean,'adding websites never requires another platform review');
+ PERFORM assert_true(r->'approved_origins' @> '["https://new.example.invalid"]'::jsonb,'manager status exposes the automatically admitted website');
+ PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),1,'website changes do not create a request generation');
+ PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST'),2::bigint,'no additional domain approval mail');
+ PERFORM assert_eq((SELECT parent_origins FROM analytics.unit_runtime WHERE unit=un),ARRAY['https://example.invalid'],'self-service preserves explicit operator grants');
 END $$;
 
 -- A historical snapshot is not an active request after worker cancellation.
@@ -192,24 +181,25 @@ BEGIN
  UPDATE public.units SET data=jsonb_set(coalesce(data,'{}'),'{measurement_websites}','["https://pending.example"]') WHERE id=un;
  r:=public.get_unit_measurement_approval(un);
  PERFORM assert_eq(r->>'request_state','not_requested','new proposal is not requested');
- PERFORM assert_true((r->>'can_request')::boolean,'new proposal can be requested');
+ PERFORM assert_false((r->>'can_request')::boolean,'new website does not request measurement approval');
+ UPDATE analytics.organization_policy SET enabled=false WHERE organization=org;
  PERFORM public.request_unit_measurement_approval(un);
  PERFORM public.request_unit_measurement_approval(un);
  PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),1,'active retries are idempotent');
- UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}','[]') WHERE id=un;
+ UPDATE analytics.organization_policy SET enabled=true WHERE organization=org;
  PERFORM set_config('request.jwt.claim.role','service_role',true);
  -- Defer other transaction-local fixtures; exercise the real worker boundary.
  UPDATE public.email_messages SET target_time='infinity' WHERE unit IS DISTINCT FROM un;
  UPDATE public.email_capacity SET paused=false,quota_at=now(),circuit_until=NULL,max_preparing=2,worker_url=NULL;
  FOR i IN 1..2 LOOP
   claimed:=public.claim_email();
-  PERFORM assert_eq(claimed,'{"skipped":true}'::jsonb,'worker cancels withdrawn request');
+  PERFORM assert_eq(claimed,'{"skipped":true}'::jsonb,'worker cancels fulfilled runtime request');
  END LOOP;
- UPDATE public.units SET data=jsonb_set(data,'{measurement_websites}','["https://pending.example"]') WHERE id=un;
+ UPDATE analytics.organization_policy SET enabled=false WHERE organization=org;
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  r:=public.get_unit_measurement_approval(un);
  PERFORM assert_eq(r->>'request_state','retry_available','cancelled generation can be retried');
- PERFORM assert_true((r->>'can_request')::boolean,'re-added website is requestable');
+ PERFORM assert_true((r->>'can_request')::boolean,'revoked measurement permission is requestable');
  PERFORM public.request_unit_measurement_approval(un);
  PERFORM public.request_unit_measurement_approval(un);
  PERFORM assert_eq((SELECT revision FROM analytics.unit_measurement_request WHERE unit=un),2,'retry creates exactly one new generation');

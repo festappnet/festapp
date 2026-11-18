@@ -89,10 +89,7 @@ BEGIN
    JOIN public.organization_users ou ON ou.organization=u.organization AND ou."user"=p_message.recipient_user AND ou.is_admin
    WHERE q.unit=p_message.unit AND u.organization=p_message.organization AND NOT public.is_demo_unit(u.id)
     AND q.revision=coalesce((p_message.data->>'request_revision')::integer,1)
-    AND (public.unit_measurement_approval_internal(u.id)->'approved'='false'::jsonb
-     OR EXISTS(SELECT FROM jsonb_array_elements(q.requested_origins) x
-      WHERE coalesce(u.data->'measurement_websites','[]'::jsonb) @> jsonb_build_array(x.value)
-       AND NOT (public.unit_measurement_approval_internal(u.id)->'approved_origins' @> jsonb_build_array(x.value))))
+    AND public.unit_measurement_approval_internal(u.id)->'approved'='false'::jsonb
     AND public.get_user_delivery_email(ou."user")=p_message.recipient);
  END IF;
  IF p_message.message_kind='admin_notification_digest' THEN

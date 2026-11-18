@@ -96,7 +96,12 @@ Standalone uses the real Klaro UI with analytics and marketing services, off by
 default. The translated notice offers Decline, Accept and Settings in both bar and modal
 layouts, with equal prominence for Decline and Accept, a privacy URL and plain
 custom text. Settings opens the per-purpose dialog before any decision; the
-floating Consent settings button remains available for later changes.
+floating Consent settings button remains available for later changes on top-level
+pages, including a new tab opened through a consent link. It is never rendered
+in embeds. Embedded forms use the host bridge directly for consent, renewal
+and revocation; they never create a local Klaro controller or read a standalone
+choice cookie. Unknown or disconnected host choices remain denied without
+blocking checkout. The host website owns consent there.
 The dialog also shows an always-on, disabled necessary-data row for form
 operation, security and remembering the choice. This informational row is not a
 Klaro service, adds nothing to stored consent and maps to no Consent Mode signal. The notice blocks the page, not measurement. Saved choice belongs to
@@ -374,14 +379,14 @@ this purpose together with advertising.
 The initial central notice is blocking: Escape focuses the notice without saving
 a choice or closing it. Decline is available for a decision without optional
 consent. Escape in Settings discards the draft. Reopened Settings always offer
-Decline; after a saved decision focus returns to the floating Consent settings
-button. The button is fixed at the bottom left, with reserved scroll clearance.
+Decline; on top-level pages, after a saved decision focus returns to the floating
+Consent settings button. The button is fixed at the bottom left, with reserved scroll clearance.
 Custom notice text always retains a fixed explanation of how to change consent.
 
 ## Live consent transfer to a new tab
 
 Explicit marked links can share a saved website CMP record with the standalone
-form. The Unit must enable `measurement_consent_bridge` and approve the exact
+form. The Unit must enable `measurement_consent_bridge` and confirm the binding for the exact
 host origin. The website notice and its archived CMP configuration must cover
 this Unit's form, purposes, destinations, recipients and applicable notice revision.
 An opt-in switch is configuration, not evidence that a visitor confirmed a notice.
@@ -605,8 +610,8 @@ are retired before publishing choices. Explicit local saves use the existing
 saved local decision wins when the link checks it; ordinary open Klaro tabs are
 not continuously synchronized.
 
-Successful transfer shows the floating settings button. Saving there makes a
-local decision; Escape closes settings without saving. Link helpers preserve
+Successful transfer to a top-level new tab shows the floating settings button.
+Saving there makes a local decision; Escape closes settings without saving. Link helpers preserve
 modifier clicks, downloads, noreferrer and referrer policies. A bare noopener
 does not opt out: browsers imply it for new tabs and CMS/SEO plugins (e.g. Rank
 Math) add it to every external link. Remove the marker to opt a link out.
@@ -640,48 +645,43 @@ Retire the previous four-tag preset before enabling its replacement; Google
 consent behavior, Meta initialization/matching and account prerequisites are
 explained in the linked setup guide.
 
-### Organizer website proposals
+### Organizer websites and measurement execution permission
 
-Organizer settings store `measurement_websites` in `units.data`, alongside the
-other organizer-owned measurement settings. The shared settings contract accepts
-at most ten exact HTTPS origins (no path, query, fragment or trailing slash).
-These are proposals only. The approval status returned to administration compares
-them with `analytics.unit_runtime.parent_origins` using exact string equality.
-They do not participate in processing/consent revisions or approved host output.
+Organizer settings store `measurement_websites` in `units.data`. The shared
+settings contract accepts at most ten exact HTTPS origins (no path, query,
+fragment or trailing slash). These are the canonical saved websites for managed
+consent bindings, not proposals requiring platform review. Managers can confirm
+and export bindings immediately. The URLs do not themselves prove ownership or
+visitor consent. Saving a website confirms organizer operation. After initial
+platform/runtime approval, one SQL effective-origin projection admits the saved
+websites alongside explicit application origins without rewriting
+`analytics.unit_runtime.parent_origins`. Only canonical browser origins are
+admitted; the settings editor normalizes casing/default ports before saving.
 
-`request_unit_measurement_approval` snapshots proposals into the existing request
-and emails the platform administrators. A previously requested or approved Unit
-can request again when a pending origin was not included in its last request.
-Unit locking serializes retries; each request revision has separate email dedupe.
-Old request revisions become obsolete at delivery validation.
+`get_unit_website_consent_bindings` owns saved-origin membership for consent setup
+and external CMP probes. `get_unit_measurement_approval` separately reports
+measurement execution permission/runtime availability and notification history.
+`request_unit_measurement_approval` sends a request only if that execution policy
+or runtime is missing. Adding/changing websites cannot trigger another request
+when measurement is already allowed. Origin snapshots in existing request/email
+records remain historical metadata, not consent authorization.
 
-Approval continues through platform provisioning: a platform operator reviews
-ownership and updates `analytics.organization_policy` and
-`analytics.unit_runtime` (including `parent_origins`, revision, operator and reason)
-through the existing controlled SQL release procedure. No organizer RPC writes
-these platform tables, and neither saving nor requesting approves an origin.
+An eligible administrator's queued/preparing notification, accepted delivery or
+ambiguous sending/unknown outcome prevents duplicate requests. Terminal undelivered
+or expired queued work permits retry; the Unit row lock and revision serialize
+it. Once runtime/policy permission is present, delivery validation retires pending
+measurement requests regardless of differences in saved websites.
 
-### Website approval request lifecycle
-
-`get_unit_measurement_approval` is the authority for `saved_origins`,
-`request_state` (`not_requested`, `requested`, `retry_available`) and `can_request`.
-The requested origin snapshot and timestamp are historical metadata; they alone
-do not prove an active notification. The current revision stays active while an
-eligible administrator has queued/preparing work, an accepted delivery or an
-ambiguous sending/unknown outcome. Terminal undelivered or expired queued work
-permits an explicit retry; the Unit row lock and revision keep active retries
-idempotent. Approval of runtime origins remains a separate platform operation.
-
-Save proposed websites through the Unit aggregate first, then refresh approval
-status and request permission. Drafts must not be presented as submitted requests.
-The frontend fails closed when the new lifecycle fields are unavailable; apply
-the forward SQL migration before deploying its reader.
+Platform policy and runtime execution are provisioned separately through the
+controlled SQL release procedure. No consent-authoring RPC writes those tables.
+External unmanaged adapters retain the same effective approved-host boundary;
+all managed CMS integrations use the single binding authority.
 
 ### Managed CMS consent configuration (schema 1)
 
 SQL in `website_consent_bindings.sql` owns one durable binding per Unit and exact
 saved website origin. `get_unit_website_consent_bindings(p_unit)` returns current
-`consentRevision` and bindings. Managers save through
+`consentRevision`, `saved_origins` and bindings. Managers save through
 `save_unit_website_consent_binding(p_unit,p_website_origin,p_platform,p_provider_config,
 p_expected_version,p_expected_consent_revision,p_confirm)`. Version 0 creates;
 every write increments version, clears old confirmation and optionally records
@@ -696,12 +696,12 @@ providerConfig:{provider,organization,unit,consentRevision,...}}`.
 `serviceOrigin` comes from the stored organization's `DEFAULT_URL`. Complianz
 requires a pinned `policyId`: its supported category API has no saved-choice
 timestamp to prove coverage. The configured, current and saved policy must agree.
-Organizer settings automatically read `current_policy_id` from the approved
+Organizer settings automatically read `current_policy_id` from the saved
 website's inline WordPress `complianz` JSON configuration. Multisite cookie
 prefixes do not change this field; visitor cookies still use the prefix-aware
 adapter. See [Complianz's integration guide](https://complianz.io/help/wordpress/configuration/developers-guide-for-third-party-integrations/).
 The authenticated `probe-complianz` function checks configuration-management
-permission and both saved and approved origins through existing caller-JWT RPCs.
+permission and saved exact-origin membership through the manager-only binding RPC.
 Only the exact HTTPS origin is fetched, without cookies, using the existing
 DNS-vetted, TLS-identity-preserving pinned fetcher, a 15-second request timeout,
 a 1 MiB body ceiling and same-origin redirects. HTML tokenization and JavaScript
@@ -709,8 +709,8 @@ syntax parsing select only active inline, top-level localized JSON declarations.
 Comments, inert containers, external/module/data scripts, executable config and
 incomplete or conflicting candidates cannot establish a policy ID. Website code
 is never executed; malformed candidates are parsed once, without suffix rescans.
-The UI starts probing only after the owning screen has loaded approval for the
-saved origin; approval requests alone do not trigger it. Pending detection uses
+The UI starts probing for saved origins without loading measurement approval.
+Unsaved changes cannot start a probe. Pending detection uses
 a static loading message and releases the editor to manual fallback after
 20 seconds, including when the transport never completes. Website, platform and
 provider selectors stay available during detection. The dedicated
@@ -718,7 +718,7 @@ provider selectors stay available during detection. The dedicated
 the settings widget owns the editable draft and the stored binding. Scope changes
 and disposal cancel the UI deadline and invalidate late results.
 Missing, ambiguous, blocked or unsupported configuration offers a collapsed manual
-entry fallback, also available before approval when external probing is forbidden.
+entry fallback when automatic detection is unavailable.
 Failed reloads retain manual values and stored drafts; the saved pin stays visible
 separately from a newly detected ID. Reload clears coverage confirmation. Automatic confirmation
 fetches again on the server and saves only if the detected ID still matches the
@@ -799,3 +799,14 @@ coverage for every Wix editor or account.
 Primary Wix contracts: [consent requirements](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/gdpr-compliance/implement-cookie-consent-requirements),
 [consent apps and default policy](https://dev.wix.com/docs/build-apps/launch-your-app/legal-and-security/about-consent-apps),
 [consent policy manager](https://dev.wix.com/docs/sdk/host-modules/site/consent-policy-manager/introduction).
+
+
+### Automatic measurement on saved websites
+
+After the organizer's initial platform/runtime approval, every exact HTTPS
+website saved by its manager is automatically eligible as a measurement host.
+Saving confirms that the organizer operates those websites; it never grants
+visitor consent. The existing organization/Unit/form switches, privacy notice,
+runtime and consent checks remain. No additional domain-approval request is sent.
+Removing a saved website withdraws its self-service grant on policy renewal.
+Explicit operator-owned application origins remain separately configured.

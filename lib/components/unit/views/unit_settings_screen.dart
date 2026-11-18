@@ -191,6 +191,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
   }
 
+  List<String> get _savedMeasurementWebsites =>
+      List<String>.from(_unit.data?['measurement_websites'] ?? const []);
+
   bool get _measurementSaved {
     final d = _unit.data ?? <String, dynamic>{};
     return !_isSaving &&
@@ -209,21 +212,8 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
           UnitMeasurementSettings.parseWebsites(
             _measurementWebsitesController.text,
           ),
-          List<String>.from(d['measurement_websites'] ?? const []),
+          _savedMeasurementWebsites,
         );
-  }
-
-  List<String> get _approvedMeasurementWebsites {
-    final approval = _measurementApproval;
-    if (_isLoadingMeasurementApproval ||
-        _measurementApprovalLoadFailed ||
-        approval == null ||
-        !approval.approved) {
-      return const [];
-    }
-    return approval.approvedOrigins
-        .where(approval.savedOrigins.contains)
-        .toList();
   }
 
   Future<void> _loadMeasurementApproval() async {
@@ -825,13 +815,14 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                                           'website-consent-${_unit.id}',
                                         ),
                                         unitId: _unit.id!,
-                                        websites:
-                                            UnitMeasurementSettings.parseWebsites(
-                                              _measurementWebsitesController
-                                                  .text,
-                                            ),
-                                        approvedWebsites:
-                                            _approvedMeasurementWebsites,
+                                        websites: _savedMeasurementWebsites
+                                            .where(
+                                              UnitMeasurementSettings.parseWebsites(
+                                                _measurementWebsitesController
+                                                    .text,
+                                              ).contains,
+                                            )
+                                            .toList(),
                                         saved: _measurementSaved,
                                       )
                                     : null,
@@ -841,6 +832,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                                 ),
                                 websitesController:
                                     _measurementWebsitesController,
+                                savedWebsites: _savedMeasurementWebsites,
                                 approval: _measurementApproval,
                                 loadingApproval: _isLoadingMeasurementApproval,
                                 approvalLoadFailed:

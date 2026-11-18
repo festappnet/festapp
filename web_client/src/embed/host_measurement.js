@@ -1,5 +1,5 @@
 import {consentScope, readConsentSource, managedConsentOrigin} from '../components/forms/measurement_consent_source.js';
-import {measurementProtocol, measurementConsent, measurementManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
+import {measurementProtocol, measurementConsent, measurementManifest, consentTransportManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
 // Presence is the long-lived public opt-in; absent preserves existing embeds.
@@ -128,13 +128,13 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
     return {api, stopHeartbeat, revoke, syncConsent, receive(frame, record, data) {
             if(data.type==='measurement-context' && data.measurement?.protocol===measurementProtocol) {
                 const m=data.measurement.manifest;
-                if(!m || !sameMeasurementManifest(m,measurementManifest(m,m.form_link)))return true;
+                if(!m || !sameMeasurementManifest(m,consentTransportManifest(m,m.form_link)))return true;
                 if(!sameMeasurementManifest(m,record.manifest)){revoke(frame,record);record.manifest=m;}
                 syncConsent(frame,record);return true;
             }
             if(data.type==='measurement-activate' || data.type==='analytics') {
                 const m=data.measurement;
-                if(m?.protocol!==measurementProtocol || !record.lease || Date.now()>=record.lease.until ||
+                if(m?.protocol!==measurementProtocol || !measurementManifest(m.manifest,m.manifest?.form_link) || !record.lease || Date.now()>=record.lease.until ||
                     m.leaseId!==record.lease.id || !sameMeasurementManifest(m.manifest,record.manifest) || !Number.isSafeInteger(m.generation))return true;
                 if(data.type==='measurement-activate') {
                     if(record.lease.generation!==m.generation)record.pageContext=null;

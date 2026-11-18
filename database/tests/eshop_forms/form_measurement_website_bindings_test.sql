@@ -98,3 +98,56 @@ BEGIN
  BEGIN PERFORM public.normalize_website_consent_provider_internal(jsonb_build_object('provider','cookieconsent','revision',1,'categories',jsonb_build_object('analytics',repeat('😀',65),'marketing','m'))); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
  PERFORM assert_true(rejected,'129+ UTF16 units rejected');
 END $$;
+
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; org bigint:=(x->>'organization')::bigint;
+ fid bigint:=(x->>'form')::bigint; scope jsonb; result jsonb; b jsonb; exported jsonb; policy jsonb; rejected boolean;
+BEGIN
+ UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example","FORM_MEASUREMENT_ENABLED":false}' WHERE id=org;
+ UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_enabled":false,"measurement_websites":["https://self-service.example"]}' WHERE id=un;
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(un,(x->>'actor')::uuid,true) ON CONFLICT(unit,"user") DO UPDATE SET is_manager=true;
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ scope:=public.get_unit_website_consent_bindings(un);
+ PERFORM assert_eq(scope->'saved_origins','["https://self-service.example"]'::jsonb,'manager scope owns saved probe origins');
+ result:=public.save_unit_website_consent_binding(un,'https://self-service.example','wordpress','{"provider":"cookiebot"}',0,scope->>'consentRevision',true);
+ b:=result#>'{bindings,0}';
+ PERFORM assert_eq(b->>'state','ready','confirmed saved website needs no platform/runtime permission');
+ exported:=public.export_unit_website_consent_binding((b->>'id')::uuid,1);
+ PERFORM assert_eq(exported->>'websiteOrigin','https://self-service.example','self-service export succeeds');
+ policy:=public.form_measurement_runtime_internal(fid);
+ PERFORM assert_eq(policy#>>'{website_consent_bindings,0,effective}','true','consent policy is independent');
+ PERFORM assert_eq(policy->'eligible','false'::jsonb,'consent does not enable measurement');
+ PERFORM assert_eq(policy->'approved_hosts','[]'::jsonb,'consent does not widen runtime hosts');
+ PERFORM assert_eq(policy->'runtime_origin','null'::jsonb,'consent cannot provision runtime');
+ PERFORM assert_eq(policy->>'privacy_url','https://organizer.example/privacy','consent notice available with measurement off');
+ PERFORM assert_true(NOT EXISTS(SELECT FROM analytics.unit_runtime WHERE unit=un),'no implicit runtime write');
+ PERFORM assert_true(NOT EXISTS(SELECT FROM analytics.organization_policy WHERE organization=org),'no implicit platform permission');
+ PERFORM assert_true(NOT EXISTS(SELECT FROM public.email_messages WHERE unit=un AND code='MEASUREMENT_APPROVAL_REQUEST'),'consent authoring sends no approval mail');
+ rejected:=false;
+ BEGIN PERFORM public.save_unit_website_consent_binding(un,'https://foreign.example','html','{"provider":"cookiebot"}',0,scope->>'consentRevision',true);
+ EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ PERFORM assert_true(rejected,'unsaved origin cannot pair');
+ UPDATE public.units SET data=data||'{"measurement_websites":[]}' WHERE id=un;
+ PERFORM assert_eq(public.get_unit_website_consent_bindings(un)#>>'{bindings,0,state}','unavailable','removing saved website revokes binding');
+ rejected:=false;
+ BEGIN PERFORM public.export_unit_website_consent_binding((b->>'id')::uuid,1); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
+ PERFORM assert_true(rejected,'removed website cannot export');
+END $$;
+
+-- Imported/old noncanonical strings cannot create split binding/runtime identities.
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; b analytics.website_consent_bindings; rejected boolean:=false;
+BEGIN
+ UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://NEW.example:443"]}' WHERE id=un;
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(un,(x->>'actor')::uuid,true) ON CONFLICT(unit,"user") DO UPDATE SET is_manager=true;
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision)
+ VALUES(un,'https://NEW.example:443','html','{"provider":"cookiebot"}',1,true,public.unit_measurement_consent_scope_internal(un)->>'consentRevision') RETURNING * INTO b;
+ PERFORM assert_false(public.website_consent_binding_effective_internal(b),'old noncanonical identity cannot become an effective consent grant');
+ PERFORM assert_eq(public.website_consent_bindings_policy_internal(un),'[]'::jsonb,'invalid old identity cannot poison a browser manifest');
+ BEGIN PERFORM public.export_unit_website_consent_binding(b.id,1);EXCEPTION WHEN invalid_parameter_value THEN rejected:=true;END;
+ PERFORM assert_true(rejected,'invalid old binding cannot export mismatched website origin');
+ UPDATE public.units SET data=data||'{"measurement_websites":["https://new.example"]}' WHERE id=un;
+ PERFORM public.save_unit_website_consent_binding(un,'https://new.example','html','{"provider":"cookiebot"}',0,public.unit_measurement_consent_scope_internal(un)->>'consentRevision',true);
+ PERFORM assert_eq(public.website_consent_bindings_policy_internal(un)#>>'{0,websiteOrigin}','https://new.example','authoring and browser policy share the canonical identity');
+END $$;

@@ -1,6 +1,6 @@
 import {consentScope, managedConsentOrigin, sameConsentBinding} from '../components/forms/measurement_consent_source.js';
 import {validId} from './protocol.js';
-import {measurementProtocol, analyticsPayload, campaignContext, measurementConsent, measurementManifest, sameMeasurementManifest} from '../components/forms/form_measurement_contract.js';
+import {measurementProtocol, analyticsPayload, campaignContext, measurementConsent, measurementManifest, consentTransportManifest, sameMeasurementManifest} from '../components/forms/form_measurement_contract.js';
 
 export class EmbedMeasurement {
     constructor(win, channel) { Object.assign(this, {win, channel}); }
@@ -46,7 +46,7 @@ export class EmbedMeasurement {
     selection() {return !this.channel.closed && !this.suspended && this.origin && this.measurementProtocol===measurementProtocol ? (this.dataLayer?'host':'runtime') : null;}
     connectConsent(policy,notify) {
         const binding = this.consentBinding = {};
-        this.measurementManifest=measurementManifest(policy,policy?.form_link);
+        this.measurementManifest=consentTransportManifest(policy,policy?.form_link);
         this.consentNotify=notify;this.requestConsent();
         return ()=>{if(this.consentBinding!==binding)return;this.consentNotify=null;this.measurementManifest=null;this.stop();};
     }
@@ -56,6 +56,7 @@ export class EmbedMeasurement {
     hostContext() {return this.selection()?{origin:this.origin,instance:this.instance}:null;}
     activate(grant) {
         this.stop();
+        if (!measurementManifest(grant.manifest,grant.manifest?.form_link)) return;
         if(grant.selection!==this.selection() || grant.host?.origin!==this.origin || grant.host?.instance!==this.instance || !this.leaseId || this.leaseId!==grant.leaseId || Date.now()>=this.leaseUntil)return;
         this.grant=grant;
         if(grant.selection==='runtime')this.measurementRuntime.activate(grant);

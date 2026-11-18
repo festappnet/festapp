@@ -19,6 +19,10 @@ const locale = arg('--locale') || configuredLocale;
 const preview = process.argv.includes('--preview');
 const profile = value('WEB_ORGANIZER_CONTENT_PROFILE');
 const enabled = value('WEB_ORGANIZER_LANDING_ENABLED') === 'true' && ['vstupenky-cs', 'festapp-en'].includes(profile);
+if (process.argv.includes('--published-language')) {
+  process.stdout.write(enabled && ['cs', 'en'].includes(configuredLocale) ? configuredLocale : '');
+  process.exit(0);
+}
 const outputRoot = path.resolve(arg('--output-root') || path.join(root, 'web_client/public'));
 if (!enabled) {
   if (arg('--output')) fs.rmSync(path.resolve(arg('--output')), {recursive:true, force:true});

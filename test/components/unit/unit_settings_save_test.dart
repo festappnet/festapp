@@ -273,6 +273,75 @@ void main() {
                     as Map)['FeatureFormSettings']
                 as Map)['measurementConsentTitle']
             as String;
+    for (final (address, valid, collapsed) in [
+      ('https://new.example', true, false),
+      ('https://new.example', true, true),
+      ('invalid-address', false, false),
+      ('invalid-address', false, true),
+    ]) {
+      testWidgets(
+        'Save validates pending website: valid=$valid collapsed=$collapsed',
+        (tester) async {
+          stored = {
+            'id': 7,
+            'organization': 1,
+            'title': 'Slavnostní ples',
+            'aggregate_version': 4,
+            'data': {'timezone': 'Europe/Prague', 'measurement_enabled': false},
+          };
+          final rights = RightsContextFixture(
+            context: OccasionLinkModel.fromJson({
+              'code': 200,
+              'unit': {'id': 7},
+              'organization': {'FORM_MEASUREMENT_ENABLED': true},
+              'capabilities': {'unit.settings.write': true},
+            }),
+          );
+          addTearDown(rights.dispose);
+          final environment = WidgetEnvironmentFixture(
+            locale: const Locale('cs'),
+            translations: jsonDecode(
+              File('assets/translations/cs.json').readAsStringSync(),
+            ),
+          );
+          await environment.pumpWidget(
+            tester,
+            MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              home: UnitSettingsScreen(
+                unit: UnitModel.fromJson(stored),
+                onUnitUpdated: () {},
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await toggleMeasurement(tester);
+          final input = find.widgetWithText(
+            TextFormField,
+            FormStrings.measurementAddWebsite,
+          );
+          await tester.ensureVisible(input);
+          await tester.enterText(input, address);
+          if (collapsed) await toggleMeasurement(tester);
+          final save = find.widgetWithText(ElevatedButton, CommonStrings.save);
+          await tester.ensureVisible(save);
+          await tester.tap(save);
+          await tester.pumpAndSettle();
+          expect(saves, isEmpty);
+          expect(
+            find.text(
+              valid
+                  ? FormStrings.measurementFinishAddingWebsite
+                  : FormStrings.measurementWebsitesInvalid,
+            ),
+            findsOneWidget,
+          );
+          expect(input, findsOneWidget);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+
     for (final (name, replyTo, edited, rejected) in [
       (
         'set Reply-To',

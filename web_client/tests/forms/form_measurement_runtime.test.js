@@ -181,3 +181,11 @@ test('isolated runtime attaches its validated page context to each event',t=>{
  f.send('event',{payload:{event:'form_submit_error'}});
  assert.equal(f.win.dataLayer.find(p=>p.event==='form_submit_error').language,null);
 });
+
+ test('Worker admits the bounded32+10 effective host projection and rejects overflow',async()=>{
+  const ancestors=[parent,...Array.from({length:41},(_,i)=>`https://saved-${i}.example`)];
+  const response=await serveMeasurement(request,env,async()=>({...config,ancestor_origins:ancestors}));
+  assert.equal(response.status,200);
+  assert.ok(response.headers.get('content-security-policy').includes('frame-ancestors '+ancestors.join(' ')));
+  assert.equal((await serveMeasurement(request,env,async()=>({...config,ancestor_origins:[...ancestors,'https://overflow.example']}))).status,404);
+ });
