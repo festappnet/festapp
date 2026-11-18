@@ -31,10 +31,11 @@ export async function serveMeasurement(request, env, fetchConfig = async args =>
         (!local && new URL(parent).protocol!=='https:') || (!/^[1-9]\d*$/.test(String(env.ORGANIZATION_ID)) || !/^[1-9]\d*$/.test(String(env.UNIT_ID)))) return fail();
     try {
         const config=await fetchConfig({p_form_link:form,p_organization:Number(env.ORGANIZATION_ID),p_unit:Number(env.UNIT_ID),p_runtime_origin:url.origin,p_parent_origin:parent});
+        // Up to32 operator-owned origins plus10 validated manager-saved websites.
         if (!config || config.organization!==Number(env.ORGANIZATION_ID) || config.unit!==Number(env.UNIT_ID) || config.form_link!==form ||
             config.runtime_origin!==url.origin || config.parent_origin!==parent || config.profile!=='gtm-v1' ||
             config.policy?.eligible!==true || config.policy.runtime_supported!==true ||
-            !Array.isArray(config.ancestor_origins) || !config.ancestor_origins.includes(parent) || config.ancestor_origins.length>32 ||
+            !Array.isArray(config.ancestor_origins) || !config.ancestor_origins.includes(parent) || config.ancestor_origins.length>42 ||
             !Array.isArray(config.collector_origins) || config.collector_origins.length>16 ||
             (config.gtm_container && !/^GTM-[A-Z0-9]{4,32}$/.test(config.gtm_container)) ||
             (config.scripts && (typeof config.scripts!=='string' || [...config.scripts].length>FORM_MEASUREMENT_SCRIPT_LIMIT))) return fail();

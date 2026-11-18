@@ -10,7 +10,7 @@ export function measurementApprovalEmail(recipient: string, data: Record<string,
   }
   const en = data.lang === "en";
   const websites = Array.isArray(data.proposed_websites) ? data.proposed_websites : [];
-  const sitesHtml = `<p>${en ? "Proposed websites (require platform approval)" : "Navržené weby (vyžadují schválení platformou)"}</p><ul>${websites.map(site => `<li>${escape(site)}</li>`).join("")}</ul>`;
+  const sitesHtml = `<p>${en ? "Organizer websites (consent transfer is self-service)" : "Weby pořadatele (přenos souhlasu nastavuje pořadatel)"}</p><ul>${websites.map(site => `<li>${escape(site)}</li>`).join("")}</ul>`;
   return {
     from: `Festapp <${sender}>`, to: recipient, replyTo: sender,
     subject: en ? "Request to enable form measurement" : "Žádost o povolení měření formulářů",

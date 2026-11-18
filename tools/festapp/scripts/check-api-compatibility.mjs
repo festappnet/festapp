@@ -8,6 +8,10 @@ const equal = (a,b) => JSON.stringify(a) === JSON.stringify(b);
 export function schemaBreaks(before, after, direction, at = '$') {
     if (equal(before, after)) return [];
     if (!before || !after) return [at + ': schema removed'];
+    // An intersection containing the complete previous response schema is a
+    // provable narrowing, without attempting general regex/schema implication.
+    if (direction === 'response' && Array.isArray(after.allOf) &&
+        after.allOf.some(part => equal(before, part))) return [];
     const issues = [], request = direction === 'request';
     const fail = reason => issues.push(at + ': ' + reason);
     const types = s => new Set([s.type].flat().filter(Boolean));

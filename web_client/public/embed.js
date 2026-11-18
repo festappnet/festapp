@@ -92,7 +92,7 @@
     };
   }
   function measurementManifest(policy, formLink) {
-    if (!policy || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization < 1 || policy.unit < 1 || !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision < 1 || !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision < 1 || typeof policy.processing_revision !== "string" || !policy.processing_revision || policy.processing_revision.length > 128 || policy.profile !== "gtm-v1" || !measurementId(formLink) || JSON.stringify(policy.required_purposes) !== JSON.stringify(["analytics", "marketing"])) return null;
+    if (!policy || policy.consent_only === true || policy.measurement_protocol !== measurementProtocol || !Number.isSafeInteger(policy.organization) || !Number.isSafeInteger(policy.unit) || policy.organization < 1 || policy.unit < 1 || !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision < 1 || !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision < 1 || typeof policy.processing_revision !== "string" || !policy.processing_revision || policy.processing_revision.length > 128 || policy.profile !== "gtm-v1" || !measurementId(formLink) || JSON.stringify(policy.required_purposes) !== JSON.stringify(["analytics", "marketing"])) return null;
     if (policy.consent_revision !== void 0 && (typeof policy.consent_revision !== "string" || !/^[a-f0-9]{32}$/.test(policy.consent_revision))) return null;
     return {
       ...policy.website_consent_bindings !== void 0 ? { website_consent_bindings: policy.website_consent_bindings } : {},
@@ -109,7 +109,26 @@
       required_purposes: ["analytics", "marketing"]
     };
   }
-  var sameMeasurementManifest = (a, b) => !!a && !!b && ["website_consent_bindings", "measurement_protocol", "organization", "unit", "form_link", "processing_revision", "consent_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key])) && a.measurement_consent_bridge === true === (b.measurement_consent_bridge === true);
+  var sameMeasurementManifest = (a, b) => !!a && !!b && ["consent_only", "website_consent_bindings", "measurement_protocol", "organization", "unit", "form_link", "processing_revision", "consent_revision", "runtime_revision", "policy_revision", "profile", "required_purposes"].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key])) && a.measurement_consent_bridge === true === (b.measurement_consent_bridge === true);
+  function consentTransportManifest(policy, formLink) {
+    const runtime = measurementManifest(policy, formLink);
+    if (runtime) return runtime;
+    if (!policy || policy.measurement_consent_bridge !== true || !Number.isSafeInteger(policy.runtime_revision) || policy.runtime_revision < 0 || !Number.isSafeInteger(policy.policy_revision) || policy.policy_revision < 0 || ![null, "gtm-v1"].includes(policy.profile ?? null) || typeof policy.consent_revision !== "string" || !Array.isArray(policy.website_consent_bindings) || !policy.website_consent_bindings.some((b) => b.effective === true)) return null;
+    const scope = measurementManifest({
+      ...policy,
+      consent_only: false,
+      runtime_revision: 1,
+      policy_revision: 1,
+      profile: "gtm-v1"
+    }, formLink);
+    return scope ? {
+      ...scope,
+      consent_only: true,
+      runtime_revision: policy.runtime_revision,
+      policy_revision: policy.policy_revision,
+      profile: policy.profile ?? null
+    } : null;
+  }
 
   // src/components/forms/measurement_consent_source.js
   function consentScope(policy, origin) {
@@ -231,7 +250,7 @@
     const click = (event) => {
       try {
         const link = event.target.closest("a[data-festapp-consent-link]");
-        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target !== "_blank" || link.hasAttribute("download") || /(?:^|\s)(?:noopener|noreferrer)(?:\s|$)/i.test(link.rel) || // Any explicit referrer policy (on the link or the page) keeps native
+        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target !== "_blank" || link.hasAttribute("download") || /(?:^|\s)noreferrer(?:\s|$)/i.test(link.rel) || // Any explicit referrer policy (on the link or the page) keeps native
         // navigation: window.open() would not carry the link's own policy.
         link.hasAttribute("referrerpolicy") || [...win.document.querySelectorAll("meta[name]")].some((meta) => meta.name.toLowerCase() === "referrer")) return;
         const url = new URL(link.href, win.document.baseURI);
@@ -1061,7 +1080,7 @@
     return { api, stopHeartbeat, revoke, syncConsent, receive(frame, record, data) {
       if (data.type === "measurement-context" && data.measurement?.protocol === measurementProtocol) {
         const m = data.measurement.manifest;
-        if (!m || !sameMeasurementManifest(m, measurementManifest(m, m.form_link))) return true;
+        if (!m || !sameMeasurementManifest(m, consentTransportManifest(m, m.form_link))) return true;
         if (!sameMeasurementManifest(m, record.manifest)) {
           revoke(frame, record);
           record.manifest = m;
@@ -1071,7 +1090,7 @@
       }
       if (data.type === "measurement-activate" || data.type === "analytics") {
         const m = data.measurement;
-        if (m?.protocol !== measurementProtocol || !record.lease || Date.now() >= record.lease.until || m.leaseId !== record.lease.id || !sameMeasurementManifest(m.manifest, record.manifest) || !Number.isSafeInteger(m.generation)) return true;
+        if (m?.protocol !== measurementProtocol || !measurementManifest(m.manifest, m.manifest?.form_link) || !record.lease || Date.now() >= record.lease.until || m.leaseId !== record.lease.id || !sameMeasurementManifest(m.manifest, record.manifest) || !Number.isSafeInteger(m.generation)) return true;
         if (data.type === "measurement-activate") {
           if (record.lease.generation !== m.generation) record.pageContext = null;
           record.lease.generation = m.generation;

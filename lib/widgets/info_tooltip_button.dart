@@ -11,6 +11,7 @@ class InfoTooltipButton extends StatefulWidget {
   final InlineSpan? richMessage;
   final FocusNode? focusNode;
   final Color? color;
+  final double targetSize;
 
   const InfoTooltipButton({
     super.key,
@@ -19,6 +20,7 @@ class InfoTooltipButton extends StatefulWidget {
     this.richMessage,
     this.focusNode,
     this.color,
+    this.targetSize = 40,
   });
 
   @override
@@ -105,9 +107,9 @@ class InfoTooltipButtonState extends State<InfoTooltipButton> {
               child: IconButton(
                 focusNode: _buttonFocus,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 40,
-                  height: 40,
+                constraints: BoxConstraints.tightFor(
+                  width: widget.targetSize,
+                  height: widget.targetSize,
                 ),
                 iconSize: 18,
                 color: widget.color,

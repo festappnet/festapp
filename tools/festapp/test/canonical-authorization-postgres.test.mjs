@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID, createHash } from 'node:crypto';
 import {openDisposableDatabase} from './postgres.mjs';
+import {truthTableRows} from './authorization-truth-table.mjs';
 import {enableFixtureBankPayments} from './form-fixtures.mjs';
 import { connect, fixture } from '../../../automation/authorization/benchmark.mjs';
 const options={skip:!process.env.FESTAPP_AUTHORIZATION_DATABASE_URL};
@@ -25,14 +26,7 @@ test('canonical truth table preserves server operation rights across 2048 role c
     await db.query('insert into organization_users(organization,"user",is_admin) values($1,$2,false)',[f.org,f.actor]);
     await db.query("update occasions set features='[{\"code\":\"reception\",\"is_enabled\":true}]' where id=$1",[f.occasion]);
     await db.query(await readFile(new URL('../../../database/tests/helpers/authorization_context_reference.sql',import.meta.url),'utf8'));
-    for(let bits=0;bits<2048;bits++) {
-        const b=Array.from({length:11},(_,i)=>Boolean(bits&(1<<i)));
-        await db.query('RESET ROLE');
-        await db.query('update occasion_users set is_editor=$1,is_editor_view=$2,is_editor_order=$3,is_editor_order_view=$4,is_manager=$5,is_receptionist=$8,is_approver=$9 where occasion=$6 and "user"=$7',[...b.slice(0,5),f.occasion,f.actor,b[9],b[10]]);
-        await db.query('update unit_users set is_editor=$1,is_manager=$2,is_editor_view=$5 where unit=$3 and "user"=$4',[b[5],b[6],f.unit,f.actor,b[8]]);
-        await db.query('update organization_users set is_admin=$1 where organization=$2 and "user"=$3',[b[7],f.org,f.actor]);
-        await identity(db,f);
-        const r=(await db.query(`select can_read_orders($1) read,can_write_orders($1) write,
+    const rows=await truthTableRows(db,f,`select can_read_orders($1) read,can_write_orders($1) write,
           can_edit_occasion($1) edit,can_edit_ticket_layout($1) layout,
           can_read_occasion_client_commits($1) occasion_audit,can_read_unit_client_commits($2) unit_audit,can_read_organization_client_commits($3) organization_audit,
           can_read_unit_app_landing($2) landing_read,can_manage_unit_app_landing($2) landing_write,
@@ -54,7 +48,9 @@ test('canonical truth table preserves server operation rights across 2048 role c
           can_write_service_items($1) services,can_manage_occasion_participants($1) participants,get_can_manage_occasion_users($1) users_manage,
           can_read_participant_contacts($1) contacts,can_import_group_assignments($1) group_import,
           can_write_blueprints($1) blueprints,can_copy_inventory_target($1) inventory,
-          can_write_activity_plan($1) activities,can_read_activity_editor($1) activities_read,can_send_custom_email($1) custom_mail`,[f.occasion,f.unit,f.org])).rows[0];
+          can_write_activity_plan($1) activities,can_read_activity_editor($1) activities_read,can_send_custom_email($1) custom_mail`);
+    for(const {bits,rights:r,context:c,original} of rows) {
+        const b=Array.from({length:11},(_,i)=>Boolean(bits&(1<<i)));
         assert.deepEqual(r,{read:b[3],write:b[2],edit:b[5],layout:b[5],
           occasion_audit:b[4]||b[7],unit_audit:b[6],organization_audit:b[7],
           landing_read:b[7]||b[8]||b[5]||b[6],landing_write:b[7],abuse_read:b[5]||b[6],legal_read:b[6]||b[7],icons_write:b[5],copy_occasion_target:b[6],activity_log:b[4]||b[6]||b[7],
@@ -65,14 +61,10 @@ test('canonical truth table preserves server operation rights across 2048 role c
           reception:b[9]||b[4]||b[7],schedule:b[0],schedule_read:b[1],schedule_participants:b[0]||b[1]||b[7],feedback:b[1]||b[7],
           speakers:b[0],speakers_read:b[1],services:b[4],participants:b[4]||b[7],users_manage:b[4]||b[7]||b[5],contacts:b[0]||b[4]||b[10],
           group_import:b[0]||b[4]||b[5]||b[7],blueprints:b[0]||b[4],inventory:b[2]||b[6],activities:b[0],activities_read:b[0]||b[1],custom_mail:b[0]||b[2]},`roles ${bits}`);
-        const c=(await db.query('select get_app_config_v218($1::jsonb) c',
-          [JSON.stringify({organization:f.org,link:f.link,platform:{platform:'web'}})])).rows[0].c;
         assert.equal(c.code,200);
         assert.equal(c.capabilities['occasions.editor.read'],r.occasion_editor_read);
         assert.equal(c.capabilities['organization.settings.write'],b[7]);
         assert.equal(c.capabilities['blueprints.write'],r.background_occasion);
-        const original=(await db.query('select authorization_context_before_for_test($1::jsonb) c',
-          [JSON.stringify({organization:f.org,link:f.link,platform:{platform:'web'}})])).rows[0].c;
         const {capabilities,bank_capabilities,...currentEnvelope}=c;
         // Keep the historical reference exact and assert the approved additive
         // measurement/provider projections separately from authorization facts.

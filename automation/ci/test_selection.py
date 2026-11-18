@@ -27,6 +27,36 @@ class CanonicalTranslationOwnershipTest(unittest.TestCase):
 
 
 class CmsDependencyOwnershipTest(unittest.TestCase):
+    def test_mcp_source_does_not_invalidate_independent_sql_executors(self):
+        independent={'occasion-lifecycle','seat-authorization','seat-google-auth',
+                     'seat-payments','seat-orders','seat-delivery','seat-notifications','seat-browser'}
+        for path in ['tools/festapp/src/remote/views.mjs',
+                     'tools/festapp/src/operations/orders.mjs']:
+            units=selection.unit_owners(path,'seat-checkout',CONTRACT)
+            self.assertTrue(independent.isdisjoint(units),path)
+            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts'}.issubset(units),path)
+        for path in ['database/functions/eshop/finalize_ticket_order.sql',
+                     'database/tests/helpers/reset_owned_sequences.sql']:
+            self.assertTrue(independent.issubset(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
+        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','seat-checkout',CONTRACT))
+
+    def test_ticket_core_and_edge_have_only_their_actual_platform_inputs(self):
+        lane='ticket-preview-and-delivery'
+        for path in ['lib/components/occasion_settings/occasion_settings_layout.dart',
+                     'test/components/occasion/occasion_setup_feedback_cases.dart']:
+            units=selection.unit_owners(path,lane,CONTRACT)
+            self.assertIn('ticket-client',units)
+            self.assertTrue({'ticket-core','ticket-edge','ticket-install'}.isdisjoint(units))
+        self.assertIn('ticket-core',selection.unit_owners('packages/festapp_core/lib/eshop/customer_label.dart',lane,CONTRACT))
+        self.assertIn('ticket-edge',selection.unit_owners('supabase/functions/preview-ticket-layout/entrypoint_test.ts',lane,CONTRACT))
+        for path in ['test/fixtures/ticket_layout/background.png',
+                     'database/fixtures/demo_occasions/concert-layout.json',
+                     'assets/brand/apple-wallet/provenance.json']:
+            self.assertIn(lane,selection.owners(path,CONTRACT))
+            self.assertIn('ticket-edge',selection.unit_owners(path,lane,CONTRACT))
+        self.assertIn('ticket-core',selection.unit_owners('assets/email_templates/preview_examples.json',lane,CONTRACT))
+        self.assertEqual(selection.unit_owners('unknown_shared/input.dat',lane,CONTRACT),set(CONTRACT['jobs'][lane]['steps']))
+
     def test_image_health_checker_has_only_actual_consumers(self):
         self.assertEqual(selection.owners('automation/verify_image_service.mjs',CONTRACT),
                          {'image-contract','web-startup'})
@@ -176,6 +206,15 @@ class ScopedPolicyTest(unittest.TestCase):
 
 
 class InventoryPreflightTest(unittest.TestCase):
+    def test_provisioning_follows_selected_executors(self):
+        flags=selection.provisioning_flags
+        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False))
+        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False))
+        self.assertTrue(flags(['ticket-core'],CONTRACT)['flutter'])
+        self.assertEqual(flags(['seat-mcp-contracts'],CONTRACT),dict(flutter=False,sql=True,browser=False))
+        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True))
+        with self.assertRaises(KeyError):flags(['unregistered-executor'],CONTRACT)
+
     def test_registration_failure_prevents_selection_and_reuse(self):
         with patch.object(sys,'argv',['selection.py','seat-checkout']), \
              patch.object(selection,'preflight_inventory',side_effect=ValueError('registration failed')), \
@@ -503,6 +542,24 @@ class ReusePolicyTest(unittest.TestCase):
         result=self.evaluate(fingerprint=digest,consume=True)
         self.assertEqual(result['execute'],['image-storage'])
         self.assertEqual(set(result['reuse']),set(self.contract['jobs']['image-contract']['steps'])-{'image-storage'})
+
+    def test_check_order_is_not_an_unnecessary_runtime_dependency(self):
+        import copy
+        step=self.contract['steps']['image-storage']
+        step['after']=['image-policy']
+        step['requires']=['image-install']
+        self.original_contract=copy.deepcopy(self.contract)
+        baseline=self.evaluate()
+        def digest(sha,lane,policy,unit=None):
+            return 'changed' if sha==SHA and unit=='image-storage' else 'same-inputs'
+        result=self.evaluate(fingerprint=digest,consume=True)
+        self.assertEqual(set(result['execute']),{'image-storage','image-install'})
+        self.assertIn('image-policy',result['reuse'])
+        result['execute'].remove('image-install')
+        result['reuse']['image-install']=baseline['reuse']['image-install']
+        with patch.object(selection,'definition',return_value='trusted'):
+            with self.assertRaisesRegex(ValueError,'Missing execution dependency'):
+                selection.verify_plan(result,'image-contract',SHA,'fixture/repo',self.contract)
 
     def test_budget_expiry_keeps_verified_units_and_executes_changed_remainder(self):
         self.contract['steps']['image-storage']['after']=[]

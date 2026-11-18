@@ -6,13 +6,18 @@ export const consentLinkNamespace = 'festapp-consent-link';
 // the actual WindowProxy also excludes iframe and unsolicited popup requests.
 // Standalone links require an actual scoped CMP record; GCM defaults and updates
 // alone do not establish a saved decision or its coverage.
+// The data-festapp-consent-link marker is the explicit opt-in. A bare noopener
+// is not an opt-out: browsers imply it for target=_blank and CMS/SEO plugins
+// (e.g. Rank Math) inject it into every external link. Opting out means
+// removing the marker; noreferrer and referrer policies still keep native
+// navigation because the child needs the referrer to identify its source.
 export function installHostConsentLink(win, productOrigin, source) {
     const opened = new Map();
     const click = event => {
         try {
             const link = event.target.closest('a[data-festapp-consent-link]');
             if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||
-                link.target !== '_blank' || link.hasAttribute('download') ||  /(?:^|\s)(?:noopener|noreferrer)(?:\s|$)/i.test(link.rel) ||
+                link.target !== '_blank' || link.hasAttribute('download') ||  /(?:^|\s)noreferrer(?:\s|$)/i.test(link.rel) ||
                 // Any explicit referrer policy (on the link or the page) keeps native
                 // navigation: window.open() would not carry the link's own policy.
                 link.hasAttribute('referrerpolicy') ||

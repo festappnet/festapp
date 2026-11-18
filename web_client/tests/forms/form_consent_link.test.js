@@ -65,7 +65,18 @@ test('global source failure remains configured and retired callbacks are inert',
  assert.equal(r.read(scope).analytics,true);r.connect({read:()=>({processingRevision:'rev',analytics:true,marketing:true}),subscribe(){throw Error('broken')}});
  dispose();old();assert.equal(r.configured,true);assert.equal(r.read(scope),null);
 });
-for(const attrs of ['rel="noopener"','rel="noreferrer"','referrerpolicy="no-referrer"','target="_self"','href="https://evil.example/form/test"'])test('host preserves native navigation '+attrs,()=>{
+for(const rel of ['noopener','NoOpener nofollow','nofollow noopener external'])test('host bridges marked links despite injected rel '+rel,()=>{
+ const f=hostFixture();try{
+ const link=f.win.document.querySelector('a');let opened=null;f.win.open=(...args)=>{opened=args;return f.child};
+ // SEO plugins rewrite rel after the helper is installed; the click reads the live DOM.
+ link.setAttribute('rel',rel);
+ let prevented=false;f.win.document.addEventListener('click',e=>{prevented=e.defaultPrevented});f.click();
+ assert.equal(opened?.[0],'https://tickets.example/form/test');assert.match(opened[1],/^festapp-consent-link-[a-f0-9-]{36}$/);assert.equal(prevented,true);
+ assert.equal(link.getAttribute('rel'),rel,'rel is left untouched');
+ f.reply();assert.equal(f.replies.at(-1).data.type,'response');assert.equal(f.replies.at(-1).data.choice.analytics,true);
+ }finally{f.close()}
+});
+for(const attrs of ['rel="noopener noreferrer"','rel="NoReferrer"','rel="noreferrer"','referrerpolicy="no-referrer"','target="_self"','href="https://evil.example/form/test"'])test('host preserves native navigation '+attrs,()=>{
  const f=hostFixture();try{let opened=false;f.win.open=()=>{opened=true;return f.child};const [key,value]=attrs.split('=');f.win.document.querySelector('a').setAttribute(key,value.slice(1,-1));f.win.document.addEventListener('click',e=>e.preventDefault());f.click();assert.equal(opened,false)}finally{f.close()}
 });
 for(const options of [{legacy:true},{referrer:'https://evil.example'},{policy:{...policy,measurement_consent_bridge:false}}])test('unapproved links use ordinary local consent '+JSON.stringify(options),()=>{
@@ -106,4 +117,20 @@ test('a terminal end from an unloading website revokes even without the peer sou
  const g=childFixture();try{g.reply();g.reply({sequence:2,choice:{analytics:true,marketing:true}},null);assert.equal(g.accepted.length,1,'a grant still needs the exact peer');
  g.reply({type:'end',sequence:3,nonce:'wrong'},null);assert.equal(g.revoked,0,'end still needs the nonce');
  }finally{g.close()}
+});
+
+test('managed linked consent needs its live binding, independently of runtime host approval',()=>{
+ const binding={id:'11111111-1111-1111-1111-111111111111',version:1,websiteOrigin:'https://host.example',effective:true};
+ const managed={...policy,approved_hosts:[],eligible:false,organization_allowed:false,runtime_supported:false,
+  consent_revision:'a'.repeat(32),website_consent_bindings:[binding]};
+ const f=childFixture({policy:managed});try{
+  assert.equal(f.sent.length,1,'no runtime/domain review needed');
+  f.reply({scope:f.sent[0].scope});assert.equal(f.accepted.length,1);
+  f.reply({sequence:2,scope:{...f.sent[0].scope,binding:{id:binding.id,version:2}}});
+  assert.equal(f.accepted.length,1,'stale/wrong binding cannot grant');
+ }finally{f.close()}
+ for(const record of [{...binding,effective:false},{...binding,websiteOrigin:'https://foreign.example'}]) {
+  const denied=childFixture({policy:{...managed,website_consent_bindings:[record]}});
+  try{assert.equal(denied.sent.length,0,'only effective exact-origin binding admits link')}finally{denied.close()}
+ }
 });

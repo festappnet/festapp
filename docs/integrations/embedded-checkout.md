@@ -294,7 +294,7 @@ FestappEmbed.setMeasurementConsent(formular, {analytics: true, marketing: false}
 Pro průběžné čtení uložené volby slouží `connectKlaro(formular, manager)` nebo
 `connectMeasurementConsent(formular, zdroj)`. Explicitní adaptér má vždy přednost
 před automatickým mostem a jeho odpojení automatický zdroj neobnoví.
-Automatický most vyžaduje zapnutí „Převzít souhlas z lišty schválených webů“ v nastavení
+Automatický most vyžaduje zapnutí „Převzít souhlas z cookie lišty webu“ v nastavení
 měření pořadatele (`measurement_consent_bridge`). Výchozí stav je vypnuto i pro
 existující pořadatele. Zapnutím pořadatel potvrzuje, že web a formulář provozuje
 jako stejný správce a lišta výslovně pokrývá formulář na vstupenky.online, účely,
@@ -342,7 +342,9 @@ Web s `embed.js` může předat uloženou volbu svého CMP do samostatného form
    href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
 ```
 
-Pořadatel zapne `measurement_consent_bridge` a platforma schválí origin webu.
+Pořadatel zapne `measurement_consent_bridge`, uloží přesný origin svého webu
+a potvrdí pokrytí v propojení cookie lišty. Toto propojení nevyžaduje schválení
+platformou. Oprávnění spouštět měření a povolené runtime originy zůstávají oddělené.
 Samotný atribut odkazu ani stav Google Consent Mode nestačí. Správce webu jednou
 nastaví standardní adaptér Complianzu na skriptu `embed.js`:
 
@@ -431,8 +433,11 @@ přesný kontrakt je v dokumentaci měření. Bez adaptéru se odkaz řídí mí
 Dosavadní GCM cesta vložených formulářů bez napojeného zdroje se nemění.
 
 Skript načtěte přímo z originu formuláře. Helper zachytí běžné kliknutí do nové
-karty a formulář hned zruší veřejný opener. Odkazy s noopener/noreferrer,
-referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Bez
+karty a formulář hned zruší veřejný opener. Odkazy s noreferrer,
+referrerpolicy, stahováním nebo modifikátory zachovají nativní chování. Samotné
+noopener převzetí nevypíná: prohlížeče ho u nové karty předpokládají a CMS či SEO
+pluginy (např. Rank Math) ho přidávají ke všem externím odkazům. Pro vypnutí
+odeberte z odkazu atribut data-festapp-consent-link. Bez
 referreru, propojení oken nebo při omezení COOP se zobrazí běžná místní lišta.
 Povoleny jsou HTTPS originy; HTTP loopback pouze při lokálním vývoji.
 
@@ -443,10 +448,17 @@ ukončí převzetí a obnoví místní lištu. Žádné převzaté souhlasy se n
 cookies. Obnovená nebo další karta vyžaduje nové předání. Vlastní volba uložená
 ve formuláři má přednost a zůstává v cookie na 180 dní.
 
-Po převzetí je dostupné plovoucí tlačítko nastavení. Uložení odpojí vzdálený zdroj;
+Po převzetí v nové samostatné záložce je dostupné plovoucí tlačítko nastavení.
+Uložení odpojí vzdálený zdroj;
 Escape zavře neuložené nastavení. Obnovení vazby nepřepíše rozpracovanou volbu.
 Klaro místní volby mezi již otevřenými kartami nepřenáší průběžně. Kliknutí helperu
 může potlačit GTM Just Links trigger s validací; nákup měřte událostmi formuláře.
+
+Ve vloženém formuláři se plovoucí tlačítko nastavení nikdy nezobrazuje, bez ohledu
+na zdroj souhlasu nebo dříve uloženou volbu. Nevytváří se ani místní dialog
+Klaro a nečte se volba uložená pro samostatný formulář. Souhlas, jeho obnovování
+a odvolání spravuje stávající most hostitelského webu. Neznámý nebo odpojený
+zdroj neudělí souhlas s volitelnými účely a neblokuje vyplnění formuláře.
 
 Přesný kontrakt zdroje a protokolu je v
 [dokumentaci měření](form-datalayer.md#live-consent-transfer-to-a-new-tab).
@@ -480,3 +492,30 @@ svými omezeními: `policyId`, `cbid`, `revision`, `consentValidFrom` i
 Nové potvrzení verzovanou konfiguraci nahradí; starý export pak není platný.
 Aktualizace CMS doplňků není potřeba, ale SQL a hostovaný helper musí být nasazeny
 společně. Starší helper nový export bez ruční revize odmítne a ponechá místní lištu.
+
+
+### Samoobslužné propojení cookie lišty
+
+V části Moje weby pořadatel uloží přesný HTTPS origin a v propojení vybere CMP.
+Po potvrzení pokrytí aktuálních zásad může ihned exportovat konfiguraci do CMS.
+Přenos nevyžaduje ruční schválení domény, zapnuté měření ani připravený runtime.
+Samotná uložená adresa nedokazuje vlastnictví a nepředstavuje souhlas návštěvníka;
+platný zdroj musí běžet na daném webu a dodat aktuální uloženou volbu CMP.
+Kontroly peeru, originu, verze propojení, revize zásad a vypršení spojení zůstávají.
+
+Iframe může před zprovozněním runtime vyměnit manifest označený `consent_only`.
+Takový manifest se přijímá pouze pro přenos souhlasu. Hostitel i klient jej odmítají
+pro aktivaci měření a analytické události. `approved_hosts` nadále řídí spuštění
+měřicího transportu a starší nespravované adaptéry. Přidání webu nemění runtime
+allowlist ani oprávnění platformy a po zprovoznění měření neposílá další žádost.
+
+
+### Automatické měření na uložených webech
+
+Po prvním povolení měření pořadatele a zprovoznění jeho runtime se automaticky
+povolí každý přesný HTTPS web uložený správcem pořadatele. Uložením správce
+potvrzuje, že uvedené weby provozuje; nejde o souhlas návštěvníka. Nadále platí
+přepínače organizace, pořadatele a formuláře, informace o soukromí, runtime
+a kontroly souhlasu. Další žádost o schválení domény se neposílá.
+Odebrání uloženého webu při obnově politiky odvolá jeho samoobslužné povolení.
+Výslovně nastavené aplikační domény platformy zůstávají samostatně spravované.

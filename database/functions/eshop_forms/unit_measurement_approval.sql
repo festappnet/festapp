@@ -21,7 +21,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   SELECT u.id,u.organization,coalesce(p.enabled,false) allowed,
    public.form_measurement_runtime_supported_internal(r.runtime_profile,r.runtime_origin,r.parent_origins)
     AND NOT public.is_demo_unit(u.id) supported,q.requested_at,
-   coalesce(to_jsonb(r.parent_origins),'[]'::jsonb) approved_origins,
+   to_jsonb(public.unit_measurement_parent_origins_internal(u.id)) approved_origins,
    coalesce(u.data->'measurement_websites','[]'::jsonb) saved_origins,
    coalesce(q.requested_origins,'[]'::jsonb) requested_origins,
    EXISTS(SELECT FROM public.email_messages m
@@ -38,17 +38,13 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   LEFT JOIN analytics.organization_policy p ON p.organization=u.organization
   LEFT JOIN analytics.unit_runtime r ON r.unit=u.id
   LEFT JOIN analytics.unit_measurement_request q ON q.unit=u.id WHERE u.id=p_unit
- ), pending AS (
-  SELECT *,coalesce((SELECT jsonb_agg(value) FROM jsonb_array_elements(saved_origins)
-   WHERE NOT (approved_origins @> jsonb_build_array(value))),'[]'::jsonb) pending_origins FROM status
  ) SELECT jsonb_build_object('approved',allowed AND supported,'organization_allowed',allowed,
   'runtime_supported',supported,'requested_at',requested_at,'approved_origins',approved_origins,
   'saved_origins',saved_origins,'requested_origins',requested_origins,
   'request_state',CASE WHEN requested_at IS NULL THEN 'not_requested'
     WHEN active_request THEN 'requested' ELSE 'retry_available' END,
   'can_request',NOT public.is_demo_unit(id) AND
-   (NOT (allowed AND supported) OR pending_origins<>'[]'::jsonb) AND
-   (NOT active_request OR NOT (requested_origins @> pending_origins))) FROM pending;
+   NOT (allowed AND supported) AND NOT active_request) FROM status;
 $$;
 REVOKE ALL ON FUNCTION public.unit_measurement_approval_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

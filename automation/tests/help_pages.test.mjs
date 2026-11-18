@@ -210,3 +210,50 @@ test('phone scanner guides use only mobile webclient captures in both locales',(
   }
  }
 });
+
+test('Flutter projects the help language published by the tenant', t => {
+ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-flutter-help-'));
+ t.after(() => fs.rmSync(temporary, {recursive: true, force: true}));
+ const apply = fs.readFileSync(path.join(root, 'automation/apply_config.sh'), 'utf8');
+ const projection = apply.match(/<<'FLUTTER_LANGUAGES'\n([\s\S]*?)\nFLUTTER_LANGUAGES/)[1];
+ const source = fs.readFileSync(path.join(root, 'lib/app_config.dart'), 'utf8');
+ const flutterPath = path.join(temporary, 'app_config.dart');
+ const configPath = path.join(temporary, 'project.conf');
+ for (const [languages, enabled, profile, expected] of [
+  ['cs,en', 'true', 'vstupenky-cs', 'cs'],
+  ['en,de', 'true', 'festapp-en', 'en'],
+  ['de,en', 'true', 'other-tenant', ''],
+  ['cs,en', 'false', 'vstupenky-cs', ''],
+ ]) {
+  fs.writeFileSync(configPath, [
+   `WEB_SUPPORTED_LANGUAGES=${languages}`,
+   `WEB_ORGANIZER_LANDING_ENABLED=${enabled}`,
+   `WEB_ORGANIZER_CONTENT_PROFILE=${profile}`,
+  ].join('\n'));
+  const rendered = spawnSync(process.execPath, [
+   path.join(root, 'automation/release/render_help_pages.mjs'),
+   '--config', configPath, '--published-language',
+  ], {encoding: 'utf8'});
+  assert.equal(rendered.status, 0, rendered.stderr);
+  assert.equal(rendered.stdout, expected);
+  fs.writeFileSync(flutterPath, source.replace(
+   /static const bool organizerLandingEnabled = (true|false);/,
+   `static const bool organizerLandingEnabled = ${enabled};`,
+  ));
+  const run = spawnSync('python3', ['-', flutterPath, languages, enabled, rendered.stdout], {
+   input: projection,
+   encoding: 'utf8',
+   env: {
+    ...process.env,
+    PYTHONPATH: path.join(root, 'automation/lib'),
+    FESTAPP_WRITE_HELPER: path.join(root, 'automation/lib/write_if_changed.cjs'),
+   },
+  });
+  assert.equal(run.status, 0, run.stderr);
+  const projected = fs.readFileSync(flutterPath, 'utf8');
+  assert.deepEqual(
+   [...projected.matchAll(/organizerHelpLanguage = "(.*?)";/g)].map(match => match[1]),
+   [expected],
+  );
+ }
+});

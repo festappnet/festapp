@@ -23,6 +23,7 @@ import uuid
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'automation/ci'))
 from telemetry import phase as timed_phase, emit
+from wordpress_runtime import WordPress
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--base-port',type=int,default=int(os.environ.get('FESTAPP_CMS_FIXTURE_BASE_PORT','61000')))
 parser.add_argument('--keep',action='store_true',help='Keep only this owned environment after verification for diagnosis')
@@ -44,7 +45,7 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
@@ -68,27 +69,8 @@ def phase(message):print(message,flush=True)
 def sql(query):
  return run(['psql',f'postgresql://supabase_admin:postgres@127.0.0.1:{base+22}/postgres','-X','-qAt','-v','ON_ERROR_STOP=1','-c',query],capture=True).strip()
 
-def cleanup_partial_wordpress():
- # wp-env destroy may refuse an interrupted startup. Compose labels bind any
- # fallback strictly to this copied environment, never another running project.
- raw=run(['docker','ps','-a','--format','{{.ID}}|{{.Label "com.docker.compose.project.working_dir"}}|{{.Label "com.docker.compose.project"}}'],capture=True)
- records=[line.split('|') for line in raw.splitlines() if len(line.split('|'))==3]
- boundary=(fixture/'integrations/wordpress/.private/wp-env').resolve()
- owned={project_name for _,working,project_name in records if working and Path(working).resolve().is_relative_to(boundary) and re.fullmatch(r'[a-zA-Z0-9_-]+',project_name)}
- for project_name in owned:
-  group=[row for row in records if row[2]==project_name]
-  if any(not working or not Path(working).resolve().is_relative_to(boundary) for _,working,_ in group):
-   raise RuntimeError('Compose identity collision; foreign resources preserved')
-  working=Path(group[0][1]);compose=working/'docker-compose.yml'
-  if compose.is_file():
-   run(['docker','compose','--project-name',project_name,'--project-directory',working,'-f',compose,'down','--volumes','--remove-orphans'])
-  else:
-   run(['docker','rm','-fv',*[row[0] for row in group]])
-   for kind in ['volume','network']:
-    names=run(['docker',kind,'ls','--filter','label=com.docker.compose.project='+project_name,'--format','{{.Name}}'],capture=True).splitlines()
-    if names:run(['docker',kind,'rm',*names])
-
 wp=fixture/'integrations/wordpress';joomla=fixture/'integrations/joomla'
+wordpress=None
 try:
  phase('Preparing owned CMS package copies and frozen dependencies')
  for cms in ['wordpress','joomla']:
@@ -117,25 +99,24 @@ try:
  config['config'].update({'WP_HOME':f'https://127.0.0.1:{base+31}','WP_SITEURL':f'https://127.0.0.1:{base+31}'})
  config['env']['tests']['config']={'WP_HOME':f'https://127.0.0.1:{base+36}','WP_SITEURL':f'https://127.0.0.1:{base+36}'}
  (wp/'.wp-env.json').write_text(json.dumps(config,indent=2)+'\n')
- # One verified frozen installation in the source package, reused by the
- # copied environment's CLI. No node_modules copy and no shared CMS state.
- run(['python3','automation/ci/run.py','install','integrations/wordpress'],label='dependencies')
- env['FESTAPP_WP_ENV_CLI']=str(ROOT/'integrations/wordpress/node_modules/.bin/wp-env')
+ wordpress=WordPress(wp,project,run)
  run(['python3','scripts/package.py'],wp);run(['python3','scripts/package.py'],joomla)
  run(['node','scripts/setup-backend.mjs'],wp)
  phase('Starting independent owned services and browser dependencies concurrently')
  jprefix=project+'-joomla'
  def prepare_backend():
   started['backend']=True
-  run(['supabase','start','--workdir','.private/backend','--exclude','realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp,label='backend.start')
+  run(['supabase','start','--workdir','.private/backend','--exclude','realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp,label='backend.start')
   run(['bash','scripts/bootstrap-backend.sh'],wp,label='backend.bootstrap')
   sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
  def prepare_wordpress():
-  started['wordpress']=True;run(['node','scripts/environment.mjs','start'],wp,label='wordpress.start')
+  started['wordpress']=True
+  with timed_phase('cms.wordpress.start'):wordpress.start()
   products=json.loads((wp/'products.json').read_text())
   for cli in ['cli','tests-cli']:
-   for p in products:run(['node','scripts/environment.mjs','run',cli,'wp','plugin','install',f'/var/www/html/wp-content/vo-artifacts/{p["slug"]}-{p["version"]}.zip','--activate','--force'],wp)
-   run(['node','scripts/environment.mjs','run',cli,'wp','eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-installed.php'],wp)
+   archives=[f'/var/www/html/wp-content/vo-artifacts/{p["slug"]}-{p["version"]}.zip' for p in products]
+   wordpress.cli(cli,'plugin','install',*archives,'--activate','--force')
+   wordpress.cli(cli,'eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-installed.php')
  def prepare_joomla():
   started['joomla']=True;run(['python3','scripts/environment.py','start'],joomla,label='joomla.start')
   for major in [5,6]:
@@ -153,7 +134,7 @@ try:
   cache_before=cache_bytes();browser_started=time.monotonic()
   run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps','chromium','firefox','webkit'],label='browsers.install')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
- with ThreadPoolExecutor(max_workers=3) as workers:
+ with ThreadPoolExecutor(max_workers=4) as workers:
   pending=[(name,workers.submit(prepare)) for name,prepare in [('backend',prepare_backend),('wordpress',prepare_wordpress),('joomla',prepare_joomla),('browsers',prepare_browsers)]]
   failures=[]
   for name,future in pending:
@@ -180,7 +161,7 @@ try:
   state_file=fixture/'fixture-state.json';state=json.loads(state_file.read_text());state['coop']=coop;state_file.write_text(json.dumps(state))
   phase(f'Verifying {platform} {variant or "generated"} with {engine}')
   prepared=json.loads(run(['node','web_client/scripts/cms_consent_fixture_prepare.mjs',fixture,str(base),str(offset),platform],capture=True))
-  if platform=='wordpress':run(['node','scripts/environment.mjs','run',variant,'wp','eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-journey.php'],wp)
+  if platform=='wordpress':wordpress.cli(variant,'eval-file','/var/www/html/wp-content/plugins/vstupenky-online-tests/consent-journey.php')
   elif platform=='joomla':
    container=jprefix+'-'+variant
    run(['docker','exec',container,'php','/tests/consent-journey.php']);run(['docker','exec',container,'php','/tests/clear-cache.php'])
@@ -206,12 +187,14 @@ finally:
     os.killpg(p.pid,signal.SIGTERM)
     try:p.wait(timeout=10)
     except subprocess.TimeoutExpired:os.killpg(p.pid,signal.SIGKILL);p.wait()
-  cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['node','scripts/environment.mjs','destroy','--force'],wp,'wordpress'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
+  cleanup=[(['python3','scripts/environment.py','stop'],joomla,'joomla'),(['supabase','stop','--workdir','.private/backend','--no-backup'],wp,'backend')]
+  cleanup_errors=[]
   with ThreadPoolExecutor(max_workers=3) as workers:
    pending=[(key,workers.submit(run,command,cwd,label='cleanup.'+key)) for command,cwd,key in cleanup if started[key]]
+   if started['wordpress']:pending.append(('wordpress',workers.submit(wordpress.stop)))
    for key,future in pending:
     try:future.result()
-    except Exception as error:print(f'Owned {key} cleanup failed: {error}',file=sys.stderr)
-  if started['wordpress']:
-   try:cleanup_partial_wordpress()
-   except Exception as error:print(f'Owned partial WordPress cleanup failed: {error}',file=sys.stderr)
+    except Exception as error:
+     cleanup_errors.append(key)
+     print(f'Owned {key} cleanup failed: {error}',file=sys.stderr)
+  if cleanup_errors and sys.exc_info()[0] is None:raise RuntimeError('Owned CMS cleanup failed: '+','.join(cleanup_errors))
