@@ -19,6 +19,23 @@ abstract interface class AdministrationAccess {
   Future<bool> load(String link, {required bool reservations});
 }
 
+class OccasionAdministrationScope extends InheritedWidget {
+  final bool Function() canShowTabs;
+
+  const OccasionAdministrationScope({
+    required this.canShowTabs,
+    required super.child,
+    super.key,
+  });
+
+  static OccasionAdministrationScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<OccasionAdministrationScope>();
+
+  @override
+  bool updateShouldNotify(OccasionAdministrationScope oldWidget) =>
+      canShowTabs != oldWidget.canShowTabs;
+}
+
 class RightsAdministrationAccess implements AdministrationAccess {
   const RightsAdministrationAccess();
   @override
@@ -289,25 +306,39 @@ class _OccasionAdministrationBoundaryState
           : _denied
           ? failure
           : loading;
-    final waiting = _loading || widget.access.loadedLink != _link;
-    // Previously authorized retained editors stay mounted behind the denial
-    // screen. Initial denial never creates them; restored access keeps the same
-    // native nested route stack and unsaved draft.
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Offstage(
-          offstage: _denied || waiting,
-          child: TickerMode(
-            enabled: !_denied && !waiting,
-            child: KeyedSubtree(
-              key: ValueKey(_link),
-              child: widget.builder(context),
-            ),
-          ),
+    bool canShowTabs() =>
+        widget.access.loadedLink == _link &&
+        widget.access.canAccess(reservations: widget.reservations);
+    // Keep previously authorized editors mounted while hiding them immediately
+    // when access is invalidated, including during a context refresh.
+    return ListenableBuilder(
+      listenable: widget.access.changes,
+      child: KeyedSubtree(
+        key: ValueKey(_link),
+        child: OccasionAdministrationScope(
+          canShowTabs: canShowTabs,
+          child: widget.builder(context),
         ),
-        if (waiting) loading else if (_denied) failure,
-      ],
+      ),
+      builder: (context, child) {
+        final waiting = _loading || widget.access.loadedLink != _link;
+        final visible = !_denied && !waiting && canShowTabs();
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            Offstage(
+              offstage: !visible,
+              child: TickerMode(enabled: visible, child: child!),
+            ),
+            if (waiting)
+              loading
+            else if (_denied)
+              failure
+            else if (!visible)
+              loading,
+          ],
+        );
+      },
     );
   }
 }

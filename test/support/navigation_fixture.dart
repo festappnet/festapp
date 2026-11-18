@@ -39,6 +39,7 @@ class FixtureRouter extends RootStackRouter {
   WidgetBuilder? loadingBuilder;
   bool showHeader = false;
   bool extra = true;
+  bool tabsRequireAccess = false;
   bool dirty = false;
   bool discard = false;
   int prompts = 0;
@@ -97,17 +98,26 @@ class FixtureRouter extends RootStackRouter {
                                       body: child)
                                   : null,
                               tabs: [
-                                const RoutedTabDefinition(
-                                    slug: 'orders',
-                                    route: OrdersTabsRoute(),
-                                    label: 'Orders',
-                                    icon: Icons.shopping_cart),
-                                const RoutedTabDefinition(
-                                    slug: 'report',
-                                    route: ReportSectionRoute(),
-                                    label: 'Report',
-                                    icon: Icons.bar_chart),
-                                if (extra)
+                                if (tabsRequireAccess)
+                                  const RoutedTabDefinition(
+                                      slug: 'email-templates',
+                                      route: EmailTemplatesSectionRoute(),
+                                      label: 'Email Templates',
+                                      icon: Icons.email)
+                                else ...[
+                                  const RoutedTabDefinition(
+                                      slug: 'orders',
+                                      route: OrdersTabsRoute(),
+                                      label: 'Orders',
+                                      icon: Icons.shopping_cart),
+                                  const RoutedTabDefinition(
+                                      slug: 'report',
+                                      route: ReportSectionRoute(),
+                                      label: 'Report',
+                                      icon: Icons.bar_chart),
+                                ],
+                                if (extra &&
+                                    (!tabsRequireAccess || access.allowed))
                                   const RoutedTabDefinition(
                                       slug: 'forms',
                                       route: FormsNavigationRoute(),
@@ -115,6 +125,8 @@ class FixtureRouter extends RootStackRouter {
                                       icon: Icons.article),
                               ])),
                   children: [
+                    page(EmailTemplatesSectionRoute.name, 'email-templates',
+                        (_) => const Text('EMAIL TEMPLATES CONTENT')),
                     RedirectRoute(path: '', redirectTo: 'orders'),
                     page(
                         OrdersTabsRoute.name,
