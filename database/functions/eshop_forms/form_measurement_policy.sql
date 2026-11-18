@@ -93,7 +93,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  ) SELECT jsonb_build_object('requested_enabled',requested,'organization_allowed',allowed,
   'organization_enabled',organization_enabled,'unit_enabled',unit_enabled,
   'runtime_supported',supported,'eligible',requested AND allowed AND organization_enabled AND unit_enabled AND destination AND supported AND privacy_policy_valid,
-  'meta_purchase_enabled',EXISTS(SELECT FROM analytics.meta_purchase_forms m JOIN analytics.meta_purchase_connectors c ON c.unit=m.unit WHERE m.form=p_form AND c.enabled),
+  'meta_purchase_enabled',public.form_meta_purchase_unit_internal(p_form) IS NOT NULL,
   'purchase_timing',public.form_purchase_timing_internal(p_form),'policy_revision',revision,'consent_required',true,'enhanced_conversions_unavailable',false,
   'blocked_reasons',to_jsonb(array_remove(ARRAY[
    CASE WHEN NOT requested THEN 'disabled' END,

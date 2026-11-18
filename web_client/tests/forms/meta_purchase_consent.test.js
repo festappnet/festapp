@@ -20,24 +20,34 @@ test('snapshot requires every saved advertising purpose and a live transport',()
         assert.equal(purchaseConsentSnapshot(value,notice,now),null);
     }
 });
-test('live denial, disconnect and changed binding revoke through buyer capability; closure needs no callback',async()=>{
-    for (const change of [()=>false,()=>null,value=>{value.purchaseConsent.binding.version++;return value;},value=>{value.purchaseConsent.consentRevision='c'.repeat(32);return value;}]) {
-        const calls=[];
-        const orders=new PurchaseConsentOrders({clock:()=>now,revoke:async scope=>{calls.push(scope);return true;}});
-        orders.observe(choice());
-        const scope={token:'buyer-capability',orderId:42};
-        orders.track(scope,purchaseConsentSnapshot(choice(),notice,now),notice);
-        await new Promise(resolve=>setImmediate(resolve));
-        assert.equal(calls.length,0,'snapshot survives without heartbeat after tab closure');
-        orders.observe(change(choice()));
-        await new Promise(resolve=>setImmediate(resolve));
-        assert.deepEqual(calls,[scope]);
-    }
+const denyAdvertising = () => {
+    const denied=choice();
+    denied.purchaseConsent.ad_storage=false;
+    denied.purchaseConsent.timestamp=new Date(now-1).toISOString();
+    return denied;
+};
+
+test('only a newer saved denial in the captured consent scope withdraws checkout consent',async()=>{
+    const calls=[];
+    const orders=new PurchaseConsentOrders({clock:()=>now,revoke:async scope=>{calls.push(scope);return true;}});
+    orders.observe(choice());
+    const scope={token:'buyer-capability',orderId:42};
+    orders.track(scope,purchaseConsentSnapshot(choice(),notice,now),notice);
+    const unrelated=denyAdvertising(),older=denyAdvertising();
+    unrelated.purchaseConsent.binding.version++;
+    older.purchaseConsent.timestamp=new Date(now-2000).toISOString();
+    for (const value of [false,null,unrelated,older]) orders.observe(value);
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.deepEqual(calls,[]);
+    orders.observe(denyAdvertising());
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.deepEqual(calls,[scope]);
 });
+
 test('denial during submit is retained until buyer capability arrives, and failed withdrawal retries',async()=>{
     let calls=0;
     const orders=new PurchaseConsentOrders({clock:()=>now,revoke:async()=>++calls>1});
-    orders.observe(null);
+    orders.observe(denyAdvertising());
     orders.track({token:'capability',orderId:7},purchaseConsentSnapshot(choice(),notice,now),notice);
     await new Promise(resolve=>setImmediate(resolve));
     assert.equal(calls,1);
@@ -54,7 +64,7 @@ test('source snapshot never upgrades individually denied advertising purposes',a
         const raw={marketing:true,consentRevision:scope.consentRevision,purchaseConsent:{source:'cookiebot',timestamp:new Date(now-1000).toISOString(),ad_storage:true,ad_user_data:true,ad_personalization:true}};
         (location === 'raw' ? raw : raw.purchaseConsent)[key]=denied;
         const value=readConsentSource({read:()=>raw},scope);
-        assert.equal(value.purchaseConsent[key],false);
+        assert.equal(value.purchaseConsent[key],denied===false ? false : undefined);
         assert.equal(purchaseConsentSnapshot(value,notice,now),null);
     }
 });
@@ -84,8 +94,15 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
         const {measurementManifest}=await import('../../src/components/forms/form_measurement_contract.js');
         record.manifest=measurementManifest(policy,policy.form_link);record.lease.generation=1;
         record.pageContext={page_type:'confirmation',language:'en'};
+        const delivery={type:'analytics',measurement:{protocol:3,manifest:record.manifest,generation:1,leaseId:record.lease.id}};
+        const meta={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000};
+        saved=choice();
+        saved.purchaseConsent.ad_personalization=false;
+        host.receive(frame,record,{...delivery,payload:meta});
+        assert.equal(win.dataLayer,undefined,'a stale iframe choice cannot bypass a current denial at the host');
+        saved=choice();
         for (const event of ['purchase','meta_purchase']) {
-            const payload={...purchase,event,meta_purchase_allowed:true,user_data:{email:'buyer@example.test'}};
+            const payload={...purchase,event,meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000,user_data:{email:'buyer@example.test'}};
             host.receive(frame,record,{type:'analytics',measurement:{protocol:3,manifest:record.manifest,generation:1,leaseId:record.lease.id},payload});
             assert.equal(win.dataLayer.at(-2).event,event);
             assert.deepEqual(JSON.parse(JSON.stringify(win.dataLayer.at(-1))),{form_embedded:false,user_data:null,ecommerce:null,event_id:null,meta_purchase_allowed:null,page_type:null,user_type:null,language:null});
@@ -106,18 +123,16 @@ test('client snapshot also excludes unknown fields and missing notice cannot bre
 });
 
 test('denial then regrant before submit response remains withdrawn for the original snapshot',async()=>{
- for(const change of [()=>null,()=>false,value=>{value.purchaseConsent.binding.version++;return value;},value=>{value.purchaseConsent.consentRevision='c'.repeat(32);return value;}]) {
-  const calls=[],orders=new PurchaseConsentOrders({clock:()=>now,revoke:async scope=>{calls.push(scope);return true;}});
-  orders.observe(choice());
-  const attempt=orders.capture(purchaseConsentSnapshot(choice(),notice,now),notice);
-  orders.observe(change(choice()));
-  orders.observe(choice());
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(calls.length,0,'no withdrawal without buyer capability');
-  orders.authorize(attempt,{token:'original-buyer-capability',orderId:91});
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.deepEqual(calls,[{token:'original-buyer-capability',orderId:91}]);
- }
+ const calls=[],orders=new PurchaseConsentOrders({clock:()=>now,revoke:async scope=>{calls.push(scope);return true;}});
+ orders.observe(choice());
+ const attempt=orders.capture(purchaseConsentSnapshot(choice(),notice,now),notice);
+ orders.observe(denyAdvertising());
+ orders.observe(choice());
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,0,'no withdrawal without buyer capability');
+ orders.authorize(attempt,{token:'original-buyer-capability',orderId:91});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(calls,[{token:'original-buyer-capability',orderId:91}]);
 });
 test('generic source cannot fill missing individual ad purposes from marketing',async()=>{
  const {readConsentSource}=await import('../../src/components/forms/measurement_consent_source.js');
@@ -125,12 +140,14 @@ test('generic source cannot fill missing individual ad purposes from marketing',
  for (const missing of ['ad_storage','ad_user_data','ad_personalization']) {
   const raw={...choice(),consentRevision:scope.consentRevision};delete raw.purchaseConsent[missing];
   const value=readConsentSource({read:()=>raw},scope);
-  assert.equal(value.purchaseConsent[missing],false);
+  assert.equal(value.purchaseConsent[missing],undefined);
   assert.equal(purchaseConsentSnapshot(value,notice,now),null);
  }
- const raw={marketing:true,consentRevision:scope.consentRevision,purchaseConsent:{source:'cookiebot',timestamp:new Date(now-1000).toISOString()}};
- const value=readConsentSource({read:()=>raw},scope);
- for (const key of ['ad_storage','ad_user_data','ad_personalization']) assert.equal(value.purchaseConsent[key],false);
+ for (const marketing of [true,false]) {
+  const raw={marketing,consentRevision:scope.consentRevision,purchaseConsent:{source:'cookiebot',timestamp:new Date(now-1000).toISOString()}};
+  const value=readConsentSource({read:()=>raw},scope);
+  for (const key of ['ad_storage','ad_user_data','ad_personalization']) assert.equal(value.purchaseConsent[key],undefined);
+ }
 });
 
 test('embedded delayed-payment overview uses current host consent and handshake without standalone CMP',async()=>{

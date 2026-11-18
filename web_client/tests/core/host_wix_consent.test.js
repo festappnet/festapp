@@ -34,7 +34,7 @@ for(const [name,changes] of Object.entries({
 })) test('native Wix '+name+' fails closed',t=>{const f=fixture(t,changes);assert.equal(f.read(),null);});
 test('Wix requires third-party permission for marketing and clamps TCF',t=>{
  const f=fixture(t);f.record.policy.dataToThirdParty=false;assert.deepEqual(f.read(),{analytics:true,marketing:false});
- f.record.policy.dataToThirdParty=true;f.win.__tcfapi=()=>{};assert.deepEqual(f.read(),{analytics:true,marketing:false});
+ f.record.policy.dataToThirdParty=true;f.win.__tcfapi=()=>{};assert.deepEqual(f.read(),{analytics:true,marketing:false});assert.equal(f.source.read(scope).purchaseConsent,null);
 });
 test('reset, deletion and API loss are reread before every grant, with focus and event notifications',async t=>{
  const f=fixture(t);let notices=0;const stop=f.source.subscribe(()=>notices++);t.after(stop);

@@ -20,6 +20,8 @@ CREATE TABLE analytics.meta_purchase_deliveries (
  consent_revision text NOT NULL,
  consent_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  consent_snapshot jsonb,
+ consent_scope text,
+ consent_decided_at timestamptz,
  email_hash text,
  client_agent text,
  source_url text,

@@ -126,7 +126,7 @@ for(const tcf of ['api','IAB','TCF','query'])test('TCF '+tcf+' never grants blan
   if(tcf==='api')f.win.__tcfapi=()=>{};
   else if(tcf==='query')f.script.src+='?data-framework=TCF';
   else f.script.setAttribute('data-framework',tcf);
-  assert.deepEqual(f.read(),{analytics:true,marketing:false});
+  assert.deepEqual(f.read(),{analytics:true,marketing:false});assert.equal(f.source.read(scope).purchaseConsent,null);
  }finally{f.close()}
 });
 test('event bursts coalesce and unchanged events publish no messages',async()=>{

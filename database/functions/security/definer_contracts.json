@@ -3383,6 +3383,10 @@
       "signature": "public.revoke_meta_purchase_consent(text,bigint)",
       "source": "database/functions/eshop_forms/meta_purchase_consent.sql"
     },
+    "d4e5410020b3a0871b24cfe4abbbf70749d83b9970aa3d1af75f9eda4bf37435": {
+      "signature": "public.revoke_meta_purchase_consent(text,bigint,jsonb)",
+      "source": "database/functions/eshop_forms/meta_purchase_consent.sql"
+    },
     "66790632828c8be8f771e1265a5f9a2574a94ad77cfdd9b8dffce20f7051d47d": {
       "signature": "public.claim_meta_purchase_deliveries(integer)",
       "source": "database/functions/eshop_forms/meta_purchase_worker.sql"

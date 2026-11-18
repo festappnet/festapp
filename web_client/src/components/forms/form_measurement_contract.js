@@ -101,7 +101,10 @@ export function analyticsPayload(input) {
     }
     const conversion=['purchase','meta_purchase'].includes(input.event);
     if(conversion && input.meta_purchase_allowed !== undefined && typeof input.meta_purchase_allowed !== 'boolean')return null;
-    if(input.event==='meta_purchase' && input.meta_purchase_allowed===false)return null;
+    const metaExpiry=input.meta_purchase_expires_at;
+    const hasMetaExpiry=Number.isSafeInteger(metaExpiry) && metaExpiry>0;
+    if(conversion && metaExpiry!==undefined && !hasMetaExpiry)return null;
+    if(input.event==='meta_purchase' && (input.meta_purchase_allowed!==true || !hasMetaExpiry))return null;
     const source = input.ecommerce;
     if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) ||
         !Array.isArray(source.items) || !source.items.length || source.items.length > 200) return null;
@@ -134,14 +137,23 @@ export function analyticsPayload(input) {
     }
     const result = {event: input.event, ecommerce};
     // Released payloads omitted event_id; normalize them at the wire boundary.
-    return ['purchase','meta_purchase'].includes(input.event) ? withUserData({...result, event_id: source.transaction_id, meta_purchase_allowed: input.meta_purchase_allowed ?? true}) : result;
+    return conversion ? withUserData({...result,event_id:source.transaction_id,meta_purchase_allowed:input.meta_purchase_allowed ?? true,
+        ...(hasMetaExpiry ? {meta_purchase_expires_at:metaExpiry} : {})}) : result;
+}
+
+// Keep general analytics deliverable after the Meta-only deduplication window.
+export function currentMetaPurchaseRouting(payload, now = Date.now()) {
+    if (payload.meta_purchase_expires_at === undefined || payload.meta_purchase_expires_at > now) return payload;
+    return payload.event === 'meta_purchase' ? null : {...payload,meta_purchase_allowed:false};
 }
 
 // The sole projection from the stable wire contract to the destination dataLayer.
 // Transport peers keep page_view on the wire, including across rolling upgrades.
 export function measurementDataLayerPayload(input, {embedded = false, pageContext = null} = {}) {
-    const payload = analyticsPayload(input);
-    if (!payload) return null;
+    const wire = analyticsPayload(input);
+    const routed = wire && currentMetaPurchaseRouting(wire);
+    if (!routed) return null;
+    const {meta_purchase_expires_at: _deadline, ...payload}=routed;
     // A shared host layer cannot infer an event's context from its last push:
     // another embed may have published in between. Rebuild only public fields.
     const page = payload.event

@@ -306,17 +306,16 @@ Delayed payments can emit a browser Purchase when the buyer opens or refreshes
 the authorized order overview. This uses the current visitor policy, CMP consent
 and isolated runtime. Capability tokens and overview URLs are never exported.
 An immutable `capi_required` flag also records whether CAPI was enabled at
-creation. Those cohorts can emit browser Purchase only after their CAPI delivery
-is confirmed `sent`, including if CAPI is subsequently disabled. This prevents
-an early Pixel event followed by a CAPI retry outside Meta's deduplication
-window. Non-CAPI paid cohorts need no server delivery, and enabling CAPI later
-cannot adopt them.
+creation. A waitlist offer has no CAPI consent capture and stays in the
+browser-only cohort, with the form's purchase timing. Enabling CAPI later cannot
+adopt existing browser-only orders.
 The general `purchase` event remains available for GA4 and Ads even when
 advertising consent is denied or CAPI fails. For the immutable CAPI cohort it
 carries `meta_purchase_allowed:false`, so the preset excludes it from Pixel.
 After successful CAPI delivery, a separate `meta_purchase` companion may fire
 Pixel Purchase with the same UUID. That companion is available only within 47
-hours of the paid fact; it never fires GA4 or Ads tags. Non-CAPI purchases can
+hours of the paid fact, with the deadline rechecked before the browser hands it
+to tags. It never fires GA4 or Ads tags. Non-CAPI purchases can
 fire Pixel from the general purchase event. A browser event requires a visit
 and is not guaranteed delivery. Configure other containers with the same routing
 rules; do not map every ecommerce event to every destination. The website preset
@@ -341,11 +340,12 @@ do not authorize CAPI. Ordinary browser events retain their existing behavior.
 The snapshot is stored privately with the order. The short renewable browser
 connection authorizes capture, not the lifetime of the order snapshot. Closing
 the visit normally does not withdraw durable consent. While the checkout stays
-open, observed refusal, source disconnection or a scope change withdraws pending
-delivery, including a refusal while submission is in flight. A returned buyer
-capability authorizes that withdrawal; an order ID alone does not. Customers can
-also withdraw through the order overview linked from their confirmation email.
-A request already in flight to Meta may complete.
+open, a newer saved refusal from the same consent scope withdraws pending
+delivery, including a refusal while submission is in flight. The order overview
+also checks the saved refusal against the scope captured for each order. A buyer
+capability authorizes withdrawal, including the manual action available from the
+confirmation email. Unknown, expired or disconnected choices cannot withdraw
+durable consent. A request already in flight to Meta may complete.
 
 The Edge worker claims only the original CAPI-enabled paid cohort after a full
 payment fact exists. Before sending, it rechecks the saved snapshot, live binding,
@@ -354,7 +354,8 @@ user agent, canonical source URL, amount and currency with the first settlement
 time and stable event ID. Retries keep that ID and time. No client IP, phone or
 Meta cookie IDs are stored for this pilot. Snapshot and matching data are erased
 on terminal outcomes and expire after 30 days. Operational receipts without those
-identifiers remain for 90 days.
+identifiers remain for 90 days, with the non-contact decision timestamp and a
+digest of its consent scope to check later refusals.
 
 For the first test run, deploy the migration, proof-only `process-meta-purchases`
 function and web client on the same canonical release. The migration leaves the

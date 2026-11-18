@@ -43,13 +43,17 @@ export function readConsentSource(source, scope) {
         if (!value.purchaseConsent) return choice;
         // CMP adapters explicitly project their archived purpose mapping. Generic
         // sources must supply each purpose; marketing alone never fills gaps.
-        const granted = key => choice.marketing &&
-            (!Object.hasOwn(value,key) || value[key] === true) &&
-            (value.purchaseConsent[key] === true || (!Object.hasOwn(value.purchaseConsent,key) && value[key] === true));
+        const purpose = key => {
+            const direct = value[key], saved = value.purchaseConsent[key];
+            if (direct === false || saved === false) return false;
+            if (!choice.marketing) return undefined;
+            const grants = [value, value.purchaseConsent].filter(record => Object.hasOwn(record,key));
+            return grants.length && grants.every(record => record[key] === true) ? true : undefined;
+        };
         return {...choice, purchaseConsent:{...value.purchaseConsent,
             consentRevision:value.consentRevision, binding:value.binding, websiteOrigin:scope.websiteOrigin,
-            ad_storage:granted('ad_storage'), ad_user_data:granted('ad_user_data'),
-            ad_personalization:granted('ad_personalization')}};
+            ad_storage:purpose('ad_storage'), ad_user_data:purpose('ad_user_data'),
+            ad_personalization:purpose('ad_personalization')}};
     } catch { return null; }
 }
 export function createConsentSourceRegistry() {

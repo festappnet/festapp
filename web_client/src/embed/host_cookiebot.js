@@ -72,9 +72,13 @@ export function createCookiebotSource(win, input) {
             // both agree, no reader may reuse the previous grant: the same
             // mismatch also means withdrawal in another tab or cookie removal.
             if (!persisted(win.document, id)) return null;
-            const marketing = consent.marketing && !script.tcf && typeof win.__tcfapi === 'undefined';
-            return {purchaseConsent:{source:'cookiebot', timestamp:new Date(utc).toISOString(), ad_storage:marketing, ad_user_data:marketing, ad_personalization:marketing}, consentRevision:config.consentRevision, analytics:consent.statistics,
-                marketing};
+            const unsupportedConsent = script.tcf || typeof win.__tcfapi !== 'undefined';
+            const marketing = !unsupportedConsent && consent.marketing;
+            const purchaseConsent = unsupportedConsent ? null : {
+                source:'cookiebot',timestamp:new Date(utc).toISOString(),
+                ad_storage:marketing,ad_user_data:marketing,ad_personalization:marketing,
+            };
+            return {purchaseConsent,consentRevision:config.consentRevision,analytics:consent.statistics,marketing};
         } catch { return null; }
     };
     const tick = () => {

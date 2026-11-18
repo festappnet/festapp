@@ -264,9 +264,45 @@ test('analytics granted and advertising denied preserves general purchase indepe
  assert.equal(f.sent.find(p=>p.event==='purchase').meta_purchase_allowed,false);
  assert.equal(f.transport.grant.consent.analytics,true);assert.equal(f.transport.grant.consent.marketing,false);
 });
+const advertisingChoice = () => ({analytics:true,marketing:true,purchaseConsent:{
+ source:'klaro',timestamp:new Date(Date.now()-1000).toISOString(),consentRevision:'a'.repeat(32),
+ ad_storage:true,ad_user_data:true,ad_personalization:true,
+}});
+
 test('general Purchase and Meta companion deduplicate by event plus shared UUID',async t=>{
- const f=fixture(t);await f.start();
- const general={...purchase,meta_purchase_allowed:false},meta={...purchase,event:'meta_purchase',meta_purchase_allowed:true};
+ const f=fixture(t,{consent:advertisingChoice()});await f.start();
+ const general={...purchase,meta_purchase_allowed:false},meta={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000};
  for(let i=0;i<3;i++){f.session.captureConversion()(general);f.session.captureConversion()(meta);}
  assert.equal(f.sent.filter(p=>p.event==='purchase').length,1);assert.equal(f.sent.filter(p=>p.event==='meta_purchase').length,1);
+});
+
+
+test('a current advertising denial blocks immediate and queued Meta companions, including after regrant for the withdrawn order',async t=>{
+ const f=fixture(t,{consent:advertisingChoice()});await f.start();
+ const general={...purchase,meta_purchase_allowed:false},meta={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000};
+ f.delivery(false);
+ assert.equal(f.session.captureConversion()(meta),true);
+ const denied=advertisingChoice();denied.purchaseConsent.ad_user_data=false;
+ f.choose(denied);f.delivery(true);
+ await f.session.refresh();
+ assert.equal(f.session.captureConversion()(meta),false);
+ assert.equal(f.session.captureConversion()(general),true);
+ f.session.allowMetaPurchase=()=>false;f.choose(advertisingChoice());await f.session.refresh();
+ assert.equal(f.session.captureConversion()(meta),false);
+ assert.equal(f.sent.filter(payload=>payload.event==='purchase').length,1);
+ assert.equal(f.sent.filter(payload=>payload.event==='meta_purchase').length,0);
+});
+
+test('a queued Meta companion cannot outlive its deduplication deadline',async t=>{
+ let now=Date.now();
+ const f=fixture(t,{consent:advertisingChoice(),clock:()=>now});await f.start();
+ const expiry=now+1000;
+ const companion={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:expiry};
+ f.delivery(false);assert.equal(f.session.captureConversion()(companion),true);
+ f.delivery(true);now=expiry;
+ await f.session.refresh();
+ assert.equal(f.session.captureConversion()(companion),false);
+ assert.equal(f.sent.some(payload=>payload.event==='meta_purchase'),false);
+ assert.equal(f.session.captureConversion()({...purchase,meta_purchase_allowed:true,meta_purchase_expires_at:expiry}),true);
+ assert.equal(f.sent.find(payload=>payload.event==='purchase').meta_purchase_allowed,false);
 });

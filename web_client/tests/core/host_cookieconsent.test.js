@@ -67,7 +67,7 @@ test('missing/broken APIs and non-boolean category responses fail closed',async(
  }finally{f.close()}
 });
 test('TCF preserves analytics and denies marketing',async()=>{
- const f=await fixture();try{f.win.__tcfapi=()=>{};assert.deepEqual(f.read(),{analytics:true,marketing:false})}finally{f.close()}
+ const f=await fixture();try{f.win.__tcfapi=()=>{};assert.deepEqual(f.read(),{analytics:true,marketing:false});assert.equal(f.source.read(scope).purchaseConsent,null)}finally{f.close()}
 });
 test('custom category mapping and localStorage work against real library',async()=>{
  const f=await fixture({statistics:true,ads:false},{...cookieconsentConfig,categories:{analytics:'statistics',marketing:'ads'}},

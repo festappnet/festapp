@@ -88,8 +88,19 @@ BEGIN
  UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot,lease=claimed,prepared=true WHERE order_id=oid;
  PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent'),'receipt is finalized');
  PERFORM assert_true((SELECT status='sent' AND consent_snapshot IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'sent receipts contain no snapshot');
- UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot WHERE order_id=oid;
  PERFORM public.issue_order_overview_internal(oid,pg_temp.delivery('fixture',repeat('c',64),oid),gen_random_uuid());
+ PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":false}'),
+  'a denial at the captured decision time cannot withdraw');
+ snapshot:=snapshot||jsonb_build_object('timestamp',to_char(statement_timestamp()-interval '500 milliseconds','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'ad_storage',false);
+ PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"websiteOrigin":"https://other.example"}'),
+  'another website cannot withdraw captured consent');
+ PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":null}'),
+  'an unknown purpose cannot withdraw captured consent');
+ PERFORM assert_true(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot),
+  'a later denial on the same site withdraws even after its sent snapshot was scrubbed');
+ PERFORM assert_true((SELECT status='sent' AND revoked_at IS NOT NULL AND consent_snapshot IS NULL
+  FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'withdrawal closes later Meta companion eligibility');
+ UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot,revoked_at=NULL WHERE order_id=oid;
  PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('d',64),oid),'order id without buyer capability cannot revoke');
  PERFORM assert_true(public.revoke_meta_purchase_consent(repeat('c',64),oid),'buyer capability withdraws captured consent');
  PERFORM assert_true((SELECT status='revoked' AND consent_snapshot IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'withdrawal erases snapshot');
@@ -100,9 +111,9 @@ END $$;
 DO $$
 DECLARE x jsonb; un bigint; fid bigint;
  mode text; receipt jsonb; oid bigint; snapshot jsonb; payment_id bigint; transaction_id bigint;
- paid_event uuid; order_event uuid; claimed uuid; prepared jsonb;
+ paid_event uuid; order_event uuid; claimed uuid; prepared jsonb; order_data jsonb;
 BEGIN
- FOREACH mode IN ARRAY ARRAY['order','legacy','missing','paid_without_capi','legacy_capi_flag','paid'] LOOP
+ FOREACH mode IN ARRAY ARRAY['order','legacy','missing','paid_without_capi','legacy_capi_flag','paid','no_browser_items','waitlist_acceptance'] LOOP
   x:=pg_temp.fixture(NULL);un:=(x->>'unit')::bigint;fid:=(x->>'form')::bigint;
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
@@ -117,10 +128,23 @@ BEGIN
   -- browser order created before enablement must also remain excluded.
   UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}',
    to_jsonb(CASE WHEN mode='paid_without_capi' THEN 'paid'::text ELSE 'order'::text END)) WHERE id=fid;
-  UPDATE analytics.meta_purchase_connectors SET enabled=(mode IN ('paid','legacy_capi_flag')) WHERE unit=un;
+  UPDATE analytics.meta_purchase_connectors SET enabled=(mode IN ('paid','legacy_capi_flag','no_browser_items','waitlist_acceptance')) WHERE unit=un;
   receipt:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x)||jsonb_build_object('email','consent-'||mode||'-'||un::text||'@example.invalid'),gen_random_uuid(),gen_random_uuid());
   PERFORM assert_eq(receipt#>>'{data,code}','200','cohort fixture checkout succeeds');
   oid:=(receipt#>>'{data,order,id}')::bigint;
+  IF mode IN ('no_browser_items','waitlist_acceptance') THEN
+   DELETE FROM analytics.conversion_facts WHERE "order"=oid AND kind='purchase';
+   IF mode='no_browser_items' THEN
+    SELECT data INTO order_data FROM eshop.orders WHERE id=oid;
+    UPDATE eshop.orders SET data=jsonb_set(data,'{tickets}','[]'::jsonb) WHERE id=oid;
+    PERFORM public.record_form_conversion_internal(oid);
+    UPDATE eshop.orders SET data=order_data WHERE id=oid;
+    PERFORM assert_true(public.form_purchase_datalayer_internal(oid) IS NULL,'no browser item payload is exported');
+   ELSE
+    PERFORM public.record_form_conversion_internal(oid,false);
+    PERFORM assert_eq(public.form_order_purchase_timing_internal(oid),'paid','offer timing follows its form');
+   END IF;
+  END IF;
   SELECT event_id INTO STRICT order_event FROM analytics.conversion_facts WHERE "order"=oid AND kind='purchase';
   IF mode='legacy' THEN
    UPDATE analytics.conversion_facts SET payload=payload-'purchase_timing' WHERE "order"=oid AND kind='purchase';
@@ -138,7 +162,7 @@ BEGIN
   ELSIF mode='missing' THEN
    PERFORM assert_true(public.form_order_purchase_timing_internal(oid) IS NULL,'missing snapshot confers no paid cohort');
   END IF;
-  PERFORM assert_true(public.form_order_purchase_capi_required_internal(oid) IS NOT DISTINCT FROM (mode='paid'),
+  PERFORM assert_true(public.form_order_purchase_capi_required_internal(oid) IS NOT DISTINCT FROM (mode IN ('paid','no_browser_items')),
    'CAPI is required only when frozen at creation, missing flag fails closed');
   snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
    'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
@@ -153,7 +177,7 @@ BEGIN
   SELECT event_id INTO STRICT paid_event FROM analytics.conversion_facts WHERE "order"=oid AND kind='order_fully_paid';
   PERFORM assert_true(paid_event<>order_event,'paid fact already exists with a distinct event UUID');
   PERFORM assert_true(public.form_paid_conversion_eligible_internal(oid),'payment and live policy qualify independently of cohort');
-  IF mode<>'paid' THEN
+  IF mode NOT IN ('paid','no_browser_items') THEN
    PERFORM assert_false(EXISTS(SELECT FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid),
     'order/legacy/missing/non-CAPI-paid cohort is never claimed despite captured paid fact');
    -- Simulate an older worker claim: prepare must independently fence it.

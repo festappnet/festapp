@@ -752,6 +752,12 @@ test('CAPI snapshot uses actual saved Klaro decision time and keeps it across re
     win.document.querySelector('.cm-btn-success').click();await settle();
     saved=values.at(-1).purchaseConsent.timestamp;
     assert.ok(Date.parse(saved)<=Date.now());
+    win.document.querySelector('.festapp-consent-fab').click();await settle();
+    win.document.querySelector('#service-item-analytics').click();await settle();
+    assert.equal(values.at(-1).analytics,false,'ordinary consent is clamped by the unsaved draft');
+    assert.equal(values.at(-1).purchaseConsent.timestamp,saved,'the saved CAPI decision does not change');
+    assert.equal(values.at(-1).purchaseConsent.ad_user_data,true);
+    key(win,win.document.querySelector('#service-item-analytics'),'Escape');await settle();
    }
    const snapshot=values.at(-1).purchaseConsent;
    assert.equal(snapshot.timestamp,saved);

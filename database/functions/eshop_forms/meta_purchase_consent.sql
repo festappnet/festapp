@@ -4,9 +4,8 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT md5(jsonb_build_array(c.revision,c.dataset,c.website_origin,c.test_event_code,
          public.unit_measurement_consent_scope_internal(c.unit)->>'consentRevision')::text)
  FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
- JOIN analytics.meta_purchase_forms pilot ON pilot.form=f.id AND pilot.unit=o.unit
- JOIN analytics.meta_purchase_connectors c ON c.unit=pilot.unit
- WHERE f.id=p_form AND c.enabled AND NOT public.is_demo_occasion(o.id)
+ JOIN analytics.meta_purchase_connectors c ON c.unit=public.form_meta_purchase_unit_internal(f.id)
+ WHERE f.id=p_form
   AND public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(f.id));
 $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_consent_revision_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
@@ -56,6 +55,15 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_snapshot_valid_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Retain only a digest of the non-contact consent scope and the decision time
+-- for comparisons after matching data and the full snapshot have been scrubbed.
+CREATE OR REPLACE FUNCTION public.meta_purchase_consent_scope_internal(p_snapshot jsonb)
+RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
+ SELECT encode(extensions.digest(jsonb_build_array(p_snapshot->>'source',p_snapshot->>'websiteOrigin',
+  p_snapshot->>'consentRevision',p_snapshot#>>'{binding,id}',p_snapshot#>>'{binding,version}')::text,'sha256'),'hex');
+$$;
+REVOKE ALL ON FUNCTION public.meta_purchase_consent_scope_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.capture_meta_purchase_consent_internal(p_order bigint,p_consent jsonb)
 RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
 DECLARE
@@ -85,8 +93,10 @@ BEGIN
  THEN RETURN; END IF;
  email:=lower(btrim(details.data->>'email'));
  IF coalesce(length(email),0) NOT BETWEEN 3 AND 254 OR email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' THEN RETURN; END IF;
- INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_snapshot,email_hash,client_agent,source_url)
- VALUES (p_order,details.unit,details.revision,p_consent->>'revision',jsonb_build_object('source',p_consent->'source','timestamp',p_consent->'timestamp',
+ INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_scope,consent_decided_at,consent_snapshot,email_hash,client_agent,source_url)
+ VALUES (p_order,details.unit,details.revision,p_consent->>'revision',
+   public.meta_purchase_consent_scope_internal(p_consent),(p_consent->>'timestamp')::timestamptz,
+   jsonb_build_object('source',p_consent->'source','timestamp',p_consent->'timestamp',
      'consentRevision',p_consent->'consentRevision','websiteOrigin',details.website_origin,
      'ad_storage',true,'ad_user_data',true,'ad_personalization',true)
      || CASE WHEN p_consent ? 'binding' THEN jsonb_build_object('binding',jsonb_build_object('id',p_consent#>'{binding,id}','version',p_consent#>'{binding,version}')) ELSE '{}'::jsonb END,
@@ -95,18 +105,40 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.capture_meta_purchase_consent_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
--- Use the same buyer capability and order scope as the confirmation email.
-CREATE OR REPLACE FUNCTION public.revoke_meta_purchase_consent(p_token text,p_order_id bigint)
+-- Automated denial can affect only orders captured under that same consent
+-- scope, and only if the saved denial is newer than the captured grant.
+CREATE OR REPLACE FUNCTION public.revoke_meta_purchase_consent(p_token text,p_order_id bigint,p_denial jsonb)
 RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE overview jsonb;
+DECLARE overview jsonb; decision timestamptz; scope_hash text; affected integer;
 BEGIN
  overview:=public.get_customer_order_overview_internal(p_token,p_order_id);
  IF overview->>'code' IS DISTINCT FROM '200' THEN RETURN false; END IF;
+ IF p_denial IS NOT NULL THEN
+  IF jsonb_typeof(p_denial) IS DISTINCT FROM 'object' OR octet_length(p_denial::text)>2048
+    OR coalesce(p_denial->>'timestamp','') !~ '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$'
+    OR NOT (p_denial @> '{"ad_storage":false}' OR p_denial @> '{"ad_user_data":false}' OR p_denial @> '{"ad_personalization":false}')
+  THEN RETURN false; END IF;
+  BEGIN decision:=(p_denial->>'timestamp')::timestamptz;
+  EXCEPTION WHEN datetime_field_overflow OR invalid_datetime_format THEN RETURN false; END;
+  IF decision>statement_timestamp() OR decision<=statement_timestamp()-interval '365 days' THEN RETURN false; END IF;
+  scope_hash:=public.meta_purchase_consent_scope_internal(p_denial);
+ END IF;
  UPDATE analytics.meta_purchase_deliveries SET revoked_at=clock_timestamp(),status=CASE WHEN status='pending' THEN 'revoked' ELSE status END,
   done_at=clock_timestamp(),lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
  WHERE order_id IN(SELECT (value->>'id')::bigint FROM jsonb_array_elements(overview->'orders'))
-   AND revoked_at IS NULL;
- RETURN true;
+   AND revoked_at IS NULL
+   AND (p_denial IS NULL OR (consent_scope=scope_hash AND consent_decided_at<decision));
+ GET DIAGNOSTICS affected=ROW_COUNT;
+ RETURN p_denial IS NULL OR affected>0;
+END $$;
+REVOKE ALL ON FUNCTION public.revoke_meta_purchase_consent(text,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.revoke_meta_purchase_consent(text,bigint,jsonb) TO anon,authenticated;
+
+-- The released manual action never depends on a working CMP.
+CREATE OR REPLACE FUNCTION public.revoke_meta_purchase_consent(p_token text,p_order_id bigint)
+RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN public.revoke_meta_purchase_consent(p_token,p_order_id,NULL);
 END $$;
 REVOKE ALL ON FUNCTION public.revoke_meta_purchase_consent(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.revoke_meta_purchase_consent(text,bigint) TO anon,authenticated;

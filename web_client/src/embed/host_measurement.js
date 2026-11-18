@@ -1,3 +1,4 @@
+import {hasCurrentPurchaseConsent} from '../components/forms/meta_purchase_consent.js';
 import {consentScope, readConsentSource, managedConsentOrigin} from '../components/forms/measurement_consent_source.js';
 import {measurementProtocol, measurementConsent, measurementManifest, consentTransportManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
@@ -145,6 +146,8 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
                 if(record.lease.generation!==m.generation)return true;
                 if(usesHostDataLayer(frame)) {
                     const payload=measurementDataLayerPayload(data.payload,{embedded:true,pageContext:record.pageContext});if(!payload)return true;
+                    // A denial can reach the parent before the iframe sees its updated choice.
+                    if(payload.event==='meta_purchase' && !hasCurrentPurchaseConsent(readChoice(frame,record)))return true;
                     if(!payload.event)record.pageContext=payload;
                     window.dataLayer=window.dataLayer||[];
                     if(payload.ecommerce || payload.event==='generate_lead')window.dataLayer.push({ecommerce:null,user_data:null,meta_purchase_allowed:null,event_id:null});

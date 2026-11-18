@@ -258,9 +258,9 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
         if (!imported) {
             try {
                 const record = JSON.parse(decodeURIComponent(win.document.cookie.split('; ').find(c => c.startsWith(config.storageName+'-decision='))?.split('=').slice(1).join('=') || 'null'));
-                if (manager.confirmed && record?.marketing === choice.marketing && record?.analytics === choice.analytics)
+                if (manager.confirmed && record?.marketing === manager.savedConsents?.marketing && record?.analytics === manager.savedConsents?.analytics)
                     purchaseConsent = {source:'klaro', timestamp:record.timestamp, consentRevision:policy.consent_revision,
-                        websiteOrigin:win.location.origin, ad_storage:choice.marketing, ad_user_data:choice.marketing, ad_personalization:choice.marketing};
+                        websiteOrigin:win.location.origin, ad_storage:record.marketing, ad_user_data:record.marketing, ad_personalization:record.marketing};
             } catch { /* An unversioned old choice has no verifiable decision time. */ }
         }
         setConsent({...choice, ...(includePurchaseConsent ? {purchaseConsent} : {}), ...(imported ? remoteLease : {})});

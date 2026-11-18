@@ -3565,6 +3565,11 @@
       "authenticated": true,
       "service_role": false
     },
+    "public.revoke_meta_purchase_consent(text,bigint,jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": false
+    },
     "public.claim_meta_purchase_deliveries(integer)": {
       "anon": false,
       "authenticated": false,

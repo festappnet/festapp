@@ -540,7 +540,7 @@
     {
       "migration": "20261118160000_meta_purchase_followup.sql",
       "active": true,
-      "header": "-- Restore browser purchases with explicit timing and bind Meta delivery to saved CMP consent.\nALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS consent_snapshot jsonb;",
+      "header": "-- Restore browser purchases with explicit timing and bind Meta delivery to saved CMP consent.\nALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS consent_snapshot jsonb, ADD COLUMN IF NOT EXISTS consent_scope text, ADD COLUMN IF NOT EXISTS consent_decided_at timestamptz;",
       "sources": [
         "eshop_forms/form_settings.sql",
         "eshop_forms/form_datalayer.sql",

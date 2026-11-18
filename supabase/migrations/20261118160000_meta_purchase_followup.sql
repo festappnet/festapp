@@ -1,5 +1,5 @@
 -- Restore browser purchases with explicit timing and bind Meta delivery to saved CMP consent.
-ALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS consent_snapshot jsonb;
+ALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS consent_snapshot jsonb, ADD COLUMN IF NOT EXISTS consent_scope text, ADD COLUMN IF NOT EXISTS consent_decided_at timestamptz;
 
 -- SOURCE: eshop_forms/form_settings.sql
 -- Metadata patch owner for all administrative form settings. Private helpers;
@@ -186,11 +186,20 @@ RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.form_conversion_policy_allows_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Only a pilot mapped to the form's owning unit can select a destination.
+CREATE OR REPLACE FUNCTION public.form_meta_purchase_unit_internal(p_form bigint)
+RETURNS bigint LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT c.unit FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+ JOIN analytics.meta_purchase_forms m ON m.form=f.id AND m.unit=o.unit
+ JOIN analytics.meta_purchase_connectors c ON c.unit=m.unit
+ WHERE f.id=p_form AND c.enabled AND NOT public.is_demo_occasion(o.id);
+$$;
+REVOKE ALL ON FUNCTION public.form_meta_purchase_unit_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
 -- CAPI always selects paid browser mode, including settings saved by old clients.
 CREATE OR REPLACE FUNCTION public.form_purchase_timing_internal(p_form bigint)
 RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT CASE WHEN EXISTS(SELECT FROM analytics.meta_purchase_forms m
-   JOIN analytics.meta_purchase_connectors c ON c.unit=m.unit WHERE m.form=f.id AND c.enabled)
+ SELECT CASE WHEN public.form_meta_purchase_unit_internal(f.id) IS NOT NULL
    OR public.normalize_form_metadata_internal(f.data)#>>'{analytics,purchase_timing}'='paid'
  THEN 'paid' ELSE 'order' END FROM public.forms f WHERE f.id=p_form;
 $$;
@@ -221,12 +230,14 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  ELSE jsonb_set(snapshot.payload,'{ecommerce,transaction_id}',to_jsonb(paid.event_id::text))
    ||jsonb_build_object('event_id',paid.event_id)
  END ||jsonb_build_object('meta_purchase_allowed',NOT public.form_order_purchase_capi_required_internal(o.id)
-   -- Meta deduplicates only for 48 hours; a later overview visit must not add a second Pixel Purchase.
-   AND coalesce(CASE WHEN public.form_order_purchase_timing_internal(o.id)='order' THEN snapshot.created_at ELSE paid.created_at END,'-infinity')
-     >statement_timestamp()-interval '47 hours') FROM eshop.orders o
+   AND meta.expires_at>statement_timestamp(),
+   'meta_purchase_expires_at',floor(extract(epoch FROM meta.expires_at)*1000)::bigint) FROM eshop.orders o
  JOIN analytics.conversion_facts snapshot ON snapshot."order"=o.id AND snapshot.kind='purchase'
  LEFT JOIN analytics.conversion_facts paid ON paid."order"=o.id AND paid.kind='order_fully_paid'
- WHERE o.id=p_order AND public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(o.form))
+ CROSS JOIN LATERAL (SELECT CASE WHEN public.form_order_purchase_timing_internal(o.id)='order'
+   THEN snapshot.created_at ELSE paid.created_at END + interval '47 hours' expires_at) meta
+ WHERE o.id=p_order AND jsonb_typeof(snapshot.payload->'ecommerce')='object'
+ AND public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(o.form))
  AND (public.form_order_purchase_timing_internal(o.id)='order' OR
    (paid.event_id IS NOT NULL
     AND public.form_paid_conversion_eligible_internal(o.id)
@@ -259,7 +270,7 @@ REVOKE ALL ON FUNCTION public.form_conversion_datalayer_internal(bigint,text) FR
 
 -- Called exactly at canonical finalization/registration, never on replay.
 -- Products come from the finalizer's charged-price snapshot, not today's catalog.
-CREATE OR REPLACE FUNCTION public.record_form_conversion_internal(p_order bigint)
+CREATE OR REPLACE FUNCTION public.record_form_conversion_internal(p_order bigint,p_capi_supported boolean)
 RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
 DECLARE o eshop.orders; s jsonb; items jsonb; total numeric; payload jsonb; identity uuid:=gen_random_uuid(); brand text;
 BEGIN
@@ -270,6 +281,10 @@ BEGIN
   payload:=jsonb_build_object('event','generate_lead','event_id',identity,'currency',coalesce(nullif(trim(o.currency_code),''),'CZK'),
    'value',0,'lead_source',CASE WHEN o.state='waitlisted' THEN 'waitlist' ELSE 'free_registration' END);
  ELSIF o.price>0 AND trim(o.currency_code) ~ '^[A-Z]{3}$' THEN
+  -- Freeze the checkout cohort even if there is no safe browser item projection.
+  payload:=jsonb_build_object('purchase_timing',public.form_purchase_timing_internal(o.form),
+   'capi_required',p_capi_supported AND public.form_meta_purchase_unit_internal(o.form) IS NOT NULL);
+  BEGIN
   SELECT title INTO brand FROM public.occasions WHERE id=o.occasion;
   -- Labels stay out of the grouping: they cannot split a line or change the total.
   SELECT jsonb_agg(jsonb_build_object('item_id','product_'||x.id,'item_name',x.title,'price',x.price,'quantity',x.quantity)||
@@ -279,21 +294,27 @@ BEGIN
    FROM jsonb_array_elements(o.data->'tickets') t CROSS JOIN LATERAL jsonb_array_elements(t->'products') p
    GROUP BY p->>'id',p->>'title',(p->>'price')::numeric) x;
   IF jsonb_array_length(items) BETWEEN 1 AND 200 AND total=o.price THEN
-   payload:=jsonb_build_object('event','purchase','event_id',identity,
-    'purchase_timing',public.form_purchase_timing_internal(o.form),
-    'capi_required',EXISTS(SELECT FROM analytics.meta_purchase_forms m JOIN analytics.meta_purchase_connectors c ON c.unit=m.unit WHERE m.form=o.form AND c.enabled),'ecommerce',jsonb_build_object('transaction_id',identity,
+   payload:=payload||jsonb_build_object('event','purchase','event_id',identity,'ecommerce',jsonb_build_object('transaction_id',identity,
     'currency',trim(o.currency_code),'value',o.price,'items',items,'payment_type',
     CASE WHEN public.payment_method_is_online_internal((SELECT payment_method FROM eshop.payment_info WHERE id=o.payment_info)) THEN 'card' ELSE 'bank_transfer' END));
   END IF;
+  EXCEPTION WHEN OTHERS THEN NULL; -- Preserve the cohort without exporting invalid browser lines.
+  END;
  END IF;
  IF payload IS NOT NULL THEN
-  INSERT INTO analytics.conversion_facts("order",kind,event_id,payload) VALUES(p_order,coalesce(payload->>'lead_source',payload->>'event'),identity,payload)
+  INSERT INTO analytics.conversion_facts("order",kind,event_id,payload) VALUES(p_order,coalesce(payload->>'lead_source','purchase'),identity,payload)
    ON CONFLICT("order",kind) DO NOTHING;
  END IF;
 -- Measurement failure cannot change checkout. Invalid/incomplete snapshots are
 -- intentionally not exported; no second price calculation repairs them.
 EXCEPTION WHEN OTHERS THEN RETURN;
 END $$;
+REVOKE ALL ON FUNCTION public.record_form_conversion_internal(bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.record_form_conversion_internal(p_order bigint)
+RETURNS void LANGUAGE sql VOLATILE SET search_path=public,extensions AS $$
+ SELECT public.record_form_conversion_internal(p_order,true);
+$$;
 REVOKE ALL ON FUNCTION public.record_form_conversion_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
 -- SOURCE: eshop_forms/form_measurement_policy.sql
@@ -392,7 +413,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  ) SELECT jsonb_build_object('requested_enabled',requested,'organization_allowed',allowed,
   'organization_enabled',organization_enabled,'unit_enabled',unit_enabled,
   'runtime_supported',supported,'eligible',requested AND allowed AND organization_enabled AND unit_enabled AND destination AND supported AND privacy_policy_valid,
-  'meta_purchase_enabled',EXISTS(SELECT FROM analytics.meta_purchase_forms m JOIN analytics.meta_purchase_connectors c ON c.unit=m.unit WHERE m.form=p_form AND c.enabled),
+  'meta_purchase_enabled',public.form_meta_purchase_unit_internal(p_form) IS NOT NULL,
   'purchase_timing',public.form_purchase_timing_internal(p_form),'policy_revision',revision,'consent_required',true,'enhanced_conversions_unavailable',false,
   'blocked_reasons',to_jsonb(array_remove(ARRAY[
    CASE WHEN NOT requested THEN 'disabled' END,
@@ -469,9 +490,8 @@ RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT md5(jsonb_build_array(c.revision,c.dataset,c.website_origin,c.test_event_code,
          public.unit_measurement_consent_scope_internal(c.unit)->>'consentRevision')::text)
  FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
- JOIN analytics.meta_purchase_forms pilot ON pilot.form=f.id AND pilot.unit=o.unit
- JOIN analytics.meta_purchase_connectors c ON c.unit=pilot.unit
- WHERE f.id=p_form AND c.enabled AND NOT public.is_demo_occasion(o.id)
+ JOIN analytics.meta_purchase_connectors c ON c.unit=public.form_meta_purchase_unit_internal(f.id)
+ WHERE f.id=p_form
   AND public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(f.id));
 $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_consent_revision_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
@@ -521,6 +541,15 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_snapshot_valid_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Retain only a digest of the non-contact consent scope and the decision time
+-- for comparisons after matching data and the full snapshot have been scrubbed.
+CREATE OR REPLACE FUNCTION public.meta_purchase_consent_scope_internal(p_snapshot jsonb)
+RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
+ SELECT encode(extensions.digest(jsonb_build_array(p_snapshot->>'source',p_snapshot->>'websiteOrigin',
+  p_snapshot->>'consentRevision',p_snapshot#>>'{binding,id}',p_snapshot#>>'{binding,version}')::text,'sha256'),'hex');
+$$;
+REVOKE ALL ON FUNCTION public.meta_purchase_consent_scope_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.capture_meta_purchase_consent_internal(p_order bigint,p_consent jsonb)
 RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
 DECLARE
@@ -550,8 +579,10 @@ BEGIN
  THEN RETURN; END IF;
  email:=lower(btrim(details.data->>'email'));
  IF coalesce(length(email),0) NOT BETWEEN 3 AND 254 OR email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' THEN RETURN; END IF;
- INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_snapshot,email_hash,client_agent,source_url)
- VALUES (p_order,details.unit,details.revision,p_consent->>'revision',jsonb_build_object('source',p_consent->'source','timestamp',p_consent->'timestamp',
+ INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_scope,consent_decided_at,consent_snapshot,email_hash,client_agent,source_url)
+ VALUES (p_order,details.unit,details.revision,p_consent->>'revision',
+   public.meta_purchase_consent_scope_internal(p_consent),(p_consent->>'timestamp')::timestamptz,
+   jsonb_build_object('source',p_consent->'source','timestamp',p_consent->'timestamp',
      'consentRevision',p_consent->'consentRevision','websiteOrigin',details.website_origin,
      'ad_storage',true,'ad_user_data',true,'ad_personalization',true)
      || CASE WHEN p_consent ? 'binding' THEN jsonb_build_object('binding',jsonb_build_object('id',p_consent#>'{binding,id}','version',p_consent#>'{binding,version}')) ELSE '{}'::jsonb END,
@@ -560,18 +591,40 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.capture_meta_purchase_consent_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
--- Use the same buyer capability and order scope as the confirmation email.
-CREATE OR REPLACE FUNCTION public.revoke_meta_purchase_consent(p_token text,p_order_id bigint)
+-- Automated denial can affect only orders captured under that same consent
+-- scope, and only if the saved denial is newer than the captured grant.
+CREATE OR REPLACE FUNCTION public.revoke_meta_purchase_consent(p_token text,p_order_id bigint,p_denial jsonb)
 RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE overview jsonb;
+DECLARE overview jsonb; decision timestamptz; scope_hash text; affected integer;
 BEGIN
  overview:=public.get_customer_order_overview_internal(p_token,p_order_id);
  IF overview->>'code' IS DISTINCT FROM '200' THEN RETURN false; END IF;
+ IF p_denial IS NOT NULL THEN
+  IF jsonb_typeof(p_denial) IS DISTINCT FROM 'object' OR octet_length(p_denial::text)>2048
+    OR coalesce(p_denial->>'timestamp','') !~ '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$'
+    OR NOT (p_denial @> '{"ad_storage":false}' OR p_denial @> '{"ad_user_data":false}' OR p_denial @> '{"ad_personalization":false}')
+  THEN RETURN false; END IF;
+  BEGIN decision:=(p_denial->>'timestamp')::timestamptz;
+  EXCEPTION WHEN datetime_field_overflow OR invalid_datetime_format THEN RETURN false; END;
+  IF decision>statement_timestamp() OR decision<=statement_timestamp()-interval '365 days' THEN RETURN false; END IF;
+  scope_hash:=public.meta_purchase_consent_scope_internal(p_denial);
+ END IF;
  UPDATE analytics.meta_purchase_deliveries SET revoked_at=clock_timestamp(),status=CASE WHEN status='pending' THEN 'revoked' ELSE status END,
   done_at=clock_timestamp(),lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
  WHERE order_id IN(SELECT (value->>'id')::bigint FROM jsonb_array_elements(overview->'orders'))
-   AND revoked_at IS NULL;
- RETURN true;
+   AND revoked_at IS NULL
+   AND (p_denial IS NULL OR (consent_scope=scope_hash AND consent_decided_at<decision));
+ GET DIAGNOSTICS affected=ROW_COUNT;
+ RETURN p_denial IS NULL OR affected>0;
+END $$;
+REVOKE ALL ON FUNCTION public.revoke_meta_purchase_consent(text,bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.revoke_meta_purchase_consent(text,bigint,jsonb) TO anon,authenticated;
+
+-- The released manual action never depends on a working CMP.
+CREATE OR REPLACE FUNCTION public.revoke_meta_purchase_consent(p_token text,p_order_id bigint)
+RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ RETURN public.revoke_meta_purchase_consent(p_token,p_order_id,NULL);
 END $$;
 REVOKE ALL ON FUNCTION public.revoke_meta_purchase_consent(text,bigint) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.revoke_meta_purchase_consent(text,bigint) TO anon,authenticated;
@@ -1000,7 +1053,8 @@ BEGIN
    'adminScope',p_payload#>'{administrativeApproval,scope}','paymentPreparationPolicy','leased_keep_pending'); END IF;
  result:=public.complete_profile_inventory_membership_mutation_v1(p_command_id,occ,'inventory.waitlist.'||p_operation,entity_changes,before_users,result,actor_kind);
  IF p_actor IS NULL AND p_operation IN ('register','accept') THEN
-  PERFORM public.record_form_conversion_internal((result#>>'{data,order,id}')::bigint);
+  -- Offer checkout has no Meta consent capture. Keep it in the browser-only cohort.
+  PERFORM public.record_form_conversion_internal((result#>>'{data,order,id}')::bigint,false);
   result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_purchase_datalayer_internal((result#>>'{data,order,id}')::bigint),public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' ELSE 'free_registration' END),'null'::jsonb));
  END IF;
  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true);

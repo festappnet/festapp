@@ -51,7 +51,10 @@
     }
     const conversion = ["purchase", "meta_purchase"].includes(input.event);
     if (conversion && input.meta_purchase_allowed !== void 0 && typeof input.meta_purchase_allowed !== "boolean") return null;
-    if (input.event === "meta_purchase" && input.meta_purchase_allowed === false) return null;
+    const metaExpiry = input.meta_purchase_expires_at;
+    const hasMetaExpiry = Number.isSafeInteger(metaExpiry) && metaExpiry > 0;
+    if (conversion && metaExpiry !== void 0 && !hasMetaExpiry) return null;
+    if (input.event === "meta_purchase" && (input.meta_purchase_allowed !== true || !hasMetaExpiry)) return null;
     const source = input.ecommerce;
     if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) || !Array.isArray(source.items) || !source.items.length || source.items.length > 200) return null;
     const items = [];
@@ -80,11 +83,22 @@
       ecommerce.transaction_id = source.transaction_id;
     }
     const result = { event: input.event, ecommerce };
-    return ["purchase", "meta_purchase"].includes(input.event) ? withUserData({ ...result, event_id: source.transaction_id, meta_purchase_allowed: input.meta_purchase_allowed ?? true }) : result;
+    return conversion ? withUserData({
+      ...result,
+      event_id: source.transaction_id,
+      meta_purchase_allowed: input.meta_purchase_allowed ?? true,
+      ...hasMetaExpiry ? { meta_purchase_expires_at: metaExpiry } : {}
+    }) : result;
+  }
+  function currentMetaPurchaseRouting(payload, now = Date.now()) {
+    if (payload.meta_purchase_expires_at === void 0 || payload.meta_purchase_expires_at > now) return payload;
+    return payload.event === "meta_purchase" ? null : { ...payload, meta_purchase_allowed: false };
   }
   function measurementDataLayerPayload(input, { embedded = false, pageContext = null } = {}) {
-    const payload = analyticsPayload(input);
-    if (!payload) return null;
+    const wire = analyticsPayload(input);
+    const routed = wire && currentMetaPurchaseRouting(wire);
+    if (!routed) return null;
+    const { meta_purchase_expires_at: _deadline, ...payload } = routed;
     const page = payload.event ? analyticsPayload({ page_type: pageContext?.page_type, language: pageContext?.language }) : null;
     const eventContext = payload.event ? { page_type: page?.page_type ?? null, user_type: "b2c", language: page?.language ?? null } : {};
     return {
@@ -136,8 +150,8 @@
   // src/components/forms/measurement_consent_source.js
   function consentScope(policy, origin) {
     const revision2 = policy?.processingRevision ?? policy?.processing_revision;
-    const purposes = policy?.requiredPurposes ?? policy?.required_purposes;
-    if (![policy?.organization, policy?.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof revision2 !== "string" || !revision2.length || revision2.length > 128 || purposes !== void 0 && (!Array.isArray(purposes) || purposes.length !== 2 || !purposes.includes("analytics") || !purposes.includes("marketing"))) return null;
+    const purposes2 = policy?.requiredPurposes ?? policy?.required_purposes;
+    if (![policy?.organization, policy?.unit].every((v) => Number.isSafeInteger(v) && v > 0) || typeof revision2 !== "string" || !revision2.length || revision2.length > 128 || purposes2 !== void 0 && (!Array.isArray(purposes2) || purposes2.length !== 2 || !purposes2.includes("analytics") || !purposes2.includes("marketing"))) return null;
     const consentRevision = policy.consentRevision ?? policy.consent_revision;
     if (consentRevision !== void 0 && (typeof consentRevision !== "string" || !/^[a-f0-9]{32}$/.test(consentRevision))) return null;
     let binding = policy.binding, websiteOrigin = policy.websiteOrigin;
@@ -173,15 +187,21 @@
       if (!matches || scope.binding && !sameConsentBinding(value?.binding, scope.binding)) return null;
       const choice = measurementConsent(value);
       if (!value.purchaseConsent) return choice;
-      const granted = (key) => choice.marketing && (!Object.hasOwn(value, key) || value[key] === true) && (value.purchaseConsent[key] === true || !Object.hasOwn(value.purchaseConsent, key) && value[key] === true);
+      const purpose = (key) => {
+        const direct = value[key], saved = value.purchaseConsent[key];
+        if (direct === false || saved === false) return false;
+        if (!choice.marketing) return void 0;
+        const grants = [value, value.purchaseConsent].filter((record) => Object.hasOwn(record, key));
+        return grants.length && grants.every((record) => record[key] === true) ? true : void 0;
+      };
       return { ...choice, purchaseConsent: {
         ...value.purchaseConsent,
         consentRevision: value.consentRevision,
         binding: value.binding,
         websiteOrigin: scope.websiteOrigin,
-        ad_storage: granted("ad_storage"),
-        ad_user_data: granted("ad_user_data"),
-        ad_personalization: granted("ad_personalization")
+        ad_storage: purpose("ad_storage"),
+        ad_user_data: purpose("ad_user_data"),
+        ad_personalization: purpose("ad_personalization")
       } };
     } catch {
       return null;
@@ -388,13 +408,16 @@
         const timestamp2 = typeof date === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?(?:Z|[+-]\d\d:\d\d)$/.test(date) ? Date.parse(date) : Object.prototype.toString.call(date) === "[object Date]" ? date.getTime() : NaN;
         const now = win.Date.now();
         if (saved?.defaultPolicy !== false || p?.essential !== true || !["functional", "analytics", "advertising", "dataToThirdParty"].every((k) => typeof p[k] === "boolean") || !consentValidity(config)(timestamp2, now)) return null;
-        const marketing = p.advertising && p.dataToThirdParty && typeof win.__tcfapi === "undefined";
-        return {
-          purchaseConsent: { source: "wix", timestamp: new Date(timestamp2).toISOString(), ad_storage: marketing, ad_user_data: marketing, ad_personalization: marketing },
-          consentRevision: config.consentRevision,
-          analytics: p.analytics,
-          marketing
+        const unsupportedConsent = typeof win.__tcfapi !== "undefined";
+        const marketing = !unsupportedConsent && p.advertising && p.dataToThirdParty;
+        const purchaseConsent = unsupportedConsent ? null : {
+          source: "wix",
+          timestamp: new Date(timestamp2).toISOString(),
+          ad_storage: marketing,
+          ad_user_data: marketing,
+          ad_personalization: marketing
         };
+        return { purchaseConsent, consentRevision: config.consentRevision, analytics: p.analytics, marketing };
       } catch {
         return null;
       }
@@ -581,13 +604,16 @@
         const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
         if (!consentId(id) || consent.stamp !== id || !consentValidity(config)(utc, now)) return null;
         if (!persisted(win.document, id)) return null;
-        const marketing = consent.marketing && !script.tcf && typeof win.__tcfapi === "undefined";
-        return {
-          purchaseConsent: { source: "cookiebot", timestamp: new Date(utc).toISOString(), ad_storage: marketing, ad_user_data: marketing, ad_personalization: marketing },
-          consentRevision: config.consentRevision,
-          analytics: consent.statistics,
-          marketing
+        const unsupportedConsent = script.tcf || typeof win.__tcfapi !== "undefined";
+        const marketing = !unsupportedConsent && consent.marketing;
+        const purchaseConsent = unsupportedConsent ? null : {
+          source: "cookiebot",
+          timestamp: new Date(utc).toISOString(),
+          ad_storage: marketing,
+          ad_user_data: marketing,
+          ad_personalization: marketing
         };
+        return { purchaseConsent, consentRevision: config.consentRevision, analytics: consent.statistics, marketing };
       } catch {
         return null;
       }
@@ -665,8 +691,16 @@
           if (typeof accepted !== "boolean" || accepted !== cookie.categories.includes(name)) return null;
           choice[purpose] = accepted;
         }
-        if (typeof win.__tcfapi !== "undefined") choice.marketing = false;
-        return { purchaseConsent: { source: "cookieconsent", timestamp: new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(), ad_storage: choice.marketing, ad_user_data: choice.marketing, ad_personalization: choice.marketing }, consentRevision: config.consentRevision, ...choice };
+        const unsupportedConsent = typeof win.__tcfapi !== "undefined";
+        const marketing = !unsupportedConsent && choice.marketing;
+        const purchaseConsent = unsupportedConsent ? null : {
+          source: "cookieconsent",
+          timestamp: new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(),
+          ad_storage: marketing,
+          ad_user_data: marketing,
+          ad_personalization: marketing
+        };
+        return { purchaseConsent, consentRevision: config.consentRevision, analytics: choice.analytics, marketing };
       } catch {
         return null;
       }
@@ -798,6 +832,17 @@
       this.closed = true;
     }
   };
+
+  // src/components/forms/meta_purchase_consent.js
+  var purposes = ["ad_storage", "ad_user_data", "ad_personalization"];
+  function hasCurrentDecision(choice, now) {
+    const snapshot = choice?.purchaseConsent;
+    const timestamp2 = Date.parse(snapshot?.timestamp);
+    return !!snapshot && ["klaro", "cookiebot", "cookieconsent", "wix"].includes(snapshot.source) && /^[a-f0-9]{32}$/.test(snapshot.consentRevision || "") && (snapshot.source === "klaro" || validConsentBinding(snapshot.binding)) && Number.isFinite(timestamp2) && timestamp2 <= now && now - timestamp2 < 365 * 864e5 && (choice.expiresAt === void 0 || Number.isFinite(choice.expiresAt) && choice.expiresAt > now);
+  }
+  function hasCurrentPurchaseConsent(choice, now = Date.now()) {
+    return hasCurrentDecision(choice, now) && purposes.every((key) => choice.purchaseConsent[key] === true);
+  }
 
   // src/embed/host_consent_mode.js
   var keys = ["analytics_storage", "ad_storage", "ad_user_data", "ad_personalization"];
@@ -1112,6 +1157,7 @@
         if (usesHostDataLayer(frame)) {
           const payload = measurementDataLayerPayload(data.payload, { embedded: true, pageContext: record.pageContext });
           if (!payload) return true;
+          if (payload.event === "meta_purchase" && !hasCurrentPurchaseConsent(readChoice(frame, record))) return true;
           if (!payload.event) record.pageContext = payload;
           window.dataLayer = window.dataLayer || [];
           if (payload.ecommerce || payload.event === "generate_lead") window.dataLayer.push({ ecommerce: null, user_data: null, meta_purchase_allowed: null, event_id: null });

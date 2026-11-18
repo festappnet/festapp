@@ -62,7 +62,7 @@ test('purchase event_id is the transaction UUID, including released payload norm
 test('purchase and Meta companion validate distinct destination markers with the same UUID',()=>{
  assert.equal(analyticsPayload(purchase).meta_purchase_allowed,true,'released purchase defaults to non-CAPI');
  assert.equal(analyticsPayload({...purchase,meta_purchase_allowed:false}).meta_purchase_allowed,false);
- const companion=analyticsPayload({...purchase,event:'meta_purchase',meta_purchase_allowed:true});
+ const companion=analyticsPayload({...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000});
  assert.equal(companion.event_id,purchase.event_id);assert.equal(companion.event,'meta_purchase');
  assert.equal(analyticsPayload({...purchase,event:'meta_purchase',meta_purchase_allowed:false}),null);
  for(const marker of [null,'true',0])assert.equal(analyticsPayload({...purchase,meta_purchase_allowed:marker}),null);

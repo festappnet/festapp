@@ -174,7 +174,8 @@ BEGIN
    'adminScope',p_payload#>'{administrativeApproval,scope}','paymentPreparationPolicy','leased_keep_pending'); END IF;
  result:=public.complete_profile_inventory_membership_mutation_v1(p_command_id,occ,'inventory.waitlist.'||p_operation,entity_changes,before_users,result,actor_kind);
  IF p_actor IS NULL AND p_operation IN ('register','accept') THEN
-  PERFORM public.record_form_conversion_internal((result#>>'{data,order,id}')::bigint);
+  -- Offer checkout has no Meta consent capture. Keep it in the browser-only cohort.
+  PERFORM public.record_form_conversion_internal((result#>>'{data,order,id}')::bigint,false);
   result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_purchase_datalayer_internal((result#>>'{data,order,id}')::bigint),public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' ELSE 'free_registration' END),'null'::jsonb));
  END IF;
  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true);

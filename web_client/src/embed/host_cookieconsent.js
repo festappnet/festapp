@@ -48,8 +48,13 @@ export function createCookieConsentSource(win, input) {
                 if (typeof accepted !== 'boolean' || accepted !== cookie.categories.includes(name)) return null;
                 choice[purpose] = accepted;
             }
-            if (typeof win.__tcfapi !== 'undefined') choice.marketing = false;
-            return {purchaseConsent:{source:'cookieconsent', timestamp:new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(), ad_storage:choice.marketing, ad_user_data:choice.marketing, ad_personalization:choice.marketing}, consentRevision:config.consentRevision, ...choice};
+            const unsupportedConsent = typeof win.__tcfapi !== 'undefined';
+            const marketing = !unsupportedConsent && choice.marketing;
+            const purchaseConsent = unsupportedConsent ? null : {
+                source:'cookieconsent',timestamp:new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(),
+                ad_storage:marketing,ad_user_data:marketing,ad_personalization:marketing,
+            };
+            return {purchaseConsent,consentRevision:config.consentRevision,analytics:choice.analytics,marketing};
         } catch { return null; }
     };
     const tick = () => {

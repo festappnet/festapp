@@ -192,7 +192,7 @@ test('isolated runtime attaches its validated page context to each event',t=>{
 
 test('Meta companion clears contacts and routing before later isolated events',t=>{
  const f=bootstrap(t);f.send('init');
- f.send('event',{payload:{...purchase,event:'meta_purchase',meta_purchase_allowed:true,user_data:{email:'buyer@example.test'}}});
+ f.send('event',{payload:{...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000,user_data:{email:'buyer@example.test'}}});
  const entries=f.win.dataLayer;
  assert.equal(entries.filter(p=>p.event==='meta_purchase').length,1);
  assert.equal(entries.at(-1).user_data,null);

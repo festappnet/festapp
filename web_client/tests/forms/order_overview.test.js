@@ -446,27 +446,32 @@ test('Meta consent is withdrawn using the scoped buyer capability and supports r
 test('a later explicit advertising denial withdraws Meta consent; unknown consent never does', async t => {
     const host = setup(t);
     const scope = { orderId: 1, token: 'a'.repeat(64) };
-    const results = [false, true];
+    const results = [{error: new Error('scope unavailable')}, {data: true}];
     const calls = [];
     const commands = {
         overview: async () => ({ ...fixture(), metaPurchaseConsent: true }),
-        client: { rpc: async (name, params) => { calls.push({ name, params }); return { data: results.shift() }; } },
+        client: { rpc: async (name, params) => { calls.push({ name, params }); return results.shift(); } },
     };
     await loadOrderOverview(host, commands, scope);
     const settle = () => new Promise(resolve => setTimeout(resolve, 0));
-    const granted = { ad_storage: true, ad_user_data: true, ad_personalization: true };
+    const granted = {
+        source: 'klaro', timestamp: new Date(Date.now()-1000).toISOString(), consentRevision: 'b'.repeat(32),
+        websiteOrigin: 'https://tickets.example', ad_storage: true, ad_user_data: true, ad_personalization: true,
+    };
+    const denied = {...granted, ad_user_data: false};
     for (const choice of [null, false, { marketing: false }, { marketing: true, purchaseConsent: null },
-        { marketing: true, purchaseConsent: granted }]) {
+        { marketing: true, purchaseConsent: granted }, { purchaseConsent: {...denied, timestamp:'not a time'} },
+        { purchaseConsent: denied, expiresAt:1 }]) {
         withdrawOverviewPurchaseConsent(host, choice); await settle();
     }
     assert.equal(calls.length, 0, 'missing, disconnected or granted consent keeps the order consent');
-    withdrawOverviewPurchaseConsent(host, { marketing: false, purchaseConsent: { ...granted, ad_user_data: false } }); await settle();
+    withdrawOverviewPurchaseConsent(host, { marketing: false, purchaseConsent: denied }); await settle();
     assert.equal(calls.length, 1);
     withdrawOverviewPurchaseConsent(host); await settle();
     assert.equal(calls.length, 2, 'a failed withdrawal is retried on the next poll');
     withdrawOverviewPurchaseConsent(host); await settle();
     assert.equal(calls.length, 2, 'a confirmed withdrawal is not repeated');
-    assert.deepEqual(calls[0], { name: 'revoke_meta_purchase_consent', params: { p_token: scope.token, p_order_id: scope.orderId } });
+    assert.deepEqual(calls[0], { name: 'revoke_meta_purchase_consent', params: { p_token: scope.token, p_order_id: scope.orderId, p_denial: denied } });
     stopOrderOverview(host);
 });
 
