@@ -29,7 +29,7 @@ export class EmbedMeasurement {
                 this.leaseUntil=granted?Date.now()+Math.min(60000,Math.max(0,Number(value.ttl)||0)):0;
                 this.win.clearTimeout(this.leaseTimer);
                 this.leaseTimer=this.win.setTimeout(()=>{this.stop();this.consentNotify?.(false);},Math.max(0,this.leaseUntil-Date.now()));
-                this.consentNotify?.(granted && imported?{...measurementConsent(value.consent),leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
+                this.consentNotify?.(granted && imported?{...measurementConsent(value.consent),purchaseConsent:scope?.binding && sameConsentBinding(scope.binding,value.binding) ? {...value.consent?.purchaseConsent, binding:scope.binding, websiteOrigin:this.origin} : null,leaseId:this.leaseId,expiresAt:this.leaseUntil}:false);
             } else if (data.type === 'measurement-ack' && this.grant && data.measurement?.protocol===measurementProtocol &&
                 data.measurement.generation===this.grant.generation && data.measurement.leaseId===this.grant.leaseId &&
                 sameMeasurementManifest(data.measurement.manifest,this.grant.manifest) && Date.now()<this.leaseUntil) {

@@ -13,6 +13,7 @@ DECLARE
  deposit_id bigint;
  balance_id bigint;
  paid_id uuid;
+ paid_created_at timestamptz;
  claimed uuid;
  prepared jsonb;
  first_event_time bigint;
@@ -26,12 +27,36 @@ BEGIN
  VALUES ((fixture->>'organization')::bigint,true,1,'fixture','confirmed purchase');
  UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=form_id;
  PERFORM public.reserve_public_link_internal('form',form_id,fixture->>'link',true);
+ -- Default order mode restores accepted-order purchase without changing lead semantics.
+ PERFORM assert_eq(public.form_purchase_timing_internal(form_id),'order','missing timing defaults to order');
+ receipt:=public.create_ticket_order_client_sync_v1(checkout,gen_random_uuid(),client_id);
+ PERFORM assert_eq(receipt#>>'{data,analytics,event}','purchase','default emits accepted-order purchase');
+ unconsented_id:=(receipt#>>'{data,order,id}')::bigint;
+ PERFORM assert_eq(receipt#>>'{data,analytics,event_id}',receipt#>>'{data,analytics,ecommerce,transaction_id}','order event_id equals transaction UUID');
+ PERFORM assert_eq((public.apply_form_settings_internal('{}','{"analytics":{"purchase_timing":"paid"}}')#>>'{analytics,purchase_timing}'),'paid','editor saves paid mode');
+ BEGIN
+  PERFORM public.apply_form_settings_internal('{}','{"analytics":{"purchase_timing":"invalid"}}');
+  RAISE EXCEPTION 'invalid timing accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ UPDATE public.organizations SET data=coalesce(data,'{}')||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(fixture->>'organization')::bigint;
  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled,test_event_code)
  VALUES(connector_unit,'123456',vault.create_secret(repeat('t',40),'meta-purchase-fixture'),
   'https://tickets.example',true,'TEST4242');
  INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(form_id,connector_unit);
+ PERFORM assert_eq(public.form_order_purchase_timing_internal(unconsented_id),'order','CAPI activation cannot change an existing order cohort');
+ PERFORM assert_false(public.form_order_purchase_capi_required_internal(unconsented_id),'CAPI activation cannot adopt an existing non-CAPI cohort');
+ UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}','"paid"') WHERE id=form_id;
+ PERFORM assert_eq(public.form_order_purchase_timing_internal(unconsented_id),'order','editing timing cannot change an existing order cohort');
+ PERFORM assert_true(public.form_purchase_datalayer_internal(unconsented_id) IS NOT NULL,'old cohort retains accepted-order event');
+ UPDATE analytics.conversion_facts SET payload=payload-'purchase_timing' WHERE "order"=unconsented_id AND kind='purchase';
+ PERFORM assert_eq(public.form_order_purchase_timing_internal(unconsented_id),'order','legacy snapshots remain order cohort');
+ UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}','"order"') WHERE id=form_id;
  checkout:=checkout||jsonb_build_object('metaPurchaseConsent',jsonb_build_object(
-  'revision',public.get_meta_purchase_consent(fixture->>'link')->>'revision','userAgent','Test checkout'));
+  'revision',public.get_meta_purchase_consent(fixture->>'link')->>'revision','userAgent','Test checkout',
+  'ad_storage',true,'ad_user_data',true,'ad_personalization',true,'source','klaro',
+  'timestamp',to_char(statement_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  'consentRevision',public.unit_measurement_consent_scope_internal(connector_unit)->>'consentRevision',
+  'websiteOrigin','https://tickets.example'));
  PERFORM assert_true(checkout#>>'{metaPurchaseConsent,revision}' IS NOT NULL,'enabled connector exposes the bound notice');
 
  receipt:=public.create_ticket_order_client_sync_v1(checkout,command_id,client_id);
@@ -47,10 +72,7 @@ BEGIN
 
  UPDATE eshop.payment_info SET deposit_amount=30 WHERE id=payment_id RETURNING bank_account INTO bank_id;
 
- -- Simulate a receipt written before this migration. Old clients must never
- -- recover the historical order-time event, even after this order is paid.
- INSERT INTO analytics.conversion_facts("order",kind,payload)
- VALUES(v_order_id,'purchase','{"event":"purchase"}');
+ PERFORM assert_eq(public.form_purchase_timing_internal(form_id),'paid','CAPI overrides legacy order setting');
  PERFORM assert_eq(public.create_ticket_order_client_sync_v1(checkout,command_id,client_id)#>'{data,analytics}',
   'null'::jsonb,'checkout replay suppresses historical order-time purchase');
 
@@ -84,8 +106,17 @@ BEGIN
  SELECT event_id INTO STRICT paid_id FROM analytics.conversion_facts WHERE "order"=v_order_id AND kind='order_fully_paid';
  PERFORM assert_eq((SELECT payload FROM analytics.conversion_facts WHERE event_id=paid_id),
   '{"currency":"CZK","value":100}'::jsonb,'actual bank receipts cover the full order');
- PERFORM assert_eq(public.create_ticket_order_client_sync_v1(checkout,command_id,client_id)#>'{data,analytics}',
-  'null'::jsonb,'full payment stays out of browser checkout receipts');
+ PERFORM assert_eq(public.form_order_purchase_timing_internal(v_order_id),'paid','CAPI order creation freezes paid cohort');
+ PERFORM assert_true(public.form_order_purchase_capi_required_internal(v_order_id),'CAPI order creation freezes server-send requirement');
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(v_order_id)->>'event_id',paid_id::text,'pending CAPI does not block general paid analytics');
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(v_order_id)->'meta_purchase_allowed','false'::jsonb,'general purchase suppresses early Pixel for original CAPI cohort');
+ PERFORM assert_true(public.form_meta_purchase_datalayer_internal(v_order_id) IS NULL,'pending CAPI blocks only Meta companion');
+ UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=connector_unit;
+ PERFORM assert_true(public.form_meta_purchase_datalayer_internal(v_order_id) IS NULL,'CAPI disable cannot remove frozen Meta server-send requirement');
+ UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=connector_unit;
+ PERFORM assert_eq(public.create_ticket_order_client_sync_v1(checkout,command_id,client_id)#>>'{data,analytics,event_id}',
+  paid_id::text,'authorized replay exposes general paid purchase before CAPI send');
+ PERFORM assert_true(public.get_customer_order_overview_internal(repeat('b',64),v_order_id)->>'code'<>'200','invalid capability cannot read purchase');
  PERFORM public.apply_transaction_pairing(balance_id,NULL,'manual_unlink','user');
  PERFORM public.apply_transaction_pairing(balance_id,payment_id,'manual_attach','user');
  PERFORM assert_eq((SELECT event_id FROM analytics.conversion_facts WHERE "order"=v_order_id AND kind='order_fully_paid'),
@@ -101,6 +132,8 @@ BEGIN
  PERFORM assert_true(public.prepare_meta_purchase_delivery(v_order_id,claimed) IS NULL,'one prepare per lease');
  first_event_time:=(prepared->>'eventTime')::bigint;
  PERFORM assert_true(public.finish_meta_purchase_delivery(v_order_id,claimed,'retry'),'transient result acknowledges the lease');
+ PERFORM assert_true(public.form_meta_purchase_datalayer_internal(v_order_id) IS NULL,'CAPI retry still blocks only Meta companion');
+ PERFORM assert_true(public.form_purchase_datalayer_internal(v_order_id) IS NOT NULL,'CAPI retry preserves general paid analytics');
  PERFORM assert_eq((SELECT count(*) FROM public.claim_meta_purchase_deliveries(8)),0::bigint,'retry backs off');
  UPDATE analytics.meta_purchase_deliveries d SET next_attempt_at=now()-interval '1 second' WHERE d.order_id=v_order_id;
  SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(8) d WHERE d.order_id=v_order_id;
@@ -113,6 +146,7 @@ BEGIN
  UPDATE analytics.meta_purchase_deliveries d SET next_attempt_at=now()-interval '1 second' WHERE d.order_id=v_order_id;
  SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(8) d WHERE d.order_id=v_order_id;
  PERFORM public.issue_order_overview_internal(v_order_id,pg_temp.delivery('fixture',buyer_token,v_order_id),gen_random_uuid());
+ PERFORM assert_eq(public.get_customer_order_overview_internal(buyer_token,v_order_id)#>'{orders,0,metaAnalytics}','null'::jsonb,'authorized Meta companion cannot precede CAPI send');
  PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('b',64),v_order_id),'invalid buyer capability cannot revoke');
  PERFORM assert_true(public.revoke_meta_purchase_consent(buyer_token,v_order_id),'buyer can revoke in order overview');
  PERFORM assert_true(public.prepare_meta_purchase_delivery(v_order_id,claimed) IS NULL,'withdrawal invalidates an outstanding claim');
@@ -124,6 +158,14 @@ BEGIN
  PERFORM assert_true(unconsented_id IS NOT NULL,'checkout without consent succeeds');
  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries d WHERE d.order_id=unconsented_id),
   'checkout without consent never queues a delivery');
+ SELECT payment_info INTO STRICT payment_id FROM eshop.orders WHERE id=unconsented_id;
+ INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source)
+ VALUES(bank_id,100,'CZK',now(),'fio_api') RETURNING id INTO balance_id;
+ PERFORM public.apply_transaction_pairing(balance_id,payment_id,'manual_attach','user');
+ PERFORM assert_true(public.form_purchase_datalayer_internal(unconsented_id) IS NOT NULL,'advertising denial cannot suppress general paid analytics');
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(unconsented_id)->'meta_purchase_allowed','false'::jsonb,'advertising-denied CAPI cohort cannot send early Pixel');
+ PERFORM assert_true(public.form_meta_purchase_datalayer_internal(unconsented_id) IS NULL,'advertising-denied purchase has no Meta companion');
+
 
  receipt:=public.create_ticket_order_client_sync_v1(checkout,gen_random_uuid(),client_id);
  second_order_id:=(receipt#>>'{data,order,id}')::bigint;
@@ -136,6 +178,23 @@ BEGIN
  PERFORM assert_eq((prepared->>'value')::numeric,100::numeric,'overpayment does not inflate purchase value');
  PERFORM assert_true(public.finish_meta_purchase_delivery(second_order_id,claimed,'sent'),'a confirmed Meta receipt completes delivery');
  PERFORM assert_false(public.finish_meta_purchase_delivery(second_order_id,claimed,'sent'),'replaying acknowledgment does not deliver twice');
+ SELECT event_id,created_at INTO STRICT paid_id,paid_created_at FROM analytics.conversion_facts WHERE "order"=second_order_id AND kind='order_fully_paid';
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(second_order_id)->>'event_id',paid_id::text,'general purchase retains shared UUID');
+ PERFORM assert_eq(public.form_meta_purchase_datalayer_internal(second_order_id)->>'event_id',paid_id::text,'sent CAPI exposes matching Meta companion UUID');
+ PERFORM assert_eq(public.form_meta_purchase_datalayer_internal(second_order_id)->>'event','meta_purchase','Meta companion has a dedicated destination event');
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(second_order_id)#>>'{ecommerce,transaction_id}',paid_id::text,'sent CAPI and browser share the same UUID');
+ UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=connector_unit;
+ PERFORM assert_eq(public.form_purchase_datalayer_internal(second_order_id)->>'event_id',paid_id::text,'CAPI disable preserves the sent paid cohort UUID');
+ UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=connector_unit;
+ PERFORM public.issue_order_overview_internal(second_order_id,pg_temp.delivery('fixture',repeat('c',64),second_order_id),gen_random_uuid());
+ PERFORM assert_eq(public.get_customer_order_overview_internal(repeat('c',64),second_order_id)#>>'{orders,0,metaAnalytics,event_id}',paid_id::text,'authorized overview recovers a sent Meta companion');
+ UPDATE analytics.conversion_facts SET created_at=statement_timestamp()-interval '48 hours' WHERE "order"=second_order_id AND kind='order_fully_paid';
+ PERFORM assert_true(public.form_meta_purchase_datalayer_internal(second_order_id) IS NULL,'late return cannot emit Meta companion beyond dedup window');
+ PERFORM assert_true(public.form_purchase_datalayer_internal(second_order_id) IS NOT NULL,'late return preserves general purchase analytics');
+ -- Restore the precise original instant, not the start of this DO statement:
+ -- that would put the fact before its consent and invalidate prepare evidence.
+ UPDATE analytics.conversion_facts SET created_at=paid_created_at WHERE "order"=second_order_id AND kind='order_fully_paid';
+ PERFORM assert_eq(public.form_meta_purchase_datalayer_internal(second_order_id)->>'event_id',paid_id::text,'restoring original paid timestamp restores sent Meta companion');
  PERFORM assert_true((SELECT status='sent' AND email_hash IS NULL AND client_agent IS NULL
   FROM analytics.meta_purchase_deliveries d WHERE d.order_id=second_order_id),'success retains only operational evidence');
 

@@ -431,6 +431,11 @@
     "updatingUsers": "Actualizando usuarios"
   },
   "FeatureFormSettings": {
+    "purchaseTiming": "Evento de compra",
+    "purchaseTimingOrder": "Al realizar el pedido",
+    "purchaseTimingPaid": "Tras el pago completo",
+    "purchaseTimingHelp": "El modo de pedido incluye pedidos sin pagar. El modo de pago requiere un pago bancario o en línea válido y volver al resumen en un plazo de 47 horas.",
+    "purchaseTimingCapi": "Meta Conversions API requiere el modo de pago. El navegador y el servidor comparten el ID del evento.",
     "measurementPolicySummary": "Política de privacidad",
     "measurementBannerFallback": "Se usa cuando el formulario se abre por separado.",
     "measurementBasics": "Ajustes básicos",

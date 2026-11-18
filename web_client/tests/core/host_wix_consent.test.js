@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {measurementConsent} from '../../src/components/forms/form_measurement_contract.js';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
 import {createWixConsentSource} from '../../src/embed/host_wix_consent.js';
@@ -15,7 +16,7 @@ function fixture(t,changes={}) {
  win.consentPolicyManager={getCurrentConsentPolicy:()=>record};
  const exported={schemaVersion:1,serviceOrigin:'https://tickets.example',websiteOrigin:origin,binding,providerConfig:config};
  const source=createManagedConsentSource(win,exported,exported.serviceOrigin);
- return {win,source,read:()=>readConsentSource(source,scope),record,setRecord:v=>record=v};
+ return {win,source,read:()=>{const value=readConsentSource(source,scope);return value ? measurementConsent(value) : value;},record,setRecord:v=>record=v};
 }
 test('native Wix saved choice and refusal use archived scope, cutoff and managed version',t=>{
  const f=fixture(t);assert.deepEqual(f.read(),{analytics:true,marketing:true});
@@ -48,4 +49,14 @@ test('native Wix supports canonical ISO creation timestamp as well as SDK Date',
 test('invalid native mapping cannot echo requested notice revision',t=>{
  const f=fixture(t);const source=createWixConsentSource(f.win,{...config,consentValidFrom:'invalid'});
  assert.equal(source.read(scope),null);
+});
+
+test('managed Wix snapshot preserves saved timestamp, binding and individual advertising denial',t=>{
+ const f=fixture(t);const value=readConsentSource(f.source,scope);
+ assert.equal(value.purchaseConsent.timestamp,f.record.createdDate.toISOString());
+ assert.deepEqual(value.purchaseConsent.binding,binding);
+ assert.equal(value.purchaseConsent.websiteOrigin,origin);
+ assert.equal(value.purchaseConsent.ad_user_data,true);
+ f.record.policy.dataToThirdParty=false;
+ assert.equal(readConsentSource(f.source,scope).purchaseConsent.ad_user_data,false);
 });

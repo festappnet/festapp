@@ -22,8 +22,9 @@ export function createWixConsentSource(win, input) {
             if (saved?.defaultPolicy !== false || p?.essential !== true ||
                 !['functional','analytics','advertising','dataToThirdParty'].every(k => typeof p[k] === 'boolean') ||
                 !consentValidity(config)(timestamp, now)) return null;
-            return {consentRevision:config.consentRevision, analytics:p.analytics,
-                marketing:p.advertising && p.dataToThirdParty && typeof win.__tcfapi === 'undefined'};
+            const marketing = p.advertising && p.dataToThirdParty && typeof win.__tcfapi === 'undefined';
+            return {purchaseConsent:{source:'wix', timestamp:new Date(timestamp).toISOString(), ad_storage:marketing, ad_user_data:marketing, ad_personalization:marketing}, consentRevision:config.consentRevision, analytics:p.analytics,
+                marketing};
         } catch { return null; }
     };
     const tick = () => {

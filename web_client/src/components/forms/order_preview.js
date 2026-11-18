@@ -61,22 +61,6 @@ export class OrderPreview {
         });
         else if (data.registrationMode !== 'waitlist' && !presentation.submitLabel) {paymentSubmit.textContent = paymentMethodText('finishFree');overlay.querySelector('[data-payment-methods]').hidden=true;}
 
-        if (data.totalPrice > 0 && presentation.metaConsent) {
-            const consent = document.createElement('p');
-            const choice = document.createElement('label');
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.dataset.metaPurchaseConsent = '';
-            choice.append(checkbox, ' ', FormStrings.metaPurchaseConsent);
-            const privacy = document.createElement('a');
-            privacy.href = presentation.metaConsent.privacyUrl;
-            privacy.target = '_blank';
-            privacy.rel = 'noopener noreferrer';
-            privacy.textContent = FormStrings.measurementConsentPrivacy;
-            consent.append(choice, ' ', privacy);
-            overlay.querySelector('[data-payment-methods]').after(consent);
-        }
-
         // 3. Close Logic (with Animation)
         let isClosing = false;
         const closePreview = () => {

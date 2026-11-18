@@ -52,9 +52,14 @@ abstract final class FormMetadata {
     'communication_tone': null,
     'variable_symbol': ['type', 'starting_number'],
     'payment_message': ['type'],
-    'payments': ['bankEnabled', 'providerConnections', 'cashEnabled', 'cashInstructions'],
+    'payments': [
+      'bankEnabled',
+      'providerConnections',
+      'cashEnabled',
+      'cashInstructions',
+    ],
     'payment_deadline': ['mode'],
-    'analytics': ['enabled'],
+    'analytics': ['enabled', 'purchase_timing'],
     'waitlist': ['show_count'],
     'design': [
       'embed_inherit_style',

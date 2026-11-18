@@ -1,13 +1,15 @@
+import {measurementConsent} from '../../src/components/forms/form_measurement_contract.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
 import {createManagedConsentSource, parseConsentExport} from '../../src/embed/host_consent_export.js';
-import {consentScope, readConsentSource} from '../../src/components/forms/measurement_consent_source.js';
+import {consentScope, readConsentSource as readFullConsentSource} from '../../src/components/forms/measurement_consent_source.js';
 import {complianzFixture, complianzConfig} from '../support/complianz_fixture.js';
 import {cookiebotFixture, cookiebotConfig} from '../support/cookiebot_fixture.js';
 import {cookieconsentFixture, cookieconsentConfig} from '../support/cookieconsent_fixture.js';
 import {EmbedMeasurement} from '../../src/embed/measurement.js';
 import {measurementManifest} from '../../src/components/forms/form_measurement_contract.js';
+const readConsentSource=(...args)=>{const value=readFullConsentSource(...args);return value ? measurementConsent(value) : value;};
 const HOST='https://host.example', SERVICE='https://tickets.example';
 const binding={id:'11111111-1111-1111-1111-111111111111',version:1};
 const policy={organization:1,unit:2,processing_revision:'technical',consent_revision:'a'.repeat(32),

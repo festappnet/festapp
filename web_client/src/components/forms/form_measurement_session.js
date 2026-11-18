@@ -19,9 +19,10 @@ export function hasBrowserSession(win) {
 // Construction is inert. Sources and transports never decide to grant access.
 export class FormMeasurementSession {
     constructor({win=window, model, policySource, consentSource, identitySource, transport,
-        entryAllowed, onActive=()=>{}, clock=()=>Date.now()}) {
-        Object.assign(this,{win,model,policySource,consentSource,identitySource,transport,onActive,clock});
-        this.entryAllowed=(entryAllowed ?? publicFormLocation(win.location,{entry:true})) && documentEntryAllowed(win);
+        entryAllowed, authorizedOrderScope=null, onActive=()=>{}, onConsent=()=>{}, clock=()=>Date.now()}) {
+        Object.assign(this,{win,model,policySource,consentSource,identitySource,transport,onActive,onConsent,clock});
+        this.authorizedOrderScope=authorizedOrderScope;
+        this.entryAllowed=this.orderContextAllowed() || (entryAllowed ?? publicFormLocation(win.location,{entry:true})) && documentEntryAllowed(win);
         this.policyVerification=0; this.contextEpoch=0; this.pendingConversions=new Map(); this.deliveredConversions=new Set();
         this.generation=0; this.state='blocked'; this.consent=measurementConsent(false);
     }
@@ -55,9 +56,24 @@ export class FormMeasurementSession {
         this.transport.stop();
     }
     identity() { return this.identitySource?.read?.() ?? (hasBrowserSession(this.win)?'authenticated':'anonymous'); }
+    // Set only after a successful buyer-capability RPC. Never exported to runtime.
+    orderContextAllowed() {
+        const scope=this.authorizedOrderScope, loc=this.win.location;
+        if(!scope || loc.pathname!=='/order' || loc.hash)return false;
+        const q=new URLSearchParams(loc.search);
+        if ([...q.keys()].some(key=>!['token','order_id','embed'].includes(key)) ||
+            q.getAll('token').length!==1 || q.getAll('order_id').length!==1 ||
+            (q.has('embed') && (q.getAll('embed').length!==1 || q.get('embed')!=='1'))) return false;
+        let framed=true;
+        try {framed=this.win.self!==this.win.top;} catch { /* Restricted frames stay embedded. */ }
+        // A private buyer route in a frame must explicitly select host context.
+        if (framed && q.get('embed')!=='1') return false;
+        return q.get('token')===scope.token && q.get('order_id')===String(scope.orderId) &&
+            /^[a-f0-9]{64}$/.test(scope.token) && Number.isSafeInteger(scope.orderId) && scope.orderId>0;
+    }
     contextAllowed() {
         try {return !this.disposed && !this.suspended && this.entryAllowed &&
-            !this.model.demoSimulation && publicFormLocation(this.win.location);} catch {return false;}
+            !this.model.demoSimulation && (this.orderContextAllowed() || publicFormLocation(this.win.location));} catch {return false;}
     }
     refresh() {
         if (this.disposed) return Promise.resolve();
@@ -74,6 +90,7 @@ export class FormMeasurementSession {
             this.win.clearTimeout(this.expiry);
             this.expiry=this.win.setTimeout(()=>{this.invalidate();},Math.max(0,this.until-this.clock()));
             this.transport.renew?.(this.consentDeadline());
+            if (!this.suspended) this.onConsent(this.consent);
             this.policyVerification++;
             this.reconcile();
             this.flushConversions();
@@ -95,9 +112,10 @@ export class FormMeasurementSession {
                 const next=measurementConsent(validLease ? value : false);
                 const changed=next.analytics!==this.consent.analytics || next.marketing!==this.consent.marketing;
                 if(value?.leaseId!==this.consent.leaseId) this.invalidate();
-                this.consent={...next,leaseId:value?.leaseId,expiresAt:validLease ? value?.expiresAt : 0};
+                this.consent={...next,purchaseConsent:validLease ? value?.purchaseConsent : null,leaseId:value?.leaseId,expiresAt:validLease ? value?.expiresAt : 0};
                 if (validLease && this.grant) this.transport.renew?.(this.consentDeadline());
                 if(changed && validLease)this.transport.updateConsent?.(next);
+                if (!this.suspended) this.onConsent(this.consent);
                 this.reconcile();
             });
         } catch {this.consentConnected=false;this.consent=measurementConsent(false);this.transport.updateConsent?.(this.consent);}
@@ -147,8 +165,8 @@ export class FormMeasurementSession {
         const eligible=this.state==='active' && this.permitted();
         return input=>{
             const payload=analyticsPayload(input);
-            if(this.disposed || !eligible || !payload || !['purchase','generate_lead'].includes(payload.event))return false;
-            const key=payload.ecommerce?.transaction_id || payload.event_id;
+            if(this.disposed || !eligible || !payload || !['purchase','meta_purchase','generate_lead'].includes(payload.event))return false;
+            const key=payload.event+':'+(payload.ecommerce?.transaction_id || payload.event_id);
             if(this.deliveredConversions.has(key) || this.pendingConversions.has(key))return true;
             if(send(payload)){this.deliveredConversions.add(key);return true;}
             const {user_data, ...fact}=payload;

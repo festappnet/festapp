@@ -16,24 +16,27 @@ const events=[
  {name:'begin_checkout',ecommerce:true,meta:'InitiateCheckout'},
  {name:'add_payment_info',ecommerce:true,meta:'AddPaymentInfo'},
  {name:'generate_lead',contact:true,meta:'Lead'},
+ {name:'purchase',ecommerce:true,contact:true,meta:'Purchase'},
+ {name:'meta_purchase',ecommerce:true,contact:true,metaOnly:true},
 ];
 const variables=[];
 const variable=(name,type,parameter)=>{
  variables.push(withFolder({variableId:String(variables.length+1),name,type,parameter}));return name;
 };
 const dl=path=>'dl.'+path;
-for(const path of ['form_embedded','ecommerce.value','ecommerce.currency','ecommerce.items',
+for(const path of ['form_embedded','meta_purchase_allowed','ecommerce.transaction_id','ecommerce.value','ecommerce.currency','ecommerce.items',
  'user_data.email','user_data.phone_number',...contextNames,...leadNames]) {
  variable(dl(path),'v',[p('dataLayerVersion',2,'INTEGER'),p('setDefaultValue',false,'BOOLEAN'),p('name',path)]);
 }
 const constants={
  ga4:variable('GA4 ID - Festapp','c',[p('value','G-REPLACE0000')]),
  ads:variable('GAds ID - Festapp','c',[p('value','000000000')]),
+ purchase:variable('GAds label - Festapp - Purchase','c',[p('value','REPLACE_PURCHASE_LABEL')]),
  registration:variable('GAds label - Festapp - Registrace','c',[p('value','REPLACE_REGISTRATION_LABEL')]),
  meta:variable('FB Pixel ID - Festapp','c',[p('value','000000000000000')]),
 };
 const js=(name,body)=>variable('cjs - Festapp - '+name,'jsm',[p('javascript','function () { '+body+' }')]);
-const contactGuard=`if (${ref(dl('form_embedded'))} !== true || ${ref('Event')} !== 'generate_lead') return;`;
+const contactGuard=`if (${ref(dl('form_embedded'))} !== true || ['generate_lead','purchase','meta_purchase'].indexOf(${ref('Event')}) < 0) return;`;
 const email=js('email',contactGuard+` var v=${ref(dl('user_data.email'))}; if (typeof v === 'string') return v;`);
 const phone=js('phone',contactGuard+` var v=${ref(dl('user_data.phone_number'))}; if (typeof v === 'string' && v.charAt(0) === '+' && /^[1-9][0-9]{7,14}$/.test(v.substring(1))) return v;`);
 const metaPhone=js('Meta phone',`var v=${ref(phone)}; if (typeof v === 'string') return v.substring(1);`);
@@ -64,6 +67,10 @@ const registrationTrigger=withFolder({triggerId:String(triggers.length+1),name:'
  type:'CUSTOM_EVENT',customEventFilter:[equals('_event','generate_lead')],
  filter:[equals(dl('form_embedded'),'true'),equals(dl('lead_source'),'free_registration')]});
 triggers.push(registrationTrigger);
+const pixelPurchaseTrigger=withFolder({triggerId:String(triggers.length+1),name:'event - Festapp - purchase - Meta allowed',
+ type:'CUSTOM_EVENT',customEventFilter:[equals('_event','purchase')],
+ filter:[equals(dl('form_embedded'),'true'),equals(dl('meta_purchase_allowed'),'true')]});
+triggers.push(pixelPurchaseTrigger);
 const triggerFor=name=>triggers[events.findIndex(event=>event.name===name)].triggerId;
 const eventParameters=entries=>({type:'LIST',key:'eventSettingsTable',list:entries.map(([name,value])=>({type:'MAP',map:[p('parameter',name),p('parameterValue',ref(value))]}))});
 const googleConsent={consentStatus:'NOT_NEEDED'};
@@ -71,7 +78,7 @@ const metaConsent={consentStatus:'NEEDED',consentType:{type:'LIST',list:[{type:'
 const tags=[];
 const tag=(name,type,parameter,firingTriggerId,consentSettings)=>tags.push(withFolder({tagId:String(tags.length+1),name,type,
  parameter,firingTriggerId,tagFiringOption:'ONCE_PER_EVENT',paused:true,consentSettings}));
-for(const event of events) {
+for(const event of events.filter(event=>!event.metaOnly)) {
  const parameters=contextNames.map(name=>[name,dl(name)]);
  if(event.name==='generate_lead')parameters.push(...leadNames.map(name=>[name,leadVariables[name]]));
  if(event.contact)parameters.push(['user_data',userProvided]);
@@ -88,18 +95,26 @@ tag('GAds - Festapp - Registrace','awct',[
  p('enableConversionLinker',true,'BOOLEAN'),eventParameters([['user_data',userProvided]]),
 ],[registrationTrigger.triggerId],googleConsent);
 
+tag('GAds - Festapp - Purchase','awct',[
+ p('conversionId',ref(constants.ads)),p('conversionLabel',ref(constants.purchase)),
+ p('orderId',ref(dl('ecommerce.transaction_id'))),p('conversionValue',ref(dl('ecommerce.value'))),
+ p('currencyCode',ref(dl('ecommerce.currency'))),p('enableConversionLinker',true,'BOOLEAN'),
+ eventParameters([['user_data',userProvided]]),
+],[triggerFor('purchase')],googleConsent);
+
 const metaTemplate=JSON.parse(readFileSync(new URL('./meta-pixel-template.json',import.meta.url),'utf8'));
 for(const event of events.filter(event=>event.meta)) {
  const matching=event.contact?[{type:'MAP',map:[p('name','em'),p('value',ref(email))]},
   {type:'MAP',map:[p('name','ph'),p('value',ref(metaPhone))]}]:[];
  tag('Meta Pixel - Festapp - '+event.meta,'cvt_0_1',[
   p('pixelId',ref(constants.meta)),p('eventName','standard'),p('standardEventName',event.meta),
+  ...(event.name==='purchase'?[p('eventId',ref(dl('ecommerce.transaction_id')))]:[]),
   p('consent',true,'BOOLEAN'),p('optInMetaCAPI',false,'BOOLEAN'),
   p('advancedMatching',!!event.contact,'BOOLEAN'),
   ...(event.contact?[{type:'LIST',key:'advancedMatchingList',list:matching}]:[]),
   p('enhancedEcommerce',false,'BOOLEAN'),p('useGA4Ecommerce',false,'BOOLEAN'),
   p('objectPropertiesFromVariable',ref(metaProperties)),
- ],[triggerFor(event.name)],metaConsent);
+ ],event.name==='purchase'?[pixelPurchaseTrigger.triggerId,triggerFor('meta_purchase')]:[triggerFor(event.name)],metaConsent);
 }
 export const preset={exportFormatVersion:2,exportTime:'2026-11-11 00:00:00',containerVersion:{
  name:'Festapp website measurement - paused setup preset',accountId:'0',containerId:'0',containerVersionId:'0',

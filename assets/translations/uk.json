@@ -108,6 +108,11 @@
     "validationSummary": "Перевірте виділені поля. Зміни ще не збережено."
   },
   "FeatureFormSettings": {
+    "purchaseTiming": "Подія покупки",
+    "purchaseTimingOrder": "Під час оформлення замовлення",
+    "purchaseTimingPaid": "Після повної оплати",
+    "purchaseTimingHelp": "Режим замовлення включає неоплачені замовлення. Режим оплати вимагає відповідного банківського або онлайн-платежу та повернення до огляду протягом 47 годин.",
+    "purchaseTimingCapi": "Meta Conversions API вимагає режиму після оплати. Браузер і сервер використовують однаковий ID події.",
     "measurementPolicySummary": "Політика конфіденційності",
     "measurementBannerFallback": "Використовується у формі, відкритій окремо.",
     "measurementBasics": "Основні налаштування",

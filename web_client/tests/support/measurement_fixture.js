@@ -6,8 +6,8 @@ export const policy={measurement_protocol:3,enabled:true,organization_allowed:tr
  form_link:'summer',runtime_origin:'https://unit-measurement.pages.dev',privacy_url:'https://organizer.example/privacy',
  processing_revision:'processing-a',runtime_revision:1,policy_revision:1,profile:'gtm-v1',required_purposes:['analytics','marketing'],valid_for_seconds:60,visitor_role:'anonymous'};
 export const settle=()=>new Promise(resolve=>setImmediate(resolve));
-export const purchase={event:'purchase',ecommerce:{currency:'CZK',transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',payment_type:'bank_transfer',items:[{item_id:'product_11',item_name:'Concert',price:100,quantity:2}]}};
-export function fixture(t,{source=async()=>({...policy}),identity='anonymous',consent={analytics:true,marketing:true},url='https://tickets.test/form/summer',autoReady=true,modelData={},clock}={}) {
+export const purchase={event:'purchase',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',ecommerce:{currency:'CZK',transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',payment_type:'bank_transfer',items:[{item_id:'product_11',item_name:'Concert',price:100,quantity:2}]}};
+export function fixture(t,{source=async()=>({...policy}),identity='anonymous',consent={analytics:true,marketing:true},url='https://tickets.test/form/summer',autoReady=true,modelData={},clock,authorizedOrderScope}={}) {
  const dom=new JSDOM('<html lang="cs"><body></body></html>',{url,pretendToBeVisual:true});
  let currentIdentity=identity,notifyIdentity,notifyConsent,deliver=true;const sent=[],starts=[];
  const transport={activate(grant){this.grant=grant;starts.push(grant);if(autoReady)grant.onReady();},stop(){this.grant=null;},renew(){},
@@ -17,7 +17,7 @@ export function fixture(t,{source=async()=>({...policy}),identity='anonymous',co
   {id:5,type:'email'},{id:6,type:'phone'}]};
  const checkout={payload:{fields:[]}};let session;
  const layer=new FormDataLayer({win:dom.window,model,sink:{record:p=>session.record(p),capture:()=>session.capture(),captureConversion:()=>session.captureConversion()}});
- session=new FormMeasurementSession({win:dom.window,model,transport,policySource:source,clock,
+ session=new FormMeasurementSession({win:dom.window,model,transport,policySource:source,clock,authorizedOrderScope,
   identitySource:{read:()=>currentIdentity,subscribe:fn=>{notifyIdentity=fn;return ()=>notifyIdentity=null;}},
   consentSource:{connect(_policy,notify){notifyConsent=notify;notify(consent);return ()=>{notifyConsent=null;};}},
   onActive:()=>layer.activate(checkout)});

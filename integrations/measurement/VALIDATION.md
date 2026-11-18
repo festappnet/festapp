@@ -1,6 +1,6 @@
 # Preset validation for issue #804, 2026-11-11
 
-This receipt applies to the artifact hash below. It predates the removal of browser purchase tags for issue #917.
+This receipt applies to the artifact hash below. It predates #918 and the subsequent Purchase/consent follow-up. It is historical evidence, not validation of the current generated preset.
 
 Implementation base: main `32032baa7` with #803 consent changes and #806 order
 reads preserved. The old four-tag receipt is retained in `validation/2026-11-10.md`;

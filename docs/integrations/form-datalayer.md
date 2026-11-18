@@ -11,7 +11,7 @@ GTM and Unit scripts as soon as the form loads, and dataLayer is always filled. 
 choice in the consent notice is state for Google Consent Mode, evaluated by the
 organizer's container, which the organizer configures and answers for. Missing or
 broken consent sources report denied state and measurement continues.
-`generate_lead` can carry available `user_data` on immediate delivery; contact-free
+`purchase`, `meta_purchase` and `generate_lead` can carry available `user_data` on immediate delivery; contact-free
 recovery is described below. See [Contact in conversions](#contact-in-conversions).
 
 ## Configuration and ownership
@@ -24,7 +24,7 @@ recovery is described below. See [Contact in conversions](#contact-in-conversion
   `modal`), `measurement_consent_title` (80 characters) and
   `measurement_consent_text` (500 characters) shape the consent notice. Existing Unit managers edit these
   through the normal Unit settings aggregate/UI/MCP. Disabling preserves ID and script text.
-- Form: `forms.data.analytics` contains only `{enabled:boolean}`. Existing form
+- Form: `forms.data.analytics` contains `{enabled:boolean,purchase_timing?:"order"|"paid"}` (timing defaults to `order`). Existing form
   authors toggle it through the same form aggregate/UI/MCP as other settings.
   Form-level destination code and the `enhanced_conversions` key are rejected.
 
@@ -255,7 +255,7 @@ prove Google/Meta delivery or arbitrary future container compatibility.
 
 ## Contact in conversions
 
-**dataLayer contains the readable e-mail and phone.** Immediate `generate_lead` delivery carries available `user_data: {email, phone_number}`, whatever the visitor chose,
+**dataLayer contains the readable e-mail and phone.** Immediate `purchase` and `generate_lead` delivery carries available `user_data: {email, phone_number}`, whatever the visitor chose,
 so every tag and Unit script in the container can read them. Being in dataLayer is
 not the same as being sent: Google tags honour `ad_user_data`, and the organizer is
 responsible for how tags use the values and for describing it in its privacy policy.
@@ -263,8 +263,7 @@ responsible for how tags use the values and for describing it in its privacy pol
 The form document reads the answers it already holds: the e-mail trimmed and
 lowercased, the phone in E.164. Every receiver rebuilds `user_data` and passes only
 these two fields, an e-mail up to 254 characters and an E.164 phone. Anything else is
-left out, including a national number whose country is not known. No other event
-carries contact. Nothing is stored in `conversion_facts`, logged or put in a URL.
+left out, including a national number whose country is not known. Other interaction events do not carry contacts. The Meta-only Purchase companion may carry the same bounded conversion contacts. Nothing is stored in `conversion_facts`, logged or put in a URL.
 Recovery after a grant replacement deliberately omits contacts and retains only
 the conversion fact in memory. Reading it cannot affect the order. The frame and host clear `user_data` after the
 event, which stops it reaching later events but does not erase dataLayer history.
@@ -284,36 +283,78 @@ and its countdown. GA4's automatic form-interaction event uses a session-level
 scope and cannot observe the form from our isolated runtime. Map the supplied
 event once in GTM; do not add another collector for the same interaction.
 
-The browser reports the confirmation page when checkout succeeds. Remove any
-GTM trigger that counts order acceptance as a purchase. Existing authorized
-replays recover the same free-registration or waitlist lead under current form
-policy, and the browser suppresses duplicate lead callbacks within its lifecycle.
+The browser reports the confirmation page when checkout succeeds. Organizers
+select `analytics.purchase_timing`: `order` (the backwards-compatible default)
+or `paid`. Order mode emits `purchase` for an accepted priced order, including
+unpaid orders. Paid mode emits only after eligible bank or online funds cover
+the full price. Deposits, cash and administrative settlements do not qualify.
+Free registrations and waiting-list entries remain `generate_lead` events.
+Authorized receipt replay projects the same immutable snapshot under current
+form policy; repeated callbacks are deduplicated within the browser lifecycle.
 
-The bank-pairing and online-payment owners record a private `order_fully_paid`
-fact only when eligible funds cover the full order price. It has one event ID
-per order, a recorded timestamp, the exact amount and currency. A deposit can
-release tickets before this threshold. Cash and administrative external-payment
-records are outside the measurement scope. Payment changes and fact creation
-commit together. An unsuccessful write leaves payment processing retryable.
-The checkout receipt never projects this fact.
+Purchase timing is frozen in the immutable creation snapshot. Changing the form setting or enabling CAPI later does not change an existing order’s cohort or UUID. Legacy order-mode snapshots cannot become paid browser or CAPI purchases.
+
+CAPI-connected forms require paid mode. The settings editor displays this
+requirement and disables order mode; SQL enforces it even for older editors.
+The private `order_fully_paid` fact retains exactly `{value,currency}`. Its UUID
+is projected into browser top-level `event_id` and `ecommerce.transaction_id` (both must match); map that value to Meta's
+`eventID`, as the supplied preset does. CAPI uses the same fact UUID as
+`event_id`. Never generate a second Pixel ID or mix order-mode Meta Purchase
+with paid CAPI for the same form.
+
+Delayed payments can emit a browser Purchase when the buyer opens or refreshes
+the authorized order overview. This uses the current visitor policy, CMP consent
+and isolated runtime. Capability tokens and overview URLs are never exported.
+An immutable `capi_required` flag also records whether CAPI was enabled at
+creation. Those cohorts can emit browser Purchase only after their CAPI delivery
+is confirmed `sent`, including if CAPI is subsequently disabled. This prevents
+an early Pixel event followed by a CAPI retry outside Meta's deduplication
+window. Non-CAPI paid cohorts need no server delivery, and enabling CAPI later
+cannot adopt them.
+The general `purchase` event remains available for GA4 and Ads even when
+advertising consent is denied or CAPI fails. For the immutable CAPI cohort it
+carries `meta_purchase_allowed:false`, so the preset excludes it from Pixel.
+After successful CAPI delivery, a separate `meta_purchase` companion may fire
+Pixel Purchase with the same UUID. That companion is available only within 47
+hours of the paid fact; it never fires GA4 or Ads tags. Non-CAPI purchases can
+fire Pixel from the general purchase event. A browser event requires a visit
+and is not guaranteed delivery. Configure other containers with the same routing
+rules; do not map every ecommerce event to every destination. The website preset
+targets embedded events; standalone overview events need corresponding triggers
+in the isolated container (`form_embedded = false`).
+Snapshots whose line totals/currency differ from the paid fact are suppressed.
+The payment transaction and paid fact commit together; failed fact writes keep
+payment processing retryable.
 
 ### Meta CAPI pilot
 
-The standalone purchase review offers a separate opt-in for the pilot forms
-configured by the operator. Existing website or embedded cookie choices do
-not grant it. The opt-in is attached to the order and scoped to the organizer,
-dataset and notice revision. Customers can withdraw in the order overview
-linked from their confirmation email, including after closing checkout.
-Withdrawal applies to pending delivery. A request that has already started
-may complete.
+Pilot forms use the existing saved CMP choice; there is no separate Purchase
+checkbox. A capture requires all three advertising purposes (`ad_storage`,
+`ad_user_data`, `ad_personalization`), the original saved decision time, the
+current semantic notice revision and the configured website origin. Managed
+embeds and linked visits also require the exact effective website binding and
+version. Cookiebot, CookieConsent v3 and Wix provide the saved decision metadata.
+Standalone Klaro stores decision metadata on an actual save; older choices need
+to be saved again. Complianz choices without a comparable saved decision time
+do not authorize CAPI. Ordinary browser events retain their existing behavior.
 
-The Edge worker claims the consent row only after a full-payment fact exists.
-Before sending, it checks consent, current destination and the current eligible
-balance. It sends Meta the normalized e-mail hash, checkout user agent, form URL,
-amount and currency. The payload includes the first settlement time and stable
-event ID, reused on retry. It stores no client IP, phone or Meta cookie IDs for
-this pilot. Matching data is scrubbed on terminal outcomes and expires after 30
-days. Delivery receipts are retained for 90 days.
+The snapshot is stored privately with the order. The short renewable browser
+connection authorizes capture, not the lifetime of the order snapshot. Closing
+the visit normally does not withdraw durable consent. While the checkout stays
+open, observed refusal, source disconnection or a scope change withdraws pending
+delivery, including a refusal while submission is in flight. A returned buyer
+capability authorizes that withdrawal; an order ID alone does not. Customers can
+also withdraw through the order overview linked from their confirmation email.
+A request already in flight to Meta may complete.
+
+The Edge worker claims only the original CAPI-enabled paid cohort after a full
+payment fact exists. Before sending, it rechecks the saved snapshot, live binding,
+destination and eligible balance. It sends the normalized email hash, checkout
+user agent, canonical source URL, amount and currency with the first settlement
+time and stable event ID. Retries keep that ID and time. No client IP, phone or
+Meta cookie IDs are stored for this pilot. Snapshot and matching data are erased
+on terminal outcomes and expire after 30 days. Operational receipts without those
+identifiers remain for 90 days.
 
 For the first test run, deploy the migration, proof-only `process-meta-purchases`
 function and web client on the same canonical release. The migration leaves the

@@ -526,6 +526,11 @@
     "capacityRetryLater": "Skúste to znova neskôr."
   },
   "FeatureFormSettings": {
+    "purchaseTiming": "Udalosť purchase",
+    "purchaseTimingOrder": "Pri vytvorení objednávky",
+    "purchaseTimingPaid": "Po úplnom zaplatení",
+    "purchaseTimingHelp": "Režim objednávky zahŕňa aj nezaplatené objednávky. Režim zaplatenia vyžaduje oprávnenú bankovú alebo online platbu a návrat do prehľadu do 47 hodín.",
+    "purchaseTimingCapi": "Meta Conversions API vyžaduje režim po zaplatení. Prehliadač aj server používajú rovnaké ID udalosti.",
     "measurementPolicySummary": "Zásady",
     "measurementBannerFallback": "Použije sa v samostatne otvorenom formulári.",
     "measurementBasics": "Základ",

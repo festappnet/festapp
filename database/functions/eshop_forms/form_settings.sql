@@ -6,7 +6,7 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
  "payments":["bankEnabled","stripeConnectionId","providerConnections","cashEnabled","cashInstructions"],
  "payment_deadline":["mode"],
- "analytics":["enabled"],
+ "analytics":["enabled","purchase_timing"],
  "waitlist":["show_count"],
  "design":["embed_inherit_style","is_card_design","primary_color","secondary_color","background_mode","theme_mode","font_family","countdown_style","presale_header"],
  "sale_opening_notifications":["enabled","collection_paused"],
@@ -79,7 +79,7 @@ DECLARE result jsonb:=public.normalize_form_metadata_internal(p_data); spec json
  entry record; field record; section jsonb; v jsonb; k text; path text; n numeric; starts timestamptz; ends timestamptz;
 BEGIN
  IF result ? 'analytics' AND result->'analytics'<>'null'::jsonb AND (jsonb_typeof(result->'analytics')<>'object' OR
-   EXISTS(SELECT 1 FROM jsonb_object_keys(result->'analytics') analytics_key WHERE analytics_key<>'enabled')) THEN
+   EXISTS(SELECT 1 FROM jsonb_object_keys(result->'analytics') analytics_key WHERE analytics_key NOT IN ('enabled','purchase_timing'))) THEN
   RAISE invalid_parameter_value USING MESSAGE='unsupported analytics setting'; END IF;
  IF p_patch IS NULL OR jsonb_typeof(p_patch)<>'object' OR octet_length(p_patch::text)>131072 THEN
   RAISE invalid_parameter_value USING MESSAGE='invalid form settings patch'; END IF;
@@ -116,6 +116,8 @@ BEGIN
    IF v='null'::jsonb THEN section:=section-k;CONTINUE; END IF;
    IF path IN ('waitlist.show_count','analytics.enabled','payments.bankEnabled','design.embed_inherit_style','design.is_card_design','schedule.enable_countdown','sale_opening_notifications.enabled','sale_opening_notifications.collection_paused') THEN
     IF jsonb_typeof(v)<>'boolean' THEN RAISE invalid_parameter_value USING MESSAGE='invalid boolean setting: '||path; END IF;
+   ELSIF path='analytics.purchase_timing' THEN
+    IF v NOT IN ('"order"'::jsonb,'"paid"'::jsonb) THEN RAISE invalid_parameter_value USING MESSAGE='invalid purchase timing'; END IF;
    ELSIF path='payments.providerConnections' THEN
     IF jsonb_typeof(v)<>'object' THEN RAISE invalid_parameter_value USING MESSAGE='invalid provider connections'; END IF;
     IF EXISTS(SELECT 1 FROM jsonb_each(v) x WHERE jsonb_typeof(x.value)<>'string' OR NOT EXISTS(SELECT 1 FROM eshop.payment_providers WHERE provider_key=x.key AND hosted_checkout)) THEN

@@ -508,6 +508,11 @@
     "capacityRetryLater": "Spróbuj ponownie później."
   },
   "FeatureFormSettings": {
+    "purchaseTiming": "Zdarzenie zakupu",
+    "purchaseTimingOrder": "Przy złożeniu zamówienia",
+    "purchaseTimingPaid": "Po pełnej zapłacie",
+    "purchaseTimingHelp": "Tryb zamówienia obejmuje nieopłacone zamówienia. Tryb płatności wymaga kwalifikującej się płatności bankowej lub online i powrotu do podglądu w ciągu 47 godzin.",
+    "purchaseTimingCapi": "Meta Conversions API wymaga trybu po zapłacie. Przeglądarka i serwer używają tego samego identyfikatora zdarzenia.",
     "measurementPolicySummary": "Polityka prywatności",
     "measurementBannerFallback": "Pojawia się w formularzu otwartym samodzielnie.",
     "measurementBasics": "Podstawy",

@@ -431,6 +431,11 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "purchaseTiming": "Událost purchase",
+    "purchaseTimingOrder": "Při vytvoření objednávky",
+    "purchaseTimingPaid": "Po úplném zaplacení",
+    "purchaseTimingHelp": "Režim objednávky zahrnuje i nezaplacené objednávky. Režim zaplacení vyžaduje způsobilou bankovní nebo online platbu a návrat do přehledu do 47 hodin.",
+    "purchaseTimingCapi": "Meta Conversions API vyžaduje režim po zaplacení. Prohlížeč i server používají stejné ID události.",
     "measurementPolicySummary": "Zásady",
     "measurementBannerFallback": "Použije se v samostatně otevřeném formuláři.",
     "measurementBasics": "Základ",

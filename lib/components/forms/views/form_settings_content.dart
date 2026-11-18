@@ -105,6 +105,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _providerId,
     _titleController.text,
     _measurementEnabled,
+    _purchaseTiming,
     _linkController.text,
     _deadlineDaysController.text,
     _startingNumberController.text,
@@ -148,6 +149,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   String _communicationTone = 'inherit';
 
   bool _measurementEnabled = false;
+  String _purchaseTiming = 'order';
+  bool get _paidPurchaseRequired =>
+      _form?.definition.measurementStatus?['purchase_timing'] == 'paid' &&
+      _form?.definition.measurementStatus?['meta_purchase_enabled'] == true;
 
   bool _bankEnabled = false,
       _paymentRecipientFailed = false,
@@ -396,6 +401,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
       final analytics = _form!.definition.data?['analytics'];
       _measurementEnabled = analytics is Map && analytics['enabled'] == true;
+      _purchaseTiming =
+          analytics is Map && analytics['purchase_timing'] == 'paid'
+          ? 'paid'
+          : 'order';
       _savedLink = _form!.definition.link;
       _titleController.text = _form!.definition.title ?? '';
       _linkController.text = _form!.definition.link ?? '';
@@ -542,7 +551,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
 
     if (_canManageMeasurement && _showMeasurement) {
-      metadata['analytics'] = {'enabled': _measurementEnabled};
+      metadata['analytics'] = {
+        'enabled': _measurementEnabled,
+        'purchase_timing': _paidPurchaseRequired ? 'paid' : _purchaseTiming,
+      };
     }
 
     metadata['payment_deadline'] = {
@@ -1435,6 +1447,41 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                           _canEdit && _canManageMeasurement
                                           ? (value) => setState(
                                               () => _measurementEnabled = value,
+                                            )
+                                          : null,
+                                    ),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: _paidPurchaseRequired
+                                          ? 'paid'
+                                          : _purchaseTiming,
+                                      decoration: InputDecoration(
+                                        labelText: FormStrings.purchaseTiming,
+                                        helperText: _paidPurchaseRequired
+                                            ? FormStrings.purchaseTimingCapi
+                                            : FormStrings.purchaseTimingHelp,
+                                        helperMaxLines: 4,
+                                      ),
+                                      items: [
+                                        DropdownMenuItem(
+                                          value: 'order',
+                                          child: Text(
+                                            FormStrings.purchaseTimingOrder,
+                                          ),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'paid',
+                                          child: Text(
+                                            FormStrings.purchaseTimingPaid,
+                                          ),
+                                        ),
+                                      ],
+                                      onChanged:
+                                          _canEdit &&
+                                              _canManageMeasurement &&
+                                              !_paidPurchaseRequired
+                                          ? (value) => setState(
+                                              () => _purchaseTiming =
+                                                  value ?? 'order',
                                             )
                                           : null,
                                     ),

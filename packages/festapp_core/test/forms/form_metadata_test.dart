@@ -27,17 +27,22 @@ void main() {
       for (final enabled in [false, true]) {
         final changed = loaded.copyWith(
           data: {
-            'analytics': {'enabled': enabled, 'gtm_container': 'GTM-AB12'},
+            'analytics': {
+              'enabled': enabled,
+              'purchase_timing': 'paid',
+              'gtm_container': 'GTM-AB12',
+            },
           },
         );
         final patch = FormMetadata.authoringSettingsSnapshot(
           changed.data,
         )['analytics'];
         expect(patch['enabled'], enabled);
-        expect(patch, {'enabled': enabled});
+        expect(patch, {'enabled': enabled, 'purchase_timing': 'paid'});
       }
       expect(FormMetadata.authoringSettingsSnapshot(loaded.data)['analytics'], {
         'enabled': false,
+        'purchase_timing': null,
       });
     },
   );

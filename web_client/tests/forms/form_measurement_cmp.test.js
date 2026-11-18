@@ -16,7 +16,7 @@ window.startManagedEmbed = (translations, bridge, notify) => {
 };
 window.startFixture = (translations, transport, privacy_url = 'https://organizer.example/privacy', consent_notice, approved_hosts, measurement_consent_bridge = true, win = window) => {
  LocalizationService.translations = translations;
- return startMeasurementConsent({win,model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",privacy_url,consent_notice,approved_hosts,measurement_consent_bridge}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main')});
+ return startMeasurementConsent({win,model:{data:{analytics:{organization:1,unit:2,processing_revision:"a",consent_revision:"b".repeat(32),privacy_url,consent_notice,approved_hosts,measurement_consent_bridge}}},setConsent:value=>transport.setConsent(value),host:document.querySelector('main'),includePurchaseConsent:transport.includePurchaseConsent === true});
 };`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
 const settle=()=>new Promise(resolve=>setTimeout(resolve,30));
 const none={analytics:false,marketing:false},both={analytics:true,marketing:true};
@@ -736,4 +736,28 @@ for (const localChoice of [undefined, none, both]) test(`managed embed follows h
   assert.equal(win.document.cookie,cookie,'host consent neither reads into nor overwrites the local choice');
   cleanup();cleanup=undefined;assert.equal(disconnected,1);clearUI();
  }finally{cleanup?.();win.close();}
+});
+
+test('CAPI snapshot uses actual saved Klaro decision time and keeps it across reload',async()=>{
+ const {CookieJar}=await import('jsdom');const jar=new CookieJar();let saved;
+ for (const first of [true,false]) {
+  const win=new JSDOM('<html lang="en"><body><main></main></body></html>',{url:'https://tickets.example/form/summer',runScripts:'outside-only',pretendToBeVisual:true,cookieJar:jar}).window;
+  const values=[];let cleanup;
+  try {
+   win.eval(bundle.outputFiles[0].text);
+   cleanup=win.startFixture(cs(),{includePurchaseConsent:true,setConsent:value=>values.push(value)});
+   await settle();
+   if(first) {
+    assert.equal(values.at(-1).purchaseConsent,null);
+    win.document.querySelector('.cm-btn-success').click();await settle();
+    saved=values.at(-1).purchaseConsent.timestamp;
+    assert.ok(Date.parse(saved)<=Date.now());
+   }
+   const snapshot=values.at(-1).purchaseConsent;
+   assert.equal(snapshot.timestamp,saved);
+   assert.equal(snapshot.source,'klaro');
+   assert.equal(snapshot.ad_user_data,true);
+   assert.equal(snapshot.consentRevision,'b'.repeat(32));
+  } finally {cleanup?.();win.close();}
+ }
 });

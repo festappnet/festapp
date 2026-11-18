@@ -1,0 +1,171 @@
+-- test-setup: database/tests/helpers/form_measurement_fixture.sql
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint;
+ org bigint:=(x->>'organization')::bigint; snapshot jsonb; b analytics.website_consent_bindings; bad jsonb;
+BEGIN
+ UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=org;
+ UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://tickets.example"]}' WHERE id=un;
+ INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
+ VALUES(un,'123456',gen_random_uuid(),'https://tickets.example',true);
+ snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
+  'ad_storage',true,'ad_user_data',true,'ad_personalization',true);
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot),'scoped saved standalone choice');
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot-'source') IS FALSE,'missing source returns false, never SQL NULL');
+ UPDATE public.organizations SET data=data-'DEFAULT_URL' WHERE id=org;
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot) IS FALSE,'missing standalone service URL returns false, never SQL NULL');
+ UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=org;
+ FOREACH bad IN ARRAY ARRAY['null'::jsonb,'{}'::jsonb,snapshot||'{"ad_user_data":false}',snapshot||'{"ad_personalization":false}',
+  snapshot||'{"ad_storage":false}',snapshot||'{"source":"invented"}',snapshot||'{"timestamp":"2026-99-99T00:00:00.000Z"}',
+  snapshot||'{"consentRevision":"obsolete"}',snapshot||'{"websiteOrigin":"https://attacker.example"}',
+  snapshot||'{"timestamp":"2000-01-01T00:00:00.000Z"}'] LOOP
+  PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,bad),'malformed, denied, stale or unbound choice fails closed');
+ END LOOP;
+ INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_at)
+ VALUES(un,'https://tickets.example','html','{"provider":"cookiebot"}',1,true,snapshot->>'consentRevision',clock_timestamp()-interval '1 minute') RETURNING * INTO b;
+ snapshot:=snapshot||jsonb_build_object('source','cookiebot','binding',jsonb_build_object('id',b.id,'version',b.version));
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot),'managed choice uses live exact binding');
+ -- Durable snapshot remains valid after the live transport permission expires.
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot||'{"transportExpiresAt":1}'),'transport expiry does not expire captured order consent');
+ UPDATE analytics.website_consent_bindings SET version=2 WHERE id=b.id;
+ PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,snapshot),'changed binding blocks pending sends');
+ UPDATE analytics.website_consent_bindings SET version=1,enabled=false WHERE id=b.id;
+ PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,snapshot),'disconnected binding blocks pending sends');
+ UPDATE analytics.website_consent_bindings SET enabled=true WHERE id=b.id;
+ UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=un;
+ PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,snapshot),'disabled connector blocks pending sends');
+END $$;
+
+DO $$
+DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; fid bigint:=(x->>'form')::bigint;
+ snapshot jsonb; checkout jsonb; receipt jsonb; oid bigint; b analytics.website_consent_bindings; claimed uuid:=gen_random_uuid();
+BEGIN
+ PERFORM set_config('request.jwt.claim.sub','',true);
+ UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
+ UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://tickets.example"]}' WHERE id=un;
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES((x->>'organization')::bigint,true,1,'fixture','saved CMP consent');
+ UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=fid;
+ PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
+ INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
+ VALUES(un,'123456',gen_random_uuid(),'https://tickets.example',true);
+ INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(fid,un);
+ INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_at)
+ VALUES(un,'https://tickets.example','html','{"provider":"cookiebot"}',1,true,
+  public.unit_measurement_consent_scope_internal(un)->>'consentRevision',clock_timestamp()-interval '1 minute') RETURNING * INTO b;
+ snapshot:=jsonb_build_object('source','cookiebot','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
+  'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Consent regression',
+  'ad_storage',true,'ad_user_data',true,'ad_personalization',true,
+  'transportExpiresAt',floor(extract(epoch FROM clock_timestamp())*1000)+59000,
+  'binding',jsonb_build_object('id',b.id,'version',b.version,'untrustedContact','must not persist'),
+  'untrustedContact','must not persist');
+ checkout:=pg_temp.checkout(x)||jsonb_build_object('metaPurchaseConsent',snapshot);
+ receipt:=public.create_ticket_order_client_sync_v1(checkout,gen_random_uuid(),gen_random_uuid());
+ PERFORM assert_eq(receipt#>>'{data,code}','200','snapshot does not affect checkout');
+ oid:=(receipt#>>'{data,order,id}')::bigint;
+ PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'valid connected CMP captured');
+ PERFORM assert_false((SELECT consent_snapshot ? 'untrustedContact' OR consent_snapshot->'binding' ? 'untrustedContact'
+  FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'only allowlisted consent fields persist');
+ DELETE FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+ PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot-'source');
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'missing source cannot capture');
+ UPDATE public.organizations SET data=data-'DEFAULT_URL' WHERE id=(x->>'organization')::bigint;
+ PERFORM public.capture_meta_purchase_consent_internal(oid,(snapshot-'binding')||'{"source":"klaro"}');
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'missing service URL cannot capture');
+ UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
+ PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot);
+ -- A snapshot captured on a live bridge stays durable after its lease expires.
+ UPDATE analytics.meta_purchase_deliveries SET lease=claimed,lease_until=clock_timestamp()+interval '1 minute' WHERE order_id=oid;
+ UPDATE analytics.website_consent_bindings SET version=2 WHERE id=b.id;
+ PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'live binding change stops a claimed pending send');
+ PERFORM assert_true((SELECT status='invalid' AND consent_snapshot IS NULL AND email_hash IS NULL
+  FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'invalid delivery erases visitor metadata');
+ UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot,
+  consent_at=clock_timestamp()-interval '31 days',done_at=NULL WHERE order_id=oid;
+ PERFORM public.claim_meta_purchase_deliveries(1);
+ PERFORM assert_true((SELECT status='expired' AND consent_snapshot IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'retention expiry erases snapshot');
+ UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot,lease=claimed,prepared=true WHERE order_id=oid;
+ PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent'),'receipt is finalized');
+ PERFORM assert_true((SELECT status='sent' AND consent_snapshot IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'sent receipts contain no snapshot');
+ UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot WHERE order_id=oid;
+ PERFORM public.issue_order_overview_internal(oid,pg_temp.delivery('fixture',repeat('c',64),oid),gen_random_uuid());
+ PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('d',64),oid),'order id without buyer capability cannot revoke');
+ PERFORM assert_true(public.revoke_meta_purchase_consent(repeat('c',64),oid),'buyer capability withdraws captured consent');
+ PERFORM assert_true((SELECT status='revoked' AND consent_snapshot IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'withdrawal erases snapshot');
+END $$;
+
+-- Later CAPI enablement cannot send a second Purchase for an immutable
+-- order-time cohort, even when a captured delivery and fully-paid fact exist.
+DO $$
+DECLARE x jsonb; un bigint; fid bigint;
+ mode text; receipt jsonb; oid bigint; snapshot jsonb; payment_id bigint; transaction_id bigint;
+ paid_event uuid; order_event uuid; claimed uuid; prepared jsonb;
+BEGIN
+ FOREACH mode IN ARRAY ARRAY['order','legacy','missing','paid_without_capi','legacy_capi_flag','paid'] LOOP
+  x:=pg_temp.fixture(NULL);un:=(x->>'unit')::bigint;fid:=(x->>'form')::bigint;
+ PERFORM set_config('request.jwt.claim.sub','',true);
+ UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES((x->>'organization')::bigint,true,1,'fixture','immutable purchase cohort');
+ UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true,"purchase_timing":"order"}}' WHERE id=fid;
+ PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
+ INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
+ VALUES(un,'123456',vault.create_secret(repeat('t',40),'consent-cohort-'||un),'https://tickets.example',false);
+ INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(fid,un);
+  -- Only the final order retains an original CAPI-required flag. A paid-only
+  -- browser order created before enablement must also remain excluded.
+  UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}',
+   to_jsonb(CASE WHEN mode='paid_without_capi' THEN 'paid'::text ELSE 'order'::text END)) WHERE id=fid;
+  UPDATE analytics.meta_purchase_connectors SET enabled=(mode IN ('paid','legacy_capi_flag')) WHERE unit=un;
+  receipt:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x)||jsonb_build_object('email','consent-'||mode||'-'||un::text||'@example.invalid'),gen_random_uuid(),gen_random_uuid());
+  PERFORM assert_eq(receipt#>>'{data,code}','200','cohort fixture checkout succeeds');
+  oid:=(receipt#>>'{data,order,id}')::bigint;
+  SELECT event_id INTO STRICT order_event FROM analytics.conversion_facts WHERE "order"=oid AND kind='purchase';
+  IF mode='legacy' THEN
+   UPDATE analytics.conversion_facts SET payload=payload-'purchase_timing' WHERE "order"=oid AND kind='purchase';
+  ELSIF mode='legacy_capi_flag' THEN
+   UPDATE analytics.conversion_facts SET payload=payload-'capi_required' WHERE "order"=oid AND kind='purchase';
+  ELSIF mode='missing' THEN
+   DELETE FROM analytics.conversion_facts WHERE "order"=oid AND kind='purchase';
+  END IF;
+  UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=un;
+  PERFORM assert_eq(public.form_purchase_timing_internal(fid),'paid','current CAPI setting requests paid');
+  IF mode IN ('order','legacy') THEN
+   PERFORM assert_eq(public.form_order_purchase_timing_internal(oid),'order','old order cohort remains order after enablement');
+  ELSIF mode='paid_without_capi' THEN
+   PERFORM assert_eq(public.form_order_purchase_timing_internal(oid),'paid','paid-only browser cohort is frozen before CAPI enablement');
+  ELSIF mode='missing' THEN
+   PERFORM assert_true(public.form_order_purchase_timing_internal(oid) IS NULL,'missing snapshot confers no paid cohort');
+  END IF;
+  PERFORM assert_true(public.form_order_purchase_capi_required_internal(oid) IS NOT DISTINCT FROM (mode='paid'),
+   'CAPI is required only when frozen at creation, missing flag fails closed');
+  snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+   'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
+   'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Cohort regression',
+   'ad_storage',true,'ad_user_data',true,'ad_personalization',true);
+  PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot);
+  PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'captured pending delivery exists before payment');
+  SELECT payment_info INTO STRICT payment_id FROM eshop.orders WHERE id=oid;
+  INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source)
+  SELECT bank_account,100,'CZK',now(),'fio_api' FROM eshop.payment_info WHERE id=payment_id RETURNING id INTO transaction_id;
+  PERFORM public.apply_transaction_pairing(transaction_id,payment_id,'manual_attach','user');
+  SELECT event_id INTO STRICT paid_event FROM analytics.conversion_facts WHERE "order"=oid AND kind='order_fully_paid';
+  PERFORM assert_true(paid_event<>order_event,'paid fact already exists with a distinct event UUID');
+  PERFORM assert_true(public.form_paid_conversion_eligible_internal(oid),'payment and live policy qualify independently of cohort');
+  IF mode<>'paid' THEN
+   PERFORM assert_false(EXISTS(SELECT FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid),
+    'order/legacy/missing/non-CAPI-paid cohort is never claimed despite captured paid fact');
+   -- Simulate an older worker claim: prepare must independently fence it.
+   claimed:=gen_random_uuid();
+   UPDATE analytics.meta_purchase_deliveries SET lease=claimed,lease_until=clock_timestamp()+interval '1 minute' WHERE order_id=oid;
+   PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'order/legacy/missing/non-CAPI-paid cohort is never prepared');
+   PERFORM assert_true((SELECT status='invalid' AND attempts=0 AND consent_snapshot IS NULL
+    FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'cohort rejection discloses no send payload and scrubs metadata');
+  ELSE
+   SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid;
+   prepared:=public.prepare_meta_purchase_delivery(oid,claimed);
+   PERFORM assert_eq(prepared->>'eventId',paid_event::text,'paid cohort still prepares the original paid fact');
+  END IF;
+ END LOOP;
+END $$;

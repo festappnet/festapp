@@ -49,7 +49,7 @@ export function createCookieConsentSource(win, input) {
                 choice[purpose] = accepted;
             }
             if (typeof win.__tcfapi !== 'undefined') choice.marketing = false;
-            return {consentRevision:config.consentRevision, ...choice};
+            return {purchaseConsent:{source:'cookieconsent', timestamp:new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(), ad_storage:choice.marketing, ad_user_data:choice.marketing, ad_personalization:choice.marketing}, consentRevision:config.consentRevision, ...choice};
         } catch { return null; }
     };
     const tick = () => {

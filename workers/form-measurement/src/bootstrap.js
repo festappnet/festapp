@@ -26,9 +26,10 @@ function push(input) {
     const payload = measurementDataLayerPayload(input, {embedded: context.form_embedded, pageContext});
     if (!payload) return;
     if (!payload.event) pageContext = payload;
-    if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null,user_data:null});
+    if (payload.ecommerce || payload.event === 'generate_lead') dataLayer.push({ecommerce:null,user_data:null,event_id:null,meta_purchase_allowed:null});
     dataLayer.push({...consentContext(),...payload});
-    if (['purchase','generate_lead'].includes(payload.event)) dataLayer.push({user_data:null});
+    if (['purchase','meta_purchase'].includes(payload.event)) dataLayer.push({user_data:null,ecommerce:null,event_id:null,meta_purchase_allowed:null});
+    else if (payload.event === 'generate_lead') dataLayer.push({user_data:null});
 }
 function reply(type) {
     parent.postMessage({namespace:measurementNamespace,protocol:measurementProtocol,type,instance,generation,manifest:config.manifest},config.parent_origin);

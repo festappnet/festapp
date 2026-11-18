@@ -62,8 +62,9 @@ export class FormDataLayer {
             if(!success){send({event:'form_submit_error'});return;}
             if(this.#publishPage('confirmation',send))this.pageType='confirmation';
             const lead=analyticsPayload(data?.ticketOrder?.analytics);
-            if(lead?.event!=='generate_lead' || this.conversions.has(lead.event_id))return;
-            if(sendConversion(contact?{...lead,user_data:contact}:lead))this.conversions.add(lead.event_id);
+            const identity=lead?.ecommerce?.transaction_id || lead?.event_id;
+            if(!['purchase','generate_lead'].includes(lead?.event) || this.conversions.has(identity))return;
+            if(sendConversion(contact?{...lead,user_data:contact}:lead))this.conversions.add(identity);
         };
     }
 

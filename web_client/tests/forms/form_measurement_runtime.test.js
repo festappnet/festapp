@@ -189,3 +189,19 @@ test('isolated runtime attaches its validated page context to each event',t=>{
   assert.ok(response.headers.get('content-security-policy').includes('frame-ancestors '+ancestors.join(' ')));
   assert.equal((await serveMeasurement(request,env,async()=>({...config,ancestor_origins:[...ancestors,'https://overflow.example']}))).status,404);
  });
+
+test('Meta companion clears contacts and routing before later isolated events',t=>{
+ const f=bootstrap(t);f.send('init');
+ f.send('event',{payload:{...purchase,event:'meta_purchase',meta_purchase_allowed:true,user_data:{email:'buyer@example.test'}}});
+ const entries=f.win.dataLayer;
+ assert.equal(entries.filter(p=>p.event==='meta_purchase').length,1);
+ assert.equal(entries.at(-1).user_data,null);
+ assert.equal(entries.at(-1).ecommerce,null);
+ assert.equal(entries.at(-1).event_id,null);
+ assert.equal(entries.at(-1).meta_purchase_allowed,null);
+ f.send('event',{payload:{event:'form_start'}});
+ const retained=Object.assign({},...entries.filter(p=>p && !Object.hasOwn(p,'0')));
+ assert.equal(retained.event,'form_start');
+ assert.equal(retained.user_data,null);
+ assert.equal(retained.meta_purchase_allowed,null);
+});

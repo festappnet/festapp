@@ -2,7 +2,7 @@
 (() => {
   // src/components/forms/form_measurement_contract.js
   var measurementProtocol = 3;
-  var ecommerceEvents = /* @__PURE__ */ new Set(["view_item", "add_to_cart", "remove_from_cart", "begin_checkout", "add_payment_info", "purchase"]);
+  var ecommerceEvents = /* @__PURE__ */ new Set(["view_item", "add_to_cart", "remove_from_cart", "begin_checkout", "add_payment_info", "purchase", "meta_purchase"]);
   var currencies = (value) => typeof value === "string" && /^[A-Z]{3}$/.test(value);
   var productId = (value) => typeof value === "string" && /^product_[1-9]\d{0,15}$/.test(value);
   var eventIdentity = (value) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -49,6 +49,9 @@
       if (!["free_registration", "waitlist", "sale_opening_notification"].includes(input.lead_source) || !currencies(input.currency) || input.value !== 0 || !eventIdentity(input.event_id)) return null;
       return withUserData({ event: "generate_lead", currency: input.currency, value: 0, lead_source: input.lead_source, event_id: input.event_id });
     }
+    const conversion = ["purchase", "meta_purchase"].includes(input.event);
+    if (conversion && input.meta_purchase_allowed !== void 0 && typeof input.meta_purchase_allowed !== "boolean") return null;
+    if (input.event === "meta_purchase" && input.meta_purchase_allowed === false) return null;
     const source = input.ecommerce;
     if (!ecommerceEvents.has(input.event) || !source || !currencies(source.currency) || !Array.isArray(source.items) || !source.items.length || source.items.length > 200) return null;
     const items = [];
@@ -68,16 +71,16 @@
     const value = cents / 100;
     if (Math.round(value * 100) !== cents) return null;
     const ecommerce = { currency: source.currency, items, value };
-    if (input.event === "add_payment_info" || input.event === "purchase") {
+    if (input.event === "add_payment_info" || ["purchase", "meta_purchase"].includes(input.event)) {
       if (!["bank_transfer", "card", "free"].includes(source.payment_type)) return null;
       ecommerce.payment_type = source.payment_type;
     }
-    if (input.event === "purchase") {
-      if (!eventIdentity(source.transaction_id)) return null;
+    if (["purchase", "meta_purchase"].includes(input.event)) {
+      if (!eventIdentity(source.transaction_id) || input.event_id !== void 0 && input.event_id !== source.transaction_id) return null;
       ecommerce.transaction_id = source.transaction_id;
     }
     const result = { event: input.event, ecommerce };
-    return input.event === "purchase" ? withUserData(result) : result;
+    return ["purchase", "meta_purchase"].includes(input.event) ? withUserData({ ...result, event_id: source.transaction_id, meta_purchase_allowed: input.meta_purchase_allowed ?? true }) : result;
   }
   function measurementDataLayerPayload(input, { embedded = false, pageContext = null } = {}) {
     const payload = analyticsPayload(input);
@@ -167,7 +170,19 @@
     try {
       const value = source?.read({ ...scope, requiredPurposes: [...scope.requiredPurposes] });
       const matches = value?.consentRevision !== void 0 ? scope.consentRevision !== void 0 && value.consentRevision === scope.consentRevision : value?.processingRevision === scope.processingRevision;
-      return matches && (!scope.binding || sameConsentBinding(value?.binding, scope.binding)) ? measurementConsent(value) : null;
+      if (!matches || scope.binding && !sameConsentBinding(value?.binding, scope.binding)) return null;
+      const choice = measurementConsent(value);
+      if (!value.purchaseConsent) return choice;
+      const granted = (key) => choice.marketing && (!Object.hasOwn(value, key) || value[key] === true) && (value.purchaseConsent[key] === true || !Object.hasOwn(value.purchaseConsent, key) && value[key] === true);
+      return { ...choice, purchaseConsent: {
+        ...value.purchaseConsent,
+        consentRevision: value.consentRevision,
+        binding: value.binding,
+        websiteOrigin: scope.websiteOrigin,
+        ad_storage: granted("ad_storage"),
+        ad_user_data: granted("ad_user_data"),
+        ad_personalization: granted("ad_personalization")
+      } };
     } catch {
       return null;
     }
@@ -373,10 +388,12 @@
         const timestamp2 = typeof date === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?(?:Z|[+-]\d\d:\d\d)$/.test(date) ? Date.parse(date) : Object.prototype.toString.call(date) === "[object Date]" ? date.getTime() : NaN;
         const now = win.Date.now();
         if (saved?.defaultPolicy !== false || p?.essential !== true || !["functional", "analytics", "advertising", "dataToThirdParty"].every((k) => typeof p[k] === "boolean") || !consentValidity(config)(timestamp2, now)) return null;
+        const marketing = p.advertising && p.dataToThirdParty && typeof win.__tcfapi === "undefined";
         return {
+          purchaseConsent: { source: "wix", timestamp: new Date(timestamp2).toISOString(), ad_storage: marketing, ad_user_data: marketing, ad_personalization: marketing },
           consentRevision: config.consentRevision,
           analytics: p.analytics,
-          marketing: p.advertising && p.dataToThirdParty && typeof win.__tcfapi === "undefined"
+          marketing
         };
       } catch {
         return null;
@@ -564,10 +581,12 @@
         const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
         if (!consentId(id) || consent.stamp !== id || !consentValidity(config)(utc, now)) return null;
         if (!persisted(win.document, id)) return null;
+        const marketing = consent.marketing && !script.tcf && typeof win.__tcfapi === "undefined";
         return {
+          purchaseConsent: { source: "cookiebot", timestamp: new Date(utc).toISOString(), ad_storage: marketing, ad_user_data: marketing, ad_personalization: marketing },
           consentRevision: config.consentRevision,
           analytics: consent.statistics,
-          marketing: consent.marketing && !script.tcf && typeof win.__tcfapi === "undefined"
+          marketing
         };
       } catch {
         return null;
@@ -647,7 +666,7 @@
           choice[purpose] = accepted;
         }
         if (typeof win.__tcfapi !== "undefined") choice.marketing = false;
-        return { consentRevision: config.consentRevision, ...choice };
+        return { purchaseConsent: { source: "cookieconsent", timestamp: new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(), ad_storage: choice.marketing, ad_user_data: choice.marketing, ad_personalization: choice.marketing }, consentRevision: config.consentRevision, ...choice };
       } catch {
         return null;
       }
@@ -929,18 +948,19 @@
       clearInterval(record.heartbeat);
       record.heartbeat = null;
     };
-    const readChoice = (record) => {
+    const readChoice = (frame, record) => {
       try {
         const scope = consentScope(record.manifest, window.location.origin);
         const choice = record.choice?.read(record.manifest);
-        record.consentBinding = choice && scope?.binding ? scope.binding : void 0;
-        return measurementConsent(choice);
+        const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
+        record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : void 0;
+        return { ...measurementConsent(choice), ...choice?.purchaseConsent || saved?.purchaseConsent ? { purchaseConsent: choice?.purchaseConsent || saved.purchaseConsent } : {} };
       } catch {
         return measurementConsent(false);
       }
     };
     const sendConsent = (frame, record) => {
-      const choice = readChoice(record);
+      const choice = readChoice(frame, record);
       return record.channel.send("measurement-consent", { measurement: {
         protocol: measurementProtocol,
         manifest: record.manifest,
@@ -961,7 +981,7 @@
         return;
       }
       if (suspended || !record.manifest) return;
-      const automatic = !record.explicitChoice && !usesHostDataLayer(frame) && record.manifest.measurement_consent_bridge === true;
+      const automatic = !record.explicitChoice && (!usesHostDataLayer(frame) || consentSource?.configured) && record.manifest.measurement_consent_bridge === true;
       if (!automatic && !record.explicitChoice && record.choice) record.choice.dispose();
       if (!record.choice && automatic) {
         const legacyRead = scopedChoice(record, () => consentMode.read());
@@ -1094,9 +1114,9 @@
           if (!payload) return true;
           if (!payload.event) record.pageContext = payload;
           window.dataLayer = window.dataLayer || [];
-          if (payload.ecommerce || payload.event === "generate_lead") window.dataLayer.push({ ecommerce: null, user_data: null });
+          if (payload.ecommerce || payload.event === "generate_lead") window.dataLayer.push({ ecommerce: null, user_data: null, meta_purchase_allowed: null, event_id: null });
           window.dataLayer.push(payload);
-          window.dataLayer.push({ ...["purchase", "generate_lead"].includes(payload.event) ? { user_data: null } : {}, form_embedded: false });
+          window.dataLayer.push({ ...["purchase", "meta_purchase"].includes(payload.event) ? { user_data: null, ecommerce: null, event_id: null, meta_purchase_allowed: null, page_type: null, user_type: null, language: null } : payload.event === "generate_lead" ? { user_data: null } : {}, form_embedded: false });
         }
         return true;
       }

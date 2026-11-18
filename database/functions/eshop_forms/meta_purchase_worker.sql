@@ -9,7 +9,7 @@ BEGIN
   ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
  )
  UPDATE analytics.meta_purchase_deliveries d SET status='expired',done_at=clock_timestamp(),
-  lease=NULL,lease_until=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
+  lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
  FROM expired WHERE d.order_id=expired.order_id;
  DELETE FROM analytics.meta_purchase_deliveries d WHERE d.order_id IN(
   SELECT x.order_id FROM analytics.meta_purchase_deliveries x
@@ -20,6 +20,8 @@ BEGIN
   JOIN analytics.meta_purchase_connectors c ON c.unit=d.unit
   JOIN analytics.conversion_facts f ON f."order"=d.order_id AND f.kind='order_fully_paid'
   WHERE d.status='pending' AND c.enabled AND c.paused_at IS NULL
+    AND public.form_order_purchase_timing_internal(d.order_id)='paid'
+    AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE
     AND d.next_attempt_at<=clock_timestamp() AND (d.lease_until IS NULL OR d.lease_until<=clock_timestamp())
   ORDER BY d.next_attempt_at,d.order_id LIMIT least(greatest(coalesce(p_limit,1),1),20)
   FOR UPDATE OF d SKIP LOCKED
@@ -48,8 +50,11 @@ BEGIN
  IF connector.enabled IS DISTINCT FROM true OR connector.paused_at IS NOT NULL THEN RETURN NULL; END IF;
  SELECT * INTO fact FROM analytics.conversion_facts WHERE "order"=p_order_id AND kind='order_fully_paid';
  SELECT * INTO o FROM eshop.orders WHERE id=p_order_id;
- IF delivery.connector_revision IS DISTINCT FROM connector.revision
+ IF public.form_order_purchase_timing_internal(p_order_id) IS DISTINCT FROM 'paid'
+    OR public.form_order_purchase_capi_required_internal(p_order_id) IS DISTINCT FROM true
+    OR delivery.connector_revision IS DISTINCT FROM connector.revision
     OR delivery.consent_revision IS DISTINCT FROM public.meta_purchase_consent_revision_internal(o.form)
+    OR public.meta_purchase_snapshot_valid_internal(delivery.unit,delivery.consent_snapshot) IS DISTINCT FROM true
     OR delivery.consent_at>fact.created_at
     OR delivery.consent_at<clock_timestamp()-interval '30 days'
     OR fact.created_at<clock_timestamp()-interval '7 days'
@@ -57,7 +62,7 @@ BEGIN
     OR fact.payload IS DISTINCT FROM jsonb_build_object('value',o.price,'currency',trim(o.currency_code))
     OR NOT public.form_paid_conversion_eligible_internal(p_order_id) THEN
   UPDATE analytics.meta_purchase_deliveries SET status='invalid',done_at=clock_timestamp(),
-   lease=NULL,lease_until=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
+   lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
   WHERE order_id=p_order_id;
   RETURN NULL;
  END IF;
@@ -93,6 +98,7 @@ BEGIN
  UPDATE analytics.meta_purchase_deliveries SET status=final_status,error_code=nullif(p_result,'sent'),
   next_attempt_at=clock_timestamp()+interval '2 minutes'*power(2,greatest(delivery.attempts-1,0)),
   lease=NULL,lease_until=NULL,done_at=CASE WHEN final_status<>'pending' THEN clock_timestamp() END,
+  consent_snapshot=CASE WHEN final_status='pending' THEN consent_snapshot END,
   email_hash=CASE WHEN final_status='pending' THEN email_hash END,
   client_agent=CASE WHEN final_status='pending' THEN client_agent END,
   source_url=CASE WHEN final_status='pending' THEN source_url END

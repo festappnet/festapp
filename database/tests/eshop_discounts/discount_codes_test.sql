@@ -237,7 +237,9 @@ BEGIN
  PERFORM assert_eq(r#>>'{data,code}','200','online discounted order: '||r::text);oid:=(r#>>'{data,order,id}')::bigint;
  PERFORM assert_eq((SELECT amount_minor FROM eshop.stripe_checkout_attempts WHERE order_id=oid),9000::bigint,'installed online connector receives net');
  PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=oid),90::numeric,'online order receives same net');
- PERFORM assert_eq(r#>'{data,analytics}','null'::jsonb,'discounted checkout has no conversion before payment');
+ PERFORM assert_eq(r#>>'{data,analytics,event}','purchase','default order mode emits discounted purchase before payment');
+ PERFORM assert_eq((r#>>'{data,analytics,ecommerce,value}')::numeric,90::numeric,'purchase uses the charged discounted value');
+ PERFORM assert_eq(r#>>'{data,analytics,event_id}',r#>>'{data,analytics,ecommerce,transaction_id}','discounted purchase shares its UUID');
 END $$;
 
 DO $$

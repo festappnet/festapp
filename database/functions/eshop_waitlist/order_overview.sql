@@ -165,6 +165,8 @@ BEGIN
   ORDER BY w.created_at,w.id),'[]') FROM eshop.waitlist_offers w WHERE w.order_id=root.id AND w.form_id=f.id),
  'orders',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',o.id,'symbol',o.order_symbol,'state',o.state,'total',o.price,'currency',o.currency_code,
   'discount',o.data->'discount',
+  'metaAnalytics',public.form_meta_purchase_datalayer_internal(o.id),
+  'analytics',CASE WHEN public.form_order_purchase_timing_internal(o.id)='paid' THEN public.form_purchase_datalayer_internal(o.id) END,
   'payment',public.customer_order_payment_internal(o.id),
   'answers',public.customer_order_answers_internal(f.id,o.data,false),
   'ticketIds',(SELECT coalesce(jsonb_agg(t.id ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t),
@@ -180,6 +182,7 @@ BEGIN
    'usageStatus',CASE t.state WHEN 'ordered' THEN 'unused' WHEN 'paid' THEN 'unused' WHEN 'sent' THEN 'unused' WHEN 'used' THEN 'used' WHEN 'storno' THEN 'cancelled' ELSE 'unknown' END) ORDER BY t.id),'[]')
    FROM public.get_order_tickets_internal(o.id) t)) ORDER BY o.id),'[]')
   FROM eshop.orders o WHERE o.id=ANY(ids) AND o.state IS DISTINCT FROM 'waitlisted')) INTO result;
+ result:=result||jsonb_build_object('measurementFormLink',f.link);
  IF EXISTS(SELECT FROM analytics.meta_purchase_deliveries d
    WHERE d.order_id=ANY(ids) AND d.revoked_at IS NULL AND d.status IN ('pending','sent')) THEN
   result:=result||'{"metaPurchaseConsent":true}'::jsonb;
