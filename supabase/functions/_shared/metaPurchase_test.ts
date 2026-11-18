@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { sendMetaPurchase } from "./metaPurchase.ts";
+import { sendMetaPurchase } from "../process-meta-purchases/metaPurchase.ts";
 
 const purchase = {
   dataset: "123456",
