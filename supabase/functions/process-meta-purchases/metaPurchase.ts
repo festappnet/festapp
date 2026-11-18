@@ -50,14 +50,19 @@ export async function sendMetaPurchase(
     );
     const receipt = await response.json().catch(() => null);
     if (response.ok) return receipt?.events_received === 1 ? "sent" : "retry";
+    const code = receipt?.error?.code;
+    // Graph throttling (#4, #17, #32, #613, 80000-80014) can arrive as 400 or
+    // 403. It must not pause the connector or discard the purchase.
+    if (
+      receipt?.error?.is_transient === true ||
+      [1, 2, 4, 17, 32, 613].includes(code) ||
+      (code >= 80000 && code <= 80014) ||
+      response.status === 429 || response.status >= 500
+    ) return "retry";
     if (
       response.status === 401 || response.status === 403 ||
-      [10, 190, 200].includes(receipt?.error?.code)
+      [10, 102, 190].includes(code) || (code >= 200 && code <= 299)
     ) return "credentials";
-    if (
-      response.status === 429 || response.status >= 500 ||
-      receipt?.error?.is_transient === true
-    ) return "retry";
     return "rejected";
   } catch {
     return "retry";
