@@ -2278,6 +2278,7 @@
     "connected": "Connected",
     "connectedClient": "Die verbundene Anwendung hat Zugriff auf Ihr Konto.",
     "closeHint": "Sie können dieses Fenster schließen und zur verbundenen Anwendung zurückkehren.",
+    "closeManually": "Der Browser hat dieses Fenster nicht geschlossen. Schließen Sie den Tab über dessen Schließen-Schaltfläche und kehren Sie zur verbundenen Anwendung zurück. Die Verbindung ist hergestellt.",
     "closeWindow": "Close window",
     "backToTenant": "Back to {tenant}",
     "waitingForClient": "Finishing the connection. A helper window opened to complete authentication.",

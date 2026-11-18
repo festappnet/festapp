@@ -2280,6 +2280,7 @@
     "connected": "Connected",
     "connectedClient": "Połączona aplikacja ma dostęp do Twojego konta.",
     "closeHint": "Możesz zamknąć to okno i wrócić do połączonej aplikacji.",
+    "closeManually": "Przeglądarka nie zamknęła tego okna. Zamknij kartę przyciskiem zamykania i wróć do połączonej aplikacji. Połączenie zostało nawiązane.",
     "closeWindow": "Close window",
     "backToTenant": "Back to {tenant}",
     "waitingForClient": "Finishing the connection. A helper window opened to complete authentication.",
