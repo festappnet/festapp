@@ -163,12 +163,31 @@ try:
   engines = list(dict.fromkeys(case[4] for case in cases))
   shell_only = ['--only-shell'] if engines == ['chromium'] else []
   playwright=['pnpm','--dir',ROOT/'web_client','exec','playwright']
-  if sys.platform.startswith('linux'):
-   try:
-    run([*playwright,'install-deps','--dry-run',*engines],label='browsers.system-dependencies-check')
-   except RuntimeError:
-    run([*playwright,'install-deps',*engines],label='browsers.system-dependencies')
   run([*playwright,'install',*shell_only,*engines],label='browsers.install')
+  if sys.platform.startswith('linux'):
+   # Package checks may flag optional dependencies on newer runner images.
+   # Verify the exact pinned browser and launch configuration used by the suite.
+   probe = [
+    'node', '--input-type=module', '-e',
+    '''import {createNativeBrowser} from './scripts/native_browser.mjs';
+const owner = await createNativeBrowser({engine: process.argv[1]});
+try {
+  const context = await owner.context();
+  await context.newPage();
+} finally {
+  await owner.close();
+}''',
+   ]
+   missing = []
+   for engine in engines:
+    try:
+     run([*probe, engine], ROOT/'web_client', label=f'browsers.probe.{engine}')
+    except RuntimeError:
+     missing.append(engine)
+   if missing:
+    run([*playwright, 'install-deps', *missing], label='browsers.system-dependencies')
+    for engine in missing:
+     run([*probe, engine], ROOT/'web_client', label=f'browsers.probe.after-install.{engine}')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
  preparation = [('browsers',prepare_browsers)]
  if needs_joomla:preparation.append(('joomla',prepare_joomla))
