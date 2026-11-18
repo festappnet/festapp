@@ -297,6 +297,13 @@ test('purpose switches remain keyboard operable after changes and Klaro re-rende
   assert.match(css,/\.cm-switch \.slider \{[^}]*background:color-mix\(in srgb,var\(--notice-text\) 55%,var\(--notice-surface\)\)/,'off track stays readable but distinct from the on state');
  } finally {cleanup();win.close();}
 });
+async function assertFocusRestored(win, getOpener) {
+ const deadline=Date.now()+1000;
+ // The modal closes before its deferred focus restoration runs.
+ while (win.document.activeElement!==getOpener() && Date.now()<deadline) await settle();
+ assert.equal(win.document.activeElement,getOpener(),'focus returns to the settings button');
+}
+
 for(const confirmed of [false,true]) test(`Escape cancels draft and returns focus, confirmed=${confirmed}`,async()=>{
  const {win,root,cleanup,grants}=await notice();
  try {
@@ -305,15 +312,16 @@ for(const confirmed of [false,true]) test(`Escape cancels draft and returns focu
   opener.focus();opener.click();await settle();
   root.querySelector('#service-item-analytics').click();await settle();
   const cookie=win.document.cookie;
-  key(win,win.document.activeElement,'Escape');await settle();
+  const currentOpener=()=>confirmed?opener:root.querySelector('.cm-btn-lern-more');
+  key(win,win.document.activeElement,'Escape');await assertFocusRestored(win,currentOpener);
   assert.equal(root.querySelector('.cm-modal'),null);
   assert.equal(!!root.querySelector('.cookie-modal-notice'),!confirmed);
   assert.equal(win.document.cookie,cookie,'Escape never persists the draft');
   if(!confirmed)assert.equal(win.document.cookie,'');
-  opener=confirmed?opener:root.querySelector('.cm-btn-lern-more');assert.equal(win.document.activeElement,opener);
+  opener=currentOpener();
   assert.deepEqual(grants.at(-1),confirmed?both:none,'cancel restores the saved consent');
   opener.click();await settle();assert.equal(root.querySelector('#service-item-analytics').checked,confirmed,'cancel restores switch state');
-  root.querySelector('.hide').click();await settle();assert.equal(win.document.activeElement,confirmed?opener:root.querySelector('.cm-btn-lern-more'));
+  root.querySelector('.hide').click();await assertFocusRestored(win,currentOpener);
  } finally {cleanup();win.close();}
 });
 test('light primary retains filled buttons and uses readable text for outlines, links and switches',async()=>{
