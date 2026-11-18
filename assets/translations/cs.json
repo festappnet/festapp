@@ -4823,7 +4823,7 @@
     "walletColor": "Barva karty",
     "walletColorInvalid": "Zadejte barvu ve tvaru #RRGGBB.",
     "walletLogo": "Logo",
-    "walletLogoSize": "Použijte čtvercové PNG alespoň 660 × 660 px. Okolo loga ponechte 15 % volného místa.",
+    "walletLogoSize": "Použijte čtvercové PNG alespoň 660 × 660 px. Okolo loga ponechte 15 % volného místa.",
     "walletHero": "Obrázek karty",
     "walletHeroHelp": "Google doporučuje PNG 1032 × 812 px bez vloženého textu. Apple stejný obrázek ořízne do horního pruhu za názvem akce (poměr 375:98). Široká grafika PDF proto může být špatně čitelná.",
     "walletInherit": "Převzít vzhled vstupenky",

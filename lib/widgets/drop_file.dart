@@ -27,15 +27,16 @@ class DropFile extends StatefulWidget {
   /// If null, only [onFilePathChanged] is called with the first file.
   final FutureOr<void> Function(List<ImportFile>)? onMultipleFilesChanged;
 
-  /// Optional hint text (e.g. what files, dimensions, etc.) displayed above the upload icon.
+  /// Optional file guidance displayed below the upload prompt.
   final String? hint;
   final Future<ImportFile?> Function()? pickFile;
 
   /// List of allowed file extensions (e.g. ['jpg', 'png']).
   final List<String>? allowedExtensions;
 
-  /// Height of the drop area.
+  /// Minimum height of the drop area. It grows to fit the prompt and hint.
   final double height;
+  final EdgeInsetsGeometry margin;
   final bool dropEnabled;
   final bool singleFileOnly;
   final VoidCallback? onInvalidDrop;
@@ -48,6 +49,7 @@ class DropFile extends StatefulWidget {
     this.pickFile,
     this.allowedExtensions,
     this.height = 250,
+    this.margin = const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
     this.dropEnabled = true,
     this.singleFileOnly = false,
     this.onInvalidDrop,
@@ -170,7 +172,7 @@ class _DropFileState extends State<DropFile> {
   Widget build(BuildContext context) {
     bool isClickable = widget.pickFile != null || PlatformHelper.isWeb;
     bool isCompact = widget.height < 160;
-    double iconSize = isCompact ? 32 : 50;
+    double iconSize = isCompact ? 24 : 50;
     double iconSpacing = isCompact ? 6 : 12;
 
     return DropTarget(
@@ -222,9 +224,10 @@ class _DropFileState extends State<DropFile> {
         onTap: isClickable ? _pickFile : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          height: widget.height,
+          constraints: BoxConstraints(minHeight: widget.height),
           width: double.infinity,
-          margin: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          margin: widget.margin,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             color: _dragging
@@ -236,9 +239,10 @@ class _DropFileState extends State<DropFile> {
             ),
           ),
           child: Center(
+            heightFactor: 1,
             child: file == null
                 ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.cloud_upload,
@@ -248,31 +252,27 @@ class _DropFileState extends State<DropFile> {
                             : ThemeConfig.grey600(context),
                       ),
                       SizedBox(height: iconSpacing),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text(
-                          isClickable
-                              ? CommonStrings.dropFileHereOrClick
-                              : CommonStrings.dropFileHere,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: _dragging
-                                ? Colors.blue
-                                : ThemeConfig.grey600(context),
-                          ),
+                      Text(
+                        isClickable
+                            ? CommonStrings.dropFileHereOrClick
+                            : CommonStrings.dropFileHere,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: isCompact ? 14 : 16,
+                          fontWeight: FontWeight.w600,
+                          color: _dragging
+                              ? Colors.blue
+                              : ThemeConfig.grey600(context),
                         ),
                       ),
                       if (widget.hint != null)
                         Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
+                          padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             widget.hint!,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontSize: isCompact ? 13 : 14,
                               color: _dragging
                                   ? Colors.blue
                                   : ThemeConfig.grey600(context),
@@ -282,7 +282,7 @@ class _DropFileState extends State<DropFile> {
                     ],
                   )
                 : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.insert_drive_file,
