@@ -32,12 +32,7 @@ BEGIN
   'ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',p)))));
  result:=public.create_ticket_order_client_sync_v1(payload,command,client);
  PERFORM assert_eq(result#>>'{data,code}','200','canonical card create succeeds: '||result::text);
- PERFORM assert_eq(result#>>'{data,analytics,event}','purchase','confirmed requested order receives immutable analytics facts');
- PERFORM assert_true(result#>>'{data,analytics,ecommerce,transaction_id}'<>result#>>'{data,order,order_symbol}','analytics identity is not an order capability');
- PERFORM assert_eq(result#>>'{data,analytics,ecommerce,payment_type}','card','analytics describes payment method, not paid state');
- PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1,'item_category','Card tickets','item_brand','Card order')),'analytics exposes the public offer name and final buyer price');
- PERFORM assert_eq(result#>>'{data,analytics,ecommerce,value}','123.45','analytics value is the final charged line total');
- PERFORM assert_true(NOT (result#>'{data,analytics,ecommerce}') ? 'tax','VAT is not invented without a backend breakdown');
+ PERFORM assert_eq(result#>'{data,analytics}','null'::jsonb,'card checkout has no purchase before the provider confirms payment');
  oid:=(result#>>'{data,order,id}')::bigint;
  SELECT payment_info INTO pi FROM eshop.orders WHERE id=oid;
  SELECT * INTO STRICT attempt FROM eshop.stripe_checkout_attempts WHERE order_id=oid;
@@ -56,25 +51,7 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,payment,method}','stripe','safe payment projection accompanies order');
  replay:=public.create_ticket_order_client_sync_v1(jsonb_set(payload,'{stripePaymentSource,tokenHash}',to_jsonb(repeat('d',64))),command,client);
  PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'same command retains original order and source');
- PERFORM assert_eq(replay#>'{data,analytics}',result#>'{data,analytics}','lost first response recovers the same authorized conversion');
- UPDATE eshop.orders SET price=0 WHERE id=oid;
- replay:=public.create_ticket_order_client_sync_v1(payload,command,client);
- PERFORM assert_eq(replay#>'{data,analytics}',result#>'{data,analytics}','later order edits cannot change the original command conversion');
- UPDATE eshop.orders SET price=123.45 WHERE id=oid;
- UPDATE eshop.products SET price=999 WHERE id=p;
- PERFORM assert_eq(public.form_conversion_datalayer_internal(oid,'purchase'),result#>'{data,analytics}','later catalog prices do not rewrite conversion facts');
- UPDATE public.units SET data=data-'measurement_privacy_url' WHERE id=u;
- PERFORM assert_true(public.form_conversion_datalayer_internal(oid,'purchase') IS NULL,'missing privacy URL blocks historical conversion export');
- DELETE FROM analytics.conversion_facts WHERE "order"=oid;
- PERFORM public.record_form_conversion_internal(oid);
- PERFORM assert_false(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=oid),'missing privacy URL prevents conversion recording');
- UPDATE public.units SET data=data||'{"measurement_privacy_url":"https://organizer.example/privacy"}' WHERE id=u;
- PERFORM public.record_form_conversion_internal(oid);
- PERFORM assert_true(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=oid),'valid URL permits conversion recording again');
- UPDATE analytics.organization_policy SET enabled=false,revision=2 WHERE organization=org;
- PERFORM assert_true(public.form_conversion_datalayer_internal(oid,'purchase') IS NULL,'live policy revocation blocks replay projection');
- UPDATE analytics.organization_policy SET enabled=true,revision=3 WHERE organization=org;
- UPDATE eshop.products SET price=123.45 WHERE id=p;
+ PERFORM assert_eq(replay#>'{data,analytics}','null'::jsonb,'receipt replay has no purchase');
  PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_checkout_attempts WHERE order_id=oid),1::bigint,'replay cannot create another attempt');
 
  PERFORM public.attach_stripe_handoff_internal(oid,command,encode(extensions.digest(repeat('e',64),'sha256'),'hex'),false);
@@ -119,12 +96,18 @@ BEGIN
  PERFORM assert_eq(response#>>'{data,payment,received}','123.45','wire projection keeps the exact supported-currency decimal contract');
  PERFORM assert_eq(response#>>'{data,payment,returned}','0.00','zero refund is also a normalized decimal string');
  PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'paid','canonical paid transition');
+ PERFORM assert_eq((SELECT cf.payload FROM analytics.conversion_facts cf WHERE cf."order"=oid AND cf.kind='order_fully_paid'),
+  '{"currency":"CZK","value":123.45}'::jsonb,'confirmed card payment records the exact paid amount once');
+ PERFORM assert_eq(public.create_ticket_order_client_sync_v1(payload,command,client)#>'{data,analytics}',
+  'null'::jsonb,'paid card facts never reach the browser checkout receipt');
  PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi),123.45::numeric,'gross amount exact');
  SELECT count(*) INTO count_before FROM public.email_messages WHERE order_id=oid AND message_kind='order_tickets';
  PERFORM assert_true(count_before>0,'paid transition creates existing ticket email intent');
  PERFORM public.ingest_stripe_payment_internal(attempt.id,NULL,event,facts);
  PERFORM assert_eq((SELECT count(*) FROM public.email_messages WHERE order_id=oid AND message_kind='order_tickets'),count_before,'webhook replay cannot enqueue duplicate tickets');
  PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_payment_movements WHERE attempt_id=attempt.id),1::bigint,'webhook replay cannot duplicate money');
+ PERFORM assert_eq((SELECT count(*) FROM analytics.conversion_facts WHERE "order"=oid AND kind='order_fully_paid'),1::bigint,
+  'replayed payment has one conversion fact');
  -- A page with pending/failed refunds can advance its raw provider cursor
  -- without contributing a successful refund movement. Admission waits until
  -- the durable pass is complete, including across a worker failure.

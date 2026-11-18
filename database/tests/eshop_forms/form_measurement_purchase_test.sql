@@ -1,89 +1,142 @@
--- Focused confirmed-price, policy and response-loss conversion regression.
--- Temporary fault injection is rolled back by the test runner.
-ALTER TABLE public.email_messages ADD CONSTRAINT stripe_test_email_fault CHECK(message_kind<>'order_tickets') NOT VALID;
+-- test-setup: database/tests/helpers/form_measurement_fixture.sql
 DO $$
-DECLARE org bigint; u bigint; occ bigint; f bigint; pt bigint; p bigint; conn uuid; payload jsonb; result jsonb; replay jsonb;
- source jsonb:=jsonb_build_object('tokenHash',encode(extensions.digest(repeat('1',64),'sha256'),'hex'),'returnHash',encode(extensions.digest(repeat('2',64),'sha256'),'hex'),'contentHash',repeat('c',64),
-  'sealed',jsonb_build_object('v','1','iv','fixture','ciphertext','fixture'));
- command uuid:=extensions.gen_random_uuid(); client uuid:=extensions.gen_random_uuid(); oid bigint; pi bigint; attempt eshop.stripe_checkout_attempts; claim jsonb; sync_claim jsonb; facts jsonb; event jsonb; response jsonb; count_before bigint;
- legacy_bank bigint; manager uuid; flow jsonb; original_attempts jsonb;
+DECLARE
+ fixture jsonb:=pg_temp.fixture(NULL);
+ form_id bigint:=(fixture->>'form')::bigint;
+ command_id uuid:=gen_random_uuid();
+ client_id uuid:=gen_random_uuid();
+ checkout jsonb:=pg_temp.checkout(fixture);
+ receipt jsonb;
+ v_order_id bigint;
+ payment_id bigint;
+ bank_id bigint;
+ deposit_id bigint;
+ balance_id bigint;
+ paid_id uuid;
+ claimed uuid;
+ prepared jsonb;
+ first_event_time bigint;
+ buyer_token text:=repeat('a',64);
+ connector_unit bigint:=(fixture->>'unit')::bigint;
+ unconsented_id bigint;
+ second_order_id bigint;
 BEGIN
- PERFORM set_config('request.jwt.claim.role','service_role',true);
  PERFORM set_config('request.jwt.claim.sub','',true);
- INSERT INTO public.organizations(title,data) VALUES('Stripe create tenant','{"DEFAULT_URL":"https://tickets.example"}') RETURNING id INTO org;
- INSERT INTO public.units(title,organization) VALUES('Card receiver',org) RETURNING id INTO u;
- UPDATE public.organizations SET data=data||'{"FORM_MEASUREMENT_ENABLED":true}'::jsonb WHERE id=org;
- UPDATE public.units SET data=coalesce(data,'{}')||'{"measurement_privacy_url":"https://organizer.example/privacy","measurement_enabled":true}'::jsonb WHERE id=u;
- INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) SELECT organization,m,true FROM public.units CROSS JOIN unnest(ARRAY['bank','stripe']) m WHERE id=u ON CONFLICT(organization_id,method) DO UPDATE SET enabled=true;
- INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) SELECT organization,'stripe' FROM public.units WHERE id=u ON CONFLICT DO NOTHING;
- INSERT INTO public.occasions(title,organization,unit,link,start_time,end_time)
- VALUES('Card order',org,u,'stripe-create-'||extensions.gen_random_uuid(),now(),now()+interval '2 days') RETURNING id INTO occ;
- INSERT INTO eshop.stripe_connections(organization_id,unit_id,account_id,livemode,state,paused,model_verified,charges_enabled,card_payments_active)
- VALUES(org,u,'acct_createFixture',false,'connected',false,true,true,true) RETURNING id INTO conn;
- INSERT INTO eshop.stripe_runtime_policy(organization_id,livemode,new_payments_enabled,online_admission_verified,reservation_policy_verified,dispute_policy_accepted,supported_surfaces)
- VALUES(org,false,true,true,true,true,ARRAY['web']);
- INSERT INTO public.forms(occasion,data,is_open,key) VALUES(occ,jsonb_build_object('payments',jsonb_build_object('bankEnabled',false,'stripeConnectionId',conn)),true,extensions.gen_random_uuid()) RETURNING id INTO f;
- INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason) VALUES(org,true,1,'test','disposable conversion fixture');
- UPDATE public.forms SET data=data||'{"analytics":{"enabled":true}}'::jsonb WHERE id=f;
- INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Card tickets','spot') RETURNING id INTO pt;
- INSERT INTO eshop.products(product_type,occasion,title,price,currency_code,is_hidden) VALUES(pt,occ,'Card ticket',123.45,'CZK',false) RETURNING id INTO p;
- INSERT INTO public.form_fields(form,product_type,type) VALUES(f,pt,'product_type');
- payload:=jsonb_build_object('form',(SELECT key FROM public.forms WHERE id=f),'email','card@example.test','payment_method','stripe',
-  'payment_type','full','expected_payment_amount_minor',12345,'expected_payment_currency','CZK','stripe_connection_id',conn,'payment_surface','web','stripePaymentSource',source,
-  'ticket',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',p)))));
- result:=public.create_ticket_order_client_sync_v1(payload,command,client);
- PERFORM assert_eq(result#>>'{data,code}','200','canonical card create succeeds: '||result::text);
- PERFORM assert_eq(result#>>'{data,analytics,event}','purchase','confirmed requested order receives immutable analytics facts');
- PERFORM assert_true(result#>>'{data,analytics,ecommerce,transaction_id}'<>result#>>'{data,order,order_symbol}','analytics identity is not an order capability');
- PERFORM assert_eq(result#>>'{data,analytics,ecommerce,payment_type}','card','analytics describes payment method, not paid state');
- PERFORM assert_eq(result#>'{data,analytics,ecommerce,items}',jsonb_build_array(jsonb_build_object('item_id','product_'||p,'item_name','Card ticket','price',123.45,'quantity',1,'item_category','Card tickets','item_brand','Card order')),'analytics exposes the public offer name and final buyer price');
- PERFORM assert_eq(result#>>'{data,analytics,ecommerce,value}','123.45','analytics value is the final charged line total');
- PERFORM assert_true(NOT (result#>'{data,analytics,ecommerce}') ? 'tax','VAT is not invented without a backend breakdown');
- oid:=(result#>>'{data,order,id}')::bigint;
- SELECT payment_info INTO pi FROM eshop.orders WHERE id=oid;
- SELECT * INTO STRICT attempt FROM eshop.stripe_checkout_attempts WHERE order_id=oid;
- PERFORM assert_eq(attempt.amount_minor,12345::bigint,'price originates from product catalog');
- PERFORM assert_true(attempt.reservation_expires_at=attempt.created_at+interval '31 minutes','fixed reservation and dispatch allowance');
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES ((fixture->>'organization')::bigint,true,1,'fixture','confirmed purchase');
+ UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=form_id;
+ PERFORM public.reserve_public_link_internal('form',form_id,fixture->>'link',true);
+ INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled,test_event_code)
+ VALUES(connector_unit,'123456',vault.create_secret(repeat('t',40),'meta-purchase-fixture'),
+  'https://tickets.example',true,'TEST4242');
+ INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(form_id,connector_unit);
+ checkout:=checkout||jsonb_build_object('metaPurchaseConsent',jsonb_build_object(
+  'revision',public.get_meta_purchase_consent(fixture->>'link')->>'revision','userAgent','Test checkout'));
+ PERFORM assert_true(checkout#>>'{metaPurchaseConsent,revision}' IS NOT NULL,'enabled connector exposes the bound notice');
+
+ receipt:=public.create_ticket_order_client_sync_v1(checkout,command_id,client_id);
+ PERFORM assert_eq(receipt#>>'{data,code}','200','bank checkout succeeds');
+ PERFORM assert_eq(receipt#>'{data,analytics}','null'::jsonb,'unpaid checkout has no purchase');
+ v_order_id:=(receipt#>>'{data,order,id}')::bigint;
+ SELECT payment_info INTO STRICT payment_id FROM eshop.orders WHERE id=v_order_id;
+ PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries d WHERE d.order_id=v_order_id),
+  'checkout atomically binds explicit consent to the order');
+ PERFORM assert_false((SELECT data ? 'metaPurchaseConsent' FROM eshop.orders WHERE id=v_order_id),
+  'measurement evidence is private and absent from commerce data');
+ PERFORM assert_eq((SELECT count(*) FROM public.claim_meta_purchase_deliveries(8)),0::bigint,'no work before full payment');
+
+ UPDATE eshop.payment_info SET deposit_amount=30 WHERE id=payment_id RETURNING bank_account INTO bank_id;
+
+ -- Simulate a receipt written before this migration. Old clients must never
+ -- recover the historical order-time event, even after this order is paid.
+ INSERT INTO analytics.conversion_facts("order",kind,payload)
+ VALUES(v_order_id,'purchase','{"event":"purchase"}');
+ PERFORM assert_eq(public.create_ticket_order_client_sync_v1(checkout,command_id,client_id)#>'{data,analytics}',
+  'null'::jsonb,'checkout replay suppresses historical order-time purchase');
+
+ UPDATE eshop.payment_info SET paid_externally=70 WHERE id=payment_id;
+ INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source,vs)
+ SELECT bank_id,30,'CZK',now(),'fio_api',variable_symbol::text FROM eshop.payment_info WHERE id=payment_id
+ RETURNING id INTO deposit_id;
+ PERFORM assert_eq(public.match_bank_transaction(deposit_id)->>'verdict','paired','automatic deposit match');
+ PERFORM assert_true((SELECT state IN ('paid','sent') FROM eshop.orders WHERE id=v_order_id),'deposit activates admission');
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=v_order_id AND kind='order_fully_paid'),
+  'deposit and external settlement cannot produce a purchase');
+
+ INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source)
+ VALUES (bank_id,70,'CZK',now(),'fio_api') RETURNING id INTO balance_id;
+ -- A failed conversion write must leave payment pairing retryable.
+ ALTER TABLE analytics.conversion_facts ADD CONSTRAINT measurement_payment_write_fault
+ CHECK(kind<>'order_fully_paid') NOT VALID;
  BEGIN
-  PERFORM public.cancel_order_domain_internal_v1(oid,false);RAISE EXCEPTION 'ordinary cancellation changed a Stripe order';
- EXCEPTION WHEN raise_exception THEN IF SQLERRM<>'STRIPE_USE_REFUND_ADMISSION_DECISION' THEN RAISE; END IF; END;
- PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=oid),123.45::numeric,'rejected ordinary cancellation retains original amount');
- PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'ordered','rejected ordinary cancellation retains reservation');
+  PERFORM public.apply_transaction_pairing(balance_id,payment_id,'manual_attach','user');
+  RAISE EXCEPTION 'conversion failure unexpectedly committed the pairing';
+ EXCEPTION WHEN check_violation THEN NULL;
+ END;
+ PERFORM assert_true((SELECT payment_info IS NULL FROM eshop.transactions WHERE id=balance_id),
+  'the payment is still unpaired after a failed write');
+ PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=payment_id),30::numeric,
+  'payment totals roll back with pairing');
+ ALTER TABLE analytics.conversion_facts DROP CONSTRAINT measurement_payment_write_fault;
 
- PERFORM assert_true((SELECT bank_account IS NULL AND variable_symbol IS NULL AND creditor_reference IS NULL AND deposit_amount IS NULL FROM eshop.payment_info WHERE id=pi),'card needs no bank account or bank instructions');
- PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'ordered','return/create is not proof of payment');
- PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_payment_link_sources WHERE command_id=command),1::bigint,'source commits with order');
- PERFORM assert_true(NOT (SELECT data ? 'stripePaymentSource' FROM eshop.orders WHERE id=oid),'sealed capability excluded from order history and projection');
- PERFORM assert_eq(result#>>'{data,payment,method}','stripe','safe payment projection accompanies order');
- replay:=public.create_ticket_order_client_sync_v1(jsonb_set(payload,'{stripePaymentSource,tokenHash}',to_jsonb(repeat('d',64))),command,client);
- PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'same command retains original order and source');
- PERFORM assert_eq(replay#>'{data,analytics}',result#>'{data,analytics}','lost first response recovers the same authorized conversion');
- UPDATE eshop.orders SET price=0 WHERE id=oid;
- replay:=public.create_ticket_order_client_sync_v1(payload,command,client);
- PERFORM assert_eq(replay#>'{data,analytics}',result#>'{data,analytics}','later order edits cannot change the original command conversion');
- UPDATE eshop.orders SET price=123.45 WHERE id=oid;
- UPDATE eshop.products SET price=999 WHERE id=p;
- PERFORM assert_eq(public.form_conversion_datalayer_internal(oid,'purchase'),result#>'{data,analytics}','later catalog prices do not rewrite conversion facts');
- UPDATE public.units SET data=data-'measurement_privacy_url' WHERE id=u;
- PERFORM assert_true(public.form_conversion_datalayer_internal(oid,'purchase') IS NULL,'missing privacy URL blocks historical conversion export');
- DELETE FROM analytics.conversion_facts WHERE "order"=oid;
- PERFORM public.record_form_conversion_internal(oid);
- PERFORM assert_false(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=oid),'missing privacy URL prevents conversion recording');
- UPDATE public.units SET data=data||'{"measurement_privacy_url":"https://organizer.example/privacy"}' WHERE id=u;
- PERFORM public.record_form_conversion_internal(oid);
- PERFORM assert_true(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=oid),'valid URL permits conversion recording again');
- UPDATE analytics.organization_policy SET enabled=false,revision=2 WHERE organization=org;
- PERFORM assert_true(public.form_conversion_datalayer_internal(oid,'purchase') IS NULL,'live policy revocation blocks replay projection');
- UPDATE analytics.organization_policy SET enabled=true,revision=3 WHERE organization=org;
- UPDATE eshop.products SET price=123.45 WHERE id=p;
- PERFORM assert_eq((SELECT count(*) FROM eshop.stripe_checkout_attempts WHERE order_id=oid),1::bigint,'replay cannot create another attempt');
+ -- The same private pairing boundary used by the admin RPC after permission checks.
+ PERFORM public.apply_transaction_pairing(balance_id,payment_id,'manual_attach','user');
+ SELECT event_id INTO STRICT paid_id FROM analytics.conversion_facts WHERE "order"=v_order_id AND kind='order_fully_paid';
+ PERFORM assert_eq((SELECT payload FROM analytics.conversion_facts WHERE event_id=paid_id),
+  '{"currency":"CZK","value":100}'::jsonb,'actual bank receipts cover the full order');
+ PERFORM assert_eq(public.create_ticket_order_client_sync_v1(checkout,command_id,client_id)#>'{data,analytics}',
+  'null'::jsonb,'full payment stays out of browser checkout receipts');
+ PERFORM public.apply_transaction_pairing(balance_id,NULL,'manual_unlink','user');
+ PERFORM public.apply_transaction_pairing(balance_id,payment_id,'manual_attach','user');
+ PERFORM assert_eq((SELECT event_id FROM analytics.conversion_facts WHERE "order"=v_order_id AND kind='order_fully_paid'),
+  paid_id,'unlink and re-pair preserve the original event ID');
 
- UPDATE public.units SET data=data-'measurement_privacy_url' WHERE id=u;
- payload:=jsonb_set(jsonb_set(payload,'{stripePaymentSource,tokenHash}',to_jsonb(encode(extensions.digest(extensions.gen_random_uuid()::text,'sha256'),'hex'))),
-  '{stripePaymentSource,returnHash}',to_jsonb(encode(extensions.digest(extensions.gen_random_uuid()::text,'sha256'),'hex')));
- result:=public.create_ticket_order_client_sync_v1(payload,extensions.gen_random_uuid(),extensions.gen_random_uuid());
- PERFORM assert_eq(result#>>'{data,code}','200','missing privacy URL never blocks checkout');
- PERFORM assert_true(result#>'{data,analytics}' IS NULL OR result#>'{data,analytics}'='null'::jsonb,'checkout without URL exports no conversion');
- PERFORM assert_false(EXISTS(SELECT FROM analytics.conversion_facts WHERE "order"=(result#>>'{data,order,id}')::bigint),'checkout without URL records no conversion');
+ SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(8) d WHERE d.order_id=v_order_id;
+ PERFORM assert_eq((SELECT count(*) FROM public.claim_meta_purchase_deliveries(8)),0::bigint,'active lease excludes a second worker');
+ prepared:=public.prepare_meta_purchase_delivery(v_order_id,claimed);
+ PERFORM assert_eq(prepared->>'eventId',paid_id::text,'the stable settlement ID reaches the payload');
+ PERFORM assert_eq(prepared->>'testEventCode','TEST4242','test code is bound to the dataset and consent');
+ PERFORM assert_eq(prepared->>'emailHash',encode(extensions.digest('regression@example.invalid','sha256'),'hex'),
+  'only the normalized hash is returned to the worker');
+ PERFORM assert_true(public.prepare_meta_purchase_delivery(v_order_id,claimed) IS NULL,'one prepare per lease');
+ first_event_time:=(prepared->>'eventTime')::bigint;
+ PERFORM assert_true(public.finish_meta_purchase_delivery(v_order_id,claimed,'retry'),'transient result acknowledges the lease');
+ PERFORM assert_eq((SELECT count(*) FROM public.claim_meta_purchase_deliveries(8)),0::bigint,'retry backs off');
+ UPDATE analytics.meta_purchase_deliveries d SET next_attempt_at=now()-interval '1 second' WHERE d.order_id=v_order_id;
+ SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(8) d WHERE d.order_id=v_order_id;
+ prepared:=public.prepare_meta_purchase_delivery(v_order_id,claimed);
+ PERFORM assert_eq(prepared->>'eventId',paid_id::text,'retry preserves event ID');
+ PERFORM assert_eq((prepared->>'eventTime')::bigint,first_event_time,'retry preserves settlement time');
+ PERFORM assert_true(public.finish_meta_purchase_delivery(v_order_id,claimed,'credentials'),'bad token reports to the connector');
+ PERFORM assert_true((SELECT paused_at IS NOT NULL FROM analytics.meta_purchase_connectors WHERE unit=connector_unit),'bad credentials pause the connector');
+ UPDATE analytics.meta_purchase_connectors SET paused_at=NULL WHERE unit=connector_unit;
+ UPDATE analytics.meta_purchase_deliveries d SET next_attempt_at=now()-interval '1 second' WHERE d.order_id=v_order_id;
+ SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(8) d WHERE d.order_id=v_order_id;
+ PERFORM public.issue_order_overview_internal(v_order_id,pg_temp.delivery('fixture',buyer_token,v_order_id),gen_random_uuid());
+ PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('b',64),v_order_id),'invalid buyer capability cannot revoke');
+ PERFORM assert_true(public.revoke_meta_purchase_consent(buyer_token,v_order_id),'buyer can revoke in order overview');
+ PERFORM assert_true(public.prepare_meta_purchase_delivery(v_order_id,claimed) IS NULL,'withdrawal invalidates an outstanding claim');
+ PERFORM assert_true((SELECT status='revoked' AND email_hash IS NULL AND client_agent IS NULL
+  FROM analytics.meta_purchase_deliveries d WHERE d.order_id=v_order_id),'withdrawal erases matching data');
+
+ receipt:=public.create_ticket_order_client_sync_v1(checkout-'metaPurchaseConsent',gen_random_uuid(),client_id);
+ unconsented_id:=(receipt#>>'{data,order,id}')::bigint;
+ PERFORM assert_true(unconsented_id IS NOT NULL,'checkout without consent succeeds');
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries d WHERE d.order_id=unconsented_id),
+  'checkout without consent never queues a delivery');
+
+ receipt:=public.create_ticket_order_client_sync_v1(checkout,gen_random_uuid(),client_id);
+ second_order_id:=(receipt#>>'{data,order,id}')::bigint;
+ SELECT payment_info INTO STRICT payment_id FROM eshop.orders WHERE id=second_order_id;
+ INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source)
+ VALUES (bank_id,110,'CZK',now(),'fio_api') RETURNING id INTO balance_id;
+ PERFORM public.apply_transaction_pairing(balance_id,payment_id,'manual_attach','user');
+ SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(8) d WHERE d.order_id=second_order_id;
+ prepared:=public.prepare_meta_purchase_delivery(second_order_id,claimed);
+ PERFORM assert_eq((prepared->>'value')::numeric,100::numeric,'overpayment does not inflate purchase value');
+ PERFORM assert_true(public.finish_meta_purchase_delivery(second_order_id,claimed,'sent'),'a confirmed Meta receipt completes delivery');
+ PERFORM assert_false(public.finish_meta_purchase_delivery(second_order_id,claimed,'sent'),'replaying acknowledgment does not deliver twice');
+ PERFORM assert_true((SELECT status='sent' AND email_hash IS NULL AND client_agent IS NULL
+  FROM analytics.meta_purchase_deliveries d WHERE d.order_id=second_order_id),'success retains only operational evidence');
 
 END $$;

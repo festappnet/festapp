@@ -59,7 +59,7 @@ BEGIN
  IF claim->>'disposition'='replay' THEN
   result:=claim->'response';
   IF p_actor IS NULL AND p_operation IN ('register','accept') THEN
-   result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' WHEN (result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+   result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' ELSE 'free_registration' END),'null'::jsonb));
   END IF;
   PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true); RETURN public.project_local_payment_reference_order_internal(result); END IF;
  SELECT coalesce(array_agg("user"),'{}') INTO before_users FROM public.occasion_users WHERE occasion=occ;
@@ -175,7 +175,7 @@ BEGIN
  result:=public.complete_profile_inventory_membership_mutation_v1(p_command_id,occ,'inventory.waitlist.'||p_operation,entity_changes,before_users,result,actor_kind);
  IF p_actor IS NULL AND p_operation IN ('register','accept') THEN
   PERFORM public.record_form_conversion_internal((result#>>'{data,order,id}')::bigint);
-  result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' WHEN (result#>>'{data,order,payment_info,amount}')::numeric=0 THEN 'free_registration' ELSE 'purchase' END),'null'::jsonb));
+  result:=jsonb_set(result,'{data,analytics}',coalesce(public.form_conversion_datalayer_internal((result#>>'{data,order,id}')::bigint,CASE WHEN p_operation='register' THEN 'waitlist' ELSE 'free_registration' END),'null'::jsonb));
  END IF;
  PERFORM set_config('request.jwt.claim.sub',coalesce(previous_sub,''),true);
  RETURN result;

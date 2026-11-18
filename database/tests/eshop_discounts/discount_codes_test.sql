@@ -237,7 +237,7 @@ BEGIN
  PERFORM assert_eq(r#>>'{data,code}','200','online discounted order: '||r::text);oid:=(r#>>'{data,order,id}')::bigint;
  PERFORM assert_eq((SELECT amount_minor FROM eshop.stripe_checkout_attempts WHERE order_id=oid),9000::bigint,'installed online connector receives net');
  PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=oid),90::numeric,'online order receives same net');
- PERFORM assert_eq((SELECT (payload#>>'{ecommerce,value}')::numeric FROM analytics.conversion_facts WHERE "order"=oid AND kind='purchase'),90::numeric,'conversion uses charged amount');
+ PERFORM assert_eq(r#>'{data,analytics}','null'::jsonb,'discounted checkout has no conversion before payment');
 END $$;
 
 DO $$

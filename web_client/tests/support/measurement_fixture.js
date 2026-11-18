@@ -26,3 +26,5 @@ export function fixture(t,{source=async()=>({...policy}),identity='anonymous',co
   choose(value){consent=value;notifyConsent?.(value);},identity(value){currentIdentity=value;notifyIdentity?.();},
   delivery(value){deliver=value;},start:async()=>{session.start();await settle();}};
 }
+
+export const registrationLead={event:'generate_lead',event_id:purchase.ecommerce.transaction_id,lead_source:'free_registration',value:0,currency:'CZK'};

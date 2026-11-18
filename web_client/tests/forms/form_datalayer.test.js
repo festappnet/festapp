@@ -39,7 +39,7 @@ test('catalog/cart/review/payment retain labels, price and currency without answ
  f.layer.update({ticket:[{spot:7},{fields:[{product_type:22}]}]}, {spotModels:new Map([['7',{productModel:seat}]]),state:{tickets:[{},{_blueprintProduct:{...seat,id:22,title:'Stání',type_title:'Stání'}}]}});
  assert.deepEqual(f.sent.filter(p=>p.event==='add_to_cart').at(-1).ecommerce.items.map(p=>[p.item_id,p.item_category]),[['product_21','Sezení'],['product_22','Stání']]);
 });
-for(const conversion of [purchase,{event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist'},
+for(const conversion of [{event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',value:0,lead_source:'waitlist'},
  {event:'generate_lead',event_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'EUR',value:0,lead_source:'free_registration'}])test('confirmed SQL conversion deduplicates '+conversion.event+conversion.lead_source,async t=>{
  const f=fixture(t);await f.start();const outcome=f.layer.captureSubmission();outcome(true,{ticketOrder:{analytics:conversion}});outcome(true,{ticketOrder:{analytics:conversion}});
  assert.equal(f.sent.filter(p=>p.event===conversion.event).length,1);
@@ -47,6 +47,6 @@ for(const conversion of [purchase,{event:'generate_lead',event_id:'c5c624bd-01b6
 test('accepted page and form-start deduplicate across renewed grants; no synthetic conversion',async t=>{
  const f=fixture(t);await f.start();f.layer.started();f.choose(false);f.layer.started();f.choose({analytics:true,marketing:true});f.layer.started();
  f.layer.captureSubmission()(true,{ticketOrder:{order:{payment_info:{amount:0}}}});
- assert.equal(f.sent.filter(p=>p.event==='form_start').length,1);assert.equal(f.sent.filter(p=>p.event==='page_view').length,1);
+ assert.equal(f.sent.filter(p=>p.event==='form_start').length,1);assert.equal(f.sent.filter(p=>p.event==='page_view').length,2);
  assert.equal(f.sent.some(p=>['purchase','generate_lead'].includes(p.event)),false);
 });

@@ -264,7 +264,7 @@ Protokol 1 musí zachovat kompatibilitu se staršími instalacemi.
 Měření je ve výchozím stavu vypnuté. Vyžaduje všechna uložená povolení, platné
 zásady, aktuální policy a schválený hostitelský origin. Na souhlas nečeká: skripty se
 načtou hned a volba návštěvníka jde do Consent Mode, který vyhodnocuje kontejner
-pořadatele. Události `purchase` a `generate_lead` nesou `user_data` s e-mailem a
+pořadatele. Událost `generate_lead` nese `user_data` s e-mailem a
 telefonem. Za nastavení tagů a použití údajů odpovídá pořadatel. Porucha CMP ani
 starší helper nebrání nákupu ani layoutu.
 

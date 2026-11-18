@@ -1,3 +1,5 @@
+import { CommonStrings } from '../shared/common_strings.js';
+import { FormStrings } from './form_strings.js';
 import {discountSummaryHtml} from './discount_summary.js';
 import {renderCustomerOrderChanges} from './customer_order_changes.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
@@ -301,6 +303,28 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                 }, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
             renderCustomerOrderChanges(host, data, scope, commands.client, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
+            if (data.metaPurchaseConsent) {
+                const button = host.ownerDocument.createElement('button');
+                button.type = 'button';
+                button.textContent = FormStrings.metaPurchaseConsentWithdraw;
+                const status = host.ownerDocument.createElement('p');
+                status.setAttribute('role', 'status');
+                button.onclick = async () => {
+                    button.disabled = true;
+                    try {
+                        const { data: withdrawn, error } = await commands.client.rpc('revoke_meta_purchase_consent', {
+                            p_token: scope.token, p_order_id: scope.orderId,
+                        });
+                        if (error || withdrawn !== true) throw new Error('WITHDRAWAL_FAILED');
+                        status.textContent = FormStrings.metaPurchaseConsentWithdrawn;
+                        button.hidden = true;
+                    } catch {
+                        status.textContent = CommonStrings.error;
+                        button.disabled = false;
+                    }
+                };
+                host.append(button, status);
+            }
             host.querySelectorAll('details[data-overview-key]').forEach(detail => { if (opened.has(detail.dataset.overviewKey)) detail.open = opened.get(detail.dataset.overviewKey); });
             host._overviewSnapshot = snapshot;
         }

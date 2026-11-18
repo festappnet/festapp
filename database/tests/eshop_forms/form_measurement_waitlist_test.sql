@@ -20,10 +20,10 @@ BEGIN
  payload:=jsonb_build_object('offerId',w->'id','ticketIds',to_jsonb(ids),'token',token,'orderDetails',pg_temp.checkout(x,ids));
  r:=public.execute_waitlist_command_client_sync_v1('accept',payload,command,client,NULL);
  PERFORM assert_eq(r#>>'{data,code}','200','anonymous capability acceptance succeeds');
- PERFORM assert_eq(r#>>'{data,analytics,event}','purchase','accepted paid offer projects same canonical purchase');
- PERFORM assert_eq(r#>>'{data,analytics,ecommerce,value}','100.00','canonical accepted price');
+ PERFORM assert_eq(r#>'{data,analytics}','null'::jsonb,'accepting a priced waitlist offer is not a purchase');
+ PERFORM assert_eq(r#>>'{data,order,payment_info,amount}','100.00','canonical accepted price');
  facts:=r#>'{data,analytics}';
  r:=public.execute_waitlist_command_client_sync_v1('accept',payload,command,client,NULL);
- PERFORM assert_eq(r#>'{data,analytics}',facts,'accepted offer response loss recovers same conversion');
+ PERFORM assert_eq(r#>'{data,analytics}',facts,'accepted offer replay cannot produce a purchase');
  PERFORM assert_eq(pg_temp.ticket_ids(source),ids,'existing waitlist ticket identities preserved');
 END $$;

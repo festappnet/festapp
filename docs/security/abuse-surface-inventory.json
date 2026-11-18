@@ -968,6 +968,21 @@
       "reason": "Body and provider I/O are bounded; Wix validates the exact app identity before the service-only issuer signs tenant/form-bound provenance. This route writes no order, grants no access and creates no financial claim."
     },
     {
+      "name": "process-meta-purchases",
+      "path": "supabase/functions/process-meta-purchases/index.ts",
+      "policies": [],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-18",
+      "evidence": [
+        "supabase/functions/_shared/edgeEntrypoints_test.ts",
+        "supabase/functions/_shared/metaPurchase_test.ts",
+        "database/tests/eshop_forms/form_measurement_purchase_test.sql"
+      ],
+      "reason": "The worker requires a short-lived machine proof and sends leased, bounded batches to Meta after checking payment and consent.",
+      "budgetDisposition": "bounded-authenticated-protocol"
+    },
+    {
       "name": "process-notification-center",
       "path": "supabase/functions/process-notification-center/index.ts",
       "policies": [],
