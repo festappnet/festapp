@@ -10,9 +10,9 @@ copies cookies or promises a shared session with an isolated Unit runtime.
 1. Back up the website container and create a separate workspace. Import using
    **Merge** and **Rename conflicting tags, triggers and variables**. Review the
    conflict preview, including the gallery template. Do not overwrite published
-   configuration. All 18 imported tags remain paused in the **Festapp** folder.
-2. Fill the five destination constants once: **GA4 ID - Festapp**, **GAds ID -
-   Festapp**, the two **GAds label - Festapp** constants, and **FB Pixel ID -
+   configuration. All 15 imported tags remain paused in the **Festapp** folder.
+2. Fill the four destination constants once: **GA4 ID - Festapp**, **GAds ID -
+   Festapp**, **GAds label - Festapp - Registrace**, and **FB Pixel ID -
    Festapp**. Use the website's intended measurement destinations. Placeholder
    values are not a working destination. Retire the previous four-tag Festapp
    preset (two grouped GA4 tags, Ads purchase and Meta Custom HTML) before
@@ -37,7 +37,7 @@ are not changed to grants by the preset. `ad_personalization` governs personaliz
 advertising, not an extra firing condition for the conversion tags. A merchant
 choosing basic Consent Mode needs a separately reviewed website setup.
 
-GA4 `purchase` and `generate_lead` and both Ads conversion tags use the native
+GA4 `generate_lead` and the Ads registration tag use the native
 **User-Provided Data - Festapp - manual** variable. It reads only the existing
 canonical email/phone from those embedded conversion events. Configure GA4's
 user-provided-data feature, required Ads linking/data capabilities and relevant
@@ -48,12 +48,12 @@ GA4 user-provided data an open beta; review its current account prerequisites.
 Never map email/phone as ordinary custom dimensions, ordinary event fields or URLs.
 
 Meta tags require **ad_storage** as an additional GTM check. The merchant CMP
-must map that gate to consent covering Meta tracking and, for Purchase/Lead,
+must map that gate to consent covering Meta tracking and, for Lead,
 customer matching. The name of a Google consent type alone is not proof of that
 coverage. The site CMP owns SDK consent withdrawal too, including queued work
 while the SDK loads; confirm its supported Meta consent/revocation integration.
 
-Only Meta Purchase/Lead tags supply Advanced Matching fields. Google retains
+Only the Meta Lead tag supplies Advanced Matching fields. Google retains
 canonical E.164 phone numbers; the Meta adapter removes only the leading `+`
 from an already valid E.164 value. It never guesses a country or rewrites source
 contact data. Invalid/missing contacts are omitted. Public Meta properties and
@@ -74,16 +74,16 @@ remain available for a separately designed future server integration.
 
 ## Event meanings
 
-- Ten fixed-name GA4 tags share scoped event triggers; ecommerce is enabled only
-  for view/cart/checkout/payment/purchase events. Non-ecommerce events cannot
+- Nine fixed-name GA4 tags share scoped event triggers; ecommerce is enabled only
+  for view/cart/checkout/payment events. Non-ecommerce events cannot
   inherit the website's earlier ecommerce payload.
-- Ads **Nákup vstupenek** records an accepted priced order. It is not proof of
-  bank/card settlement. Order identity supplies the conversion transaction ID.
+- Remove older Festapp tags that count checkout confirmation as a purchase.
+  The preset sends checkout interactions and registration leads.
 - Ads **Registrace** uses a dedicated `generate_lead` trigger restricted to
   `lead_source = free_registration`. Waitlist and sale-opening interest stay
   generic leads for GA4/Meta and do not count as completed registrations. The
-  eleven triggers therefore include ten shared events plus this subtype filter.
-- Meta uses ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo, Purchase and
+  ten triggers include nine shared events plus this subtype filter.
+- Meta uses ViewContent, AddToCart, InitiateCheckout, AddPaymentInfo and
   Lead. It sends no duplicate website PageView. Lead value remains zero.
 - VAT/net-revenue policy and estimated lead values are separate domain changes.
   The preset preserves the current charged item amounts and never invents a
@@ -92,8 +92,7 @@ remain available for a separately designed future server integration.
 ## Preview and publish
 
 In the task-owned test workspace, verify denied/granted/withdrawn consent, delayed
-SDK loading, native website events and two interleaved forms. Check purchase and
-all three lead sources, value/currency/transaction identity, contact scoping,
+SDK loading, native website events and two interleaved forms. Check all three lead sources, value, currency and event identity, contact scoping,
 existing pixel coexistence and no stale data after a conversion. Google tags may
 run in denied mode; Meta must not run before its mapped consent is granted.
 
@@ -120,9 +119,8 @@ References: [GTM import/export](https://support.google.com/tagmanager/answer/610
 
 ## Complete conversion payload examples
 
-These complete example payloads use fictional contacts. `transaction_id` is the
-server-generated UUID of the immutable purchase fact, not the order number or
-payment reference. Order leads use a server-generated `event_id`; notification
+These example payloads use fictional contacts. Order leads use a
+server-generated `event_id`; notification
 subscriptions use a client UUID created for that submission. Replays keep the
 same fact ID. Deduplicate by that ID; do not generate a new ID on retry. Product
 IDs identify catalog products. Example IDs must be replaced with actual event
@@ -130,32 +128,6 @@ IDs, never reused for real conversions. `user_data` is optional when no usable
 contact is available; sale-opening subscriptions provide email only. Successful
 recovery after transport replacement contains the conversion fact without
 `user_data`. Consent remains the current state passed to tags, including denial.
-
-```json
-{
-  "event": "purchase",
-  "ecommerce": {
-    "transaction_id": "c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
-    "currency": "CZK",
-    "value": 1000,
-    "payment_type": "bank_transfer",
-    "items": [
-      {
-        "item_id": "product_11",
-        "item_name": "Concert ticket",
-        "price": 500,
-        "quantity": 2,
-        "item_category": "Tickets",
-        "item_brand": "Summer festival"
-      }
-    ]
-  },
-  "user_data": {
-    "email": "buyer@example.test",
-    "phone_number": "+420601234567"
-  }
-}
-```
 
 ```json
 {

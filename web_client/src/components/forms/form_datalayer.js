@@ -60,12 +60,10 @@ export class FormDataLayer {
         return (success,data)=>{
             if(this.disposed)return;
             if(!success){send({event:'form_submit_error'});return;}
-            const conversion=analyticsPayload(data?.ticketOrder?.analytics);
-            if(!conversion || !['purchase','generate_lead'].includes(conversion.event))return;
-            const identity=conversion.ecommerce?.transaction_id||conversion.event_id;
-            if(this.conversions.has(identity))return;
             if(this.#publishPage('confirmation',send))this.pageType='confirmation';
-            if(sendConversion(contact?{...conversion,user_data:contact}:conversion))this.conversions.add(identity);
+            const lead=analyticsPayload(data?.ticketOrder?.analytics);
+            if(lead?.event!=='generate_lead' || this.conversions.has(lead.event_id))return;
+            if(sendConversion(contact?{...lead,user_data:contact}:lead))this.conversions.add(lead.event_id);
         };
     }
 

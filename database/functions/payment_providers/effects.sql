@@ -102,6 +102,9 @@ BEGIN
    IF NOT context->'decisions' ? 'late_payment' THEN PERFORM public.payment_provider_call_internal(p_provider,'effect_decision',args||jsonb_build_object('reason','late_payment','revision',p_revision)); END IF;
   END IF;
   PERFORM public.payment_provider_call_internal(p_provider,'effect_state',args||jsonb_build_object('state',CASE WHEN action_required THEN 'action_required' ELSE 'paid' END));
+  IF NOT action_required THEN
+   PERFORM public.record_form_paid_conversion_internal(o.id);
+  END IF;
  END IF;
  IF refunded>=pi.amount AND received>0 THEN
   IF NOT context->'decisions' ? 'full_refund' THEN

@@ -698,108 +698,6 @@
       },
       {
         "tagId": "9",
-        "name": "GA4 - Festapp - purchase",
-        "type": "gaawe",
-        "parameter": [
-          {
-            "type": "BOOLEAN",
-            "key": "sendEcommerceData",
-            "value": "true"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "getEcommerceDataFrom",
-            "value": "dataLayer"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "eventName",
-            "value": "purchase"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "measurementIdOverride",
-            "value": "{{GA4 ID - Festapp}}"
-          },
-          {
-            "type": "LIST",
-            "key": "eventSettingsTable",
-            "list": [
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "page_type"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{dl.page_type}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "user_type"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{dl.user_type}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "language"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{dl.language}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "user_data"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{User-Provided Data - Festapp - manual}}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "firingTriggerId": [
-          "9"
-        ],
-        "tagFiringOption": "ONCE_PER_EVENT",
-        "paused": true,
-        "consentSettings": {
-          "consentStatus": "NOT_NEEDED"
-        },
-        "parentFolderId": "1"
-      },
-      {
-        "tagId": "10",
         "name": "GA4 - Festapp - generate_lead",
         "type": "gaawe",
         "parameter": [
@@ -946,93 +844,6 @@
           }
         ],
         "firingTriggerId": [
-          "10"
-        ],
-        "tagFiringOption": "ONCE_PER_EVENT",
-        "paused": true,
-        "consentSettings": {
-          "consentStatus": "NOT_NEEDED"
-        },
-        "parentFolderId": "1"
-      },
-      {
-        "tagId": "11",
-        "name": "GAds - Festapp - Nákup vstupenek",
-        "type": "awct",
-        "parameter": [
-          {
-            "type": "TEMPLATE",
-            "key": "conversionId",
-            "value": "{{GAds ID - Festapp}}"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "conversionLabel",
-            "value": "{{GAds label - Festapp - Nákup vstupenek}}"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "orderId",
-            "value": "{{dl.ecommerce.transaction_id}}"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "conversionValue",
-            "value": "{{dl.ecommerce.value}}"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "currencyCode",
-            "value": "{{dl.ecommerce.currency}}"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "enableNewCustomerReporting",
-            "value": "false"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "enableProductReporting",
-            "value": "false"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "enableShippingData",
-            "value": "false"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "rdp",
-            "value": "false"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "enableConversionLinker",
-            "value": "true"
-          },
-          {
-            "type": "LIST",
-            "key": "eventSettingsTable",
-            "list": [
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "user_data"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{User-Provided Data - Festapp - manual}}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "firingTriggerId": [
           "9"
         ],
         "tagFiringOption": "ONCE_PER_EVENT",
@@ -1043,7 +854,7 @@
         "parentFolderId": "1"
       },
       {
-        "tagId": "12",
+        "tagId": "10",
         "name": "GAds - Festapp - Registrace",
         "type": "awct",
         "parameter": [
@@ -1120,7 +931,7 @@
           }
         ],
         "firingTriggerId": [
-          "11"
+          "10"
         ],
         "tagFiringOption": "ONCE_PER_EVENT",
         "paused": true,
@@ -1130,7 +941,7 @@
         "parentFolderId": "1"
       },
       {
-        "tagId": "13",
+        "tagId": "11",
         "name": "Meta Pixel - Festapp - ViewContent",
         "type": "cvt_0_1",
         "parameter": [
@@ -1200,7 +1011,7 @@
         "parentFolderId": "1"
       },
       {
-        "tagId": "14",
+        "tagId": "12",
         "name": "Meta Pixel - Festapp - AddToCart",
         "type": "cvt_0_1",
         "parameter": [
@@ -1270,7 +1081,7 @@
         "parentFolderId": "1"
       },
       {
-        "tagId": "15",
+        "tagId": "13",
         "name": "Meta Pixel - Festapp - InitiateCheckout",
         "type": "cvt_0_1",
         "parameter": [
@@ -1340,7 +1151,7 @@
         "parentFolderId": "1"
       },
       {
-        "tagId": "16",
+        "tagId": "14",
         "name": "Meta Pixel - Festapp - AddPaymentInfo",
         "type": "cvt_0_1",
         "parameter": [
@@ -1410,113 +1221,7 @@
         "parentFolderId": "1"
       },
       {
-        "tagId": "17",
-        "name": "Meta Pixel - Festapp - Purchase",
-        "type": "cvt_0_1",
-        "parameter": [
-          {
-            "type": "TEMPLATE",
-            "key": "pixelId",
-            "value": "{{FB Pixel ID - Festapp}}"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "eventName",
-            "value": "standard"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "standardEventName",
-            "value": "Purchase"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "consent",
-            "value": "true"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "optInMetaCAPI",
-            "value": "false"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "advancedMatching",
-            "value": "true"
-          },
-          {
-            "type": "LIST",
-            "key": "advancedMatchingList",
-            "list": [
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "name",
-                    "value": "em"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "value",
-                    "value": "{{cjs - Festapp - email}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "name",
-                    "value": "ph"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "value",
-                    "value": "{{cjs - Festapp - Meta phone}}"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "enhancedEcommerce",
-            "value": "false"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "useGA4Ecommerce",
-            "value": "false"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "objectPropertiesFromVariable",
-            "value": "{{cjs - Festapp - Meta properties}}"
-          }
-        ],
-        "firingTriggerId": [
-          "9"
-        ],
-        "tagFiringOption": "ONCE_PER_EVENT",
-        "paused": true,
-        "consentSettings": {
-          "consentStatus": "NEEDED",
-          "consentType": {
-            "type": "LIST",
-            "list": [
-              {
-                "type": "TEMPLATE",
-                "value": "ad_storage"
-              }
-            ]
-          }
-        },
-        "parentFolderId": "1"
-      },
-      {
-        "tagId": "18",
+        "tagId": "15",
         "name": "Meta Pixel - Festapp - Lead",
         "type": "cvt_0_1",
         "parameter": [
@@ -1603,7 +1308,7 @@
           }
         ],
         "firingTriggerId": [
-          "10"
+          "9"
         ],
         "tagFiringOption": "ONCE_PER_EVENT",
         "paused": true,
@@ -1945,46 +1650,6 @@
       },
       {
         "triggerId": "9",
-        "name": "event - Festapp - purchase",
-        "type": "CUSTOM_EVENT",
-        "customEventFilter": [
-          {
-            "type": "EQUALS",
-            "parameter": [
-              {
-                "type": "TEMPLATE",
-                "key": "arg0",
-                "value": "{{_event}}"
-              },
-              {
-                "type": "TEMPLATE",
-                "key": "arg1",
-                "value": "purchase"
-              }
-            ]
-          }
-        ],
-        "filter": [
-          {
-            "type": "EQUALS",
-            "parameter": [
-              {
-                "type": "TEMPLATE",
-                "key": "arg0",
-                "value": "{{dl.form_embedded}}"
-              },
-              {
-                "type": "TEMPLATE",
-                "key": "arg1",
-                "value": "true"
-              }
-            ]
-          }
-        ],
-        "parentFolderId": "1"
-      },
-      {
-        "triggerId": "10",
         "name": "event - Festapp - generate_lead",
         "type": "CUSTOM_EVENT",
         "customEventFilter": [
@@ -2024,7 +1689,7 @@
         "parentFolderId": "1"
       },
       {
-        "triggerId": "11",
+        "triggerId": "10",
         "name": "event - Festapp - generate_lead - free_registration",
         "type": "CUSTOM_EVENT",
         "customEventFilter": [
@@ -2151,29 +1816,6 @@
       },
       {
         "variableId": "4",
-        "name": "dl.ecommerce.transaction_id",
-        "type": "v",
-        "parameter": [
-          {
-            "type": "INTEGER",
-            "key": "dataLayerVersion",
-            "value": "2"
-          },
-          {
-            "type": "BOOLEAN",
-            "key": "setDefaultValue",
-            "value": "false"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "name",
-            "value": "ecommerce.transaction_id"
-          }
-        ],
-        "parentFolderId": "1"
-      },
-      {
-        "variableId": "5",
         "name": "dl.ecommerce.items",
         "type": "v",
         "parameter": [
@@ -2196,7 +1838,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "6",
+        "variableId": "5",
         "name": "dl.user_data.email",
         "type": "v",
         "parameter": [
@@ -2219,7 +1861,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "7",
+        "variableId": "6",
         "name": "dl.user_data.phone_number",
         "type": "v",
         "parameter": [
@@ -2242,7 +1884,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "8",
+        "variableId": "7",
         "name": "dl.page_type",
         "type": "v",
         "parameter": [
@@ -2265,7 +1907,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "9",
+        "variableId": "8",
         "name": "dl.user_type",
         "type": "v",
         "parameter": [
@@ -2288,7 +1930,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "10",
+        "variableId": "9",
         "name": "dl.language",
         "type": "v",
         "parameter": [
@@ -2311,7 +1953,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "11",
+        "variableId": "10",
         "name": "dl.currency",
         "type": "v",
         "parameter": [
@@ -2334,7 +1976,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "12",
+        "variableId": "11",
         "name": "dl.value",
         "type": "v",
         "parameter": [
@@ -2357,7 +1999,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "13",
+        "variableId": "12",
         "name": "dl.lead_source",
         "type": "v",
         "parameter": [
@@ -2380,7 +2022,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "14",
+        "variableId": "13",
         "name": "dl.event_id",
         "type": "v",
         "parameter": [
@@ -2403,7 +2045,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "15",
+        "variableId": "14",
         "name": "GA4 ID - Festapp",
         "type": "c",
         "parameter": [
@@ -2416,7 +2058,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "16",
+        "variableId": "15",
         "name": "GAds ID - Festapp",
         "type": "c",
         "parameter": [
@@ -2429,20 +2071,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "17",
-        "name": "GAds label - Festapp - Nákup vstupenek",
-        "type": "c",
-        "parameter": [
-          {
-            "type": "TEMPLATE",
-            "key": "value",
-            "value": "REPLACE_PURCHASE_LABEL"
-          }
-        ],
-        "parentFolderId": "1"
-      },
-      {
-        "variableId": "18",
+        "variableId": "16",
         "name": "GAds label - Festapp - Registrace",
         "type": "c",
         "parameter": [
@@ -2455,7 +2084,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "19",
+        "variableId": "17",
         "name": "FB Pixel ID - Festapp",
         "type": "c",
         "parameter": [
@@ -2468,33 +2097,33 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "20",
+        "variableId": "18",
         "name": "cjs - Festapp - email",
         "type": "jsm",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "javascript",
-            "value": "function () { if ({{dl.form_embedded}} !== true || ['purchase','generate_lead'].indexOf({{Event}}) < 0) return; var v={{dl.user_data.email}}; if (typeof v === 'string') return v; }"
+            "value": "function () { if ({{dl.form_embedded}} !== true || {{Event}} !== 'generate_lead') return; var v={{dl.user_data.email}}; if (typeof v === 'string') return v; }"
           }
         ],
         "parentFolderId": "1"
       },
       {
-        "variableId": "21",
+        "variableId": "19",
         "name": "cjs - Festapp - phone",
         "type": "jsm",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "javascript",
-            "value": "function () { if ({{dl.form_embedded}} !== true || ['purchase','generate_lead'].indexOf({{Event}}) < 0) return; var v={{dl.user_data.phone_number}}; if (typeof v === 'string' && v.charAt(0) === '+' && /^[1-9][0-9]{7,14}$/.test(v.substring(1))) return v; }"
+            "value": "function () { if ({{dl.form_embedded}} !== true || {{Event}} !== 'generate_lead') return; var v={{dl.user_data.phone_number}}; if (typeof v === 'string' && v.charAt(0) === '+' && /^[1-9][0-9]{7,14}$/.test(v.substring(1))) return v; }"
           }
         ],
         "parentFolderId": "1"
       },
       {
-        "variableId": "22",
+        "variableId": "20",
         "name": "cjs - Festapp - Meta phone",
         "type": "jsm",
         "parameter": [
@@ -2507,7 +2136,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "23",
+        "variableId": "21",
         "name": "User-Provided Data - Festapp - manual",
         "type": "awec",
         "parameter": [
@@ -2530,7 +2159,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "24",
+        "variableId": "22",
         "name": "cjs - Festapp - lead currency",
         "type": "jsm",
         "parameter": [
@@ -2543,7 +2172,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "25",
+        "variableId": "23",
         "name": "cjs - Festapp - lead value",
         "type": "jsm",
         "parameter": [
@@ -2556,7 +2185,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "26",
+        "variableId": "24",
         "name": "cjs - Festapp - lead lead_source",
         "type": "jsm",
         "parameter": [
@@ -2569,7 +2198,7 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "27",
+        "variableId": "25",
         "name": "cjs - Festapp - lead event_id",
         "type": "jsm",
         "parameter": [
@@ -2582,14 +2211,14 @@
         "parentFolderId": "1"
       },
       {
-        "variableId": "28",
+        "variableId": "26",
         "name": "cjs - Festapp - Meta properties",
         "type": "jsm",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "javascript",
-            "value": "function () { \n if ({{dl.form_embedded}} !== true) return {};\n var event={{Event}}, result={};\n if (event === 'generate_lead') {\n  result.currency={{cjs - Festapp - lead currency}}; result.value={{cjs - Festapp - lead value}};\n } else if ([\"view_item\",\"add_to_cart\",\"remove_from_cart\",\"begin_checkout\",\"add_payment_info\",\"purchase\"].indexOf(event) >= 0) {\n  result.currency={{dl.ecommerce.currency}}; result.value={{dl.ecommerce.value}};\n  var items={{dl.ecommerce.items}};\n  if (items instanceof Array) result.contents=items.slice(0,200).map(function (item) {\n   return {id:item.item_id,quantity:item.quantity,item_price:item.price};\n  });\n }\n return result; }"
+            "value": "function () { \n if ({{dl.form_embedded}} !== true) return {};\n var event={{Event}}, result={};\n if (event === 'generate_lead') {\n  result.currency={{cjs - Festapp - lead currency}}; result.value={{cjs - Festapp - lead value}};\n } else if ([\"view_item\",\"add_to_cart\",\"remove_from_cart\",\"begin_checkout\",\"add_payment_info\"].indexOf(event) >= 0) {\n  result.currency={{dl.ecommerce.currency}}; result.value={{dl.ecommerce.value}};\n  var items={{dl.ecommerce.items}};\n  if (items instanceof Array) result.contents=items.slice(0,200).map(function (item) {\n   return {id:item.item_id,quantity:item.quantity,item_price:item.price};\n  });\n }\n return result; }"
           }
         ],
         "parentFolderId": "1"

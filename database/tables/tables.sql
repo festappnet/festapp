@@ -1872,7 +1872,7 @@ REVOKE ALL ON analytics.organization_policy FROM PUBLIC,anon,authenticated,servi
 
 CREATE TABLE IF NOT EXISTS analytics.conversion_facts (
  "order" bigint NOT NULL REFERENCES eshop.orders(id) ON DELETE CASCADE,
- kind text NOT NULL CHECK(kind IN ('purchase','waitlist','free_registration')),
+ kind text NOT NULL CHECK(kind IN ('purchase','waitlist','free_registration','order_fully_paid')),
  PRIMARY KEY("order",kind),
  event_id uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,
  payload jsonb NOT NULL,

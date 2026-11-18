@@ -518,3 +518,21 @@ test('terminal back action removes capability and fetches fresh normal form capa
     assert.equal(page.waitlistScope,null);assert.equal(window.location.hash,'');assert.equal(window.location.search,'?lang=cs');
     d.window.close();
 });
+
+test('paid checkout shows a separate Meta opt-in unchecked when a notice is configured', t => {
+    const d = dom();
+    t.after(() => d.window.close());
+    const model = new FormModel({ registrationMode: 'regular', fields });
+    const payload = { fields: [{ 4: 'buyer@example.invalid' }], ticket: [{ fields: [{ product_type: 9 }] }] };
+    const prices = { totalPrice: 200, currency: 'CZK' };
+    OrderPreview.show(document.createElement('form'), model, prices, () => {}, null, payload);
+    assert.equal(document.querySelector('[data-meta-purchase-consent]'), null);
+    OrderPreview.show(document.createElement('form'), model, prices, () => {}, null, payload, {
+        metaConsent: { privacyUrl: 'https://organizer.example/privacy' },
+    });
+    const optIn = document.querySelector('[data-meta-purchase-consent]');
+    assert.ok(optIn);
+    assert.equal(optIn.checked, false);
+    assert.equal(optIn.required, false);
+    assert.match(optIn.closest('label').textContent, /Metou/);
+});

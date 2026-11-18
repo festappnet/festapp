@@ -609,6 +609,10 @@ export class FormPage extends Component {
 
     renderForm(formModel, showPreview, restoredDraft = null) {
         this.setOverviewLayout(false);
+        this.metaPurchaseNotice = !showPreview && !this.embedBridge && !formModel.offerBundle &&
+            !formModel.demoSimulation && formModel.registrationMode !== 'waitlist'
+            ? { model: formModel, choice: DbForms.getMetaPurchaseConsent(formModel.link).catch(() => null) }
+            : null;
         if (formModel.offerBundle) this.waitlistBundle = formModel.offerBundle;
         this.currentPriceWidget?.destroy();
         this.currentPriceWidget = null;
@@ -885,7 +889,8 @@ export class FormPage extends Component {
             this._previewModulePromise = import('./order_preview.js');
         }
 
-        this._previewModulePromise.then(({ OrderPreview }) => {
+        const consentNotice = this.metaPurchaseNotice?.model === formModel ? this.metaPurchaseNotice.choice : null;
+        Promise.all([this._previewModulePromise, consentNotice]).then(([{ OrderPreview }, metaConsent]) => {
              try {
                  const priceData = this.calculateTotal(form, formModel);
                  const precalculatedPayload = this.currentSession ? this.currentSession.payload : null;
@@ -896,11 +901,13 @@ export class FormPage extends Component {
                      this._pendingPaymentType = paymentType || null;
                      this._pendingPaymentMethod = paymentMethod;
                      this._pendingPaymentQuote = paymentQuote;
-                     this.submitOrder(form, formModel, overlay || document.body);
+                     const granted = metaConsent && overlay?.querySelector('[data-meta-purchase-consent]')?.checked;
+                     this.submitOrder(form, formModel, overlay || document.body, null,
+                         granted ? {revision: metaConsent.revision, userAgent: window.navigator.userAgent} : null);
                  }, () => {
                      this.analytics?.page('product');
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
-                 }, precalculatedPayload);
+                 }, precalculatedPayload, {metaConsent});
                  this.analytics?.review(precalculatedPayload, this.currentSession);
                  const previewContent = document.querySelector('#order-preview-overlay .order-preview-content');
                  if (previewContent && this.identityFooter) previewContent.append(this.identityFooter.host);
@@ -923,7 +930,7 @@ export class FormPage extends Component {
         }
     }
 
-    submitOrder(form, formModel, unusedContent, retrySubmission = null) {
+    submitOrder(form, formModel, unusedContent, retrySubmission = null, metaPurchaseConsent = null) {
         // 1. Close Preview
         const previewOverlay = document.getElementById('order-preview-overlay');
         let previewHistoryClosed = Promise.resolve();
@@ -953,6 +960,8 @@ export class FormPage extends Component {
 
         // 3. Prepare Data
         const payload = retrySubmission ? JSON.parse(JSON.stringify(retrySubmission.payload)) : {...(this.currentSession ? this.currentSession.payload : FormDataReader.getPayload(form, formModel)), client_capabilities:['cash_reservations','no_payment_deadline']};
+
+        if (!retrySubmission && metaPurchaseConsent) payload.metaPurchaseConsent = metaPurchaseConsent;
 
         // Inject payment_type if deposit option was selected
         if (!retrySubmission && this._pendingPaymentType) {

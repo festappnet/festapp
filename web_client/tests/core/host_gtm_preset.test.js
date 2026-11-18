@@ -7,9 +7,9 @@ import {preset} from '../../../integrations/measurement/build_gtm_preset.mjs';
 const root=new URL('../../../',import.meta.url),cv=preset.containerVersion;
 const parameters=object=>Object.fromEntries((object.parameter??[]).map(entry=>[entry.key,entry]));
 const simple=object=>Object.fromEntries((object.parameter??[]).filter(entry=>'value'in entry).map(entry=>[entry.key,entry.type==='BOOLEAN'?entry.value==='true':entry.value]));
-const eventNames=['form_page_view','form_start','form_submit_error','view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','purchase','generate_lead'];
-const ecommerceEvents=['view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','purchase'];
-const contactEvents=['purchase','generate_lead'];
+const eventNames=['form_page_view','form_start','form_submit_error','view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info','generate_lead'];
+const ecommerceEvents=['view_item','add_to_cart','remove_from_cart','begin_checkout','add_payment_info'];
+const contactEvents=['generate_lead'];
 const clean=value=>JSON.parse(JSON.stringify(value));
 const get=(object,path)=>path.split('.').reduce((value,key)=>value?.[key],object);
 
@@ -44,22 +44,22 @@ const conversionLayer=()=>({form_embedded:true,page_type:'confirmation',user_typ
  user_data:{email:'buyer@example.test',phone_number:'+420777123456'},currency:'CZK',value:0,lead_source:'free_registration',event_id:'lead-id'});
 
 test('paused import owns one folder, constants, valid references and scoped event triggers',()=>{
- assert.equal(cv.tag.length,18);assert.ok(cv.tag.every(tag=>tag.paused));
+ assert.equal(cv.tag.length,15);assert.ok(cv.tag.every(tag=>tag.paused));
  assert.deepEqual(cv.folder,[{folderId:'1',name:'Festapp'}]);
  for(const item of [...cv.tag,...cv.trigger,...cv.variable])assert.equal(item.parentFolderId,'1');
- for(const trigger of cv.trigger){assert.equal(trigger.type,'CUSTOM_EVENT');assert.equal(triggerMatches(trigger,'purchase',{form_embedded:false}),false);}
+ for(const trigger of cv.trigger){assert.equal(trigger.type,'CUSTOM_EVENT');assert.equal(triggerMatches(trigger,'purchase',{form_embedded:true}),false);}
  assert.ok(cv.tag.every(tag=>tag.firingTriggerId.every(id=>cv.trigger.some(trigger=>trigger.triggerId===id))));
  const names=new Set([...cv.variable.map(variable=>variable.name),'Event','_event']);
  const config=JSON.stringify({tags:cv.tag,triggers:cv.trigger,variables:cv.variable});
  for(const [,name]of config.matchAll(/\{\{([^}]+)\}\}/g))assert.ok(names.has(name),name);
- assert.equal(cv.variable.filter(variable=>variable.type==='c').length,5);
+ assert.equal(cv.variable.filter(variable=>variable.type==='c').length,4);
  for(const tag of cv.tag){const p=simple(tag);for(const key of ['measurementIdOverride','conversionId','conversionLabel','pixelId'])if(p[key])assert.match(p[key],/^\{\{.+\}\}$/);}
  assert.ok(cv.tag.every(tag=>tag.type!=='html'));
  assert.doesNotMatch(JSON.stringify(preset),/GTM-W9WRHWT9|6402899907|285468732/);
  assert.deepEqual(JSON.parse(readFileSync(new URL('integrations/measurement/festapp-host-gtm.json',root),'utf8')),preset);
 });
 test('GA4 uses fixed per-event names and ecommerce only on ecommerce events',()=>{
- const ga=cv.tag.filter(tag=>tag.type==='gaawe');assert.equal(ga.length,10);
+ const ga=cv.tag.filter(tag=>tag.type==='gaawe');assert.equal(ga.length,9);
  assert.deepEqual(ga.map(tag=>simple(tag).eventName).sort(),[...eventNames].sort());
  for(const tag of ga){const p=simple(tag),event=p.eventName;
   assert.equal(p.sendEcommerceData,ecommerceEvents.includes(event));
@@ -84,10 +84,9 @@ test('Google contact mapping is native/manual and present only on conversion tag
   assert.equal(hasContact,tag.type==='awct'||contactEvents.includes(simple(tag).eventName));
  }
 });
-test('Ads Registration excludes waitlist/opening-interest leads and keeps a separate action label',()=>{
- const ads=cv.tag.filter(tag=>tag.type==='awct');assert.equal(ads.length,2);
- const registration=ads.find(tag=>tag.name.endsWith('Registrace')),purchase=ads.find(tag=>tag.name.endsWith('Nákup vstupenek'));
- assert.notEqual(simple(registration).conversionLabel,simple(purchase).conversionLabel);
+test('Ads Registration excludes waitlist and opening-interest leads',()=>{
+ const ads=cv.tag.filter(tag=>tag.type==='awct');assert.equal(ads.length,1);
+ const registration=ads[0];assert.ok(registration.name.endsWith('Registrace'));
  const trigger=cv.trigger.find(trigger=>trigger.triggerId===registration.firingTriggerId[0]);
  for(const lead_source of ['free_registration','waitlist','sale_opening_notification'])
   assert.equal(triggerMatches(trigger,'generate_lead',{form_embedded:true,lead_source}),lead_source==='free_registration');
@@ -99,19 +98,19 @@ test('contact projections retain Google E.164 and transform only Meta, with even
  const layer=conversionLayer();
  for(const event of contactEvents){const read=resolver(event,layer);assert.equal(read('cjs - Festapp - email'),'buyer@example.test');assert.equal(read('cjs - Festapp - phone'),'+420777123456');assert.equal(read('cjs - Festapp - Meta phone'),'420777123456');}
  for(const event of eventNames.filter(event=>!contactEvents.includes(event)))assert.equal(resolver(event,layer)('cjs - Festapp - email'),undefined);
- assert.equal(resolver('purchase',{...layer,form_embedded:false})('cjs - Festapp - phone'),undefined);
- for(const phone_number of [undefined,'777123456','+not-a-number','+0123456789'])assert.equal(resolver('purchase',{...layer,user_data:{phone_number}})('cjs - Festapp - Meta phone'),undefined);
+ assert.equal(resolver('generate_lead',{...layer,form_embedded:false})('cjs - Festapp - phone'),undefined);
+ for(const phone_number of [undefined,'777123456','+not-a-number','+0123456789'])assert.equal(resolver('generate_lead',{...layer,user_data:{phone_number}})('cjs - Festapp - Meta phone'),undefined);
  assert.equal(layer.user_data.phone_number,'+420777123456','source is never rewritten');
 });
 test('Meta projection is allowlisted and generic/lead events cannot inherit ecommerce/contact',()=>{
  const layer=conversionLayer();
- assert.deepEqual(clean(resolver('purchase',layer)('cjs - Festapp - Meta properties')),{currency:'CZK',value:200,contents:[{id:'product_1',quantity:2,item_price:100}]});
+ assert.deepEqual(clean(resolver('view_item',layer)('cjs - Festapp - Meta properties')),{currency:'CZK',value:200,contents:[{id:'product_1',quantity:2,item_price:100}]});
  assert.deepEqual(clean(resolver('generate_lead',layer)('cjs - Festapp - Meta properties')),{currency:'CZK',value:0});
  assert.deepEqual(clean(resolver('form_start',layer)('cjs - Festapp - Meta properties')),{});
- assert.deepEqual(clean(resolver('purchase',{...layer,form_embedded:false})('cjs - Festapp - Meta properties')),{});
+ assert.deepEqual(clean(resolver('view_item',{...layer,form_embedded:false})('cjs - Festapp - Meta properties')),{});
  assert.equal(resolver('form_start',layer)('cjs - Festapp - lead value'),undefined);
  assert.equal(resolver('generate_lead',layer)('cjs - Festapp - lead value'),0);
- assert.doesNotMatch(JSON.stringify(resolver('purchase',layer)('cjs - Festapp - Meta properties')),/email|never-export|phone/);
+ assert.doesNotMatch(JSON.stringify(resolver('view_item',layer)('cjs - Festapp - Meta properties')),/email|never-export|phone/);
 });
 test('official Meta template keeps upstream executable/permissions and genuine gallery identity',()=>{
  const template=cv.customTemplate[0],source=readFileSync(new URL('integrations/measurement/vendor/meta-pixel/template.tpl',root),'utf8');
@@ -124,12 +123,12 @@ test('official Meta template keeps upstream executable/permissions and genuine g
   if(section==='SANDBOXED_JS_FOR_WEB_TEMPLATE')assert.equal(part(template.templateData),part(source),section+' is unmodified');
   else assert.deepEqual(JSON.parse(part(template.templateData)),JSON.parse(part(source)),section+' is unchanged after GTM serialization');
  }
- assert.equal(cv.tag.filter(tag=>tag.type==='cvt_0_'+template.templateId).length,6);
+ assert.equal(cv.tag.filter(tag=>tag.type==='cvt_0_'+template.templateId).length,5);
 });
-test('Meta matching inputs belong only to Purchase/Lead; CAPI and automatic ecommerce stay off',()=>{
+test('Meta matching inputs belong only to Lead; CAPI and automatic ecommerce stay off',()=>{
  const tags=cv.tag.filter(tag=>tag.type.startsWith('cvt_'));
- assert.deepEqual(tags.map(tag=>simple(tag).standardEventName).sort(),['ViewContent','AddToCart','InitiateCheckout','AddPaymentInfo','Purchase','Lead'].sort());
- for(const tag of tags){const p=simple(tag),contact=['Purchase','Lead'].includes(p.standardEventName);
+ assert.deepEqual(tags.map(tag=>simple(tag).standardEventName).sort(),['ViewContent','AddToCart','InitiateCheckout','AddPaymentInfo','Lead'].sort());
+ for(const tag of tags){const p=simple(tag),contact=p.standardEventName==='Lead';
   assert.equal(p.optInMetaCAPI,false);assert.equal(p.enhancedEcommerce,false);assert.equal(p.useGA4Ecommerce,false);
   assert.equal(p.advancedMatching,contact);assert.equal(Boolean(parameters(tag).advancedMatchingList),contact);
   assert.equal(p.eventId,undefined);
@@ -168,11 +167,11 @@ function metaHarness({hasPixel=true,builderGate=false}={}){
   vm.runInNewContext('(function(){'+source+'})()',{require:name=>{assert.ok(name in apis,name);return apis[name];},data:{...data,gtmOnSuccess:()=>success++,gtmOnFailure:()=>failure++}});
  }};
 }
-test('real Meta template uses projected purchase/matching and never opts into CAPI',()=>{
- const harness=metaHarness(),tag=cv.tag.find(tag=>tag.name==='Meta Pixel - Festapp - Purchase');
- harness.run(templateData(tag,'purchase',conversionLayer()));
+test('real Meta template uses lead matching and never opts into CAPI',()=>{
+ const harness=metaHarness(),tag=cv.tag.find(tag=>tag.name==='Meta Pixel - Festapp - Lead');
+ harness.run(templateData(tag,'generate_lead',conversionLayer()));
  const event=harness.calls.find(call=>call[0]==='trackSingle');
- assert.deepEqual(clean(event),['trackSingle','000000000000000','Purchase',{currency:'CZK',value:200,contents:[{id:'product_1',quantity:2,item_price:100}]}]);
+ assert.deepEqual(clean(event),['trackSingle','000000000000000','Lead',{currency:'CZK',value:0}]);
  assert.ok(harness.calls.some(call=>call[0]==='init'&&call[2].em==='buyer@example.test'&&call[2].ph==='420777123456'));
  assert.ok(harness.calls.every(call=>call[0]!=='optinMetaEnabledCapi'));assert.equal(harness.success,1);
  assert.doesNotMatch(JSON.stringify(harness.calls),/never-export|native/);

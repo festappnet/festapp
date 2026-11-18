@@ -3549,6 +3549,31 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.get_meta_purchase_consent(text)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.revoke_meta_purchase_consent(text,bigint)": {
+      "anon": true,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.claim_meta_purchase_deliveries(integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.prepare_meta_purchase_delivery(bigint,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_meta_purchase_delivery(bigint,uuid,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
     }
   },
   "extension_client_execute": {

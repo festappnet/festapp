@@ -139,7 +139,7 @@ for (const scenario of ['success', 'server-error', 'transport-error', 'demo', 'r
   });
 }
 
-test('real dataLayer emits purchase only after backend confirmation and survives a result-render failure', async () => {
+test('real dataLayer reports the confirmation page without a legacy purchase after a result-render failure', async () => {
   const dom=new JSDOM('<body><div id="form-page-container"></div></body>',{url:'https://example.test/form/summer'});
   global.window=dom.window;global.document=dom.window.document;global.HTMLElement=dom.window.HTMLElement;global.CustomEvent=dom.window.CustomEvent;
   window.scrollTo=()=>{};
@@ -160,13 +160,13 @@ test('real dataLayer emits purchase only after backend confirmation and survives
     await new Promise(resolve=>setImmediate(resolve));assert.equal(window.dataLayer,undefined);
     confirm({success:true,data:{ticketOrder:{order:{payment_info:{amount:200}},analytics:{event:'purchase',ecommerce:{transaction_id:'c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44',currency:'CZK',payment_type:'bank_transfer',items:[{item_id:'product_12',item_name:'Concert ticket',price:100,quantity:2}]}}}}});
     await finished;
-    assert.deepEqual(sent.filter(item=>item.event).map(item=>item.event),['page_view','purchase']);
+    assert.deepEqual(sent.filter(item=>item.event).map(item=>item.event),['page_view']);
     assert.equal(JSON.stringify(sent).includes('private'),false);
   }finally{FormNetwork.submitOrder=original;dom.window.close();}
 });
 
 for(const pending of ['reservations','backend'])test(`real FormPage pending ${pending} keeps its original measurement grant across a replaced lease`,async t=>{
- const {fixture,purchase,settle}=await import('../support/measurement_fixture.js');const f=fixture(t);await f.start();
+ const {fixture,registrationLead,settle}=await import('../support/measurement_fixture.js');const f=fixture(t);await f.start();
  const win=f.dom.window;Object.assign(globalThis,{window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent});win.scrollTo=()=>{};
  win.document.body.innerHTML='<div id="form-page-container"></div>';
  const [{FormPage},{FormNetwork}]=await Promise.all([import('../../src/components/forms/form_page.js'),import('../../src/components/forms/form_network.js')]);
@@ -180,20 +180,20 @@ for(const pending of ['reservations','backend'])test(`real FormPage pending ${pe
  f.sent.length=0;page.submitOrder(win.document.createElement('form'),{});await settle();
  f.choose({analytics:true,marketing:true,leaseId:'next'});const afterGrant=f.sent.length;
  if(pending==='reservations'){releaseReservations();await settle();}
- resolveBackend({success:true,data:{ticketOrder:{analytics:purchase}}});await resultShown;
+ resolveBackend({success:true,data:{ticketOrder:{analytics:registrationLead}}});await resultShown;
  assert.equal(completed,1,'business completion is independent of measurement');
  assert.equal(f.sent.length,afterGrant,'stale completion sends neither conversion nor context');
  assert.doesNotMatch(JSON.stringify(f.sent),/PRIVATE|601234567/);
 });
-test('real FormPage sends the buyer contact on purchase whatever the visitor chose',async t=>{
- const {fixture,purchase,settle}=await import('../support/measurement_fixture.js');const f=fixture(t,{consent:false});await f.start();
+test('real FormPage sends the buyer contact on a registration lead whatever the visitor chose',async t=>{
+ const {fixture,registrationLead,settle}=await import('../support/measurement_fixture.js');const f=fixture(t,{consent:false});await f.start();
  const win=f.dom.window;Object.assign(globalThis,{window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent});win.scrollTo=()=>{};
  win.document.body.innerHTML='<div id="form-page-container"></div>';
  const [{FormPage},{FormNetwork}]=await Promise.all([import('../../src/components/forms/form_page.js'),import('../../src/components/forms/form_network.js')]);
  const page=new FormPage('form-page-container');let finished;const shown=new Promise(resolve=>finished=resolve);
  page.currentSession={payload:{form:'private',fields:[{5:'Buyer@Example.test'},{6:'+420601234567'}]},awaitPendingReservations:()=>Promise.resolve(),captureReservationCapability:()=>null,completeReservation:()=>{}};
  page.analytics=f.layer;page.closePreview=()=>{};page.cleanup=()=>{};page.showFullScreenResult=()=>finished();
- t.mock.method(FormNetwork,'submitOrder',async()=>({success:true,data:{ticketOrder:{analytics:purchase}}}));
+ t.mock.method(FormNetwork,'submitOrder',async()=>({success:true,data:{ticketOrder:{analytics:registrationLead}}}));
  f.sent.length=0;page.submitOrder(win.document.createElement('form'),{});await shown;await settle();
- assert.deepEqual(f.sent.find(p=>p.event==='purchase').user_data,{email:'buyer@example.test',phone_number:'+420601234567'});
+ assert.deepEqual(f.sent.find(p=>p.event==='generate_lead').user_data,{email:'buyer@example.test',phone_number:'+420601234567'});
 });

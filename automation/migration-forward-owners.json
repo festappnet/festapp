@@ -516,6 +516,23 @@
         "others/ticket_layout.sql",
         "others/get_ticket_layout_write_contract_v1.sql"
       ]
+    },
+    {
+      "migration": "20261118110000_form_paid_conversion.sql",
+      "active": true,
+      "header": "-- Historical purchase facts remain readable only in the private ledger. The\n-- new kind records settlement; there is no conversion backfill.\nALTER TABLE analytics.conversion_facts DROP CONSTRAINT conversion_facts_kind_check;\nALTER TABLE analytics.conversion_facts ADD CONSTRAINT conversion_facts_kind_check\n CHECK (kind IN ('purchase','waitlist','free_registration','order_fully_paid'));",
+      "sources": [
+        "eshop_forms/form_datalayer.sql",
+        "eshop_forms/form_paid_conversion.sql",
+        "eshop_forms/meta_purchase_schema.sql",
+        "eshop_forms/meta_purchase_consent.sql",
+        "eshop_forms/meta_purchase_worker.sql",
+        "eshop_waitlist/order_overview.sql",
+        "eshop_orders/create_ticket_order_client_sync_v1.sql",
+        "eshop_waitlist/commands.sql",
+        "eshop_transactions/apply_transaction_pairing.sql",
+        "payment_providers/effects.sql"
+      ]
     }
   ]
 }
