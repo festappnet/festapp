@@ -75,7 +75,9 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
   assert.match(html, /data-sketch-motif="modern-ball-template"/);
   assert.match(html, /data-sketch-motif="concert-ticket"/);
   const purchase = html.slice(html.indexOf('id="ukazka-nakupu"'), html.indexOf('</section>', html.indexOf('id="ukazka-nakupu"')));
-  assert.ok(purchase.includes('data-demo-player') && purchase.includes('/organizers-media/seat-select-landing-cut.mp4'));
+  assert.equal((purchase.match(/data-demo-player/g) ?? []).length, 2);
+  assert.ok(purchase.includes('/organizers-media/seat-select-landing-cut.mp4'));
+  assert.ok(purchase.includes('/organizers-media/order-payment-detail.mp4'));
   assert.ok(purchase.includes('data-portrait') && purchase.includes('width="426" height="900"'));
   assert.ok(html.includes('id="prvni-akce"'));
   const hero = html.slice(html.indexOf('<div class="hero-copy">'), html.indexOf('id="ukazka-nakupu"'));

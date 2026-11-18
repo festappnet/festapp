@@ -48,9 +48,7 @@ export function renderLandingContent(content, manifest, page = {id: "home"}, pag
   return { TOPIC_LINKS: renderTopicLinks(pages), REFERENCE_STRIP: referenceStrip, REFERENCES_SECTION: referencesSection,
     GETTING_STARTED: isCzechHome ? renderGettingStarted(projection) : '',
     PRICING_FACTS: isCzechHome ? renderPricingFacts(projection.pricingFacts) : '',
-    PRODUCT_PROOF: isCzechHome ? renderProductProof(
-      projection.productProof, player([page.purchasePreviewClip], false, true),
-    ) : '',
+    PRODUCT_PROOF: isCzechHome ? renderProductProof(projection.productProof, player) : '',
     PRODUCT_OVERVIEW: isCzechHome ? renderProductOverview(pages) : '',
     REFERENCE_CASE: isCzechHome ? renderReferenceCase(projection.referenceCase) : '',
     HERO_SECONDARY_HREF: publicUrl(projection.bookingUrl),
@@ -88,7 +86,7 @@ function renderOrganizerContact() {
     </section>`;
 }
 
-function renderProductProof(cards = [], recording) {
+function renderProductProof(cards = [], player) {
   if (!cards.length) return '';
   return `
     <section id="ukazka-nakupu" class="wrap product-proof" aria-labelledby="product-proof-title">
@@ -121,17 +119,15 @@ function renderProductProof(cards = [], recording) {
       <details class="product-proof-details">
       <summary>Jak vypadá výběr na telefonu a přehled platby</summary>
       <div class="product-proof-grid">${cards.map(card => {
-        const media = card.recording ? recording
-          : `<img src="${publicUrl(card.image)}" width="${Number(card.width)}" height="${Number(card.height)}" alt="${escape(card.alt)}">`;
-        const action = card.recording ? ''
-          : `<a class="topic-text-link" href="${publicUrl(card.href)}">${escape(card.label)}</a>`;
+        const media = player([card.clip], false, card.compact);
+        const action = card.href ? `<a class="topic-text-link" href="${publicUrl(card.href)}">${escape(card.label)}</a>` : '';
         return `
           <figure>
             <figcaption>
               <h3>${escape(card.role)}</h3><p>${escape(card.caption)}</p>
               ${action}
             </figcaption>
-            <div class="product-proof-image">${media}</div>
+            <div class="product-proof-media">${media}</div>
           </figure>`;
       }).join('')}</div>
       </details>

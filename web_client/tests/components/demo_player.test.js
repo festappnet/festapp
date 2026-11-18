@@ -24,3 +24,40 @@ test('demo keeps mobile poster, aspect ratio and visible playback label in sync'
  assert.equal(video.getAttribute('poster'),'/desktop.webp');assert.equal(video.width,1200);assert.equal(video.getAttribute('src'),null);
  assert.equal(stage.querySelector('[data-playback-label]').textContent,'Přehrát');
 });
+
+test('a manually started video keeps playing beside a more visible video', async t => {
+ const card = '<div data-demo-player><video></video><button data-playback-surface></button><p class="media-fallback" hidden></p></div>';
+ const dom = new JSDOM(card + card, { pretendToBeVisual: true });
+ const win = dom.window;
+ t.after(() => win.close());
+ win.matchMedia = () => Object.assign(new win.EventTarget(), { matches: false });
+ let measure;
+ win.setTimeout = handler => { measure = handler; };
+ win.clearTimeout = () => {};
+ const [first, second] = Array.from(win.document.querySelectorAll('[data-demo-player]'));
+ const layout = new Map([[first, 0], [second, -20]]);
+ for (const [index, stage] of [first, second].entries()) {
+   stage.dataset.variants = JSON.stringify([{ id: String(index), src: `/${index}.mp4`, width: 100, height: 100, description: 'Ukázka' }]);
+   stage.getBoundingClientRect = () => ({ left: 0, right: 100, width: 100, top: layout.get(stage), bottom: layout.get(stage) + 100, height: 100 });
+   const video = stage.querySelector('video');
+   let paused = true;
+   Object.defineProperty(video, 'paused', { get: () => paused });
+   video.load = () => {};
+   video.pause = () => { paused = true; };
+   video.play = async () => { paused = false; };
+ }
+ t.after(initDemoPlayers(win.document));
+ const firstVideo = first.querySelector('video');
+ const secondVideo = second.querySelector('video');
+ measure();
+ assert.equal(firstVideo.paused, false);
+ second.querySelector('button').click();
+ measure();
+ assert.equal(firstVideo.paused, true);
+ assert.equal(secondVideo.paused, false);
+ layout.set(second, -100);
+ win.dispatchEvent(new win.Event('scroll'));
+ measure();
+ assert.equal(firstVideo.paused, false);
+ assert.equal(secondVideo.paused, true);
+});
