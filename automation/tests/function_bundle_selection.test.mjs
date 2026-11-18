@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 const script = resolve('automation/hetzner-supabase/runtime/function-bundle-selection.py');
-function fixture(t) {
+function fixture(t, functionName = 'alpha') {
     const root = mkdtempSync(join(tmpdir(), 'festapp-function-selection-'));
     t.after(() => rmSync(root, { recursive: true, force: true }));
     const base = join(root, 'base'), source = join(root, 'source'), stage = join(root, 'stage');
@@ -22,11 +22,12 @@ function fixture(t) {
     rmSync(join(source, 'alpha/retired.ts'));
     writeFileSync(join(source, 'beta/index.ts'), 'export const worker = "requires-unreleased-schema";');
     mkdirSync(stage);
-    cpSync(join(source, 'alpha'), join(stage, 'alpha'), { recursive: true });
+    if (functionName !== 'alpha') cpSync(join(source, 'alpha'), join(source, functionName), { recursive: true });
+    cpSync(join(source, functionName), join(stage, functionName), { recursive: true });
     const run = (command, args) => spawnSync('python3', [script, command, '--root', command === 'select' ? source : base, ...args], { encoding: 'utf8' });
     const inventory = run('inventory', []); assert.equal(inventory.status, 0, inventory.stderr);
     const inventoryPath = join(root, 'base.json'); writeFileSync(inventoryPath, inventory.stdout);
-    const select = (shared = []) => run('select', ['--base', inventoryPath, '--functions', 'alpha', '--shared-modules', shared.join(',')]);
+    const select = (shared = []) => run('select', ['--base', inventoryPath, '--functions', functionName, '--shared-modules', shared.join(',')]);
     const selection = select(); assert.equal(selection.status, 0, selection.stderr);
     const manifest = join(root, 'manifest.json'); writeFileSync(manifest, JSON.stringify({ selection: JSON.parse(selection.stdout) }));
     return { root, base, source, stage, manifest, run, select,
@@ -38,6 +39,14 @@ test('selected release replaces one complete Function and preserves unrelated wo
         assert.equal(readFileSync(join(f.stage, name), 'utf8'), readFileSync(join(f.base, name), 'utf8'));
     assert.equal(readFileSync(join(f.stage, 'alpha/index.ts'), 'utf8'), readFileSync(join(f.source, 'alpha/index.ts'), 'utf8'));
     assert.throws(() => readFileSync(join(f.stage, 'alpha/retired.ts')));
+});
+test('selected release can stage a new Function while preserving existing directories', t => {
+    const f = fixture(t, 'new-contact'), result = f.stageSelected();
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(readFileSync(join(f.stage, 'new-contact/index.ts'), 'utf8'), readFileSync(join(f.source, 'new-contact/index.ts'), 'utf8'));
+    assert.deepEqual(readdirSync(f.stage).sort(), [...readdirSync(f.base), 'new-contact'].sort());
+    for (const name of ['alpha/index.ts', 'beta/index.ts', '_shared/common.ts', 'main/index.ts', 'deno.lock'])
+        assert.equal(readFileSync(join(f.stage, name), 'utf8'), readFileSync(join(f.base, name), 'utf8'));
 });
 test('shared and lock upgrades require a full coordinated release', t => {
     for (const name of ['_shared/common.ts', 'deno.lock']) {

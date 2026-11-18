@@ -40,6 +40,11 @@
     "with_check": "true"
   },
   "entrypoints": {
+    "public.enqueue_organizer_contact_v1(uuid,text,jsonb,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
     "public.update_spot_assignments(jsonb)": {
       "anon": false,
       "authenticated": true,
@@ -3558,6 +3563,7 @@
   "application_client_truncate": false,
   "application_definer_search_path_required": true,
   "reviewed_definer_sources": [
+    "database/functions/emails/organizer_contact.sql",
     "database/functions/inventory/update_spots_assignments.sql",
     "database/functions/others/get_occasion_for_context.sql",
     "database/functions/others/get_news_read_state.sql",
