@@ -1,0 +1,15 @@
+diff --git a/lib/parse.js b/lib/parse.js
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -343,5 +343,11 @@ const analyzeRepeatedExtglob = (body, options) => {
+       : { risky: true };
+   }
+
++  // CVE-2026-112366: a single flat literal has a fixed width. Use the
++  // literal fallback for single branches without a safe rewrite above.
++  if (branches.length === 1 && !/^[a-zA-Z0-9_. -]+$/.test(body)) {
++    return { risky: true };
++  }
++
+   return { risky: false };
+ };
