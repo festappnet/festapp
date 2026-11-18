@@ -76,6 +76,8 @@ class MirrorContractTest(unittest.TestCase):
                         self.assertEqual(step['if'],"steps.selection.outputs.full == 'true'")
                     elif step.get('name')=='Some lane tests executed':
                         self.assertEqual(step['if'],"steps.selection.outputs.run == 'true' && steps.selection.outputs.full != 'true'")
+                    elif name in ('client-contract', 'client-browser-contract') and step.get('uses', '').startswith('pnpm/action-setup@'):
+                        self.assertEqual(step['if'], "github.job == 'client-contract' && steps.selection.outputs.run == 'true'")
                     elif step.get('name') == 'Restore pinned WordPress core archive':
                         self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
                     else:
@@ -271,19 +273,20 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_flutter_browser_contracts_have_one_owner_and_semantic_inventory(self):
         steps=runner.CONTRACT['steps']
-        for source in ('test/browser/browser_preference_store_test.dart',
-                       'test/components/html/html_image_preview_cases.dart',
-                       'test/components/navigation/platform_route_parser_cases.dart'):
-            owners=[name for name,unit in steps.items() if source in unit['script']]
-            self.assertEqual(owners,['image-client-browser'])
-        command=steps['image-client-browser']['script'].splitlines()
-        self.assertEqual(len(command),1)
-        self.assertIn('--platform chrome',command[0])
-        self.assertIn('--concurrency=1',command[0])
-        inventory=json.loads((ROOT/'automation/client_test_inventory.json').read_text())
-        self.assertTrue({'ticket-client','navigation-contract','image-client-browser'}
-                        .issubset(inventory['ci_cases']))
-        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']),10)
+        entrypoint = 'test/browser/client_browser_ci_cases.dart'
+        owners = [name for name, unit in steps.items() if entrypoint in unit['script']]
+        self.assertEqual(owners, ['image-client-browser'])
+        command = steps['image-client-browser']['script'].splitlines()
+        self.assertEqual(len(command), 1)
+        self.assertIn('--platform chrome', command[0])
+        self.assertIn('--concurrency=1', command[0])
+        inventory = json.loads((ROOT/'automation/client_test_inventory.json').read_text())
+        self.assertEqual({row['source'] for row in inventory['ci_moves']['image-client-browser'].values()}, {
+            'test/browser/browser_preference_store_test.dart',
+            'test/components/html/html_image_preview_cases.dart',
+            'test/components/navigation/platform_route_parser_cases.dart',
+        })
+        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']), 10)
         self.assertIn('automation/testing/navigation_ci.dart',
                       steps['navigation-contract']['script'])
         self.assertIn('automation/testing/navigation_default.dart',
@@ -291,7 +294,7 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_semantic_inventory_changes_trigger_all_owning_workflows(self):
         pattern='automation/client_test_inventory.*'
-        for name in ('navigation-interactions','client-contract','ticket-preview-and-delivery','ticket-rendering-contracts'):
+        for name in ('navigation-interactions','client-contract','client-browser-contract','ticket-preview-and-delivery','ticket-rendering-contracts'):
             lane=runner.CONTRACT['jobs'][name]
             self.assertIn(pattern,lane['inputs'])
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())

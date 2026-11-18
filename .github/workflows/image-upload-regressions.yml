@@ -99,7 +99,7 @@ jobs:
           mkdir -p "$FVM_CACHE_PATH/versions"
           ln -s "$FLUTTER_ROOT" "$FVM_CACHE_PATH/versions/${{ steps.sdk.outputs.version }}"
       - uses: pnpm/action-setup@v6
-        if: steps.selection.outputs.run == 'true'
+        if: github.job == 'client-contract' && steps.selection.outputs.run == 'true'
         with:
           version: 11.24.0
       - uses: actions/setup-node@v7
