@@ -94,7 +94,7 @@
       (hostDataLayer.checked ? ' data-festapp-datalayer' : '');
     // Match the child canvas from creation, before the deferred helper can run.
     const frame = `<iframe${marker} src="${escape(url.href + '?embed=1')}" title="${text.title}" allow="clipboard-write" height="800" style="display:block;width:100%;max-width:100%;border:0;color-scheme:light dark" loading="lazy"></iframe>`;
-    const link = `<p><a href="${escape(url.href)}" target="_blank" ${imported ? 'data-festapp-consent-link' : 'rel="noopener noreferrer"'}>${text.link}</a></p>`;
+    const link = `<a href="${escape(url.href)}" target="_blank" ${imported ? 'data-festapp-consent-link' : 'rel="noopener noreferrer"'}>${text.link}</a>`;
     const importAttributes=imported ? ` data-festapp-consent="${escape(JSON.stringify(imported))}"${imported.providerConfig.provider==='cookiebot' ? ' data-cookieconsent="ignore"' : ''}${imported.providerConfig.provider==='complianz' ? ' data-category="functional"' : ''}` : '';
     code.value = `<div data-festapp-embed-host>\n${frame}\n${link}\n</div>\n<script src="${origin}/embed.js"${importAttributes} defer></script>`;
     output.hidden = false; output.querySelector('[data-form-link]').href = url.href;

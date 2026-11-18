@@ -16,7 +16,7 @@ export function fixture(t,{source=async()=>({...policy}),identity='anonymous',co
   {id:4,type:'product_type',productTypeData:{title:'Vstupenky'},options:[{id:11,title:'Concert',price:100,currency:'CZK'},{id:12,title:'Free',price:0,currency:'CZK'}]},
   {id:5,type:'email'},{id:6,type:'phone'}]};
  const checkout={payload:{fields:[]}};let session;
- const layer=new FormDataLayer({win:dom.window,model,sink:{record:p=>session.record(p),capture:()=>session.capture()}});
+ const layer=new FormDataLayer({win:dom.window,model,sink:{record:p=>session.record(p),capture:()=>session.capture(),captureConversion:()=>session.captureConversion()}});
  session=new FormMeasurementSession({win:dom.window,model,transport,policySource:source,clock,
   identitySource:{read:()=>currentIdentity,subscribe:fn=>{notifyIdentity=fn;return ()=>notifyIdentity=null;}},
   consentSource:{connect(_policy,notify){notifyConsent=notify;notify(consent);return ()=>{notifyConsent=null;};}},

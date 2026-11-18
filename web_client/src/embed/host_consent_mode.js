@@ -7,7 +7,7 @@ const object = value => value !== null && typeof value === 'object' && !Array.is
 const project = state => ({analytics:state.analytics_storage === true,
     marketing:state.ad_storage === true && state.ad_user_data === true && state.ad_personalization === true});
 function createReader(win) {
-    let layerRef, lastEntry, index = 0, defaults = {}, updates = {}, regional = new Set();
+    let layerRef, lastEntry, index = 0, updates = {};
     return () => {
         try {
             const entries = win.google_tag_data?.ics?.entries;
@@ -18,7 +18,7 @@ function createReader(win) {
                     const entry = entries[key];
                     if (entry === undefined) continue;
                     if (!object(entry)) { state[key] = false; continue; }
-                    const value = entry.update !== undefined ? entry.update : entry.default;
+                    const value = entry.update;
                     // Google creates entries for types the website never set (e.g.
                     // ad_user_data on OneTrust sites): no value means missing.
                     if (value === undefined) continue;
@@ -31,7 +31,7 @@ function createReader(win) {
             // Websites may trim or replace old entries; if the last entry read is no
             // longer where it was, re-read the whole queue instead of trusting the cursor.
             if (layer !== layerRef || layer.length < index || (index > 0 && layer[index - 1] !== lastEntry)) {
-                layerRef = layer; index = 0; defaults = {}; updates = {}; regional = new Set();
+                layerRef = layer; index = 0; updates = {};
             }
             while (index < layer.length) {
                 const command = layer[index++];
@@ -39,20 +39,14 @@ function createReader(win) {
                 if (Object.prototype.toString.call(command) !== '[object Arguments]') continue;
                 const [kind, action, values] = command;
                 if (kind !== 'consent' || !['default', 'update'].includes(action) || !object(values)) continue;
-                // The visitor's region is unknown here: a regional default makes that
-                // purpose undecidable until the website's CMP sends an update.
-                if (action === 'default' && 'region' in values) {
-                    for (const key of keys) if (Object.hasOwn(values, key)) regional.add(key);
-                    continue;
-                }
-                const target = action === 'update' ? updates : defaults;
-                for (const key of keys) if (Object.hasOwn(values, key)) target[key] = values[key] === 'granted';
+                // Defaults configure tags; only an explicit update represents a choice.
+                if (action !== 'update') continue;
+                for (const key of keys) if (Object.hasOwn(values, key)) updates[key] = values[key] === 'granted';
             }
-            const state = {...defaults, ...updates};
-            for (const key of regional) if (!Object.hasOwn(updates, key)) state[key] = false;
+            const state = updates;
             return {...project(state), ...(typeof win.__tcfapi !== 'undefined' ? {marketing:false} : {})};
         } catch {
-            layerRef = undefined; lastEntry = undefined; index = 0; defaults = {}; updates = {}; regional = new Set();
+            layerRef = undefined; lastEntry = undefined; index = 0; updates = {};
             return project({});
         }
     };
