@@ -15,11 +15,40 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/unit/views/unit_measurement_settings.dart';
+import 'package:fstapp/components/unit/views/unit_measurement_help.dart';
 import 'package:fstapp/components/unit/unit_measurement_approval.dart';
-import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:fstapp/widgets/app_dialog.dart';
+import 'package:intl/intl.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
+
+Future<void> settleConsent(WidgetTester tester) async {
+  await tester.pumpAndSettle();
+  final edit = find.byWidgetPredicate(
+    (w) =>
+        w is TextButton &&
+        w.child is Text &&
+        (w.child as Text).data == CommonStrings.edit,
+  );
+  final platform = find.byType(DropdownButtonFormField<String>);
+  if (edit.evaluate().isNotEmpty && platform.evaluate().isEmpty) {
+    await tester.ensureVisible(edit.first);
+    await tester.tap(edit.first);
+    await tester.pumpAndSettle();
+  }
+}
+
+Future<void> openPolicy(WidgetTester tester) async {
+  if (find
+      .widgetWithText(TextField, FormStrings.cmsPolicyId)
+      .evaluate()
+      .isEmpty) {
+    await tester.ensureVisible(find.text(FormStrings.cmsPolicyManual));
+    await tester.tap(find.text(FormStrings.cmsPolicyManual));
+    await tester.pumpAndSettle();
+  }
+}
 
 void main() {
   WidgetEnvironmentFixture.register();
@@ -36,6 +65,264 @@ void main() {
       await loader.load();
     }
   });
+  test(
+    'measurement help links target published pages and existing anchors',
+    () {
+      const root = 'automation/release/help';
+      for (final (language, site, basics) in [
+        (
+          'cs',
+          'https://vstupenky.online',
+          'https://vstupenky.online/napoveda/mereni-formularu/#zapnuti',
+        ),
+        (
+          'en',
+          'https://festapp.net',
+          'https://festapp.net/help/form-measurement/#enable',
+        ),
+      ]) {
+        expect(
+          UnitMeasurementHelp.basics
+              .url(site: site, publishedLanguage: language)
+              .toString(),
+          basics,
+        );
+        final isCzech = language == 'cs';
+        final manifest = isCzech ? 'pages.json' : 'pages.en.json';
+        final pages =
+            jsonDecode(File('$root/$manifest').readAsStringSync()) as List;
+        final slugs = pages.map((page) => page['slug']).toSet();
+        for (final topic in UnitMeasurementHelp.values) {
+          final url = topic.url(site: site, publishedLanguage: language)!;
+          expect(url.pathSegments.first, isCzech ? 'napoveda' : 'help');
+          final slug = url.pathSegments[1];
+          expect(slugs, contains(slug), reason: '$language: $url');
+          final html = File('$root/${isCzech ? '' : 'en/'}$slug.html')
+              .readAsStringSync();
+          expect(url.fragment, isNotEmpty);
+          expect(
+            html,
+            contains('id="${url.fragment}"'),
+            reason: '$language: $url',
+          );
+        }
+      }
+      expect(UnitMeasurementHelp.basics.url(publishedLanguage: 'de'), isNull);
+      expect(
+        UnitMeasurementHelp.basics.url(
+          site: 'https://tenant.example',
+          publishedLanguage: null,
+        ),
+        isNull,
+      );
+    },
+  );
+
+  for (final operation in ['confirmation', 'disable']) {
+    testWidgets(
+      'CMS ignores $operation response after removing the last website',
+      (tester) async {
+        const site = 'https://culture.example';
+        var websites = [site];
+        var saved = true;
+        var calls = 0;
+        final result = Completer<UnitWebsiteConsent>();
+        final binding = {
+          'id': 'culture',
+          'websiteOrigin': site,
+          'platform': 'html',
+          'version': 7,
+          'state': operation == 'confirmation' ? 'draft' : 'ready',
+          'providerConfig': {'provider': 'cookiebot'},
+        };
+        UnitWebsiteConsent data(String state, int version) =>
+            UnitWebsiteConsent.fromJson({
+              'consentRevision': 'a' * 32,
+              'bindings': [
+                {...binding, 'state': state, 'version': version},
+              ],
+            });
+        Future<void> pump() => tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: UnitWebsiteConsentSettings(
+                  unitId: 2,
+                  websites: websites,
+                  saved: saved,
+                  load: () async => data(binding['state']! as String, 7),
+                  save: (origin, platform, config, version, revision, confirm) {
+                    expect(origin, site);
+                    expect(revision, 'a' * 32);
+                    expect(version, 7);
+                    expect(confirm, isTrue);
+                    calls++;
+                    return result.future;
+                  },
+                  disable: (id, version) {
+                    expect(id, 'culture');
+                    expect(version, 7);
+                    calls++;
+                    return result.future;
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await pump();
+        await settleConsent(tester);
+        final action = find.text(
+          operation == 'confirmation'
+              ? FormStrings.cmsConfirm
+              : FormStrings.cmsDisable,
+        );
+        if (operation == 'confirmation') {
+          await tester.ensureVisible(find.byType(Checkbox));
+          await tester.tap(find.byType(Checkbox));
+          await tester.pumpAndSettle();
+        }
+        await tester.ensureVisible(action);
+        await tester.tap(action);
+        await tester.pump();
+        expect(calls, 1);
+        websites = [];
+        saved = false;
+        await pump();
+        result.complete(
+          data(operation == 'confirmation' ? 'ready' : 'disabled', 8),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(Card), findsNothing);
+        expect(find.byType(LinearProgressIndicator), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets('CMS copies another website without replacing the open draft', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const sites = ['https://culture.example', 'https://concert.example'];
+    String? clipboard;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboard = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: UnitWebsiteConsentSettings(
+              unitId: 2,
+              websites: sites,
+              saved: true,
+              load: () async => UnitWebsiteConsent.fromJson({
+                'consentRevision': 'a' * 32,
+                'bindings': [
+                  {
+                    'id': 'first',
+                    'websiteOrigin': sites[0],
+                    'platform': 'html',
+                    'version': 3,
+                    'state': 'ready',
+                    'providerConfig': {'provider': 'cookieconsent'},
+                  },
+                  {
+                    'id': 'second',
+                    'websiteOrigin': sites[1],
+                    'platform': 'joomla',
+                    'version': 9,
+                    'state': 'ready',
+                    'providerConfig': {'provider': 'cookiebot'},
+                  },
+                ],
+              }),
+              export: (id, version) async {
+                expect(id, 'second');
+                expect(version, 9);
+                return {'website': 'concert.example'};
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final hiddenEditor = tester.element(
+      find.byKey(
+        const ValueKey('https://culture.example'),
+        skipOffstage: false,
+      ),
+    );
+    for (var index = 0; index < 8; index++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      var focusedInEditor = false;
+      FocusManager.instance.primaryFocus?.context?.visitAncestorElements((
+        ancestor,
+      ) {
+        focusedInEditor = ancestor == hiddenEditor;
+        return !focusedInEditor;
+      });
+      expect(focusedInEditor, isFalse);
+    }
+    await settleConsent(tester);
+    await tester.tap(find.text(FormStrings.cmsAdvancedCategories));
+    await tester.pumpAndSettle();
+    final category = find.widgetWithText(
+      TextField,
+      FormStrings.cmsAnalyticsCategory,
+    );
+    await tester.enterText(category, 'my-draft');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(FormStrings.cmsCopyFor('Joomla')));
+    await tester.pumpAndSettle();
+    expect(clipboard, contains('concert.example'));
+    expect(tester.widget<TextField>(category).controller!.text, 'my-draft');
+    expect(find.text(FormStrings.cmsConfirm), findsOneWidget);
+    final details = find.text(FormStrings.cmsShowConfiguration);
+    final exportCard = find.ancestor(of: details, matching: find.byType(Card));
+    expect(
+      find.descendant(of: exportCard, matching: find.text('concert.example')),
+      findsOneWidget,
+    );
+    final editOther = find.descendant(
+      of: exportCard.first,
+      matching: find.widgetWithText(TextButton, CommonStrings.edit),
+    );
+    await tester.tap(editOther);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(CommonStrings.keepEditing));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(category).controller!.text, 'my-draft');
+
+    await tester.tap(editOther);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, CommonStrings.discardChanges),
+    );
+    await tester.pumpAndSettle();
+    expect(category, findsNothing);
+  });
+
   Future<void> pumpConsent(
     WidgetTester tester, {
     Future<String> Function(String)? detect,
@@ -91,9 +378,10 @@ void main() {
         },
       );
       await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(CommonStrings.loading), findsNothing);
-      await tester.tap(find.text(FormStrings.cmsPolicyManual));
-      await tester.pumpAndSettle();
+      await openPolicy(tester);
+      await settleConsent(tester);
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsPolicyId),
         '42',
@@ -101,7 +389,7 @@ void main() {
       await tester.pump();
       await tester.ensureVisible(find.text(FormStrings.cmsSaveDraft));
       await tester.tap(find.text(FormStrings.cmsSaveDraft));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(draft, {'provider': 'complianz', 'policyId': '42'});
     },
   );
@@ -111,7 +399,7 @@ void main() {
     (tester) async {
       final pending = Completer<String>();
       await pumpConsent(tester, detect: (_) => pending.future);
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       final selectors = tester
           .widgetList<DropdownButtonFormField<String>>(
             find.byType(DropdownButtonFormField<String>),
@@ -120,11 +408,16 @@ void main() {
       expect(selectors.every((selector) => selector.onChanged != null), true);
       // Drive the same callback used by keyboard and dropdown selection.
       selectors.last.onChanged!('cookiebot');
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(CommonStrings.loading), findsNothing);
       pending.complete('42');
-      await tester.pumpAndSettle();
-      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsNothing);
+      await settleConsent(tester);
+      expect(
+        find.text(
+          '${FormStrings.cmsPolicyNumber('42')} · ${FormStrings.cmsPolicyFromWebsite}',
+        ),
+        findsNothing,
+      );
       expect(find.text(FormStrings.cmsFreshChoiceHelp), findsOneWidget);
     },
   );
@@ -146,16 +439,16 @@ void main() {
           },
         ],
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text('${FormStrings.cmsPolicySaved}: 41'), findsOneWidget);
-      await tester.tap(find.text(FormStrings.cmsPolicyManual));
-      await tester.pumpAndSettle();
+      await openPolicy(tester);
+      await settleConsent(tester);
       final field = find.widgetWithText(TextField, FormStrings.cmsPolicyId);
       expect(tester.widget<TextField>(field).controller!.text, '41');
       await tester.enterText(field, '43');
       await tester.ensureVisible(find.text(FormStrings.cmsPolicyReload));
       await tester.tap(find.text(FormStrings.cmsPolicyReload));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(tester.widget<TextField>(field).controller!.text, '43');
     },
   );
@@ -183,15 +476,20 @@ void main() {
           });
         },
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.ensureVisible(find.byType(Checkbox));
       await tester.tap(find.byType(Checkbox));
       await tester.pump();
       await tester.ensureVisible(find.text(FormStrings.cmsConfirm));
       await tester.tap(find.text(FormStrings.cmsConfirm));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(FormStrings.cmsPolicyChanged), findsOneWidget);
-      expect(find.text('${FormStrings.cmsPolicyId}: 43'), findsOneWidget);
+      expect(
+        find.text(
+          '${FormStrings.cmsPolicyNumber('43')} · ${FormStrings.cmsPolicyFromWebsite}',
+        ),
+        findsOneWidget,
+      );
       expect(find.text(FormStrings.cmsUnavailable), findsNothing);
       expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, false);
       expect(
@@ -207,7 +505,7 @@ void main() {
       await tester.pump();
       await tester.ensureVisible(find.text(FormStrings.cmsConfirm));
       await tester.tap(find.text(FormStrings.cmsConfirm));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(confirmations, 2);
       expect(
         probes,
@@ -228,7 +526,7 @@ void main() {
         confirmDetected: (_, _, _, _, _) async =>
             throw const ComplianzPolicyChanged(),
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.ensureVisible(find.byType(Checkbox));
       await tester.tap(find.byType(Checkbox));
       await tester.pump();
@@ -236,7 +534,7 @@ void main() {
       await tester.tap(find.text(FormStrings.cmsConfirm));
       await tester.pump();
       await tester.pump(const Duration(seconds: 21));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(find.text(FormStrings.cmsPolicyDetectionFailed), findsOneWidget);
       expect(
@@ -248,13 +546,13 @@ void main() {
         true,
       );
       await tester.ensureVisible(find.text(FormStrings.cmsPolicyManual));
-      await tester.tap(find.text(FormStrings.cmsPolicyManual));
-      await tester.pumpAndSettle();
+      await openPolicy(tester);
+      await settleConsent(tester);
       final field = find.widgetWithText(TextField, FormStrings.cmsPolicyId);
       expect(tester.widget<TextField>(field).enabled, true);
       expect(tester.widget<TextField>(field).controller!.text, '42');
       pending.complete('43');
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(tester.widget<TextField>(field).controller!.text, '42');
     },
   );
@@ -295,7 +593,7 @@ void main() {
       expect(attempts, 0, reason: 'unsaved websites cannot start a probe');
       saved = true;
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(
         attempts,
         1,
@@ -304,11 +602,16 @@ void main() {
       expect(find.text(CommonStrings.loading), findsOneWidget);
       saved = false;
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(CommonStrings.loading), findsNothing);
       pending.complete('42');
-      await tester.pumpAndSettle();
-      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsNothing);
+      await settleConsent(tester);
+      expect(
+        find.text(
+          '${FormStrings.cmsPolicyNumber('42')} · ${FormStrings.cmsPolicyFromWebsite}',
+        ),
+        findsNothing,
+      );
       expect(attempts, 1);
     },
   );
@@ -337,95 +640,122 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(CommonStrings.loading), findsOneWidget);
       await tester.pump(const Duration(seconds: 20));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(FormStrings.cmsPolicyDetectionFailed), findsOneWidget);
       expect(find.text(CommonStrings.loading), findsNothing);
       pending.complete('42');
-      await tester.pumpAndSettle();
-      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsNothing);
-      await tester.tap(find.text(FormStrings.cmsPolicyManual));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
+      expect(
+        find.text(
+          '${FormStrings.cmsPolicyNumber('42')} · ${FormStrings.cmsPolicyFromWebsite}',
+        ),
+        findsNothing,
+      );
+      await openPolicy(tester);
+      await settleConsent(tester);
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsPolicyId),
         '43',
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.widgetWithText(TextField, '43'), findsOneWidget);
     },
   );
 
-  testWidgets(
-    'Complianz detects read-only ID, reloads and offers manual fallback',
-    (tester) async {
-      tester.view.physicalSize = const Size(1200, 2400);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      var attempts = 0;
-      Map<String, dynamic>? pinned;
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: UnitWebsiteConsentSettings(
-                unitId: 2,
-                websites: const ['https://poradatel.cz'],
+  testWidgets('Complianz detects read-only ID, reloads and offers manual fallback', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    var attempts = 0;
+    Map<String, dynamic>? pinned;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: UnitWebsiteConsentSettings(
+              unitId: 2,
+              websites: const ['https://poradatel.cz'],
 
-                saved: true,
-                load: () async => UnitWebsiteConsent.fromJson({
+              saved: true,
+              load: () async => UnitWebsiteConsent.fromJson({
+                'consentRevision': 'a' * 32,
+                'bindings': [],
+              }),
+              detectPolicy: (_) async {
+                attempts++;
+                if (attempts == 3) throw StateError('blocked');
+                return attempts == 1 ? '42' : '43';
+              },
+              save: (_, _, config, _, _, _) async {
+                pinned = config;
+                return UnitWebsiteConsent.fromJson({
                   'consentRevision': 'a' * 32,
                   'bindings': [],
-                }),
-                detectPolicy: (_) async {
-                  attempts++;
-                  if (attempts == 3) throw StateError('blocked');
-                  return attempts == 1 ? '42' : '43';
-                },
-                save: (_, _, config, _, _, _) async {
-                  pinned = config;
-                  return UnitWebsiteConsent.fromJson({
-                    'consentRevision': 'a' * 32,
-                    'bindings': [],
-                  });
-                },
-              ),
+                });
+              },
             ),
           ),
         ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('${FormStrings.cmsPolicyId}: 42'), findsOneWidget);
-      expect(find.byType(TextField), findsNothing);
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(FormStrings.cmsPolicyReload));
-      await tester.pumpAndSettle();
-      expect(find.text('${FormStrings.cmsPolicyId}: 43'), findsOneWidget);
-      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, false);
-      await tester.tap(find.text(FormStrings.cmsPolicyReload));
-      await tester.pumpAndSettle();
-      expect(find.text(FormStrings.cmsPolicyDetectionFailed), findsOneWidget);
-      expect(
-        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
-        findsNothing,
-      );
-      await tester.tap(find.text(FormStrings.cmsPolicyManual));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextField, FormStrings.cmsPolicyId),
-        '44',
-      );
-      await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(FormStrings.cmsConfirm));
-      await tester.pumpAndSettle();
-      expect(pinned, {'provider': 'complianz', 'policyId': '44'});
-    },
-  );
+      ),
+    );
+    await settleConsent(tester);
+    expect(
+      find.text(
+        '${FormStrings.cmsPolicyNumber('42')} · ${FormStrings.cmsPolicyFromWebsite}',
+      ),
+      findsOneWidget,
+    );
+    final policyLine = find.text(
+      '${FormStrings.cmsPolicyNumber('42')} · ${FormStrings.cmsPolicyFromWebsite}',
+    );
+    final reloadRow = find
+        .ancestor(of: policyLine, matching: find.byType(Wrap))
+        .first;
+    expect(
+      find.descendant(
+        of: reloadRow,
+        matching: find.text(FormStrings.cmsPolicyReload),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.byType(Checkbox));
+    await settleConsent(tester);
+    await tester.tap(find.text(FormStrings.cmsPolicyReload));
+    await settleConsent(tester);
+    expect(
+      find.text(
+        '${FormStrings.cmsPolicyNumber('43')} · ${FormStrings.cmsPolicyFromWebsite}',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, false);
+    await tester.tap(find.text(FormStrings.cmsPolicyReload));
+    await settleConsent(tester);
+    expect(find.text(FormStrings.cmsPolicyDetectionFailed), findsOneWidget);
+    expect(
+      find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+      findsNothing,
+    );
+    await openPolicy(tester);
+    await settleConsent(tester);
+    await tester.enterText(
+      find.widgetWithText(TextField, FormStrings.cmsPolicyId),
+      '44',
+    );
+    await tester.tap(find.byType(Checkbox));
+    await settleConsent(tester);
+    await tester.tap(find.text(FormStrings.cmsConfirm));
+    await settleConsent(tester);
+    expect(pinned, {'provider': 'complianz', 'policyId': '44'});
+  });
   testWidgets(
     'CMS confirmation requires saved settings and explicit coverage; export and disable use stored binding',
     (tester) async {
@@ -453,7 +783,14 @@ void main() {
                 },
               ],
       });
-      Future<void> pump() => tester.pumpWidget(
+      final fixture = WidgetEnvironmentFixture(
+        locale: const Locale('cs'),
+        translations: jsonDecode(
+          File('assets/translations/cs.json').readAsStringSync(),
+        ),
+      );
+      Future<void> pump() => fixture.pumpWidget(
+        tester,
         MaterialApp(
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           home: Scaffold(
@@ -506,7 +843,7 @@ void main() {
         ),
       );
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       FilledButton confirm() => tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, FormStrings.cmsConfirm),
       );
@@ -517,15 +854,15 @@ void main() {
       );
       saved = true;
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(confirm().onPressed, isNull);
-      await tester.tap(find.text(FormStrings.cmsPolicyManual));
-      await tester.pumpAndSettle();
+      await openPolicy(tester);
+      await settleConsent(tester);
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsPolicyId),
         'invalid',
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(FormStrings.cmsPolicyIdInvalid), findsOneWidget);
       expect(confirm().onPressed, isNull);
       await tester.enterText(
@@ -533,26 +870,97 @@ void main() {
         '42',
       );
       await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(confirm().onPressed, isNotNull);
       await tester.tap(find.text(FormStrings.cmsConfirm));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(confirmations, 1);
+      expect(find.text(FormStrings.cmsState("ready")), findsOneWidget);
+      expect(find.widgetWithText(TextButton, CommonStrings.edit), findsNothing);
+      final footer = find
+          .ancestor(
+            of: find.text(CommonStrings.close),
+            matching: find.byType(Wrap),
+          )
+          .first;
+      expect(
+        find.descendant(
+          of: footer,
+          matching: find.text(FormStrings.cmsDisable),
+        ),
+        findsOneWidget,
+      );
+      final card = find.ancestor(of: footer, matching: find.byType(Card)).first;
+      expect(
+        tester.getTopLeft(find.text(FormStrings.cmsDisable)).dx,
+        closeTo(tester.getTopLeft(card).dx + 16, 0.1),
+      );
+      await tester.tap(find.text(CommonStrings.close));
+      await tester.pumpAndSettle();
+      final edit = find.widgetWithText(TextButton, CommonStrings.edit);
+      expect(tester.widget<TextButton>(edit).focusNode!.hasFocus, isTrue);
+      final retained = find.byType(ExcludeFocus, skipOffstage: false);
+      expect(
+        tester.widgetList<ExcludeFocus>(retained).any((item) => item.excluding),
+        isTrue,
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      final focused = FocusManager.instance.primaryFocus?.context;
+      expect(
+        focused?.findAncestorWidgetOfExactType<ExcludeFocus>()?.excluding,
+        isNot(true),
+      );
+      final headerActions = find
+          .ancestor(of: edit, matching: find.byType(Wrap))
+          .first;
+      expect(
+        find.descendant(
+          of: headerActions,
+          matching: find.text(FormStrings.cmsCopyFor('WordPress')),
+        ),
+        findsOneWidget,
+      );
+      final copyAction = find.widgetWithText(
+        FilledButton,
+        FormStrings.cmsCopyFor('WordPress'),
+      );
+      final hint = find.text(
+        FormStrings.cmsInstallHint(FormStrings.cmsInstallField('wordpress')),
+      );
+      final ready = find.widgetWithText(Chip, FormStrings.cmsState('ready'));
+      final website = find.text('poradatel.cz');
+      final summary = find.textContaining('WordPress · Complianz');
+      expect(
+        tester.getRect(summary).top - tester.getRect(website).bottom,
+        closeTo(8, 0.1),
+      );
+      expect(
+        tester.getRect(copyAction).top - tester.getRect(ready).bottom,
+        greaterThanOrEqualTo(16),
+      );
+      expect(
+        tester.getRect(copyAction).center.dy,
+        closeTo(tester.getRect(edit).center.dy, 0.1),
+      );
+      expect(
+        tester.getRect(hint).top - tester.getRect(copyAction).bottom,
+        closeTo(12, 0.1),
+      );
+      final closedCard = find.ancestor(
+        of: copyAction,
+        matching: find.byType(Card),
+      );
+      expect(
+        tester.getRect(closedCard).bottom - tester.getRect(hint).bottom,
+        closeTo(16, 0.1),
+      );
+      await tester.tap(edit);
+      await settleConsent(tester);
+
       expect(version, 1);
       expect(find.text(FormStrings.cmsConfirm), findsNothing);
       expect(find.text(FormStrings.cmsSaveDraft), findsNothing);
       expect(find.byType(CheckboxListTile), findsNothing);
-      await tester.tap(find.text(FormStrings.cmsExport));
-      await tester.pumpAndSettle();
-      expect(find.byType(SelectableText), findsNothing);
-      await tester.tap(find.text(FormStrings.cmsShowConfiguration));
-      await tester.pumpAndSettle();
-      expect(find.byType(SelectableText), findsOneWidget);
-      expect(
-        version,
-        1,
-        reason: 'getting configuration never reconfirms coverage',
-      );
       String? copied;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
         SystemChannels.platform,
@@ -569,54 +977,70 @@ void main() {
           null,
         ),
       );
-      await tester.tap(find.text(FormStrings.cmsCopy));
-      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.cmsCopyFor('WordPress')));
+      await settleConsent(tester);
       expect(copied, contains('"schemaVersion": 1'));
       expect(find.text(CommonStrings.copiedToClipboard), findsOneWidget);
+      final firstStep = find.textContaining('1. ');
+      final secondStep = find.textContaining('2. ');
+      expect(firstStep, findsOneWidget);
+      expect(
+        tester.getRect(firstStep).top - tester.getRect(copyAction).bottom,
+        closeTo(12, 0.1),
+      );
+      expect(
+        tester.getRect(secondStep).top - tester.getRect(firstStep).bottom,
+        closeTo(8, 0.1),
+      );
+      expect(find.byType(SelectableText), findsNothing);
+      await tester.tap(find.text(FormStrings.cmsShowConfiguration));
+      await settleConsent(tester);
+      expect(find.byType(SelectableText), findsOneWidget);
+      expect(version, 1, reason: 'copying never reconfirms coverage');
       await tester.tap(find.text('Complianz'));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text('Cookiebot').last);
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.byType(SelectableText), findsNothing);
       expect(confirm().onPressed, isNull);
-      expect(find.text(FormStrings.cmsExport), findsNothing);
+      expect(find.text(FormStrings.cmsCopyFor('WordPress')), findsNothing);
       expect(find.text(FormStrings.cmsSaveDraft), findsNothing);
       expect(find.text(FormStrings.cmsChangesPending), findsOneWidget);
       await tester.tap(find.text(CommonStrings.discardChanges));
-      await tester.pumpAndSettle();
-      expect(find.text(FormStrings.cmsExport), findsOneWidget);
+      await settleConsent(tester);
+      expect(find.text(FormStrings.cmsCopyFor('WordPress')), findsOneWidget);
       expect(find.text(FormStrings.cmsConfirm), findsNothing);
       expect(
         version,
         1,
         reason: 'discarding edits preserves the active binding',
       );
-      for (final suspendedState in ['approval_required', 'unavailable']) {
+      for (final suspendedState in ['confirmation_required', 'unavailable']) {
         state = suspendedState;
         await pump();
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(FormStrings.cmsPolicyManual));
-        await tester.pumpAndSettle();
+        await settleConsent(tester);
+        await openPolicy(tester);
+        await settleConsent(tester);
         await tester.enterText(
           find.widgetWithText(TextField, FormStrings.cmsPolicyId),
           '43',
         );
-        await tester.pumpAndSettle();
+        await settleConsent(tester);
         expect(
           find.text(FormStrings.cmsSaveDraft),
           findsNothing,
           reason: 'a temporarily unavailable confirmed binding cannot become a draft by accident',
         );
         await tester.tap(find.text(CommonStrings.discardChanges));
-        await tester.pumpAndSettle();
+        await settleConsent(tester);
         expect(version, 1);
         expect(confirmations, 1);
       }
       state = 'ready';
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text(FormStrings.cmsDisable));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(state, 'disabled');
       expect(version, 2);
     },
@@ -654,24 +1078,24 @@ void main() {
           'bindings': [],
         }),
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text('Complianz'));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text('CookieConsent v3').last);
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(FormStrings.cmsAdvancedCategories), findsOneWidget);
       expect(find.text(FormStrings.cmsAnalyticsCategory), findsNothing);
       await tester.tap(find.text(FormStrings.cmsAdvancedCategories));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(FormStrings.cmsAnalyticsCategory), findsOneWidget);
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsAnalyticsCategory),
         'marketing',
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(FormStrings.cmsCategoriesInvalid), findsOneWidget);
       await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(
         tester
             .widget<FilledButton>(
@@ -681,22 +1105,22 @@ void main() {
         isNull,
       );
       await tester.tap(find.text('CookieConsent v3'));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text('Cookiebot').last);
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text('Cookiebot CBID'), findsNothing);
       expect(find.text(FormStrings.cmsAnalyticsCategory), findsNothing);
       await tester.tap(find.text('WordPress'));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text('Wix').last);
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(tester.takeException(), isNull);
       await tester.tap(
         find.widgetWithText(DropdownButtonFormField<String>, 'Wix').first,
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text('WordPress').last);
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text('Complianz'), findsOneWidget);
       expect(tester.takeException(), isNull);
       expect(
@@ -736,24 +1160,24 @@ void main() {
                     'bindings': [],
                   });
                 },
-                save: (_, __, ___, ____, _____, ______) async =>
+                save: (_, _, _, _, _, _) async =>
                     throw StateError('website_consent_conflict'),
               ),
             ),
           ),
         ),
       );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(FormStrings.cmsPolicyManual));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
+      await openPolicy(tester);
+      await settleConsent(tester);
       await tester.enterText(
         find.widgetWithText(TextField, FormStrings.cmsPolicyId),
         '42',
       );
       await tester.tap(find.byType(Checkbox));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text(FormStrings.cmsConfirm));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.text(FormStrings.cmsUnavailable), findsWidgets);
       expect(find.byType(SelectableText), findsNothing);
       expect(
@@ -766,7 +1190,7 @@ void main() {
       );
       expect(loads, 1);
       await tester.tap(find.text(CommonStrings.retry));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(loads, 2);
       expect(
         tester
@@ -815,16 +1239,16 @@ void main() {
         ),
       );
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(find.byType(CheckboxListTile), findsNothing);
       sites = ['https://poradatel.cz', 'https://tanec.cz'];
       saved = false;
       await pump();
-      await tester.pumpAndSettle();
-      expect(find.text('https://poradatel.cz'), findsOneWidget);
+      await settleConsent(tester);
+      expect(find.text('poradatel.cz'), findsOneWidget);
       saved = true;
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(loads, 2, reason: 'canonical save reloads current semantic scope');
       expect(
         tester
@@ -835,12 +1259,12 @@ void main() {
       sites = ['https://tanec.cz'];
       saved = false;
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('https://tanec.cz'), findsOneWidget);
+      expect(find.text('tanec.cz'), findsOneWidget);
       saved = true;
       await pump();
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(loads, 3);
       expect(
         tester
@@ -858,6 +1282,21 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            throw PlatformException(code: 'clipboard_unavailable');
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -901,18 +1340,33 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       await tester.tap(find.text('Measurement settings'));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       final exportButton = find.widgetWithText(
         FilledButton,
-        FormStrings.cmsExport,
+        FormStrings.cmsCopyFor('WordPress'),
       );
       await tester.ensureVisible(exportButton);
       await tester.tap(exportButton);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      final manualTitle = find.text(CommonStrings.copyManually);
+      expect(manualTitle, findsOneWidget);
+      final manualField = find.byType(TextField);
+      expect(
+        tester.widget<TextField>(manualField).controller!.text,
+        contains('"schemaVersion": 1'),
+      );
+      Navigator.of(tester.element(manualTitle)).pop();
+      await tester.pumpAndSettle();
+      final measurement = find.text('Measurement settings');
+      await tester.tap(measurement);
+      await tester.pumpAndSettle();
+      await tester.tap(measurement);
       await tester.pumpAndSettle();
       await tester.tap(find.text(FormStrings.cmsShowConfiguration));
-      await tester.pumpAndSettle();
+      await settleConsent(tester);
       expect(tester.takeException(), isNull);
       expect(find.byType(SelectableText), findsOneWidget);
       expect(
@@ -929,6 +1383,7 @@ void main() {
     'retry',
     'unavailable',
     'approved',
+    'running',
     'invalid',
     'removed',
     'desktop',
@@ -937,7 +1392,7 @@ void main() {
     testWidgets('saved website UX independent of runtime approval: $state', (
       tester,
     ) async {
-      tester.view.physicalSize = Size(state == 'desktop' ? 1000 : 390, 1100);
+      tester.view.physicalSize = Size(state == 'desktop' ? 1000 : 412, 1100);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -945,8 +1400,15 @@ void main() {
       for (final controller in controllers) {
         addTearDown(controller.dispose);
       }
-      const site = 'https://poradatel.cz';
+      final host = state == 'large text'
+          ? '${'a' * 63}.obecni-kultura.example'
+          : 'poradatel.cz';
+      final site = 'https://$host';
       controllers[0].text = state == 'removed' ? '' : site;
+      if (state == 'running') {
+        controllers[1].text = 'GTM-ABCD';
+        controllers[3].text = 'https://poradatel.cz/privacy';
+      }
       final known = state != 'unavailable';
       final saved = state == 'draft' ? <String>[] : [site];
       final status = UnitMeasurementApproval.fromJson({
@@ -959,9 +1421,11 @@ void main() {
               : state == 'requested'
               ? 'requested'
               : 'not_requested',
-        'can_request': state != 'approved' && state != 'requested',
+        'can_request': !['approved', 'requested', 'running'].contains(state),
         'saved_origins': saved,
-        'approved_origins': state == 'approved' ? [site] : <String>[],
+        'approved_origins': ['approved', 'running'].contains(state)
+            ? [site]
+            : <String>[],
         'requested_origins': state == 'requested' || state == 'retry'
             ? [site]
             : <String>[],
@@ -1021,19 +1485,57 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      if (state != 'removed') {
+        final address = find.text(host);
+        final row = find
+            .ancestor(of: address, matching: find.byType(Row))
+            .first;
+        final chip = find.descendant(of: row, matching: find.byType(Chip));
+        final remove = find.descendant(
+          of: row,
+          matching: find.byTooltip(FormStrings.measurementRemoveWebsite(site)),
+        );
+        final addressRect = tester.getRect(address);
+        final removeRect = tester.getRect(remove);
+        expect(addressRect.right, lessThanOrEqualTo(removeRect.left));
+        expect(tester.getSize(remove).shortestSide, greaterThanOrEqualTo(48));
+        expect(
+          find.descendant(of: row, matching: find.byType(IconButton)),
+          findsOneWidget,
+        );
+        if (state == 'draft') {
+          expect(chip, findsOneWidget);
+          expect(find.text(FormStrings.measurementUnsavedHelp), findsOneWidget);
+        } else {
+          expect(chip, findsNothing);
+          expect(addressRect.center.dy, closeTo(removeRect.center.dy, 0.1));
+        }
+        if (state == 'large text') {
+          expect(addressRect.height, greaterThan(48));
+        }
+      }
       if (state == 'invalid') {
         await tester.enterText(
-          find.byWidgetPredicate(
-            (widget) =>
-                widget is TextFormField && widget.controller == controllers[0],
-          ),
+          find.widgetWithText(TextFormField, FormStrings.measurementAddWebsite),
           '$site/vstupenky',
+        );
+        await tester.ensureVisible(
+          find.widgetWithText(OutlinedButton, CommonStrings.add),
+        );
+        await tester.tap(
+          find.widgetWithText(OutlinedButton, CommonStrings.add),
         );
         await tester.pumpAndSettle();
         expect(
           find.text(FormStrings.measurementWebsitesInvalid),
           findsOneWidget,
         );
+      }
+      if (state == 'running') {
+        expect(find.text(FormStrings.measurementOn), findsOneWidget);
+        expect(find.text(FormStrings.measurementPolicySummary), findsOneWidget);
+        expect(find.text('GTM'), findsOneWidget);
+        expect(find.byType(Chip), findsNWidgets(3));
       }
       final button = find.widgetWithText(
         OutlinedButton,
@@ -1045,16 +1547,10 @@ void main() {
         reason: 'saved websites need no platform review',
       );
       expect(requests, 0);
-      final label = switch (state) {
-        'draft' => FormStrings.measurementWebsiteDraft,
-        'unrequested' => FormStrings.measurementWebsiteSaved,
-        'requested' => FormStrings.measurementWebsiteSaved,
-        'retry' => FormStrings.measurementWebsiteSaved,
-        'unavailable' => FormStrings.measurementWebsiteSaved,
-        'approved' => FormStrings.measurementWebsiteSaved,
-        _ => null,
-      };
-      if (label != null) expect(find.text('$site: $label'), findsOneWidget);
+      expect(
+        find.text(FormStrings.measurementWebsiteDraft),
+        state == 'draft' ? findsOneWidget : findsNothing,
+      );
       expect(
         find.text(FormStrings.measurementApprovalRequired),
         findsNothing,
@@ -1085,6 +1581,10 @@ void main() {
     testWidgets(
       'destinations and consent bridge opt-in when off; canEdit=$canEdit',
       (tester) async {
+        tester.view.physicalSize = const Size(412, 915);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
         final fixture = WidgetEnvironmentFixture(
           locale: const Locale('cs'),
           translations: jsonDecode(
@@ -1161,7 +1661,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text(FormStrings.measurementTitle), findsOneWidget);
+        expect(find.text(FormStrings.measurementTitle), findsNothing);
         expect(find.text(FormStrings.gtmContainer), findsOneWidget);
         expect(
           find.widgetWithText(
@@ -1171,26 +1671,22 @@ void main() {
           findsOneWidget,
         );
         expect(find.text(FormStrings.measurementUnitDisabled), findsOneWidget);
+        expect(find.text('approved.example'), findsOneWidget);
+        expect(find.text('pending.example'), findsOneWidget);
+        expect(find.text(FormStrings.measurementWebsiteDraft), findsNothing);
         expect(
-          find.text(
-            'https://approved.example: ${FormStrings.measurementWebsiteSaved}',
-          ),
-          findsOneWidget,
+          tester
+              .widget<TextFormField>(
+                find.widgetWithText(
+                  TextFormField,
+                  FormStrings.measurementAddWebsite,
+                ),
+              )
+              .enabled,
+          canEdit,
         );
         expect(
-          find.text(
-            'https://pending.example: ${FormStrings.measurementWebsiteSaved}',
-          ),
-          findsOneWidget,
-        );
-        final websitesField = tester.widget<TextFormField>(
-          find.byWidgetPredicate(
-            (w) => w is TextFormField && w.controller == websites,
-          ),
-        );
-        expect(websitesField.enabled, canEdit);
-        expect(
-          websitesField.validator!(
+          UnitMeasurementSettings.validateWebsites(
             'https://example.com\nhttps://www.example.com:443',
           ),
           isNull,
@@ -1216,8 +1712,61 @@ void main() {
           List.generate(11, (i) => 'https://site$i.example').join('\n'),
         ]) {
           expect(
-            websitesField.validator!(invalid),
+            UnitMeasurementSettings.validateWebsites(invalid),
             FormStrings.measurementWebsitesInvalid,
+          );
+        }
+        expect(
+          tester.getTopLeft(find.text(FormStrings.measurementBasics)).dy,
+          lessThan(
+            tester.getTopLeft(find.text(FormStrings.measurementWebsites)).dy,
+          ),
+        );
+        expect(
+          tester.getTopLeft(find.text(FormStrings.measurementWebsites)).dy,
+          lessThan(
+            tester
+                .getTopLeft(find.text(FormStrings.measurementConsentBridge))
+                .dy,
+          ),
+        );
+        if (canEdit) {
+          final add = find.widgetWithText(OutlinedButton, CommonStrings.add);
+          await tester.ensureVisible(add);
+          await tester.enterText(
+            find.widgetWithText(
+              TextFormField,
+              FormStrings.measurementAddWebsite,
+            ),
+            'https://novy.example',
+          );
+          await tester.tap(add);
+          await tester.pumpAndSettle();
+          expect(
+            UnitMeasurementSettings.parseWebsites(websites.text),
+            contains('https://novy.example'),
+          );
+          expect(
+            find.text(FormStrings.measurementWebsiteDraft),
+            findsOneWidget,
+          );
+          final remove = find.descendant(
+            of: find
+                .ancestor(
+                  of: find.text('novy.example'),
+                  matching: find.byType(Row),
+                )
+                .first,
+            matching: find.byTooltip(
+              FormStrings.measurementRemoveWebsite('https://novy.example'),
+            ),
+          );
+          await tester.ensureVisible(remove);
+          await tester.tap(remove);
+          await tester.pumpAndSettle();
+          expect(
+            UnitMeasurementSettings.parseWebsites(websites.text),
+            isNot(contains('https://novy.example')),
           );
         }
         final gtmField = find.byWidgetPredicate(
@@ -1251,19 +1800,96 @@ void main() {
           SwitchListTile,
           FormStrings.measurementConsentBridge,
         );
+        if (canEdit) {
+          final semantics = tester.ensureSemantics();
+          final help = find.byTooltip(
+            FormStrings.measurementHelpFor(
+              FormStrings.measurementConsentBridge,
+            ),
+          );
+          expect(
+            find.descendant(of: bridgeSwitch, matching: help),
+            findsNothing,
+          );
+          final switchNode = tester.getSemantics(bridgeSwitch);
+          final helpNode = tester.getSemantics(help);
+          expect(switchNode.id, isNot(helpNode.id));
+          expect(
+            switchNode.getSemanticsData().hasAction(ui.SemanticsAction.tap),
+            isTrue,
+          );
+          expect(
+            helpNode.getSemanticsData().hasAction(ui.SemanticsAction.tap),
+            isTrue,
+          );
+          semantics.dispose();
+        }
         final bridge = tester.widget<SwitchListTile>(bridgeSwitch);
         expect(bridge.value, isFalse);
         expect(bridge.onChanged == null, !canEdit);
         expect(
           find.text(FormStrings.measurementConsentBridgeConfirmation),
-          findsOneWidget,
+          findsNothing,
         );
         if (canEdit) {
           await tester.ensureVisible(bridgeSwitch);
           await tester.tap(bridgeSwitch);
           await tester.pumpAndSettle();
+          expect(consentBridge, isFalse);
+          expect(
+            find.text(FormStrings.measurementConsentBridgeConfirmation),
+            findsOneWidget,
+          );
+          final terms = find.text(
+            FormStrings.measurementConsentBridgeConfirmation,
+          );
+          final dialog = find.byType(AppAlertDialog);
+          expect(
+            tester.getRect(dialog).contains(tester.getRect(terms).topLeft),
+            isTrue,
+          );
+          expect(
+            tester.getRect(terms).right,
+            lessThan(tester.getRect(dialog).right),
+          );
+          final confirm = find.widgetWithText(
+            FilledButton,
+            CommonStrings.confirm,
+          );
+          expect(
+            tester.getSize(confirm).shortestSide,
+            greaterThanOrEqualTo(48),
+          );
+          await tester.tap(find.text(CommonStrings.cancel));
+          await tester.pumpAndSettle();
+          expect(consentBridge, isFalse);
+          await tester.tap(bridgeSwitch);
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.widgetWithText(FilledButton, CommonStrings.confirm),
+          );
+          await tester.pumpAndSettle();
           expect(consentBridge, isTrue);
+          await tester.ensureVisible(
+            find.text(FormStrings.measurementShowTerms),
+          );
+          await tester.tap(find.text(FormStrings.measurementShowTerms));
+          await tester.pumpAndSettle();
+          expect(
+            find.widgetWithText(FilledButton, CommonStrings.confirm),
+            findsNothing,
+          );
+          await tester.tap(
+            find.widgetWithText(TextButton, CommonStrings.close),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(bridgeSwitch);
+          await tester.pumpAndSettle();
+          expect(consentBridge, isFalse);
         }
+        await tester.ensureVisible(find.text(FormStrings.measurementOwnBanner));
+        await tester.tap(find.text(FormStrings.measurementOwnBanner));
+        await tester.pumpAndSettle();
         final enabledSwitch = find.widgetWithText(
           SwitchListTile,
           FormStrings.measurementUnitEnabled,
@@ -1342,6 +1968,16 @@ void main() {
         );
         expect(scriptField, findsOneWidget);
         expect(tester.widget<TextFormField>(scriptField).enabled, canEdit);
+        final howItWorks = find.text(FormStrings.measurementHowItWorks);
+        await tester.ensureVisible(howItWorks);
+        await tester.tap(howItWorks);
+        await tester.pumpAndSettle();
+        final paragraphs = FormStrings.measurementActivationHelp.split('\n\n');
+        expect(paragraphs, hasLength(3));
+        final first = tester.getRect(find.text(paragraphs.first));
+        final second = tester.getRect(find.text(paragraphs[1]));
+        expect(second.left, first.left);
+        expect(second.top - first.bottom, closeTo(12, 0.1));
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       },
@@ -1431,6 +2067,7 @@ void main() {
     ('measurement off', false, true, false, false, false),
     ('read only', true, false, false, false, false),
     ('sending request', true, true, false, false, true),
+    ('awaiting setup', true, true, false, false, false),
   ]) {
     testWidgets('platform approval: $name', (tester) async {
       final fixture = WidgetEnvironmentFixture(
@@ -1469,7 +2106,7 @@ void main() {
                 requestingApproval: busy,
                 approval: UnitMeasurementApproval.fromJson({
                   'approved': approved,
-                  'organization_allowed': approved,
+                  'organization_allowed': approved || name == 'awaiting setup',
                   'runtime_supported': approved,
                   'request_state': requested ? 'requested' : 'not_requested',
                   'can_request': !approved && !requested,
@@ -1491,32 +2128,32 @@ void main() {
         OutlinedButton,
         FormStrings.measurementApprovalRequest,
       );
-      if (enabled && !approved) {
-        expect(button, findsOneWidget);
-        expect(
-          tester.widget<OutlinedButton>(button).onPressed != null,
-          canEdit && !requested && !busy,
-        );
-        expect(
-          find.text(
-            requested
-                ? FormStrings.measurementApprovalRequested(
-                    DateFormat.yMd('cs').format(requestedAt.toLocal()),
-                  )
-                : FormStrings.measurementApprovalRequired,
-          ),
-          findsOneWidget,
-        );
-        if (canEdit && !requested && !busy) {
+      final canRequest = enabled && canEdit && !approved && !requested;
+      expect(button, canRequest ? findsOneWidget : findsNothing);
+      if (canRequest) {
+        expect(tester.widget<OutlinedButton>(button).onPressed != null, !busy);
+        if (!busy) {
           await tester.ensureVisible(button);
           await tester.tap(button);
           expect(requests, 1);
         }
-      } else {
-        expect(button, findsNothing);
+      }
+      expect(
+        find.text(FormStrings.measurementApprovalRequired),
+        !approved && name != 'awaiting setup' ? findsOneWidget : findsNothing,
+      );
+      expect(
+        find.text(FormStrings.measurementRuntimePending),
+        name == 'awaiting setup' ? findsOneWidget : findsNothing,
+      );
+      if (enabled && !approved && requested) {
         expect(
-          find.text(FormStrings.measurementApprovalRequired),
-          findsNothing,
+          find.text(
+            FormStrings.measurementApprovalRequested(
+              DateFormat.yMd('cs').format(requestedAt.toLocal()),
+            ),
+          ),
+          findsOneWidget,
         );
       }
       expect(find.text(FormStrings.gtmContainer), findsOneWidget);
@@ -1528,4 +2165,59 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+  testWidgets(
+    'measurement help uses the published guide for a German interface',
+    (tester) async {
+      const channel = MethodChannel('plugins.flutter.io/url_launcher');
+      String? opened;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+        call,
+      ) async {
+        if (call.method == 'launch') {
+          opened = (call.arguments as Map)['url'] as String;
+        }
+        return true;
+      });
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          null,
+        ),
+      );
+      final fixture = WidgetEnvironmentFixture(
+        locale: const Locale('de'),
+        translations: jsonDecode(
+          File('assets/translations/de.json').readAsStringSync(),
+        ),
+      );
+      await fixture.pumpWidget(
+        tester,
+        MaterialApp(
+          locale: const Locale('de'),
+          supportedLocales: const [Locale('de')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: Scaffold(
+            body: UnitMeasurementHelpButton(
+              UnitMeasurementHelp.basics,
+              label: FormStrings.measurementBasics,
+            ),
+          ),
+        ),
+      );
+      final steps = FormStrings.cmsInstallSteps('html');
+      expect(steps.first, contains(FormStrings.embedAction));
+      expect(steps[1], contains(FormStrings.cmsEnableImport));
+      expect(steps[1], contains(FormStrings.cmsImportLabel));
+      expect(
+        steps[1].indexOf(FormStrings.cmsEnableImport),
+        lessThan(steps[1].indexOf(FormStrings.cmsImportLabel)),
+      );
+      await tester.tap(find.byIcon(Icons.help_outline));
+      await tester.pumpAndSettle();
+      expect(
+        opened,
+        'https://vstupenky.online/napoveda/mereni-formularu/#zapnuti',
+      );
+    },
+  );
 }

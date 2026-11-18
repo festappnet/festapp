@@ -30,6 +30,7 @@
         "deploy-contract"
       ],
       "inputs": [
+        "lib/app_config.dart",
         "web_client/**",
         "web/**",
         "automation/test_web_startup.sh",
@@ -1083,6 +1084,9 @@
       },
       "inputs": [
         "integrations/**",
+        "automation/release/help/embed-generator.html",
+        "automation/release/help/en/embed-generator.html",
+        "automation/release/help/help.js",
         "automation/test_embed_adapters.sh",
         "packages/festapp_contracts/**",
         "assets/translations/**",

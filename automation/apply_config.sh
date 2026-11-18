@@ -1039,7 +1039,8 @@ for file, declaration in [('web_client/src/app_config.js', 'static organizerLand
     write_text(p, text.replace(marker, marker + '\n  ' + declaration + enabled + ';', 1))
 LANDING_CONFIG
 
-python3 - "$PROJECT_ROOT/lib/app_config.dart" "$WEB_SUPPORTED_LANGUAGES" <<'FLUTTER_LANGUAGES'
+organizer_help_language="$(node "$PROJECT_ROOT/automation/release/render_help_pages.mjs" --config "$CONFIG_FILE" --published-language)"
+python3 - "$PROJECT_ROOT/lib/app_config.dart" "$WEB_SUPPORTED_LANGUAGES" "$WEB_ORGANIZER_LANDING_ENABLED" "$organizer_help_language" <<'FLUTTER_LANGUAGES'
 from write_if_changed import write_text
 from pathlib import Path
 import re,sys
@@ -1050,5 +1051,10 @@ if not languages or any(code not in names for code in languages): raise SystemEx
 entries='\n'.join('        LanguageModel(const Locale("'+code+'"), "'+names[code]+'"),' for code in languages)
 source,count=re.subn(r'static List<LanguageModel> availableLanguages\(\) => \[[\s\S]*?\];', 'static List<LanguageModel> availableLanguages() => [\n'+entries+'\n      ];',p.read_text())
 if count != 1: raise SystemExit('Missing Flutter language adapter')
+help_language = sys.argv[4]
+source = re.sub(r'^  static const String\?? organizerHelpLanguage = .*;\n', '', source, flags=re.M)
+literal = f'"{help_language}"'
+marker = '  static const bool organizerLandingEnabled = ' + sys.argv[3] + ';'
+source = source.replace(marker, marker + f'\n  static const String organizerHelpLanguage = {literal};', 1)
 write_text(p, source)
 FLUTTER_LANGUAGES

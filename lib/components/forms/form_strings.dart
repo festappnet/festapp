@@ -4,6 +4,116 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class FormStrings {
+  static String get measurementFirstApprovalHelp =>
+      'FeatureFormSettings.measurementFirstApprovalHelp'.tr();
+  static String get measurementRuntimePending =>
+      'FeatureFormSettings.measurementRuntimePending'.tr();
+  static String get measurementPlatformPending =>
+      'FeatureFormSettings.measurementPlatformPending'.tr();
+  static String get measurementPlatformUnknown =>
+      'FeatureFormSettings.measurementPlatformUnknown'.tr();
+  static String get cmsPolicyChangedHelp =>
+      'FeatureFormSettings.cmsPolicyChangedHelp'.tr();
+  static String measurementHelpFor(String topic) =>
+      'FeatureFormSettings.measurementHelp'.tr(namedArgs: {'topic': topic});
+  static String get cmsStepSave => 'FeatureFormSettings.cmsStepSave'.tr();
+  static String get cmsWixLocation => 'FeatureFormSettings.cmsWixLocation'.tr();
+  static String get cmsWixStepSave => 'FeatureFormSettings.cmsWixStepSave'.tr();
+  static String get cmsReloadHelp => 'FeatureFormSettings.cmsReloadHelp'.tr();
+  static String get cmsDisableHelp => 'FeatureFormSettings.cmsDisableHelp'.tr();
+  static String get cmsPolicyMeaning =>
+      'FeatureFormSettings.cmsPolicyMeaning'.tr();
+  static String get measurementUnsavedHelp =>
+      'FeatureFormSettings.measurementUnsavedHelp'.tr();
+  static String get cmsReadyHelp => 'FeatureFormSettings.cmsReadyHelp'.tr();
+  static String get cmsDraftHelp => 'FeatureFormSettings.cmsDraftHelp'.tr();
+  static String get cmsDisabledHelp =>
+      'FeatureFormSettings.cmsDisabledHelp'.tr();
+  static String get cmsUnavailableHelp =>
+      'FeatureFormSettings.cmsUnavailableHelp'.tr();
+  static String cmsCopyFor(String platform) =>
+      'FeatureFormSettings.cmsCopyFor'.tr(namedArgs: {'platform': platform});
+  static String cmsInstallHint(String field) =>
+      'FeatureFormSettings.cmsInstallHint'.tr(namedArgs: {'field': field});
+  static String cmsHtmlInstallHint(String field) =>
+      'FeatureFormSettings.cmsHtmlInstallHint'.tr(
+        namedArgs: {
+          'field': field,
+          'generator': embedAction,
+          'enable': cmsEnableImport,
+        },
+      );
+
+  static String cmsStateHelp(String state) => switch (state) {
+    'ready' => cmsReadyHelp,
+    'draft' => cmsDraftHelp,
+    'disabled' => cmsDisabledHelp,
+    'confirmation_required' => cmsPolicyChangedHelp,
+    _ => cmsUnavailableHelp,
+  };
+  static String cmsInstallField(String platform) => switch (platform) {
+    'html' => cmsImportLabel,
+    'wix' => 'FeatureFormSettings.cmsWixImportLabel'.tr(),
+    _ => 'FeatureFormSettings.cmsPluginImportLabel'.tr(),
+  };
+
+  static List<String> cmsInstallSteps(String platform) {
+    final field = cmsInstallField(platform);
+    String text(String key, [Map<String, String>? args]) =>
+        'FeatureFormSettings.$key'.tr(namedArgs: args);
+    if (platform == 'html') {
+      return [
+        text('cmsHtmlStepOpen', {'generator': embedAction}),
+        text('cmsHtmlStepPaste', {'field': field, 'enable': cmsEnableImport}),
+        text('cmsHtmlStepSave'),
+      ];
+    }
+    final location = switch (platform) {
+      'joomla' => text('cmsJoomlaLocation'),
+      'wix' => cmsWixLocation,
+      _ => text('cmsWordPressLocation'),
+    };
+    final enable = text(
+      platform == 'wix' ? 'cmsWixEnableImport' : 'cmsPluginEnableImport',
+    );
+    return [
+      text('cmsStepOpen', {'location': location}),
+      text('cmsStepPaste', {'field': field, 'enable': enable}),
+      platform == 'wix' ? cmsWixStepSave : cmsStepSave,
+    ];
+  }
+
+  static String get measurementPolicySummary =>
+      'FeatureFormSettings.measurementPolicySummary'.tr();
+  static String get measurementBannerFallback =>
+      'FeatureFormSettings.measurementBannerFallback'.tr();
+
+  static String get measurementBasics =>
+      'FeatureFormSettings.measurementBasics'.tr();
+  static String get measurementOn => 'FeatureFormSettings.measurementOn'.tr();
+  static String get measurementOff => 'FeatureFormSettings.measurementOff'.tr();
+  static String get measurementAddWebsite =>
+      'FeatureFormSettings.measurementAddWebsite'.tr();
+  static String measurementRemoveWebsite(String website) =>
+      'FeatureFormSettings.measurementRemoveWebsite'.tr(
+        namedArgs: {'website': website},
+      );
+  static String get measurementFinishAddingWebsite =>
+      'FeatureFormSettings.measurementFinishAddingWebsite'.tr();
+  static String get measurementBridgeHelp =>
+      'FeatureFormSettings.measurementBridgeHelp'.tr();
+  static String get measurementTermsAccepted =>
+      'FeatureFormSettings.measurementTermsAccepted'.tr();
+  static String get measurementShowTerms =>
+      'FeatureFormSettings.measurementShowTerms'.tr();
+  static String get measurementOwnBanner =>
+      'FeatureFormSettings.measurementOwnBanner'.tr();
+  static String get measurementHowItWorks =>
+      'FeatureFormSettings.measurementHowItWorks'.tr();
+  static String get cmsPolicyFromWebsite =>
+      'FeatureFormSettings.cmsPolicyFromWebsite'.tr();
+  static String cmsPolicyNumber(String id) =>
+      'FeatureFormSettings.cmsPolicyNumber'.tr(namedArgs: {'id': id});
   static String get cmsEnableImport =>
       'FeatureFormSettings.cmsEnableImport'.tr();
   static String get cmsImportLabel => 'FeatureFormSettings.cmsImportLabel'.tr();
@@ -12,17 +122,12 @@ class FormStrings {
   static String get cmsHtmlImportHelp =>
       'FeatureFormSettings.cmsHtmlImportHelp'.tr();
   static String get cmsHtml => 'FeatureFormSettings.cmsHtml'.tr();
-  static String get cmsTransfer => 'FeatureFormSettings.cmsTransfer'.tr();
-  static String get cmsTransferHelp =>
-      'FeatureFormSettings.cmsTransferHelp'.tr();
   static String get cmsPlatform => 'FeatureFormSettings.cmsPlatform'.tr();
   static String get cmsFreshChoiceHelp =>
       'FeatureFormSettings.cmsFreshChoiceHelp'.tr();
   static String get cmsPolicySaved => 'FeatureFormSettings.cmsPolicySaved'.tr();
   static String get cmsPolicyChanged =>
       'FeatureFormSettings.cmsPolicyChanged'.tr();
-  static String get cmsPolicyDetected =>
-      'FeatureFormSettings.cmsPolicyDetected'.tr();
   static String get cmsPolicyDetectionFailed =>
       'FeatureFormSettings.cmsPolicyDetectionFailed'.tr();
   static String get cmsPolicyManual =>
@@ -52,10 +157,7 @@ class FormStrings {
       'FeatureFormSettings.cmsShowConfiguration'.tr();
   static String get cmsCoverage => 'FeatureFormSettings.cmsCoverage'.tr();
   static String get cmsConfirm => 'FeatureFormSettings.cmsConfirm'.tr();
-  static String get cmsExport => 'FeatureFormSettings.cmsExport'.tr();
   static String get cmsDisable => 'FeatureFormSettings.cmsDisable'.tr();
-  static String get cmsCopy => 'FeatureFormSettings.cmsCopy'.tr();
-  static String get cmsExportHelp => 'FeatureFormSettings.cmsExportHelp'.tr();
   static String get cmsUnavailable => 'FeatureFormSettings.cmsUnavailable'.tr();
   static String cmsState(String state) =>
       'FeatureFormSettings.cmsState_$state'.tr();
@@ -99,8 +201,6 @@ class FormStrings {
       'FeatureFormSettings.measurementWebsitesHelp'.tr();
   static String get measurementWebsitesInvalid =>
       'FeatureFormSettings.measurementWebsitesInvalid'.tr();
-  static String get measurementWebsiteSaved =>
-      'FeatureFormSettings.measurementWebsiteSaved'.tr();
   static String get measurementWebsiteDraft =>
       'FeatureFormSettings.measurementWebsiteDraft'.tr();
   static String get measurementWebsitesSaveFirst =>

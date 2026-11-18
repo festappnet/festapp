@@ -191,6 +191,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
   }
 
+  List<String> get _savedMeasurementWebsites =>
+      List<String>.from(_unit.data?['measurement_websites'] ?? const []);
+
   bool get _measurementSaved {
     final d = _unit.data ?? <String, dynamic>{};
     return !_isSaving &&
@@ -209,7 +212,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
           UnitMeasurementSettings.parseWebsites(
             _measurementWebsitesController.text,
           ),
-          List<String>.from(d['measurement_websites'] ?? const []),
+          _savedMeasurementWebsites,
         );
   }
 
@@ -803,13 +806,6 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                               bottom: 16,
                             ),
                             title: Text(FormStrings.measurementTitle),
-                            subtitle: Text(
-                              _measurementEnabled
-                                  ? UnitSettingsStrings
-                                        .measurementSummaryEnabled
-                                  : UnitSettingsStrings
-                                        .measurementSummaryDisabled,
-                            ),
                             children: [
                               UnitMeasurementSettings(
                                 websiteConsentBuilder:
@@ -819,11 +815,14 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                                           'website-consent-${_unit.id}',
                                         ),
                                         unitId: _unit.id!,
-                                        websites:
-                                            UnitMeasurementSettings.parseWebsites(
-                                              _measurementWebsitesController
-                                                  .text,
-                                            ),
+                                        websites: _savedMeasurementWebsites
+                                            .where(
+                                              UnitMeasurementSettings.parseWebsites(
+                                                _measurementWebsitesController
+                                                    .text,
+                                              ).contains,
+                                            )
+                                            .toList(),
                                         saved: _measurementSaved,
                                       )
                                     : null,
@@ -833,10 +832,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                                 ),
                                 websitesController:
                                     _measurementWebsitesController,
-                                savedWebsites: List<String>.from(
-                                  _unit.data?['measurement_websites'] ??
-                                      const [],
-                                ),
+                                savedWebsites: _savedMeasurementWebsites,
                                 approval: _measurementApproval,
                                 loadingApproval: _isLoadingMeasurementApproval,
                                 approvalLoadFailed:

@@ -582,6 +582,23 @@ NODE
     fi
 done
 
+# Use the same config and inherited environment for the full configuration and
+# the renderer. This tenant has no organizer publishing flags in its file.
+(
+    export WEB_ORGANIZER_LANDING_ENABLED=true
+    export WEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs
+    config="$SCRIPT_DIR/fixtures/tenants/farnostopava.conf"
+    bash automation/apply_config.sh "$config" > apply-inherited-help.log 2>&1 || {
+        cat apply-inherited-help.log; exit 1;
+    }
+    grep -Fq 'static const String organizerHelpLanguage = "";' lib/app_config.dart
+    node automation/release/render_help_pages.mjs --config "$config" \
+        --output-root "$TMP_ROOT/inherited-help" > render-inherited-help.log 2>&1
+    grep -Fq 'Public help disabled for this tenant.' render-inherited-help.log
+    test ! -d "$TMP_ROOT/inherited-help/napoveda"
+    test ! -d "$TMP_ROOT/inherited-help/help"
+)
+
 # 4. Verify the seed Color() change happens in upper-case as the script writes
 #    it. We assert lowercase is NOT present because BSD sed and GNU sed differ
 #    in how they handle replacement strings on rare flags.
