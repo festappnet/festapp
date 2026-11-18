@@ -28,17 +28,14 @@ class CanonicalTranslationOwnershipTest(unittest.TestCase):
 
 class CmsDependencyOwnershipTest(unittest.TestCase):
     def test_mcp_source_does_not_invalidate_independent_sql_executors(self):
-        independent={'occasion-lifecycle','seat-authorization','seat-google-auth',
-                     'seat-payments','seat-orders','seat-delivery','seat-notifications','seat-browser'}
-        for path in ['tools/festapp/src/remote/views.mjs',
-                     'tools/festapp/src/operations/orders.mjs']:
-            units=selection.unit_owners(path,'seat-checkout',CONTRACT)
-            self.assertTrue(independent.isdisjoint(units),path)
-            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'}.issubset(units),path)
-        for path in ['database/functions/eshop/finalize_ticket_order.sql',
-                     'database/tests/helpers/reset_owned_sequences.sql']:
+        independent={'seat-authorization','seat-payments','seat-orders','seat-delivery','seat-browser'}
+        for path in ['tools/festapp/src/remote/views.mjs', 'tools/festapp/src/operations/orders.mjs']:
+            self.assertTrue(independent.isdisjoint(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
+            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'}
+                            .issubset(selection.unit_owners(path,'mcp-database-contracts',CONTRACT)),path)
+        for path in ['database/functions/eshop/finalize_ticket_order.sql','database/tests/helpers/reset_owned_sequences.sql']:
             self.assertTrue(independent.issubset(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
-        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','seat-checkout',CONTRACT))
+        self.assertIn('seat-services',selection.unit_owners('tools/festapp/test/postgres.mjs','mcp-database-contracts',CONTRACT))
 
     def test_ticket_core_and_edge_have_only_their_actual_platform_inputs(self):
         lane='ticket-preview-and-delivery'
@@ -90,12 +87,14 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
     def test_checkout_ui_does_not_reexecute_unrelated_backend_contracts(self):
         units=selection.unit_owners('web_client/src/components/forms/order_result.js','seat-checkout',CONTRACT)
         self.assertIn('seat-browser',units)
-        for backend in ['seat-authorization','seat-google-auth','seat-notifications','occasion-lifecycle']:
-            self.assertNotIn(backend,units)
-            self.assertIn(backend,selection.unit_owners('database/functions/eshop/finalize_ticket_order.sql','seat-checkout',CONTRACT))
+        self.assertNotIn('seat-authorization', units)
+        sql = 'database/functions/eshop/finalize_ticket_order.sql'
+        self.assertIn('seat-authorization', selection.unit_owners(sql,'seat-checkout',CONTRACT))
+        for backend in ['seat-google-auth','seat-notifications','occasion-lifecycle']:
+            self.assertIn(backend, selection.unit_owners(sql,'database-regressions',CONTRACT))
 
     def test_mcp_database_groups_follow_backend_inputs_without_checkout_ui(self):
-        lane='seat-checkout'
+        lane='mcp-database-contracts'
         groups={'seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'}
         self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
         for path in ['database/functions/eshop/finalize_ticket_order.sql',
@@ -121,9 +120,9 @@ class VersionProjectionTest(unittest.TestCase):
                 git('add','.');git('commit','-qm',version);return git('rev-parse','HEAD')
             before=commit('0.20.625');after=commit('0.20.626')
             with patch.object(selection,'ROOT',root),selection.lookup():
-                for lane,unit in [('wix-checkout-compatibility','wix-cms'),('seat-checkout','seat-mcp-prepare'),
-                                  ('seat-checkout','seat-mcp-authorization'),('seat-checkout','seat-mcp-contracts-1'),
-                                  ('seat-checkout','seat-mcp-contracts-2')]:
+                for lane,unit in [('wix-checkout-compatibility','wix-cms'),('mcp-database-contracts','seat-mcp-prepare'),
+                                  ('mcp-database-contracts','seat-mcp-authorization'),('mcp-database-contracts','seat-mcp-contracts-1'),
+                                  ('mcp-database-contracts','seat-mcp-contracts-2')]:
                     self.assertEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)
                 for lane,unit in [('web-startup','web-startup'),('seat-checkout','seat-browser')]:
                     self.assertNotEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)

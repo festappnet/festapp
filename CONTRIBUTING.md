@@ -25,7 +25,7 @@ workspace. It never guesses an existing localhost database.
 The GitHub web regression jobs have a native local mirror:
 
 ```bash
-./automation/test_ci.sh                    # All eight GitHub regression jobs
+./automation/test_ci.sh                    # All GitHub regression jobs
 ./automation/test_ci.sh seat-checkout      # Partial: SQL + real checkout browser
 python3 automation/ci/run.py list          # Available job names
 ```
@@ -34,7 +34,7 @@ GitHub and the mirror consume the same unit DAG from
 `automation/ci/checks.json`. Units declare dependencies, source inputs, test
 groups and resource claims. The local scheduler bounds RAM, browser work,
 cluster mutation and the single workstation Flutter slot. Required units with a
-failed dependency are `INCOMPLETE`, never successful skips. All eight public job
+failed dependency are `INCOMPLETE`, never successful skips. All canonical job
 names and exact-SHA release gates remain mandatory.
 
 Install pnpm 11.24.0, FVM/project SDK, Deno 2.9.0, Supabase CLI 2.111.0, Docker,
@@ -95,7 +95,7 @@ Before publishing shared changes, run targeted local tests of the affected
 behavior. GitHub performs authoritative complete lane verification; a duplicate
 full local mirror is not required. `automation/test_ci.sh` remains an explicit
 full mirror for diagnosis, offline work and requested full verification. Before a
-web release, all eight jobs in `automation/ci/checks.json` must finish successfully
+web release, all jobs in `automation/ci/checks.json` must finish successfully
 in GitHub on the exact canonical `baseMainSha`. Each job covers every declared unit by execution or identical-input direct evidence from successful main or internal-PR artifacts no older than seven days. Mixed coverage is recorded explicitly in schema-2 receipts. Reused
 evidence is recorded in the job summary;
 it cannot refresh its own age. Missing evidence or an uncertain impact runs tests.
@@ -146,7 +146,7 @@ Main startup, unbranded form routing, catalogue login/Google handoff and editor/
 for open and closed forms. Backend transport and the final provider/admin
 handoffs are simulated; element visibility is checked in the browser.
 
-The Google broker also runs against actual SQL in the seat-checkout CI job.
+The Google broker also runs against actual SQL in the database-regressions CI job.
 To reproduce it against a bootstrapped disposable local database, run:
 
 ```bash
@@ -594,7 +594,7 @@ registrations remain authoritative for their existing roots.
 
 The existing `automation/client_test_inventory.json` records original semantic
 cases and skip states for ticket, navigation and Flutter browser units. Both
-local mirrors and hosted lanes enforce those inventories. Keep the eight public
+local mirrors and hosted lanes enforce those inventories. Keep the canonical public
 release jobs; moving a case between owners must move its workflow source filters
 and inventory coverage too. Use `FESTAPP_FIXTURE_ORDER=reverse` to verify the
 scoped navigation registrations in reverse order.

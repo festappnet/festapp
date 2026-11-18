@@ -80,11 +80,12 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
-        self.assertEqual(len(contract['jobs']),8)
+        self.assertTrue({'seat-checkout','database-regressions','mcp-database-contracts','client-browser-contract'}
+                        .issubset(contract['jobs']))
         for name,lane in contract['jobs'].items():
             workflow=yaml.safe_load((ROOT/'.github/workflows'/lane['workflow']).read_text())
             steps=workflow['jobs'][name]['steps']
-            commands=[step['run'].strip() for step in steps if 'run' in step]
+            commands=[step['run'].strip().replace('${{ github.job }}', name) for step in steps if 'run' in step]
             self.assertIn('python3 automation/ci/run.py lane '+name,commands)
             for command in commands:
                 self.assertTrue(command=='python3 automation/ci/run.py lane '+name or
@@ -111,8 +112,14 @@ class MirrorContractTest(unittest.TestCase):
             for unit in lane['steps']:
                 # Serialize shared installs/API generation in the local mirror.
                 # Hosted jobs filter dependencies to their isolated worktree.
-                if unit not in ('wix-install','seat-mcp-prepare'):
-                    self.assertTrue(set(runner.CONTRACT['steps'][unit]['after']) <= set(lane['steps']))
+                if unit == 'wix-install':
+                    continue
+                cross_lane = set(runner.CONTRACT['steps'][unit]['after']) - set(lane['steps'])
+                allowed = {
+                    'seat-mcp-prepare': {'mcp-auth-contract'},
+                    'seat-database': {'seat-runtime-contract'},
+                }.get(unit, {'seat-database'} if name == 'mcp-database-contracts' else set())
+                self.assertLessEqual(cross_lane, allowed, unit)
         self.assertIn('mcp-auth-contract',runner.CONTRACT['steps']['seat-mcp-prepare']['after'])
         for unit in ('seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'):
             self.assertIn(unit,runner.CONTRACT['steps']['wix-install']['after'])
@@ -140,23 +147,11 @@ class MirrorContractTest(unittest.TestCase):
             self.assertEqual(contract['steps'][name]['resources']['dbCluster'],
                              contract['resources']['dbCluster'],name)
 
-    def test_hosted_checkout_adds_a_lease_without_relaxing_cluster_exclusivity(self):
-        local = runner.selected_units(['seat-checkout'])
-        hosted, capacities = runner.hosted_admission('seat-checkout', local)
-        self.assertEqual(capacities['dbCluster'], 3)
-        self.assertEqual(runner.CONTRACT['resources']['dbCluster'], 2)
-        for name in ('seat-upgrade', 'seat-runtime-contract', 'seat-database'):
-            self.assertEqual(local[name]['resources']['dbCluster'], 2)
-            self.assertEqual(hosted[name]['resources']['dbCluster'], 3)
-        for name in ('seat-mcp-authorization', 'seat-mcp-contracts-1', 'seat-mcp-contracts-2', 'seat-payments'):
-            self.assertEqual(hosted[name]['resources']['dbCluster'], 1)
-
     def test_hosted_wix_has_capacity_to_overlap_cms_and_quick_checks(self):
         units = runner.selected_units(['wix-checkout-compatibility'])
-        hosted, capacities = runner.hosted_admission('wix-checkout-compatibility', units)
+        limits = runner.CONTRACT['jobs']['wix-checkout-compatibility']['hostedResources']
         concurrent = ('wix-quick', 'wix-adapters', 'wix-cms')
-        self.assertLessEqual(sum(hosted[name]['resources']['ramMiB'] for name in concurrent),
-                             capacities['ramMiB'])
+        self.assertLessEqual(sum(units[name]['resources']['ramMiB'] for name in concurrent), limits['ramMiB'])
 
     def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
         steps=runner.CONTRACT['steps']
@@ -165,8 +160,8 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual(steps['ticket-core']['requires'],[])
         self.assertEqual(steps['seat-browser']['requires'],['seat-install'])
         for index in (1, 2):
-            self.assertEqual(steps[f'seat-mcp-contracts-{index}']['requires'], ['seat-install','seat-mcp-prepare'])
-        self.assertEqual(steps['seat-mcp-prepare']['requires'],['seat-install'])
+            self.assertEqual(steps[f'seat-mcp-contracts-{index}']['requires'], ['mcp-database-install','seat-mcp-prepare'])
+        self.assertEqual(steps['seat-mcp-prepare']['requires'],['mcp-database-install'])
         # Full runs retain the canonical order and its independent proofs.
         self.assertIn('seat-database',steps['seat-browser']['after'])
         self.assertIn('seat-runtime-contract',steps['seat-database']['after'])
@@ -306,7 +301,7 @@ class MirrorContractTest(unittest.TestCase):
 
     def test_actual_upgrade_and_email_recovery_are_required(self):
         contract=runner.CONTRACT
-        self.assertIn('seat-upgrade',contract['jobs']['seat-checkout']['steps'])
+        self.assertIn('seat-upgrade',contract['jobs']['database-regressions']['steps'])
         self.assertIn('runtime.py upgrade',contract['steps']['seat-upgrade']['script'])
         filters=[filter for value in contract['sqlGroups'].values() for filter in value['filters']]
         self.assertIn('database/tests/emails/delivered_tickets_resolve_confirmation_test.sql',filters)
@@ -346,7 +341,8 @@ class UnitSplitContractTest(unittest.TestCase):
                      'automation/lib/historical_sql.mjs',
                      'test/fixtures/order_item_terminology.json']:
             for unit in ['seat-payments','seat-orders','seat-delivery','seat-services']:
-                self.assertIn(unit,unit_owners(path,'seat-checkout',runner.CONTRACT),(unit,path))
+                lane = 'mcp-database-contracts' if unit == 'seat-services' else 'seat-checkout'
+                self.assertIn(unit,unit_owners(path,lane,runner.CONTRACT),(unit,path))
         self.assertIn('wix-cms',unit_owners('automation/lib/migration_inputs.py',
                                           'wix-checkout-compatibility',runner.CONTRACT))
 

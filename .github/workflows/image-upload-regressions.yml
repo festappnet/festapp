@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FVM_CACHE_PATH: /tmp/festapp-fvm
-    steps:
+    steps: &flutter-client-steps
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -80,7 +80,7 @@ jobs:
         id: selection
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/selection.py client-contract
+        run: python3 automation/ci/selection.py ${{ github.job }}
       - id: sdk
         if: steps.selection.outputs.run == 'true'
         run: echo "version=$(sed -n 's/^FLUTTER_VERSION=//p' automation/project.conf)" >> "$GITHUB_OUTPUT"
@@ -107,7 +107,7 @@ jobs:
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/run.py lane client-contract
+        run: python3 automation/ci/run.py lane ${{ github.job }}
       - name: All lane tests executed
         if: steps.selection.outputs.full == 'true'
         run: echo 'All lane tests executed'
@@ -124,3 +124,10 @@ jobs:
           path: ~/.cache/festapp-ci/runs
           retention-days: 7
           if-no-files-found: ignore
+
+  client-browser-contract:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    env:
+      FVM_CACHE_PATH: /tmp/festapp-fvm
+    steps: *flutter-client-steps

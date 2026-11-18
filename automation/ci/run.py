@@ -83,21 +83,6 @@ def selected_units(names):
             for name,definition in CONTRACT['steps'].items() if name in selected}
 
 
-def hosted_admission(lane, units):
-    local = CONTRACT['resources']
-    overrides = CONTRACT['jobs'][lane].get('hostedResources', {})
-    capacities = {**local, **overrides}
-    if 'dbCluster' not in overrides:
-        return units, capacities
-    # A claim for the full local cluster remains exclusive on larger runners.
-    units = {
-        name: {**unit, 'resources': {**unit['resources'], 'dbCluster': capacities['dbCluster']}}
-        if unit.get('resources', {}).get('dbCluster') == local['dbCluster'] else unit
-        for name, unit in units.items()
-    }
-    return units, capacities
-
-
 def inventory():
     actual={str(path.relative_to(ROOT)) for path in (ROOT/'database/tests').rglob('*_test.sql')}
     expected=set(CONTRACT['sqlInventory']['knownTests'])
@@ -162,7 +147,7 @@ def _execute(names, *, pinned=False, command_started=None):
         units={unit:{**row,'after':[dep for dep in row['after'] if dep in plan['execute']]} for unit,row in units.items() if unit in plan['execute']}
     capacities = CONTRACT['resources']
     if len(names) == 1 and not pinned and os.environ.get('GITHUB_ACTIONS') == 'true':
-        units, capacities = hosted_admission(names[0], units)
+        capacities = {**capacities, **CONTRACT['jobs'][names[0]].get('hostedResources', {})}
     receipt['resourceCapacities'] = capacities
     execution_started=time.monotonic()
     receipt['preparationSeconds']=execution_started-started
@@ -248,8 +233,8 @@ def local(names):
             try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
             except BlockingIOError:raise RuntimeError('Another local CI mirror is running; wait for it to finish.')
             require_version(['pnpm','--version'],'11.24.0')
-            if any(name in names for name in ('seat-checkout','ticket-preview-and-delivery','server-policy')):require_version(['deno','--version'],'2.9.0')
-            if {'seat-checkout','web-startup','client-contract'}.intersection(names):
+            if any(name in names for name in ('seat-checkout','database-regressions','ticket-preview-and-delivery','server-policy')):require_version(['deno','--version'],'2.9.0')
+            if {'seat-checkout','web-startup','client-contract','client-browser-contract'}.intersection(names):
                 browser=(os.environ.get('CHROME_EXECUTABLE') or shutil.which('google-chrome') or shutil.which('chromium'))
                 if not browser and sys.platform=='darwin':browser='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
                 if not browser or not Path(browser).is_file():raise RuntimeError('Install Chrome/Chromium before browser lanes')
@@ -259,7 +244,7 @@ def local(names):
                 call([sys.executable,'-m','venv',str(venv)])
                 call([str(venv/'bin/pip'),'--quiet','install','PyYAML==6.0.3'])
                 os.environ['PATH']=str(venv/'bin')+os.pathsep+os.environ['PATH']
-            if 'seat-checkout' in names:
+            if {'seat-checkout','database-regressions','mcp-database-contracts'}.intersection(names):
                 require_version(['supabase','--version'],'2.111.0')
             return _execute(names,pinned=True,command_started=command_started)
     finally:os.environ.clear();os.environ.update(previous)

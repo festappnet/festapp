@@ -1,6 +1,6 @@
 # CI input reuse
 
-All eight canonical check names remain required on the exact release main SHA.
+Every job in the canonical CI registry is required on the exact release main SHA.
 A green job means complete coverage of its current unit inventory. Each unit executed or has independently verified direct execution evidence with identical inputs. Targeted local tests precede
 publication. GitHub owns complete authoritative verification. The full local
 mirror remains available explicitly for diagnosis and offline work.
@@ -38,6 +38,13 @@ artifact instead of repeating that source suite.
 
 ## Direct execution evidence
 
+Hosted checkout, database regression and MCP database checks run on independent
+runners. Each builds its own disposable database when needed. Cold history and
+runtime lifecycle proofs run in the database regression job. The local mirror
+shares one owned database runtime and orders the cluster-wide operations before
+other SQL units. The Flutter native and browser client checks have independent
+hosted runners and retain the single Flutter slot in the local mirror.
+
 MCP PostgreSQL tests use three independent leased databases: the canonical
 authorization matrix and two partitions of the remaining contracts. Files
 within each group stay serial because fixtures may commit, analyze tables or
@@ -46,8 +53,7 @@ replace functions.
 and verifies the dynamic partition covers every `*-postgres.test.mjs` file.
 The ordinary `test:postgres` command still runs the complete suite. All CI
 groups retain the marked-database and paused-delivery guard. Each group claims one
-of three database slots on GitHub-hosted seat checkout. The local mirror uses
-two slots. Whole-cluster units reserve the entire capacity in either environment.
+of two database slots. Whole-cluster units reserve both slots.
 Payment checks use one slot. Upgrade and Stripe concurrency fixtures acquire
 their own marked clones, and the remaining payment checks use the unit's lease.
 API generation finishes before all MCP groups. The local mirror also waits for

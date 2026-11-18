@@ -153,8 +153,7 @@
       "steps": [
         "image-client-install",
         "image-client-adapter",
-        "image-client-widgets",
-        "image-client-browser"
+        "image-client-widgets"
       ],
       "inputs": [
         "lib/**",
@@ -192,22 +191,11 @@
       "node": "22.23.4",
       "steps": [
         "seat-install",
-        "seat-mcp-prepare",
-        "seat-upgrade",
-        "seat-runtime-contract",
         "seat-database",
-        "seat-mcp-authorization",
-        "seat-mcp-contracts-1",
-        "seat-mcp-contracts-2",
-        "occasion-lifecycle",
         "seat-authorization",
-        "seat-google-auth",
-        "seat-measurement",
         "seat-payments",
         "seat-orders",
         "seat-delivery",
-        "seat-services",
-        "seat-notifications",
         "seat-browser"
       ],
       "inputs": [
@@ -222,7 +210,6 @@
         "automation/tests/authorization_read_phase.test.mjs",
         "automation/payments/**",
         "web_client/**",
-        "tools/festapp/**",
         "workers/image-worker/**",
         "packages/festapp_contracts/**",
         "integrations/make/**",
@@ -230,11 +217,7 @@
         "assets/translations/**",
         "automation/lib/**",
         "test/fixtures/**"
-      ],
-      "hostedResources": {
-        "dbCluster": 3,
-        "ramMiB": 5000
-      }
+      ]
     },
     "ticket-preview-and-delivery": {
       "workflow": "seat-checkout-regressions.yml",
@@ -277,6 +260,126 @@
         "automation/testing/ticket_default_ci.dart",
         "database/fixtures/**",
         "automation/lib/**"
+      ]
+    },
+    "database-regressions": {
+      "workflow": "seat-checkout-regressions.yml",
+      "node": "22.23.4",
+      "steps": [
+        "database-regressions-install",
+        "seat-upgrade",
+        "seat-runtime-contract",
+        "occasion-lifecycle",
+        "seat-google-auth",
+        "seat-measurement",
+        "seat-notifications"
+      ],
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/historical-sql-manifest.json",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "automation/email-delivery/**",
+        "automation/tests/authorization_read_phase.test.mjs",
+        "automation/payments/**",
+        "web_client/**",
+        "tools/festapp/**",
+        "workers/image-worker/**",
+        "packages/festapp_contracts/**",
+        "integrations/make/**",
+        "automation/hetzner-supabase/runtime/Caddyfile.integrations",
+        "assets/translations/**",
+        "automation/lib/**",
+        "test/fixtures/**"
+      ]
+    },
+    "mcp-database-contracts": {
+      "workflow": "seat-checkout-regressions.yml",
+      "node": "22.23.4",
+      "steps": [
+        "mcp-database-install",
+        "seat-mcp-prepare",
+        "seat-mcp-authorization",
+        "seat-mcp-contracts-1",
+        "seat-mcp-contracts-2",
+        "seat-services"
+      ],
+      "inputs": [
+        "database/**",
+        "supabase/**",
+        "automation/local_db/**",
+        "automation/baseline.py",
+        "automation/historical-sql-manifest.json",
+        "automation/*manifest*",
+        "automation/assemble-*.py",
+        "automation/email-delivery/**",
+        "automation/tests/authorization_read_phase.test.mjs",
+        "automation/payments/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/.npmrc",
+        "web_client/tests/database/**",
+        "web_client/src/components/users/connection_page_styles.js",
+        "web_client/src/theme_config.css",
+        "web_client/src/**",
+        "web_client/scripts/**",
+        "web_client/tests/database/retired_waitlist_registry.test.js",
+        "web_client/tests/database/sql_runner.test.js",
+        "web_client/tests/database/customer_order_changes_concurrency.test.js",
+        "web_client/tests/forms/customer_order_changes.test.js",
+        "web_client/tests/fixtures/**",
+        "web_client/tests/database/disposable_database.js",
+        "web_client/tests/database/runtime_workspace.js",
+        "web_client/tests/database/*_fixture.js",
+        "tools/festapp/**",
+        "workers/image-worker/**",
+        "packages/festapp_contracts/**",
+        "integrations/make/**",
+        "automation/hetzner-supabase/runtime/Caddyfile.integrations",
+        "assets/translations/**",
+        "automation/lib/**",
+        "test/fixtures/**"
+      ]
+    },
+    "client-browser-contract": {
+      "workflow": "image-upload-regressions.yml",
+      "node": "22.23.4",
+      "steps": [
+        "image-browser-install",
+        "image-client-browser"
+      ],
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "test_dart/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf",
+        "automation/testing/**",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_contracts/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "supabase/functions/**"
       ]
     }
   },
@@ -391,7 +494,10 @@
         "seat-mcp-prepare",
         "seat-mcp-authorization",
         "seat-mcp-contracts-1",
-        "seat-mcp-contracts-2"
+        "seat-mcp-contracts-2",
+        "database-regressions-install",
+        "mcp-database-install",
+        "image-browser-install"
       ],
       "resources": {
         "ramMiB": 256
@@ -475,6 +581,15 @@
         "sourceGeneration": 1
       }
     },
+    "image-browser-install": {
+      "script": "node automation/configure_fonts.js . --assets-only\nfvm flutter pub get\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 2600,
+        "flutter": 1,
+        "sourceGeneration": 1
+      }
+    },
     "image-client-adapter": {
       "script": "fvm dart test test_dart/adapters/image_control_client_test.dart\n",
       "after": [
@@ -500,7 +615,7 @@
     "image-client-browser": {
       "script": "fvm flutter test --no-pub --concurrency=1 --platform chrome test/components/navigation/platform_route_parser_cases.dart test/browser/browser_preference_store_test.dart test/components/html/html_image_preview_cases.dart\n",
       "after": [
-        "image-client-widgets"
+        "image-browser-install"
       ],
       "resources": {
         "ramMiB": 2600,
@@ -508,7 +623,7 @@
         "browser": 1
       },
       "requires": [
-        "image-client-install"
+        "image-browser-install"
       ]
     },
     "seat-install": {
@@ -523,14 +638,38 @@
         "web_client/.npmrc"
       ]
     },
+    "mcp-database-install": {
+      "script": "cd web_client\npython3 ../automation/ci/run.py install .\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 256
+      },
+      "inputs": [
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/.npmrc"
+      ]
+    },
+    "database-regressions-install": {
+      "script": "cd web_client\npython3 ../automation/ci/run.py install .\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 256
+      },
+      "inputs": [
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "web_client/.npmrc"
+      ]
+    },
     "seat-mcp-prepare": {
       "script": "python3 automation/ci/run.py install tools/festapp\npnpm --dir tools/festapp run pretest:postgres\npnpm --dir tools/festapp exec node --test test/postgres-selection.test.mjs\n",
       "after": [
-        "seat-install",
+        "mcp-database-install",
         "mcp-auth-contract"
       ],
       "requires": [
-        "seat-install"
+        "mcp-database-install"
       ],
       "resources": {
         "ramMiB": 768,
@@ -589,8 +728,8 @@
     "seat-mcp-authorization": {
       "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs authorization\n",
       "after": [
-        "seat-database",
-        "seat-mcp-prepare"
+        "seat-mcp-prepare",
+        "seat-database"
       ],
       "resources": {
         "ramMiB": 900,
@@ -614,15 +753,15 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install",
+        "mcp-database-install",
         "seat-mcp-prepare"
       ]
     },
     "seat-mcp-contracts-1": {
       "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts-1\n",
       "after": [
-        "seat-database",
-        "seat-mcp-prepare"
+        "seat-mcp-prepare",
+        "seat-database"
       ],
       "resources": {
         "ramMiB": 1024,
@@ -646,15 +785,15 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install",
+        "mcp-database-install",
         "seat-mcp-prepare"
       ]
     },
     "seat-mcp-contracts-2": {
       "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts-2\n",
       "after": [
-        "seat-database",
-        "seat-mcp-prepare"
+        "seat-mcp-prepare",
+        "seat-database"
       ],
       "resources": {
         "ramMiB": 1024,
@@ -678,13 +817,14 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install",
+        "mcp-database-install",
         "seat-mcp-prepare"
       ]
     },
     "seat-services": {
       "script": "node web_client/scripts/run_db_tests.js --group seat-service-setup\npsql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -f database/tests/performance/sale_status_product_scope.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_LOCAL_DB_PORT=\"${FESTAPP_LOCAL_DB_PORT:?owned runtime port required}\" FESTAPP_LOCAL_DB_PROJECT_ID=\"${FESTAPP_LOCAL_DB_PROJECT_ID:?owned runtime project required}\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/postgres-guard.test.mjs\nnode web_client/scripts/run_db_tests.js --group seat-service-contracts\nnode --test web_client/tests/database/retired_waitlist_registry.test.js\nnode --test --test-concurrency=1 web_client/tests/database/sql_runner.test.js\n\n\npython3 automation/assemble-order-bank-setup-migration.py --check\n\n\n\n\n\nnode --test database/tests/eshop_discounts/discount_codes_concurrency.test.mjs\n\npython3 automation/assemble-customer-order-changes-migration.py --check\npnpm --dir web_client exec node --test --test-concurrency=1 tests/database/customer_order_changes_concurrency.test.js\n\npnpm --dir web_client exec node --test tests/forms/customer_order_changes.test.js\n\nnode --test automation/tests/customer_cancellation_cutover.test.mjs\npython3 automation/assemble-customer-cancellation-cutover.py --check\npython3 automation/assemble-customer-cancellation-deadline.py --check\n",
       "after": [
+        "seat-mcp-prepare",
         "seat-database"
       ],
       "resources": {
@@ -736,7 +876,8 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install"
+        "mcp-database-install",
+        "seat-mcp-prepare"
       ]
     },
     "seat-authorization": {
@@ -777,7 +918,7 @@
     "seat-google-auth": {
       "script": "export GOOGLE_AUTH_DATABASE_URL=\"$DATABASE_URL\"\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read --allow-run=psql supabase/functions/_shared/googleAuthFlow_test.ts\n",
       "after": [
-        "seat-database"
+        "seat-runtime-contract"
       ],
       "resources": {
         "ramMiB": 900,
@@ -807,13 +948,13 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install"
+        "database-regressions-install"
       ]
     },
     "seat-notifications": {
       "script": "python3 automation/assemble-admin-notification-delivery-migration.py --check\npython3 automation/assemble-notification-settings-clarity-migration.py --check\npython3 automation/assemble-notification-settings-unit-groups-migration.py --check\nnode --test automation/tests/admin_notification_upgrade.test.mjs automation/tests/notification_feed_migration.test.mjs automation/tests/notification_prepared_protocol.test.mjs automation/tests/server_security_migrations.test.mjs\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net supabase/functions/_shared/notificationDispatcher_test.ts supabase/functions/_shared/adminNotificationEmail_test.ts supabase/functions/_shared/adminNotificationSender_test.ts\nnode web_client/scripts/run_db_tests.js --group seat-notifications-1\nnode --test --test-concurrency=1 database/tests/notification_center/*concurrency.test.mjs\n\npython3 -m unittest discover -s automation/tests -p test_google_wallet_environment.py\n",
       "after": [
-        "seat-database"
+        "seat-runtime-contract"
       ],
       "resources": {
         "ramMiB": 900,
@@ -842,7 +983,7 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install"
+        "database-regressions-install"
       ]
     },
     "seat-browser": {
@@ -977,7 +1118,7 @@
     "occasion-lifecycle": {
       "script": "python3 automation/ci/run.py install workers/image-worker\npnpm --dir workers/image-worker run test:lifecycle\nnode web_client/scripts/run_db_tests.js --group occasion-lifecycle-1\nnode --test --test-concurrency=1 database/tests/scanning/ownership_upgrade.test.mjs\n",
       "after": [
-        "seat-database"
+        "seat-runtime-contract"
       ],
       "resources": {
         "ramMiB": 900,
@@ -1007,13 +1148,13 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install"
+        "database-regressions-install"
       ]
     },
     "seat-measurement": {
       "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-websites-migration.py --check\npython3 automation/assemble-measurement-request-lifecycle-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-consent-scope-migration.py --check\npython3 automation/assemble-website-consent-bindings-migration.py --check\npython3 automation/assemble-self-service-consent-migration.py --check\nnode --test database/tests/eshop_forms/website_consent_concurrency.test.mjs\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
       "after": [
-        "seat-database"
+        "seat-runtime-contract"
       ],
       "resources": {
         "ramMiB": 900,
@@ -1023,7 +1164,7 @@
         "web_client/package.json": "package-version"
       },
       "requires": [
-        "seat-install"
+        "database-regressions-install"
       ]
     },
     "web-measurement": {
@@ -1056,7 +1197,7 @@
     "seat-upgrade": {
       "script": "python3 automation/local_db/runtime.py upgrade\n",
       "after": [
-        "seat-install"
+        "database-regressions-install"
       ],
       "resources": {
         "ramMiB": 1000,
@@ -1079,7 +1220,8 @@
         "automation/tests/migration_compaction.test.mjs",
         "automation/tests/test_baseline_contract.py",
         "automation/tests/test_historical_inputs.py"
-      ]
+      ],
+      "requires": []
     },
     "seat-runtime-contract": {
       "script": "FESTAPP_RUNTIME_INTEGRATION=1 python3 -m unittest discover -s automation/local_db -p test_runtime.py\n\nnode --test automation/tests/migration_compaction.test.mjs\npython3 -m unittest discover -s automation/tests -p test_migration_compaction.py\npython3 -m unittest discover -s automation/tests -p test_baseline_contract.py\npython3 -m unittest discover -s automation/tests -p test_historical_inputs.py\n",
@@ -1110,7 +1252,7 @@
         "automation/tests/test_historical_inputs.py"
       ],
       "requires": [
-        "seat-install"
+        "database-regressions-install"
       ]
     },
     "wix-quick": {
