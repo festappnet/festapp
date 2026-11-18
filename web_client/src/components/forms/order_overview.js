@@ -253,6 +253,7 @@ export function renderOrderOverview(host, data, onContinue, offerInPage = false,
 export function stopOrderOverview(host) {
     host._purchaseSession?.dispose(); host._purchaseRuntime?.destroy();
     delete host._purchaseSession; delete host._purchaseRuntime; delete host._purchaseScope;
+    delete host._purchaseChoice; delete host._purchaseConsentActive; delete host._purchaseRevoke;
     delete host._customerChangeSession;
     delete host._customerChangeScope;
     delete host.dataset.customerEditing;
@@ -294,7 +295,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
         onIdentity(data.organizationIdentity);
-        updateOverviewPurchases(host, data, scope);
+        updateOverviewPurchases(host, data, scope, commands.client);
         const snapshot = JSON.stringify({ ...data, serverTime: null });
         // Keep expanded details and keyboard focus stable when nothing changed.
         // A focused control may be in use: defer replacing it until the next poll.
@@ -344,6 +345,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
         if (host._overviewGeneration !== generation) return;
         host._purchaseSession?.dispose(); host._purchaseRuntime?.destroy();
         delete host._purchaseSession; delete host._purchaseRuntime; delete host._purchaseScope;
+        delete host._purchaseChoice; delete host._purchaseConsentActive; delete host._purchaseRevoke;
         onIdentity(null);
         unavailable = error.message === 'OVERVIEW_UNAVAILABLE';
         host._overviewSnapshot = null;
@@ -364,14 +366,36 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
     }
 }
 
+const adPurposes=['ad_storage','ad_user_data','ad_personalization'];
+
+// A later explicit denial of an advertising purpose in the saved website choice
+// withdraws pending Meta delivery for this order. Unknown, expired or
+// disconnected consent never withdraws, so another device cannot revoke it.
+export function withdrawOverviewPurchaseConsent(host, choice) {
+    if (choice !== undefined) host._purchaseChoice = choice;
+    const snapshot = host._purchaseChoice?.purchaseConsent;
+    const revoke = host._purchaseRevoke;
+    if (!host._purchaseConsentActive || host._purchaseWithdrawing || !revoke || !snapshot || typeof snapshot !== 'object' ||
+        !adPurposes.some(key => snapshot[key] === false)) return;
+    host._purchaseWithdrawing = true;
+    Promise.resolve().then(revoke).then(withdrawn => { if (withdrawn === true) host._purchaseConsentActive = false; })
+        .catch(() => {}).finally(() => { host._purchaseWithdrawing = false; });
+}
+
 // Only successful capability responses reach this adapter. The existing session
 // rechecks current visitor policy and CMP consent; no direct dataLayer writes.
-function updateOverviewPurchases(host, data, scope) {
+function updateOverviewPurchases(host, data, scope, client) {
+    host._purchaseConsentActive = data.metaPurchaseConsent === true;
+    host._purchaseRevoke = client ? async () => {
+        const {data: withdrawn, error} = await client.rpc('revoke_meta_purchase_consent', {p_token: scope.token, p_order_id: scope.orderId});
+        return !error && withdrawn === true;
+    } : null;
     const link=data.measurementFormLink;
     if(typeof link!=='string' || !/^[a-zA-Z0-9_-]+$/.test(link))return;
     const key=JSON.stringify([scope.orderId,scope.token,link]);
     if(host._purchaseScope!==key) {
         host._purchaseSession?.dispose(); host._purchaseRuntime?.destroy();
+        delete host._purchaseChoice;
         const model={link,data:{},visibleFields:[]};
         const win=host.ownerDocument.defaultView;
         let framed=true;
@@ -406,13 +430,15 @@ function updateOverviewPurchases(host, data, scope) {
                 if (embedded) {notify(null);return ()=>{};}
                 let disposed=false,cleanup;
                 import('./form_measurement_cmp.js').then(({startMeasurementConsent})=>{
-                    if(!disposed)cleanup=startMeasurementConsent({model,setConsent:notify,host});
+                    if(!disposed)cleanup=startMeasurementConsent({model,setConsent:notify,host,includePurchaseConsent:true});
                 }).catch(()=>{if(!disposed)notify(null);});
                 return ()=>{disposed=true;cleanup?.();};
-            }},onActive:publish});
+            }},onConsent:choice=>withdrawOverviewPurchaseConsent(host,choice),onActive:publish});
         host._purchasePublish=publish; host._purchaseScope=key;
         host._purchaseSession.start();
     }
     host._purchaseOrders=data.orders;
+    // Retry a failed withdrawal on the next poll while the server still reports consent.
+    withdrawOverviewPurchaseConsent(host);
     if(host._purchaseSession?.state==='active')host._purchasePublish();
 }
