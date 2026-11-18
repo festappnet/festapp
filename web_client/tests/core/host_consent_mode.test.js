@@ -11,9 +11,11 @@ const granted = {analytics:true, marketing:true};
 const command = (...args) => (function () { return arguments; })(...args);
 const script = readFileSync(new URL('../../public/embed.js', import.meta.url), 'utf8');
 
-test('ICS is authoritative, update overrides default, only booleans grant', () => {
+test('ICS is authoritative, defaults never grant, only boolean updates grant', () => {
     const win = {google_tag_data:{ics:{entries:{analytics_storage:{default:true}, ad_storage:{default:true},ad_user_data:{default:true},ad_personalization:{default:true}}}},
         dataLayer:[command('consent','update',{analytics_storage:'denied'})]};
+    assert.deepEqual(readHostConsentMode(win), denied);
+    for (const entry of Object.values(win.google_tag_data.ics.entries)) entry.update=true;
     assert.deepEqual(readHostConsentMode(win), granted);
     win.google_tag_data.ics.entries.analytics_storage.update = false;
     win.google_tag_data.ics.entries.ad_user_data = {default:false};
@@ -48,6 +50,8 @@ test('dataLayer accepts only Arguments and retains partial updates', () => {
     const win = {dataLayer:[]};
     assert.deepEqual(readHostConsentMode(win), denied);
     win.dataLayer.push(command('consent','default',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'}));
+    assert.deepEqual(readHostConsentMode(win), denied);
+    win.dataLayer.push(command('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'}));
     assert.deepEqual(readHostConsentMode(win), granted);
     win.dataLayer.push(command('consent','update',{ad_user_data:'denied'}));
     assert.deepEqual(readHostConsentMode(win), {analytics:true,marketing:false});

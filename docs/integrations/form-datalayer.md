@@ -11,7 +11,8 @@ GTM and Unit scripts as soon as the form loads, and dataLayer is always filled. 
 choice in the consent notice is state for Google Consent Mode, evaluated by the
 organizer's container, which the organizer configures and answers for. Missing or
 broken consent sources report denied state and measurement continues. `purchase` and
-`generate_lead` always carry `user_data`; see [Contact in conversions](#contact-in-conversions).
+`generate_lead` carry available `user_data` on immediate delivery; contact-free
+recovery is described below. See [Contact in conversions](#contact-in-conversions).
 
 ## Configuration and ownership
 
@@ -54,6 +55,8 @@ administrator of the Unit's organization with a delivery email; retries send no
 additional notices. The settings show the localized request date while waiting.
 Platform operators still approve manually through `analytics.organization_policy`
 and `analytics.unit_runtime`; submitting a request grants no measurement permission.
+The platform administrator handles initial approval manually and replies by email.
+No standard processing time is specified.
 
 The private `analytics` schema contains exactly these measurement tables:
 
@@ -111,7 +114,14 @@ wait for a matching policy/role response.
 A single in-flight Promise serves concurrent policy waiters. Identity changes
 invalidate the generation before fresh policy is requested. Stale responses and
 finally blocks cannot overwrite a newer request. Equivalent renewal preserves the
-active grant; identity, relevant configuration or transport changes revoke it. A
+active grant; identity, relevant configuration or transport changes revoke it.
+A successful order response arriving after a grant replacement can recover only
+its validated, contact-free conversion fact in the same page session. Recovery
+refreshes server policy and waits for an active transport, checks current consent
+and lease validity, and requires the same visitor identity, manifest, transport
+selection and host instance. Stable transaction/event IDs deduplicate delivery.
+Changed scope is discarded; disposal clears the in-memory pending facts. This
+is not durable delivery across navigation, reload or an uncertain transport ack. A
 consent change does not: it reaches the frame as `gtag('consent','update',...)` plus
 the `festapp_consent_update` dataLayer event with `{analytics, marketing}`. Hiding the
 page keeps the frame, so a tab switch does not run the container again. Pagehide
@@ -164,8 +174,9 @@ cannot be assumed to cover the organizer. Explicit adapters remain independent o
 the switch. The switch is part of the manifest and processing revision. A missing or false switch preserves the pre-bridge fingerprint; only true adds the bridge marker.
 
 When enabled, the helper reads `google_tag_data.ics.entries`, then only Arguments
-`consent default/update` commands in `window.dataLayer` if ICS is unavailable.
-Arrays are ignored. Regional defaults stay denied until a CMP update. Analytics
+`consent update` commands in `window.dataLayer` if ICS is unavailable.
+Arrays are ignored. Neither global nor regional defaults establish visitor choice;
+ICS entries without a boolean update also remain denied. Analytics
 requires explicit granted `analytics_storage`; marketing requires all three of
 `ad_storage`, `ad_user_data` and `ad_personalization` explicitly granted. Missing or
 broken values mean denied. If `__tcfapi` is present, marketing is always denied;
@@ -187,7 +198,9 @@ the automatic bridge does not apply. See the
 `capture()` returns a sender bound forever to the original active grant; inactive
 capture is forever no-op. `captureSubmission(payload)` captures before submit;
 `observe()` captures before awaiting reservations. A replaced grant cannot revive
-either callback. Activation sets current cart baseline and page/catalog context
+those senders. Successful order submissions separately retain a contact-free fact
+for verified recovery through `captureConversion()`; cart changes and page context
+from stale callbacks are not replayed. Activation sets current cart baseline and page/catalog context
 without replaying old interactions. Dedupe survives inactive periods. Measurement
 failure never controls business success.
 
@@ -242,8 +255,8 @@ prove Google/Meta delivery or arbitrary future container compatibility.
 
 ## Contact in conversions
 
-**dataLayer contains the readable e-mail and phone.** Every `purchase` and
-`generate_lead` carries `user_data: {email, phone_number}`, whatever the visitor chose,
+**dataLayer contains the readable e-mail and phone.** Immediate `purchase` and
+`generate_lead` delivery carries available `user_data: {email, phone_number}`, whatever the visitor chose,
 so every tag and Unit script in the container can read them. Being in dataLayer is
 not the same as being sent: Google tags honour `ad_user_data`, and the organizer is
 responsible for how tags use the values and for describing it in its privacy policy.
@@ -253,7 +266,8 @@ lowercased, the phone in E.164. Every receiver rebuilds `user_data` and passes o
 these two fields, an e-mail up to 254 characters and an E.164 phone. Anything else is
 left out, including a national number whose country is not known. No other event
 carries contact. Nothing is stored in `conversion_facts`, logged or put in a URL.
-Reading it cannot affect the order. The frame and host clear `user_data` after the
+Recovery after a grant replacement deliberately omits contacts and retains only
+the conversion fact in memory. Reading it cannot affect the order. The frame and host clear `user_data` after the
 event, which stops it reaching later events but does not erase dataLayer history.
 
 Host transport delivers to approved `parent_origins` only, like every measurement
@@ -290,9 +304,11 @@ are added when they exist, in browser events and in the server `purchase`:
 Labels are limited to 100 characters. A label with controls or `@` is omitted while the item
 remains. They never affect `value` or the `total=o.price` check, and they do not split a charged
 line. Conversion facts recorded earlier stay immutable without these labels and remain valid.
-`item_variant`, `coupon` and `discount` are not exported. Festapp has no variant, discount code or
-voucher entity. A product is the selected option, a seat section is not known consistently in the
-cart, and the negative `meta_surcharge` is informational and does not change the charged price.
+`item_variant`, `coupon` and `discount` are not exported. Discounted cart items use
+net prices from the server quote; purchase items use the final charged-price snapshot.
+Discount codes themselves are never exported. A product is the selected option;
+a seat section is not known consistently in the cart. The negative `meta_surcharge`
+is informational and does not change the charged price.
 
 The forward migration relocates the earlier public tables into `analytics` and
 moves unambiguous legacy form destination configuration to Unit. It preflights
@@ -364,6 +380,87 @@ before the request; a revoked/replaced measurement grant cannot send its result.
 Failures, preview and unsubscribe never emit a lead. These client subscription
 leads do not create an order or an `analytics.conversion_facts` record; that SQL
 kind constraint applies only to immutable order finalizer facts.
+
+
+## Complete conversion payload examples
+
+These complete example payloads use fictional contacts. `transaction_id` is the
+server-generated UUID of the immutable purchase fact, not the order number or
+payment reference. Order leads use a server-generated `event_id`; notification
+subscriptions use a client UUID created for that submission. Replays keep the
+same fact ID. Deduplicate by that ID; do not generate a new ID on retry. Product
+IDs identify catalog products. Example IDs must be replaced with actual event
+IDs, never reused for real conversions. `user_data` is optional when no usable
+contact is available; sale-opening subscriptions provide email only. Successful
+recovery after transport replacement contains the conversion fact without
+`user_data`. Consent remains the current state passed to tags, including denial.
+
+```json
+{
+  "event": "purchase",
+  "ecommerce": {
+    "transaction_id": "c5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+    "currency": "CZK",
+    "value": 1000,
+    "payment_type": "bank_transfer",
+    "items": [
+      {
+        "item_id": "product_11",
+        "item_name": "Concert ticket",
+        "price": 500,
+        "quantity": 2,
+        "item_category": "Tickets",
+        "item_brand": "Summer festival"
+      }
+    ]
+  },
+  "user_data": {
+    "email": "buyer@example.test",
+    "phone_number": "+420601234567"
+  }
+}
+```
+
+```json
+{
+  "event": "generate_lead",
+  "lead_source": "free_registration",
+  "event_id": "d5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+  "currency": "CZK",
+  "value": 0,
+  "user_data": {
+    "email": "buyer@example.test",
+    "phone_number": "+420601234567"
+  }
+}
+```
+
+```json
+{
+  "event": "generate_lead",
+  "lead_source": "waitlist",
+  "event_id": "e5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+  "currency": "CZK",
+  "value": 0,
+  "user_data": {
+    "email": "buyer@example.test",
+    "phone_number": "+420601234567"
+  }
+}
+```
+
+```json
+{
+  "event": "generate_lead",
+  "lead_source": "sale_opening_notification",
+  "event_id": "f5c624bd-01b6-4dcf-9bf9-00dcb73a7b44",
+  "currency": "CZK",
+  "value": 0,
+  "user_data": {
+    "email": "buyer@example.test"
+  }
+}
+```
 
 ## Consent storage exceptions and keyboard behavior
 

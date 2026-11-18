@@ -788,7 +788,7 @@
     marketing: state.ad_storage === true && state.ad_user_data === true && state.ad_personalization === true
   });
   function createReader(win) {
-    let layerRef, lastEntry, index = 0, defaults = {}, updates = {}, regional = /* @__PURE__ */ new Set();
+    let layerRef, lastEntry, index = 0, updates = {};
     return () => {
       try {
         const entries = win.google_tag_data?.ics?.entries;
@@ -802,7 +802,7 @@
               state2[key] = false;
               continue;
             }
-            const value = entry.update !== void 0 ? entry.update : entry.default;
+            const value = entry.update;
             if (value === void 0) continue;
             state2[key] = value === true;
           }
@@ -813,9 +813,7 @@
         if (layer !== layerRef || layer.length < index || index > 0 && layer[index - 1] !== lastEntry) {
           layerRef = layer;
           index = 0;
-          defaults = {};
           updates = {};
-          regional = /* @__PURE__ */ new Set();
         }
         while (index < layer.length) {
           const command = layer[index++];
@@ -823,23 +821,16 @@
           if (Object.prototype.toString.call(command) !== "[object Arguments]") continue;
           const [kind, action, values] = command;
           if (kind !== "consent" || !["default", "update"].includes(action) || !object(values)) continue;
-          if (action === "default" && "region" in values) {
-            for (const key of keys) if (Object.hasOwn(values, key)) regional.add(key);
-            continue;
-          }
-          const target = action === "update" ? updates : defaults;
-          for (const key of keys) if (Object.hasOwn(values, key)) target[key] = values[key] === "granted";
+          if (action !== "update") continue;
+          for (const key of keys) if (Object.hasOwn(values, key)) updates[key] = values[key] === "granted";
         }
-        const state = { ...defaults, ...updates };
-        for (const key of regional) if (!Object.hasOwn(updates, key)) state[key] = false;
+        const state = updates;
         return { ...project(state), ...typeof win.__tcfapi !== "undefined" ? { marketing: false } : {} };
       } catch {
         layerRef = void 0;
         lastEntry = void 0;
         index = 0;
-        defaults = {};
         updates = {};
-        regional = /* @__PURE__ */ new Set();
         return project({});
       }
     };
