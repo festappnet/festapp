@@ -159,9 +159,13 @@ GitHub SHA-256; the digest is verified again on every read.
 Wix has quick contracts/build, PHP adapter smoke and an installed Joomla,
 Wix and generated HTML unit. The installed WordPress suite has its own required
 job. Each installed suite starts only its CMS platforms and browser engines,
-using a separate disposable Supabase. Wix's hosted units can run together
+using a separate disposable Supabase PostgreSQL instance and the pinned
+PostgREST image. The fixture's HTTPS transport serves the browser's public
+`/rest/v1` requests, and readiness requires the actual anonymous form policy
+RPC. Wix's hosted units can run together
 within the 5000 MiB admission budget.
-The local mirror retains the 3500 MiB budget.
+Ticket preview and delivery uses the same hosted budget so its independent
+Deno checks can overlap the Flutter tests. The local mirror retains 3500 MiB.
 Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix
 reinstalls shared package dependencies. Installed CMS uses digest-pinned official

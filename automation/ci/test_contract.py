@@ -149,11 +149,14 @@ class MirrorContractTest(unittest.TestCase):
             self.assertEqual(contract['steps'][name]['resources']['dbCluster'],
                              contract['resources']['dbCluster'],name)
 
-    def test_hosted_wix_has_capacity_to_overlap_cms_and_quick_checks(self):
-        units = runner.selected_units(['wix-checkout-compatibility'])
-        limits = runner.CONTRACT['jobs']['wix-checkout-compatibility']['hostedResources']
-        concurrent = ('wix-quick', 'wix-adapters', 'wix-cms')
-        self.assertLessEqual(sum(units[name]['resources']['ramMiB'] for name in concurrent), limits['ramMiB'])
+    def test_hosted_lanes_have_capacity_to_overlap_independent_checks(self):
+        for lane, concurrent in [
+            ('wix-checkout-compatibility', ('wix-quick', 'wix-adapters', 'wix-cms')),
+            ('ticket-preview-and-delivery', ('ticket-edge', 'ticket-client')),
+        ]:
+            units = runner.selected_units([lane])
+            limits = runner.CONTRACT['jobs'][lane]['hostedResources']
+            self.assertLessEqual(sum(units[name]['resources']['ramMiB'] for name in concurrent), limits['ramMiB'])
 
     def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
         steps=runner.CONTRACT['steps']

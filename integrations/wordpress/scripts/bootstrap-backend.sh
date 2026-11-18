@@ -2,6 +2,12 @@
 # Initial schema load into the task-owned EMPTY backend, never an existing tenant.
 set -euo pipefail
 cd "$(dirname "$0")/../../.."
+database_only=false
+case "${1:-}" in
+  --database-only) database_only=true ;;
+  '') ;;
+  *) exit 2 ;;
+esac
 project=${FESTAPP_CMS_TEST_PROJECT:-festapp-vo-wordpress-20261023}
 base_port=${FESTAPP_CMS_TEST_BASE_PORT:-59820}
 [[ "$project" == festapp-vo-wordpress-20261023 || "$project" =~ ^festapp-cms-consent-[a-z0-9-]+$ ]] || { echo 'Refusing unowned test project'; exit 1; }
@@ -25,8 +31,10 @@ psql "$url" -v ON_ERROR_STOP=1 -qc 'GRANT USAGE, CREATE ON SCHEMA supabase_migra
 python3 automation/baseline.py upgrade-local --database-url "$url"
 PGOPTIONS='-c request.jwt.claim.role=service_role' psql "$url" -v ON_ERROR_STOP=1 -f supabase/seed.sql -f web_client/tests/fixtures/embedded-checkout/tenant.sql >/dev/null
 umask 077
-supabase status --workdir integrations/wordpress/.private/backend --output json > integrations/wordpress/.private/backend-status.json
 docker exec -i "$container" psql -X -U postgres -d postgres -v ON_ERROR_STOP=1 -q < integrations/wordpress/tests/fixture-fixes.sql
 
-node integrations/wordpress/scripts/prepare-organizer.mjs
+if [[ "$database_only" == false ]]; then
+  supabase status --workdir integrations/wordpress/.private/backend --output json > integrations/wordpress/.private/backend-status.json
+  node integrations/wordpress/scripts/prepare-organizer.mjs
+fi
 printf "Disposable canonical backend seeded\n"

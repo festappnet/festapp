@@ -84,7 +84,9 @@
         "assets/translations/**",
         "automation/lib/**",
         "automation/release/help/help.js",
-        "automation/release/help/en/embed-generator.html"
+        "automation/release/help/en/embed-generator.html",
+        "automation/testing/cms_fixture_rest.py",
+        "automation/hetzner-supabase/runtime/pins.json"
       ],
       "hostedResources": {
         "ramMiB": 5000
@@ -262,7 +264,10 @@
         "automation/testing/ticket_default_ci.dart",
         "database/fixtures/**",
         "automation/lib/**"
-      ]
+      ],
+      "hostedResources": {
+        "ramMiB": 5000
+      }
     },
     "database-regressions": {
       "workflow": "seat-checkout-regressions.yml",
@@ -415,7 +420,9 @@
         "web_client/scripts/test_timings.mjs",
         "web_client/index.html",
         "automation/testing/wordpress_runtime.py",
-        "automation/lib/**"
+        "automation/lib/**",
+        "automation/testing/cms_fixture_rest.py",
+        "automation/hetzner-supabase/runtime/pins.json"
       ]
     }
   },
@@ -1396,7 +1403,9 @@
         "integrations/wordpress/tests/onboarding-email-sink.ts",
         "automation/lib/**",
         "automation/release/help/help.js",
-        "automation/release/help/en/embed-generator.html"
+        "automation/release/help/en/embed-generator.html",
+        "automation/testing/cms_fixture_rest.py",
+        "automation/hetzner-supabase/runtime/pins.json"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",
@@ -1642,7 +1651,9 @@
         "web_client/scripts/test_timings.mjs",
         "web_client/index.html",
         "automation/testing/wordpress_runtime.py",
-        "automation/lib/**"
+        "automation/lib/**",
+        "automation/testing/cms_fixture_rest.py",
+        "automation/hetzner-supabase/runtime/pins.json"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",

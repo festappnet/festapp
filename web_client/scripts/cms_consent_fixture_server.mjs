@@ -53,7 +53,13 @@ const servers=[];const sockets=new Set();
 function listen(offset,handler){const server=https.createServer(tls,handler);server.on('connection',s=>{sockets.add(s);s.once('close',()=>sockets.delete(s));});servers.push(server);return new Promise((resolve,reject)=>{server.once('error',reject);server.listen(base+offset,'127.0.0.1',resolve);});}
 for(const [offset,target,joomla] of [[31,11,false],[36,12,false],[34,15,true],[35,16,true],[32,1,false],[33,21,false]]) {
  await listen(offset,(req,res)=>{
-  const upstream=http.request({host:'127.0.0.1',port:base+target,path:req.url,method:req.method,headers:{...req.headers,host:req.headers.host,'accept-encoding':'identity','x-forwarded-proto':'https'}},r=>{
+  let upstreamPath = req.url;
+  if (target === 21) {
+   if (!upstreamPath.startsWith('/rest/v1/')) { res.writeHead(404).end(); return; }
+   if (req.method !== 'OPTIONS' && req.headers.apikey !== status.ANON_KEY) { res.writeHead(401).end(); return; }
+   upstreamPath = upstreamPath.slice('/rest/v1'.length);
+  }
+  const upstream=http.request({host:'127.0.0.1',port:base+target,path:upstreamPath,method:req.method,headers:{...req.headers,host:req.headers.host,'accept-encoding':'identity','x-forwarded-proto':'https'}},r=>{
    const headers={...r.headers};
    if(joomla && !state().coop)delete headers['cross-origin-opener-policy'];
    if(target!==1 && target!==21 && String(headers['content-type']).includes('text/html')){

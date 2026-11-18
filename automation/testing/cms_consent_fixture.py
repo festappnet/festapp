@@ -24,6 +24,7 @@ ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'automation/ci'))
 from telemetry import phase as timed_phase, emit
 from wordpress_runtime import WordPress
+from cms_fixture_rest import prepare_rest_image, start_rest, stop_rest
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--base-port',type=int,default=int(os.environ.get('FESTAPP_CMS_FIXTURE_BASE_PORT','61000')))
 parser.add_argument('--suite', choices=('all', 'wordpress', 'joomla-wix-html'), default='all')
@@ -63,7 +64,7 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/wordpress_runtime.py','automation/hetzner-supabase/runtime/pins.json','integrations/wordpress/docker-images.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
@@ -121,14 +122,15 @@ try:
   wordpress=WordPress(wp,project,run)
   run(['python3','scripts/package.py'],wp)
  if needs_joomla:run(['python3','scripts/package.py'],joomla)
- run(['node','scripts/setup-backend.mjs'],wp)
+ run(['node','scripts/setup-backend.mjs','--database-only'],wp)
  phase('Starting independent owned services and browser dependencies concurrently')
  jprefix=project+'-joomla'
- def prepare_backend():
+ def prepare_backend(rest_image):
   started['backend']=True
-  run(['supabase','start','--workdir','.private/backend','--exclude','realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit'],wp,label='backend.start')
-  run(['bash','scripts/bootstrap-backend.sh'],wp,label='backend.bootstrap')
+  run(['supabase','db','start','--workdir','.private/backend'],wp,label='backend.start')
+  run(['bash','scripts/bootstrap-backend.sh','--database-only'],wp,label='backend.bootstrap')
   sql("CREATE SCHEMA IF NOT EXISTS festapp_test_support; CREATE TABLE IF NOT EXISTS festapp_test_support.disposable_environment(singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),project text NOT NULL); INSERT INTO festapp_test_support.disposable_environment VALUES(true,'"+project+"') ON CONFLICT(singleton) DO UPDATE SET project=EXCLUDED.project; GRANT USAGE ON SCHEMA festapp_test_support TO postgres; GRANT SELECT ON festapp_test_support.disposable_environment TO postgres")
+  start_rest(rest_image.result(), wp, project, base + 21, run)
  def prepare_wordpress():
   started['wordpress']=True
   with timed_phase('cms.wordpress.start'):wordpress.start()
@@ -156,11 +158,13 @@ try:
   shell_only = ['--only-shell'] if engines == ['chromium'] else []
   run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install','--with-deps',*shell_only,*engines],label='browsers.install')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
- preparation = [('backend',prepare_backend),('browsers',prepare_browsers)]
+ preparation = [('browsers',prepare_browsers)]
  if needs_wordpress:preparation.append(('wordpress',prepare_wordpress))
  if needs_joomla:preparation.append(('joomla',prepare_joomla))
- with ThreadPoolExecutor(max_workers=len(preparation)) as workers:
-  pending=[(name,workers.submit(prepare)) for name,prepare in preparation]
+ with ThreadPoolExecutor(max_workers=len(preparation)+2) as workers:
+  rest_image = workers.submit(prepare_rest_image, ROOT, run)
+  pending = [('backend', workers.submit(prepare_backend, rest_image))]
+  pending.extend((name,workers.submit(prepare)) for name,prepare in preparation)
   failures=[]
   for name,future in pending:
    try:future.result()
