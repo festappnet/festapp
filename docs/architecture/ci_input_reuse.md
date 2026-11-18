@@ -156,8 +156,11 @@ The consumer rechecks the selection partition and its provenance before running
 the DAG. Immutable archives may be retained within the hosted job under their
 GitHub SHA-256; the digest is verified again on every read.
 
-Wix has quick contracts/build, PHP adapter smoke and an installed CMS unit.
-GitHub-hosted jobs can run them together within the 5000 MiB admission budget.
+Wix has quick contracts/build, PHP adapter smoke and an installed Joomla,
+Wix and generated HTML unit. The installed WordPress suite has its own required
+job. Each installed suite starts only its CMS platforms and browser engines,
+using a separate disposable Supabase. Wix's hosted units can run together
+within the 5000 MiB admission budget.
 The local mirror retains the 3500 MiB budget.
 Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix

@@ -82,7 +82,9 @@
         "automation/baseline.py",
         "automation/baselines/**",
         "assets/translations/**",
-        "automation/lib/**"
+        "automation/lib/**",
+        "automation/release/help/help.js",
+        "automation/release/help/en/embed-generator.html"
       ],
       "hostedResources": {
         "ramMiB": 5000
@@ -380,6 +382,40 @@
         "packages/irondash_engine_context/**",
         "packages/windows_file_picker/**",
         "supabase/functions/**"
+      ]
+    },
+    "wordpress-checkout-compatibility": {
+      "workflow": "wix-checkout-compatibility.yml",
+      "node": "24.22.1",
+      "steps": [
+        "wordpress-cms-install",
+        "wordpress-cms"
+      ],
+      "inputs": [
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "web_client/src/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "database/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "web_client/tests/fixtures/**",
+        "integrations/wordpress/**",
+        "integrations/measurement/**",
+        "integrations/tests/**",
+        "supabase/baseline/**",
+        "supabase/migrations/**",
+        "supabase/functions/_shared/**",
+        "automation/testing/cms_consent_fixture.py",
+        "web_client/scripts/cms_consent_fixture_server.mjs",
+        "web_client/scripts/cms_consent_fixture_prepare.mjs",
+        "web_client/scripts/test_cms_managed_consent_browser.mjs",
+        "web_client/scripts/native_browser.mjs",
+        "web_client/scripts/test_timings.mjs",
+        "web_client/index.html",
+        "automation/testing/wordpress_runtime.py",
+        "automation/lib/**"
       ]
     }
   },
@@ -1316,7 +1352,7 @@
       ]
     },
     "wix-cms": {
-      "script": "python3 automation/testing/cms_consent_fixture.py\n",
+      "script": "python3 automation/testing/cms_consent_fixture.py --suite joomla-wix-html\n",
       "after": [
         "wix-install"
       ],
@@ -1336,7 +1372,6 @@
         "automation/baseline.py",
         "automation/baselines/**",
         "web_client/tests/fixtures/**",
-        "integrations/wordpress/**",
         "integrations/joomla/**",
         "integrations/measurement/**",
         "integrations/tests/**",
@@ -1352,7 +1387,16 @@
         "web_client/scripts/test_cms_managed_consent_browser.mjs",
         "web_client/scripts/native_browser.mjs",
         "web_client/scripts/test_timings.mjs",
-        "web_client/index.html"
+        "web_client/index.html",
+        "integrations/wordpress/scripts/setup-backend.mjs",
+        "integrations/wordpress/scripts/bootstrap-backend.sh",
+        "integrations/wordpress/scripts/prepare-organizer.mjs",
+        "integrations/wordpress/tests/fixture-fixes.sql",
+        "integrations/wordpress/tests/capture-email.ts",
+        "integrations/wordpress/tests/onboarding-email-sink.ts",
+        "automation/lib/**",
+        "automation/release/help/help.js",
+        "automation/release/help/en/embed-generator.html"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",
@@ -1508,6 +1552,103 @@
       "requires": [
         "seat-install"
       ]
+    },
+    "wordpress-cms-install": {
+      "script": "python3 automation/ci/run.py install web_client\n",
+      "after": [
+        "image-install",
+        "image-policy",
+        "image-preflight",
+        "image-storage",
+        "web-install",
+        "web-startup",
+        "renderer-install",
+        "deploy-contract",
+        "navigation-install",
+        "navigation-contract",
+        "image-client-install",
+        "image-client-adapter",
+        "image-client-widgets",
+        "image-client-browser",
+        "seat-install",
+        "seat-database",
+        "seat-authorization",
+        "seat-google-auth",
+        "seat-notifications",
+        "seat-browser",
+        "ticket-edge",
+        "ticket-install",
+        "ticket-core",
+        "ticket-client",
+        "occasion-lifecycle",
+        "seat-measurement",
+        "web-measurement",
+        "mcp-auth-install",
+        "mcp-auth-contract",
+        "seat-upgrade",
+        "seat-runtime-contract",
+        "seat-payments",
+        "seat-orders",
+        "seat-delivery",
+        "seat-services",
+        "seat-mcp-prepare",
+        "seat-mcp-authorization",
+        "seat-mcp-contracts-1",
+        "seat-mcp-contracts-2",
+        "database-regressions-install",
+        "mcp-database-install",
+        "image-browser-install",
+        "wix-install"
+      ],
+      "inputs": [
+        "web_client/package.json",
+        "web_client/pnpm*"
+      ],
+      "resources": {
+        "ramMiB": 256
+      }
+    },
+    "wordpress-cms": {
+      "script": "python3 automation/testing/cms_consent_fixture.py --suite wordpress\n",
+      "after": [
+        "wordpress-cms-install"
+      ],
+      "resources": {
+        "ramMiB": 3000,
+        "browser": 1,
+        "dbCluster": 2
+      },
+      "inputs": [
+        "packages/festapp_contracts/**",
+        "assets/translations/**",
+        "web_client/src/**",
+        "web_client/package.json",
+        "web_client/pnpm*",
+        "database/**",
+        "automation/baseline.py",
+        "automation/baselines/**",
+        "web_client/tests/fixtures/**",
+        "integrations/wordpress/**",
+        "integrations/measurement/**",
+        "integrations/tests/**",
+        "supabase/baseline/**",
+        "supabase/migrations/**",
+        "supabase/functions/_shared/**",
+        "automation/testing/cms_consent_fixture.py",
+        "web_client/scripts/cms_consent_fixture_server.mjs",
+        "web_client/scripts/cms_consent_fixture_prepare.mjs",
+        "web_client/scripts/test_cms_managed_consent_browser.mjs",
+        "web_client/scripts/native_browser.mjs",
+        "web_client/scripts/test_timings.mjs",
+        "web_client/index.html",
+        "automation/testing/wordpress_runtime.py",
+        "automation/lib/**"
+      ],
+      "inputProjections": {
+        "web_client/package.json": "package-version",
+        "web_client/src/version.js": "generated-web-version",
+        "web_client/index.html": "html-build-version"
+      }
     }
   },
   "sqlGroups": {

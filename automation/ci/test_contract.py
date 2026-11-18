@@ -37,6 +37,8 @@ class MirrorContractTest(unittest.TestCase):
             self.assertEqual(original,key(app='2.0.0'))
             self.assertNotEqual(original,key(browser='1.66.0'))
             self.assertNotEqual(original,key(ImageOS='ubuntu26'))
+            self.assertNotEqual(original,key(GITHUB_JOB='wix-checkout-compatibility'))
+            self.assertEqual(original,key(GITHUB_JOB='wordpress-checkout-compatibility'))
             self.assertNotEqual(original,key(RUNNER_ARCH='ARM64'))
             self.assertNotEqual(key(browser='^1.65.0')[0],0)
             self.assertNotEqual(key(ImageOS='')[0],0)
@@ -112,7 +114,7 @@ class MirrorContractTest(unittest.TestCase):
             for unit in lane['steps']:
                 # Serialize shared installs/API generation in the local mirror.
                 # Hosted jobs filter dependencies to their isolated worktree.
-                if unit == 'wix-install':
+                if unit in ('wix-install','wordpress-cms-install'):
                     continue
                 cross_lane = set(runner.CONTRACT['steps'][unit]['after']) - set(lane['steps'])
                 allowed = {
@@ -327,10 +329,17 @@ class UnitSplitContractTest(unittest.TestCase):
         self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'], 1)
         for name in ['seat-payments','seat-orders','seat-delivery','seat-services']:
             self.assertIn(name,contract['databaseUnits'])
-        fixture=(ROOT/'automation/testing/cms_consent_fixture.py').read_text()
-        self.assertIn("('wordpress',31,'cli','firefox')",fixture)
-        self.assertIn("('wordpress',31,'cli','webkit')",fixture)
-        self.assertIn("coop=case_index==len(cases)-1",fixture)
+        def cases(suite):
+            return json.loads(subprocess.check_output(
+                ['python3', 'automation/testing/cms_consent_fixture.py', '--list-cases', '--suite', suite],
+                cwd=ROOT, text=True))
+        wordpress, other = cases('wordpress'), cases('joomla-wix-html')
+        self.assertEqual(len(wordpress), 4)
+        self.assertEqual(len(other), 5)
+        self.assertEqual(wordpress + other, cases('all'))
+        self.assertEqual({case[4] for case in wordpress}, {'firefox','webkit','chromium'})
+        self.assertEqual({case[4] for case in other}, {'chromium'})
+        self.assertEqual([case[1] for case in other if case[5]], ['joomla'])
 
     def test_shared_sql_helpers_and_cross_client_fixtures_invalidate_consumers(self):
         from selection import unit_owners

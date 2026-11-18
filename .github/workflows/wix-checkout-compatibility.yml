@@ -20,7 +20,7 @@ jobs:
   wix-checkout-compatibility:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
-    steps:
+    steps: &cms-lane-steps
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -28,7 +28,7 @@ jobs:
         id: selection
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/selection.py wix-checkout-compatibility
+        run: python3 automation/ci/selection.py ${{ github.job }}
       - uses: pnpm/action-setup@v6
         if: steps.selection.outputs.run == 'true'
         with:
@@ -54,7 +54,9 @@ jobs:
         run: |
           cms_playwright_version="$(node -p "require('./web_client/package.json').devDependencies.playwright")"
           [[ "$cms_playwright_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
-          printf 'key=cms-browsers-%s-%s-%s-playwright-%s\n' "$RUNNER_OS" "$RUNNER_ARCH" "${ImageOS:?}" "$cms_playwright_version" >> "$GITHUB_OUTPUT"
+          browser_suffix=''
+          if [[ "${GITHUB_JOB:-}" == 'wix-checkout-compatibility' ]]; then browser_suffix='-chromium'; fi
+          printf 'key=cms-browsers-%s-%s-%s-playwright-%s%s\n' "$RUNNER_OS" "$RUNNER_ARCH" "${ImageOS:?}" "$cms_playwright_version" "$browser_suffix" >> "$GITHUB_OUTPUT"
       - name: Restore pinned CMS browsers
         if: steps.selection.outputs.cms == 'true'
         uses: actions/cache@v5
@@ -64,7 +66,7 @@ jobs:
       - name: Run canonical regression DAG
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 automation/ci/run.py lane wix-checkout-compatibility
+        run: python3 automation/ci/run.py lane ${{ github.job }}
       - name: All lane tests executed
         if: steps.selection.outputs.full == 'true'
         run: echo 'All lane tests executed'
@@ -81,3 +83,8 @@ jobs:
           path: ~/.cache/festapp-ci/runs
           retention-days: 7
           if-no-files-found: ignore
+
+  wordpress-checkout-compatibility:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps: *cms-lane-steps

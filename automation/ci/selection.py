@@ -545,7 +545,7 @@ def main():
     print(json.dumps(result, sort_keys=True))
     if os.environ.get('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
-            output.write(f'run={str(result["run"]).lower()}\nfull={str(len(result["execute"])==len(units)).lower()}\ncms={str("wix-cms" in result["execute"]).lower()}\n')
+            output.write(f'run={str(result["run"]).lower()}\nfull={str(len(result["execute"])==len(units)).lower()}\ncms={str(bool({"wix-cms", "wordpress-cms"}.intersection(result["execute"]))).lower()}\n')
             for name,value in provisioning_flags(result['execute'],contract).items():
                 output.write(f'{name}={str(bool(value)).lower()}\n')
     if os.environ.get('GITHUB_STEP_SUMMARY'):
