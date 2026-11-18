@@ -150,7 +150,6 @@ export class FormStrings {
     static get fieldBirthDate() { return LocalizationService.tr('PersonFields.birthDate'); }
     static birthDateError(minAge, maxAge) { return LocalizationService.tr('PersonFields.ageRestriction', { minAge, maxAge }); }
     static birthDateWarning(minAge, maxAge) { return LocalizationService.tr('PersonFields.ageOutsideRecommendedRange', { minAge, maxAge }); }
-    static get birthDateFormatHint() { return LocalizationService.currentLocale === 'cs' ? 'D. M. RRRR' : 'MM/DD/YYYY'; }
     static get expiryDate() { return LocalizationService.tr('PersonFields.expiryDate'); }
     static get expiryDatePastError() { return LocalizationService.tr('PersonFields.expiryDateInPast'); }
 

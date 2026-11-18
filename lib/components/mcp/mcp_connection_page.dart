@@ -462,7 +462,11 @@ class _McpConnectionPageState extends State<McpConnectionPage> {
                               ),
                             ],
                           const SizedBox(height: 16),
-                          Text(text('duration')),
+                          Text(
+                            'McpConnection.duration'.tr(
+                              namedArgs: {'appName': AppConfig.appName},
+                            ),
+                          ),
                           const AccountConnectionsLink(),
                           const SizedBox(height: 16),
                           Wrap(

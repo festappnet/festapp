@@ -4187,6 +4187,7 @@
     "connected": "Conectado",
     "connectedClient": "La aplicación conectada tiene acceso a tu cuenta.",
     "closeHint": "Puedes cerrar esta ventana y volver a la aplicación conectada.",
+    "closeManually": "El navegador no ha cerrado esta ventana. Usa el botón de la pestaña para cerrarla y vuelve a la aplicación conectada. La conexión se ha completado.",
     "closeWindow": "Cerrar ventana",
     "backToTenant": "Volver a {tenant}",
     "waitingForClient": "Finalizando la conexión. Se ha abierto una ventana auxiliar para completar la autenticación.",
