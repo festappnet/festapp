@@ -83,6 +83,21 @@ def selected_units(names):
             for name,definition in CONTRACT['steps'].items() if name in selected}
 
 
+def hosted_admission(lane, units):
+    local = CONTRACT['resources']
+    overrides = CONTRACT['jobs'][lane].get('hostedResources', {})
+    capacities = {**local, **overrides}
+    if 'dbCluster' not in overrides:
+        return units, capacities
+    # A claim for the full local cluster remains exclusive on larger runners.
+    units = {
+        name: {**unit, 'resources': {**unit['resources'], 'dbCluster': capacities['dbCluster']}}
+        if unit.get('resources', {}).get('dbCluster') == local['dbCluster'] else unit
+        for name, unit in units.items()
+    }
+    return units, capacities
+
+
 def inventory():
     actual={str(path.relative_to(ROOT)) for path in (ROOT/'database/tests').rglob('*_test.sql')}
     expected=set(CONTRACT['sqlInventory']['knownTests'])
@@ -145,6 +160,10 @@ def _execute(names, *, pinned=False, command_started=None):
     reused={} if plan is None else {unit:{'status':'PASS','state':'reused','inputSha256':proof['inputSha256'],'origin':proof,'seconds':0} for unit,proof in plan['reuse'].items()}
     if plan is not None:
         units={unit:{**row,'after':[dep for dep in row['after'] if dep in plan['execute']]} for unit,row in units.items() if unit in plan['execute']}
+    capacities = CONTRACT['resources']
+    if len(names) == 1 and not pinned and os.environ.get('GITHUB_ACTIONS') == 'true':
+        units, capacities = hosted_admission(names[0], units)
+    receipt['resourceCapacities'] = capacities
     execution_started=time.monotonic()
     receipt['preparationSeconds']=execution_started-started
     receipt['preparationScope']='command preflight, Python environment and pinned Node resolution; hosted action provisioning is outside the lane'
@@ -186,7 +205,7 @@ def _execute(names, *, pinned=False, command_started=None):
         import runtime as runtime_module
         runtime=runtime_module.Runtime()
     try:
-        receipt['units']=execute_dag(units,CONTRACT['resources'],execute,workers=3)
+        receipt['units']=execute_dag(units,capacities,execute,workers=3)
         with lookup(seconds=120):
             for unit,row in receipt['units'].items():
                 row['state']='executed'

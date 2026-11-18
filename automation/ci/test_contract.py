@@ -114,7 +114,7 @@ class MirrorContractTest(unittest.TestCase):
                 if unit not in ('wix-install','seat-mcp-prepare'):
                     self.assertTrue(set(runner.CONTRACT['steps'][unit]['after']) <= set(lane['steps']))
         self.assertIn('mcp-auth-contract',runner.CONTRACT['steps']['seat-mcp-prepare']['after'])
-        for unit in ('seat-mcp-authorization','seat-mcp-contracts'):
+        for unit in ('seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'):
             self.assertIn(unit,runner.CONTRACT['steps']['wix-install']['after'])
         for entrypoint in ('automation/cloudflare_build.sh','automation/ci_build.sh'):
             self.assertIn('automation/build_web_bundle.sh',(ROOT/entrypoint).read_text())
@@ -127,17 +127,36 @@ class MirrorContractTest(unittest.TestCase):
         for name,script in scripts.items():
             self.assertNotRegex(script,r'test/[\w-]+-postgres\.test\.mjs',name)
         owners={name for name,script in scripts.items() if 'scripts/test-postgres.mjs ' in script}
-        self.assertEqual(owners,{'seat-mcp-authorization','seat-mcp-contracts'})
+        self.assertEqual(owners,{'seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'})
         self.assertIn('test-postgres.mjs authorization',scripts['seat-mcp-authorization'])
-        self.assertIn('test-postgres.mjs contracts',scripts['seat-mcp-contracts'])
+        for index in (1, 2):
+            self.assertIn(f'test-postgres.mjs contracts-{index}', scripts[f'seat-mcp-contracts-{index}'])
         self.assertIn('assemble-information-authoring-migration.py --check',scripts['mcp-auth-contract'])
 
     def test_cluster_mutators_reserve_the_complete_admission_capacity(self):
         contract=runner.CONTRACT
         self.assertEqual(contract['resources']['ramMiB'],3500)
-        for name in ['seat-upgrade','seat-runtime-contract','seat-database','seat-payments','wix-cms']:
+        for name in ['seat-upgrade','seat-runtime-contract','seat-database','wix-cms']:
             self.assertEqual(contract['steps'][name]['resources']['dbCluster'],
                              contract['resources']['dbCluster'],name)
+
+    def test_hosted_checkout_adds_a_lease_without_relaxing_cluster_exclusivity(self):
+        local = runner.selected_units(['seat-checkout'])
+        hosted, capacities = runner.hosted_admission('seat-checkout', local)
+        self.assertEqual(capacities['dbCluster'], 3)
+        self.assertEqual(runner.CONTRACT['resources']['dbCluster'], 2)
+        for name in ('seat-upgrade', 'seat-runtime-contract', 'seat-database'):
+            self.assertEqual(local[name]['resources']['dbCluster'], 2)
+            self.assertEqual(hosted[name]['resources']['dbCluster'], 3)
+        for name in ('seat-mcp-authorization', 'seat-mcp-contracts-1', 'seat-mcp-contracts-2', 'seat-payments'):
+            self.assertEqual(hosted[name]['resources']['dbCluster'], 1)
+
+    def test_hosted_wix_has_capacity_to_overlap_cms_and_quick_checks(self):
+        units = runner.selected_units(['wix-checkout-compatibility'])
+        hosted, capacities = runner.hosted_admission('wix-checkout-compatibility', units)
+        concurrent = ('wix-quick', 'wix-adapters', 'wix-cms')
+        self.assertLessEqual(sum(hosted[name]['resources']['ramMiB'] for name in concurrent),
+                             capacities['ramMiB'])
 
     def test_partial_consumers_require_preparation_instead_of_independent_checks(self):
         steps=runner.CONTRACT['steps']
@@ -145,7 +164,8 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual(steps['ticket-edge']['requires'],[])
         self.assertEqual(steps['ticket-core']['requires'],[])
         self.assertEqual(steps['seat-browser']['requires'],['seat-install'])
-        self.assertEqual(steps['seat-mcp-contracts']['requires'],['seat-install','seat-mcp-prepare'])
+        for index in (1, 2):
+            self.assertEqual(steps[f'seat-mcp-contracts-{index}']['requires'], ['seat-install','seat-mcp-prepare'])
         self.assertEqual(steps['seat-mcp-prepare']['requires'],['seat-install'])
         # Full runs retain the canonical order and its independent proofs.
         self.assertIn('seat-database',steps['seat-browser']['after'])
@@ -309,7 +329,7 @@ class UnitSplitContractTest(unittest.TestCase):
         self.assertNotIn('wix-contract',contract['steps'])
         self.assertNotIn('seat-contract',contract['steps'])
         self.assertEqual(contract['steps']['wix-cms']['resources']['browser'],1)
-        self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'],contract['resources']['dbCluster'])
+        self.assertEqual(contract['steps']['seat-payments']['resources']['dbCluster'], 1)
         for name in ['seat-payments','seat-orders','seat-delivery','seat-services']:
             self.assertIn(name,contract['databaseUnits'])
         fixture=(ROOT/'automation/testing/cms_consent_fixture.py').read_text()

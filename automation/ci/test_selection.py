@@ -34,7 +34,7 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
                      'tools/festapp/src/operations/orders.mjs']:
             units=selection.unit_owners(path,'seat-checkout',CONTRACT)
             self.assertTrue(independent.isdisjoint(units),path)
-            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts'}.issubset(units),path)
+            self.assertTrue({'seat-mcp-prepare','seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'}.issubset(units),path)
         for path in ['database/functions/eshop/finalize_ticket_order.sql',
                      'database/tests/helpers/reset_owned_sequences.sql']:
             self.assertTrue(independent.issubset(selection.unit_owners(path,'seat-checkout',CONTRACT)),path)
@@ -96,7 +96,7 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
 
     def test_mcp_database_groups_follow_backend_inputs_without_checkout_ui(self):
         lane='seat-checkout'
-        groups={'seat-mcp-authorization','seat-mcp-contracts'}
+        groups={'seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'}
         self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
         for path in ['database/functions/eshop/finalize_ticket_order.sql',
                      'tools/festapp/src/operations.mjs',
@@ -122,7 +122,8 @@ class VersionProjectionTest(unittest.TestCase):
             before=commit('0.20.625');after=commit('0.20.626')
             with patch.object(selection,'ROOT',root),selection.lookup():
                 for lane,unit in [('wix-checkout-compatibility','wix-cms'),('seat-checkout','seat-mcp-prepare'),
-                                  ('seat-checkout','seat-mcp-authorization'),('seat-checkout','seat-mcp-contracts')]:
+                                  ('seat-checkout','seat-mcp-authorization'),('seat-checkout','seat-mcp-contracts-1'),
+                                  ('seat-checkout','seat-mcp-contracts-2')]:
                     self.assertEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)
                 for lane,unit in [('web-startup','web-startup'),('seat-checkout','seat-browser')]:
                     self.assertNotEqual(selection.fingerprint(before,lane,CONTRACT,unit),selection.fingerprint(after,lane,CONTRACT,unit),unit)
@@ -211,7 +212,7 @@ class InventoryPreflightTest(unittest.TestCase):
         self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False))
         self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False))
         self.assertTrue(flags(['ticket-core'],CONTRACT)['flutter'])
-        self.assertEqual(flags(['seat-mcp-contracts'],CONTRACT),dict(flutter=False,sql=True,browser=False))
+        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False))
         self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True))
         with self.assertRaises(KeyError):flags(['unregistered-executor'],CONTRACT)
 

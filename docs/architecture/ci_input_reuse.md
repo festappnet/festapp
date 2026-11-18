@@ -38,16 +38,20 @@ artifact instead of repeating that source suite.
 
 ## Direct execution evidence
 
-MCP PostgreSQL tests use two independent leased databases: the canonical
-authorization matrix and the remaining contracts. Files within each group stay
-serial because fixtures may commit, analyze tables or replace functions.
+MCP PostgreSQL tests use three independent leased databases: the canonical
+authorization matrix and two partitions of the remaining contracts. Files
+within each group stay serial because fixtures may commit, analyze tables or
+replace functions.
 `seat-mcp-prepare` installs dependencies, prepares immutable API contracts once
 and verifies the dynamic partition covers every `*-postgres.test.mjs` file.
-The ordinary `test:postgres` command still runs the complete suite. Both CI
-groups retain the marked-database and paused-delivery guard, and each claims one
-of two admitted DB slots within the unchanged 3500 MiB/three-worker budget.
-Whole-cluster mutation units reserve both slots. API generation finishes before either consumer;
-the local mirror also waits for the server-policy API writer. Backend changes
+The ordinary `test:postgres` command still runs the complete suite. All CI
+groups retain the marked-database and paused-delivery guard. Each group claims one
+of three database slots on GitHub-hosted seat checkout. The local mirror uses
+two slots. Whole-cluster units reserve the entire capacity in either environment.
+Payment checks use one slot. Upgrade and Stripe concurrency fixtures acquire
+their own marked clones, and the remaining payment checks use the unit's lease.
+API generation finishes before all MCP groups. The local mirror also waits for
+the server-policy API writer. Backend changes
 invalidate MCP proofs; standalone checkout UI changes do not.
 
 The existing immutable receipt includes repository ID, workflow definition digest,
@@ -147,13 +151,16 @@ the DAG. Immutable archives may be retained within the hosted job under their
 GitHub SHA-256; the digest is verified again on every read.
 
 Wix has quick contracts/build, PHP adapter smoke and an installed CMS unit.
+GitHub-hosted jobs can run them together within the 5000 MiB admission budget.
+The local mirror retains the 3500 MiB budget.
 Seat domains have separate lease-owned databases; cluster-wide mutations remain
 exclusive. The local mirror finishes other Node-version consumers before Wix
 reinstalls shared package dependencies. Installed CMS uses digest-pinned official
 WordPress and WP-CLI images directly, avoiding wp-env's unused Composer/PHPUnit
 image builds. Both configured core/PHP pairs are verified at runtime, with
-separate volumes and databases. Owner labels fence creation and cleanup; private
-state is never cached. Developer wp-env tooling and its dependency tests remain.
+separate volumes and databases. The two core containers start concurrently.
+Their installations run concurrently once MariaDB creates both databases.
+Owner labels fence creation and cleanup. Private state is never cached. Developer wp-env tooling and its dependency tests remain.
 Pinned browser binaries are cached on GitHub; system browser libraries and all
 private CMS/database state are prepared normally. A measured upstream Docker
 image archive cache was removed: even a verified warm hit did not improve the

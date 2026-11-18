@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from threading import Barrier, Event
 import unittest
 from unittest.mock import patch
 
@@ -40,6 +41,35 @@ class WordPressRuntimeTest(unittest.TestCase):
         self.assertNotEqual(calls[0][calls[0].index('--env-file') + 1], calls[1][calls[1].index('--env-file') + 1])
         self.assertTrue(all(LABEL + '=' + self.project in command for command in calls))
         self.assertTrue(all('--rm' in command for command in calls))
+
+    def test_releases_start_and_install_concurrently_after_database_creation(self):
+        starting = Barrier(2, timeout=3)
+        installing = Barrier(2, timeout=3)
+        databases_ready = Event()
+
+        def run(command, **kwargs):
+            if 'mariadb' in command:
+                self.assertTrue(all(row['database'] in command[-1] for row in runtime.versions.values()))
+                databases_ready.set()
+
+        runtime = WordPress(self.root, self.project, run)
+
+        def start_core(row, password):
+            self.assertFalse(databases_ready.is_set())
+            starting.wait()
+
+        def install_core(name, deadline):
+            self.assertTrue(databases_ready.is_set())
+            installing.wait()
+
+        healthy = subprocess.CompletedProcess([], 0, '', '')
+        with patch.object(runtime, '_inspect', return_value=None), \
+             patch.object(runtime, '_start_core', side_effect=start_core) as starts, \
+             patch.object(runtime, '_install_core', side_effect=install_core) as installs, \
+             patch('wordpress_runtime.subprocess.run', return_value=healthy):
+            runtime.start()
+        self.assertEqual(starts.call_count, 2)
+        self.assertEqual({call.args[0] for call in installs.call_args_list}, set(runtime.versions))
 
     def test_unpinned_images_and_foreign_fixture_are_refused(self):
         with self.assertRaises(ValueError):

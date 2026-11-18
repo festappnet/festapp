@@ -3,6 +3,7 @@
 Only public Docker image and WP-CLI interfaces are used. Each version has its
 own core volume and database; all resources carry the unique fixture owner.
 """
+from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 import re
@@ -88,45 +89,51 @@ class WordPress:
         self.run(['docker', 'network', 'create', '--label', LABEL + '=' + self.project, self.network])
         self.run(['docker', 'run', '-d', '--name', self.database, '--label', LABEL + '=' + self.project,
             '--network', self.network, '--env-file', database_env, self.database_image], label='wordpress.database')
-        for row in self.versions.values():
-            self.run(['docker', 'volume', 'create', '--label', LABEL + '=' + self.project, row['volume']])
-            extra = '\n'.join('define(' + json.dumps(key) + ',' + json.dumps(value) + ');'
-                for key, value in row['config'].items() if key != 'WP_DEBUG')
-            # Docker env files cannot contain multiline values. PHP accepts spaces.
-            row['env'].write_text('\n'.join(['WORDPRESS_DB_HOST=' + self.database,
-                'WORDPRESS_DB_USER=root', 'WORDPRESS_DB_PASSWORD=' + password,
-                'WORDPRESS_DB_NAME=' + row['database'], 'WORDPRESS_DEBUG=' + ('1' if row['config'].get('WP_DEBUG') else ''), 'WORDPRESS_CONFIG_EXTRA=' + extra.replace('\n', ' ')]) + '\n')
-            row['env'].chmod(0o600)
-            self.run(['docker', 'run', '-d', '--name', row['container'], '--label', LABEL + '=' + self.project,
-                '--network', self.network, '--env-file', row['env'], '-p', '127.0.0.1:' + str(row['port']) + ':80',
-                '-v', row['volume'] + ':/var/www/html',
-                '-v', str(self.root / 'tests') + ':/var/www/html/wp-content/plugins/vstupenky-online-tests:ro',
-                '-v', str(self.root / 'dist') + ':/var/www/html/wp-content/vo-artifacts:ro',
-                self.images['wordpress:php' + row['php']]], label='wordpress.apache')
-        deadline = time.monotonic() + 90
-        while True:
-            result = subprocess.run(['docker', 'exec', self.database, 'healthcheck.sh', '--connect', '--innodb_initialized'], capture_output=True)
-            if result.returncode == 0:
-                break
-            if time.monotonic() >= deadline:
-                raise RuntimeError('Owned WordPress database readiness timeout')
-            time.sleep(.2)
-        self.run(['docker', 'exec', '--env-file', database_env, self.database, 'mariadb', '-uroot', '-e',
-            ';'.join('CREATE DATABASE ' + row['database'] for row in self.versions.values())])
-        for name, row in self.versions.items():
-            while subprocess.run(['docker', 'exec', row['container'], 'test', '-f', '/var/www/html/wp-config.php'], capture_output=True).returncode:
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            list(workers.map(lambda row: self._start_core(row, password), self.versions.values()))
+            deadline = time.monotonic() + 90
+            while True:
+                result = subprocess.run(['docker', 'exec', self.database, 'healthcheck.sh', '--connect', '--innodb_initialized'], capture_output=True)
+                if result.returncode == 0:
+                    break
                 if time.monotonic() >= deadline:
-                    raise RuntimeError('Owned WordPress core initialization timeout')
+                    raise RuntimeError('Owned WordPress database readiness timeout')
                 time.sleep(.2)
-            if self.cli(name, 'core', 'version', capture=True).strip() != row['version']:
-                self.cli(name, 'core', 'download', '--version=' + row['version'], '--force')
-            self.cli(name, 'core', 'install', '--url=' + row['config']['WP_HOME'],
-                '--title=CMS consent fixture', '--admin_user=fixture', '--admin_password=disposable-fixture-only',
-                '--admin_email=wordpress@example.invalid', '--skip-email')
-            if self.cli(name, 'core', 'version', capture=True).strip() != row['version']:
-                raise RuntimeError('WordPress version mismatch')
-            if self.cli(name, 'eval', 'echo PHP_MAJOR_VERSION,".",PHP_MINOR_VERSION;', capture=True).strip() != row['php']:
-                raise RuntimeError('PHP version mismatch')
+            self.run(['docker', 'exec', '--env-file', database_env, self.database, 'mariadb', '-uroot', '-e',
+                ';'.join('CREATE DATABASE ' + row['database'] for row in self.versions.values())])
+            list(workers.map(lambda name: self._install_core(name, deadline), self.versions))
+
+    def _start_core(self, row, password):
+        self.run(['docker', 'volume', 'create', '--label', LABEL + '=' + self.project, row['volume']])
+        extra = '\n'.join('define(' + json.dumps(key) + ',' + json.dumps(value) + ');'
+            for key, value in row['config'].items() if key != 'WP_DEBUG')
+        # Docker env files cannot contain multiline values. PHP accepts spaces.
+        row['env'].write_text('\n'.join(['WORDPRESS_DB_HOST=' + self.database,
+            'WORDPRESS_DB_USER=root', 'WORDPRESS_DB_PASSWORD=' + password,
+            'WORDPRESS_DB_NAME=' + row['database'], 'WORDPRESS_DEBUG=' + ('1' if row['config'].get('WP_DEBUG') else ''), 'WORDPRESS_CONFIG_EXTRA=' + extra.replace('\n', ' ')]) + '\n')
+        row['env'].chmod(0o600)
+        self.run(['docker', 'run', '-d', '--name', row['container'], '--label', LABEL + '=' + self.project,
+            '--network', self.network, '--env-file', row['env'], '-p', '127.0.0.1:' + str(row['port']) + ':80',
+            '-v', row['volume'] + ':/var/www/html',
+            '-v', str(self.root / 'tests') + ':/var/www/html/wp-content/plugins/vstupenky-online-tests:ro',
+            '-v', str(self.root / 'dist') + ':/var/www/html/wp-content/vo-artifacts:ro',
+            self.images['wordpress:php' + row['php']]], label='wordpress.apache')
+
+    def _install_core(self, name, deadline):
+        row = self.versions[name]
+        while subprocess.run(['docker', 'exec', row['container'], 'test', '-f', '/var/www/html/wp-config.php'], capture_output=True).returncode:
+            if time.monotonic() >= deadline:
+                raise RuntimeError('Owned WordPress core initialization timeout')
+            time.sleep(.2)
+        if self.cli(name, 'core', 'version', capture=True).strip() != row['version']:
+            self.cli(name, 'core', 'download', '--version=' + row['version'], '--force')
+        self.cli(name, 'core', 'install', '--url=' + row['config']['WP_HOME'],
+            '--title=CMS consent fixture', '--admin_user=fixture', '--admin_password=disposable-fixture-only',
+            '--admin_email=wordpress@example.invalid', '--skip-email')
+        if self.cli(name, 'core', 'version', capture=True).strip() != row['version']:
+            raise RuntimeError('WordPress version mismatch')
+        if self.cli(name, 'eval', 'echo PHP_MAJOR_VERSION,".",PHP_MINOR_VERSION;', capture=True).strip() != row['php']:
+            raise RuntimeError('PHP version mismatch')
 
     def stop(self):
         owned = [(kind, name) for kind, name in self._resources() if self._inspect(kind, name)]

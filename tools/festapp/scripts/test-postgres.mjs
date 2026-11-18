@@ -10,10 +10,17 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const authorization='canonical-authorization-postgres.test.mjs';
 
 export function postgresTests(group='all',directory=resolve(root,'test')) {
-    assert(['all','authorization','contracts'].includes(group),'Unknown PostgreSQL test group: '+group);
+    const shards = ['contracts-1', 'contracts-2'];
+    assert(['all', 'authorization', ...shards].includes(group), 'Unknown PostgreSQL test group: ' + group);
     const files=readdirSync(directory).filter(file=>file.endsWith('-postgres.test.mjs')).sort();
     assert(files.includes(authorization),'Authorization truth-table entrypoint is missing');
-    const selected=files.filter(file=>group==='all'||(group==='authorization')===(file===authorization));
+    let selected = files;
+    if (group === 'authorization') selected = [authorization];
+    if (shards.includes(group)) {
+        const shard = shards.indexOf(group);
+        selected = files.filter(file => file !== authorization)
+            .filter((_, index) => index % shards.length === shard);
+    }
     assert(selected.length,'Empty PostgreSQL test group: '+group);
     return selected.map(file=>'test/'+file);
 }
