@@ -42,7 +42,9 @@ jobs:
         with:
           node-version: '22.23.4'
           cache: pnpm
-          cache-dependency-path: workers/image-worker/pnpm-lock.yaml
+          cache-dependency-path: |
+            tools/festapp/pnpm-lock.yaml
+            web_client/pnpm-lock.yaml
       - name: Install pinned Deno
         if: steps.selection.outputs.run == 'true'
         run: bash automation/ci/deno.sh

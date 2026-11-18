@@ -136,11 +136,17 @@
       "node": "22.23.4",
       "steps": [
         "mcp-auth-install",
-        "mcp-auth-contract"
+        "mcp-api-prepare",
+        "mcp-auth-contract",
+        "mcp-web-contract",
+        "mcp-edge-policy",
+        "mcp-api-contract"
       ],
       "inputs": [
         "tools/festapp/**",
         "supabase/functions/mcp-session-exchange/**",
+        "supabase/functions/_shared/issueExistingUserSession*.ts",
+        "supabase/functions/deno.lock",
         "web_client/**",
         "packages/festapp_contracts/**",
         "automation/hetzner-supabase/runtime/*function*bundle*",
@@ -149,7 +155,25 @@
         "automation/tests/test_function_environment.py",
         "integrations/make/**",
         "automation/hetzner-supabase/runtime/Caddyfile.integrations",
-        "assets/translations/**"
+        "assets/translations/**",
+        "automation/assemble-mcp-completion-migration.py",
+        "automation/assemble-information-authoring-migration.py",
+        "automation/assemble-integration-webhooks-migration.py",
+        "automation/assemble-ticket-layout-contract-refresh-migration.py",
+        "automation/migration_forward_owners.py",
+        "automation/migration-forward-owners.json",
+        "automation/check_api_artifacts.py",
+        "automation/tests/test_api_artifacts.py",
+        "database/functions/inventory/delegated_assignments.sql",
+        "database/functions/authoring/information.sql",
+        "database/functions/user_permissions/webhook_operations.sql",
+        "database/functions/integration_webhooks/webhooks.sql",
+        "database/functions/eshop/create_ticket_order.sql",
+        "database/functions/others/get_ticket_layout_write_contract_v1.sql",
+        "supabase/migrations/20261110110000_mcp_inventory_assignments.sql",
+        "supabase/migrations/20261116160000_information_authoring.sql",
+        "supabase/migrations/20261114120000_integration_webhooks.sql",
+        "supabase/migrations/20261114130000_ticket_layout_contract_refresh.sql"
       ]
     },
     "client-contract": {
@@ -429,7 +453,8 @@
       "node": "22.23.4",
       "steps": [
         "ticket-rendering-install",
-        "ticket-rendering-client"
+        "ticket-rendering-client",
+        "ticketing-catalog-contract"
       ],
       "inputs": [
         "lib/**",
@@ -462,7 +487,8 @@
         "packages/windows_file_picker/**",
         "automation/testing/ticket_default_ci.dart",
         "database/fixtures/**",
-        "automation/lib/**"
+        "automation/lib/**",
+        "test_dart/**"
       ]
     }
   },
@@ -567,7 +593,11 @@
         "seat-measurement",
         "web-measurement",
         "mcp-auth-install",
+        "mcp-api-prepare",
         "mcp-auth-contract",
+        "mcp-web-contract",
+        "mcp-edge-policy",
+        "mcp-api-contract",
         "seat-upgrade",
         "seat-runtime-contract",
         "seat-payments",
@@ -582,7 +612,8 @@
         "mcp-database-install",
         "image-browser-install",
         "ticket-rendering-install",
-        "ticket-rendering-client"
+        "ticket-rendering-client",
+        "ticketing-catalog-contract"
       ],
       "resources": {
         "ramMiB": 256
@@ -616,7 +647,7 @@
       ]
     },
     "navigation-contract": {
-      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/navigation_ci.dart automation/testing/navigation_default.dart test/components/navigation/admin_breadcrumb_navigation_test.dart test/components/schedule/light_timeline_initial_day_cases.dart test/components/occasion/occasion_list_refresh_test.dart test/components/unit/unit_measurement_settings_cases.dart test/components/unit/unit_settings_save_test.dart test/components/eshop/order_email_repair_design_cases.dart test/components/eshop/order_detail_scroll_storage_cases.dart test/components/eshop/order_detail_viewer_cases.dart\nfvm flutter test --no-pub --concurrency=1 --dart-define=FESTAPP_APP_SUPPORTED=false test/components/navigation/ticketing_catalog_boundary_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/navigation_ci.dart automation/testing/navigation_default.dart test/components/navigation/admin_breadcrumb_navigation_test.dart test/components/schedule/light_timeline_initial_day_cases.dart test/components/occasion/occasion_list_refresh_test.dart test/components/unit/unit_measurement_settings_cases.dart test/components/unit/unit_settings_save_test.dart test/components/eshop/order_email_repair_design_cases.dart test/components/eshop/order_detail_scroll_storage_cases.dart test/components/eshop/order_detail_viewer_cases.dart\n",
       "after": [
         "navigation-install"
       ],
@@ -751,7 +782,9 @@
       "script": "python3 automation/ci/run.py install tools/festapp\npnpm --dir tools/festapp run pretest:postgres\npnpm --dir tools/festapp exec node --test test/postgres-selection.test.mjs\n",
       "after": [
         "mcp-database-install",
-        "mcp-auth-contract"
+        "mcp-auth-contract",
+        "mcp-api-prepare",
+        "mcp-api-contract"
       ],
       "requires": [
         "mcp-database-install"
@@ -1153,7 +1186,7 @@
       "requires": []
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/ticket_czech_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/ticket_palette_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -1269,15 +1302,61 @@
         "ramMiB": 256
       }
     },
-    "mcp-auth-contract": {
-      "script": "pnpm --dir tools/festapp run api:prepare\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/app-landing.test.mjs test/information.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js\ndeno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/ supabase/functions/_shared/issueExistingUserSession_test.ts\npnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\npython3 automation/assemble-information-authoring-migration.py --check\nnode --test automation/tests/function_bundle_selection.test.mjs\npython3 -m unittest automation.tests.test_function_environment\n\n# api:prepare already rendered the eight offline references verified by api-docs.test.mjs.\npnpm --dir tools/festapp exec node scripts/check-api-contract.mjs\npnpm --dir tools/festapp run api:compatibility\npnpm --dir tools/festapp exec node ../../integrations/make/scripts/build.mjs --check\n\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/webhook-protocol.test.mjs test/webhook-delivery.test.mjs test/webhook-events.test.mjs test/webhook-receiver.test.mjs\npython3 automation/assemble-integration-webhooks-migration.py --check\npython3 automation/assemble-ticket-layout-contract-refresh-migration.py --check\n\npython3 automation/check_api_artifacts.py\npython3 -m unittest automation.tests.test_api_artifacts\npnpm --dir tools/festapp exec node --test test/api-artifacts.test.mjs\n",
+    "mcp-api-prepare": {
+      "script": "pnpm --dir tools/festapp run api:prepare\n",
       "after": [
         "mcp-auth-install"
       ],
       "resources": {
-        "ramMiB": 768,
+        "ramMiB": 1280,
         "sourceGeneration": 1
+      },
+      "requires": [
+        "mcp-auth-install"
+      ]
+    },
+    "mcp-auth-contract": {
+      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/app-landing.test.mjs test/information.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/webhook-protocol.test.mjs test/webhook-delivery.test.mjs test/webhook-events.test.mjs test/webhook-receiver.test.mjs\n",
+      "after": [
+        "mcp-api-prepare"
+      ],
+      "resources": {
+        "ramMiB": 768
+      },
+      "requires": [
+        "mcp-api-prepare"
+      ]
+    },
+    "mcp-web-contract": {
+      "script": "pnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js\n",
+      "after": [
+        "mcp-auth-install"
+      ],
+      "resources": {
+        "ramMiB": 768
+      },
+      "requires": [
+        "mcp-auth-install"
+      ]
+    },
+    "mcp-edge-policy": {
+      "script": "deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/ supabase/functions/_shared/issueExistingUserSession_test.ts\nnode --test automation/tests/function_bundle_selection.test.mjs\npython3 -m unittest automation.tests.test_function_environment\n",
+      "after": [],
+      "resources": {
+        "ramMiB": 768
       }
+    },
+    "mcp-api-contract": {
+      "script": "pnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\npython3 automation/assemble-information-authoring-migration.py --check\npnpm --dir tools/festapp exec node scripts/check-api-contract.mjs\npnpm --dir tools/festapp run api:compatibility\npnpm --dir tools/festapp exec node ../../integrations/make/scripts/build.mjs --check\npython3 automation/assemble-integration-webhooks-migration.py --check\npython3 automation/assemble-ticket-layout-contract-refresh-migration.py --check\npython3 automation/check_api_artifacts.py\npython3 -m unittest automation.tests.test_api_artifacts\npnpm --dir tools/festapp exec node --test test/api-artifacts.test.mjs\n",
+      "after": [
+        "mcp-api-prepare"
+      ],
+      "resources": {
+        "ramMiB": 1024
+      },
+      "requires": [
+        "mcp-api-prepare"
+      ]
     },
     "seat-upgrade": {
       "script": "python3 automation/local_db/runtime.py upgrade\n",
@@ -1636,7 +1715,11 @@
         "seat-measurement",
         "web-measurement",
         "mcp-auth-install",
+        "mcp-api-prepare",
         "mcp-auth-contract",
+        "mcp-web-contract",
+        "mcp-edge-policy",
+        "mcp-api-contract",
         "seat-upgrade",
         "seat-runtime-contract",
         "seat-payments",
@@ -1652,7 +1735,8 @@
         "image-browser-install",
         "wix-install",
         "ticket-rendering-install",
-        "ticket-rendering-client"
+        "ticket-rendering-client",
+        "ticketing-catalog-contract"
       ],
       "inputs": [
         "web_client/package.json",
@@ -1727,7 +1811,7 @@
       ]
     },
     "ticket-rendering-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 automation/testing/ticket_default_ci.dart test/sessions/ticket_czech_cases.dart test/sessions/ticket_palette_cases.dart\n",
       "after": [
         "ticket-rendering-install"
       ],
@@ -1770,6 +1854,49 @@
         "test/sessions/ticket_czech_cases.dart",
         "test/sessions/ticket_futura_cases.dart",
         "test/sessions/ticket_palette_cases.dart",
+        "test/support/**",
+        "test/fixtures/**"
+      ]
+    },
+    "ticketing-catalog-contract": {
+      "script": "fvm flutter test --no-pub --concurrency=1 --dart-define=FESTAPP_APP_SUPPORTED=false test/components/navigation/ticketing_catalog_boundary_cases.dart\n",
+      "after": [
+        "ticket-rendering-client"
+      ],
+      "resources": {
+        "ramMiB": 2600,
+        "flutter": 1
+      },
+      "requires": [
+        "ticket-rendering-install"
+      ],
+      "inputs": [
+        "lib/**",
+        "test/**",
+        "test_dart/**",
+        "assets/**",
+        "fonts/**",
+        "pubspec.*",
+        ".fvmrc",
+        "automation/project.conf",
+        "automation/client_test_inventory.*",
+        "packages/festapp_contracts/**",
+        "packages/android_file_picker/**",
+        "packages/desktop_drop/**",
+        "packages/festapp_core/**",
+        "packages/file_picker/**",
+        "packages/file_picker_darwin/**",
+        "packages/file_picker_linux/**",
+        "packages/file_picker_platform_interface/**",
+        "packages/file_picker_web/**",
+        "packages/maplibre_android/**",
+        "packages/maplibre_ios/**",
+        "packages/maplibre_platform_interface/**",
+        "packages/nm/**",
+        "packages/super_native_extensions/**",
+        "packages/irondash_engine_context/**",
+        "packages/windows_file_picker/**",
+        "test/components/navigation/ticketing_catalog_boundary_cases.dart",
         "test/support/**",
         "test/fixtures/**"
       ]

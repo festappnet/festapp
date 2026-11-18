@@ -120,11 +120,12 @@ class MirrorContractTest(unittest.TestCase):
                     continue
                 cross_lane = set(runner.CONTRACT['steps'][unit]['after']) - set(lane['steps'])
                 allowed = {
-                    'seat-mcp-prepare': {'mcp-auth-contract'},
+                    'seat-mcp-prepare': {'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract'},
                     'seat-database': {'seat-runtime-contract'},
                 }.get(unit, {'seat-database'} if name == 'mcp-database-contracts' else set())
                 self.assertLessEqual(cross_lane, allowed, unit)
-        self.assertIn('mcp-auth-contract',runner.CONTRACT['steps']['seat-mcp-prepare']['after'])
+        self.assertTrue({'mcp-api-prepare', 'mcp-auth-contract', 'mcp-api-contract'}
+                        .issubset(runner.CONTRACT['steps']['seat-mcp-prepare']['after']))
         for unit in ('seat-mcp-authorization','seat-mcp-contracts-1','seat-mcp-contracts-2'):
             self.assertIn(unit,runner.CONTRACT['steps']['wix-install']['after'])
         for entrypoint in ('automation/cloudflare_build.sh','automation/ci_build.sh'):
@@ -142,7 +143,7 @@ class MirrorContractTest(unittest.TestCase):
         self.assertIn('test-postgres.mjs authorization',scripts['seat-mcp-authorization'])
         for index in (1, 2):
             self.assertIn(f'test-postgres.mjs contracts-{index}', scripts[f'seat-mcp-contracts-{index}'])
-        self.assertIn('assemble-information-authoring-migration.py --check',scripts['mcp-auth-contract'])
+        self.assertIn('assemble-information-authoring-migration.py --check',scripts['mcp-api-contract'])
 
     def test_cluster_mutators_reserve_the_complete_admission_capacity(self):
         contract=runner.CONTRACT
