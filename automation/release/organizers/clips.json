@@ -141,6 +141,16 @@
       "mobileDuration": 7.933333
     },
     {
+      "id": "order-payment-detail",
+      "label": "Platby u objednávky",
+      "src": "/organizers-media/order-payment-detail.mp4",
+      "poster": "/organizers-media/order-payment-video-poster.webp",
+      "width": 720,
+      "height": 720,
+      "duration": 8.47,
+      "description": "Přechod z historie na platby a kontrola přijatých plateb u dvou objednávek."
+    },
+    {
       "id": "orders-overview",
       "label": "Report a objednávky",
       "src": "/organizers-media/orders-overview.mp4",

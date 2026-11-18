@@ -391,8 +391,9 @@ body.dark-mode .topic-layout-image{background:#dce1df}
 .product-proof h2{font-size:clamp(28px,3.2vw,44px);line-height:1.12;margin-bottom:22px}
 .product-proof-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.65fr);gap:20px}
 .product-proof-grid figure{display:grid;grid-template-rows:auto 1fr;margin:0;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:15px;overflow:hidden}
-.product-proof-image{display:grid;place-items:center;background:var(--wash);height:470px;padding:16px}
-.product-proof-image img{width:100%;height:100%;min-height:0;object-fit:contain}
+.product-proof-media{display:grid;place-items:center;background:var(--wash);height:470px;min-width:0;padding:16px}
+.product-proof-media>.media-stage{width:100%;max-width:438px;min-width:0}
+.product-proof-media>.media-stage[data-portrait]{width:fit-content}
 .product-proof-grid figcaption{padding:16px 22px 12px}
 .product-proof-grid h3{font-size:23px;line-height:1.16}
 .product-proof-grid p{margin-top:7px;color:var(--muted);font-size:16px}
@@ -425,7 +426,7 @@ body.dark-mode .topic-layout-image{background:#dce1df}
   .topic-intro-art picture img{max-height:none}
   .topic-intro-art-portrait>img{width:min(100%,250px);max-height:none}
   .product-proof-grid,.product-directory{grid-template-columns:1fr}
-  .product-proof-image{height:auto}
+  .product-proof-media{height:auto}
   .product-proof{padding-bottom:28px}
   .product-directory a{padding-block:12px}
   .product-directory a::after{top:20px}
@@ -461,10 +462,9 @@ body.dark-mode .topic-layout-image{background:#dce1df}
 .media-stage[data-portrait]{width:fit-content;max-width:100%;margin-inline:auto}
 .media-stage[data-portrait] .media-viewport video{width:auto;height:auto;max-width:100%;max-height:min(640px,75svh)}
 
-.product-proof-image .media-stage[data-portrait] video{max-height:438px}
+.product-proof-media .media-stage[data-portrait] video{max-height:438px}
 @media(max-width:760px){
- .product-proof-image .media-stage[data-portrait] video{max-height:min(620px,72svh)}
- .product-proof-image>img{height:auto}
+ .product-proof-media .media-stage[data-portrait] video{max-height:min(620px,72svh)}
 }
 
 /* Czech marketing pages. Instrument Sans variable fonts, Latin and Latin Extended. */

@@ -326,16 +326,14 @@
     "productProof": [
       {
         "role": "Co vidí host",
-        "recording": true,
+        "clip": "seat-select",
+        "compact": true,
         "caption": "Host si na telefonu vybere místa u jednoho stolu."
       },
       {
         "role": "Co vidí pořadatel",
-        "image": "/organizers-media/order-payment-detail.webp",
-        "width": 720,
-        "height": 540,
-        "alt": "Přehled platebních údajů, úhrady a případné vratky v detailu objednávky.",
-        "caption": "Platba u konkrétní objednávky.",
+        "clip": "order-payment-detail",
+        "caption": "Kde u objednávky zjistíte, kolik host zaplatil.",
         "label": "Prohlédnout platby a doručení vstupenek",
         "href": "/platby-a-objednavky"
       }
@@ -343,8 +341,7 @@
     "pages": [
       {
         "id": "home",
-        "path": "/",
-        "purchasePreviewClip": "seat-select"
+        "path": "/"
       },
       {
         "id": "seating-reservations",

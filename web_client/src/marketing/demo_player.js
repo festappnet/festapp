@@ -20,6 +20,7 @@ export function initDemoPlayers(root = document) {
   const players = [];
   const removers = [];
   let timer;
+  let preferredPlayer;
   let destroyed = false;
   function listen(target, name, callback, options) {
     target.addEventListener(name, callback, options);
@@ -60,6 +61,7 @@ export function initDemoPlayers(root = document) {
     player.video.loop = automatic() && player.variants.length === 1;
     if (!load(player)) return;
     if (explicit) {
+      preferredPlayer = player;
       player.manualPause = false;
       player.userStarted = true;
       player.error = false;
@@ -74,7 +76,9 @@ export function initDemoPlayers(root = document) {
   function measure() {
     if (destroyed) return;
     players.forEach(player => { player.ratio = visibleRatio(player.stage.getBoundingClientRect(), win.innerHeight, win.innerWidth); });
-    const active = root.hidden ? null : automatic() ? chooseVisiblePlayer(players) : players.find(player => player.userStarted && !player.video.paused && player.ratio >= .5);
+    const preferred = preferredPlayer && chooseVisiblePlayer([preferredPlayer]);
+    const active = root.hidden ? null : automatic() ? preferred ?? chooseVisiblePlayer(players)
+      : players.find(player => player.userStarted && !player.video.paused && player.ratio >= .5);
     players.forEach(player => { if (player !== active) player.video.pause(); });
     if (active && automatic()) play(active);
   }
@@ -85,6 +89,7 @@ export function initDemoPlayers(root = document) {
       player.ratio = visibleRatio(player.stage.getBoundingClientRect(), win.innerHeight, win.innerWidth);
       if (root.hidden || player.ratio < .5) player.video.pause();
     });
+    if (preferredPlayer?.ratio < .5) preferredPlayer = undefined;
     timer = win.setTimeout(measure, 550);
   }
   root.querySelectorAll('[data-demo-player]').forEach(stage => {
@@ -111,7 +116,7 @@ export function initDemoPlayers(root = document) {
       if (!video.paused) { player.manualPause = true; video.pause(); updateButton(player); }
       else play(player, true);
     });
-    listen(video, 'play', () => { pauseOthers(player); updateButton(player); });
+    listen(video, 'play', () => { if (!video.paused) pauseOthers(player); updateButton(player); });
     listen(video, 'pause', () => updateButton(player));
     listen(video, 'ended', () => {
       // Native looping normally bypasses ended; keep visibility and manual intent authoritative.
