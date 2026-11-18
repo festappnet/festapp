@@ -519,20 +519,15 @@ test('terminal back action removes capability and fetches fresh normal form capa
     d.window.close();
 });
 
-test('paid checkout shows a separate Meta opt-in unchecked when a notice is configured', t => {
+test('paid checkout no longer renders a separate Meta opt-in', t => {
     const d = dom();
     t.after(() => d.window.close());
     const model = new FormModel({ registrationMode: 'regular', fields });
     const payload = { fields: [{ 4: 'buyer@example.invalid' }], ticket: [{ fields: [{ product_type: 9 }] }] };
     const prices = { totalPrice: 200, currency: 'CZK' };
-    OrderPreview.show(document.createElement('form'), model, prices, () => {}, null, payload);
-    assert.equal(document.querySelector('[data-meta-purchase-consent]'), null);
+    // Meta CAPI consent comes from the saved website consent, not from checkout.
     OrderPreview.show(document.createElement('form'), model, prices, () => {}, null, payload, {
         metaConsent: { privacyUrl: 'https://organizer.example/privacy' },
     });
-    const optIn = document.querySelector('[data-meta-purchase-consent]');
-    assert.ok(optIn);
-    assert.equal(optIn.checked, false);
-    assert.equal(optIn.required, false);
-    assert.match(optIn.closest('label').textContent, /Metou/);
+    assert.equal(document.querySelector('[data-meta-purchase-consent]'), null);
 });
