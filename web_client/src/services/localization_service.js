@@ -19,9 +19,28 @@ function savedLocale() {
     return null;
 }
 
+async function loadCatalog(locale) {
+    const res = await fetch(`/assets/translations/${locale}.json`);
+    if (!res.ok) throw new Error('Translation not found');
+    return res.json();
+}
+
+function lookup(catalog, key) {
+    let value = Object.hasOwn(catalog, key) ? catalog[key] : undefined;
+    if (!value) {
+        value = catalog;
+        for (const part of key.split('.')) {
+            if (!value || !Object.hasOwn(value, part)) return undefined;
+            value = value[part];
+        }
+    }
+    return value && value !== key ? value : undefined;
+}
+
 export class LocalizationService {
     static currentLocale = AppConfig.defaultLanguage; // Default
     static translations = {};
+    static fallbackTranslations = {};
     static _initialization = null;
 
     static init({locale, persist = true} = {}) {
@@ -75,9 +94,12 @@ export class LocalizationService {
     static async loadTranslations(locale, {persist = true} = {}) {
         if (!supportsLocale(locale, persist)) throw new Error('Unsupported locale');
         try {
-            const res = await fetch(`/assets/translations/${locale}.json`);
-            if (!res.ok) throw new Error('Translation not found');
-            LocalizationService.translations = await res.json();
+            const fallback = persist && locale !== AppConfig.defaultLanguage
+                ? loadCatalog(AppConfig.defaultLanguage).catch(() => ({}))
+                : {};
+            const [translations, fallbackTranslations] = await Promise.all([loadCatalog(locale), fallback]);
+            LocalizationService.translations = translations;
+            LocalizationService.fallbackTranslations = fallbackTranslations;
             LocalizationService.currentLocale = locale;
             if (persist) {
                 browserStorage.setItem(sharedLocaleKey, JSON.stringify(locale));
@@ -90,34 +112,21 @@ export class LocalizationService {
     }
 
     static tr(key, args = {}, fallback = key) {
-        // 0. Try direct lookup first (for keys with dots like "Some sentence.")
-        let value = LocalizationService.translations[key];
+        const preferred = lookup(LocalizationService.translations, key);
+        // Explicit fallbacks also let callers probe for a locale-specific wording variant.
+        const defaultText = preferred === undefined && fallback === key
+            ? lookup(LocalizationService.fallbackTranslations, key)
+            : undefined;
+        const value = preferred ?? defaultText;
+        if (value === undefined) return fallback;
 
-        if (!value) {
-            // 1. Traverse hierarchy if direct lookup failed
-            const keys = key.split('.');
-            value = LocalizationService.translations;
-            
-            for (const k of keys) {
-                if (value && value[k]) {
-                    value = value[k];
-                } else {
-                    return fallback; // Key not found
-                }
-            }
-        }
-
-        // Some legacy translation payloads contain the internal key as their
-        // value. Treat that as untranslated so callers with a user-facing
-        // fallback never render implementation identifiers.
-        if (value === key) return fallback;
-
-        
         // Simple interpolation for named arguments: {name}
         if (typeof value === 'string') {
+            let text = value;
             for (const [argKey, argValue] of Object.entries(args)) {
-                value = value.replace(`{${argKey}}`, argValue);
+                text = text.replace(`{${argKey}}`, argValue);
             }
+            return text;
         }
         
         return value;

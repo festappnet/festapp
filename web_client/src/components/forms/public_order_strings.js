@@ -6,8 +6,8 @@ export class PublicOrderStrings {
     static text(key, tone) {
         if (tone === 'informal') {
             const informalKey = `${key}_informal`;
-            const val = LocalizationService.tr(informalKey);
-            if (val && val !== informalKey) {
+            const val = LocalizationService.tr(informalKey, {}, null);
+            if (val) {
                 return val;
             }
         }

@@ -1172,8 +1172,7 @@ class _FormPageState extends State<FormPage> {
                                                         ? WaitlistStrings.text(
                                                             'regularToWaitlist',
                                                           )
-                                                        : WaitlistStrings
-                                                              .refresh,
+                                                        : CommonStrings.refresh,
                                                   ),
                                                 ),
                                               ],
@@ -1630,7 +1629,7 @@ class _FormPageState extends State<FormPage> {
           Text(OrderOverviewStrings.text('failed')),
           TextButton(
             onPressed: _resolveOverviewAccess,
-            child: Text(WaitlistStrings.refresh),
+            child: Text(CommonStrings.refresh),
           ),
         ],
       );
