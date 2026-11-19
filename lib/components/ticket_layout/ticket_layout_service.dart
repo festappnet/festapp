@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../features/ticket_feature.dart';
+import '../email_templates/db_email_templates.dart';
 import '../images/image_control_client.dart';
 import 'package:fstapp/app_config.dart';
 import 'ticket_preview_assets.dart';
@@ -328,18 +329,10 @@ class TicketLayoutService {
     required int occasionId,
     required TicketDeliveryMode mode,
     required bool walletEnabled,
-  }) async => Map<String, dynamic>.from(
-    await Supabase.instance.client.rpc(
-      'get_occasion_setup_email_preview',
-      params: {
-        'p_id': null,
-        'p_expected_revision': null,
-        'p_message_type': 'order_tickets',
-        'p_occasion': occasionId,
-        'p_delivery_mode': mode.value,
-        'p_wallet_enabled': walletEnabled,
-      },
-    ) as Map,
+  }) => DbEmailTemplates.getTicketDeliveryPreview(
+    occasionId: occasionId,
+    deliveryMode: mode.value,
+    walletEnabled: walletEnabled,
   );
 
   final String? setupDraftId;

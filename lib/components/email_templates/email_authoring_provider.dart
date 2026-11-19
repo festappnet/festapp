@@ -7,12 +7,14 @@ import 'email_template_model.dart';
 import 'email_templates_strings.dart';
 import 'email_preview_html.dart';
 import '../ticket_layout/views/ticket_email_preview.dart';
+import '../ticket_layout/ticket_delivery_strings.dart';
 
 class EmailAuthoringProvider extends TemplateAuthoringProvider {
   EmailAuthoringProvider(this.template, {required this.field, this.scenario});
   final EmailTemplateModel template;
   bool inlineTicketsEnabled = false;
-  bool walletTicketsEnabled = false;
+  Set<TicketWalletProvider> walletProviders = const {};
+  bool get walletTicketsEnabled => walletProviders.isNotEmpty;
   bool includesPdfTickets = false;
   List<EmailTemplateSub> get _subs => template.substitutions.where((sub) {
     if (sub.code == 'tickets' && !inlineTicketsEnabled && !walletTicketsEnabled)
@@ -190,6 +192,7 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
             if (walletTicketsEnabled)
               TicketEmailPreview.walletSample(
                 count: 1,
+                providers: walletProviders,
                 language: scenario?.locale ?? 'en',
               ),
           ],

@@ -180,8 +180,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
     _bodyProvider.inlineTicketsEnabled =
         _ticketMode != null && _ticketMode != TicketDeliveryMode.pdfAttachment;
     _bodyProvider.includesPdfTickets = _ticketMode?.includesPdf == true;
-    _bodyProvider.walletTicketsEnabled =
-        _ticketMode != null && _authoringContext?.walletEnabled == true;
+    _bodyProvider.walletProviders = _ticketMode != null
+        ? _authoringContext?.walletProviders ?? const {}
+        : const {};
     _subjectProvider.scenario = _scenario;
     _bodyProvider.scenario = _scenario;
   }
@@ -412,7 +413,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                             ),
                           ),
                           'wrapper': _authoringContext!.wrapperHtml,
-                          'walletEnabled': _bodyProvider.walletTicketsEnabled,
+                          'walletProviders': _bodyProvider.walletProviders,
                           'walletTicketCount': 1,
                           'walletLanguage': _scenario!.locale,
                           'attachments': TicketEmailPreview.sampleAttachments(

@@ -1,4 +1,5 @@
 import 'email_template_commands.dart';
+import '../ticket_layout/ticket_delivery_strings.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
@@ -22,9 +23,34 @@ class DbEmailTemplates {
     if (response.status != 200 || response.data is! Map) {
       throw StateError('Email authoring metadata unavailable');
     }
-    return EmailAuthoringContext.fromJson(
-        Map<String, dynamic>.from(response.data as Map));
+    final context = Map<String, dynamic>.from(response.data as Map);
+    if (occasionId != null &&
+        templateCode == 'TICKET_ORDER_PAYMENT_DONE' &&
+        context['walletEnabled'] == true) {
+      try {
+        final preview = await getTicketDeliveryPreview(occasionId: occasionId);
+        context['walletProviders'] = preview['walletProviders'];
+      } on PostgrestException {
+        // Email authoring can still be available without ticket-layout access.
+      }
+    }
+    return EmailAuthoringContext.fromJson(context);
   }
+
+  static Future<Map<String, dynamic>> getTicketDeliveryPreview({
+    required int occasionId,
+    String? deliveryMode,
+    bool? walletEnabled,
+  }) async => Map<String, dynamic>.from(
+    await _supabase.rpc('get_occasion_setup_email_preview', params: {
+      'p_id': null,
+      'p_expected_revision': null,
+      'p_message_type': 'order_tickets',
+      'p_occasion': occasionId,
+      'p_delivery_mode': deliveryMode,
+      'p_wallet_enabled': walletEnabled,
+    }) as Map,
+  );
 
   static Future<EmailTemplatesResponse> getAllEmailTemplatesViaOccasionLink(
       String link) async {
@@ -99,14 +125,14 @@ class EmailAuthoringContext {
   final String senderAddress;
   final String? wrapperHtml;
   final List<EmailPreviewPaymentAccount> paymentAccounts;
-  final bool walletEnabled;
+  final Set<TicketWalletProvider> walletProviders;
   final String language;
   final String? ticketDeliveryMode;
   const EmailAuthoringContext({
     required this.senderAddress,
     this.wrapperHtml,
     this.paymentAccounts = const [],
-    this.walletEnabled = false,
+    this.walletProviders = const {},
     this.language = 'cs',
     this.ticketDeliveryMode,
   });
@@ -119,7 +145,9 @@ class EmailAuthoringContext {
     return EmailAuthoringContext(
       senderAddress: sender,
       wrapperHtml: json['wrapperHtml'] as String?,
-      walletEnabled: json['walletEnabled'] == true,
+      walletProviders: json['walletEnabled'] == true
+          ? TicketWalletProvider.ready(json['walletProviders'])
+          : const {},
       language: json['language'] as String? ?? 'cs',
       ticketDeliveryMode: json['ticketDeliveryMode'] as String?,
       paymentAccounts: [

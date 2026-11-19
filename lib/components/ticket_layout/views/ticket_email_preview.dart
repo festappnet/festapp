@@ -72,8 +72,13 @@ class TicketEmailPreview extends StatelessWidget {
         ],
       );
 
-  static Widget walletSample({required int count, String? language}) => Builder(
+  static Widget walletSample({
+    required int count,
+    required Set<TicketWalletProvider> providers,
+    String? language,
+  }) => Builder(
     builder: (context) {
+      if (providers.isEmpty) return const SizedBox.shrink();
       final requested = language ?? context.locale.languageCode;
       final lang =
           const {'cs', 'sk', 'en', 'de', 'pl', 'uk'}.contains(requested)
@@ -124,13 +129,23 @@ class TicketEmailPreview extends StatelessWidget {
                         ),
                         Padding(
                           padding: const EdgeInsets.all(8),
-                          child: Center(
-                            child: Image.asset(
-                              'assets/brand/google-wallet/$lang.png',
-                              height: 48,
-                              fit: BoxFit.contain,
-                              semanticLabel: text('Button'),
-                            ),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final provider
+                                  in TicketWalletProvider.values)
+                                if (providers.contains(provider))
+                                  Image.asset(
+                                    provider.emailBadge(lang),
+                                    height: 48,
+                                    fit: BoxFit.contain,
+                                    semanticLabel:
+                                        provider == TicketWalletProvider.google
+                                        ? text('Button')
+                                        : 'Apple Wallet',
+                                  ),
+                            ],
                           ),
                         ),
                         Padding(
@@ -204,8 +219,11 @@ class TicketEmailPreview extends StatelessWidget {
         ticketsEnabled: true,
       ),
     );
-    final walletEnabled =
-        context['walletEnabled'] != false && context['walletReady'] == true;
+    final providers =
+        context['walletEnabled'] != false && context['ticketsEnabled'] != false
+        ? TicketWalletProvider.ready(context['walletProviders'])
+        : <TicketWalletProvider>{};
+    final walletEnabled = providers.isNotEmpty;
     final body = ticketBody(
       '${template['html'] ?? ''}',
       mode,
@@ -216,7 +234,7 @@ class TicketEmailPreview extends StatelessWidget {
       'subject': scenario.composeSubject('${template['subject'] ?? ''}'),
       'html': scenario.composeHtml(body, wrapperHtml: wrapper),
       'wrapper': wrapper,
-      'walletEnabled': walletEnabled,
+      'walletProviders': providers,
       'walletTicketCount': count,
       'walletLanguage': context['lang'] ?? scenario.locale,
       'includesPdf': mode.includesPdf,
@@ -280,9 +298,11 @@ class TicketEmailPreview extends StatelessWidget {
               count: sampleCount,
               includesPdf: includesPdf || preview['includesPdf'] == true,
             ),
-          if (preview['walletEnabled'] == true)
+          if (preview['walletProviders']
+              case Set<TicketWalletProvider> providers)
             walletSample(
               count: preview['walletTicketCount'] as int? ?? 1,
+              providers: providers,
               language: preview['walletLanguage'] as String?,
             ),
         ],

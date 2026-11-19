@@ -129,7 +129,7 @@ void main() {
         Duration.zero,
         () => const EmailAuthoringContext(
           senderAddress: 'sender@test.invalid',
-          walletEnabled: true,
+          walletProviders: {TicketWalletProvider.google, TicketWalletProvider.apple},
           language: 'en',
           ticketDeliveryMode: 'pdf_attachment',
         ),
