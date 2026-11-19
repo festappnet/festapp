@@ -842,6 +842,7 @@ REVOKE ALL ON FUNCTION public.save_occasion_domain_command_internal_v1(
   bigint, uuid, bigint, jsonb
 ) FROM PUBLIC, anon, authenticated;
 
+-- SOURCE: notification_center/inherited_form_end_baseline.sql
 -- Seed the new due time for already initialized notification projections.
 DO $$
 DECLARE tenant record; form record; baseline_at timestamptz;

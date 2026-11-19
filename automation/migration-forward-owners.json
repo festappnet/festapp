@@ -551,6 +551,18 @@
         "eshop_waitlist/commands.sql",
         "eshop_waitlist/order_overview.sql"
       ]
+    },
+    {
+      "migration": "20261119120000_default_form_close_at_occasion_end.sql",
+      "active": true,
+      "header": "-- Inherit the current occasion end for forms without a custom closing instant.",
+      "sources": [
+        "eshop_forms/get_effective_form_data.sql",
+        "eshop_forms/get_form_for_edit.sql",
+        "occasion_setup/finalize.sql",
+        "others/save_occasion_domain_command_internal_v1.sql",
+        "notification_center/inherited_form_end_baseline.sql"
+      ]
     }
   ]
 }
