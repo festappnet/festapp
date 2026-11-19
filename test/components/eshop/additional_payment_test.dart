@@ -55,7 +55,6 @@ void main() {
   final payments = <Map<String, dynamic>>[];
   late Directory storage;
   final previousPaths = PathProviderPlatform.instance;
-  late Completer<void> recorded;
   var paymentOutcome = 'success';
   Map<String, dynamic> checkoutOutcome = {'code': 200};
   final checkouts = <Map<String, dynamic>>[];
@@ -270,7 +269,6 @@ void main() {
               paymentOutcome == 'rejected' ? 409 : 503,
               headers: {'content-type': 'application/json'},
             );
-          if (!recorded.isCompleted) recorded.complete();
           return http.Response(
             '{"code":200,"nextAction":"recorded"}',
             200,
@@ -321,7 +319,6 @@ void main() {
     contextReads = 0;
     instructionsError = null;
     legacyRefund = false;
-    recorded = Completer<void>();
     _environment = WidgetEnvironmentFixture(
       locale: const Locale('cs'),
       translations: jsonDecode(
@@ -1082,28 +1079,38 @@ void main() {
         },
       );
       expect(tester.widget<IconButton>(plus()).onPressed, isNotNull);
-      await tester.runAsync(() async {
-        await tester.tap(find.byIcon(Icons.add_circle_outline));
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-      });
-      await tester.pumpAndSettle();
-      expect(find.byType(PaymentOperationDialog), findsOneWidget);
+      // The intent store uses real file I/O and the widget uses the test clock.
+      // Drive both until the expected UI or refresh state is observable.
+      Future<void> waitFor(bool Function() ready) async {
+        final elapsed = Stopwatch()..start();
+        while (!ready() && elapsed.elapsed < const Duration(seconds: 10)) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump(const Duration(milliseconds: 16));
+        }
+      }
+
+      await tester.runAsync(
+        () => tester.tap(find.byIcon(Icons.add_circle_outline)),
+      );
+      final dialog = find.byType(PaymentOperationDialog);
+      await waitFor(() => dialog.evaluate().isNotEmpty);
+      expect(dialog, findsOneWidget);
       await tester.enterText(find.byType(TextFormField).first, '500');
-      await tester.runAsync(() async {
-        await tester.tap(
+      await tester.runAsync(
+        () => tester.tap(
           find.widgetWithText(ElevatedButton, OrdersStrings.addPayment),
-        );
-        await recorded.future.timeout(const Duration(seconds: 10));
-        // Let PostgREST finish its real async response before returning to the fake clock.
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-      });
+        ),
+      );
+      await waitFor(() => refreshed > 0);
+      expect(refreshed, 1);
       await tester.pumpAndSettle();
       expect(payments, hasLength(1));
       expect(payments.single['input_data']['amount'], '500');
       expect(payments.single['input_data']['orderId'], 5);
       expect(payments.single['input_data']['operation'], 'record_payment');
       expect(payments.single['input_data']['currency'], 'CZK');
-      expect(refreshed, 1);
       expect(order.state, 'sent');
       expect(
         order.allows('paid'),
