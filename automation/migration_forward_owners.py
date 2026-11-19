@@ -37,7 +37,8 @@ def render_forward(root: Path, entry):
     config = manifest(root, entry)
     parts = [config['header']]
     for source in sources(root, entry):
-        parts.append('-- SOURCE: ' + source + '\n' + migration_inputs.read_text(root / 'database/functions' / source).rstrip())
+        body = selected_source(root, entry, source) if source in config.get('selectors', {}) else migration_inputs.read_text(root / 'database/functions' / source).rstrip()
+        parts.append('-- SOURCE: ' + source + '\n' + body)
     return root / 'supabase/migrations' / entry['migration'], '\n\n'.join(parts) + '\n'
 
 

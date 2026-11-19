@@ -618,6 +618,22 @@
       "retiredSources": [
         "eshop_forms/meta_purchase_schema.sql"
       ]
+    },
+    {
+      "migration": "20261119230000_organizer_ticket_resend_limits.sql",
+      "active": true,
+      "header": "-- Meter authorized ticket resends per organizer and recipient at admission and send.",
+      "sources": [
+        "abuse/ticket_resend.sql",
+        "abuse/policy.sql",
+        "abuse/email.sql",
+        "emails/email_queue.sql"
+      ],
+      "selectors": {
+        "abuse/policy.sql": ["abuse_effective_rules_v1"],
+        "abuse/email.sql": ["admit_email_intent_v1"],
+        "emails/email_queue.sql": ["begin_email_send"]
+      }
     }
   ]
 }
