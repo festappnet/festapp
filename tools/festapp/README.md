@@ -44,8 +44,11 @@ node tools/festapp/src/cli/main.mjs auth login --profile vstupenky-online
 node tools/festapp/src/cli/main.mjs context inspect --profile vstupenky-online
 ```
 
-Login prompts for email and a hidden password in a terminal. Never put passwords
-or tokens in arguments, environment variables, tool inputs or profile JSON.
+Login prompts for email and a hidden password in a terminal. Enter the same
+email used to sign in to the application; the CLI adds the profile's
+organization prefix (for example `3+name@example.com`) unless it is already
+present. Never put passwords or tokens in arguments, environment variables,
+tool inputs or profile JSON.
 MFA-required accounts fail explicitly until an MFA interaction is implemented.
 Local logout removes only this operator's Keychain record; it never globally
 signs the user out of the application:

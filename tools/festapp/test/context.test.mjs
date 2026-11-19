@@ -56,6 +56,24 @@ test('session rotation is serialized across owners and persisted before reads', 
     assert(f.calls.filter((c) => c.url.pathname === '/auth/v1/user').length >= 3,
         'login and both authorized reads must validate the user');
 });
+test('password login uses the organization-scoped sign-in address once', async (t) => {
+    const signInEmail = async (typed, profileValue) => {
+        const f = await fixture(t, profileValue ? { profileValue } : {});
+        await f.owner.login(typed, 'test');
+        const call = f.calls.find((c) => c.url.pathname === '/auth/v1/token');
+        assert.equal(call.url.searchParams.get('grant_type'), 'password');
+        assert.equal(f.store.value().userId, actor);
+        return JSON.parse(call.init.body).email;
+    };
+    assert.equal(await signInEmail('name@example.com'), '1+name@example.com');
+    assert.equal(await signInEmail(' name@example.com '), '1+name@example.com');
+    assert.equal(await signInEmail('1+name@example.com'), '1+name@example.com');
+    const other = profile('http://127.0.0.1:54321', 7);
+    assert.equal(await signInEmail('name@example.com', other), '7+name@example.com');
+    assert.equal(await signInEmail('7+name@example.com', other), '7+name@example.com');
+    // Only this profile's prefix is recognized, as in AppConfig.removeUserPrefix.
+    assert.equal(await signInEmail('1+name@example.com', other), '7+1+name@example.com');
+});
 test('foreign organization is denied and never reaches domain commands', async (t) => {
     const f = await fixture(t, {
         fetchImpl: async (url) =>

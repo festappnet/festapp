@@ -17,6 +17,15 @@ function authenticationError(error) {
     upstream(error);
 }
 
+// The application stores each account under an organization-scoped sign-in
+// address (AppConfig.getUserPrefix). Accept the address the user knows and
+// add this profile's prefix once; identity() still verifies the organization.
+export function organizationSignInEmail(email, organizationId) {
+    const address = email.trim();
+    const prefix = `${organizationId}+`;
+    return address.startsWith(prefix) ? address : prefix + address;
+}
+
 export class KeychainStore {
     async entry(binding) {
         check(process.platform === 'darwin', 'SECURE_STORAGE_UNAVAILABLE');
@@ -142,7 +151,7 @@ export class SessionOwner {
             await verifyActivation(this.profile, this.fetch);
             const client = this.client();
             const { data, error } = await client.auth.signInWithPassword({
-                email,
+                email: organizationSignInEmail(email, this.profile.organizationId),
                 password,
             });
             authenticationError(error);
