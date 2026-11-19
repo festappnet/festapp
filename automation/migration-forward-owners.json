@@ -577,6 +577,19 @@
         "others/get_ticket_layout_write_contract_v1.sql",
         "notification_center/inherited_form_end_baseline.sql"
       ]
+    },
+    {
+      "migration": "20261119130000_free_checkout_ticket_delivery_receipt.sql",
+      "sha256": "2682557e6317d7d2c6e9471df0b84ca3ca5f745384365038498918b561ca1eb3",
+      "sources": [
+        "emails/email_domain.sql",
+        "emails/email_reporting.sql"
+      ],
+      "checkSources": true,
+      "functionOnlySources": [
+        "emails/email_domain.sql",
+        "emails/email_reporting.sql"
+      ]
     }
   ]
 }
