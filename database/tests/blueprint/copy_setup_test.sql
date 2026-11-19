@@ -1,7 +1,7 @@
 -- test-setup: database/tests/blueprint/fixtures.sql
 
 DO $$
-DECLARE f jsonb; req jsonb; r jsonb; original_bp bigint; original_occ bigint; copied_occ bigint; copied_bp bigint; unit_id bigint; source_layout jsonb; new_bp bigint; form_id bigint; group_id uuid:=gen_random_uuid(); area_id uuid:=gen_random_uuid(); selection_id uuid:=gen_random_uuid(); pool_id bigint; context_id bigint; copied_layout jsonb; copied_group uuid; copied_area uuid; copied_unit uuid; table_id uuid:=gen_random_uuid(); attachment_id uuid:=gen_random_uuid(); section_id uuid:=gen_random_uuid(); preset_id uuid:=gen_random_uuid();
+DECLARE f jsonb; req jsonb; r jsonb; original_bp bigint; original_occ bigint; copied_occ bigint; copied_bp bigint; unit_id bigint; source_layout jsonb; new_bp bigint; form_id bigint; foreign_occ bigint; foreign_plan bigint; group_id uuid:=gen_random_uuid(); area_id uuid:=gen_random_uuid(); selection_id uuid:=gen_random_uuid(); pool_id bigint; context_id bigint; copied_layout jsonb; copied_group uuid; copied_area uuid; copied_unit uuid; table_id uuid:=gen_random_uuid(); attachment_id uuid:=gen_random_uuid(); section_id uuid:=gen_random_uuid(); preset_id uuid:=gen_random_uuid();
 BEGIN
  f:=public.blueprint_test_fixture_internal();req:=f->'request';original_bp:=(f->>'blueprint')::bigint;original_occ:=(f->>'occasion')::bigint;
  PERFORM set_config('request.jwt.claim.sub',f->>'actor',true);
@@ -33,9 +33,16 @@ BEGIN
  r:=public.update_blueprint_client_sync_v1(req,gen_random_uuid());PERFORM public.assert_eq(r->>'status','applied','copy source saved');
  source_layout:=req->'layout';
  UPDATE eshop.spots SET secret=gen_random_uuid(),secret_expiration_time=now()+interval '5 minutes' WHERE blueprint=original_bp;
+ SELECT (public.blueprint_test_fixture_internal()->>'occasion')::bigint INTO foreign_occ;
+ SELECT id INTO STRICT foreign_plan FROM eshop.blueprints WHERE occasion=foreign_occ;
+ INSERT INTO public.forms(occasion,title,blueprint)
+ VALUES(original_occ,'Legacy foreign plan',foreign_plan);
  copied_occ:=public.duplicate_occasion_internal_v1(original_occ,unit_id,'cs');
  SELECT id INTO copied_bp FROM eshop.blueprints WHERE occasion=copied_occ;
  SELECT layout INTO copied_layout FROM eshop.blueprints WHERE id=copied_bp;
+ PERFORM public.assert_eq((SELECT count(*)::int FROM public.forms WHERE occasion=copied_occ AND blueprint=copied_bp),1,'Copy remaps the source occasion plan');
+ PERFORM public.assert_eq((SELECT count(*)::int FROM public.forms WHERE occasion=copied_occ AND blueprint IS NULL),1,'Copy drops the inherited foreign plan');
+
  PERFORM public.validate_blueprint_layout_internal(copied_layout);
  PERFORM public.assert_eq((SELECT count(*)::int FROM jsonb_array_elements(source_layout->'nodes') old_node JOIN jsonb_array_elements(copied_layout->'nodes') new_node ON old_node->>'id'=new_node->>'id'),0,'copy node IDs all disjoint');
  PERFORM public.assert_eq(copied_layout#>>'{nodes,0,label}',group_id::text,'UUID-looking label preserved');

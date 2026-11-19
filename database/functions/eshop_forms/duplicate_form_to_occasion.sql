@@ -72,7 +72,10 @@ BEGIN
         CASE WHEN source_unit_id IS DISTINCT FROM (SELECT unit FROM public.occasions WHERE id=target_occasion_id)
           AND data#>'{payments,bankEnabled}'='false'::jsonb THEN false ELSE is_open END,
         NULL,
-        blueprint,
+        (SELECT b.id FROM eshop.blueprints b
+          WHERE b.id = forms.blueprint
+            AND b.occasion = target_occasion_id
+            AND b.organization = target_organization_id),
         header,
         header_off,participant_capacity,waitlist_enabled,show_remaining_capacity,waitlist_offer_duration_seconds
     FROM public.forms
