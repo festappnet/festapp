@@ -3,3 +3,6 @@ URLs on 2026-10-03. SHA-256 and length are tested against the generated catalog;
 tests never fetch these providers. Roboto and Russo One licenses are included.
 Roboto Slab uses the Apache 2.0 license included in
 `supabase/functions/_shared/ticket-assets/Roboto-LICENSE.txt`.
+
+Archivo Regular is the immutable catalog face used to reproduce PDF preparation
+failure in Fontkit 2.0.4. Its SIL Open Font License is included.

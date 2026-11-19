@@ -2,7 +2,7 @@ import { formatDisplayNumber } from '../_shared/numberFormatting.ts';
 import { documentLimits, boundDocumentInput, boundDocumentOutput } from '../_shared/documentLimits.ts';
 import { fetchPublicBinary, fetchPublicImage } from '../fetch-http-data/safeFetch.ts';
 import { PDFDocument, rgb, PageSizes, PDFFont } from "npm:pdf-lib";
-import * as fontkit from "npm:fontkit";
+import * as fontkit from "npm:fontkit@3.0.0";
 import { supabaseAdmin, createUserClient } from "../_shared/supabaseUtil.ts";
 import { authorizeRequest, AuthError } from "../_shared/auth.ts";
 import {

@@ -6,6 +6,7 @@ import {generateTicketPdf,prepareTicketRenderer} from './ticketGeneration.ts';
 import {preset,parseLayout,pdfBox} from './ticketLayout.ts';
 import {sampleData} from './ticketRenderData.ts';
 import {fitText} from './ticketText.ts';
+import {prepareTicketDelivery} from './ticketDelivery.ts';
 const families=['Roboto','Roboto Slab','Russo One'];
 const assets=families.map(f=>fontCatalog.find(a=>a.family===f&&a.weight===400&&a.style==='normal')!);
 const local=new Map<string,Uint8Array>();
@@ -20,6 +21,41 @@ function setup(shared=new Map<string,Uint8Array>()) {
   };
   return {deps,counts,shared,advance:()=>now+=6000,resolver:new TicketFontResolver(deps)};
 }
+Deno.test('Archivo Regular imports and renders a six-ticket PDF email through the canonical renderer', async () => {
+  const asset = fontCatalog.find(f => f.family === 'Archivo' && f.weight === 400 && f.style === 'normal')!;
+  const bytes = await Deno.readFile('test/fixtures/ticket_fonts/Archivo.ttf');
+  assertEquals(await digest(bytes), asset.sha256);
+  const cold = setup();
+  delete cold.deps.inspect;
+  cold.deps.fetch = async () => new Response(bytes.slice().buffer);
+  const font = await cold.resolver.resolve(asset.id);
+  assertEquals(cold.shared.size, 2);
+  const template = preset('named');
+  template.fontId = font.id;
+  const occasion = {
+    id: 7, locale: 'cs', title: 'Maturitní ples EDUCAnet Praha',
+    features: [{
+      code: 'ticket', is_enabled: true, ticket_type: 'named',
+      layout: {schemaVersion: 3, templates: {named: template}},
+    }],
+  };
+  const tickets = Array.from({length: 6}, (_, i) => ({
+    id: i + 1, occasion: occasion.id, state: 'paid', ticket_symbol: `SAMPLE0${i + 1}`,
+  }));
+  const delivery = await prepareTicketDelivery(occasion, {}, tickets, (event, ticket, order) =>
+    prepareTicketRenderer(event, ticket, order, {
+      load: async () => ({fonts: {[font.id]: font}, font: font.bytes, metrics: font.metrics}),
+      products: async () => ({products: [], product_types: []}),
+    })
+  );
+  assertEquals(delivery.attachments.length, 6);
+  for (const attachment of delivery.attachments) {
+    assertEquals(attachment.contentType, 'application/pdf');
+    assert(attachment.content instanceof Uint8Array);
+    assertEquals((await PDFDocument.load(attachment.content)).getPageCount(), 1);
+  }
+});
+
 Deno.test('20 concurrent selections deduplicate, 100 renders stay warm, restart reads persistent bytes',async()=>{
   const s=setup();const fonts=await Promise.all(Array.from({length:20},()=>s.resolver.resolve(assets[0].id)));
   assertEquals([s.counts.fetch,s.counts.create,s.counts.inspect],[1,2,1]);
