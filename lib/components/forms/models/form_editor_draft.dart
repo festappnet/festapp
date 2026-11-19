@@ -48,6 +48,7 @@ class FormEditorDraft {
   }
 
   OccasionModel? occasionModel;
+  final DateTime? occasionEndTime;
   BankAccountModel? bankAccount;
   List<BankAccountModel>? availableBankAccounts;
   List<FormFieldDraft> relatedFields;
@@ -68,6 +69,7 @@ class FormEditorDraft {
     String? key,
     int? occasionId,
     this.occasionModel,
+    this.occasionEndTime,
     int? blueprint,
     String? type,
     this.bankAccount,
@@ -115,7 +117,7 @@ class FormEditorDraft {
     _captureProductVersions();
   }
 
-  FormEditorDraft.fromBundle(FormBundle bundle)
+  FormEditorDraft.fromBundle(FormBundle bundle, {this.occasionEndTime})
     : aggregateVersion = bundle.aggregateVersion,
       definition = bundle.definition.copyWith(
         relatedFields: const <FormFieldDefinition>[],
@@ -131,7 +133,12 @@ class FormEditorDraft {
     _captureProductVersions();
   }
   factory FormEditorDraft.fromJson(Map<String, dynamic> json) =>
-      FormEditorDraft.fromBundle(FormBundle.fromJson(json));
+      FormEditorDraft.fromBundle(
+        FormBundle.fromJson(json),
+        occasionEndTime: DateTime.tryParse(
+          json['occasion_end_time'] as String? ?? '',
+        ),
+      );
   bool get usesSeatSelection => FormDefinition.usesSeatSelectionIn(
     relatedFields.map((field) => field.definition),
   );

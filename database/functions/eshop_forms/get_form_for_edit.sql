@@ -54,6 +54,7 @@ BEGIN
         'header', f.header,
         'header_off', f.header_off,
         'occasion', f.occasion,
+        'occasion_end_time', (SELECT o.end_time FROM public.occasions o WHERE o.id=f.occasion),
         'blueprint', f.blueprint,
         'link', f.link,
         'bank_account', f.bank_account,

@@ -17,13 +17,21 @@ LANGUAGE sql
 STABLE
 SET search_path = public, extensions
 AS $$
-    SELECT public.effective_form_metadata_internal(f.data,u.data) || jsonb_build_object(
-        'analytics',public.form_measurement_runtime_internal(f.id)
+    WITH form_metadata AS MATERIALIZED (
+        SELECT public.effective_form_metadata_internal(f.data,u.data) AS metadata,
+               o.end_time
+        FROM public.forms f
+        JOIN public.occasions o ON o.id = f.occasion
+        JOIN public.units u ON u.id = o.unit
+        WHERE f.id = p_form_id
     )
-    FROM public.forms f
-    JOIN public.occasions o ON o.id = f.occasion
-    JOIN public.units u ON u.id = o.unit
-    WHERE f.id = p_form_id;
+    SELECT metadata || jsonb_build_object(
+        'schedule', coalesce(metadata->'schedule','{}'::jsonb) || jsonb_build_object(
+            'end_time', coalesce(nullif(metadata#>'{schedule,end_time}','null'::jsonb),to_jsonb(end_time))
+        ),
+        'analytics', public.form_measurement_runtime_internal(p_form_id)
+    )
+    FROM form_metadata;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_effective_form_data(bigint)

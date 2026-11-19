@@ -20,6 +20,9 @@ DECLARE
   v_hash text;
   v_entity jsonb;
   v_old_hidden boolean;
+  v_old_end timestamptz;
+  v_availability_at timestamptz;
+  v_notifications_initialized boolean;
   v_new_hidden boolean;
   v_old_unit bigint;
   v_new_unit bigint;
@@ -68,12 +71,12 @@ BEGIN
     RETURN v_begin->'response';
   END IF;
 
-  PERFORM public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=p_occasion));
+  v_notifications_initialized:=public.notification_center_initialized_internal((SELECT organization FROM public.occasions WHERE id=p_occasion));
   IF NOT (p_config ? 'ticket_layout_change' AND p_config-ARRAY['id','ticket_layout_change']='{}'::jsonb) THEN
     PERFORM 1 FROM public.forms WHERE occasion=p_occasion ORDER BY id FOR UPDATE;
   END IF;
 
-  SELECT o.is_hidden, o.unit INTO v_old_hidden, v_old_unit
+  SELECT o.is_hidden, o.unit, o.end_time INTO v_old_hidden, v_old_unit, v_old_end
   FROM public.occasions o
   WHERE o.id = p_occasion
   FOR UPDATE;
@@ -126,6 +129,14 @@ BEGIN
   ELSE
     PERFORM public.update_occasion_internal_v1(
       public.apply_occasion_settings_intent_internal_v1(p_occasion,p_config));
+    IF v_notifications_initialized AND v_old_end IS DISTINCT FROM
+      (SELECT end_time FROM public.occasions WHERE id=p_occasion) THEN
+      v_availability_at:=clock_timestamp();
+      PERFORM public.notification_center_form_availability_internal(f.id,v_availability_at)
+      FROM public.forms f WHERE f.occasion=p_occasion
+        AND public.normalize_form_metadata_internal(f.data)#>>'{schedule,end_time}' IS NULL
+      ORDER BY f.id;
+    END IF;
   END IF;
   UPDATE public.client_aggregate_versions
   SET version = version + 1, updated_at = clock_timestamp()

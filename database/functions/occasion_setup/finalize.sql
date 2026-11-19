@@ -11,7 +11,7 @@ DECLARE policies jsonb; d public.occasion_setup_drafts; payload jsonb; config js
  unit_defaults jsonb; communication_new boolean; reply_email text; form_meta jsonb; reminder_days numeric;
  payment_method text;
  publish_to_catalog boolean;
- sale_mode text; sale_start timestamptz; sale_end timestamptz;
+ sale_mode text; sale_start timestamptz; sale_end timestamptz; sale_end_override timestamptz;
  blueprint_mode text; blueprint_id bigint; blueprint_source bigint; v_commit public.client_commits%ROWTYPE;
 BEGIN
  SELECT * INTO d FROM public.occasion_setup_drafts WHERE id=p_id FOR UPDATE;
@@ -39,7 +39,8 @@ BEGIN
  IF coalesce((payload->>'formEnabled')::boolean,true) THEN
   IF sale_mode NOT IN ('preparation','scheduled','immediate') THEN
    RAISE invalid_parameter_value USING MESSAGE='Invalid sale mode'; END IF;
-  sale_end:=coalesce(nullif(payload->>'saleEnd','')::timestamptz,(payload->>'end')::timestamptz);
+  sale_end_override:=nullif(payload->>'saleEnd','')::timestamptz;
+  sale_end:=coalesce(sale_end_override,(payload->>'end')::timestamptz);
   IF sale_end IS NULL THEN
    RAISE invalid_parameter_value USING MESSAGE='Sale end is required'; END IF;
   IF sale_mode='scheduled' THEN
@@ -199,7 +200,7 @@ BEGIN
   form_meta:=coalesce(nullif(form_data->'data','null'::jsonb),'{}'::jsonb)
     -'start_time'-'end_time'-'enable_countdown';
   form_meta:=jsonb_set(form_meta,'{schedule}',coalesce(nullif(form_meta->'schedule','null'::jsonb),'{}'::jsonb)
-   ||jsonb_build_object('start_time',sale_start,'end_time',sale_end,
+   ||jsonb_build_object('start_time',sale_start,'end_time',sale_end_override,
      'enable_countdown',coalesce((payload->>'saleCountdown')::boolean,false),
      'sale_preparation',sale_mode='preparation'));
   form_meta:=form_meta-'sale_opening_notifications';

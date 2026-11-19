@@ -543,6 +543,7 @@ class FormStrings {
       'FeatureFormSettings.autoOpenHelp'.tr(); // "Auto-open/close times."
   static String get labelStartTime =>
       'FeatureFormSettings.labelStartTime'.tr(); // "Start Time"
+  static String get defaultClosingTime => 'OccasionSales.endDefault'.tr();
   static String get labelEndTime =>
       'FeatureFormSettings.labelEndTime'.tr(); // "End Time"
   static String get errorEndTimeBeforeStartTime =>
