@@ -539,7 +539,7 @@
     },
     {
       "migration": "20261118160000_meta_purchase_followup.sql",
-      "active": true,
+      "active": false,
       "header": "-- Restore browser purchases with explicit timing and bind Meta delivery to saved CMP consent.\nALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS consent_snapshot jsonb, ADD COLUMN IF NOT EXISTS consent_scope text, ADD COLUMN IF NOT EXISTS consent_decided_at timestamptz;",
       "sources": [
         "eshop_forms/form_settings.sql",
@@ -550,6 +550,19 @@
         "eshop_orders/create_ticket_order_client_sync_v1.sql",
         "eshop_waitlist/commands.sql",
         "eshop_waitlist/order_overview.sql"
+      ],
+      "sha256": "60b1c7503eb363339cce8286e9bb033c9189758de21e333417fb5178a0533efc"
+    },
+    {
+      "migration": "20261118200000_meta_purchase_matching.sql",
+      "active": true,
+      "header": "-- Extend consent-bound matching with independent retention for raw addresses.\nALTER TABLE analytics.meta_purchase_deliveries\n ADD COLUMN phone_hash text, ADD COLUMN fbp text, ADD COLUMN fbc text, ADD COLUMN client_ip inet;\nCREATE INDEX meta_purchase_ip_retention ON analytics.meta_purchase_deliveries(consent_at) WHERE client_ip IS NOT NULL;\nCREATE TABLE analytics.meta_purchase_retention_state(singleton boolean PRIMARY KEY CHECK(singleton), last_sweep timestamptz NOT NULL);\nALTER TABLE analytics.meta_purchase_retention_state ENABLE ROW LEVEL SECURITY;\nREVOKE ALL ON analytics.meta_purchase_retention_state FROM PUBLIC,anon,authenticated,service_role;",
+      "sources": [
+        "eshop_forms/meta_purchase_matching.sql",
+        "eshop_forms/meta_purchase_retention.sql",
+        "eshop_forms/meta_purchase_consent.sql",
+        "eshop_forms/meta_purchase_worker.sql",
+        "eshop_orders/create_ticket_order_client_sync_v1.sql"
       ]
     },
     {
@@ -561,6 +574,7 @@
         "eshop_forms/get_form_for_edit.sql",
         "occasion_setup/finalize.sql",
         "others/save_occasion_domain_command_internal_v1.sql",
+        "others/get_ticket_layout_write_contract_v1.sql",
         "notification_center/inherited_form_end_baseline.sql"
       ]
     }

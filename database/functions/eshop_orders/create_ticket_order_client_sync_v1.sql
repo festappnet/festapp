@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION public.create_ticket_order_command_internal(
   p_order jsonb,p_command_id uuid,p_client_id uuid,p_context jsonb DEFAULT NULL
 ) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
-DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
+DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text; v_legacy_hash text; v_request jsonb;
   v_result jsonb; v_symbol text; v_before_users uuid[]; v_actor_kind text; v_origin jsonb; v_form bigint;
 BEGIN
   IF p_order IS NULL OR jsonb_typeof(p_order)<>'object'
@@ -12,9 +12,21 @@ BEGIN
     WHERE f.key=NULLIF(p_order->>'form','')::uuid;
   IF v_occasion IS NULL THEN
     RAISE invalid_parameter_value USING MESSAGE='ticket order form not found'; END IF;
-  v_hash:=encode(extensions.digest(convert_to((jsonb_build_object(
-    'occasion',v_occasion,'order',public.strip_payment_sources_internal(p_order))
-      ||CASE WHEN p_context IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('administration',p_context) END)::text,'UTF8'),'sha256'),'hex');
+  v_request:=jsonb_build_object('occasion',v_occasion,'order',public.strip_payment_sources_internal(p_order))
+    ||CASE WHEN p_context IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('administration',p_context) END;
+  v_hash:=encode(extensions.digest(convert_to((v_request#-'{order,metaPurchaseConsent}')::text,'UTF8'),'sha256'),'hex');
+  IF p_order ? 'metaPurchaseConsent' THEN
+    -- Historical receipts may bind the original consent. Match their exact
+    -- request and buyer; new claims always use the consent-independent hash.
+    v_legacy_hash:=encode(extensions.digest(convert_to((v_request#-'{order,metaPurchaseConsent,matching}')::text,'UTF8'),'sha256'),'hex');
+    IF EXISTS(SELECT FROM public.client_mutation_receipts r WHERE r.command_id=p_command_id
+      AND r.command_name='inventory.order.create' AND r.occasion=v_occasion
+      AND r.actor_id IS NOT DISTINCT FROM v_actor
+      AND (v_actor IS NOT NULL OR r.actor_client_id=p_client_id)
+      AND r.request_sha256=v_legacy_hash) THEN
+      v_hash:=v_legacy_hash;
+    END IF;
+  END IF;
   IF v_actor IS NULL THEN
     v_begin:=public.begin_anonymous_client_mutation_v1(p_command_id,
       'inventory.order.create',v_occasion,p_client_id,v_hash);

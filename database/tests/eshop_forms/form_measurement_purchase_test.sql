@@ -1,4 +1,5 @@
 -- test-setup: database/tests/helpers/form_measurement_fixture.sql
+SELECT public.purge_meta_purchase_data_internal();
 DO $$
 DECLARE
  fixture jsonb:=pg_temp.fixture(NULL);

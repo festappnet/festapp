@@ -25,6 +25,10 @@ CREATE TABLE analytics.meta_purchase_deliveries (
  email_hash text,
  client_agent text,
  source_url text,
+ phone_hash text,
+ fbp text,
+ fbc text,
+ client_ip inet,
  revoked_at timestamptz,
  next_attempt_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  attempts integer NOT NULL DEFAULT 0,
@@ -37,7 +41,15 @@ CREATE TABLE analytics.meta_purchase_deliveries (
 );
 CREATE INDEX meta_purchase_delivery_due ON analytics.meta_purchase_deliveries(next_attempt_at,order_id)
  WHERE status='pending';
+CREATE INDEX meta_purchase_ip_retention ON analytics.meta_purchase_deliveries(consent_at) WHERE client_ip IS NOT NULL;
 ALTER TABLE analytics.meta_purchase_connectors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics.meta_purchase_deliveries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics.meta_purchase_forms ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON analytics.meta_purchase_connectors,analytics.meta_purchase_forms,analytics.meta_purchase_deliveries FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE TABLE analytics.meta_purchase_retention_state(
+ singleton boolean PRIMARY KEY CHECK(singleton),
+ last_sweep timestamptz NOT NULL
+);
+ALTER TABLE analytics.meta_purchase_retention_state ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.meta_purchase_retention_state FROM PUBLIC,anon,authenticated,service_role;

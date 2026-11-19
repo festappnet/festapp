@@ -2,18 +2,6 @@ CREATE OR REPLACE FUNCTION public.claim_meta_purchase_deliveries(p_limit integer
 RETURNS TABLE(order_id bigint, lease uuid) LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
- -- Only a small bounded set is scrubbed per run. Keep delivery receipts 90 days.
- WITH expired AS (
-  SELECT d.order_id FROM analytics.meta_purchase_deliveries d
-  WHERE d.status='pending' AND d.consent_at<clock_timestamp()-interval '30 days'
-  ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
- )
- UPDATE analytics.meta_purchase_deliveries d SET status='expired',done_at=clock_timestamp(),
-  lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
- FROM expired WHERE d.order_id=expired.order_id;
- DELETE FROM analytics.meta_purchase_deliveries d WHERE d.order_id IN(
-  SELECT x.order_id FROM analytics.meta_purchase_deliveries x
-  WHERE x.done_at<clock_timestamp()-interval '90 days' LIMIT 100 FOR UPDATE SKIP LOCKED);
  RETURN QUERY
  WITH due AS (
   SELECT d.order_id FROM analytics.meta_purchase_deliveries d
@@ -62,7 +50,7 @@ BEGIN
     OR fact.payload IS DISTINCT FROM jsonb_build_object('value',o.price,'currency',trim(o.currency_code))
     OR NOT public.form_paid_conversion_eligible_internal(p_order_id) THEN
   UPDATE analytics.meta_purchase_deliveries SET status='invalid',done_at=clock_timestamp(),
-   lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,client_agent=NULL,source_url=NULL
+   lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
   WHERE order_id=p_order_id;
   RETURN NULL;
  END IF;
@@ -72,10 +60,14 @@ BEGIN
   WHERE unit=connector.unit AND revision=connector.revision;
   RETURN NULL;
  END IF;
- UPDATE analytics.meta_purchase_deliveries SET attempts=attempts+1,prepared=true WHERE order_id=p_order_id;
+ -- Recheck retention even if claim used an older worker or cleanup was bounded.
+ IF delivery.consent_at<=clock_timestamp()-interval '7 days' THEN delivery.client_ip:=NULL; END IF;
+ UPDATE analytics.meta_purchase_deliveries SET client_ip=delivery.client_ip,attempts=attempts+1,prepared=true WHERE order_id=p_order_id;
  RETURN jsonb_build_object('dataset',connector.dataset,'accessToken',token,'testEventCode',connector.test_event_code,
   'eventId',fact.event_id,'eventTime',floor(extract(epoch FROM fact.created_at)),
   'value',fact.payload->'value','currency',fact.payload->>'currency',
+  'phoneHash',CASE WHEN delivery.phone_hash ~ '^[0-9a-f]{64}$' THEN delivery.phone_hash END,'fbp',public.meta_purchase_browser_id_internal(delivery.fbp),
+  'fbc',public.meta_purchase_browser_id_internal(delivery.fbc),'clientIp',host(delivery.client_ip),
   'emailHash',delivery.email_hash,'clientAgent',delivery.client_agent,'sourceUrl',delivery.source_url);
 END $$;
 
@@ -100,6 +92,10 @@ BEGIN
   lease=NULL,lease_until=NULL,done_at=CASE WHEN final_status<>'pending' THEN clock_timestamp() END,
   consent_snapshot=CASE WHEN final_status='pending' THEN consent_snapshot END,
   email_hash=CASE WHEN final_status='pending' THEN email_hash END,
+  phone_hash=CASE WHEN final_status='pending' THEN phone_hash END,
+  fbp=CASE WHEN final_status='pending' THEN fbp END,
+  fbc=CASE WHEN final_status='pending' THEN fbc END,
+  client_ip=CASE WHEN final_status='pending' AND consent_at>clock_timestamp()-interval '7 days' THEN client_ip END,
   client_agent=CASE WHEN final_status='pending' THEN client_agent END,
   source_url=CASE WHEN final_status='pending' THEN source_url END
  WHERE order_id=p_order_id;
@@ -125,10 +121,7 @@ BEGIN
    -- Same cohort filter as claiming, so unclaimable rows do not wake the worker.
    AND public.form_order_purchase_timing_internal(d.order_id)='paid'
    AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE
- ) AND NOT EXISTS(
-  SELECT FROM analytics.meta_purchase_deliveries WHERE status='pending' AND consent_at<clock_timestamp()-interval '30 days'
-     OR done_at<clock_timestamp()-interval '90 days'
- ) THEN RETURN; END IF;
+) THEN RETURN; END IF;
  SELECT regexp_replace(worker_url,'/process-email-queue$','/process-meta-purchases') INTO endpoint
  FROM public.email_capacity
  WHERE worker_url LIKE '%/process-email-queue';
@@ -137,15 +130,3 @@ BEGIN
    timeout_milliseconds:=90000);
 END $$;
 REVOKE ALL ON FUNCTION public.wake_meta_purchase_worker() FROM PUBLIC,anon,authenticated,service_role;
-
--- An operator activates the schedule only after configuring a test dataset and
--- releasing the worker with the canonical gateway.
-DO $$ DECLARE job bigint; BEGIN
- IF EXISTS(SELECT 1 FROM pg_extension WHERE extname='pg_cron') THEN
-  SELECT jobid INTO job FROM cron.job WHERE jobname='festapp_meta_purchase_delivery';
-  IF job IS NULL THEN
-   job:=cron.schedule('festapp_meta_purchase_delivery','* * * * *','SELECT public.wake_meta_purchase_worker()');
-   PERFORM cron.alter_job(job,active:=false);
-  END IF;
- END IF;
-END $$;

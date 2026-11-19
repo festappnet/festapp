@@ -138,7 +138,7 @@ test('legacy sale dates normalize once in admin reads and saves; reset cannot re
  const ui=(await db.query('select get_form_for_edit($1) value',[link])).rows[0].value;assert.deepEqual(ui.data.form.data,data);
  const reset=await ex.ops.invoke('forms.save',{occasionId:f.occasion,commandId:randomUUID(),form:formPatch(read.data.authoring,{settings:{schedule:null}})});assert.equal(reset.ok,true,JSON.stringify(reset));
  await db.query('RESET ROLE');const persisted=await stored(db,made.formId);assert.deepEqual(persisted,{private_owner:7,schedule:{sale_preparation:true},payments:defaultPayments});
- const after=(await db.query("select get_form_availability_snapshot_internal($1,'2029-01-01T00:00:00Z') value",[made.formId])).rows[0].value;assert.equal(after.startAt,null);assert.equal(after.endAt,null);
+ const after=(await db.query("select get_form_availability_snapshot_internal($1,'2029-01-01T00:00:00Z') value",[made.formId])).rows[0].value;assert.equal(after.startAt,null);assert.equal(after.endAt,ui.data.form.occasion_end_time);
  // The bounded released-input adapter also retires aliases on its next save.
  const saved=(await db.query('select update_form_client_sync_v1($1,$2) value',[{occasion:f.occasion,...formPatch(reset.data.authoring,{data:legacy})},randomUUID()])).rows[0].value;assert.equal(saved.code,200,JSON.stringify(saved));const canonical=await stored(db,made.formId);assert(!Object.hasOwn(canonical,'start_time'));assert(!Object.hasOwn(canonical,'end_time'));assert(canonical.schedule.start_time.includes('T'));
 });

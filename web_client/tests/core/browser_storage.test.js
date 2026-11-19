@@ -37,3 +37,17 @@ test('normal browser storage remains shared and persistent', () => {
     second.removeItem('auth');
     assert.equal(first.getItem('auth'), null);
 });
+
+test('pending-order key listing includes memory fallbacks without resurrecting failed removals', () => {
+    const values = new Map([['order:legacy', 'receipt'], ['order:removed', 'old'], ['other:key', 'unrelated']]);
+    const storage = createBrowserStorage(() => ({
+        get length() { return values.size; },
+        key: i => [...values.keys()][i] ?? null,
+        getItem: key => values.get(key) ?? null,
+        setItem: () => { throw new Error('QuotaExceededError'); },
+        removeItem: () => { throw new Error('SecurityError'); },
+    }));
+    storage.setItem('order:memory', 'pending');
+    storage.removeItem('order:removed');
+    assert.deepEqual(storage.keys('order:'), ['order:legacy', 'order:memory']);
+});
