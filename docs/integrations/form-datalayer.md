@@ -345,7 +345,7 @@ delivery, including a refusal while submission is in flight. The order overview
 also checks the saved refusal against the scope captured for each order. A buyer
 capability authorizes withdrawal, including the manual action available from the
 confirmation email. Unknown, expired or disconnected choices cannot withdraw
-durable consent. Withdrawal stops every delivery that has not yet started; an event already handed to Meta at withdrawal cannot be recalled and is recorded as `sent_in_flight`.
+durable consent. Withdrawal stops deliveries that the server has not yet prepared. A prepared event may still reach Meta after withdrawal. If Meta confirms receipt, it is recorded as `sent_in_flight`.
 The commit of prepare is the irreversible send boundary.
 
 The Edge worker claims only the original CAPI-enabled paid cohort after a full
