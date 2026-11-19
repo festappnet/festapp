@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:fstapp/services/locale_date_time.dart';
 
 class OrdersStrings {
   static String get deleteOrderNotice =>
@@ -106,6 +107,27 @@ class OrdersStrings {
   static String get priceRefreshAction =>
       'FeatureOrders.priceRefreshAction'.tr();
   static String get priceSame => 'FeatureOrders.priceSame'.tr();
+
+  static String ticketEmailLimit(Map details, String locale) {
+    final reason = details['limitReason'] == 'email_recipient'
+        ? 'PublicOrder.emailRecipientLimit'.tr()
+        : 'PublicOrder.emailServiceLimit'.tr();
+    final seconds = details['retryAfterSeconds'];
+    if (seconds is! int || seconds < 1 || seconds > 604800) {
+      return '$reason ${'PublicOrder.capacityRetryLater'.tr()}';
+    }
+    final retryAt = DateTime.now().add(Duration(seconds: seconds));
+    final date = LocaleDateTime.instant(retryAt, locale, seconds: true);
+    final retry = 'FeatureOrders.ticketEmailRetryAt'.tr(
+      namedArgs: {'date': date},
+    );
+    return '$reason $retry';
+  }
+
+  static String ticketEmailsQueued(int count) =>
+      'FeatureOrders.ticketEmailsQueued'.tr(namedArgs: {'count': '$count'});
+
+  static String get ticketEmailUnknown => 'EmailDelivery.state.unknown'.tr();
 
   // --- Orders Tab ---
   static String get processing =>

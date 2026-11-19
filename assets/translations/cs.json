@@ -892,6 +892,8 @@
     "saveRecoveryExpired": "Výsledek staršího uložení již nelze ověřit. Načtěte formulář znovu a ověřte uložené údaje."
   },
   "FeatureOrders": {
+    "ticketEmailRetryAt": "Odeslání můžete zkusit znovu od {date}.",
+    "ticketEmailsQueued": "Čeká na odeslání: {count}",
     "deleteOrderNotice": "Objednávka bude trvale smazána a zákazník ji už neuvidí. Pokud chcete záznam zachovat, zvolte storno.",
     "deleteFakturoidInvoice": "Smazat také fakturu ve Fakturoidu",
     "deleteFakturoidInvoiceHelp": "Platí pro objednávky s napojeným Fakturoidem. Pokud smazání dokladu selže, objednávka zůstane zachovaná.",

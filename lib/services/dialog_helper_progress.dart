@@ -12,6 +12,7 @@ class ProgressDialogs {
     int total, {
     List<Future<void> Function()>? futures,
     Duration? delay,
+    String Function()? completionMessage,
     bool isBasic = false,
   }) async {
     final navigator = Navigator.of(context, rootNavigator: true);
@@ -33,13 +34,15 @@ class ProgressDialogs {
               dismissible: false,
               title: ValueListenableBuilder<bool>(
                 valueListenable: isOkActive,
-                builder: (context, finished, _) => Text(!finished
-                    ? title
-                    : hasError.value
-                        ? CommonStrings.processingFailed
-                        : isCancelled.value
-                            ? CommonStrings.cancelled
-                            : CommonStrings.processingCompletedTitle),
+                builder: (context, finished, _) => Text(
+                  !finished
+                      ? title
+                      : hasError.value
+                      ? CommonStrings.processingFailed
+                      : isCancelled.value
+                      ? CommonStrings.cancelled
+                      : CommonStrings.processingCompletedTitle,
+                ),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -47,7 +50,8 @@ class ProgressDialogs {
                   Text("${CommonStrings.progress}: $progress/$total"),
                   SizedBox(height: 20),
                   LinearProgressIndicator(
-                      value: total > 0 ? progress / total : 0),
+                    value: total > 0 ? progress / total : 0,
+                  ),
                   SizedBox(height: 20),
                   ValueListenableBuilder<String>(
                     valueListenable: statusMessage,
@@ -158,18 +162,18 @@ class ProgressDialogs {
 
     isOkActive.value = true;
     isStornoActive.value = false;
-    if (hasError.value) {
-      statusMessage.value = CommonStrings.processingFailed;
-    } else if (isCancelled.value) {
+    if (hasError.value) return false;
+    if (isCancelled.value) {
       statusMessage.value = CommonStrings.processingCancelled;
     } else {
-      statusMessage.value = CommonStrings.processingCompleted;
+      statusMessage.value =
+          completionMessage?.call() ?? CommonStrings.processingCompleted;
       if (isBasic && navigator.mounted) {
         navigator.pop();
       }
     }
 
-    return !hasError.value && !isCancelled.value;
+    return !isCancelled.value;
   }
 
   static Future<T?> showFutureProgressDialog<T>({

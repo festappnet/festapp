@@ -338,6 +338,8 @@ Deno.test("first ticket delivery joins the paid intent while explicit resend get
   const { supabaseAdmin } = await import("./supabaseUtil.ts");
   const originalRpc = supabaseAdmin.rpc;
   const enqueues: Record<string, unknown>[] = [];
+  let state = "accepted";
+  let limit = false;
   supabaseAdmin.rpc = ((name: string, args: Record<string, unknown>) => {
     let data: unknown;
     if (name === "get_order_details_for_email") {
@@ -352,27 +354,30 @@ Deno.test("first ticket delivery joins the paid intent while explicit resend get
     else if (name === "check_request_secret") data = true;
     else if (name === "enqueue_order_email") {
       enqueues.push(args);
-      data = { message_id: "fixture-message" };
-    } else if (name === "get_internal_email_state") data = "accepted";
-    else throw new Error("Unexpected RPC: " + name);
+      if (limit) {
+        return Promise.resolve({ data: null, error: {
+          code: "PT429",
+          details: JSON.stringify({ ruleKey: "email.ordinary.recipient.day", retryAfterSeconds: 3600 }),
+        } });
+      }
+      data = { message_id: "fixture-message", state };
+    } else throw new Error("Unexpected RPC: " + name);
     return Promise.resolve({ data, error: null });
   }) as unknown as typeof supabaseAdmin.rpc;
+  const send = (firstDelivery = false) =>
+    handler(new Request("https://edge-test.invalid", {
+      method: "POST",
+      body: JSON.stringify({
+        orderId: 42,
+        email: "regression@example.invalid",
+        requestSecret: "fixture-secret",
+        requestId: "fixture-click",
+        firstDelivery,
+      }),
+    }));
   try {
-    for (const firstDelivery of [true, false]) {
-      const response = await handler(
-        new Request("https://edge-test.invalid", {
-          method: "POST",
-          body: JSON.stringify({
-            orderId: 42,
-            email: "regression@example.invalid",
-            requestSecret: "fixture-secret",
-            requestId: "fixture-click",
-            firstDelivery,
-          }),
-        }),
-      );
-      assertEquals(response.status, 200);
-    }
+    assertEquals((await send(true)).status, 200);
+    assertEquals((await send()).status, 200);
     assertEquals(
       enqueues[0].p_request,
       undefined,
@@ -382,6 +387,23 @@ Deno.test("first ticket delivery joins the paid intent while explicit resend get
       enqueues[1].p_request,
       "resend:fixture-click:42:regression@example.invalid",
     );
+    limit = true;
+    const limited = await send();
+    assertEquals(limited.status, 429);
+    assertEquals(limited.headers.get("Retry-After"), "3600");
+    assertEquals(await limited.json(), {
+      code: 429, errorCode: "ABUSE_LIMIT_EXCEEDED",
+      limitReason: "email_recipient", retryAfterSeconds: 3600,
+    });
+    limit = false;
+    state = "retry_wait";
+    const queued = await send();
+    assertEquals(queued.status, 202);
+    assertEquals((await queued.json()).code, 202);
+    for (const terminal of ["unknown", "dead"]) {
+      state = terminal;
+      assertEquals((await send()).status, 409);
+    }
   } finally {
     supabaseAdmin.rpc = originalRpc;
   }

@@ -892,6 +892,8 @@
     "saveRecoveryExpired": "The previous save result is no longer available. Reload the form and check the saved values."
   },
   "FeatureOrders": {
+    "ticketEmailRetryAt": "You can try sending again at {date}.",
+    "ticketEmailsQueued": "Queued for sending: {count}",
     "deleteOrderNotice": "The order will be permanently deleted and the customer will no longer see it. To keep the record, cancel the order instead.",
     "deleteFakturoidInvoice": "Also delete the invoice in Fakturoid",
     "deleteFakturoidInvoiceHelp": "Applies to orders connected to Fakturoid. If invoice deletion fails, the order is kept.",
