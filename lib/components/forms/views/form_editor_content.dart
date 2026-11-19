@@ -303,9 +303,13 @@ class _FormEditorContentState extends State<FormEditorContent>
     }).toList();
   }
 
+  DateTime? _defaultClosingTime(FormEditorDraft form) =>
+      (form.occasionEndTime ?? form.occasionModel?.endTime)?.toOccasionTime();
+
   Widget _buildFormOpenToggleAndOffTextEditor() {
     if (_bundle == null) return const SizedBox.shrink();
     final form = _bundle!.form;
+    final defaultClosingTime = _defaultClosingTime(form);
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -386,14 +390,6 @@ class _FormEditorContentState extends State<FormEditorContent>
                             if (date == null) {
                               form.definition =
                                   form.definition.withEnableCountdown(false);
-                            } else {
-                              if (form.definition.endTime == null ||
-                                  form.definition.endTime!.isBefore(date)) {
-                                form.definition = form.definition
-                                    .withEndTimeUtc(date
-                                        .add(const Duration(hours: 1))
-                                        .toUtcFromOccasionTime());
-                              }
                             }
                           });
                         }, isStart: true, enabled: _canEdit),
@@ -417,13 +413,21 @@ class _FormEditorContentState extends State<FormEditorContent>
                               .withEndTimeUtc((date)?.toUtcFromOccasionTime()));
                         },
                             isEnd: true,
+                            defaultValue: defaultClosingTime,
                             minDate: form.definition.startTime,
                             enabled: _canEdit),
                       ),
                     ],
-                  )],
-                      ),
-                  const Divider(height: 24),
+                  ),
+                  if (form.definition.endTime == null &&
+                      defaultClosingTime != null) ...[
+                    const SizedBox(height: 8),
+                    Text(FormStrings.defaultClosingTime,
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ],
+              ),
+              const Divider(height: 24),
               FormUnavailableContentEditor(
                 form: form,
                 coordinator: _htmlSave,
@@ -452,7 +456,9 @@ class _FormEditorContentState extends State<FormEditorContent>
       {bool isStart = false,
       bool isEnd = false,
       DateTime? minDate,
+      DateTime? defaultValue,
       bool enabled = true}) {
+    final displayedValue = value ?? defaultValue;
     /*
     Color? statusColor;
     String statusText = "";
@@ -478,7 +484,7 @@ class _FormEditorContentState extends State<FormEditorContent>
       onTap: !enabled
           ? null
           : () async {
-              final initialDate = value ?? DateTime.now();
+              final initialDate = displayedValue ?? DateTime.now();
               final firstDate = minDate ?? DateTime(2000);
 
               // Ensure initialDate is valid (must be >= firstDate)
@@ -491,12 +497,12 @@ class _FormEditorContentState extends State<FormEditorContent>
                 firstDate: firstDate,
                 lastDate: DateTime(2100),
               );
-              if (date != null) {
+              if (date != null && mounted) {
                 final time = await showTimePicker(
                   context: context,
-                  initialTime: TimeOfDay.fromDateTime(value ?? DateTime.now()),
+                  initialTime: TimeOfDay.fromDateTime(initialDate),
                 );
-                if (time != null) {
+                if (time != null && mounted) {
                   onChanged(DateTime(
                       date.year, date.month, date.day, time.hour, time.minute));
                 }
@@ -519,8 +525,8 @@ class _FormEditorContentState extends State<FormEditorContent>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-                value != null
-                    ? DateFormat.yMd().add_jm().format(value)
+                displayedValue != null
+                    ? DateFormat.yMd().add_jm().format(displayedValue)
                     : FormStrings.notSet,
                 style: const TextStyle(fontSize: 14)),
             /*
@@ -540,6 +546,7 @@ class _FormEditorContentState extends State<FormEditorContent>
     String text;
     Color color;
     final now = DateTime.now();
+    final closingTime = form.definition.endTime ?? _defaultClosingTime(form);
 
     if (!(form.definition.isOpen ?? true)) {
       text = FormStrings.formClosedMessage;
@@ -549,10 +556,9 @@ class _FormEditorContentState extends State<FormEditorContent>
       text = FormStrings.scheduledWithTime(
           DateFormat.Md().add_jm().format(form.definition.startTime!));
       color = ThemeConfig.redColor(context);
-    } else if (form.definition.endTime != null &&
-        now.isAfter(form.definition.endTime!)) {
+    } else if (closingTime != null && now.isAfter(closingTime)) {
       text = FormStrings.endedWithTime(
-          DateFormat.Md().add_jm().format(form.definition.endTime!));
+          DateFormat.Md().add_jm().format(closingTime));
       color = ThemeConfig.redColor(context);
     } else if (!_prototype && form.definition.isWaitlist) {
       text = WaitlistStrings.formOpenWaitlistMessage;

@@ -2,7 +2,7 @@
 BEGIN;
 DO $$
 DECLARE org bigint; un bigint; oc bigint; f bigint; editor uuid:=gen_random_uuid(); viewer uuid:=gen_random_uuid();
- cmd uuid:=gen_random_uuid(); result jsonb; input jsonb; n bigint; at_time timestamptz:=clock_timestamp(); copy_id bigint; new_form_id bigint;
+ cmd uuid:=gen_random_uuid(); result jsonb; input jsonb; n bigint; at_time timestamptz:=clock_timestamp(); copy_id bigint; new_form_id bigint; event_end timestamptz;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Availability save') RETURNING id INTO org;
  -- This notification fixture opens paid default products with explicit cash policy.
@@ -53,5 +53,27 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
  result:=pg_temp.prepared_notification_view(org,oc);
  PERFORM assert_true(jsonb_array_length(result->'feedItems')>=4,'save to personal projection to feed');
+ INSERT INTO public.unit_users(unit,"user",is_editor) VALUES(un,editor,true);
+ PERFORM set_config('request.jwt.claim.sub',editor::text,true);
+ event_end:=at_time+interval '12 hours';
+ result:=public.save_occasion_client_sync_v1(oc,gen_random_uuid(),0,jsonb_build_object('id',oc,'end_time',event_end));
+ PERFORM assert_eq(result->>'status','applied','Occasion date change succeeds: '||result::text);
+ PERFORM assert_eq((SELECT next_evaluation_at FROM public.notification_center_source_state
+   WHERE organization=org AND source_key='form-availability:'||f),
+   event_end+interval '1 microsecond','Occasion edit reschedules the inherited notification');
+ PERFORM assert_eq(public.get_form_registration_mode_internal(f,event_end),'regular','Inherited closing instant is inclusive');
+ PERFORM assert_eq(public.get_form_registration_mode_internal(f,event_end+interval '1 microsecond'),'closed','After inherited closing');
+ event_end:=at_time+interval '2 days';
+ result:=public.save_occasion_client_sync_v1(oc,gen_random_uuid(),1,jsonb_build_object('id',oc,'end_time',event_end));
+ PERFORM assert_eq(result->>'status','applied','Occasion moves later');
+ PERFORM assert_eq(public.get_form_registration_mode_internal(f,at_time+interval '1 day'),'regular','Moving the event end later extends availability');
+ result:=public.update_form_client_sync_v1(jsonb_build_object('id',f,'occasion',oc,
+   'settings',jsonb_build_object('schedule',jsonb_build_object('end_time',at_time+interval '3 days'))),gen_random_uuid());
+ PERFORM assert_eq(result->>'status','applied','Custom end can be after the occasion');
+ PERFORM assert_eq(public.get_form_registration_mode_internal(f,event_end+interval '1 second'),'regular','Custom override wins over occasion end');
+ result:=public.update_form_client_sync_v1(jsonb_build_object('id',f,'occasion',oc,
+   'settings','{"schedule":{"end_time":null}}'::jsonb),gen_random_uuid());
+ PERFORM assert_eq(result->>'status','applied','Removing custom closure succeeds');
+ PERFORM assert_eq(public.get_form_registration_mode_internal(f,event_end+interval '1 second'),'closed','Clearing the override restores inheritance');
 END $$;
 ROLLBACK;

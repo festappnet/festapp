@@ -51,6 +51,14 @@ BEGIN
  PERFORM assert_eq(result#>>'{data,code}','200','Optional dinner checkout succeeds');
  PERFORM assert_eq((SELECT price FROM eshop.orders WHERE id=(result#>>'{data,order,id}')::bigint),2800::numeric,'Base plus dinner stored at 2800');
  SELECT count(*) INTO before_orders FROM eshop.orders;
+ UPDATE public.occasions SET end_time=clock_timestamp()-interval '1 minute' WHERE id=oc;
+ EXECUTE 'SET LOCAL ROLE anon';
+ result:=public.create_ticket_order_client_sync_v1(payload,gen_random_uuid(),client);
+ EXECUTE 'RESET ROLE';
+ PERFORM assert_eq(result#>>'{data,code}','1020','Anonymous checkout rejects an inherited cutoff even when the manual switch is open');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.orders),before_orders,'Elapsed inherited cutoff leaves no partial order');
+ UPDATE public.occasions SET end_time=now()+interval '2 days' WHERE id=oc;
+ SELECT count(*) INTO before_orders FROM eshop.orders;
  FOREACH invalid_payload IN ARRAY ARRAY[
    jsonb_set(payload,'{ticket,0,fields}','[]'),
    jsonb_set(payload,'{ticket,0,fields}',jsonb_build_array(jsonb_build_object('product_type',dinner)))

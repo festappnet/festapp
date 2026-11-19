@@ -32,7 +32,9 @@ BEGIN
   form_id:=form_row.id;
   PERFORM assert_eq(response#>>'{data,formLink}',form_row.link,'Completion uses the saved public form address');
   PERFORM assert_eq(form_row.is_open,mode<>'preparation','Sale mode writes the form flag');
-  PERFORM assert_eq((form_row.data#>>'{schedule,end_time}')::timestamptz,(payload->>'end')::timestamptz,'Sale end follows the new event');
+  PERFORM assert_true(form_row.data#>>'{schedule,end_time}' IS NULL,'Wizard leaves the default sale end inherited');
+  PERFORM assert_eq((public.get_effective_form_data(form_id)#>>'{schedule,end_time}')::timestamptz,
+    (payload->>'end')::timestamptz,'Sale end follows the new event');
   PERFORM assert_eq((form_row.data#>>'{schedule,enable_countdown}')::boolean,false,'Countdown is independent from scheduling');
   PERFORM assert_false(form_row.data ? 'start_time' OR form_row.data ? 'end_time','Legacy source dates are cleared');
   PERFORM assert_eq((SELECT is_hidden FROM public.occasions WHERE id=event_id),true,'Opening a form does not publish the event catalogue entry');
@@ -46,6 +48,8 @@ BEGIN
    EXECUTE 'SET LOCAL ROLE anon';
    response:=public.get_form_by_link(form_row.link)::jsonb;
    PERFORM assert_eq(response->>'code','200','Anonymous visitor can open the immediate sales form while the occasion is hidden');
+   PERFORM assert_eq((response#>>'{data,data,schedule,end_time}')::timestamptz,
+     (payload->>'end')::timestamptz,'Public form receives inherited end');
    EXECUTE 'RESET ROLE';
    PERFORM set_config('request.jwt.claim.sub',actor::text,true);
    PERFORM set_config('request.jwt.claim.role','authenticated',true);
@@ -62,6 +66,10 @@ BEGIN
   END IF;
   PERFORM assert_eq(public.get_form_registration_mode_internal(form_id,now()+interval '12 days'),'closed','Form stops accepting new orders after sale end');
  END LOOP;
+ -- The editor receives the inherited date separately from writable metadata.
+ response:=public.get_form_editor_bundle_internal(form_id,true);
+ PERFORM assert_eq((response#>>'{data,form,occasion_end_time}')::timestamptz,(payload->>'end')::timestamptz,'Editor shows the occasion end');
+ PERFORM assert_true(response#>>'{data,form,data,schedule,end_time}' IS NULL,'Editor cannot save the inherited date as an override by accident');
  -- Invalid schedule rejection must not leave a partially created occasion.
  SELECT count(*) INTO before_count FROM public.occasions WHERE unit=unit_id;
  EXECUTE 'SET LOCAL ROLE authenticated';
