@@ -338,6 +338,7 @@
       "cancelled": "Cancelled",
       "expired": "Expired",
       "send": "Accepted by provider",
+      "preparation_failed": "Nie udało się przygotować wiadomości",
       "not_accepted": "Provider did not accept message",
       "done": "Complete",
       "tracking_disabled": "Tracking disabled",
@@ -372,6 +373,7 @@
     "recovery": {
       "repairHeading": "Popraw e-mail",
       "repairInstruction": "Dostarczenie na ten adres jest niemożliwe. Podaj inny e-mail.",
+      "preparationRetry": "Nie udało się przygotować wiadomości. System ponowi próbę automatycznie.",
       "verifyInstruction": "Przed ponownym wysłaniem sprawdź e-mail klienta i stan dostarczenia.",
       "heading": "Dostarczenie e-maila",
       "saveOnly": "Tylko zapisz",

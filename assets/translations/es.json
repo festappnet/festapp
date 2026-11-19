@@ -120,6 +120,7 @@
       "cancelled": "Cancelado",
       "expired": "Caducado",
       "send": "Aceptado por el proveedor",
+      "preparation_failed": "No se pudo preparar el mensaje",
       "not_accepted": "El proveedor no ha aceptado el mensaje",
       "done": "Completado",
       "tracking_disabled": "Seguimiento desactivado",
@@ -154,6 +155,7 @@
     "recovery": {
       "repairHeading": "Corregir el correo electrónico",
       "repairInstruction": "La entrega a esta dirección está bloqueada. Introduce otro correo.",
+      "preparationRetry": "No se pudo preparar el mensaje. El sistema lo intentará de nuevo automáticamente.",
       "verifyInstruction": "Comprueba el correo del cliente y el estado de la entrega antes de volver a enviar.",
       "heading": "Envío de correos",
       "saveOnly": "Solo guardar",

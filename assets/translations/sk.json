@@ -356,6 +356,7 @@
       "cancelled": "Cancelled",
       "expired": "Expired",
       "send": "Accepted by provider",
+      "preparation_failed": "Príprava správy zlyhala",
       "not_accepted": "Provider did not accept message",
       "done": "Complete",
       "tracking_disabled": "Tracking disabled",
@@ -390,6 +391,7 @@
     "recovery": {
       "repairHeading": "Opraviť e-mail",
       "repairInstruction": "Na túto adresu nie je možné doručovať. Zadajte iný e-mail.",
+      "preparationRetry": "Príprava správy zlyhala. Systém pokus zopakuje automaticky.",
       "verifyInstruction": "Pred ďalším odoslaním overte e-mail zákazníka a stav doručenia.",
       "heading": "Doručenie e-mailu",
       "saveOnly": "Iba uložiť",

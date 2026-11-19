@@ -120,6 +120,7 @@
       "cancelled": "Cancelled",
       "expired": "Expired",
       "send": "Accepted by provider",
+      "preparation_failed": "Message preparation failed",
       "not_accepted": "Provider did not accept message",
       "done": "Complete",
       "tracking_disabled": "Tracking disabled",
@@ -154,6 +155,7 @@
     "recovery": {
       "repairHeading": "Correct email",
       "repairInstruction": "Delivery to this address is blocked. Enter another email.",
+      "preparationRetry": "Message preparation failed. The system will retry automatically.",
       "verifyInstruction": "Verify the customer email and delivery status before sending again.",
       "heading": "Email delivery",
       "saveOnly": "Save only",

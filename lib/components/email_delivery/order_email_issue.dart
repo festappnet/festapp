@@ -38,6 +38,8 @@ class OrderEmailIssue {
       const {'pending', 'preparing', 'sending', 'accepted'}.contains(state) &&
       data['reason'] == null &&
       data['suppression_reason'] == null;
+  bool get preparationFailed => data['reason'] == 'preparation_failed';
+  bool get retryingPreparation => preparationFailed && state == 'retry_wait';
   bool get uncertain => state == 'unknown' || state == 'sending';
   bool get isFailure =>
       const {
@@ -59,6 +61,9 @@ class OrderEmailIssue {
           (data['recipient'] ?? originalRecipient).toString().toLowerCase();
   String? get reasonDescription =>
       switch (data['suppression_reason'] ?? data['reason']) {
+        'preparation_failed' => retryingPreparation
+            ? EmailDeliveryStrings.recovery('preparationRetry')
+            : EmailDeliveryStrings.state('preparation_failed'),
         'complaint' => EmailDeliveryStrings.recovery('spam'),
         'hard_bounce' => EmailDeliveryStrings.recovery('hardBounce'),
         'queue_paused' => EmailDeliveryStrings.recovery('paused'),
@@ -74,6 +79,7 @@ class OrderEmailIssue {
       };
   bool get canResend =>
       !uncertain &&
+      !retryingPreparation &&
       !const {'pending', 'preparing', 'blocked'}.contains(state) &&
       state != 'post_action_failed' &&
       data['obsolete'] != true &&

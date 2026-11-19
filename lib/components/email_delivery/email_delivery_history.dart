@@ -330,9 +330,14 @@ Widget emailDeliveryMessageContent(BuildContext context, Map result) => Column(
     if (result['message']?['last_error'] == 'post_action_failed')
       Text(EmailDeliveryStrings.state('post_action_failed')),
     for (final entry in (result['attempts'] as List? ?? []))
-      Text(
-        '${EmailDeliveryStrings.state(entry['state'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}${entry['error'] == null ? '' : ' - ${entry['error']}'}',
-      ),
+      if (entry['error'] == 'preparation_failed')
+        Text(
+          '${EmailDeliveryStrings.state('preparation_failed')} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}',
+        )
+      else
+        Text(
+          '${EmailDeliveryStrings.state(entry['state'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}${entry['error'] == null ? '' : ' - ${entry['error']}'}',
+        ),
     for (final entry in (result['events'] as List? ?? []))
       Text(
         '${EmailDeliveryStrings.state(entry['type'].toString())} - ${LocaleDateTime.instant(entry['at'], Localizations.localeOf(context).toString())}',

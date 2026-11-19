@@ -1,3 +1,5 @@
+import 'package:fstapp/components/email_delivery/email_delivery_history.dart';
+import 'package:fstapp/components/email_delivery/order_email_issue.dart';
 import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
@@ -148,6 +150,47 @@ void main() {
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'preparation retry identifies the internal failure and preserves the address',
+    (tester) async {
+      final issue = {
+        ...delivery('prep', 'order_tickets', 'retry_wait'),
+        'reason': 'preparation_failed',
+      };
+      expect(OrderEmailIssue(issue).canResend, isFalse);
+      await open(tester, [issue]);
+
+      expect(find.text('Příprava zprávy selhala. Systém pokus zopakuje automaticky.'), findsOneWidget);
+      expect(find.textContaining('ověřte e-mail zákazníka'), findsNothing);
+      expect(find.textContaining('může být překlep'), findsNothing);
+      expect(find.text('customer@example.comcz'), findsOneWidget);
+      expect(tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Odeslat vstupenky')).onPressed, isNull);
+
+      await environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => emailDeliveryMessageContent(context, {
+                'attempts': [
+                  {
+                    'state': 'not_accepted',
+                    'error': 'preparation_failed',
+                    'at': '2026-11-19T12:28:00Z',
+                  },
+                ],
+              }),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Příprava zprávy selhala'), findsOneWidget);
+      expect(find.textContaining('Poskytovatel zprávu nepřijal'), findsNothing);
+    },
+  );
 
   testWidgets('application context uses confirmation actions', (tester) async {
     RightsService.currentOccasion()!.features.single.isEnabled = false;
