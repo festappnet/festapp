@@ -1,4 +1,4 @@
--- Read-only operator evidence. Labels are the three fixed mail classes, never
+-- Read-only operator evidence. Labels are fixed mail classes, never
 -- recipient/source/UUID. The endpoint does no cleanup, dispatch or provider IO.
 CREATE INDEX email_pending_class_age ON public.email_messages(admission_class,created_at)
  WHERE workflow_state IN ('pending','blocked','preparing','sending','retry_wait','unknown');
@@ -21,7 +21,7 @@ BEGIN
    -- but only runnable work can age into a stalled-delivery alert.
    'oldestDueAt',(SELECT min(greatest(created_at,target_time)) FROM public.email_messages WHERE admission_class=class
      AND workflow_state IN ('pending','preparing','sending','retry_wait') AND target_time<=statement_timestamp())
-  ) stats FROM unnest(ARRAY['ordinary','auth','commitment']) class
+  ) stats FROM unnest(ARRAY['ordinary','auth','commitment','transactional']) class
  ) q;
  SELECT expires_at INTO expired_at FROM public.abuse_budget_usage WHERE expires_at<statement_timestamp() ORDER BY expires_at LIMIT 1;
  SELECT measured_at INTO evidence_at FROM public.abuse_unit_evidence ORDER BY measured_at LIMIT 1;

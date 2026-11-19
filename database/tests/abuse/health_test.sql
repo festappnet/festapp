@@ -7,7 +7,7 @@ BEGIN
  EXECUTE 'SET LOCAL ROLE service_role';
  result:=public.get_abuse_health_v1();
  PERFORM assert_eq((result->>'policyRevision')::bigint,1::bigint,'operator health reports the installed revision');
- PERFORM assert_eq((SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(result->'queue') k),ARRAY['auth','commitment','ordinary'],'health emits only fixed labels');
+ PERFORM assert_eq((SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(result->'queue') k),ARRAY['auth','commitment','ordinary','transactional'],'health emits only fixed labels');
  PERFORM assert_eq((result#>>'{queue,ordinary,countCappedAt}')::int,5000,'operator sees bounded count semantics');
  EXECUTE 'RESET ROLE';
 END $$;
