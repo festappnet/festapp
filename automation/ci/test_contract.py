@@ -25,6 +25,7 @@ class MirrorContractTest(unittest.TestCase):
         command = steps[0]['run']
         self.assertEqual(steps[1]['with']['key'], '${{ steps.key.outputs.browsers }}')
         for filename, job in (
+            ('wix-checkout-compatibility.yml', 'wix-checkout-compatibility'),
             ('seat-checkout-regressions.yml', 'seat-checkout'),
             ('image-upload-regressions.yml', 'server-policy'),
             ('deploy.yml', 'cloudflare'),
@@ -70,9 +71,9 @@ class MirrorContractTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             cms_browser_command(ROOT, 'owned-browser', [], {'GH_TOKEN': 'synthetic'})
         workflow = yaml.safe_load((ROOT / '.github/workflows/wix-checkout-compatibility.yml').read_text())
-        for job in workflow['jobs'].values():
-            self.assertNotIn('./.github/actions/restore-playwright-cache',
-                             [step.get('uses') for step in job['steps']])
+        cms_steps = workflow['jobs']['wordpress-checkout-compatibility']['steps']
+        cache = next(step for step in cms_steps if step.get('uses') == './.github/actions/restore-playwright-cache')
+        self.assertEqual(cache['if'], "github.job == 'wix-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
 
     def test_selection_covers_provisioning_tests_and_execution_evidence(self):
         contract = json.loads((ROOT / 'automation/ci/checks.json').read_text())
@@ -112,8 +113,10 @@ class MirrorContractTest(unittest.TestCase):
                     elif name == 'server-policy' and step.get('name') in ('Install Python YAML parser', 'Install pinned Deno'):
                         outputs = {'Install Python YAML parser': 'python_yaml', 'Install pinned Deno': 'deno'}
                         self.assertEqual(step['if'], f"steps.selection.outputs.{outputs[step['name']]} == 'true'")
-                    elif step.get('name') == 'Restore pinned WordPress core archive':
-                        self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
+                    elif step.get('name') in ('Restore pinned WordPress core archive', 'Restore pinned host Chromium'):
+                        cms_job = ('wordpress-checkout-compatibility' if step['name']=='Restore pinned WordPress core archive'
+                                   else 'wix-checkout-compatibility')
+                        self.assertEqual(step['if'], f"github.job == '{cms_job}' && steps.selection.outputs.cms == 'true'")
                     else:
                         self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'",
                                                   "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'",

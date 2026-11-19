@@ -71,7 +71,7 @@ def input_digests():
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
 processes=[]
-container_browser=sys.platform.startswith('linux')
+container_browser=sys.platform.startswith('linux') and needs_wordpress
 browser_container=project+'-browser'
 browser_timings=os.environ.get('FESTAPP_TIMINGS')
 started={'backend':False,'wordpress':False,'joomla':False}
@@ -160,14 +160,8 @@ try:
     run(['docker','exec','--user','www-data',jprefix+'-'+str(major),'php','cli/joomla.php','extension:install','--path','/tmp/'+archive])
   run(['python3','tests/consent-installed.py'],joomla)
  def prepare_browsers():
+  global container_browser
   engines = list(dict.fromkeys(case[4] for case in cases))
-  if not container_browser:
-   shell_only = ['--only-shell'] if engines == ['chromium'] else []
-   run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install',*shell_only,*engines],label='browsers.install')
-   return
-  image=browser_image(ROOT)
-  if subprocess.run(['docker','image','inspect',image],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode:
-   run(['docker','pull',image],label='browsers.pull-pinned-image')
   probe = ['--input-type=module','-e','''import {createNativeBrowser} from './scripts/native_browser.mjs';
 for (const engine of process.argv.slice(1)) {
   const owner = await createNativeBrowser({engine});
@@ -178,7 +172,23 @@ for (const engine of process.argv.slice(1)) {
     await owner.close();
   }
 }''',*engines]
+  if not container_browser:
+   shell_only = ['--only-shell'] if engines == ['chromium'] else []
+   try:
+    run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install',*shell_only,*engines],label='browsers.install')
+    if sys.platform.startswith('linux'):
+     run(['node',*probe],cwd=ROOT/'web_client',label='browsers.probe-host-chromium',timeout=30)
+    phase('CMS browser runtime: native Playwright')
+    return
+   except RuntimeError:
+    if not sys.platform.startswith('linux'):raise
+    container_browser=True
+    phase('Host Chromium unavailable; using the pinned CMS browser image')
+  image=browser_image(ROOT)
+  if subprocess.run(['docker','image','inspect',image],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode:
+   run(['docker','pull',image],label='browsers.pull-pinned-image',timeout=240)
   run(cms_browser_command(ROOT,browser_container,probe,{},browser_timings),label='browsers.probe-pinned-image')
+  phase('CMS browser runtime: pinned Playwright image')
  preparation = [('browsers',prepare_browsers)]
  if needs_joomla:preparation.append(('joomla',prepare_joomla))
  with ThreadPoolExecutor(max_workers=len(preparation)+2+2*needs_wordpress) as workers:

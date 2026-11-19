@@ -49,6 +49,9 @@ jobs:
       - name: Ensure disposable backend SQL client
         if: steps.selection.outputs.cms == 'true'
         run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
+      - name: Restore pinned host Chromium
+        if: github.job == 'wix-checkout-compatibility' && steps.selection.outputs.cms == 'true'
+        uses: ./.github/actions/restore-playwright-cache
       - name: Restore pinned WordPress core archive
         if: github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'
         uses: actions/cache@v5

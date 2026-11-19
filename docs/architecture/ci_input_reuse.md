@@ -183,15 +183,17 @@ image builds. Both configured core/PHP pairs are verified at runtime, with
 separate volumes and databases. The two core containers start concurrently.
 Their installations run concurrently once MariaDB creates both databases.
 The older core release is staged from its SHA-256-pinned archive. WP-CLI
-reads that archive offline. Each hosted CMS browser case runs inside the same Linux
+reads that archive offline. Hosted WordPress browser cases run inside the same Linux
 Playwright image, pinned by digest and checked against the dependency version.
 The image provides Chromium, Firefox, WebKit, and their system libraries. The
 browser process joins the runner's loopback network to reach the existing owned
 fixture and receives only the fixture environment variables and read-only
 JavaScript inputs. The source receipt includes the image pin. macOS keeps its
-native local browser runner. Owner labels fence creation and cleanup. Private
-fixture state is never cached. The other host browser checks share the pinned
-Chromium cache by runner OS and architecture.
+native local browser runner. Chromium-only hosted CMS cases share the pinned
+host Chromium cache by runner OS and architecture with other browser jobs. The
+host launch probe switches to the same immutable image if Chromium is
+unavailable. Owner labels fence creation and cleanup. Private fixture state is
+never cached.
 Deno reuses dependency downloads keyed by its pin and lockfile, and pnpm caches
 include the lockfiles installed by each job. Closing a pull request evicts its
 merge-ref caches so unused copies do not displace shared main-branch entries.
