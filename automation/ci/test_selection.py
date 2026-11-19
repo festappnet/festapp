@@ -222,8 +222,9 @@ class ScopedPolicyTest(unittest.TestCase):
     def test_raw_registry_is_projected_but_executable_ci_remains_trusted(self):
         def entries(sha):
             return b'100644 blob '+sha.encode()+b'\t'+selection.POLICY.encode()+b'\0'+b'100644 blob stable\tautomation/ci/run.py\0'
-        with selection.lookup(),patch.object(selection,'git',side_effect=lambda *args:entries(args[3])):
+        with selection.lookup(),patch.object(selection,'git',side_effect=lambda *args:entries(args[3])) as git:
             self.assertEqual(selection.definition(BASE),selection.definition(SHA))
+            self.assertIn('.github/actions', git.call_args.args)
         for path in ['automation/ci/run.py','.github/workflows/seat-checkout-regressions.yml']:
             with selection.lookup(),patch.object(selection,'git',side_effect=lambda *args:b'100644 blob '+args[3].encode()+b'\t'+path.encode()+b'\0'):
                 self.assertNotEqual(selection.definition(BASE),selection.definition(SHA))

@@ -1,0 +1,11 @@
+name: Restore pinned Deno dependencies
+description: Reuse dependency downloads validated by the Edge Functions lockfile.
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cache/deno/remote
+          ~/.cache/deno/npm
+        key: deno-dependencies-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('automation/ci/deno.sh', 'supabase/functions/deno.lock') }}

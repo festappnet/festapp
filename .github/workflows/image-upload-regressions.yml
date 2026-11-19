@@ -53,9 +53,15 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/festapp-ci-python"
           "$RUNNER_TEMP/festapp-ci-python/bin/pip" --disable-pip-version-check --quiet install PyYAML==6.0.3
           echo "$RUNNER_TEMP/festapp-ci-python/bin" >> "$GITHUB_PATH"
+      - name: Restore pinned Chromium test runner
+        if: steps.selection.outputs.browser == 'true'
+        uses: ./.github/actions/restore-playwright-cache
       - name: Install isolated Chromium test runner
         if: steps.selection.outputs.browser == 'true'
         run: bash automation/ci/browser.sh
+      - name: Restore pinned Deno dependencies
+        if: steps.selection.outputs.deno == 'true'
+        uses: ./.github/actions/restore-deno-cache
       - name: Install pinned Deno
         if: steps.selection.outputs.deno == 'true'
         run: bash automation/ci/deno.sh

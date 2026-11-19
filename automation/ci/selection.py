@@ -91,7 +91,7 @@ def lane_inputs(lane):
 
 def _owners(path, contract):
     # The same map governs local affected selection and hosted input digests.
-    if (path.startswith(('automation/ci/', '.github/workflows/')) or
+    if (path.startswith(('automation/ci/', '.github/workflows/', '.github/actions/')) or
             (path.endswith(('_test.sql', '.test.js', '.test.mjs', '_test.ts', '_test.dart'))
              and path not in known_tests(contract))):
         return set(contract['jobs'])
@@ -116,7 +116,7 @@ def _unit_owners(path, lane, policy):
     if lane not in owners(path,policy): return set()
     units=policy['jobs'][lane]['steps']
     # Unknown inputs and CI changes invalidate every unit, even with a fine map.
-    if (path.startswith(('automation/ci/','.github/workflows/')) or
+    if (path.startswith(('automation/ci/','.github/workflows/','.github/actions/')) or
             (path.endswith(('_test.sql','.test.js','.test.mjs','_test.ts','_test.dart')) and path not in known_tests(policy))):
         return set(units)
     job = policy['jobs'][lane]
@@ -224,7 +224,7 @@ def definition(sha):
     # The policy's relevant commands, inventory and inputs are authenticated in
     # each fingerprint. Keep every executable evidence producer/workflow here.
     def compute():
-        entries=git('ls-tree','-r','-z',sha,'automation/ci','.github/workflows','automation/test_ci.sh').split(b'\0')
+        entries=git('ls-tree','-r','-z',sha,'automation/ci','.github/workflows','.github/actions','automation/test_ci.sh').split(b'\0')
         return hashlib.sha256(b'\0'.join(entry for entry in entries if entry and
             entry.split(b'\t',1)[1].decode()!=POLICY)).hexdigest()
     return cached(('definition',str(ROOT),sha),compute)
