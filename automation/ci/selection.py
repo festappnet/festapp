@@ -29,6 +29,42 @@ class BudgetExpired(TimeoutError):
     pass
 
 
+class EvidenceArtifactMissing(ValueError):
+    pass
+
+
+def timestamp(value):
+    result = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    if result.tzinfo is None:
+        raise ValueError('GitHub timestamp has no timezone')
+    return result
+
+
+def evidence_window(policy, now=None):
+    days = policy['reusePolicy']['maxAgeDays']
+    if type(days) is not int or not 1 <= days <= 90:
+        raise ValueError('CI evidence retention must be between 1 and 90 days')
+    now = now or datetime.now(timezone.utc)
+    return now - timedelta(days=days), now
+
+
+def recent_execution(job, cutoff, now):
+    return cutoff <= timestamp(job['completed_at']) <= now
+
+
+def candidate_runs(repository, workflow):
+    page = 1
+    while True:
+        endpoint = f'actions/workflows/{workflow}/runs?per_page=100'
+        if page > 1:
+            endpoint += f'&page={page}'
+        runs = api(repository, endpoint)['workflow_runs']
+        yield from sorted(runs, key=lambda run: (run['run_number'], run['run_attempt']), reverse=True)
+        if len(runs) < 100:
+            return
+        page += 1
+
+
 @contextmanager
 def lookup(seconds=20):
     token = LOOKUP.set({'deadline':time.monotonic()+seconds, 'cache':{},
@@ -262,15 +298,19 @@ def _ensure_commit(sha):
 def read_artifact(repository, run, lane):
     artifacts = api(repository, f'actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts']
     matches = [a for a in artifacts if a['name'] == f'ci-{lane}-{run["run_attempt"]}']
+    if not matches:
+        raise EvidenceArtifactMissing('Execution artifact no longer available')
     if len(matches) != 1:
-        raise ValueError('Missing or ambiguous execution artifact')
+        raise ValueError('Ambiguous execution artifact')
     artifact = matches[0]
     binding = artifact['workflow_run']
-    if (artifact.get('size_in_bytes', 0) > 100_000_000 or artifact['expired'] or binding['id'] != run['id'] or
+    if (artifact.get('size_in_bytes', 0) > 100_000_000 or binding['id'] != run['id'] or
             binding['repository_id'] != run['repository']['id'] or
             binding['head_repository_id'] != run['head_repository']['id'] or
             binding['head_sha'] != run['head_sha']):
         raise ValueError('Foreign or expired artifact')
+    if artifact['expired'] or (artifact.get('expires_at') and timestamp(artifact['expires_at']) <= datetime.now(timezone.utc)):
+        raise EvidenceArtifactMissing('Execution artifact expired')
     expected_digest=artifact['digest']
     if not re.fullmatch('sha256:[0-9a-f]{64}',expected_digest): raise ValueError('Invalid artifact digest')
     local=None
@@ -389,16 +429,15 @@ def reusable(lane, sha, repository, contract, policy):
     remaining=set(units);proofs={}
     repository_id=api(repository,'')['id']
     workflow=contract['jobs'][lane]['workflow']
-    runs=api(repository,f'actions/workflows/{workflow}/runs?per_page=100')['workflow_runs']
-    cutoff=datetime.now(timezone.utc)-timedelta(days=policy['reusePolicy']['maxAgeDays'])
+    cutoff, now = evidence_window(policy)
     stop_reason = None
     try:
-        for run in sorted(runs,key=lambda r:(r['run_number'],r['run_attempt']),reverse=True):
+        for run in candidate_runs(repository, workflow):
             if str(run['id'])==os.environ.get('GITHUB_RUN_ID'): continue
             if (run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or
                     run['event'] not in ('push','workflow_dispatch','pull_request') or
                     run['path']!=f'.github/workflows/{workflow}' or
-                    datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff): continue
+                    timestamp(run.get('updated_at') or run['created_at'])<cutoff): continue
             state=LOOKUP.get()
             if state is not None: state['candidates']+=1
             # A list entry may become stale during a rerun. Refresh status/attempt
@@ -407,7 +446,7 @@ def reusable(lane, sha, repository, contract, policy):
             run=api(repository,f'actions/runs/{expected_id}')
             if (run['id']!=expected_id or run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or run['event'] not in ('push','workflow_dispatch','pull_request') or run['path']!=f'.github/workflows/{workflow}'):
                 raise ValueError('Fresh run binding changed')
-            if datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<cutoff: continue
+            if timestamp(run.get('updated_at') or run['created_at'])<cutoff: continue
             if run['status'] == 'completed' and run['conclusion'] == 'skipped':
                 job = lane_job(repository, run, lane)
                 if job['status'] == 'completed' and job['conclusion'] == 'skipped' and job['steps'] == []:
@@ -430,8 +469,11 @@ def reusable(lane, sha, repository, contract, policy):
                 if not remaining: break
                 continue
             if run['event']!='pull_request' and definition(run['head_sha'])!=trusted: continue
-            if not direct_marker(job): continue
-            receipt,artifact=read_artifact(repository,run,lane)
+            if not direct_marker(job) or not recent_execution(job, cutoff, now): continue
+            try:
+                receipt,artifact=read_artifact(repository,run,lane)
+            except EvidenceArtifactMissing:
+                continue
             # Old lane receipts never supply unit evidence. Mixed receipts supply
             # only directly executed rows, never the rows that they reused.
             if receipt.get('execution',{}).get('schemaVersion')!=2: continue
@@ -487,17 +529,17 @@ def verify_plan(plan, lane, sha, repository, contract):
             raise ValueError('Missing execution dependency')
     if not reuse: return plan
     repository_id=api(repository,'')['id']
+    cutoff, now = evidence_window(contract)
     for unit,proof in reuse.items():
         run=cached(('run',proof['runId']),lambda:api(repository,f'actions/runs/{proof["runId"]}'))
         if (run['repository']['id']!=repository_id or run['head_repository']['id']!=repository_id or
                 run['event'] not in ('push','workflow_dispatch','pull_request') or run['status']!='completed' or
                 run['conclusion'] not in ('success','failure') or run['run_attempt']!=proof['attempt'] or
-                run['path']!='.github/workflows/'+contract['jobs'][lane]['workflow'] or
-                datetime.fromisoformat(run['created_at'].replace('Z','+00:00'))<datetime.now(timezone.utc)-timedelta(days=contract['reusePolicy']['maxAgeDays'])):
+                run['path']!='.github/workflows/'+contract['jobs'][lane]['workflow']):
             raise ValueError('Unit source run is stale or foreign')
         job=cached(('job',proof['runId'],proof['attempt'],lane),lambda:job_for(repository,run,lane))
         receipt,artifact=cached(('artifact',proof['runId'],proof['attempt'],lane),lambda:read_artifact(repository,run,lane))
-        if not direct_marker(job) or job['id']!=proof['jobId'] or artifact!=proof['artifact']:
+        if not recent_execution(job, cutoff, now) or not direct_marker(job) or job['id']!=proof['jobId'] or artifact!=proof['artifact']:
             raise ValueError('Unit origin changed')
         source=verify_execution(receipt,run,job,lane,fingerprint(sha,lane,contract,unit),repository_id,contract,contract,definition(sha),unit)
         if source!=proof['source'] or proof['inputSha256']!=fingerprint(sha,lane,contract,unit):
@@ -544,9 +586,14 @@ def main():
     contract = json.loads((ROOT / 'automation/ci/checks.json').read_text())
     if args.lane not in contract['jobs']:
         parser.error('Unknown CI lane')
+    evidence_window(contract)
+    github_output = os.environ.get('GITHUB_OUTPUT')
+    if github_output:
+        with open(github_output, 'a') as output:
+            output.write(f'evidence_retention_days={contract["reusePolicy"]["maxAgeDays"]}\n')
     # Check source/semantic ownership before downloads, compilation or reuse.
     preflight_inventory()
-    policy = json.loads((ROOT / POLICY).read_text())
+    policy = contract
     event_path = os.environ.get('GITHUB_EVENT_PATH')
     event = json.loads(Path(event_path).read_text()) if event_path else {}
     if (os.environ.get('GITHUB_EVENT_NAME') == 'pull_request' and

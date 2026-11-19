@@ -3780,7 +3780,7 @@
     "database/tests/organization/get_my_admin_organization_id_test.sql"
   ],
   "reusePolicy": {
-    "maxAgeDays": 7
+    "maxAgeDays": 90
   },
   "independentInputs": [
     "docs/**"

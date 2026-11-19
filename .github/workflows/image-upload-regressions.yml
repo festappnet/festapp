@@ -83,7 +83,7 @@ jobs:
         with:
           name: ci-${{ github.job }}-${{ github.run_attempt }}
           path: ~/.cache/festapp-ci/runs
-          retention-days: 7
+          retention-days: ${{ steps.selection.outputs.evidence_retention_days }}
           if-no-files-found: ignore
 
   client-contract:
@@ -141,7 +141,7 @@ jobs:
         with:
           name: ci-${{ github.job }}-${{ github.run_attempt }}
           path: ~/.cache/festapp-ci/runs
-          retention-days: 7
+          retention-days: ${{ steps.selection.outputs.evidence_retention_days }}
           if-no-files-found: ignore
 
   client-browser-contract:
