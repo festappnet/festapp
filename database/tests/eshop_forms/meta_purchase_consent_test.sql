@@ -37,9 +37,11 @@ BEGIN
 END $$;
 
 DO $$
+<<review>>
 DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; fid bigint:=(x->>'form')::bigint;
  snapshot jsonb; checkout jsonb; receipt jsonb; replay jsonb; oid bigint; b analytics.website_consent_bindings; claimed uuid:=gen_random_uuid();
  command_id uuid:=gen_random_uuid(); client_id uuid:=gen_random_uuid();
+ other_command uuid:=gen_random_uuid(); other_order bigint; changed_checkout jsonb;
 BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
@@ -76,6 +78,36 @@ BEGIN
  replay:=public.create_ticket_order_client_sync_v1(
   jsonb_set(checkout,'{metaPurchaseConsent,matching,fbc}','"fb.1.1795000001000.Click_123"'),command_id,client_id);
  PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'reload with changed matching replays the first order');
+ replay:=public.create_ticket_order_client_sync_v1(checkout-'metaPurchaseConsent',command_id,client_id);
+ PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'checkout without the original consent returns the original order');
+ replay:=public.create_ticket_order_client_sync_v1(
+  jsonb_set(checkout,'{metaPurchaseConsent,ad_storage}','false'),command_id,client_id);
+ PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'changed consent returns the original order');
+ BEGIN
+  PERFORM public.create_ticket_order_client_sync_v1(checkout||'{"email":"other-buyer@example.invalid"}',command_id,client_id);
+  RAISE EXCEPTION 'different business data cannot replay a command';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL;
+ END;
+ BEGIN
+  PERFORM public.create_ticket_order_client_sync_v1(checkout-'metaPurchaseConsent',command_id,gen_random_uuid());
+  RAISE EXCEPTION 'a different buyer cannot replay the receipt';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL;
+ END;
+ -- Previous receipts stored the complete consent decision in the request hash.
+ UPDATE public.client_mutation_receipts SET request_sha256=encode(extensions.digest(convert_to(jsonb_build_object(
+  'occasion',(x->>'occasion')::bigint,'order',public.strip_payment_sources_internal(checkout)#-'{metaPurchaseConsent,matching}')::text,'UTF8'),'sha256'),'hex')
+ WHERE client_mutation_receipts.command_id=review.command_id;
+ replay:=public.create_ticket_order_client_sync_v1(checkout,command_id,client_id);
+ PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'exact historical decision still recovers its original order');
+
+ changed_checkout:=(checkout-'metaPurchaseConsent')||'{"email":"unconsented@example.invalid"}';
+ replay:=public.create_ticket_order_client_sync_v1(changed_checkout,other_command,client_id);
+ PERFORM assert_eq(replay#>>'{data,code}','200','checkout without consent succeeds');
+ other_order:=(replay#>>'{data,order,id}')::bigint;
+ replay:=public.create_ticket_order_client_sync_v1(changed_checkout||jsonb_build_object('metaPurchaseConsent',snapshot),other_command,client_id);
+ PERFORM assert_eq(replay#>>'{data,order,id}',other_order::text,'new consent still recovers the originally unconsented order');
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=other_order),
+  'a replay does not add consent to an already committed order');
  PERFORM assert_eq((SELECT fbc FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
   'fb.1.1795000000000.Click_123','replaying a checkout never rewrites original Meta matching');
  UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp()-interval '8 days' WHERE order_id=oid;
