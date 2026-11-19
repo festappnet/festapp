@@ -368,8 +368,7 @@ BEGIN
  -- converging on one date. Meter the actual fenced send, with separate essential
  -- classes so ordinary bulk cannot consume Auth or accepted-order capacity.
  BEGIN
-  PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.send.'||v_row.admission_class,v_row.unit,v_row.organization),
-   jsonb_build_object('recipient',CASE WHEN v_row.admission_class='notification' THEN v_row.recipient_user::text ELSE public.abuse_recipient_key_v1(v_row.recipient) END,'global','all'));
+  PERFORM public.charge_email_send_recipient_internal_v1(v_row);
  EXCEPTION WHEN SQLSTATE 'PT429' THEN
   GET STACKED DIAGNOSTICS v_detail=PG_EXCEPTION_DETAIL;
   v_retry:=greatest(coalesce((v_detail::jsonb->>'retryAfterSeconds')::integer,60),1);

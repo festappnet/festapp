@@ -8,8 +8,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public._swap_spots_update_ticket(bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ee35114ff7d579afbf04f99f2a7a4660'),'current SQL source parity: public._swap_spots_update_ticket(bigint,bigint,bigint)');
 -- supabase/migrations/20261116140000_restore_fakturoid_czk_reference.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abort_fakturoid_ticket_order_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='c559a6f056e618b1b0ba21570c47280b'),'current SQL source parity: public.abort_fakturoid_ticket_order_v1(bigint,uuid)');
--- supabase/migrations/20261115120000_discount_codes.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abuse_effective_rules_v1(text,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='fdfa0fea225a4aab0a9cdb8c92c9b2fb'),'current SQL source parity: public.abuse_effective_rules_v1(text,bigint,bigint)');
+-- supabase/migrations/20261119230000_organizer_ticket_resend_limits.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abuse_effective_rules_v1(text,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='be1975f1ed9804981455dad845ec8216'),'current SQL source parity: public.abuse_effective_rules_v1(text,bigint,bigint)');
 -- supabase/migrations/20261115120000_discount_codes.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abuse_policy_bundle_v1(text[],bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='298af2c60e17b660062b699e3bd54a27'),'current SQL source parity: public.abuse_policy_bundle_v1(text[],bigint,bigint)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
@@ -48,8 +48,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.adjust_spot_capacity_for_pool(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='d95a5a962c7a5c1f4c3595fee5efeb20'),'current SQL source parity: public.adjust_spot_capacity_for_pool(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.administration_navigation_rule(boolean,boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='7a9559975e19ae53e8b15a23a4b8b68a'),'current SQL source parity: public.administration_navigation_rule(boolean,boolean,boolean,boolean,boolean)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.admit_email_intent_v1(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='be906a28f2eb9b87994ddbec91aefe3f'),'current SQL source parity: public.admit_email_intent_v1(bigint,boolean)');
+-- supabase/migrations/20261119230000_organizer_ticket_resend_limits.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.admit_email_intent_v1(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='7409c88dde4a22d80a6eb6bb4354699a'),'current SQL source parity: public.admit_email_intent_v1(bigint,boolean)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.admit_email_preparation_v1(bigint,bigint,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='f004d1014f5589b45bde7421f09c36ba'),'current SQL source parity: public.admit_email_preparation_v1(bigint,bigint,bigint,text)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -164,8 +164,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_bank_sync_operation(uuid,bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='686d7d6b5a7b272c3c0ad1ad975a3521'),'current SQL source parity: public.begin_bank_sync_operation(uuid,bigint,text,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_delegated_bank_sync_operation(uuid,bigint,text,text,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='688385bc3d5436ba9dc40306549d7baa'),'current SQL source parity: public.begin_delegated_bank_sync_operation(uuid,bigint,text,text,bigint,bigint)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_email_send(uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='18fd61b202ed9583c3c610f72ce35bae'),'current SQL source parity: public.begin_email_send(uuid,uuid)');
+-- supabase/migrations/20261119230000_organizer_ticket_resend_limits.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_email_send(uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='3553a29fbb3903585dbf363599315647'),'current SQL source parity: public.begin_email_send(uuid,uuid)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_stripe_connection_flow(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='29afe3a2f1144e3ef5b5e66d6ae115d6'),'current SQL source parity: public.begin_stripe_connection_flow(bigint,boolean)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
@@ -450,6 +450,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.capture_meta_purchase_consent_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1fa2de855baf467f59fedca54682e367'),'current SQL source parity: public.capture_meta_purchase_consent_internal(bigint,jsonb)');
 -- supabase/migrations/20261116120000_bank_multicurrency_availability.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.cash_payment_provider_internal(text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1b7b1800ac3fe53f7bb312e5ddb9db7f'),'current SQL source parity: public.cash_payment_provider_internal(text,jsonb)');
+-- supabase/migrations/20261119230000_organizer_ticket_resend_limits.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.charge_email_send_recipient_internal_v1(public.email_messages)') AND md5(btrim(prosrc,E' \n\r\t'))='960c7a1029a474206a0bcc5e8edafd6a'),'current SQL source parity: public.charge_email_send_recipient_internal_v1(public.email_messages)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.check_bank_account_writable(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df39c0ba082b4e785792ee797388eb96'),'current SQL source parity: public.check_bank_account_writable(bigint)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
@@ -2530,6 +2532,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_layout_rule(boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='8bc8e0cd6a5a45d10d57f79cec655768'),'current SQL source parity: public.ticket_layout_rule(boolean,boolean)');
 -- supabase/migrations/20261116150000_ticket_table_seat_appearance.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_layout_uses_product_type(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='dddc7962230734dd5835601b455d8bb4'),'current SQL source parity: public.ticket_layout_uses_product_type(bigint,bigint)');
+-- supabase/migrations/20261119230000_organizer_ticket_resend_limits.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_resend_scopes_internal_v1(public.email_messages)') AND md5(btrim(prosrc,E' \n\r\t'))='ddd3180b28340284b8ecc3bdcb2a12c5'),'current SQL source parity: public.ticket_resend_scopes_internal_v1(public.email_messages)');
 -- supabase/migrations/20261114010000_ticket_wallet_collections.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.ticket_wallet_enabled(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='ccbb73fd52b030315763e2be50b8e7a7'),'current SQL source parity: public.ticket_wallet_enabled(jsonb)');
 -- supabase/migrations/20261114010000_ticket_wallet_collections.sql

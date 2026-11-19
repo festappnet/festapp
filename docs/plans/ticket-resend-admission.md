@@ -1,0 +1,8 @@
+# Limity ručního odesílání vstupenek
+
+1. Ověřit stejnou autoritu, kterou používá administrace objednávek. Zvláštní limit se vztahuje na odeslání vstupenek zaplacené nebo již odeslané objednávky na adresu uloženou u objednávky, pokud ho vyžádal oprávněný editor objednávek. Automatické doručení, jiné adresy, běžné e-maily a přihlašovací zprávy používají dosavadní pravidla.
+2. Při přijetí zprávy i při zahájení skutečného odeslání nejprve použít běžný rozpočet. Je-li vyčerpaný limit adresy, uplatnit dvě souběžné hranice rezervy. Pár pořadatel a příjemce má výchozí rezervu 2 za minutu a 5 za den. Příjemce napříč pořadateli má limit 4 za minutu a 12 za den. Pořadatelem je Unit, která sdružuje jeho akce. Použít stávající klouzavá okna a pseudonymizovanou identitu příjemce. Dále uplatňovat limity editora, objemu pořadatele a organizace, fronty a poskytovatele.
+3. Při čerpání rezervy v okamžiku odeslání znovu ověřit objednávku a oprávnění editora. Již přijatá zpráva může při ztrátě oprávnění čerpat jen běžnou kapacitu. Opakování stejného požadavku používá existující identitu zprávy. Zamítnuté požadavky vracejí stávající stav HTTP 429 s časem dalšího pokusu.
+4. Přidat dopřednou databázovou migraci. Na jednorázové změně pravidel ověřit původní ochrany a nové případy v dočasné databázi. Vyčerpání běžného limitu, více akcí jednoho pořadatele, jiný pořadatel, společný strop, opakování stejného požadavku, změněný příjemce, odebraný přístup a zahájení skutečného odeslání.
+
+Rozhodnutí používá stávající HTTP kontrakt a nepotřebuje novou verzi webu. Nasazení probíhá jedinou databázovou migrací. Před nasazením ověřit shodu s hlavní větví a po nasazení zkontrolovat nové rozpočty i zachování stávajících počítadel.

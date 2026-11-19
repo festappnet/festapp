@@ -28,7 +28,7 @@ REVOKE ALL ON FUNCTION public.email_admission_class_v1(public.email_messages) FR
 CREATE OR REPLACE FUNCTION public.admit_email_intent_v1(p_message bigint,p_recheck boolean DEFAULT false) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE m public.email_messages; policy jsonb; scopes jsonb; costs jsonb; r jsonb;
- is_auth boolean; unit_count bigint; org_count bigint; unit_bytes bigint; org_bytes bigint; growth bigint:=0; policies jsonb;
+ is_auth boolean; unit_count bigint; org_count bigint; unit_bytes bigint; org_bytes bigint; growth bigint:=0; policies jsonb; resend_scopes jsonb; limit_detail text;
 BEGIN
  SELECT * INTO STRICT m FROM public.email_messages WHERE id=p_message;
 
@@ -67,8 +67,10 @@ BEGIN
   UPDATE public.email_messages SET admission_class='commitment',priority=5 WHERE id=m.id;
   RETURN;
  END IF;
- IF NOT p_recheck AND m.producer_actor IS NOT NULL THEN
-  PERFORM public.abuse_charge_v1(policies->'email.actor',scopes);
+ IF NOT p_recheck THEN
+  resend_scopes:=public.ticket_resend_scopes_internal_v1(m);
+  IF resend_scopes IS NOT NULL THEN scopes:=scopes||jsonb_build_object('actor',resend_scopes->'actor'); END IF;
+  IF scopes->>'actor' IS NOT NULL THEN PERFORM public.abuse_charge_v1(policies->'email.actor',scopes); END IF;
  END IF;
  is_auth:=public.email_admission_class_v1(m)='auth';
  UPDATE public.email_messages SET admission_class=CASE WHEN is_auth THEN 'auth' ELSE 'ordinary' END WHERE id=m.id;
@@ -99,7 +101,17 @@ BEGIN
    WHERE unit=m.unit AND measured_at>statement_timestamp()-interval '15 minutes';
   growth:=coalesce(growth,0);
  END IF;
- PERFORM public.abuse_charge_v1(policy,scopes,jsonb_build_object('growth',growth));
+ BEGIN
+  PERFORM public.abuse_charge_v1(policy,scopes,jsonb_build_object('growth',growth));
+ EXCEPTION WHEN SQLSTATE 'PT429' THEN
+  GET STACKED DIAGNOSTICS limit_detail = PG_EXCEPTION_DETAIL;
+  IF resend_scopes IS NULL OR coalesce(limit_detail::jsonb->>'ruleKey','') NOT IN
+   ('email.ordinary.recipient.burst','email.ordinary.recipient.day') THEN RAISE; END IF;
+  -- An exhausted recipient budget can use the reserve. Tenant and Unit limits still apply.
+  policy:=jsonb_set(policy,'{rules}',(SELECT jsonb_agg(value) FROM jsonb_array_elements(policy->'rules') WHERE value->>'scope_kind'<>'recipient'));
+  PERFORM public.abuse_charge_v1(policy,scopes,jsonb_build_object('growth',growth));
+  PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.ticket_resend',m.unit,m.organization),resend_scopes);
+ END;
 END $$;
 REVOKE ALL ON FUNCTION public.admit_email_intent_v1(bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;
 
