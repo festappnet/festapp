@@ -86,13 +86,12 @@ or publish a success before the command receipt. Refresh restores server state.
 
 ## Fonts, images and setup
 
-The editor paints authored text with the actual registered native font face and
-transient Flutter paragraphs. Geometry changes do not dispatch whole-text shaping.
-Explicit save and entry into reservation viewing prepare the captured document's
-canonical whole-text vectors through the shared HarfBuzz owner. Saved/native
-viewing and public SVG viewing consume those vectors; there is no public native
-font fallback and no second persisted scene/document. Numeric symbols and
-imported SVG paths retain their canonical prepared representation.
+The editor displays matching saved label outlines while the native font loads.
+Each label switches to a Flutter paragraph once its face is ready. Draft edits
+and geometry changes use local rendering. Explicit save prepares the captured
+document's canonical whole-text vectors through the shared HarfBuzz owner.
+Read-only and public SVG viewers consume those vectors. Numeric symbols and
+imported SVG paths keep their prepared representation.
 
 Both editors use `venue_seat_picker/editor_ui.dart` for font-style/alignment
 controls, color picking and numeric wheel stepping. Hosts retain their own value

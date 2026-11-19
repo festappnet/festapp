@@ -20,16 +20,7 @@ class LayoutNativeTextCache {
     Map<String, dynamic> presentation = const {},
   }) {
     final matrices = worldMatrices(document), nodes = orderedNodes(document);
-    final items = <Map<String, dynamic>>[
-      for (final raw in scene['items'] as List)
-        if (!(raw['kind'] == 'glyphs' && '${raw['id']}'.endsWith(':text')))
-          // The painter caches parsed paths by item identity. Native text only
-          // replaces labels; retaining the compiler's other items keeps those
-          // path caches alive while unrelated geometry moves.
-          raw is Map<String, dynamic>
-              ? raw
-              : Map<String, dynamic>.from(raw as Map),
-    ];
+    final nativeLabels = <Map<String, dynamic>>[];
     final active = <String>{};
     final nativeIds = <String>{};
     for (var rank = 0; rank < nodes.length; rank++) {
@@ -138,7 +129,7 @@ class LayoutNativeTextCache {
           'height': ink.height,
         },
       );
-      items.add({
+      nativeLabels.add({
         'id': '${node.id}:text',
         'nodeId': node.id,
         'kind': 'nativeText',
@@ -171,6 +162,18 @@ class LayoutNativeTextCache {
         _paragraphs.remove(id)!.painter.dispose();
       }
     }
+    // Keep the saved vector until a native paragraph can replace it. Reuse
+    // untouched items by identity so the painter keeps their parsed paths.
+    final items = <Map<String, dynamic>>[
+      for (final raw in scene['items'] as List)
+        if (!(raw['kind'] == 'glyphs' &&
+            '${raw['id']}'.endsWith(':text') &&
+            active.contains(raw['nodeId'])))
+          raw is Map<String, dynamic>
+              ? raw
+              : Map<String, dynamic>.from(raw as Map),
+      ...nativeLabels,
+    ];
     items.sort((a, b) {
       final x = a['paintOrder'] as List, y = b['paintOrder'] as List;
       final rank = (x[0] as num).compareTo(y[0] as num);
