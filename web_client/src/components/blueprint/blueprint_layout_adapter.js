@@ -136,11 +136,36 @@ export class BlueprintLayoutAdapter {
             onQuantityRequested: (id, quantity) => this.requestQuantity(id, quantity),
             onSelectionRequested: (ids, selecting) => this.requestSelection(ids, selecting) };
     }
+    async toggleTable(tableId) {
+        const members = new Set([...this.bindings]
+            .filter(([, binding]) => binding.groupNodeId === tableId).map(([id]) => id));
+        const units = new Set();
+        for (const id of members) {
+            const unit = (this.document.selectionUnits || []).find(unit => unit.nodeIds.includes(id));
+            const ids = unit?.nodeIds ?? [id];
+            if (ids.every(member => members.has(member))) units.add(ids);
+        }
+        const states = this.seatPresentation;
+        const available = [...units].filter(ids => ids.every(id => states[id]?.selectable) &&
+            ids.some(id => !states[id].selected));
+        const selecting = available.length > 0;
+        const targets = selecting ? available : [...units].filter(ids => ids.every(id => states[id]?.selected));
+        let count = 0;
+        // Keep existing per-unit holds and limits. Independent places must not
+        // become an atomic unit when the buyer selects a table as a shortcut.
+        for (const ids of targets) {
+            const result = await this.requestSelection(new Set(ids), selecting);
+            if (!result.accepted) return {count, selecting, rejected: true, message: result.message};
+            count += ids.filter(id => states[id].selected !== selecting).length;
+        }
+        return {count, selecting};
+    }
     async requestSelection(nodeIds, selecting) {
         const ids = [...nodeIds];
         if (this.disposed || !ids.length || ids.some(id => this.pending.has(id))) return { accepted: false };
         const models = ids.map(id => this.models.get(id));
-        if (models.some((model, index) => !model || !this.seatPresentation[ids[index]].selectable)) return { accepted: false };
+        const states = this.seatPresentation;
+        if (models.some((model, index) => !model || !states[ids[index]].selectable)) return { accepted: false };
         // The package supplies a complete unit. Validate it before any command.
         for (const id of ids) {
             const unit = (this.document.selectionUnits || []).find(u => u.nodeIds.includes(id));

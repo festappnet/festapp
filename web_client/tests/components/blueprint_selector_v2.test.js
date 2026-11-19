@@ -79,3 +79,63 @@ test('seat and quantity intent notify interaction, but opening and presentation 
     await options.onQuantityRequested('standing-1', 2);
     assert.equal(interactions, 2);
 });
+
+test('clicking the table selects and releases its available seats without intercepting individual seats', async t => {
+    const tableId = '00000000-0000-4000-8000-000000000101';
+    const seatIds = [102, 103, 104].map(n => '00000000-0000-4000-8000-000000000' + n);
+    const layout = {...emptyLayout, nodes: [
+        {id: tableId, kind: 'table', surface: {type: 'rect'}, width: 100, height: 40,
+            transform: {x: 200, y: 200, rotation: 0}},
+        ...seatIds.map((id, i) => ({id, kind: 'seat', parentId: tableId, width: 20, height: 20,
+            transform: {x: -30 + 30 * i, y: 40, rotation: 0}})),
+    ]};
+    t.mock.method(DbForms, 'getBlueprint', async () => ({
+        layout, products: [{id: 1, price: 380, currency_code: 'CZK'}],
+        seatBindings: seatIds.map((nodeId, i) => ({nodeId, groupNodeId: tableId, spotId: i + 1, productId: 1})),
+        spots: ['available', 'ordered', 'available'].map((state, i) => ({id: i + 1, state})),
+    }));
+    const identity = {a: 1, b: 0, c: 0, d: 1, e: 0, f: 0, inverse: () => identity};
+    t.mock.method(dom.window.SVGElement.prototype, 'getScreenCTM', () => identity);
+    t.mock.method(dom.window.SVGElement.prototype, 'getBoundingClientRect',
+        () => ({left: 0, top: 0, right: 600, bottom: 400, width: 600, height: 400}));
+    const oldPoint = globalThis.DOMPoint;
+    globalThis.DOMPoint = class {
+        constructor(x, y) { this.x = x; this.y = y; }
+        matrixTransform() { return this; }
+    };
+    const calls = [];
+    const selector = new BlueprintSelector();
+    t.after(() => { selector.close?.(); globalThis.DOMPoint = oldPoint; });
+    await selector.open({
+        formModel: {key: 'form', secret: 'secret', blueprint: 1},
+        async toggleSpotUnit(models, selecting) {
+            calls.push([models.map(model => model.id), selecting]);
+            return {spotIds: models.map(model => model.id)};
+        },
+    }, null);
+    const svg = document.querySelector('.venue-layout-viewer > svg');
+    assert.ok(svg);
+    svg.setPointerCapture = () => {};
+    const click = async (clientX, clientY) => {
+        svg.dispatchEvent(new dom.window.MouseEvent('click', {clientX, clientY, bubbles: true, detail: 1}));
+        await new Promise(resolve => setImmediate(resolve));
+    };
+    await click(200, 200);
+    assert.deepEqual(calls, [[[1], true], [[3], true]]);
+    assert.equal(selector.adapter.selectedSeats.length, 2);
+    await click(200, 200);
+    assert.deepEqual(calls.slice(2), [[[1], false], [[3], false]]);
+    await click(170, 240);
+    assert.deepEqual(calls.at(-1), [[1], true]);
+
+    const pointer = (name, clientX) => svg.dispatchEvent(new dom.window.MouseEvent(name, {
+        clientX, clientY: 200, bubbles: true,
+    }));
+    pointer('pointerdown', 200);
+    pointer('pointermove', 230);
+    pointer('pointermove', 200);
+    pointer('pointerup', 200);
+    const beforeDrag = calls.length;
+    await click(200, 200);
+    assert.equal(calls.length, beforeDrag, 'dragging out and back does not select a table');
+});

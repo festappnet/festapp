@@ -75,12 +75,28 @@ export class BlueprintCapacityControls {
         };
         content.ownerDocument.addEventListener('pointerdown', this.dismissOutside, true);
         content.ownerDocument.addEventListener('click', this.dismissOutside, true);
-        // Capture activation using the same public kernel hit test as the viewer.
-        // This prevents the package's generic below-canvas quantity editor.
-        this.pointerStart = event => { this.pointer = {x: event.clientX, y: event.clientY}; };
+        // Use the same exact hit test as the viewer for table and capacity
+        // controls. Leave individual seats and near-seat taps to the viewer.
+        const tables = new Set(options.document.nodes.filter(node => node.kind === 'table').map(node => node.id));
+        const pointers = new Set();
+        this.pointerStart = event => {
+            pointers.add(event.pointerId);
+            this.pointer = {x: event.clientX, y: event.clientY, moved: pointers.size > 1};
+        };
+        this.pointerMove = event => {
+            if (pointers.has(event.pointerId) && this.pointer &&
+                Math.hypot(event.clientX - this.pointer.x, event.clientY - this.pointer.y) >= 4) this.pointer.moved = true;
+        };
+        this.pointerEnd = event => {
+            pointers.delete(event.pointerId);
+            if (event.type === 'pointercancel' && this.pointer) this.pointer.moved = true;
+        };
         content.addEventListener('pointerdown', this.pointerStart, true);
+        content.addEventListener('pointermove', this.pointerMove, true);
+        content.addEventListener('pointerup', this.pointerEnd, true);
+        content.addEventListener('pointercancel', this.pointerEnd, true);
         this.activate = event => {
-            if (event.detail > 0 && this.pointer && Math.hypot(event.clientX - this.pointer.x, event.clientY - this.pointer.y) > 5) return;
+            if (event.detail > 0 && this.pointer?.moved) return;
             if (this.layer.contains(event.target)) return;
             let id = event.target.closest?.('button[data-node-id]')?.dataset.nodeId;
             const svg = content.querySelector('.venue-layout-viewer > svg');
@@ -92,8 +108,10 @@ export class BlueprintCapacityControls {
                 }
             }
             const entry = this.entries.get(id);
-            if (!entry) return;
-            event.stopImmediatePropagation(); event.preventDefault(); this.edit(entry);
+            if (!entry && !(tables.has(id) && options.onTableRequested)) return;
+            event.stopImmediatePropagation(); event.preventDefault();
+            if (entry) this.edit(entry);
+            else void options.onTableRequested(id);
         };
         content.addEventListener('click', this.activate, true);
         this.update(options.capacityPresentation);
@@ -201,6 +219,9 @@ export class BlueprintCapacityControls {
         this.content.ownerDocument.removeEventListener('click', this.dismissOutside, true);
         this.content.removeEventListener('click', this.activate, true);
         this.content.removeEventListener('pointerdown', this.pointerStart, true);
+        this.content.removeEventListener('pointermove', this.pointerMove, true);
+        this.content.removeEventListener('pointerup', this.pointerEnd, true);
+        this.content.removeEventListener('pointercancel', this.pointerEnd, true);
         this.layer.remove();
     }
 }

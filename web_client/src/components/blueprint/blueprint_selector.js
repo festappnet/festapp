@@ -83,7 +83,7 @@ export class BlueprintSelector {
         const stateId = `seat-selection-${Date.now()}`;
         window.history.pushState({ ...window.history.state, blueprintOverlay: stateId }, '', '#seat-selection');
         revealEmbedStep(container);
-        let closed = false, closing = false, loading = false, pending = 0;
+        let closed = false, closing = false, loading = false, pending = 0, tablePending = false;
         const assetAbort = new AbortController();
         const refreshActions = () => {
             confirmBtn.disabled = loading || pending > 0 || !this.adapter;
@@ -180,13 +180,38 @@ export class BlueprintSelector {
                 options.messages = BlueprintStrings.viewerMessages;
                 const select = options.onSelectionRequested;
                 options.onSelectionRequested = async (ids, selecting) => {
+                    if (tablePending) return {accepted: false};
                     onInteraction?.();
                     pending++; refreshActions();
                     try { return await select(ids, selecting); }
                     finally { pending--; if (!closed) refreshActions(); }
                 };
+                options.onTableRequested = async id => {
+                    if (closed || pending) return;
+                    onInteraction?.();
+                    tablePending = true;
+                    pending++; refreshActions();
+                    let feedback;
+                    try {
+                        const {count, selecting, rejected, message} = await this.adapter.toggleTable(id);
+                        const summary = count ? options.messages[selecting ? 'selectedPlaces' : 'releasedPlaces']
+                            .replace('{count}', String(count)) : '';
+                        feedback = [summary, rejected ? message || options.messages.selectionRejected
+                            : count ? '' : options.messages.placeUnavailable].filter(Boolean).join(' ');
+                    } catch {
+                        feedback = options.messages.selectionRejected;
+                    } finally {
+                        tablePending = false;
+                        pending--;
+                        if (!closed) {
+                            refreshActions();
+                            status.textContent = feedback;
+                        }
+                    }
+                };
                 const quantity = options.onQuantityRequested;
                 if (quantity) options.onQuantityRequested = async (id, count) => {
+                    if (tablePending) return {accepted: false};
                     onInteraction?.();
                     pending++; refreshActions();
                     try { return await quantity(id, count); }
