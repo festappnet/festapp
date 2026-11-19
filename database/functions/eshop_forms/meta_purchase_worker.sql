@@ -79,11 +79,19 @@ BEGIN
  IF p_result IS NULL OR p_result NOT IN ('sent','retry','credentials','rejected') THEN
   RAISE invalid_parameter_value USING MESSAGE='invalid delivery result'; END IF;
  SELECT * INTO delivery FROM analytics.meta_purchase_deliveries
- WHERE order_id=p_order_id AND lease=p_lease AND status='pending' AND prepared FOR UPDATE;
+ WHERE order_id=p_order_id AND lease=p_lease AND status IN ('pending','revoked') AND prepared FOR UPDATE;
  IF NOT FOUND THEN RETURN false; END IF;
  IF p_result='credentials' THEN
   UPDATE analytics.meta_purchase_connectors SET paused_at=clock_timestamp()
   WHERE unit=delivery.unit AND revision=delivery.connector_revision;
+ END IF;
+ -- Withdrawal scrubs the payload but must still record the authorized in-flight result.
+ IF delivery.status='revoked' THEN
+  UPDATE analytics.meta_purchase_deliveries
+  SET error_code=CASE WHEN p_result='sent' THEN 'sent_in_flight' ELSE p_result END,
+   lease=NULL,lease_until=NULL
+  WHERE order_id=p_order_id;
+  RETURN true;
  END IF;
  final_status:=CASE WHEN p_result='sent' THEN 'sent'
   WHEN p_result='rejected' OR delivery.attempts>=6 THEN 'failed' ELSE 'pending' END;
