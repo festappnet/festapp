@@ -112,6 +112,8 @@ NODE
 }
 printf '<script>window.__FESTAPP_BUILD_VERSION__ = "1.2.3+456";</script><script type="module" src="/web-assets/app.js"></script><div id="web-client-startup">Loading</div>\n' \
   > "$BUILD_DIR/webclient"
+printf '<main id="preview"></main><script type="module" src="/web-assets/app.js"></script>\n' \
+  > "$BUILD_DIR/occasion-card-preview"
 CONFIG_ANON_KEY="$(sed -n 's/^SUPABASE_ANON_KEY=//p' "$PROJECT_ROOT/automation/project.conf")"
 CONFIG_SUPABASE_URL="$(sed -n 's/^SUPABASE_URL=//p' "$PROJECT_ROOT/automation/project.conf")"
 CONFIG_PROJECT_REF="$(sed -n 's#^SUPABASE_URL=https://\([^.]*\)\.supabase\.co/*#\1#p' \

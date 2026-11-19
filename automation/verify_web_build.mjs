@@ -50,6 +50,10 @@ assert.match(
 assert.ok(webClientHtml.includes('web-client-startup'),
   'Web client HTML must remain visible when its entry module cannot load');
 await verifyBundleEntries(buildDir, webClientHtml);
+const previewEntry = target === 'cloudflare' ? 'occasion-card-preview' : 'occasion-card-preview.html';
+const previewHtml = await readFile(path.join(buildDir, previewEntry), 'utf8');
+assert.match(previewHtml, /<main id="preview">/, 'occasion preview is missing its mount point');
+await verifyBundleEntries(buildDir, previewHtml);
 const authBridgeEntry = target === 'cloudflare' ? 'auth_bridge' : 'auth_bridge.html';
 const [flutterHtml, main, versionedMain, worker, siteManifestText, authBridge] = await Promise.all([
   readFile(path.join(buildDir, flutterEntry), 'utf8'),

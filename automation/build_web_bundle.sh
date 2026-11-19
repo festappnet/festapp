@@ -120,6 +120,7 @@ fi
 
 if [ "$TARGET" = cloudflare ]; then
     mv build/web/index.html build/web/webclient
+    mv build/web/occasion-card-preview.html build/web/occasion-card-preview
     if [ -f build/web/auth_bridge.html ]; then
         mv build/web/auth_bridge.html build/web/auth_bridge
     fi
