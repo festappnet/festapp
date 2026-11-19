@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+import 'package:fstapp/services/decimal_input.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:material_ui/material_ui.dart';
@@ -38,6 +40,8 @@ class TicketProductEditorRow extends StatefulWidget {
 }
 
 class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
+  static final _priceInputPattern = RegExp(r'^[0-9]*([.,][0-9]*)?$');
+
   void _refresh(VoidCallback change) {
     setState(change);
     widget.onChanged?.call();
@@ -71,8 +75,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       widget.onChanged?.call();
     });
     _priceController.addListener(() {
-      final text = _priceController.text.replaceAll(RegExp(r'\s+'), '');
-      final newPrice = double.tryParse(text);
+      final newPrice = DecimalInput.tryParse(_priceController.text);
       if (newPrice != null) {
         widget.replaceProduct(widget.product.copyWith(price: newPrice));
       }
@@ -92,10 +95,9 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
 
   void _validateDeposit() {
     final depositText = _depositController.text.replaceAll(RegExp(r'\s+'), '');
-    final priceText = _priceController.text.replaceAll(RegExp(r'\s+'), '');
     final deposit =
         depositText.isNotEmpty ? double.tryParse(depositText) : null;
-    final price = double.tryParse(priceText) ?? 0;
+    final price = DecimalInput.tryParse(_priceController.text) ?? 0;
 
     _refresh(() {
       if (deposit != null && deposit > 0 && deposit >= price) {
@@ -302,6 +304,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       Widget currency, {
       bool signed = false,
       String? error,
+      List<TextInputFormatter>? inputFormatters,
     }) =>
         Padding(
           padding: EdgeInsets.zero,
@@ -311,6 +314,7 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
               Expanded(
                 child: TextField(
                   controller: controller,
+                  inputFormatters: inputFormatters,
                   keyboardType: TextInputType.numberWithOptions(
                     decimal: true,
                     signed: signed,
@@ -332,6 +336,12 @@ class _TicketProductEditorRowState extends State<TicketProductEditorRow> {
       _priceController,
       CommonStrings.price,
       buildCurrencySelectBox(),
+      inputFormatters: [
+        TextInputFormatter.withFunction(
+          (oldValue, newValue) =>
+              _priceInputPattern.hasMatch(newValue.text) ? newValue : oldValue,
+        ),
+      ],
     );
     final extra = !hasDeposit
         ? null

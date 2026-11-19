@@ -182,6 +182,13 @@ void main() {
         expect(product.price, 4500);
         expect(product.currencyCode, 'CZK');
         expect(product.metaSurchargeCurrency, 'EUR');
+        await tester.enterText(price, '170,50');
+        expect(product.price, 170.5);
+        await tester.enterText(price, '170.25');
+        expect(product.price, 170.25);
+        await tester.enterText(price, '170.25e2');
+        expect(tester.widget<TextField>(price).controller!.text, '170.25');
+        expect(product.price, 170.25);
         expect(tester.takeException(), isNull);
       });
     }

@@ -6,13 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
 import 'package:fstapp/components/forms/widgets_editor/form_fields_generator.dart';
+import 'package:fstapp/components/forms/widgets_editor/form_fields_navigation_controller.dart';
 import 'package:fstapp/components/forms/widgets_editor/product_detail_editor_dialog.dart';
-import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:fstapp/components/occasion/demo/demo_occasion_banner.dart';
 
 void main() {
   testWidgets(
-      'read-only fields and product details stay clickable without edits',
+      'a product preview row selects its ticket field without opening a dialog',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 1000);
     tester.view.devicePixelRatio = 1;
@@ -43,29 +43,22 @@ void main() {
         products: [product],
         availableBankAccounts: []);
     var edits = 0;
+    final navigation = FormFieldsNavigationController();
+    addTearDown(navigation.dispose);
     await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
         home: Scaffold(
             body: SingleChildScrollView(
                 child: FormFieldsGenerator(
                     bundle: bundle,
                     editingEnabled: false,
+                    navigationController: navigation,
                     onChanged: () => edits++)))));
-    await tester.tap(find.text('Participants', findRichText: true));
-    await tester.pump();
-    expect(find.byType(TextFormField), findsNothing);
+    expect(navigation.selectedIdentity, 1);
     await tester.tap(find.text('Admission'));
     await tester.pumpAndSettle();
-    expect(find.byType(ProductDetailEditorDialog), findsOneWidget);
-    expect(
-        tester
-            .widgetList<TextField>(find.byType(TextField))
-            .every((field) => field.enabled == false),
-        isTrue);
-    expect(
-        tester
-            .widget<EditableHtmlField>(find.byType(EditableHtmlField))
-            .enabled,
-        isFalse);
+    expect(navigation.selectedIdentity, 2);
+    expect(find.byType(ProductDetailEditorDialog), findsNothing);
+    expect(find.byType(TextField), findsNothing);
     expect(product.maximum, 230);
     expect(email.definition.title, 'Contact');
     expect(edits, 0);

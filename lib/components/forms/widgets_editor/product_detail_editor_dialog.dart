@@ -13,11 +13,9 @@ class ProductDetailEditorDialog extends StatefulWidget {
   final ProductModel Function() readProduct;
   final ValueChanged<ProductModel> replaceProduct;
   ProductModel get product => readProduct();
-  final bool readOnly;
   final HtmlSaveCoordinator? coordinator;
   const ProductDetailEditorDialog(
       {super.key,
-      this.readOnly = false,
       required this.readProduct,
       required this.replaceProduct,
       this.coordinator});
@@ -70,7 +68,6 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
               const SizedBox(height: 16),
               TextField(
                 controller: _shortTitleController,
-                enabled: !widget.readOnly,
                 decoration: InputDecoration(
                   labelText: OrdersStrings.gridShortTitle,
                   border: const UnderlineInputBorder(),
@@ -81,7 +78,6 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
             // Editable Product Quantity with helper text
             TextField(
               controller: _quantityController,
-              enabled: !widget.readOnly,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: FormStrings.productQuantity,
@@ -97,7 +93,6 @@ class _ProductDetailEditorDialogState extends State<ProductDetailEditorDialog> {
             const SizedBox(height: 8),
             // Full HTML description (no height limit)
             EditableHtmlField(
-                enabled: !widget.readOnly,
                 html: _description,
                 coordinator: widget.coordinator,
                 owner: HtmlMediaOwner.occasion(widget.product.occasion),
