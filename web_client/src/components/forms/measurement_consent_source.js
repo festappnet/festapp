@@ -50,7 +50,7 @@ export function readConsentSource(source, scope) {
             const grants = [value, value.purchaseConsent].filter(record => Object.hasOwn(record,key));
             return grants.length && grants.every(record => record[key] === true) ? true : undefined;
         };
-        return {...choice, purchaseConsent:{...value.purchaseConsent,
+        return {...choice, purchaseConsent:{source:value.purchaseConsent.source,timestamp:value.purchaseConsent.timestamp,
             consentRevision:value.consentRevision, binding:value.binding, websiteOrigin:scope.websiteOrigin,
             ad_storage:purpose('ad_storage'), ad_user_data:purpose('ad_user_data'),
             ad_personalization:purpose('ad_personalization')}};

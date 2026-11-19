@@ -1,4 +1,4 @@
-import {metaBrowserMatching, purchaseConsentSnapshot, PurchaseConsentOrders} from './meta_purchase_consent.js';
+import {metaBrowserMatching, purchaseConsentSnapshot, PurchaseConsentOrders, samePurchaseDecision} from './meta_purchase_consent.js';
 import { DiscountCode } from './discount_code.js';
 import {createEmbedConsentSource} from './form_measurement_embed_consent.js';
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
@@ -910,7 +910,7 @@ export class FormPage extends Component {
                      this._pendingPaymentQuote = paymentQuote;
                      const snapshot = purchaseConsentSnapshot(this.measurementSession?.consent, metaConsent);
                      this.submitOrder(form, formModel, overlay || document.body, null,
-                         snapshot ? {...snapshot, matching:snapshot.source === 'klaro' ? metaBrowserMatching(snapshot,window) : snapshot.matching, userAgent:window.navigator.userAgent} : null);
+                         snapshot ? {...snapshot,userAgent:window.navigator.userAgent} : null);
                  }, () => {
                      this.analytics?.page('product');
                      if (this.identityFooter) this.pageHost.append(this.identityFooter.host);
@@ -935,6 +935,19 @@ export class FormPage extends Component {
                 overlay.remove();
             }, 300);
         }
+    }
+
+    async collectMetaCheckoutMatching(formModel,snapshot) {
+        try {
+            const notice=await DbForms.getMetaPurchaseConsent(formModel.link);
+            const current=()=>purchaseConsentSnapshot(this.measurementSession?.consent,notice);
+            if (this.currentSession?.formModel!==formModel || notice?.revision!==snapshot.revision ||
+                !samePurchaseDecision(current(),snapshot))return {};
+            const matching=snapshot.source==='klaro'
+                ? metaBrowserMatching(snapshot,window)
+                : await this.embedBridge?.collectMetaCheckoutMatching(snapshot);
+            return this.currentSession?.formModel===formModel && samePurchaseDecision(current(),snapshot) ? matching || {} : {};
+        } catch { return {}; }
     }
 
     submitOrder(form, formModel, unusedContent, retrySubmission = null, metaPurchaseConsent = null) {
@@ -1000,12 +1013,18 @@ export class FormPage extends Component {
             } : null);
         const submittedSession = this.currentSession;
         const measurementOutcome=this.analytics?.captureSubmission(payload);
+        const matchingRequest=!retrySubmission && metaPurchaseConsent
+            ? this.collectMetaCheckoutMatching(formModel,metaPurchaseConsent) : null;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
             if (retrySubmission) submittedCapability = retrySubmission.capability;
             else {
                 await submittedSession?.awaitPendingReservations();
                 submittedCapability = submittedSession?.captureReservationCapability();
+            }
+            if (matchingRequest) {
+                const matching=await matchingRequest;
+                if (Object.keys(matching).length)payload.metaPurchaseConsent={...metaPurchaseConsent,matching};
             }
             return formModel.demoSimulation
             ? Promise.resolve({ success: true, data: { demoSimulation: true } })

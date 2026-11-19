@@ -13,7 +13,7 @@ BEGIN
   IF v_occasion IS NULL THEN
     RAISE invalid_parameter_value USING MESSAGE='ticket order form not found'; END IF;
   v_hash:=encode(extensions.digest(convert_to((jsonb_build_object(
-    'occasion',v_occasion,'order',public.strip_payment_sources_internal(p_order))
+    'occasion',v_occasion,'order',public.strip_payment_sources_internal(p_order)#-'{metaPurchaseConsent,matching}')
       ||CASE WHEN p_context IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('administration',p_context) END)::text,'UTF8'),'sha256'),'hex');
   IF v_actor IS NULL THEN
     v_begin:=public.begin_anonymous_client_mutation_v1(p_command_id,

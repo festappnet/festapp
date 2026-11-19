@@ -4,6 +4,16 @@ const purposes = ['ad_storage','ad_user_data','ad_personalization'];
 export function validMetaBrowserId(value) {
     return typeof value === 'string' && value.length <= 1024 && !/[\u0000-\u001f\u007f]/.test(value) && /^fb\.[0-9]{1,3}\.[0-9]{13}\.[A-Za-z0-9_-]{1,500}$/.test(value);
 }
+export function validMetaBrowserMatching(matching) {
+    return Object.fromEntries(['fbp','fbc'].filter(key => validMetaBrowserId(matching?.[key])).map(key => [key,matching[key]]));
+}
+
+export function samePurchaseDecision(a,b) {
+    return !!a && !!b && a.source===b.source && a.timestamp===b.timestamp &&
+        a.consentRevision===b.consentRevision && a.websiteOrigin===b.websiteOrigin &&
+        a.binding?.id===b.binding?.id && a.binding?.version===b.binding?.version;
+}
+
 export function metaBrowserMatching(snapshot, win) {
     // Read identifiers only after all purposes and the source origin agree.
     if (!hasCurrentPurchaseConsent({purchaseConsent:snapshot,expiresAt:snapshot?.transportExpiresAt}) || snapshot.websiteOrigin !== win.location.origin) return {};
@@ -38,11 +48,15 @@ function hasCurrentDecision(choice, now) {
 export function hasCurrentPurchaseConsent(choice, now = Date.now()) {
     return hasCurrentDecision(choice,now) && purposes.every(key => choice.purchaseConsent[key] === true);
 }
-export function currentPurchaseDenial(choice, now = Date.now()) {
-    if (!hasCurrentDecision(choice,now) || !purposes.some(key => choice.purchaseConsent[key] === false)) return null;
-    const {source,timestamp,consentRevision,websiteOrigin,binding,ad_storage,ad_user_data,ad_personalization} = choice.purchaseConsent;
+export function publicPurchaseDecision(snapshot) {
+    if (!snapshot || typeof snapshot!=='object') return null;
+    const {source,timestamp,consentRevision,websiteOrigin,binding,ad_storage,ad_user_data,ad_personalization} = snapshot;
     return {source,timestamp,consentRevision,websiteOrigin,ad_storage,ad_user_data,ad_personalization,
         ...(binding ? {binding:{id:binding.id,version:binding.version}} : {})};
+}
+export function currentPurchaseDenial(choice, now = Date.now()) {
+    if (!hasCurrentDecision(choice,now) || !purposes.some(key => choice.purchaseConsent[key] === false)) return null;
+    return publicPurchaseDecision(choice.purchaseConsent);
 }
 export function purchaseConsentSnapshot(choice, notice, now = Date.now()) {
     if (!notice?.revision || !hasCurrentPurchaseConsent(choice,now)) return null;
@@ -51,7 +65,6 @@ export function purchaseConsentSnapshot(choice, notice, now = Date.now()) {
     return {source:snapshot.source, timestamp:snapshot.timestamp, consentRevision:snapshot.consentRevision,
         websiteOrigin:notice.origin, ad_storage:true, ad_user_data:true, ad_personalization:true,
         ...(snapshot.binding ? {binding:{id:snapshot.binding.id,version:snapshot.binding.version}} : {}),
-        matching:Object.fromEntries(['fbp','fbc'].filter(key => validMetaBrowserId(snapshot.matching?.[key])).map(key => [key,snapshot.matching[key]])),
         revision:notice.revision, ...(choice.expiresAt !== undefined ? {transportExpiresAt:choice.expiresAt} : {})};
 }
 

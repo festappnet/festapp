@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {register} from 'node:module';
 import assert from 'node:assert/strict';
 import {purchaseConsentSnapshot, PurchaseConsentOrders} from '../../src/components/forms/meta_purchase_consent.js';
 const now = Date.now();
@@ -78,10 +79,14 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
         win.document.cookie='_fbp=fb.1.1795000000000.1234; path=/';
         win.document.cookie='_fbc=fb.1.1795000000000.Click_123; path=/';
         win.eval(bundle.outputFiles[0].text);
-        const messages=[],frame=win.document.createElement('iframe');frame.setAttribute('data-festapp-datalayer','');
+        const messages=[],matchingResponses=[],frame=win.document.createElement('iframe');frame.setAttribute('data-festapp-datalayer','');
         const record={manifest:{organization:1,unit:2,processing_revision:'revision',consent_revision:'b'.repeat(32),measurement_consent_bridge:true,
-            website_consent_bindings:[{websiteOrigin:notice.origin,effective:true,id:'11111111-1111-1111-1111-111111111111',version:1}]},channel:{send:(_type,data)=>messages.push(data.measurement)}};
+            website_consent_bindings:[{websiteOrigin:notice.origin,effective:true,id:'11111111-1111-1111-1111-111111111111',version:1}]},channel:{send:(type,data)=>type==='meta-checkout-matching' ? matchingResponses.push(data) : messages.push(data.measurement)}};
         let saved=choice(),notify;
+        saved.purchaseConsent.matching={fbp:'fb.1.1795000000000.mustNotCross'};
+        const cookieDescriptor=Object.getOwnPropertyDescriptor(win.Document.prototype,'cookie');
+        let cookieReads=0;
+        Object.defineProperty(win.document,'cookie',{get:()=>{cookieReads++;return cookieDescriptor.get.call(win.document);}});
         const frames=new Map([[frame,record]]);
         const host=win.createHostMeasurement({frames,currentRecord:()=>true,disposeRecord:()=>{},scan:()=>{},
             consentSource:{configured:true,read:()=>saved,subscribe:callback=>{notify=callback;return ()=>{};}}});
@@ -89,12 +94,30 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
         assert.equal(messages.at(-1).consent.marketing,false,'the host owns tag consent');
         assert.equal(messages.at(-1).consent.purchaseConsent.timestamp,saved.purchaseConsent.timestamp);
         assert.equal(messages.at(-1).binding.version,1);
-        assert.deepEqual(purchaseConsentSnapshot(messages.at(-1).consent,notice,now).matching,
+        assert.equal(messages.at(-1).consent.purchaseConsent.matching,undefined);
+        assert.equal(cookieReads,0,'consent renewal never reads Meta cookies');
+        const {measurementManifest}=await import('../../src/components/forms/form_measurement_contract.js');
+        const {policy}=await import('../support/measurement_fixture.js');
+        const request={requestId:'checkout-1',leaseId:record.lease.id,manifest:record.manifest,origin:notice.origin,
+            revision:notice.revision,decisionAt:saved.purchaseConsent.timestamp,consentRevision:saved.purchaseConsent.consentRevision,
+            binding:saved.purchaseConsent.binding};
+        host.receive(frame,record,{type:'meta-checkout-matching-request',matchingRequest:request});
+        assert.equal(cookieReads,0,'consent-only manifest cannot read Meta cookies');
+        record.manifest=measurementManifest(policy,policy.form_link);
+        const live={...request,manifest:{...record.manifest,consent_revision:record.manifest.consent_revision}};
+        live.manifest.website_consent_bindings=[{websiteOrigin:notice.origin,effective:true,...request.binding}];
+        record.manifest=live.manifest;
+        for(const wrong of [{...live,leaseId:'obsolete'},{...live,revision:undefined},{...live,decisionAt:'older'}]) {
+            host.receive(frame,record,{type:'meta-checkout-matching-request',matchingRequest:wrong});
+        }
+        assert.equal(cookieReads,0,'no matching for stale or unscoped requests');
+        host.receive(frame,record,{type:'meta-checkout-matching-request',matchingRequest:live});
+        assert.equal(cookieReads,1);
+        assert.deepEqual(JSON.parse(JSON.stringify(matchingResponses[0].matching)),
             {fbp:'fb.1.1795000000000.1234',fbc:'fb.1.1795000000000.Click_123'});
         saved=null;notify();
         assert.equal(messages.at(-1).consent.purchaseConsent,undefined,'source loss cannot retain a snapshot');
-        const {policy,purchase}=await import('../support/measurement_fixture.js');
-        const {measurementManifest}=await import('../../src/components/forms/form_measurement_contract.js');
+        const {purchase}=await import('../support/measurement_fixture.js');
         record.manifest=measurementManifest(policy,policy.form_link);record.lease.generation=1;
         record.pageContext={page_type:'confirmation',language:'en'};
         const delivery={type:'analytics',measurement:{protocol:3,manifest:record.manifest,generation:1,leaseId:record.lease.id}};
@@ -202,7 +225,7 @@ test('embedded delayed-payment overview uses current host consent and handshake 
 });
 
 test('matching reads only the consented source origin, validates cookies and derives stable click identity',async()=>{
- const {metaBrowserMatching}=await import('../../src/components/forms/meta_purchase_consent.js');
+ const {metaBrowserMatching,validMetaBrowserMatching}=await import('../../src/components/forms/meta_purchase_consent.js');
  const snapshot=choice().purchaseConsent;
  let reads=0;
  const win={location:{origin:notice.origin,href:notice.origin+'/?fbclid=Click_123'},performance:{timeOrigin:1795000000000},
@@ -213,11 +236,12 @@ test('matching reads only the consented source origin, validates cookies and der
  assert.equal(reads,0,'no cookie access without all purposes and the exact source origin');
  const matching=metaBrowserMatching(snapshot,win);
  assert.deepEqual(matching,{fbp:'fb.1.1795000000000.1234',fbc:'fb.1.1795000000000.Click_123'});
- assert.deepEqual(metaBrowserMatching(snapshot,win),matching,'fallback timestamp does not change on heartbeat');
+ assert.deepEqual(metaBrowserMatching(snapshot,win),matching,'the fallback click time is stable for this page visit');
  const value=choice();value.purchaseConsent.matching={...matching,email:'private',ip:'192.0.2.1'};
- assert.deepEqual(purchaseConsentSnapshot(value,notice,now).matching,matching);
+ assert.equal(purchaseConsentSnapshot(value,notice,now).matching,undefined);
+ assert.deepEqual(validMetaBrowserMatching(value.purchaseConsent.matching),matching);
  value.purchaseConsent.matching={fbp:'fb.1.1795000000000.bad\n',fbc:'fb.1.1795000000000.'+'a'.repeat(501)};
- assert.deepEqual(purchaseConsentSnapshot(value,notice,now).matching,{});
+ assert.deepEqual(validMetaBrowserMatching(value.purchaseConsent.matching),{});
  win.document={cookie:'_fbc=fb.1.1795000000001.Click_123'};
  assert.deepEqual(metaBrowserMatching(snapshot,win),{fbc:'fb.1.1795000000001.Click_123'},'the cookie keeps the original click time');
  win.document={cookie:'_fbc=fb.1.1795000000001.OldClick'};
@@ -229,4 +253,63 @@ test('matching reads only the consented source origin, validates cookies and der
  assert.deepEqual(metaBrowserMatching(snapshot,win),{fbc:'fb.1.1795000000000.Click_123'},'blocked cookies still allow consented URL fallback');
  win.document={cookie:''};win.location.href=notice.origin;
  assert.deepEqual(metaBrowserMatching(snapshot,win),{},'no invented browser identifier');
+});
+
+
+test('checkout matching waits for the correlated response under the same live lease',async()=>{
+    const {EmbedMeasurement}=await import('../../src/embed/measurement.js');
+    const {measurementManifest}=await import('../../src/components/forms/form_measurement_contract.js');
+    const {policy}=await import('../support/measurement_fixture.js');
+    const sent=[];
+    const win={crypto:globalThis.crypto,setTimeout,clearTimeout};
+    const bridge=new EmbedMeasurement(win,{origin:notice.origin,instance:'test-instance',send:(type,data)=>sent.push({type,...data})});
+    bridge.measurementProtocol=3;
+    bridge.measurementManifest=measurementManifest(policy,policy.form_link);
+    bridge.leaseId='checkout-lease';
+    bridge.leaseUntil=Date.now()+60000;
+    const snapshot=purchaseConsentSnapshot(choice(),notice,now);
+    const waiting=bridge.collectMetaCheckoutMatching(snapshot);
+    const request=sent.at(-1).matchingRequest;
+    assert.equal(sent.at(-1).type,'meta-checkout-matching-request');
+    assert.deepEqual(request.binding,snapshot.binding);
+    bridge.receive({type:'meta-checkout-matching',requestId:'other-checkout',leaseId:request.leaseId,matching:{fbp:'fb.1.1795000000000.bad'}});
+    bridge.receive({type:'meta-checkout-matching',requestId:request.requestId,leaseId:'old-lease',matching:{fbp:'fb.1.1795000000000.bad'}});
+    bridge.receive({type:'meta-checkout-matching',requestId:request.requestId,leaseId:request.leaseId,
+        matching:{fbp:'fb.1.1795000000000.good',fbc:'malformed',email:'not-a-matching-field'}});
+    assert.deepEqual(await waiting,{fbp:'fb.1.1795000000000.good'});
+    const unavailable=bridge.collectMetaCheckoutMatching(snapshot);
+    bridge.suspend();
+    assert.deepEqual(await unavailable,{},'a disappearing helper does not hold checkout open');
+});
+
+test('checkout only asks the host after a fresh notice and discards matching if the saved choice changes',async t=>{
+    register('../css_loader.mjs',import.meta.url);
+    const {JSDOM}=await import('jsdom');
+    const win=new JSDOM('',{url:'https://tickets.example/form/pilot'}).window;
+    const globals={window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent};
+    const previous=Object.fromEntries(Object.keys(globals).map(key=>[key,globalThis[key]]));
+    Object.assign(globalThis,globals);
+    t.after(()=>{Object.assign(globalThis,previous);win.close();});
+    const {FormPage}=await import('../../src/components/forms/form_page.js');
+    const {DbForms}=await import('../../src/components/forms/db_forms.js');
+    const model={link:'pilot'};
+    const initial=choice();
+    const snapshot=purchaseConsentSnapshot(initial,notice,now);
+    const page={
+        currentSession:{formModel:model},
+        measurementSession:{consent:initial},
+        embedBridge:{collectMetaCheckoutMatching:async()=>({fbp:'fb.1.1795000000000.good'})},
+    };
+    const collect=()=>FormPage.prototype.collectMetaCheckoutMatching.call(page,model,snapshot);
+    const host=t.mock.method(page.embedBridge,'collectMetaCheckoutMatching');
+    const lookup=t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>null);
+    assert.deepEqual(await collect(),{});
+    assert.equal(host.mock.callCount(),0);
+    lookup.mock.mockImplementation(async()=>notice);
+    assert.deepEqual(await collect(),{fbp:'fb.1.1795000000000.good'});
+    host.mock.mockImplementation(async()=>{
+        page.measurementSession.consent=denyAdvertising();
+        return {fbp:'fb.1.1795000000000.mustBeDiscarded'};
+    });
+    assert.deepEqual(await collect(),{});
 });

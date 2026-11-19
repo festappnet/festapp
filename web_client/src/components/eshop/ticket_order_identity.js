@@ -16,7 +16,12 @@ export async function claimTicketOrderIdentity(endpoint, payload, principal, sto
     // Keep ordinary fingerprints unchanged and pin the original proof alongside
     // the pending command so its SQL payload hash also remains unchanged.
     const { checkoutOrigin, ...purchase } = payload;
-    const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(canonicalCommandPayload([endpoint, payload.form, purchase]))));
+    const intent = {...purchase};
+    if (intent.metaPurchaseConsent && typeof intent.metaPurchaseConsent === 'object' && !Array.isArray(intent.metaPurchaseConsent)) {
+        const {matching, ...savedConsent} = intent.metaPurchaseConsent;
+        intent.metaPurchaseConsent = savedConsent;
+    }
+    const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(canonicalCommandPayload([endpoint, payload.form, intent]))));
     const fingerprint = Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
     const key = `client_command_pending:ticket_order:${fingerprint}`;
     let saved;

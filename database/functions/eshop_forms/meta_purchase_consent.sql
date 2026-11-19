@@ -18,7 +18,8 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extens
  JOIN public.units u ON u.id=o.unit JOIN analytics.meta_purchase_connectors c ON c.unit=u.id
  CROSS JOIN LATERAL (SELECT public.meta_purchase_consent_revision_internal(f.id) revision) v
  WHERE f.id=public.resolve_form_link_internal(p_form_link) AND public.can_read_public_form_measurement(f.id) AND v.revision IS NOT NULL
-  AND public.form_measurement_visitor_role_internal(f.id)<>'staff';
+  AND public.form_measurement_visitor_role_internal(f.id)<>'staff'
+  AND public.meta_purchase_retention_ready_internal();
 $$;
 REVOKE ALL ON FUNCTION public.get_meta_purchase_consent(text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.get_meta_purchase_consent(text) TO anon,authenticated;
@@ -71,7 +72,8 @@ DECLARE
  agent text:=p_consent->>'userAgent';
  email text; phone text; prefixes jsonb; address inet; fbp text; fbc text;
 BEGIN
- IF jsonb_typeof(p_consent) IS DISTINCT FROM 'object'
+ IF NOT public.meta_purchase_retention_ready_internal()
+    OR jsonb_typeof(p_consent) IS DISTINCT FROM 'object'
     OR coalesce(length(agent),0) NOT BETWEEN 1 AND 512 OR agent ~ '[[:cntrl:]]'
     OR coalesce(p_consent->>'revision','') !~ '^[a-f0-9]{32}$'
  THEN RETURN; END IF;
@@ -96,8 +98,8 @@ BEGIN
  -- Optional matching data can only degrade to NULL; it never fails checkout.
  BEGIN
   prefixes:=public.get_effective_form_data(details.form)->'phone_prefixes';
-  phone:=public.meta_purchase_phone_internal(details.data->>'phone',coalesce(
-   CASE WHEN jsonb_typeof(prefixes)='array' THEN CASE WHEN jsonb_array_length(prefixes)=1 THEN prefixes->>0 END END,'+420'));
+  phone:=public.meta_purchase_phone_internal(details.data->>'phone',
+   CASE WHEN jsonb_typeof(prefixes)='array' THEN CASE WHEN jsonb_array_length(prefixes)=1 THEN prefixes->>0 END END);
  EXCEPTION WHEN OTHERS THEN phone:=NULL;
  END;
  BEGIN

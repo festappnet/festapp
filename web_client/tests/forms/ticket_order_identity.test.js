@@ -46,3 +46,15 @@ test('discount recovery requires the original pending identity and never allocat
  first.complete();await assert.rejects(claimTicketOrderIdentity('https://one',payload,'buyer',s,{requirePending:true}),/RECOVERY_REQUIRED/);
  assert.equal(s.data.size,0);
 });
+
+test('a reloaded paid checkout recovers the original command even when Meta matching changes',async()=>{
+ const s=storage(),purchase={form:'f',ticket:[],metaPurchaseConsent:{source:'klaro',timestamp:'2026-11-18T00:00:00.000Z'}};
+ const before=await claimTicketOrderIdentity('https://one',purchase,null,s);
+ const first=await claimTicketOrderIdentity('https://one',{...purchase,metaPurchaseConsent:{...purchase.metaPurchaseConsent,matching:{fbc:'fb.1.1795000000000.sameClick'}}},null,s);
+ const retry=await claimTicketOrderIdentity('https://one',{...purchase,metaPurchaseConsent:{...purchase.metaPurchaseConsent,matching:{fbc:'fb.1.1795000001000.sameClick'}}},null,s,{requirePending:true});
+ assert.equal(first.commandId,before.commandId,'matching does not change identity for an existing pending order');
+ assert.equal(retry.commandId,first.commandId);
+ assert.equal(s.data.size,1);
+ assert.match(retry.orderDetails.metaPurchaseConsent.matching.fbc,/1795000001000/);
+ assert.doesNotMatch(JSON.stringify([...s.data]),/sameClick/);
+});

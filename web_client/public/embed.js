@@ -195,7 +195,8 @@
         return grants.length && grants.every((record) => record[key] === true) ? true : void 0;
       };
       return { ...choice, purchaseConsent: {
-        ...value.purchaseConsent,
+        source: value.purchaseConsent.source,
+        timestamp: value.purchaseConsent.timestamp,
         consentRevision: value.consentRevision,
         binding: value.binding,
         websiteOrigin: scope.websiteOrigin,
@@ -778,8 +779,8 @@
   var limits = Object.freeze({ minHeight: 120, legacyMinHeight: 240, viewportMax: 4e3, heightMax: 2e4 });
   var validId = (value) => typeof value === "string" && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
   var viewport = (value) => Number.isFinite(value) && value >= limits.legacyMinHeight && value <= limits.viewportMax;
-  var toChild = /* @__PURE__ */ new Set(["init", "viewport", "theme", "price-ready", "price-activate", "measurement-consent", "measurement-ack"]);
-  var toHost = /* @__PURE__ */ new Set(["ready", "resize", "scroll-request", "scroll-save", "scroll-restore", "scroll-discard", "price", "measurement-context", "measurement-activate", "analytics"]);
+  var toChild = /* @__PURE__ */ new Set(["init", "viewport", "theme", "price-ready", "price-activate", "measurement-consent", "measurement-ack", "meta-checkout-matching"]);
+  var toHost = /* @__PURE__ */ new Set(["ready", "resize", "scroll-request", "scroll-save", "scroll-restore", "scroll-discard", "price", "measurement-context", "measurement-activate", "analytics", "meta-checkout-matching-request"]);
   var bounded = (value, min, max) => Number.isFinite(value) && value >= min && value <= max;
   function validMessage(data, destination) {
     if (!data || typeof data !== "object" || Array.isArray(data) || data.namespace !== namespace || data.protocol !== protocol || !(destination === "child" ? toChild : toHost).has(data.type)) return false;
@@ -867,6 +868,20 @@
   }
   function hasCurrentPurchaseConsent(choice, now = Date.now()) {
     return hasCurrentDecision(choice, now) && purposes.every((key) => choice.purchaseConsent[key] === true);
+  }
+  function publicPurchaseDecision(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return null;
+    const { source, timestamp: timestamp2, consentRevision, websiteOrigin, binding, ad_storage, ad_user_data, ad_personalization } = snapshot;
+    return {
+      source,
+      timestamp: timestamp2,
+      consentRevision,
+      websiteOrigin,
+      ad_storage,
+      ad_user_data,
+      ad_personalization,
+      ...binding ? { binding: { id: binding.id, version: binding.version } } : {}
+    };
   }
 
   // src/embed/host_consent_mode.js
@@ -1024,8 +1039,8 @@
         const choice = record.choice?.read(record.manifest);
         const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
         record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : void 0;
-        const snapshot = choice?.purchaseConsent || saved?.purchaseConsent;
-        return { ...measurementConsent(choice), ...snapshot ? { purchaseConsent: { ...snapshot, matching: hasCurrentPurchaseConsent(choice?.purchaseConsent ? choice : saved) ? metaBrowserMatching(snapshot, window) : {} } } : {} };
+        const snapshot = publicPurchaseDecision(choice?.purchaseConsent || saved?.purchaseConsent);
+        return { ...measurementConsent(choice), ...snapshot ? { purchaseConsent: snapshot } : {} };
       } catch {
         return measurementConsent(false);
       }
@@ -1160,6 +1175,19 @@
       frames.forEach((record, frame) => syncConsent(frame, record));
     });
     return { api, stopHeartbeat, revoke, syncConsent, receive(frame, record, data) {
+      if (data.type === "meta-checkout-matching-request") {
+        const { requestId, leaseId, manifest, origin, revision: revision2, consentRevision, decisionAt, binding } = data.matchingRequest || {};
+        if (suspended || !currentRecord(frame, record) || !validId(requestId) || !record.lease || Date.now() >= record.lease.until || leaseId !== record.lease.id || !sameMeasurementManifest(manifest, record.manifest) || !measurementManifest(manifest, manifest?.form_link) || origin !== window.location.origin || !/^[0-9a-f]{32}$/.test(revision2 || "")) return true;
+        const choice = readChoice(frame, record);
+        const scope = consentScope(record.manifest, origin);
+        if (!sameConsentBinding(scope?.binding, binding) || !sameConsentBinding(record.consentBinding, binding) || !hasCurrentPurchaseConsent(choice) || choice.purchaseConsent.consentRevision !== consentRevision || choice.purchaseConsent.timestamp !== decisionAt) return true;
+        record.channel.send("meta-checkout-matching", {
+          requestId,
+          leaseId,
+          matching: metaBrowserMatching(choice.purchaseConsent, window)
+        });
+        return true;
+      }
       if (data.type === "measurement-context" && data.measurement?.protocol === measurementProtocol) {
         const m = data.measurement.manifest;
         if (!m || !sameMeasurementManifest(m, consentTransportManifest(m, m.form_link))) return true;

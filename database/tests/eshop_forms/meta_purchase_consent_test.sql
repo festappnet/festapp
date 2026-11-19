@@ -38,7 +38,8 @@ END $$;
 
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; fid bigint:=(x->>'form')::bigint;
- snapshot jsonb; checkout jsonb; receipt jsonb; oid bigint; b analytics.website_consent_bindings; claimed uuid:=gen_random_uuid();
+ snapshot jsonb; checkout jsonb; receipt jsonb; replay jsonb; oid bigint; b analytics.website_consent_bindings; claimed uuid:=gen_random_uuid();
+ command_id uuid:=gen_random_uuid(); client_id uuid:=gen_random_uuid();
 BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
@@ -50,6 +51,8 @@ BEGIN
  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
  VALUES(un,'123456',gen_random_uuid(),'https://tickets.example',true);
  INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(fid,un);
+ PERFORM assert_true(public.get_meta_purchase_consent(x->>'link') IS NULL,'no public collection notice before retention runs');
+ PERFORM public.purge_meta_purchase_data_internal();
  INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_at)
  VALUES(un,'https://tickets.example','html','{"provider":"cookiebot"}',1,true,
   public.unit_measurement_consent_scope_internal(un)->>'consentRevision',clock_timestamp()-interval '1 minute') RETURNING * INTO b;
@@ -63,20 +66,33 @@ BEGIN
   'matching',jsonb_build_object('fbp','fb.1.1795000000000.1234','fbc','fb.1.1795000000000.Click_123'));
  PERFORM set_config('request.headers','{"x-festapp-client-ip":"2001:db8::1"}',true);
  checkout:=pg_temp.checkout(x)||jsonb_build_object('metaPurchaseConsent',snapshot);
- receipt:=public.create_ticket_order_client_sync_v1(checkout,gen_random_uuid(),gen_random_uuid());
+ receipt:=public.create_ticket_order_client_sync_v1(checkout,command_id,client_id);
  PERFORM assert_eq(receipt#>>'{data,code}','200','snapshot does not affect checkout');
  oid:=(receipt#>>'{data,order,id}')::bigint;
  PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'valid connected CMP captured');
  PERFORM assert_eq((SELECT fbp FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'fb.1.1795000000000.1234','matching is captured with this exact order');
  PERFORM assert_eq((SELECT host(client_ip) FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'2001:db8::1','trusted checkout header supplies the address');
  PERFORM assert_false(receipt::text LIKE '%fb.1.%' OR receipt::text LIKE '%2001:db8%','matching never enters the browser receipt');
+ replay:=public.create_ticket_order_client_sync_v1(
+  jsonb_set(checkout,'{metaPurchaseConsent,matching,fbc}','"fb.1.1795000001000.Click_123"'),command_id,client_id);
+ PERFORM assert_eq(replay#>>'{data,order,id}',oid::text,'reload with changed matching replays the first order');
+ PERFORM assert_eq((SELECT fbc FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
+  'fb.1.1795000000000.Click_123','replaying a checkout never rewrites original Meta matching');
  UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp()-interval '8 days' WHERE order_id=oid;
- PERFORM public.claim_meta_purchase_deliveries(1);
+ -- Delivery is disabled; PostgreSQL retention still runs.
+ UPDATE analytics.meta_purchase_connectors SET paused_at=clock_timestamp() WHERE unit=un;
+ PERFORM public.purge_meta_purchase_data_internal();
+ UPDATE analytics.meta_purchase_connectors SET paused_at=NULL WHERE unit=un;
  PERFORM assert_true((SELECT client_ip IS NULL AND fbp IS NOT NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'seven-day IP cleanup also covers unpaid orders and retains younger matching');
  UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp() WHERE order_id=oid;
  PERFORM assert_false((SELECT consent_snapshot ? 'untrustedContact' OR consent_snapshot->'binding' ? 'untrustedContact'
   FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'only allowlisted consent fields persist');
  DELETE FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+ UPDATE analytics.meta_purchase_retention_state SET last_sweep=clock_timestamp()-interval '11 minutes';
+ PERFORM assert_true(public.get_meta_purchase_consent(x->>'link') IS NULL,'stale retention closes the public notice');
+ PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot);
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'stale retention prevents new collection');
+ PERFORM public.purge_meta_purchase_data_internal();
  PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot||'{"ad_storage":false}');
  PERFORM public.capture_meta_purchase_consent_internal(oid,jsonb_set(snapshot,'{binding,version}','2'));
  PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot||'{"websiteOrigin":"https://other.example"}');
@@ -96,7 +112,7 @@ BEGIN
   FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'invalid delivery erases visitor metadata');
  UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot,
   phone_hash=repeat('b',64),fbp='fb.1.1795000000000.1234',fbc='fb.1.1795000000000.Click_123',client_ip='192.0.2.1',consent_at=clock_timestamp()-interval '31 days',done_at=NULL WHERE order_id=oid;
- PERFORM public.claim_meta_purchase_deliveries(1);
+ PERFORM public.purge_meta_purchase_data_internal();
  PERFORM assert_true((SELECT status='expired' AND consent_snapshot IS NULL AND phone_hash IS NULL AND fbp IS NULL AND fbc IS NULL AND client_ip IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'retention expiry erases snapshot');
  UPDATE analytics.meta_purchase_deliveries SET phone_hash=repeat('b',64),fbp='fb.1.1795000000000.1234',fbc='fb.1.1795000000000.Click_123',client_ip='192.0.2.1',status='pending',consent_snapshot=snapshot,lease=claimed,prepared=true WHERE order_id=oid;
  PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent'),'receipt is finalized');
@@ -220,7 +236,8 @@ BEGIN
 END $$;
 
 DO $$ BEGIN
- PERFORM assert_eq(public.meta_purchase_phone_internal('777 123 456'),'420777123456','default national prefix is CZ');
+ PERFORM assert_true(public.meta_purchase_phone_internal('777 123 456') IS NULL,'ambiguous national number is omitted');
+ PERFORM assert_eq(public.meta_purchase_phone_internal('777 123 456','+420'),'420777123456','one saved Czech prefix is enough');
  PERFORM assert_eq(public.meta_purchase_phone_internal('00 421 905 123 456'),'421905123456','international 00 prefix');
  PERFORM assert_eq(public.meta_purchase_phone_internal('905123456','+421'),'421905123456','saved Slovak default');
  PERFORM assert_eq(public.meta_purchase_phone_internal('0903 123 456','+421'),'421903123456','Slovak national trunk 0 is dropped');

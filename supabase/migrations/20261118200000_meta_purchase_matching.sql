@@ -2,6 +2,9 @@
 ALTER TABLE analytics.meta_purchase_deliveries
  ADD COLUMN phone_hash text, ADD COLUMN fbp text, ADD COLUMN fbc text, ADD COLUMN client_ip inet;
 CREATE INDEX meta_purchase_ip_retention ON analytics.meta_purchase_deliveries(consent_at) WHERE client_ip IS NOT NULL;
+CREATE TABLE analytics.meta_purchase_retention_state(singleton boolean PRIMARY KEY CHECK(singleton), last_sweep timestamptz NOT NULL);
+ALTER TABLE analytics.meta_purchase_retention_state ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.meta_purchase_retention_state FROM PUBLIC,anon,authenticated,service_role;
 
 -- SOURCE: eshop_forms/meta_purchase_matching.sql
 -- Identifiers are validated independently of the consent gate at capture.
@@ -26,8 +29,8 @@ END $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_ip_internal(text) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Keep digits only for Meta hashing, without a leading plus. Form prefixes
--- resolve national numbers; CZ is the fallback when no single prefix is saved.
-CREATE OR REPLACE FUNCTION public.meta_purchase_phone_internal(p_value text,p_prefix text DEFAULT '+420')
+-- resolve national numbers only when the form has one known prefix.
+CREATE OR REPLACE FUNCTION public.meta_purchase_phone_internal(p_value text,p_prefix text DEFAULT NULL)
 RETURNS text LANGUAGE plpgsql IMMUTABLE SET search_path=public AS $$
 DECLARE phone text;
 BEGIN
@@ -35,7 +38,7 @@ BEGIN
  phone:=regexp_replace(btrim(p_value),'[ ().-]','','g');
  IF phone LIKE '00%' THEN phone:='+'||substr(phone,3); END IF;
  IF phone NOT LIKE '+%' THEN
-  IF phone ~ '^(420|421)[0-9]{9}$' THEN phone:='+'||phone;
+  IF phone ~ '^(420|421)[1-9][0-9]{8}$' THEN phone:='+'||phone;
   ELSIF p_prefix ~ '^\+[1-9][0-9]{0,3}$' THEN
    -- National trunk 0 is dropped (030..., 0903...), except Italy, which keeps it.
    IF p_prefix<>'+39' AND phone ~ '^0[1-9]' THEN phone:=substr(phone,2); END IF;
@@ -47,6 +50,42 @@ BEGIN
  RETURN substr(phone,2);
 END $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_phone_internal(text,text) FROM PUBLIC,anon,authenticated,service_role;
+
+-- SOURCE: eshop_forms/meta_purchase_retention.sql
+-- This runs in PostgreSQL even if Edge and Meta are offline.
+CREATE OR REPLACE FUNCTION public.purge_meta_purchase_data_internal()
+RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
+BEGIN
+ -- Unpaid and paused rows also lose raw addresses after seven days.
+ WITH stale_ip AS (
+  SELECT d.order_id FROM analytics.meta_purchase_deliveries d
+  WHERE d.client_ip IS NOT NULL AND d.consent_at<=clock_timestamp()-interval '7 days'
+  ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
+ ) UPDATE analytics.meta_purchase_deliveries d SET client_ip=NULL FROM stale_ip WHERE d.order_id=stale_ip.order_id;
+ -- Only a small bounded set is scrubbed per run. Keep delivery receipts 90 days.
+ WITH expired AS (
+  SELECT d.order_id FROM analytics.meta_purchase_deliveries d
+  WHERE d.status='pending' AND d.consent_at<clock_timestamp()-interval '30 days'
+  ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
+ )
+ UPDATE analytics.meta_purchase_deliveries d SET status='expired',done_at=clock_timestamp(),
+  lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
+ FROM expired WHERE d.order_id=expired.order_id;
+ DELETE FROM analytics.meta_purchase_deliveries d WHERE d.order_id IN(
+  SELECT x.order_id FROM analytics.meta_purchase_deliveries x
+  WHERE x.done_at<clock_timestamp()-interval '90 days' LIMIT 100 FOR UPDATE SKIP LOCKED);
+ INSERT INTO analytics.meta_purchase_retention_state(singleton,last_sweep)
+ VALUES(true,clock_timestamp()) ON CONFLICT(singleton) DO UPDATE SET last_sweep=EXCLUDED.last_sweep;
+END $$;
+REVOKE ALL ON FUNCTION public.purge_meta_purchase_data_internal() FROM PUBLIC,anon,authenticated,service_role;
+
+-- Stop collecting when the independent retention job has not run recently.
+CREATE OR REPLACE FUNCTION public.meta_purchase_retention_ready_internal()
+RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT EXISTS(SELECT FROM analytics.meta_purchase_retention_state
+  WHERE singleton AND last_sweep>=statement_timestamp()-interval '10 minutes');
+$$;
+REVOKE ALL ON FUNCTION public.meta_purchase_retention_ready_internal() FROM PUBLIC,anon,authenticated,service_role;
 
 -- SOURCE: eshop_forms/meta_purchase_consent.sql
 -- Policy gates and destination/notice binding are shared by checkout and delivery.
@@ -69,7 +108,8 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extens
  JOIN public.units u ON u.id=o.unit JOIN analytics.meta_purchase_connectors c ON c.unit=u.id
  CROSS JOIN LATERAL (SELECT public.meta_purchase_consent_revision_internal(f.id) revision) v
  WHERE f.id=public.resolve_form_link_internal(p_form_link) AND public.can_read_public_form_measurement(f.id) AND v.revision IS NOT NULL
-  AND public.form_measurement_visitor_role_internal(f.id)<>'staff';
+  AND public.form_measurement_visitor_role_internal(f.id)<>'staff'
+  AND public.meta_purchase_retention_ready_internal();
 $$;
 REVOKE ALL ON FUNCTION public.get_meta_purchase_consent(text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.get_meta_purchase_consent(text) TO anon,authenticated;
@@ -122,7 +162,8 @@ DECLARE
  agent text:=p_consent->>'userAgent';
  email text; phone text; prefixes jsonb; address inet; fbp text; fbc text;
 BEGIN
- IF jsonb_typeof(p_consent) IS DISTINCT FROM 'object'
+ IF NOT public.meta_purchase_retention_ready_internal()
+    OR jsonb_typeof(p_consent) IS DISTINCT FROM 'object'
     OR coalesce(length(agent),0) NOT BETWEEN 1 AND 512 OR agent ~ '[[:cntrl:]]'
     OR coalesce(p_consent->>'revision','') !~ '^[a-f0-9]{32}$'
  THEN RETURN; END IF;
@@ -147,8 +188,8 @@ BEGIN
  -- Optional matching data can only degrade to NULL; it never fails checkout.
  BEGIN
   prefixes:=public.get_effective_form_data(details.form)->'phone_prefixes';
-  phone:=public.meta_purchase_phone_internal(details.data->>'phone',coalesce(
-   CASE WHEN jsonb_typeof(prefixes)='array' THEN CASE WHEN jsonb_array_length(prefixes)=1 THEN prefixes->>0 END END,'+420'));
+  phone:=public.meta_purchase_phone_internal(details.data->>'phone',
+   CASE WHEN jsonb_typeof(prefixes)='array' THEN CASE WHEN jsonb_array_length(prefixes)=1 THEN prefixes->>0 END END);
  EXCEPTION WHEN OTHERS THEN phone:=NULL;
  END;
  BEGIN
@@ -218,24 +259,6 @@ CREATE OR REPLACE FUNCTION public.claim_meta_purchase_deliveries(p_limit integer
 RETURNS TABLE(order_id bigint, lease uuid) LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
- -- Unpaid and paused rows also lose raw addresses after seven days.
- WITH stale_ip AS (
-  SELECT d.order_id FROM analytics.meta_purchase_deliveries d
-  WHERE d.client_ip IS NOT NULL AND d.consent_at<=clock_timestamp()-interval '7 days'
-  ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
- ) UPDATE analytics.meta_purchase_deliveries d SET client_ip=NULL FROM stale_ip WHERE d.order_id=stale_ip.order_id;
- -- Only a small bounded set is scrubbed per run. Keep delivery receipts 90 days.
- WITH expired AS (
-  SELECT d.order_id FROM analytics.meta_purchase_deliveries d
-  WHERE d.status='pending' AND d.consent_at<clock_timestamp()-interval '30 days'
-  ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
- )
- UPDATE analytics.meta_purchase_deliveries d SET status='expired',done_at=clock_timestamp(),
-  lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
- FROM expired WHERE d.order_id=expired.order_id;
- DELETE FROM analytics.meta_purchase_deliveries d WHERE d.order_id IN(
-  SELECT x.order_id FROM analytics.meta_purchase_deliveries x
-  WHERE x.done_at<clock_timestamp()-interval '90 days' LIMIT 100 FOR UPDATE SKIP LOCKED);
  RETURN QUERY
  WITH due AS (
   SELECT d.order_id FROM analytics.meta_purchase_deliveries d
@@ -355,11 +378,7 @@ BEGIN
    -- Same cohort filter as claiming, so unclaimable rows do not wake the worker.
    AND public.form_order_purchase_timing_internal(d.order_id)='paid'
    AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE
- ) AND NOT EXISTS(
-  SELECT FROM analytics.meta_purchase_deliveries WHERE status='pending' AND consent_at<clock_timestamp()-interval '30 days'
-     OR done_at<clock_timestamp()-interval '90 days'
-     OR client_ip IS NOT NULL AND consent_at<=clock_timestamp()-interval '7 days'
- ) THEN RETURN; END IF;
+) THEN RETURN; END IF;
  SELECT regexp_replace(worker_url,'/process-email-queue$','/process-meta-purchases') INTO endpoint
  FROM public.email_capacity
  WHERE worker_url LIKE '%/process-email-queue';
@@ -369,14 +388,96 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.wake_meta_purchase_worker() FROM PUBLIC,anon,authenticated,service_role;
 
--- An operator activates the schedule only after configuring a test dataset and
--- releasing the worker with the canonical gateway.
-DO $$ DECLARE job bigint; BEGIN
- IF EXISTS(SELECT 1 FROM pg_extension WHERE extname='pg_cron') THEN
-  SELECT jobid INTO job FROM cron.job WHERE jobname='festapp_meta_purchase_delivery';
-  IF job IS NULL THEN
-   job:=cron.schedule('festapp_meta_purchase_delivery','* * * * *','SELECT public.wake_meta_purchase_worker()');
-   PERFORM cron.alter_job(job,active:=false);
+-- SOURCE: eshop_orders/create_ticket_order_client_sync_v1.sql
+CREATE OR REPLACE FUNCTION public.create_ticket_order_command_internal(
+  p_order jsonb,p_command_id uuid,p_client_id uuid,p_context jsonb DEFAULT NULL
+) RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_actor uuid:=auth.uid(); v_occasion bigint; v_begin jsonb; v_hash text;
+  v_result jsonb; v_symbol text; v_before_users uuid[]; v_actor_kind text; v_origin jsonb; v_form bigint;
+BEGIN
+  IF p_order IS NULL OR jsonb_typeof(p_order)<>'object'
+    OR octet_length(p_order::text)>4194304 OR p_command_id IS NULL
+    OR (v_actor IS NULL AND p_client_id IS NULL) THEN
+    RAISE invalid_parameter_value USING MESSAGE='invalid ticket order command'; END IF;
+  SELECT f.occasion INTO v_occasion FROM public.forms f
+    WHERE f.key=NULLIF(p_order->>'form','')::uuid;
+  IF v_occasion IS NULL THEN
+    RAISE invalid_parameter_value USING MESSAGE='ticket order form not found'; END IF;
+  v_hash:=encode(extensions.digest(convert_to((jsonb_build_object(
+    'occasion',v_occasion,'order',public.strip_payment_sources_internal(p_order)#-'{metaPurchaseConsent,matching}')
+      ||CASE WHEN p_context IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('administration',p_context) END)::text,'UTF8'),'sha256'),'hex');
+  IF v_actor IS NULL THEN
+    v_begin:=public.begin_anonymous_client_mutation_v1(p_command_id,
+      'inventory.order.create',v_occasion,p_client_id,v_hash);
+    v_actor_kind:='unknown';
+  ELSE
+    v_begin:=public.begin_client_mutation_v1(p_command_id,
+      'inventory.order.create',v_occasion,v_actor,v_hash);
+    v_actor_kind:='user';
   END IF;
- END IF;
-END $$;
+  IF v_begin->>'disposition'='replay' THEN
+    v_result := v_begin->'response';
+    IF v_result#>'{data,order}' IS NOT NULL AND v_result#>>'{data,order,order_symbol}' IS NULL THEN
+      v_symbol := public.read_order_identity((v_result#>>'{data,order,id}')::bigint,
+        v_occasion, (SELECT organization FROM public.occasions WHERE id=v_occasion));
+      IF v_symbol IS NOT NULL THEN
+        v_result := jsonb_set(v_result, '{data,order,order_symbol}', to_jsonb(v_symbol));
+      END IF;
+    END IF;
+    IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
+      (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN
+      v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_purchase_datalayer_internal((v_result#>>'{data,order,id}')::bigint),public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,'free_registration'),'null'::jsonb));
+    END IF;
+    RETURN public.project_local_payment_reference_order_internal(v_result);
+  END IF;
+  IF p_order ? 'checkoutOrigin' THEN
+    SELECT id INTO v_form FROM public.forms WHERE key=(p_order->>'form')::uuid;
+    v_origin:=public.read_checkout_origin_internal(p_order->>'checkoutOrigin',v_form);
+    IF v_origin IS NULL THEN
+      RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',400,
+        jsonb_build_object('code',400,'errorCode','CHECKOUT_CONTEXT_EXPIRED'));
+    END IF;
+  END IF;
+  SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_before_users
+    FROM public.occasion_users ou WHERE ou.occasion=v_occasion;
+  v_result:=public.create_ticket_order_internal_v1((public.strip_payment_sources_internal(p_order)-ARRAY['checkoutOrigin','discount_command_id','metaPurchaseConsent'])||CASE WHEN p_order ? 'discount' THEN jsonb_build_object('discount_command_id',p_command_id) ELSE '{}'::jsonb END);
+  IF COALESCE((v_result->>'code')::integer,500)<>200 THEN
+    RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',
+      CASE WHEN COALESCE((v_result->>'code')::integer,500) BETWEEN 100 AND 599
+        THEN (v_result->>'code')::integer ELSE 400 END,v_result); END IF;
+  IF p_context IS NULL AND p_order ? 'metaPurchaseConsent' THEN
+    PERFORM public.capture_meta_purchase_consent_internal((v_result#>>'{order,id}')::bigint,p_order->'metaPurchaseConsent');
+  END IF;
+  PERFORM public.attach_checkout_origin_internal((v_result#>>'{order,id}')::bigint,v_origin);
+  PERFORM public.attach_provider_order_source_internal((v_result#>>'{order,id}')::bigint,p_command_id,p_order);
+  PERFORM public.enqueue_ticket_order_confirmation_v1(
+    p_command_id,v_occasion,v_result,p_order->>'lang');
+  IF p_context IS NOT NULL THEN v_result:=v_result||jsonb_build_object('adminQuote',p_context->'quote','paymentPreparationPolicy','leased_keep_pending'); END IF;
+  v_result:=public.complete_profile_inventory_membership_mutation_v1(
+    p_command_id,v_occasion,'inventory.order.create',jsonb_build_array(jsonb_build_object(
+      'entityType','order','entityId',v_result#>>'{order,id}','operation','insert',
+      'safeLabel','Ticket order','changedFields',jsonb_build_array(
+        'tickets','products','allocations','membership'))),v_before_users,v_result,
+    v_actor_kind);
+  -- The receipt remains frozen; first response and authorized replay project the
+  -- same immutable facts, filtered through current stored form policy.
+  IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
+      (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN
+    PERFORM public.record_form_conversion_internal((v_result#>>'{data,order,id}')::bigint);
+  END IF;
+  IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
+      (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN
+    v_result:=jsonb_set(v_result,'{data,analytics}',coalesce(public.form_purchase_datalayer_internal((v_result#>>'{data,order,id}')::bigint),
+      public.form_conversion_datalayer_internal((v_result#>>'{data,order,id}')::bigint,'free_registration'),'null'::jsonb));
+  END IF;
+  RETURN v_result;
+END; $$;
+REVOKE ALL ON FUNCTION public.create_ticket_order_command_internal(jsonb,uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Released RPC signature and ordinary checkout hashes remain unchanged.
+CREATE OR REPLACE FUNCTION public.create_ticket_order_client_sync_v1(p_order jsonb,p_command_id uuid,p_client_id uuid)
+RETURNS jsonb LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
+ SELECT public.create_ticket_order_command_internal(p_order,p_command_id,p_client_id,NULL);
+$$;
+REVOKE ALL ON FUNCTION public.create_ticket_order_client_sync_v1(jsonb,uuid,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_ticket_order_client_sync_v1(jsonb,uuid,uuid) TO anon,authenticated;

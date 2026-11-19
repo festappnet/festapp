@@ -2,24 +2,6 @@ CREATE OR REPLACE FUNCTION public.claim_meta_purchase_deliveries(p_limit integer
 RETURNS TABLE(order_id bigint, lease uuid) LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
  PERFORM public.require_service_role();
- -- Unpaid and paused rows also lose raw addresses after seven days.
- WITH stale_ip AS (
-  SELECT d.order_id FROM analytics.meta_purchase_deliveries d
-  WHERE d.client_ip IS NOT NULL AND d.consent_at<=clock_timestamp()-interval '7 days'
-  ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
- ) UPDATE analytics.meta_purchase_deliveries d SET client_ip=NULL FROM stale_ip WHERE d.order_id=stale_ip.order_id;
- -- Only a small bounded set is scrubbed per run. Keep delivery receipts 90 days.
- WITH expired AS (
-  SELECT d.order_id FROM analytics.meta_purchase_deliveries d
-  WHERE d.status='pending' AND d.consent_at<clock_timestamp()-interval '30 days'
-  ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
- )
- UPDATE analytics.meta_purchase_deliveries d SET status='expired',done_at=clock_timestamp(),
-  lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
- FROM expired WHERE d.order_id=expired.order_id;
- DELETE FROM analytics.meta_purchase_deliveries d WHERE d.order_id IN(
-  SELECT x.order_id FROM analytics.meta_purchase_deliveries x
-  WHERE x.done_at<clock_timestamp()-interval '90 days' LIMIT 100 FOR UPDATE SKIP LOCKED);
  RETURN QUERY
  WITH due AS (
   SELECT d.order_id FROM analytics.meta_purchase_deliveries d
@@ -139,11 +121,7 @@ BEGIN
    -- Same cohort filter as claiming, so unclaimable rows do not wake the worker.
    AND public.form_order_purchase_timing_internal(d.order_id)='paid'
    AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE
- ) AND NOT EXISTS(
-  SELECT FROM analytics.meta_purchase_deliveries WHERE status='pending' AND consent_at<clock_timestamp()-interval '30 days'
-     OR done_at<clock_timestamp()-interval '90 days'
-     OR client_ip IS NOT NULL AND consent_at<=clock_timestamp()-interval '7 days'
- ) THEN RETURN; END IF;
+) THEN RETURN; END IF;
  SELECT regexp_replace(worker_url,'/process-email-queue$','/process-meta-purchases') INTO endpoint
  FROM public.email_capacity
  WHERE worker_url LIKE '%/process-email-queue';
@@ -152,15 +130,3 @@ BEGIN
    timeout_milliseconds:=90000);
 END $$;
 REVOKE ALL ON FUNCTION public.wake_meta_purchase_worker() FROM PUBLIC,anon,authenticated,service_role;
-
--- An operator activates the schedule only after configuring a test dataset and
--- releasing the worker with the canonical gateway.
-DO $$ DECLARE job bigint; BEGIN
- IF EXISTS(SELECT 1 FROM pg_extension WHERE extname='pg_cron') THEN
-  SELECT jobid INTO job FROM cron.job WHERE jobname='festapp_meta_purchase_delivery';
-  IF job IS NULL THEN
-   job:=cron.schedule('festapp_meta_purchase_delivery','* * * * *','SELECT public.wake_meta_purchase_worker()');
-   PERFORM cron.alter_job(job,active:=false);
-  END IF;
- END IF;
-END $$;

@@ -1,5 +1,6 @@
-import {hasCurrentPurchaseConsent, metaBrowserMatching} from '../components/forms/meta_purchase_consent.js';
-import {consentScope, readConsentSource, managedConsentOrigin} from '../components/forms/measurement_consent_source.js';
+import {validId} from './protocol.js';
+import {hasCurrentPurchaseConsent, metaBrowserMatching, publicPurchaseDecision} from '../components/forms/meta_purchase_consent.js';
+import {consentScope, readConsentSource, managedConsentOrigin, sameConsentBinding} from '../components/forms/measurement_consent_source.js';
 import {measurementProtocol, measurementConsent, measurementManifest, consentTransportManifest, sameMeasurementManifest, measurementDataLayerPayload} from '../components/forms/form_measurement_contract.js';
 import {createHostConsentMode} from './host_consent_mode.js';
 import {bindKlaroConsent} from '../components/forms/form_measurement_consent.js';
@@ -19,8 +20,8 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             const choice = record.choice?.read(record.manifest);
             const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
             record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : undefined;
-            const snapshot = choice?.purchaseConsent || saved?.purchaseConsent;
-            return {...measurementConsent(choice), ...(snapshot ? {purchaseConsent:{...snapshot, matching:hasCurrentPurchaseConsent(choice?.purchaseConsent ? choice : saved) ? metaBrowserMatching(snapshot,window) : {}}} : {})};
+            const snapshot = publicPurchaseDecision(choice?.purchaseConsent || saved?.purchaseConsent);
+            return {...measurementConsent(choice), ...(snapshot ? {purchaseConsent:snapshot} : {})};
         }
         catch { return measurementConsent(false); }
     };
@@ -129,6 +130,24 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
         frames.forEach((record, frame) => syncConsent(frame, record));
     });
     return {api, stopHeartbeat, revoke, syncConsent, receive(frame, record, data) {
+            if(data.type==='meta-checkout-matching-request') {
+                // The canonical child asks only after a fresh pilot lookup during
+                // checkout. The parent independently checks its lease and saved choice.
+                const {requestId,leaseId,manifest,origin,revision,consentRevision,decisionAt,binding}=data.matchingRequest || {};
+                if (suspended || !currentRecord(frame,record) || !validId(requestId) ||
+                    !record.lease || Date.now()>=record.lease.until || leaseId!==record.lease.id ||
+                    !sameMeasurementManifest(manifest,record.manifest) ||
+                    !measurementManifest(manifest,manifest?.form_link) ||
+                    origin!==window.location.origin || !/^[0-9a-f]{32}$/.test(revision || ''))return true;
+                const choice=readChoice(frame,record);
+                const scope=consentScope(record.manifest,origin);
+                if (!sameConsentBinding(scope?.binding,binding) || !sameConsentBinding(record.consentBinding,binding) ||
+                    !hasCurrentPurchaseConsent(choice) || choice.purchaseConsent.consentRevision!==consentRevision ||
+                    choice.purchaseConsent.timestamp!==decisionAt)return true;
+                record.channel.send('meta-checkout-matching',{requestId,leaseId,
+                    matching:metaBrowserMatching(choice.purchaseConsent,window)});
+                return true;
+            }
             if(data.type==='measurement-context' && data.measurement?.protocol===measurementProtocol) {
                 const m=data.measurement.manifest;
                 if(!m || !sameMeasurementManifest(m,consentTransportManifest(m,m.form_link)))return true;

@@ -46,3 +46,10 @@ ALTER TABLE analytics.meta_purchase_connectors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics.meta_purchase_deliveries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics.meta_purchase_forms ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON analytics.meta_purchase_connectors,analytics.meta_purchase_forms,analytics.meta_purchase_deliveries FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE TABLE analytics.meta_purchase_retention_state(
+ singleton boolean PRIMARY KEY CHECK(singleton),
+ last_sweep timestamptz NOT NULL
+);
+ALTER TABLE analytics.meta_purchase_retention_state ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON analytics.meta_purchase_retention_state FROM PUBLIC,anon,authenticated,service_role;
