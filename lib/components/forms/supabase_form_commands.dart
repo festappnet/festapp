@@ -131,7 +131,13 @@ class SupabaseFormCommands implements FormCommands {
       await _transport.invoke(functionName, parameters),
     );
     if (response.code != 200) {
-      throw StateError(response.data['message']?.toString() ?? 'Form rejected');
+      final message = response.data['message']?.toString();
+      if (functionName == 'update_form_client_sync_v1' &&
+          response.status == 'conflict' &&
+          message == null) {
+        throw StateError('FORM_SAVE_CONFLICT');
+      }
+      throw StateError(message ?? 'Form rejected');
     }
     await applyClientCommandReplacements(response);
     return response.data;

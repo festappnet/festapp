@@ -884,6 +884,8 @@
     "defaultProductSelected": "Výchozí volba pro zákazníka. Kliknutím předvolení zrušíte.",
     "setDefaultProduct": "Kliknutím nastavíte produkt jako výchozí volbu pro zákazníka.",
     "selectionOptionsRequired": "Přidejte alespoň jednu neprázdnou možnost nebo pole odstraňte.",
+    "saveConflict": "Formulář se mezitím změnil. Zkopírujte si rozpracované změny, obnovte stránku a zadejte je znovu.",
+    "savePaymentRequired": "Před otevřením prodeje nastavte alespoň jeden dostupný způsob platby v Nastavení formuláře.",
     "previousSaveConfirmed": "Předchozí uložení bylo potvrzeno. Načtěte formulář znovu před dalšími úpravami.",
     "saveRecoveryExpired": "Výsledek staršího uložení již nelze ověřit. Načtěte formulář znovu a ověřte uložené údaje."
   },
