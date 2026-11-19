@@ -25,6 +25,7 @@ sys.path.insert(0,str(ROOT/'automation/ci'))
 sys.path.insert(0,str(ROOT/'automation'))
 from telemetry import phase as timed_phase, emit
 from wordpress_runtime import WordPress
+from cms_browser_dependencies import missing_playwright_packages
 from cms_fixture_rest import prepare_rest_image, start_rest, stop_rest
 from cms_fixture_postgres import CmsPostgres
 parser=argparse.ArgumentParser(description=__doc__)
@@ -66,19 +67,19 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','integrations/wordpress/core-archives.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_browser_dependencies.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','integrations/wordpress/core-archives.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
 processes=[]
 started={'backend':False,'wordpress':False,'joomla':False}
 
-def run(command,cwd=ROOT,extra=None,capture=False,label='command'):
+def run(command,cwd=ROOT,extra=None,capture=False,label='command',timeout=180):
  with timed_phase('cms.'+label), log.open('a') as output:
   try:
-   result=subprocess.run([str(v) for v in command],cwd=cwd,env={**env,**(extra or {})},stdout=subprocess.PIPE if capture else output,stderr=output,text=True,timeout=180)
+   result=subprocess.run([str(v) for v in command],cwd=cwd,env={**env,**(extra or {})},stdout=subprocess.PIPE if capture else output,stderr=output,text=True,timeout=timeout)
   except subprocess.TimeoutExpired as error:
-   raise RuntimeError(f'{label} exceeded 180 seconds; private log: {log}') from error
+   raise RuntimeError(f'{label} exceeded {timeout} seconds; private log: {log}') from error
   if result.returncode:raise RuntimeError(f'{Path(str(command[0])).name} failed ({result.returncode}); private log: {log}')
  return result.stdout if capture else ''
 
@@ -178,16 +179,44 @@ try {
   await owner.close();
 }''',
    ]
-   missing = []
+   def probe_engine(engine, stage="probe"):
+    with timed_phase(f'cms.browsers.{stage}.{engine}'):
+     result = subprocess.run([*probe, engine], cwd=ROOT/'web_client', env=env,
+                             capture_output=True, text=True, timeout=30)
+    if result.returncode:
+     with log.open('a') as output:
+      output.write(result.stdout + result.stderr)
+     return result.stderr
+    return None
+
+   missing = {}
    for engine in engines:
-    try:
-     run([*probe, engine], ROOT/'web_client', label=f'browsers.probe.{engine}')
-    except RuntimeError:
-     missing.append(engine)
+    diagnostic = probe_engine(engine)
+    if diagnostic is not None:
+     packages = missing_playwright_packages(diagnostic)
+     if not packages:
+      if 'Host system is missing dependencies to run browsers.' not in diagnostic:
+       raise RuntimeError(f'{engine} launch failed before CMS tests; private log: {log}')
+      raise RuntimeError(f'Playwright could not identify system packages for {engine}; private log: {log}')
+     missing[engine] = packages
    if missing:
-    run([*playwright, 'install-deps', *missing], label='browsers.system-dependencies')
+    packages = sorted({package for names in missing.values() for package in names})
+    phase(f'Installing missing Playwright system packages: {", ".join(packages)}')
+    apt = [
+     *(['sudo', '-n'] if os.getuid() else []),
+     'apt-get', '-o', 'Acquire::Retries=0', '-o', 'Acquire::http::Timeout=10',
+     '-o', 'Acquire::https::Timeout=10', '-o', 'DPkg::Lock::Timeout=10',
+    ]
+    install = [*apt, 'install', '--yes', '--no-install-recommends', '--', *packages]
+    try:
+     run(install, label='browsers.system-dependencies', timeout=45)
+    except RuntimeError:
+     run([*apt, 'update', '-o', 'APT::Update::Error-Mode=any'],
+         label='browsers.refresh-package-index', timeout=35)
+     run(install, label='browsers.system-dependencies.retry', timeout=45)
     for engine in missing:
-     run([*probe, engine], ROOT/'web_client', label=f'browsers.probe.after-install.{engine}')
+     if probe_engine(engine, "probe.after-install") is not None:
+      raise RuntimeError(f'{engine} launch failed after system package install; private log: {log}')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
  preparation = [('browsers',prepare_browsers)]
  if needs_joomla:preparation.append(('joomla',prepare_joomla))

@@ -15,6 +15,7 @@
         "automation/test_embed_adapters.sh",
         "packages/festapp_contracts/**",
         "automation/testing/cms_consent_fixture.py",
+        "automation/testing/cms_browser_dependencies.py",
         "database/**",
         "supabase/**",
         "automation/baseline.py",
@@ -504,6 +505,8 @@
         "supabase/migrations/**",
         "supabase/functions/_shared/**",
         "automation/testing/cms_consent_fixture.py",
+        "automation/testing/cms_browser_dependencies.py",
+        "automation/testing/test_cms_browser_dependencies.py",
         "web_client/scripts/cms_consent_fixture_server.mjs",
         "web_client/scripts/cms_consent_fixture_prepare.mjs",
         "web_client/scripts/test_cms_managed_consent_browser.mjs",
@@ -1625,6 +1628,7 @@
         "supabase/migrations/**",
         "supabase/functions/_shared/**",
         "automation/testing/cms_consent_fixture.py",
+        "automation/testing/cms_browser_dependencies.py",
         "web_client/scripts/cms_consent_fixture_server.mjs",
         "web_client/scripts/cms_consent_fixture_prepare.mjs",
         "web_client/scripts/test_cms_managed_consent_browser.mjs",
@@ -1865,7 +1869,7 @@
       }
     },
     "wordpress-cms": {
-      "script": "python3 automation/testing/cms_consent_fixture.py --suite wordpress\n",
+      "script": "python3 -m unittest automation.testing.test_cms_browser_dependencies\npython3 automation/testing/cms_consent_fixture.py --suite wordpress\n",
       "after": [
         "wordpress-cms-install"
       ],
@@ -1891,6 +1895,8 @@
         "supabase/migrations/**",
         "supabase/functions/_shared/**",
         "automation/testing/cms_consent_fixture.py",
+        "automation/testing/cms_browser_dependencies.py",
+        "automation/testing/test_cms_browser_dependencies.py",
         "web_client/scripts/cms_consent_fixture_server.mjs",
         "web_client/scripts/cms_consent_fixture_prepare.mjs",
         "web_client/scripts/test_cms_managed_consent_browser.mjs",
