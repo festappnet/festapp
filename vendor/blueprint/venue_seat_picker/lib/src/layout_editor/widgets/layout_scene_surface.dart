@@ -753,7 +753,7 @@ class _LayoutSceneSurfaceState extends State<LayoutSceneSurface>
           nativeTextPreview: nativeEditing,
         ),
         widget.document,
-        enabled: widget.retainPendingTextPreview,
+        enabled: widget.retainPendingTextPreview && !nativeEditing,
       );
       if (nativeEditing) {
         _loadNativeFonts();

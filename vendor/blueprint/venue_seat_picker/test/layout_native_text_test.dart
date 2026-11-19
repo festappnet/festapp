@@ -8,6 +8,56 @@ import 'package:venue_seat_picker/src/layout_editor/layout_scene_cache.dart';
 import 'package:venue_seat_picker/src/layout_editor/widgets/layout_scene_surface.dart';
 
 void main() {
+  testWidgets('saved vector labels remain until each native face is ready', (
+    tester,
+  ) async {
+    final fixture =
+        jsonDecode(
+              File(
+                'web/test/fixtures/canonical_rendering.json',
+              ).readAsStringSync(),
+            )
+            as Map;
+    final document = VenueLayoutDocument.fromJson(
+      Map<String, dynamic>.from(fixture['document']),
+    );
+    final scene = compileScene(
+      document,
+      resources: Map<String, dynamic>.from(fixture['resources']),
+    );
+    final text = document.nodes.firstWhere((node) => node.kind == 'text');
+    final table = document.nodes.firstWhere((node) => node.kind == 'table');
+    final cache = LayoutNativeTextCache();
+    addTearDown(cache.dispose);
+
+    Map label(Map<String, dynamic> frame, LayoutNode node) =>
+        (frame['items'] as List).cast<Map>().singleWhere(
+          (item) => item['id'] == '${node.id}:text',
+        );
+    final textVector = label(scene, text);
+    final tableVector = label(scene, table);
+    expect(textVector['kind'], 'glyphs');
+    expect(tableVector['kind'], 'glyphs');
+
+    final fonts = <String, TextStyle>{};
+    Map<String, dynamic> render() =>
+        cache.update(scene, document, fonts, (node) => node.kind);
+    final pending = render();
+    expect(label(pending, text), same(textVector));
+    expect(label(pending, table), same(tableVector));
+
+    fonts['text'] = const TextStyle(fontFamily: 'Ahem');
+    final partial = render();
+    expect(label(partial, text)['kind'], 'nativeText');
+    expect(label(partial, table), same(tableVector));
+
+    fonts['table'] = const TextStyle(fontFamily: 'Ahem');
+    final ready = render();
+    expect(label(ready, text)['kind'], 'nativeText');
+    expect(label(ready, table)['kind'], 'nativeText');
+    expect(label(scene, table), same(tableVector));
+  });
+
   testWidgets('native labels preserve cached geometry while a round table moves', (
     tester,
   ) async {
