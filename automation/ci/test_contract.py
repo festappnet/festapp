@@ -353,6 +353,8 @@ class MirrorContractTest(unittest.TestCase):
                     archive=archives[0]
                     self.assertEqual(archive['if'],'always()')
                     self.assertEqual(archive['with']['path'],'~/.cache/festapp-ci/runs')
+                    self.assertEqual(archive['with']['retention-days'],
+                                     '${{ steps.selection.outputs.evidence_retention_days }}')
                     self.assertLess(steps.index(execution[0]),steps.index(archive))
 
     def test_actual_upgrade_and_email_recovery_are_required(self):

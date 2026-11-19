@@ -96,7 +96,7 @@ behavior. GitHub performs authoritative complete lane verification; a duplicate
 full local mirror is not required. `automation/test_ci.sh` remains an explicit
 full mirror for diagnosis, offline work and requested full verification. Before a
 web release, all jobs in `automation/ci/checks.json` must finish successfully
-in GitHub on the exact canonical `baseMainSha`. Each job covers every declared unit by execution or identical-input direct evidence from successful main or internal-PR artifacts no older than seven days. Mixed coverage is recorded explicitly in schema-2 receipts. Reused
+in GitHub on the exact canonical `baseMainSha`. Each job covers every declared unit by execution or identical-input direct evidence from successful main or internal-PR artifacts within the evidence window in `automation/ci/checks.json` (90 days from direct job completion). Mixed coverage is recorded explicitly in schema-2 receipts. Reused
 evidence is recorded in the job summary;
 it cannot refresh its own age. Missing evidence or an uncertain impact runs tests.
 A failed baseline is still a blocked release. A build or local receipt does not
@@ -576,7 +576,7 @@ Before submitting code for review, verify:
 - [ ] Shared code imported from `_shared/` (no duplication)
 
 Hosted canonical lanes archive their immutable run receipts, timings and unit logs
-for seven days, including failed runs. The artifact is named by job and attempt;
+for the configured 90-day retention window, including failed runs. The artifact is named by job and attempt;
 local receipts keep the same structure under the documented CI cache.
 
 
