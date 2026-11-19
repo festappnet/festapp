@@ -1,0 +1,45 @@
+{
+  "checkedAt": "2026-11-19T05:04:24.734896+00:00",
+  "scope": "festapp-tickets only",
+  "version": "1.0.4",
+  "sourceRevision": "83ba23d6eac94111e90b1a8852595a9f5ad621b8",
+  "reviewedArchiveSha256": "b075fd2c427c24c796c4a96b06ad78f43ebd9d107e2275389031d326db96d2ea",
+  "reviewedArchiveReproduced": true,
+  "candidateSha256": "da277501d169547368eee81d78fb8727256d20c87ae4b1c9da578d96846cb599",
+  "checks": {
+    "wordpress": {
+      "current": "7.1.3 / PHP 8.5.12",
+      "minimum": "6.6 / PHP 7.4.33",
+      "installedZip": "PASS",
+      "dualProducts": "PASS",
+      "dualTranslationsWithFixturePack": "PASS",
+      "dualLifecycle": "PASS"
+    },
+    "pluginCheck": {
+      "version": "2.1.0",
+      "findings": 0,
+      "bothVersions": "PASS"
+    },
+    "wpcs": {
+      "version": "3.4.1",
+      "errors": 0,
+      "warnings": 0
+    },
+    "phpSyntax": {
+      "filesPerVersion": 3,
+      "php8.5.12": "PASS",
+      "php7.4.33": "PASS"
+    },
+    "metadataContract": "4 passed",
+    "approvedDiff": "Only version metadata and international i18n distribution"
+  },
+  "wordpressHostingApproved": "2026-11-19",
+  "production": {
+    "tenant": "festappticketsglobal",
+    "version": "0.20.605",
+    "build": 1130,
+    "backend": "canonical",
+    "embedSha256": "480b1960596dea8eb7b54f27b7a3e0a6c178a0b1250922e3d99246dde62322ef",
+    "parity": "Matches approved candidate target. Managed cookie-choice import is absent from the candidate."
+  }
+}
