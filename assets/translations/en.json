@@ -5809,6 +5809,14 @@
     "recoveryUnavailable": "The original order could not be verified. Open its confirmation email or contact the organizer."
   },
   "MetaCapi": {
+    "invalidCount": "Invalid",
+    "expired": "Expired",
+    "connector_changed": "Not sent: connection settings changed.",
+    "consent_invalid": "Not sent: saved advertising consent is no longer valid.",
+    "order_ineligible": "Not sent: the order no longer meets the requirements.",
+    "payment_too_old": "Not sent: payment is more than 7 days old.",
+    "attempts_exhausted": "Not sent: delivery attempts were exhausted.",
+    "retention_expired": "Not sent: consent retention period expired.",
     "loadFailed": "Could not load Meta CAPI settings",
     "platformDisabled": "The platform disabled Meta CAPI",
     "noWebsites": "First add a website in the events and consent section.",

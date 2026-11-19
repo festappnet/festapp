@@ -3547,6 +3547,14 @@
     }
   },
   "MetaCapi": {
+    "invalidCount": "Nieważne",
+    "expired": "Wygasłe",
+    "connector_changed": "Nie wysłano: zmieniono ustawienia połączenia.",
+    "consent_invalid": "Nie wysłano: zapisana zgoda reklamowa jest już nieważna.",
+    "order_ineligible": "Nie wysłano: zamówienie nie spełnia już warunków.",
+    "payment_too_old": "Nie wysłano: od płatności minęło ponad 7 dni.",
+    "attempts_exhausted": "Nie wysłano: wyczerpano próby wysyłki.",
+    "retention_expired": "Nie wysłano: upłynął okres przechowywania zgody.",
     "loadFailed": "Nie udało się wczytać ustawień Meta CAPI",
     "platformDisabled": "Platforma wyłączyła Meta CAPI",
     "noWebsites": "Najpierw dodaj witrynę w sekcji zdarzeń i zgody.",

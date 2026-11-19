@@ -28,7 +28,7 @@ DECLARE
  connector analytics.meta_purchase_connectors;
  fact analytics.conversion_facts;
  o eshop.orders;
- token text; connector_unit bigint;
+ token text; connector_unit bigint; invalid_reason text;
 BEGIN
  PERFORM public.require_service_role();
  -- Follow the same connector -> delivery order as disconnect and finish.
@@ -46,19 +46,23 @@ BEGIN
  IF delivery.unit IS DISTINCT FROM connector.unit THEN RETURN NULL; END IF;
  SELECT * INTO fact FROM analytics.conversion_facts WHERE "order"=p_order_id AND kind='order_fully_paid';
  SELECT * INTO o FROM eshop.orders WHERE id=p_order_id;
- IF public.form_order_purchase_timing_internal(p_order_id) IS DISTINCT FROM 'paid'
+ -- Closed reason vocabulary; the first matching guard owns the outcome.
+ invalid_reason:=CASE
+  WHEN delivery.connector_revision IS DISTINCT FROM connector.revision THEN 'connector_changed'
+  WHEN public.form_order_purchase_timing_internal(p_order_id) IS DISTINCT FROM 'paid'
     OR public.form_order_purchase_capi_required_internal(p_order_id) IS DISTINCT FROM true
     OR public.form_meta_purchase_unit_internal(o.form) IS DISTINCT FROM connector.unit
-    OR delivery.connector_revision IS DISTINCT FROM connector.revision
-    OR delivery.consent_revision IS DISTINCT FROM public.meta_purchase_consent_revision_internal(o.form)
+    OR fact.payload IS DISTINCT FROM jsonb_build_object('value',o.price,'currency',trim(o.currency_code))
+    OR NOT public.form_paid_conversion_eligible_internal(p_order_id) THEN 'order_ineligible'
+  WHEN delivery.consent_revision IS DISTINCT FROM public.meta_purchase_consent_revision_internal(o.form)
     OR public.meta_purchase_snapshot_valid_internal(delivery.unit,delivery.consent_snapshot) IS DISTINCT FROM true
     OR delivery.consent_at>fact.created_at
-    OR delivery.consent_at<clock_timestamp()-interval '30 days'
-    OR fact.created_at<clock_timestamp()-interval '7 days'
-    OR delivery.attempts>=6
-    OR fact.payload IS DISTINCT FROM jsonb_build_object('value',o.price,'currency',trim(o.currency_code))
-    OR NOT public.form_paid_conversion_eligible_internal(p_order_id) THEN
-  UPDATE analytics.meta_purchase_deliveries SET status='invalid',done_at=clock_timestamp(),
+    OR delivery.consent_at<clock_timestamp()-interval '30 days' THEN 'consent_invalid'
+  WHEN fact.created_at<clock_timestamp()-interval '7 days' THEN 'payment_too_old'
+  WHEN delivery.attempts>=6 THEN 'attempts_exhausted'
+ END;
+ IF invalid_reason IS NOT NULL THEN
+  UPDATE analytics.meta_purchase_deliveries SET status='invalid',error_code=invalid_reason,done_at=clock_timestamp(),
    lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
   WHERE order_id=p_order_id;
   RETURN NULL;

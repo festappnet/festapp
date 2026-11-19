@@ -606,7 +606,7 @@
     },
     {
       "migration": "20261119210000_meta_purchase_settings.sql",
-      "active": true,
+      "active": false,
       "header": "-- Organization-approved Meta CAPI settings. No live activation.\nALTER TABLE analytics.meta_purchase_connectors ADD COLUMN IF NOT EXISTS token_changed_at timestamptz;\nALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS prepared_at timestamptz;",
       "sources": [
         "user_permissions/unit_meta_purchase.sql",
@@ -617,7 +617,9 @@
       ],
       "retiredSources": [
         "eshop_forms/meta_purchase_schema.sql"
-      ]
+      ],
+      "sha256": "ffea2057cf82188a27a0edabd88a7aa049f21f712c0fd4e0771f128794835c61",
+      "checkSources": true
     },
     {
       "migration": "20261119230000_organizer_ticket_resend_limits.sql",
@@ -633,6 +635,21 @@
         "abuse/policy.sql": ["abuse_effective_rules_v1"],
         "abuse/email.sql": ["admit_email_intent_v1"],
         "emails/email_queue.sql": ["begin_email_send"]
+      }
+    },
+    {
+      "migration": "20261120000000_meta_purchase_outcomes.sql",
+      "active": true,
+      "header": "-- Explain terminal Meta purchase outcomes without retaining matching data.",
+      "sources": [
+        "eshop_forms/meta_purchase_settings.sql",
+        "eshop_forms/meta_purchase_worker.sql",
+        "eshop_forms/meta_purchase_retention.sql"
+      ],
+      "selectors": {
+        "eshop_forms/meta_purchase_settings.sql": [
+          "get_unit_meta_purchase"
+        ]
       }
     }
   ]

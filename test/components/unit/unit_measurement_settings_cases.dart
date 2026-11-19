@@ -382,6 +382,56 @@ void main() {
     expect(find.text(MetaCapiStrings.noWebsites), findsNothing);
   });
 
+  testWidgets('Meta CAPI shows terminal counts and reasons without retry', (
+    tester,
+  ) async {
+    final fixture = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
+    for (final code in [
+      'connector_changed',
+      'consent_invalid',
+      'order_ineligible',
+      'payment_too_old',
+      'attempts_exhausted',
+      'retention_expired',
+    ]) {
+      await fixture.pumpWidget(
+        tester,
+        MaterialApp(
+          key: ValueKey(code),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMetaCapiSettings(
+                unitId: 1,
+                load: (_) async => {
+                  'allowed': true,
+                  'websites': [],
+                  'forms': [],
+                  'queue': {'invalid': 3, 'expired': 2},
+                  'last_error': {
+                    'code': code,
+                    'status': code == 'retention_expired' ? 'expired' : 'invalid',
+                  },
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MetaCapiStrings.title));
+      await tester.pumpAndSettle();
+      expect(find.text('${MetaCapiStrings.invalidCount}: 3'), findsOneWidget);
+      expect(find.text('${MetaCapiStrings.expired}: 2'), findsOneWidget);
+      expect(find.text(MetaCapiStrings.outcomeReason(code)), findsOneWidget);
+      expect(find.text(MetaCapiStrings.retry), findsNothing);
+    }
+  });
+
   testWidgets('Meta CAPI pause asks to replace the token', (tester) async {
     await initializeDateFormatting('cs');
     final previousLocale = Intl.defaultLocale;

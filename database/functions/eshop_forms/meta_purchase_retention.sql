@@ -14,7 +14,7 @@ BEGIN
   WHERE d.status='pending' AND d.consent_at<clock_timestamp()-interval '30 days'
   ORDER BY d.consent_at LIMIT 100 FOR UPDATE SKIP LOCKED
  )
- UPDATE analytics.meta_purchase_deliveries d SET status='expired',done_at=clock_timestamp(),
+ UPDATE analytics.meta_purchase_deliveries d SET status='expired',error_code='retention_expired',done_at=clock_timestamp(),
   lease=NULL,lease_until=NULL,consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
  FROM expired WHERE d.order_id=expired.order_id;
  DELETE FROM analytics.meta_purchase_deliveries d WHERE d.order_id IN(

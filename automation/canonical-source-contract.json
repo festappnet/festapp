@@ -5,6 +5,7 @@
     "abuse/ticket_resend.sql",
     "eshop_forms/website_consent_bindings.sql",
     "eshop_forms/meta_purchase_matching.sql",
+    "eshop_forms/meta_purchase_retention.sql",
     "eshop_forms/meta_purchase_settings.sql",
     "user_permissions/unit_meta_purchase.sql"
   ],

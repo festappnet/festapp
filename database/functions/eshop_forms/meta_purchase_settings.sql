@@ -50,11 +50,12 @@ BEGIN
   'websites',to_jsonb(public.unit_meta_purchase_origins_internal(p_unit)),
   'queue',(SELECT jsonb_build_object('pending',count(*) FILTER(WHERE status='pending'),
     'sent',count(*) FILTER(WHERE status='sent'),'failed',count(*) FILTER(WHERE status='failed'),
-    'revoked',count(*) FILTER(WHERE status='revoked')) FROM analytics.meta_purchase_deliveries
-    WHERE unit=p_unit AND consent_at>=statement_timestamp()-interval '30 days'),
+    'revoked',count(*) FILTER(WHERE status='revoked'),
+    'invalid',count(*) FILTER(WHERE status='invalid'),'expired',count(*) FILTER(WHERE status='expired')) FROM analytics.meta_purchase_deliveries
+    WHERE unit=p_unit AND coalesce(done_at,consent_at)>=statement_timestamp()-interval '30 days'),
   'last_error',coalesce((SELECT jsonb_build_object('code',error_code,'status',status,'at',coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))))
     FROM analytics.meta_purchase_deliveries WHERE unit=p_unit AND error_code IS NOT NULL
-    ORDER BY coalesce(done_at,next_attempt_at) DESC LIMIT 1),
+    ORDER BY coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))) DESC LIMIT 1),
     (SELECT jsonb_build_object('code','credentials','status','pending','at',paused_at) FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND paused_at IS NOT NULL)),
   'forms',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'enabled',m.form IS NOT NULL,
      'measurement_ready',public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(f.id))) ORDER BY f.id),'[]'::jsonb)

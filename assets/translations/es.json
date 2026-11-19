@@ -5803,6 +5803,14 @@
     "recoveryUnavailable": "No se ha podido verificar el pedido original. Abre su correo de confirmación o ponte en contacto con la organización."
   },
   "MetaCapi": {
+    "invalidCount": "No válidos",
+    "expired": "Caducados",
+    "connector_changed": "No enviado: cambió la configuración de la conexión.",
+    "consent_invalid": "No enviado: el consentimiento publicitario guardado ya no es válido.",
+    "order_ineligible": "No enviado: el pedido ya no cumple los requisitos.",
+    "payment_too_old": "No enviado: han pasado más de 7 días desde el pago.",
+    "attempts_exhausted": "No enviado: se agotaron los intentos de envío.",
+    "retention_expired": "No enviado: venció el plazo de conservación del consentimiento.",
     "loadFailed": "No se pudo cargar la configuración de Meta CAPI",
     "platformDisabled": "La plataforma desactivó Meta CAPI",
     "noWebsites": "Primero añada un sitio web en la sección de eventos y consentimiento.",

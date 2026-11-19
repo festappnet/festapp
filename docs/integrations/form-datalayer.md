@@ -424,31 +424,40 @@ are erased on terminal outcomes or authorized consent withdrawal. Operational
 receipts without those identifiers remain for 90 days, with the decision timestamp
 and a digest of its consent scope to check later refusals.
 
-For the first test run, deploy the migration, proof-only `process-meta-purchases`
-function and web client on the same canonical release. Install
-`automation/hetzner-supabase/runtime/install-meta-purchase-schedules.sh` on the
-canonical host. It verifies both control-plane jobs, starts the independent
-retention job and provisions new delivery jobs inactive. Verify a successful
-retention sweep before activating delivery or enabling a connector. Capture
-closes when the last successful sweep is older than ten minutes.
+Deploy the forward database migration, the sending `process-meta-purchases`
+Edge Function and the administration/web clients in the same canonical release.
+On the canonical host install
+`automation/hetzner-supabase/runtime/install-meta-purchase-schedules.sh` through
+the backend operator workflow. It starts the independent PostgreSQL retention
+job and provisions a new delivery job inactive; reinstalling preserves an
+existing delivery job's state. Verify a successful retention sweep before
+activating `festapp_meta_purchase_delivery` or enabling a connector. Capture
+closes when the last successful sweep is older than ten minutes. Retention runs
+in PostgreSQL even if the delivery worker or Meta is unavailable.
 
-Use the canonical backend operator workflow to register the token in Vault,
-configure the organizer Unit, test dataset, test event code and HTTPS checkout
-origin in `analytics.meta_purchase_connectors`, and allow one pilot form in
-`analytics.meta_purchase_forms`. Verify that the consent notice and privacy
-policy cover Meta and retire earlier Festapp Purchase tags for the pilot form.
-Activate the `festapp_meta_purchase_delivery` job after its proof endpoint
-validates, then enable the connector. During testing, use a dedicated Meta
-dataset and test the bank balance payment, a card payment, and withdrawal
-before settlement. Compare the stable event ID and value in Meta Test Events
-with the private settlement record.
+The platform operator approves the organization by setting
+`analytics.organization_policy.meta_capi_enabled`. Organization administrators
+then configure Meta Conversions API in organizer settings → Events and consent:
+dataset ID, saved HTTPS website, optional test event code and access token.
+`save_unit_meta_purchase` saves settings and the Vault credential atomically;
+operators do not create connectors or tokens manually. The organizer configures
+website consent, enables form measurement and selects forms for CAPI in the
+administration. Verify the consent notice and privacy policy cover Meta and
+retire earlier Festapp Purchase tags for the selected forms. Use Meta Test Events
+to check a bank balance payment, a card payment and withdrawal before settlement.
+Compare the stable event ID and value with the private settlement record.
 
-On token errors the worker pauses that connector, leaving eligible work
-pending. Replace the token in the same Vault entry, clear `paused_at` and verify
-the result in `analytics.meta_purchase_deliveries`. Inspect status, attempts
-and error code without exporting matching data or the Vault credential. A
-dataset, test-mode or notice change requires fresh checkout consent and never
-backfills earlier orders.
+Token errors pause the connector. The organizer saves a replacement token in
+administration to clear the pause atomically. The overview shows pending, sent,
+failed, revoked, invalid and expired counts over 30 days. Terminal receipts use
+their completion time; pending rows use capture time. The last error includes
+terminal reasons and distinguishes scheduled retries from outcomes without
+further attempts. Invalid reasons are connector revision changes, ineligible
+orders (including changed price or form configuration), invalid consent
+(snapshot, revision or timing), payment older than seven days and exhausted
+attempts. Retention expires pending deliveries after 30 days from consent.
+Reasons contain no matching data or credentials. A dataset, website or test-code
+change requires fresh checkout consent and never backfills earlier orders.
 
 Items carry `item_id`, `item_name`, `price` and `quantity`. Two optional public catalog labels
 are added when they exist in browser ecommerce events:
