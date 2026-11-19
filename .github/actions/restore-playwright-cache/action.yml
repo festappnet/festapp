@@ -1,0 +1,37 @@
+name: Restore pinned browser dependencies
+description: Reuse Playwright binaries across jobs and Ubuntu packages for the WordPress engines.
+inputs:
+  profile:
+    description: chromium or wordpress
+    default: chromium
+runs:
+  using: composite
+  steps:
+    - id: key
+      shell: bash
+      env:
+        PROFILE: ${{ inputs.profile }}
+      run: |
+        set -euo pipefail
+        version="$(node -p "require('./web_client/package.json').devDependencies.playwright")"
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+        base="cms-browsers-${RUNNER_OS}-${RUNNER_ARCH}-${ImageOS:?}-playwright-${version}"
+        case "$PROFILE" in
+          chromium) printf 'browsers=%s-chromium\n' "$base" >> "$GITHUB_OUTPUT" ;;
+          wordpress)
+            printf 'browsers=%s\n' "$base" >> "$GITHUB_OUTPUT"
+            printf 'archives=cms-apt-%s-%s-%s-%s-%s\n' "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "${ImageVersion:?}" "$version" >> "$GITHUB_OUTPUT"
+            printf 'FESTAPP_CMS_APT_CACHE=%s/.cache/festapp-ci/playwright-apt\n' "$HOME" >> "$GITHUB_ENV" ;;
+          *) echo "Unknown browser profile: $PROFILE" >&2; exit 1 ;;
+        esac
+    - name: Restore Playwright browser binaries
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ steps.key.outputs.browsers }}
+    - name: Restore Playwright system package archives
+      if: inputs.profile == 'wordpress'
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/festapp-ci/playwright-apt/*.deb
+        key: ${{ steps.key.outputs.archives }}

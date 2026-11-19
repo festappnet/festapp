@@ -25,7 +25,7 @@ sys.path.insert(0,str(ROOT/'automation/ci'))
 sys.path.insert(0,str(ROOT/'automation'))
 from telemetry import phase as timed_phase, emit
 from wordpress_runtime import WordPress
-from cms_browser_dependencies import missing_playwright_packages
+from cms_browser_dependencies import missing_playwright_packages, simulated_missing_packages
 from cms_fixture_rest import prepare_rest_image, start_rest, stop_rest
 from cms_fixture_postgres import CmsPostgres
 parser=argparse.ArgumentParser(description=__doc__)
@@ -189,30 +189,50 @@ try {
      return result.stderr
     return None
 
+   apt = [
+    *(['sudo', '-n'] if os.getuid() else []),
+    'apt-get', '-o', 'Acquire::Retries=0', '-o', 'Acquire::http::Timeout=10',
+    '-o', 'Acquire::https::Timeout=10', '-o', 'DPkg::Lock::Timeout=10',
+   ]
+   if cache_path := os.environ.get('FESTAPP_CMS_APT_CACHE'):
+    archives = Path(cache_path)
+    archives.mkdir(parents=True, exist_ok=True)
+    apt.extend(['-o', f'Dir::Cache::archives={archives}', '-o', 'APT::Keep-Downloaded-Packages=true'])
+   refresh = [*apt, 'update', '-o', 'APT::Update::Error-Mode=any']
+
+   def simulate_packages(engine):
+    with timed_phase(f'cms.browsers.simulate-deps.{engine}'):
+     result = subprocess.run([*map(str, playwright), 'install-deps', '--dry-run', engine],
+                             cwd=ROOT, env=env, capture_output=True, text=True, timeout=20)
+    with log.open('a') as output:
+     output.write(result.stdout + result.stderr)
+    return result
+
    missing = {}
    for engine in engines:
     diagnostic = probe_engine(engine)
-    if diagnostic is not None:
-     packages = missing_playwright_packages(diagnostic)
-     if not packages:
-      if 'Host system is missing dependencies to run browsers.' not in diagnostic:
-       raise RuntimeError(f'{engine} launch failed before CMS tests; private log: {log}')
-      raise RuntimeError(f'Playwright could not identify system packages for {engine}; private log: {log}')
-     missing[engine] = packages
+    if diagnostic is None:
+     continue
+    packages = missing_playwright_packages(diagnostic)
+    if not packages:
+     # Linux loaders can exit before Playwright prints its mapped package list.
+     # Ask the pinned installer for its package simulation without running apt update.
+     simulation = simulate_packages(engine)
+     packages = simulated_missing_packages(simulation.stdout)
+     if not packages and simulation.returncode and 'Unable to locate package' in simulation.stderr:
+      run(refresh, label='browsers.refresh-package-index', timeout=35)
+      packages = simulated_missing_packages(simulate_packages(engine).stdout)
+    if not packages:
+     raise RuntimeError(f'{engine} launch failed without a missing package list: {diagnostic[:900]}')
+    missing[engine] = packages
    if missing:
     packages = sorted({package for names in missing.values() for package in names})
     phase(f'Installing missing Playwright system packages: {", ".join(packages)}')
-    apt = [
-     *(['sudo', '-n'] if os.getuid() else []),
-     'apt-get', '-o', 'Acquire::Retries=0', '-o', 'Acquire::http::Timeout=10',
-     '-o', 'Acquire::https::Timeout=10', '-o', 'DPkg::Lock::Timeout=10',
-    ]
     install = [*apt, 'install', '--yes', '--no-install-recommends', '--', *packages]
     try:
      run(install, label='browsers.system-dependencies', timeout=45)
     except RuntimeError:
-     run([*apt, 'update', '-o', 'APT::Update::Error-Mode=any'],
-         label='browsers.refresh-package-index', timeout=35)
+     run(refresh, label='browsers.refresh-package-index', timeout=35)
      run(install, label='browsers.system-dependencies.retry', timeout=45)
     for engine in missing:
      if probe_engine(engine, "probe.after-install") is not None:

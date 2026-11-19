@@ -186,8 +186,16 @@ The older core release is staged from its SHA-256-pinned archive. WP-CLI
 reads that archive offline. Hosted browser setup checks existing system
 dependencies before installing any missing packages.
 Owner labels fence creation and cleanup. Private state is never cached. Developer wp-env tooling and its dependency tests remain.
-Pinned browser binaries are cached on GitHub; system browser libraries and all
-private CMS/database state are prepared normally. A measured upstream Docker
+The checkout, server-policy, CMS and optional hosted web build jobs share the
+same pinned Chromium cache for the runner OS and architecture. WordPress uses
+a separate browser cache because it also needs Firefox and WebKit. The WordPress
+runner caches downloaded apt archives by runner image and Playwright version.
+Apt still resolves and verifies the packages against its signed repository
+index. Browsers are launched in a probe before and after any necessary install.
+Deno reuses dependency downloads keyed by its pin and lockfile, and pnpm caches
+include the lockfiles installed by each job. Closing a pull request evicts its
+merge-ref caches so unused copies do not displace shared main-branch entries.
+Private CMS/database state stays disposable. A measured upstream Docker
 image archive cache was removed: even a verified warm hit did not improve the
 hosted CMS duration, and transferred a 2.25 GB archive. All nine browser scenarios
 remain; the iframe renewal case advances browser time through its real 20-second

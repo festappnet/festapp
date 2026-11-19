@@ -1,6 +1,6 @@
 import unittest
 
-from automation.testing.cms_browser_dependencies import missing_playwright_packages
+from automation.testing.cms_browser_dependencies import missing_playwright_packages, simulated_missing_packages
 
 
 class MissingPlaywrightPackagesTest(unittest.TestCase):
@@ -27,6 +27,13 @@ class MissingPlaywrightPackagesTest(unittest.TestCase):
         self.assertEqual(missing_playwright_packages(
             "Host system is missing dependencies to run browsers.\nsudo apt-get install libgtk-4-1 --reinstall"
         ), ())
+
+
+    def test_dry_run_returns_only_requested_missing_packages(self):
+        report = "Warning\nMissing system dependencies (2):\n  libflite1\n  libwebpdemux2:amd64\n"
+        self.assertEqual(simulated_missing_packages(report), ("libflite1", "libwebpdemux2:amd64"))
+        self.assertEqual(simulated_missing_packages("All system dependencies are installed."), ())
+        self.assertEqual(simulated_missing_packages("Missing system dependencies (2):\n  libflite1"), ())
 
 
 if __name__ == "__main__":

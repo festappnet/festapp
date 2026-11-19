@@ -1,0 +1,21 @@
+name: Retire closed pull request caches
+on:
+  pull_request_target:
+    types: [closed]
+permissions:
+  actions: write
+jobs:
+  retire-closed-pr-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Delete only caches scoped to the closed pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          gh cache delete --repo "$GITHUB_REPOSITORY" --all --succeed-on-no-caches \
+            --ref "refs/pull/$PR_NUMBER/merge"

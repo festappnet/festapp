@@ -18,30 +18,50 @@ GROWTH_GUARD = ('python3 -m unittest automation.tests.test_repository_growth\n'
 
 
 class MirrorContractTest(unittest.TestCase):
-    def test_cms_browser_cache_tracks_binary_version_and_platform(self):
-        workflow=yaml.safe_load((ROOT/'.github/workflows/wix-checkout-compatibility.yml').read_text())
-        steps=workflow['jobs']['wix-checkout-compatibility']['steps']
-        command=next(step['run'] for step in steps if step.get('id')=='cms-browser-key')
-        cache=next(step for step in steps if step.get('name')=='Restore pinned CMS browsers')
-        self.assertEqual(cache['with']['key'],'${{ steps.cms-browser-key.outputs.key }}')
+    def test_shared_playwright_cache_tracks_dependency_and_runner_versions(self):
+        action_path = './.github/actions/restore-playwright-cache'
+        steps = yaml.safe_load((ROOT / action_path / 'action.yml').read_text())['runs']['steps']
+        command = steps[0]['run']
+        self.assertEqual(steps[1]['with']['key'], '${{ steps.key.outputs.browsers }}')
+        self.assertEqual(steps[2]['with']['key'], '${{ steps.key.outputs.archives }}')
+        self.assertEqual(steps[2]['if'], "inputs.profile == 'wordpress'")
+        for filename, job in (
+            ('wix-checkout-compatibility.yml', 'wordpress-checkout-compatibility'),
+            ('wix-checkout-compatibility.yml', 'wix-checkout-compatibility'),
+            ('seat-checkout-regressions.yml', 'seat-checkout'),
+            ('image-upload-regressions.yml', 'server-policy'),
+            ('deploy.yml', 'cloudflare'),
+        ):
+            workflow = yaml.safe_load((ROOT / '.github/workflows' / filename).read_text())
+            self.assertIn(action_path, [step.get('uses') for step in workflow['jobs'][job]['steps']])
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);(root/'web_client').mkdir()
-            def key(app='1.0.0',browser='1.65.0',**platform):
-                (root/'web_client/package.json').write_text(json.dumps({'version':app,'devDependencies':{'playwright':browser}}))
-                output=root/'output';output.unlink(missing_ok=True)
-                result=subprocess.run(['bash','-e','-c',command],cwd=root,capture_output=True,
-                    env={**os.environ,'RUNNER_OS':'Linux','RUNNER_ARCH':'X64','ImageOS':'ubuntu24',
-                         'GITHUB_OUTPUT':str(output),**platform})
-                return result.returncode,output.read_text() if output.exists() else ''
-            original=key();self.assertEqual(original[0],0)
-            self.assertEqual(original,key(app='2.0.0'))
-            self.assertNotEqual(original,key(browser='1.66.0'))
-            self.assertNotEqual(original,key(ImageOS='ubuntu26'))
-            self.assertNotEqual(original,key(GITHUB_JOB='wix-checkout-compatibility'))
-            self.assertEqual(original,key(GITHUB_JOB='wordpress-checkout-compatibility'))
-            self.assertNotEqual(original,key(RUNNER_ARCH='ARM64'))
-            self.assertNotEqual(key(browser='^1.65.0')[0],0)
-            self.assertNotEqual(key(ImageOS='')[0],0)
+            root = Path(directory)
+            (root / 'web_client').mkdir()
+
+            def key(app='1.0.0', browser='1.65.0', **platform):
+                (root / 'web_client/package.json').write_text(json.dumps({
+                    'version': app, 'devDependencies': {'playwright': browser},
+                }))
+                output = root / 'output'
+                output.unlink(missing_ok=True)
+                result = subprocess.run(['bash', '-e', '-c', command], cwd=root, capture_output=True,
+                    env={**os.environ, 'RUNNER_OS': 'Linux', 'RUNNER_ARCH': 'X64', 'ImageOS': 'ubuntu26',
+                         'ImageVersion': '20261111.82.6', 'PROFILE': 'chromium', 'GITHUB_OUTPUT': str(output),
+                         'GITHUB_ENV': str(root / 'env'), **platform})
+                return result.returncode, output.read_text() if output.exists() else ''
+
+            chromium = key()
+            self.assertEqual(chromium, (0, 'browsers=cms-browsers-Linux-X64-ubuntu26-playwright-1.65.0-chromium\n'))
+            self.assertEqual(chromium, key(app='2.0.0', ImageVersion='20261119.1'))
+            self.assertNotEqual(chromium, key(browser='1.66.0'))
+            self.assertNotEqual(chromium, key(ImageOS='ubuntu24'))
+            self.assertNotEqual(chromium, key(RUNNER_ARCH='ARM64'))
+            wordpress = key(PROFILE='wordpress')
+            self.assertIn('archives=cms-apt-Linux-X64-ubuntu26-20261111.82.6-1.65.0', wordpress[1])
+            self.assertNotEqual(wordpress, key(PROFILE='wordpress', ImageVersion='20261119.1'))
+            self.assertNotEqual(key(PROFILE='invalid')[0], 0)
+            self.assertNotEqual(key(browser='^1.65.0')[0], 0)
+            self.assertNotEqual(key(ImageOS='')[0], 0)
 
     def test_selection_covers_provisioning_tests_and_execution_evidence(self):
         contract = json.loads((ROOT / 'automation/ci/checks.json').read_text())
@@ -86,7 +106,7 @@ class MirrorContractTest(unittest.TestCase):
                     else:
                         self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'",
                                                   "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'",
-                                                  "steps.selection.outputs.browser == 'true'"))
+                                                  "steps.selection.outputs.browser == 'true'","steps.selection.outputs.deno == 'true'"))
 
     def test_jobs_share_the_canonical_lane_and_all_units_are_owned_once(self):
         contract=runner.CONTRACT;referenced=[]
