@@ -96,6 +96,8 @@
     "confirm": "Adres jest poprawny"
   },
   "FormsFeature": {
+    "saveConflict": "Formularz zmienił się w trakcie edycji. Skopiuj niezapisane zmiany, odśwież stronę i wprowadź je ponownie.",
+    "savePaymentRequired": "Przed otwarciem sprzedaży skonfiguruj co najmniej jedną dostępną metodę płatności w ustawieniach formularza.",
     "selectionOptionsRequired": "Dodaj co najmniej jedną niepustą opcję lub usuń to pole."
   },
   "FeatureBlueprint": {

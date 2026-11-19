@@ -611,7 +611,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     } catch (e) {
       _form?.definition = _form!.definition.copyWith(link: _savedLink);
       if (!mounted) return;
-      var errorMessage = e.toString().replaceFirst("Exception: ", "");
+      var errorMessage = FormStrings.saveError(e);
       if (errorMessage.endsWith('_RECIPIENT_UNAVAILABLE'))
         errorMessage = PaymentMethodStrings.reason('recipient_changed');
       final providerReason = RegExp(

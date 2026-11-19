@@ -347,6 +347,12 @@ class FormStrings {
 
   static String saveError(Object error) {
     final message = error.toString();
+    if (message.contains('FORM_SAVE_CONFLICT')) {
+      return 'FormsFeature.saveConflict'.tr();
+    }
+    if (message.contains('PAYMENT_CONFIGURATION_INCOMPLETE')) {
+      return 'FormsFeature.savePaymentRequired'.tr();
+    }
     if (message.contains('FORM_PREVIOUS_SAVE_CONFIRMED')) {
       return 'FormsFeature.previousSaveConfirmed'.tr();
     }

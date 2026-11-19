@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/forms/db_forms.dart';
+import 'package:fstapp/components/forms/models/form_editor_draft.dart';
+import 'package:fstapp/components/forms/supabase_form_commands.dart';
+import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 import 'package:http/http.dart' as http;
 
 import '../support/fixtures/root_supabase_fixture.dart';
@@ -67,6 +70,50 @@ void main() {
       expect(bundle, isNotNull);
       expect(bundle!.form.definition.link, 'spolutvurcem2026');
       expect(bundle.form.definition.title, 'Registration');
+    },
+  );
+
+  test(
+    'form save keeps payment errors and identifies message-free conflicts',
+    () async {
+      final responses = [
+        (409, 'conflict', {'aggregate_version': 1}, 'FORM_SAVE_CONFLICT'),
+        (
+          400,
+          'rejected',
+          {'message': 'PAYMENT_CONFIGURATION_INCOMPLETE'},
+          'PAYMENT_CONFIGURATION_INCOMPLETE',
+        ),
+      ];
+      for (final (code, status, data, message) in responses) {
+        final commands = SupabaseFormCommands.withTransport(
+          ClientCommandTransport(
+            (_, params) async => {
+              'status': status,
+              'code': code,
+              'data': data,
+              'mutation': {
+                'commandId': params['p_command_id'],
+                'receiptId': params['p_command_id'],
+                'commitId': null,
+                'replayed': false,
+                'occurredAt': '2026-11-19T11:13:55Z',
+              },
+              'sync': {'replacements': <Object>[]},
+            },
+          ),
+        );
+        await expectLater(
+          commands.save(FormEditorDraft(id: 1, occasionId: 7).toEditedJson()),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'message',
+              message,
+            ),
+          ),
+        );
+      }
     },
   );
 

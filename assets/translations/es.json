@@ -881,6 +881,8 @@
     "defaultProductSelected": "Opción predeterminada para los clientes. Haz clic para quitarla como predeterminada.",
     "setDefaultProduct": "Haz clic para que este producto sea la opción predeterminada para los clientes.",
     "selectionOptionsRequired": "Añade al menos una opción que no esté vacía o elimina este campo.",
+    "saveConflict": "El formulario ha cambiado mientras lo editaba. Copie los cambios sin guardar, recargue la página y vuelva a aplicarlos.",
+    "savePaymentRequired": "Configure al menos un método de pago disponible en los ajustes del formulario antes de abrir la venta.",
     "previousSaveConfirmed": "Se ha confirmado el guardado anterior. Recarga el formulario antes de hacer más cambios.",
     "saveRecoveryExpired": "El resultado del guardado anterior ya no está disponible. Recarga el formulario y comprueba los valores guardados."
   },

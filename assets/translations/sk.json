@@ -96,6 +96,8 @@
     "confirm": "Adresa je správna"
   },
   "FormsFeature": {
+    "saveConflict": "Formulár sa medzitým zmenil. Skopírujte si rozpracované zmeny, obnovte stránku a zadajte ich znova.",
+    "savePaymentRequired": "Pred otvorením predaja nastavte aspoň jeden dostupný spôsob platby v nastaveniach formulára.",
     "selectionOptionsRequired": "Pridajte aspoň jednu neprázdnu možnosť alebo pole odstráňte."
   },
   "FeatureBlueprint": {
