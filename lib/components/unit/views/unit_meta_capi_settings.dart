@@ -292,10 +292,9 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     };
     final paused = data['paused_at'] != null;
     final pausedAt = DateTime.tryParse(data['paused_at']?.toString() ?? '');
-    final statusDateFormat = DateFormat.yMd(context.locale.toString()).add_jm();
     String withStatusDate(String message, DateTime? at) => at == null
         ? message
-        : '$message · ${statusDateFormat.format(at.toLocal())}';
+        : '$message · ${DateFormat.yMd(context.locale.toString()).add_jm().format(at.toLocal())}';
     final enabled = data['enabled'] == true;
     final websiteReady = data['website_ready'] != false;
     final hasReadyForm = forms.any(
