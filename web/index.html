@@ -482,7 +482,7 @@ installRuntimeState(window);
        OneSignalDeferred.push(async function(OneSignal) {
            try {
              await OneSignal.User.addTags({
-               app_generation: '',
+               app_generation: 'festapptickets_cutover_v1',
                occasion: ''
              });
              if (callback) callback(null);
