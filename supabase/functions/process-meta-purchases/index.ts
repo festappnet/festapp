@@ -39,7 +39,7 @@ Deno.serve(async (request) => {
           p_result: await sendMetaPurchase(prepared.data),
         },
       );
-      if (finished.error) faults++;
+      if (finished.error || finished.data === false) faults++;
     }
     return respond(
       { claimed: claims.data?.length ?? 0, faults },

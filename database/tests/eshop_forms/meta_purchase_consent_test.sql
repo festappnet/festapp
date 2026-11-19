@@ -285,3 +285,73 @@ DO $$ BEGIN
  PERFORM assert_true(public.meta_purchase_ip_internal('999.1.1.1') IS NULL AND public.meta_purchase_ip_internal('192.0.2.1/24') IS NULL
   AND public.meta_purchase_ip_internal('192.0.2.1, 192.0.2.2') IS NULL AND public.meta_purchase_ip_internal('192.1') IS NULL,'invalid addresses, lists and subnets excluded');
 END $$;
+
+-- Prepare is the irreversible send boundary. Withdrawal still erases all data
+-- immediately while preserving only the receipt fence for the current sender.
+DO $$
+DECLARE x jsonb; un bigint; fid bigint; snapshot jsonb; receipt jsonb; oid bigint;
+ payment_id bigint; transaction_id bigint; claimed uuid; deadline timestamptz; result text;
+BEGIN
+ FOREACH result IN ARRAY ARRAY['sent','retry','credentials','rejected','before_prepare','expired_lease'] LOOP
+  x:=pg_temp.fixture(NULL); un:=(x->>'unit')::bigint; fid:=(x->>'form')::bigint;
+  PERFORM set_config('request.jwt.claim.sub','',true);
+  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
+  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+  VALUES((x->>'organization')::bigint,true,1,'fixture','in-flight withdrawal');
+  UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=fid;
+  PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
+  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
+  VALUES(un,'123456',vault.create_secret(repeat('t',40),'revocation-flight-'||un),'https://tickets.example',true);
+  INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(fid,un);
+  PERFORM public.purge_meta_purchase_data_internal();
+  snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+   'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
+   'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Withdrawal regression',
+   'ad_storage',true,'ad_user_data',true,'ad_personalization',true);
+  receipt:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x)||jsonb_build_object('metaPurchaseConsent',snapshot,'email','withdrawal-'||result||'-'||un::text||'@example.invalid'),gen_random_uuid(),gen_random_uuid());
+  PERFORM assert_eq(receipt#>>'{data,code}','200','withdrawal fixture checkout succeeds');
+  oid:=(receipt#>>'{data,order,id}')::bigint;
+  SELECT payment_info INTO STRICT payment_id FROM eshop.orders WHERE id=oid;
+  INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source)
+  SELECT bank_account,100,'CZK',now(),'fio_api' FROM eshop.payment_info WHERE id=payment_id RETURNING id INTO transaction_id;
+  PERFORM public.apply_transaction_pairing(transaction_id,payment_id,'manual_attach','user');
+  SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid;
+  IF result<>'before_prepare' THEN
+   PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NOT NULL,'valid delivery prepares before withdrawal');
+  END IF;
+  IF result='expired_lease' THEN
+   UPDATE analytics.meta_purchase_deliveries SET lease_until=clock_timestamp()-interval '1 second' WHERE order_id=oid;
+  END IF;
+  SELECT next_attempt_at INTO deadline FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+  PERFORM public.issue_order_overview_internal(oid,pg_temp.delivery('fixture',encode(sha256(convert_to('withdrawal-'||result,'UTF8')),'hex'),oid),gen_random_uuid());
+  PERFORM assert_true(public.revoke_meta_purchase_consent(encode(sha256(convert_to('withdrawal-'||result,'UTF8')),'hex'),oid),'buyer withdraws consent');
+  PERFORM assert_true((SELECT status='revoked' AND revoked_at IS NOT NULL AND consent_snapshot IS NULL
+   AND email_hash IS NULL AND phone_hash IS NULL AND fbp IS NULL AND fbc IS NULL AND client_ip IS NULL
+   AND client_agent IS NULL AND source_url IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
+   'withdrawal immediately erases the entire matching payload');
+  PERFORM assert_false(public.finish_meta_purchase_delivery(oid,gen_random_uuid(),'sent'),'foreign lease cannot finish a revoked delivery');
+  IF result IN ('before_prepare','expired_lease') THEN
+   PERFORM assert_true((SELECT lease IS NULL AND lease_until IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
+    'unprepared or expired lease is cleared');
+   PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'withdrawal before prepare blocks sending');
+   PERFORM assert_false(public.finish_meta_purchase_delivery(oid,claimed,'sent'),'cleared lease cannot finish');
+  ELSE
+   PERFORM assert_true((SELECT lease=claimed AND lease_until>clock_timestamp() FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
+    'prepared live receipt fence survives withdrawal');
+   PERFORM assert_true(public.revoke_meta_purchase_consent(encode(sha256(convert_to('withdrawal-'||result,'UTF8')),'hex'),oid),'repeated withdrawal is harmless');
+   PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,result),'sender records the in-flight result');
+   PERFORM assert_eq((SELECT error_code FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
+    CASE WHEN result='sent' THEN 'sent_in_flight' ELSE result END,'receipt preserves the actual outcome');
+   PERFORM assert_false(public.finish_meta_purchase_delivery(oid,claimed,result),'receipt fence is consumed once');
+   IF result='credentials' THEN
+    PERFORM assert_true((SELECT paused_at IS NOT NULL FROM analytics.meta_purchase_connectors WHERE unit=un),'credentials still pause connector');
+   END IF;
+  END IF;
+  PERFORM assert_true((SELECT status='revoked' AND revoked_at IS NOT NULL AND lease IS NULL AND lease_until IS NULL
+   AND next_attempt_at=deadline AND consent_snapshot IS NULL AND email_hash IS NULL AND phone_hash IS NULL
+   AND fbp IS NULL AND fbc IS NULL AND client_ip IS NULL AND client_agent IS NULL AND source_url IS NULL
+   FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'finish never restores data or schedules a revoked delivery');
+  PERFORM assert_false(EXISTS(SELECT FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid),'revoked delivery cannot be claimed');
+  PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'revoked delivery cannot prepare again');
+ END LOOP;
+END $$;

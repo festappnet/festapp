@@ -555,7 +555,7 @@
     },
     {
       "migration": "20261118200000_meta_purchase_matching.sql",
-      "active": true,
+      "active": false,
       "header": "-- Extend consent-bound matching with independent retention for raw addresses.\nALTER TABLE analytics.meta_purchase_deliveries\n ADD COLUMN phone_hash text, ADD COLUMN fbp text, ADD COLUMN fbc text, ADD COLUMN client_ip inet;\nCREATE INDEX meta_purchase_ip_retention ON analytics.meta_purchase_deliveries(consent_at) WHERE client_ip IS NOT NULL;\nCREATE TABLE analytics.meta_purchase_retention_state(singleton boolean PRIMARY KEY CHECK(singleton), last_sweep timestamptz NOT NULL);\nALTER TABLE analytics.meta_purchase_retention_state ENABLE ROW LEVEL SECURITY;\nREVOKE ALL ON analytics.meta_purchase_retention_state FROM PUBLIC,anon,authenticated,service_role;",
       "sources": [
         "eshop_forms/meta_purchase_matching.sql",
@@ -563,7 +563,8 @@
         "eshop_forms/meta_purchase_consent.sql",
         "eshop_forms/meta_purchase_worker.sql",
         "eshop_orders/create_ticket_order_client_sync_v1.sql"
-      ]
+      ],
+      "sha256": "1ad3a9424e99c01a56d06bb8d6ae026592aa90f042be6bcb25ce28986be20ccc"
     },
     {
       "migration": "20261119120000_default_form_close_at_occasion_end.sql",
@@ -589,6 +590,15 @@
       "functionOnlySources": [
         "emails/email_domain.sql",
         "emails/email_reporting.sql"
+      ]
+    },
+    {
+      "migration": "20261119200000_meta_purchase_revocation_in_flight.sql",
+      "active": true,
+      "header": "-- Preserve the prepared receipt fence after consent withdrawal without rescheduling delivery.",
+      "sources": [
+        "eshop_forms/meta_purchase_consent.sql",
+        "eshop_forms/meta_purchase_worker.sql"
       ]
     }
   ]
