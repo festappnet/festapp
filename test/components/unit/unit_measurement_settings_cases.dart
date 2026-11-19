@@ -70,6 +70,10 @@ void main() {
                 key: ValueKey(connected),
                 unitId: 1,
                 load: (_) async => {'allowed': false, 'connected': exists},
+                loadApproval: (_) async => throw const PostgrestException(
+                  message: 'unit Meta CAPI approval read denied',
+                  code: '42501',
+                ),
                 mutate: (operation, _) async {
                   expect(operation, 'delete_unit_meta_purchase');
                   disconnected = true;
@@ -109,6 +113,10 @@ void main() {
             unitId: 1,
             load: (_) async => throw const PostgrestException(
               message: 'access denied',
+              code: '42501',
+            ),
+            loadApproval: (_) async => throw const PostgrestException(
+              message: 'unit Meta CAPI approval read denied',
               code: '42501',
             ),
           ),
@@ -489,6 +497,166 @@ void main() {
         .add_jm()
         .format(DateTime.parse('2026-11-19T10:00:00Z').toLocal());
     expect(find.text('${MetaCapiStrings.credentials} · $date'), findsOneWidget);
+  });
+
+  testWidgets('Meta CAPI approval request shows its state to Unit managers', (
+    tester,
+  ) async {
+    await initializeDateFormatting('cs');
+    final fixture = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
+    UnitMeasurementApproval status(
+      String state, {
+      bool approved = false,
+      bool canRequest = true,
+      String? requestedAt,
+    }) => UnitMeasurementApproval.fromJson({
+      'approved': approved,
+      'request_state': state,
+      'can_request': canRequest,
+      'requested_at': requestedAt,
+    });
+    const requestedAt = '2026-11-19T10:00:00Z';
+    var current = status('not_requested');
+    var requests = 0;
+    Future<void> pump({bool canRequestApproval = true}) async {
+      await fixture.pumpWidget(
+        tester,
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMetaCapiSettings(
+                key: UniqueKey(),
+                unitId: 1,
+                canRequestApproval: canRequestApproval,
+                // A Unit manager without organization administration.
+                load: (_) async => throw const PostgrestException(
+                  message: 'Meta CAPI access denied',
+                  code: '42501',
+                ),
+                loadApproval: (_) async => current,
+                requestApproval: (_) async {
+                  requests++;
+                  return current = status(
+                    'requested',
+                    canRequest: false,
+                    requestedAt: requestedAt,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    final request = find.widgetWithText(
+      OutlinedButton,
+      MetaCapiStrings.requestApproval,
+    );
+    await pump();
+    expect(find.text(MetaCapiStrings.title), findsOneWidget);
+    expect(find.text(FormStrings.measurementApprovalRequired), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byType(ExpansionTile), findsNothing);
+    await tester.tap(request);
+    await tester.pumpAndSettle();
+    expect(requests, 1);
+    final date = DateFormat.yMd('cs')
+        .format(DateTime.parse(requestedAt).toLocal());
+    expect(
+      find.text(FormStrings.measurementApprovalRequested(date)),
+      findsOneWidget,
+    );
+    expect(request, findsNothing);
+
+    // Reload keeps the persisted date and never offers a duplicate request.
+    await pump();
+    expect(
+      find.text(FormStrings.measurementApprovalRequested(date)),
+      findsOneWidget,
+    );
+    expect(request, findsNothing);
+
+    current = status('retry_available', requestedAt: requestedAt);
+    await pump();
+    expect(find.text(FormStrings.measurementApprovalRetry), findsOneWidget);
+    expect(request, findsOneWidget);
+
+    // Readers without settings write see the state but cannot ask.
+    await pump(canRequestApproval: false);
+    expect(request, findsNothing);
+
+    // Demo Units and other no-op states offer no request.
+    current = status('not_requested', canRequest: false);
+    await pump();
+    expect(find.text(FormStrings.measurementApprovalRequired), findsOneWidget);
+    expect(request, findsNothing);
+
+    current = status(
+      'requested',
+      approved: true,
+      canRequest: false,
+      requestedAt: requestedAt,
+    );
+    await pump();
+    expect(find.text(MetaCapiStrings.approvedByPlatform), findsOneWidget);
+    expect(request, findsNothing);
+    expect(requests, 1);
+  });
+
+  testWidgets('Meta CAPI approval request explains a missing recipient', (
+    tester,
+  ) async {
+    final toasts = <MethodCall>[];
+    const toast = MethodChannel('PonnamKarthik/fluttertoast');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(toast, (call) async {
+      toasts.add(call);
+      return true;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(toast, null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: UnitMetaCapiSettings(
+              unitId: 1,
+              canRequestApproval: true,
+              load: (_) async => {'allowed': false, 'connected': false},
+              loadApproval: (_) async => UnitMeasurementApproval.fromJson({
+                'approved': false,
+                'request_state': 'not_requested',
+                'can_request': true,
+              }),
+              requestApproval: (_) async =>
+                  throw Exception('meta_capi_request_no_recipient'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(OutlinedButton, MetaCapiStrings.requestApproval),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      toasts.single.arguments.toString(),
+      contains(FormStrings.measurementRequestNoRecipient),
+    );
+    expect(
+      find.widgetWithText(OutlinedButton, MetaCapiStrings.requestApproval),
+      findsOneWidget,
+    );
+    // Let the toast's dismissal timer finish before teardown.
+    await tester.pump(const Duration(seconds: 3));
   });
 
   setUpAll(() async {

@@ -42,4 +42,6 @@ class MetaCapiStrings {
   static String get rejected => 'MetaCapi.rejected'.tr();
   static String get retry => 'MetaCapi.retry'.tr();
   static String get invalid => 'MetaCapi.invalid'.tr();
+  static String get requestApproval => 'MetaCapi.requestApproval'.tr();
+  static String get approvedByPlatform => 'MetaCapi.approvedByPlatform'.tr();
 }

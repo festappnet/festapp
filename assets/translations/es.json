@@ -5844,6 +5844,8 @@
     "credentials": "Meta rechazó el token. Sustitúyalo.",
     "rejected": "Meta rechazó una compra. Compruebe el conjunto de datos y el sitio web.",
     "retry": "El envío falló temporalmente; hay otro intento programado.",
-    "invalid": "Introduzca un valor válido."
+    "invalid": "Introduzca un valor válido.",
+    "requestApproval": "Solicitar la aprobación de Meta CAPI",
+    "approvedByPlatform": "La plataforma ha aprobado Meta CAPI. Un administrador de la organización configura la conexión."
   }
 }

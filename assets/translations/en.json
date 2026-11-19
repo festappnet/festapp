@@ -5850,6 +5850,8 @@
     "credentials": "Meta rejected the token. Replace it.",
     "rejected": "Meta rejected a purchase. Check the dataset and website.",
     "retry": "Delivery failed temporarily; another attempt is scheduled.",
-    "invalid": "Enter a valid value."
+    "invalid": "Enter a valid value.",
+    "requestApproval": "Request Meta CAPI approval",
+    "approvedByPlatform": "The platform has approved Meta CAPI. An organization administrator sets up the connection."
   }
 }

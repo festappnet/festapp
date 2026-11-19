@@ -26,6 +26,28 @@ class DbUnits {
     await _supabase.rpc(operation, params: params);
   }
 
+  static Future<UnitMeasurementApproval> getMetaCapiApproval(
+    int unitId,
+  ) async => UnitMeasurementApproval.fromJson(
+    Map<String, dynamic>.from(
+      await _supabase.rpc(
+        'get_unit_meta_capi_approval',
+        params: {'p_unit': unitId},
+      ),
+    ),
+  );
+
+  static Future<UnitMeasurementApproval> requestMetaCapiApproval(
+    int unitId,
+  ) async => UnitMeasurementApproval.fromJson(
+    Map<String, dynamic>.from(
+      await _supabase.rpc(
+        'request_unit_meta_capi_approval',
+        params: {'p_unit': unitId},
+      ),
+    ),
+  );
+
   static Future<String> detectComplianzPolicy(int unitId, String origin) async {
     final response = await _supabase.functions.invoke(
       'probe-complianz',

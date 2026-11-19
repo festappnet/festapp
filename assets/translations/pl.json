@@ -3588,6 +3588,8 @@
     "credentials": "Meta odrzuciła token. Wymień go.",
     "rejected": "Meta odrzuciła zakup. Sprawdź zestaw danych i witrynę.",
     "retry": "Wysyłka tymczasowo się nie powiodła; zaplanowano kolejną próbę.",
-    "invalid": "Wpisz prawidłową wartość."
+    "invalid": "Wpisz prawidłową wartość.",
+    "requestApproval": "Poproś o zgodę na Meta CAPI",
+    "approvedByPlatform": "Platforma zatwierdziła Meta CAPI. Połączenie skonfiguruje administrator organizacji."
   }
 }

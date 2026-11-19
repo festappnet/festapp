@@ -4,11 +4,13 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import '../db_units.dart';
 import '../meta_capi_strings.dart';
+import '../unit_measurement_approval.dart';
 
 class UnitMetaCapiSettings extends StatefulWidget {
   final int unitId;
@@ -16,6 +18,12 @@ class UnitMetaCapiSettings extends StatefulWidget {
   final Widget Function(Widget child)? sectionBuilder;
   final Future<Map<String, dynamic>> Function(int)? load;
   final Future<void> Function(String, Map<String, dynamic>)? mutate;
+
+  /// Unit managers may ask the platform for approval; settings stay
+  /// organization-administrator only.
+  final bool canRequestApproval;
+  final Future<UnitMeasurementApproval> Function(int)? loadApproval;
+  final Future<UnitMeasurementApproval> Function(int)? requestApproval;
   const UnitMetaCapiSettings({
     super.key,
     required this.unitId,
@@ -23,6 +31,9 @@ class UnitMetaCapiSettings extends StatefulWidget {
     this.sectionBuilder,
     this.load,
     this.mutate,
+    this.canRequestApproval = false,
+    this.loadApproval,
+    this.requestApproval,
   });
   @override
   State<UnitMetaCapiSettings> createState() => _UnitMetaCapiSettingsState();
@@ -30,6 +41,7 @@ class UnitMetaCapiSettings extends StatefulWidget {
 
 class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
   Map<String, dynamic>? _data;
+  UnitMeasurementApproval? _approval;
   final _dataset = TextEditingController();
   final _testCode = TextEditingController();
   final _token = TextEditingController();
@@ -95,6 +107,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     } catch (_) {
       if (mounted) setState(() => _loadFailed = true);
     } finally {
+      if (mounted && _data?['allowed'] == false) await _loadApproval();
       if (mounted) {
         setState(() => _loading = false);
         if (_refreshWebsites) {
@@ -103,6 +116,87 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         }
       }
     }
+  }
+
+  Future<void> _loadApproval() async {
+    UnitMeasurementApproval? approval;
+    try {
+      approval = await (widget.loadApproval ?? DbUnits.getMetaCapiApproval)(
+        widget.unitId,
+      );
+    } catch (_) {
+      // Readers without Unit administration access keep the hidden section.
+      approval = null;
+    }
+    if (mounted) setState(() => _approval = approval);
+  }
+
+  Future<void> _requestApproval() async {
+    if (_busy || _approval?.canRequest != true) return;
+    setState(() => _busy = true);
+    try {
+      final approval = await ExceptionHandler.guard(
+        context,
+        futureFunction: () async {
+          try {
+            return await (widget.requestApproval ??
+                DbUnits.requestMetaCapiApproval)(widget.unitId);
+          } catch (error) {
+            final detail = error.toString();
+            final message = detail.contains('meta_capi_request_no_recipient')
+                ? FormStrings.measurementRequestNoRecipient
+                : detail.contains('meta_capi_notification_origin_missing')
+                ? FormStrings.measurementNotificationOriginMissing
+                : null;
+            if (message != null) {
+              throw AppError(
+                code: 'meta_capi_request',
+                message: message,
+                rawJson: '{}',
+              );
+            }
+            rethrow;
+          }
+        },
+      );
+      if (mounted && approval != null) setState(() => _approval = approval);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Widget _approvalStatus(BuildContext context, UnitMeasurementApproval a) {
+    final requested = a.requestState == MeasurementRequestState.requested;
+    final status = a.approved
+        ? MetaCapiStrings.approvedByPlatform
+        : requested
+        ? a.requestedAt == null
+              ? FormStrings.measurementPlatformPending
+              : FormStrings.measurementApprovalRequested(
+                  DateFormat.yMd(context.locale.toString())
+                      .format(a.requestedAt!.toLocal()),
+                )
+        : a.requestState == MeasurementRequestState.retryAvailable &&
+              a.canRequest
+        ? FormStrings.measurementApprovalRetry
+        : FormStrings.measurementApprovalRequired;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Semantics(liveRegion: true, child: Text(status)),
+        if (widget.canRequestApproval &&
+            !a.approved &&
+            !requested &&
+            a.canRequest) ...[
+          const SizedBox(height: 8),
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: _busy || _loading ? null : _requestApproval,
+            child: Text(MetaCapiStrings.requestApproval),
+          ),
+        ],
+      ],
+    );
   }
 
   bool get _validDraftToken =>
@@ -241,18 +335,36 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
   }
 
   Widget? _buildSection(BuildContext context) {
-    // A known platform denial exposes only authorized disconnect cleanup.
+    // A known platform denial exposes only the approval request status and
+    // authorized disconnect cleanup, never settings or delivery details.
     if (_data?['allowed'] == false) {
-      if (_data?['connected'] != true) return null;
+      final connected = _data?['connected'] == true;
+      final approval = _approval;
+      if (!connected && approval == null) return null;
       return Padding(
         padding: const EdgeInsets.only(top: 32),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: Text(MetaCapiStrings.platformDisabled)),
-            TextButton(
-              onPressed: _busy || _loading ? null : _disconnect,
-              child: Text(MetaCapiStrings.disconnect),
-            ),
+            if (connected)
+              Row(
+                children: [
+                  Expanded(child: Text(MetaCapiStrings.platformDisabled)),
+                  TextButton(
+                    onPressed: _busy || _loading ? null : _disconnect,
+                    child: Text(MetaCapiStrings.disconnect),
+                  ),
+                ],
+              )
+            else
+              Text(
+                MetaCapiStrings.title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            if (approval != null) ...[
+              const SizedBox(height: 8),
+              _approvalStatus(context, approval),
+            ],
           ],
         ),
       );
