@@ -636,7 +636,7 @@
       }
     },
     {
-      "migration": "20261120000000_transactional_order_email_admission.sql",
+      "migration": "20261120020000_transactional_order_email_admission.sql",
       "active": true,
       "header": "-- Separate verified system order delivery from user-triggered email limits.",
       "sources": [
