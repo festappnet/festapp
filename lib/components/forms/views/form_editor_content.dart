@@ -248,9 +248,10 @@ class _FormEditorContentState extends State<FormEditorContent>
       final saved = await DbForms.updateForm(form);
       _htmlSave.markSaved();
       if (!mounted) return;
+      final title = saved.definition.displayTitle;
       ToastHelper.Show(
         context,
-        "${CommonStrings.saved}: ${form.definition.link}",
+        title.isEmpty ? CommonStrings.saved : '${CommonStrings.saved}: $title',
         severity: ToastSeverity.Ok,
       );
       setState(() {
