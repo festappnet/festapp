@@ -2,7 +2,7 @@ BEGIN;
 SELECT set_config('festapp.email_wake','scheduled',true);
 DO $$
 DECLARE org bigint; un bigint; oc bigint; oid bigint; first_message uuid; result jsonb;
- actor uuid:=gen_random_uuid();
+ actor uuid:=gen_random_uuid(); rejection text;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Paid ticket delivery regression') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Delivery regression',org) RETURNING id INTO un;
@@ -17,10 +17,26 @@ BEGIN
  result:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',oid,'requested_by',actor),org,oc,un);
  IF result->>'message_id' IS DISTINCT FROM first_message::text OR (SELECT count(*) FROM public.email_messages WHERE order_id=oid)<>1 THEN
   RAISE EXCEPTION 'First delivery must reuse the already accepted automatic intent'; END IF;
+ UPDATE public.abuse_policy_rules SET base_limit=1 WHERE rule_key='email.ordinary.recipient.day';
+ SET LOCAL ROLE service_role;
  -- An explicit later resend remains a distinct authorized user operation.
  result:=public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',oid,'requested_by',actor),org,oc,un,now(),'resend:explicit-test');
  IF result->>'message_id'=first_message::text OR (SELECT count(*) FROM public.email_messages WHERE order_id=oid)<>2 THEN
   RAISE EXCEPTION 'Explicit resend must create a new intent'; END IF;
+ UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now() WHERE message_id=(result->>'message_id')::uuid;
+ BEGIN
+  PERFORM public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',oid,'requested_by',actor),org,oc,un,now(),'resend:after-recipient-limit');
+  RAISE EXCEPTION 'A new resend must obey the existing recipient budget';
+ EXCEPTION WHEN SQLSTATE 'PT429' THEN
+  GET STACKED DIAGNOSTICS rejection = PG_EXCEPTION_DETAIL;
+  IF rejection::jsonb->>'ruleKey' IS DISTINCT FROM 'email.ordinary.recipient.day'
+     OR coalesce((rejection::jsonb->>'retryAfterSeconds')::int,0)<=0 THEN
+   RAISE EXCEPTION 'The rejected resend must report the recipient rule and retry time';
+  END IF;
+ END;
+ IF (SELECT count(*) FROM public.email_messages WHERE order_id=oid)<>2 THEN
+  RAISE EXCEPTION 'A rejected resend must leave the delivered messages intact'; END IF;
+ RESET ROLE;
  RAISE NOTICE 'PASS: first delivery reuses accepted automatic tickets; explicit resend remains available';
 END $$;
 ROLLBACK;

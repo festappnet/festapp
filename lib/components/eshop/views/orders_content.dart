@@ -57,6 +57,8 @@ import 'package:fstapp/components/eshop/db_orders.dart';
 import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/services/dialog_helper.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
 
 import '../eshop_columns.dart';
 import '../orders_strings.dart';
@@ -1141,34 +1143,56 @@ class _OrdersContentState extends State<OrdersContent> {
 
     if (confirm && mounted) {
       final visibleIds = _getChecked(singleDataGrid).map((o) => o.id).toSet();
-      var futures = sending.where((o) => visibleIds.contains(o.id)).map((s) {
-        return () async {
-          await sendTicketsToEmail(
-            s,
-            firstDelivery: newlyPaidIds.contains(s.id),
-          );
-        };
-      }).toList();
+      final locale = Localizations.localeOf(context).toString();
+      var queued = 0;
+      final futures = sending
+          .where((order) => visibleIds.contains(order.id))
+          .map((order) {
+            return () async {
+              try {
+                final response = await DbTickets.sendTicketsToEmail(
+                  orderId: order.id!,
+                  email: order.data!["email"],
+                  firstDelivery: newlyPaidIds.contains(order.id),
+                );
+                if (response.status == 202) queued++;
+              } on FunctionException catch (error) {
+                final details = error.details;
+                if (error.status == 429 &&
+                    details is Map &&
+                    details['errorCode'] == 'ABUSE_LIMIT_EXCEEDED') {
+                  throw AppError(
+                    code: 429,
+                    message: OrdersStrings.ticketEmailLimit(details, locale),
+                    rawJson: '',
+                  );
+                }
+                if (error.status == 409 &&
+                    details is Map &&
+                    details['error'] == 'ticket_delivery_unknown') {
+                  throw AppError(
+                    code: 409,
+                    message: OrdersStrings.ticketEmailUnknown,
+                    rawJson: '',
+                  );
+                }
+                rethrow;
+              }
+            };
+          })
+          .toList();
 
       await DialogHelper.showProgressDialogAsync(
         context,
         OrdersStrings.processing,
         futures.length,
         futures: futures,
+        completionMessage: () => queued > 0
+            ? OrdersStrings.ticketEmailsQueued(queued)
+            : CommonStrings.processingCompleted,
       );
     }
     if (mounted) await refreshData();
-  }
-
-  Future<void> sendTicketsToEmail(
-    OrderModel order, {
-    bool firstDelivery = false,
-  }) async {
-    await DbTickets.sendTicketsToEmail(
-      orderId: order.id!,
-      email: order.data!["email"],
-      firstDelivery: firstDelivery,
-    );
   }
 
   List<OrderModel> _getChecked(SingleDataGridController singleDataGrid) {

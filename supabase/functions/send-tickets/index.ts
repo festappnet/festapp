@@ -1,6 +1,6 @@
-import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
+import { abuseLimitDetails } from "../_shared/abuseLimit.ts";
 import { AuthError, authorizeRequest } from "../_shared/auth.ts";
-import { awaitEmailAccepted, emailRpc } from "../_shared/emailQueueClient.ts";
+import { emailRpc } from "../_shared/emailQueueClient.ts";
 const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -46,12 +46,57 @@ Deno.serve(async (req) => {
         ? { p_request: `resend:${requestId}:${orderId}:${email}` }
         : {}),
     });
-    await awaitEmailAccepted(result.message_id);
-    return Response.json({ message: "Tickets sent successfully", code: 200 }, {
-      headers,
-    });
+    if (result?.state === "accepted") {
+      return Response.json(
+        { message: "Tickets sent successfully", code: 200 },
+        {
+          headers,
+        },
+      );
+    }
+    if (
+      result?.message_id &&
+      ["pending", "blocked", "preparing", "sending", "retry_wait"].includes(
+        result.state,
+      )
+    ) {
+      return Response.json({ message: "Ticket email queued", code: 202 }, {
+        status: 202,
+        headers,
+      });
+    }
+    if (result?.state === "unknown") {
+      return Response.json({ error: "ticket_delivery_unknown" }, {
+        status: 409,
+        headers,
+      });
+    }
+    if (
+      ["dead", "cancelled", "expired", "suppressed", "skipped"].includes(
+        result?.state,
+      )
+    ) {
+      return Response.json({ error: "ticket_delivery_unavailable" }, {
+        status: 409,
+        headers,
+      });
+    }
+    throw new Error("Missing ticket delivery state");
   } catch (e) {
-    return Response.json({ error: "Ticket delivery pending or failed" }, {
+    const error = e as { code?: string; details?: string };
+    if (error?.code === "PT429") {
+      const limit = abuseLimitDetails(error.details);
+      return Response.json(limit, {
+        status: 429,
+        headers: {
+          ...headers,
+          ...(limit.retryAfterSeconds
+            ? { "Retry-After": String(limit.retryAfterSeconds) }
+            : {}),
+        },
+      });
+    }
+    return Response.json({ error: "Ticket delivery unavailable" }, {
       status: e instanceof AuthError ? e.status : 503,
       headers,
     });

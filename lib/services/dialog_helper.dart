@@ -173,6 +173,7 @@ class DialogHelper {
     int total, {
     List<Future<void> Function()>? futures,
     Duration? delay,
+    String Function()? completionMessage,
     bool isBasic = false,
   }) =>
       ProgressDialogs.showProgressDialogAsync(
@@ -181,6 +182,7 @@ class DialogHelper {
         total,
         futures: futures,
         delay: delay,
+        completionMessage: completionMessage,
         isBasic: isBasic,
       );
 

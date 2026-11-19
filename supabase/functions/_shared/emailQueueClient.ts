@@ -13,7 +13,10 @@ export async function emailRpc(
   const { supabaseAdmin } = await import("./supabaseUtil.ts");
   const { data, error } = await supabaseAdmin.rpc(name, args);
   if (error) {
-    throw Object.assign(new Error(`email_rpc_${name}`), { code: error.code });
+    throw Object.assign(new Error(`email_rpc_${name}`), {
+      code: error.code,
+      details: error.details,
+    });
   }
   return data;
 }

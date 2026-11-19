@@ -58,29 +58,80 @@ void main() {
     });
   }
 
-  testWidgets('completed summary can be acknowledged without completing twice',
-      (tester) async {
+  testWidgets(
+    'completed summary can be acknowledged without completing twice',
+    (tester) async {
+      late BuildContext context;
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Builder(
+            builder: (value) {
+              context = value;
+              return const Scaffold(body: Text('Editor'));
+            },
+          ),
+        ),
+      );
+      final write = Completer<void>();
+      final pending = ProgressDialogs.showProgressDialogAsync(
+        context,
+        'Save',
+        1,
+        futures: [() => write.future],
+        completionMessage: () => "Queued for sending: 1",
+      );
+      await tester.pump();
+      expect(find.text('Save'), findsOneWidget);
+      expect(find.text(CommonStrings.processingCompletedTitle), findsNothing);
+      write.complete();
+      await tester.pumpAndSettle();
+      expect(await pending, isTrue);
+      expect(find.text('Save'), findsNothing);
+      expect(find.text(CommonStrings.processingCompletedTitle), findsOneWidget);
+      expect(find.text('Queued for sending: 1'), findsOneWidget);
+      await tester.tap(find.text(CommonStrings.ok));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Editor'), findsOneWidget);
+    },
+  );
+
+  testWidgets('failed progress retains the ticket email limit explanation', (
+    tester,
+  ) async {
     late BuildContext context;
-    await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder, home: Builder(builder: (value) {
-      context = value;
-      return const Scaffold(body: Text('Editor'));
-    })));
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Builder(
+          builder: (value) {
+            context = value;
+            return const Scaffold();
+          },
+        ),
+      ),
+    );
     final write = Completer<void>();
-    final pending = ProgressDialogs.showProgressDialogAsync(context, 'Save', 1,
-        futures: [() => write.future]);
+    final pending = ProgressDialogs.showProgressDialogAsync(
+      context,
+      'Send tickets',
+      1,
+      futures: [() => write.future],
+    );
     await tester.pump();
-    expect(find.text('Save'), findsOneWidget);
-    expect(find.text(CommonStrings.processingCompletedTitle), findsNothing);
-    write.complete();
+    const message = 'Email limit reached. Try again tomorrow.';
+    write.completeError(
+      PostgrestException(message: '{"code": 429, "message": "$message"}'),
+    );
     await tester.pumpAndSettle();
-    expect(await pending, isTrue);
-    expect(find.text('Save'), findsNothing);
-    expect(find.text(CommonStrings.processingCompletedTitle), findsOneWidget);
+    expect(await pending, isFalse);
+    expect(find.text(message), findsOneWidget);
+    expect(find.text(CommonStrings.processingFailed), findsOneWidget);
     await tester.tap(find.text(CommonStrings.ok));
     await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
     expect(find.byType(AlertDialog), findsNothing);
-    expect(find.text('Editor'), findsOneWidget);
   });
 
   testWidgets(
