@@ -1,7 +1,12 @@
 {
   "baselineManifest": "supabase/baseline/manifest.json",
   "operationsManifest": "automation/canonical-operation-sources.json",
-  "additionalSources": ["eshop_forms/website_consent_bindings.sql", "eshop_forms/meta_purchase_matching.sql"],
+  "additionalSources": [
+    "eshop_forms/website_consent_bindings.sql",
+    "eshop_forms/meta_purchase_matching.sql",
+    "eshop_forms/meta_purchase_settings.sql",
+    "user_permissions/unit_meta_purchase.sql"
+  ],
   "retainedSignatures": [
     "public.uses_ticket_terminology_internal(jsonb)",
     "public.record_account_deletion_sync_v1(uuid,bigint)",

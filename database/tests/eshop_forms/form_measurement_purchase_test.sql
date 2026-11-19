@@ -24,8 +24,8 @@ DECLARE
  second_order_id bigint;
 BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
- INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
- VALUES ((fixture->>'organization')::bigint,true,1,'fixture','confirmed purchase');
+ INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
+ VALUES ((fixture->>'organization')::bigint,true,true,1,'fixture','confirmed purchase');
  UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=form_id;
  PERFORM public.reserve_public_link_internal('form',form_id,fixture->>'link',true);
  -- Default order mode restores accepted-order purchase without changing lead semantics.

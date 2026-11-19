@@ -11,6 +11,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/database_tables/tb.dart';
 
 class DbUnits {
+  static Future<Map<String, dynamic>> getMetaPurchase(int unitId) async =>
+      Map<String, dynamic>.from(
+        await _supabase.rpc(
+          'get_unit_meta_purchase',
+          params: {'p_unit': unitId},
+        ) as Map,
+      );
+
+  static Future<void> mutateMetaPurchase(
+    String operation,
+    Map<String, dynamic> params,
+  ) async {
+    await _supabase.rpc(operation, params: params);
+  }
+
   static Future<String> detectComplianzPolicy(int unitId, String origin) async {
     final response = await _supabase.functions.invoke(
       'probe-complianz',

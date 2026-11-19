@@ -63,7 +63,10 @@
     },
     "probe-complianz": {
       "trigger": "client-http",
-      "effects": ["remote-http-read", "database-rpc"],
+      "effects": [
+        "remote-http-read",
+        "database-rpc"
+      ],
       "mutates_authority": true
     },
     "fetch-http-data": {
@@ -609,6 +612,11 @@
     "mutating_edge_function": "deploy-canonical-disable-source-function-and-revoke-source-service-role",
     "read_only_edge_function": "deploy-canonical-and-remove-source-routing",
     "mutating_worker": "pause-trigger-drain-and-pin-canonical-bindings-before-resume",
-    "read_only_worker": "pin-canonical-bindings-and-routes"
+    "read_only_worker": "pin-canonical-bindings-and-routes",
+    "meta_purchase_settings": {
+      "source": "database/functions/eshop_forms/meta_purchase_settings.sql",
+      "authorization": "Organization admin and non-demo unit on every RPC; platform approval required except disconnect cleanup; private Vault write only",
+      "evidence": "database/tests/eshop_forms/meta_purchase_consent_test.sql"
+    }
   }
 }

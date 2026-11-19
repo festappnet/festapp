@@ -1,4 +1,8 @@
 import 'dart:ui' as ui;
+
+import 'package:fstapp/components/unit/views/unit_meta_capi_settings.dart';
+import 'package:fstapp/components/unit/meta_capi_strings.dart';
+
 import 'dart:async';
 
 import 'package:fstapp/components/unit/views/unit_website_consent_settings.dart';
@@ -12,6 +16,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/unit/views/unit_measurement_settings.dart';
@@ -20,6 +25,7 @@ import 'package:fstapp/components/unit/unit_measurement_approval.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
 
@@ -52,6 +58,389 @@ Future<void> openPolicy(WidgetTester tester) async {
 
 void main() {
   WidgetEnvironmentFixture.register();
+  testWidgets('Meta CAPI is hidden without platform approval', (tester) async {
+    for (final connected in [false, true]) {
+      var exists = connected;
+      var disconnected = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMetaCapiSettings(
+                key: ValueKey(connected),
+                unitId: 1,
+                load: (_) async => {'allowed': false, 'connected': exists},
+                mutate: (operation, _) async {
+                  expect(operation, 'delete_unit_meta_purchase');
+                  disconnected = true;
+                  exists = false;
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(MetaCapiStrings.title), findsNothing);
+      expect(find.byType(TextField), findsNothing);
+      if (connected) {
+        expect(find.text(MetaCapiStrings.platformDisabled), findsOneWidget);
+        final disconnect = find.widgetWithText(
+          TextButton,
+          MetaCapiStrings.disconnect,
+        );
+        await tester.tap(disconnect);
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(TextButton, MetaCapiStrings.disconnect).last,
+        );
+        await tester.pumpAndSettle();
+        expect(disconnected, isTrue);
+        expect(find.text(MetaCapiStrings.platformDisabled), findsNothing);
+      } else {
+        expect(find.byType(ExpansionTile), findsNothing);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: UnitMetaCapiSettings(
+            unitId: 1,
+            load: (_) async => throw const PostgrestException(
+              message: 'access denied',
+              code: '42501',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(ExpansionTile), findsNothing);
+    expect(find.text(MetaCapiStrings.loadFailed), findsNothing);
+    expect(find.text(CommonStrings.retry), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    // Unknown policy remains retryable; a known denial above stays hidden.
+    var attempts = 0;
+    final retry = Completer<Map<String, dynamic>>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: UnitMetaCapiSettings(
+              unitId: 1,
+              load: (_) {
+                attempts++;
+                if (attempts == 1) return Future.error(StateError('offline'));
+                return retry.future;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(MetaCapiStrings.loadFailed).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.retry));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    retry.complete({'allowed': true, 'websites': [], 'forms': []});
+    await tester.pumpAndSettle();
+    expect(attempts, 2);
+    expect(find.text(MetaCapiStrings.noWebsites), findsOneWidget);
+    expect(find.text(MetaCapiStrings.noForms), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, CommonStrings.save),
+          )
+          .onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('Meta CAPI clears the write-only token after saving', (
+    tester,
+  ) async {
+    const toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      toastChannel,
+      (_) async => true,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        toastChannel,
+        null,
+      ),
+    );
+    for (final scenario in [
+      'first token',
+      'replacement',
+      'stored token',
+      'save disabled',
+      'token failure',
+    ]) {
+      var saved = scenario == 'replacement' || scenario == 'stored token';
+      var enabled = false;
+      String? revision = saved ? 'revision' : null;
+      final operations = <String>[];
+      var formUpdates = 0;
+      final tokenWrite = Completer<void>();
+      final hasDraft = scenario != 'stored token';
+      final enable = scenario != 'save disabled';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMetaCapiSettings(
+                key: ValueKey(scenario),
+                unitId: 1,
+                load: (_) async => {
+                  'allowed': true,
+                  'revision': revision,
+                  'token_saved': saved,
+                  'enabled': enabled,
+                  'dataset': '123456',
+                  'websites': [
+                    'https://tickets.example',
+                    'https://organizer.example',
+                  ],
+                  'website_origin': 'https://tickets.example',
+                  'forms': [
+                    {
+                      'id': 10,
+                      'title': 'Concert tickets',
+                      'enabled': formUpdates > 0,
+                    },
+                  ],
+                },
+                mutate: (operation, params) async {
+                  expect(params['p_unit'], 1);
+                  if (operation == 'set_form_meta_purchase') {
+                    expect(params['p_form'], 10);
+                    expect(params['p_enabled'], true);
+                    formUpdates++;
+                    return;
+                  }
+                  operations.add(operation);
+                  expect(operation, 'save_unit_meta_purchase');
+                  expect(
+                    params['p_dataset'],
+                    scenario == 'replacement' ? '987654' : '123456',
+                  );
+                  expect(
+                    params['p_website_origin'],
+                    scenario == 'replacement'
+                        ? 'https://organizer.example'
+                        : 'https://tickets.example',
+                  );
+                  if (hasDraft) {
+                    expect(params['p_token'], 'secret-token-value');
+                    await tokenWrite.future;
+                    saved = true;
+                  } else {
+                    expect(params.containsKey('p_token'), isFalse);
+                  }
+                  expect(params['p_enabled'], enable);
+                  enabled = params['p_enabled'] == true;
+                  revision = 'revision';
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MetaCapiStrings.title));
+      await tester.pumpAndSettle();
+      final enabledSwitch = find.widgetWithText(
+        SwitchListTile,
+        MetaCapiStrings.enabled,
+      );
+      expect(
+        tester.widget<SwitchListTile>(enabledSwitch).onChanged == null,
+        !saved,
+      );
+      final token = find.byWidgetPredicate(
+        (w) => w is TextField && w.obscureText,
+      );
+      expect(tester.widget<TextField>(token).decoration?.counterText, '');
+      expect(tester.widget<TextField>(token).maxLength, 4096);
+      final testCode = find.byWidgetPredicate(
+        (w) =>
+            w is TextField &&
+            w.decoration?.labelText == MetaCapiStrings.testCode,
+      );
+      expect(tester.widget<TextField>(testCode).decoration?.counterText, '');
+      expect(tester.widget<TextField>(testCode).maxLength, 60);
+      if (hasDraft) {
+        await tester.ensureVisible(token);
+        await tester.enterText(token, 'secret-token-value');
+        await tester.pumpAndSettle();
+      }
+      expect(tester.widget<SwitchListTile>(enabledSwitch).onChanged, isNotNull);
+      if (enable) {
+        await tester.ensureVisible(enabledSwitch);
+        await tester.tap(enabledSwitch);
+        await tester.pumpAndSettle();
+      }
+      if (scenario == 'replacement') {
+        final dataset = find.byWidgetPredicate(
+          (w) =>
+              w is TextField &&
+              w.decoration?.labelText == MetaCapiStrings.dataset,
+        );
+        await tester.ensureVisible(dataset);
+        await tester.enterText(dataset, '987654');
+        await tester.enterText(testCode, 'TEST42');
+        final website = find.byType(DropdownButtonFormField<String>);
+        await tester.ensureVisible(website);
+        await tester.tap(website);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('https://organizer.example').last);
+        await tester.pumpAndSettle();
+        final formSwitch = find.widgetWithText(
+          SwitchListTile,
+          'Concert tickets',
+        );
+        await tester.ensureVisible(formSwitch);
+        await tester.tap(formSwitch);
+        await tester.pumpAndSettle();
+        expect(formUpdates, 1);
+        expect(tester.widget<TextField>(dataset).controller!.text, '987654');
+        expect(tester.widget<TextField>(testCode).controller!.text, 'TEST42');
+        expect(
+          tester.widget<TextField>(token).controller!.text,
+          'secret-token-value',
+        );
+        expect(tester.widget<SwitchListTile>(enabledSwitch).value, isTrue);
+        expect(find.text('https://organizer.example'), findsOneWidget);
+        expect(tester.widget<SwitchListTile>(formSwitch).value, isTrue);
+      }
+      final save = find.widgetWithText(FilledButton, CommonStrings.save);
+      expect(save, findsOneWidget);
+      expect(
+        find.widgetWithText(OutlinedButton, CommonStrings.save),
+        findsNothing,
+      );
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pump();
+      if (hasDraft) {
+        expect(operations, ['save_unit_meta_purchase']);
+        expect(enabled, isFalse);
+        expect(tester.widget<SwitchListTile>(enabledSwitch).onChanged, isNull);
+        if (scenario == 'token failure') {
+          tokenWrite.completeError(StateError('Token could not be saved'));
+        } else {
+          tokenWrite.complete();
+        }
+      }
+      await tester.pumpAndSettle();
+      expect(operations, ['save_unit_meta_purchase']);
+      expect(enabled, enable && scenario != 'token failure');
+      expect(saved, scenario != 'token failure');
+      expect(tester.widget<TextField>(token).controller!.text, isEmpty);
+      expect(find.text('secret-token-value'), findsNothing);
+      expect(
+        tester.widget<TextField>(token).decoration!.helperText,
+        saved ? MetaCapiStrings.saved : null,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      // Let the failure toast's display timer finish before the next scenario.
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pumpAndSettle();
+    }
+  });
+
+  testWidgets('Meta CAPI refreshes after saving the first website', (
+    tester,
+  ) async {
+    var websites = <String>[];
+    Widget settings() => MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: UnitMetaCapiSettings(
+            unitId: 1,
+            savedWebsites: websites,
+            load: (_) async => {'allowed': true, 'websites': websites},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpWidget(settings());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(MetaCapiStrings.title));
+    await tester.pumpAndSettle();
+    final save = find.widgetWithText(FilledButton, CommonStrings.save);
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
+    websites = ['https://tickets.example'];
+    await tester.pumpWidget(settings());
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(save).onPressed, isNotNull);
+    expect(find.text(MetaCapiStrings.noWebsites), findsNothing);
+  });
+
+  testWidgets('Meta CAPI pause asks to replace the token', (tester) async {
+    await initializeDateFormatting('cs');
+    final previousLocale = Intl.defaultLocale;
+    Intl.defaultLocale = 'en_US';
+    addTearDown(() => Intl.defaultLocale = previousLocale);
+    final fixture = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
+    await fixture.pumpWidget(
+      tester,
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: UnitMetaCapiSettings(
+              unitId: 1,
+              load: (_) async => {
+                'allowed': true,
+                'paused_at': '2026-11-19T10:00:00Z',
+                'last_error': {
+                  'code': 'credentials',
+                  'at': '2026-11-19T10:00:00Z',
+                },
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(MetaCapiStrings.title));
+    await tester.pumpAndSettle();
+    expect(find.text(MetaCapiStrings.paused), findsOneWidget);
+    final warning = tester.widget<Icon>(
+      find.byIcon(Icons.warning_amber_rounded),
+    );
+    final context = tester.element(find.byType(UnitMetaCapiSettings));
+    expect(warning.color, ThemeConfig.warningColor(context));
+    final statusText = tester.widget<Text>(find.text(MetaCapiStrings.paused));
+    final foreground = statusText.style!.color!;
+    final background = Theme.of(context).colorScheme.surface;
+    final light = foreground.computeLuminance() > background.computeLuminance()
+        ? foreground
+        : background;
+    final dark = foreground.computeLuminance() > background.computeLuminance()
+        ? background
+        : foreground;
+    expect(
+      (light.computeLuminance() + 0.05) / (dark.computeLuminance() + 0.05),
+      greaterThanOrEqualTo(4.5),
+    );
+    final date = DateFormat.yMd('cs')
+        .add_jm()
+        .format(DateTime.parse('2026-11-19T10:00:00Z').toLocal());
+    expect(find.text('${MetaCapiStrings.credentials} · $date'), findsOneWidget);
+  });
+
   setUpAll(() async {
     if (Platform.environment.containsKey('MEASUREMENT_REVIEW_ARTIFACT_DIR')) {
       final loader = FontLoader('Futura');

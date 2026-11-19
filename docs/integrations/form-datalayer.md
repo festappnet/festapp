@@ -325,7 +325,53 @@ Snapshots whose line totals/currency differ from the paid fact are suppressed.
 The payment transaction and paid fact commit together; failed fact writes keep
 payment processing retryable.
 
-### Meta CAPI pilot
+### Meta CAPI settings
+
+The platform must first approve the organization. Organization administrators
+then open Unit settings → Meta Conversions API (beside the existing event and
+consent settings). Before initial approval the section is hidden; there is no request button.
+If approval is removed from an existing connector, only a platform-disabled
+notice and Disconnect remain visible. No settings or delivery details are exposed. The platform uses its protected database administration boundary:
+
+```sql
+INSERT INTO analytics.organization_policy
+ (organization, meta_capi_enabled, revision, operator, reason)
+VALUES (123, true, 1, 'platform operator', 'Approved paid purchases to Meta')
+ON CONFLICT (organization) DO UPDATE SET meta_capi_enabled=true,
+ revision=analytics.organization_policy.revision+1, changed_at=clock_timestamp(),
+ operator=EXCLUDED.operator, reason=EXCLUDED.reason;
+```
+
+Setting `meta_capi_enabled=false` immediately blocks capture, claiming and
+preparing deliveries, independently of organizer switches. A request already
+sent to Meta cannot be recalled. Organizer RPCs cannot change platform policy.
+
+Enter the dataset ID and access token, choose a saved website and optionally enter a
+test event code. Save can enable delivery together with the token. Configure
+website consent and enable measurement and Meta CAPI on each form you want to
+track. In Meta
+Events Manager, select the dataset → Settings → Conversions API → manual setup
+→ Generate access token; paste it into the write-only token field and save.
+The saved token is never displayed. To replace it, enter and save a new token.
+Under the dataset's Test events tab, copy the server test event code. While the
+code is present, purchases go only to Test events. Remove it after testing.
+See [Meta's setup instructions](https://developers.facebook.com/docs/marketing-api/conversions-api/get-started/).
+
+The section shows active/off/paused, a 30-day queue summary and a redacted last
+error. The last error distinguishes pending retries from final failures with no
+further attempts. Credential errors pause sending and collection. Saving a replacement
+token clears the pause. Browser Purchase keeps its paid timing while CAPI is paused. Orders already `failed` after six attempts are never
+retried; pending orders remain eligible only within seven days of full payment.
+Changing dataset, website or test code advances the connector revision: pending
+orders captured for an earlier revision are invalidated and scrubbed by the
+worker, never sent to the new destination. Disconnecting removes the token and
+form switches, terminates pending deliveries and erases stored matching data.
+Organization administrators may disconnect even after platform approval is removed.
+A prepared delivery with a live lease retains only its receipt fence: finishing
+without the connector still records `sent_in_flight` for success and never retries
+or restores matching data. Unprepared or expired leases are cleared.
+
+### Meta CAPI consent
 
 Pilot forms use the existing saved CMP choice; there is no separate Purchase
 checkbox. A capture requires all three advertising purposes (`ad_storage`,
