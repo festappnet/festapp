@@ -1,3 +1,4 @@
+import {purchaseObservation} from './purchase_observation.js';
 // Category-level Complianz opt-in records only. This is an organizer-configured
 // coverage mapping, not an attestation by Google Consent Mode or by Festapp.
 const events = ['cmplz_status_change', 'cmplz_banner_status', 'cmplz_fire_categories',
@@ -16,13 +17,14 @@ export function createComplianzSource(win, input) {
         else config = Object.freeze({...config, policyId:policyId(config.policyId)});
     } catch { config = null; }
     const listeners = new Set();
+    const observePurchase = purchaseObservation(win);
     let timer, last, pending = false;
     const read = scope => {
         try {
             if (!config || pending || (scope && (scope.organization !== config.organization || scope.unit !== config.unit ||
                 scope.consentRevision !== config.consentRevision))) return null;
             const cmp = win.complianz;
-            if (cmp?.consenttype !== 'optin' || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) ||
+            if (cmp?.consenttype !== 'optin' || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) || !disabled(cmp.clean_cookies) ||
                 typeof win.cmplz_get_cookie !== 'function' || typeof win.cmplz_get_banner_status !== 'function' ||
                 typeof win.cmplz_has_consent !== 'function' || win.cmplz_get_banner_status() !== 'dismissed' ||
                 policyId(cmp.current_policy_id) !== config.policyId || policyId(win.cmplz_get_cookie('policy_id')) !== config.policyId) return null;
@@ -35,8 +37,12 @@ export function createComplianzSource(win, input) {
             if (services && services !== '[]' && services !== '{}') return null;
             const analytics = win.cmplz_has_consent('statistics'), marketing = win.cmplz_has_consent('marketing');
             if (typeof analytics !== 'boolean' || typeof marketing !== 'boolean') return null;
+            const unsupportedConsent = !disabled(cmp.tcf_active) || typeof win.__tcfapi !== 'undefined';
+            const granted = ads === 'allow' && marketing;
             return {consentRevision:config.consentRevision, analytics:stats === 'allow' && analytics,
-                marketing:ads === 'allow' && marketing && disabled(cmp.tcf_active) && typeof win.__tcfapi === 'undefined'};
+                marketing:granted && !unsupportedConsent,
+                purchaseConsent:unsupportedConsent ? null : observePurchase({source:'complianz',
+                    ad_storage:granted,ad_user_data:granted,ad_personalization:granted})};
         } catch { return null; }
     };
     const tick = () => {

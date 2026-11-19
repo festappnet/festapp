@@ -159,3 +159,36 @@ test('capacity rejection releases the intent while opaque throttling retains it'
         assert.equal(first.commandId === retry.commandId, !definitive);
     }
 });
+
+
+test('withdrawal while checkout waits for the session strips consent before the order request', async t => {
+    const { FormNetwork } = await import('../../src/components/forms/form_network.js');
+    const { PurchaseConsentOrders } = await import('../../src/components/forms/meta_purchase_consent.js');
+    const authenticated = Promise.withResolvers();
+    const now = Date.now();
+    const snapshot = {
+        source: 'klaro', consentRevision: 'c'.repeat(32), websiteOrigin: 'https://fixture.example',
+        ad_storage: true, ad_user_data: true, ad_personalization: true,
+        decidedAt: '2099-01-01T00:00:00.000Z', capturedAt: new Date(now).toISOString(),
+    };
+    const tracker = new PurchaseConsentOrders({ clock: () => now, revoke: t.mock.fn() });
+    const attempt = tracker.capture(snapshot, { revision: 'a'.repeat(32) });
+    const invoke = t.mock.fn(async () => ({ data: { code: 200 }, error: null }));
+    t.mock.method(SupabaseService, 'getClient', () => ({
+        auth: { getSession: () => authenticated.promise },
+        functions: { invoke },
+    }));
+    const pending = FormNetwork.submitOrder(
+        { form: 7291, tickets: [], metaPurchaseConsent: snapshot },
+        { canSendMetaPurchaseConsent: () => tracker.canDispatch(attempt) },
+    );
+    tracker.observe({ purchaseConsent: {
+        ...snapshot, ad_storage: false, decidedAt: new Date(now).toISOString(),
+    } });
+    authenticated.resolve({ data: { session: null }, error: null });
+
+    assert.equal((await pending).success, true);
+    assert.equal(invoke.mock.calls.length, 1);
+    assert.equal(invoke.mock.calls[0].arguments[1].body.orderDetails.metaPurchaseConsent, undefined);
+    assert.equal(tracker.orders.size, 0);
+});

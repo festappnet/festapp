@@ -29,34 +29,30 @@ GRANT EXECUTE ON FUNCTION public.get_meta_purchase_consent(text) TO anon,authent
 -- This checks durable consent, not the 60-second transport lease used at capture.
 CREATE OR REPLACE FUNCTION public.meta_purchase_snapshot_valid_internal(p_unit bigint,p_snapshot jsonb)
 RETURNS boolean LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-DECLARE c analytics.meta_purchase_connectors; b analytics.website_consent_bindings; decision timestamptz; service_origin text;
+DECLARE c analytics.meta_purchase_connectors; b analytics.website_consent_bindings; service_origin text;
 BEGIN
  IF jsonb_typeof(p_snapshot) IS DISTINCT FROM 'object'
-  OR coalesce(p_snapshot->>'source','') NOT IN ('klaro','cookiebot','cookieconsent','wix')
+  OR coalesce(p_snapshot->>'source','') NOT IN ('klaro','cookiebot','cookieconsent','wix','complianz')
   OR p_snapshot->'ad_storage' IS DISTINCT FROM 'true'::jsonb
   OR p_snapshot->'ad_user_data' IS DISTINCT FROM 'true'::jsonb
   OR p_snapshot->'ad_personalization' IS DISTINCT FROM 'true'::jsonb
-  OR p_snapshot->>'consentRevision' IS DISTINCT FROM public.unit_measurement_consent_scope_internal(p_unit)->>'consentRevision'
-  OR coalesce(p_snapshot->>'timestamp','') !~ '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$' THEN RETURN false; END IF;
- BEGIN decision:=(p_snapshot->>'timestamp')::timestamptz; EXCEPTION WHEN datetime_field_overflow OR invalid_datetime_format THEN RETURN false; END;
- IF decision>statement_timestamp() OR decision<=statement_timestamp()-interval '365 days' THEN RETURN false; END IF;
+  OR p_snapshot->>'consentRevision' IS DISTINCT FROM public.unit_measurement_consent_scope_internal(p_unit)->>'consentRevision' THEN RETURN false; END IF;
  SELECT * INTO c FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND enabled AND paused_at IS NULL;
  IF NOT FOUND OR NOT public.meta_purchase_platform_allowed_internal(p_unit) OR p_snapshot->>'websiteOrigin' IS DISTINCT FROM c.website_origin THEN RETURN false; END IF;
  IF p_snapshot->>'source'='klaro' THEN
   SELECT rtrim(org.data->>'DEFAULT_URL','/') INTO service_origin FROM public.units u JOIN public.organizations org ON org.id=u.organization WHERE u.id=p_unit;
-  RETURN coalesce(NOT p_snapshot ? 'binding' AND c.website_origin=service_origin
-   AND decision>statement_timestamp()-interval '180 days',false);
+  RETURN coalesce(NOT p_snapshot ? 'binding' AND c.website_origin=service_origin,false);
  END IF;
  SELECT * INTO b FROM analytics.website_consent_bindings WHERE unit=p_unit
   AND id::text=p_snapshot#>>'{binding,id}' AND version::text=p_snapshot#>>'{binding,version}'
   AND website_origin=c.website_origin;
- RETURN coalesce(FOUND AND decision>=b.confirmed_at AND public.website_consent_binding_effective_internal(b)
+ RETURN coalesce(FOUND AND public.website_consent_binding_effective_internal(b)
   AND b.provider_config->>'provider'=p_snapshot->>'source'
-  AND p_snapshot->>'source' IN ('cookiebot','cookieconsent','wix'),false);
+  AND p_snapshot->>'source' IN ('cookiebot','cookieconsent','wix','complianz'),false);
 END $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_snapshot_valid_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
--- Retain only a digest of the non-contact consent scope and the decision time
+-- Retain only a digest of the non-contact consent scope and the capture time
 -- for comparisons after matching data and the full snapshot have been scrubbed.
 CREATE OR REPLACE FUNCTION public.meta_purchase_consent_scope_internal(p_snapshot jsonb)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
@@ -65,10 +61,26 @@ RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_consent_scope_internal(jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
+-- A CMP date can order decisions only when it is a plausible UTC instant
+-- at the time the server received the assertion.
+CREATE OR REPLACE FUNCTION public.meta_purchase_decision_at_internal(p_snapshot jsonb,p_observed_at timestamptz)
+RETURNS timestamptz LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
+DECLARE raw text:=coalesce(p_snapshot->>'decidedAt',p_snapshot->>'timestamp'); decision timestamptz;
+BEGIN
+ IF raw IS NULL OR raw !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]{1,6})?Z$'
+ THEN RETURN NULL; END IF;
+ decision:=raw::timestamptz;
+ IF decision<=p_observed_at THEN RETURN decision; END IF;
+ RETURN NULL;
+EXCEPTION WHEN invalid_datetime_format OR datetime_field_overflow THEN RETURN NULL;
+END $$;
+REVOKE ALL ON FUNCTION public.meta_purchase_decision_at_internal(jsonb,timestamptz) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.capture_meta_purchase_consent_internal(p_order bigint,p_consent jsonb)
 RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
 DECLARE
  details record;
+ captured timestamptz:=clock_timestamp(); audit_time timestamptz;
  agent text:=p_consent->>'userAgent';
  email text; phone text; prefixes jsonb; address inet; fbp text; fbc text;
 BEGIN
@@ -100,6 +112,8 @@ BEGIN
     OR public.meta_purchase_consent_revision_internal(details.form) IS DISTINCT FROM p_consent->>'revision'
     OR public.meta_purchase_snapshot_valid_internal(details.unit,p_consent) IS DISTINCT FROM true
  THEN RETURN; END IF;
+ -- Missing or implausible metadata never prevents capture.
+ audit_time:=public.meta_purchase_decision_at_internal(p_consent,captured);
  email:=lower(btrim(details.data->>'email'));
  IF coalesce(length(email),0) NOT BETWEEN 3 AND 254 OR email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' THEN RETURN; END IF;
  -- Optional matching data can only degrade to NULL; it never fails checkout.
@@ -119,12 +133,13 @@ BEGIN
   fbc:=public.meta_purchase_browser_id_internal(p_consent#>>'{matching,fbc}');
  EXCEPTION WHEN OTHERS THEN fbp:=NULL; fbc:=NULL;
  END;
- INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_scope,consent_decided_at,consent_snapshot,email_hash,client_agent,source_url,phone_hash,fbp,fbc,client_ip)
+ INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,consent_scope,consent_decided_at,consent_at,consent_snapshot,email_hash,client_agent,source_url,phone_hash,fbp,fbc,client_ip)
  VALUES (p_order,details.unit,details.revision,p_consent->>'revision',
-   public.meta_purchase_consent_scope_internal(p_consent),(p_consent->>'timestamp')::timestamptz,
-   jsonb_build_object('source',p_consent->'source','timestamp',p_consent->'timestamp',
+   public.meta_purchase_consent_scope_internal(p_consent),audit_time,captured,
+   jsonb_build_object('source',p_consent->'source','capturedAt',to_char(captured AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
      'consentRevision',p_consent->'consentRevision','websiteOrigin',details.website_origin,
      'ad_storage',true,'ad_user_data',true,'ad_personalization',true)
+     || CASE WHEN audit_time IS NOT NULL THEN jsonb_build_object('decidedAt',to_char(audit_time AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')) ELSE '{}'::jsonb END
      || CASE WHEN p_consent ? 'binding' THEN jsonb_build_object('binding',jsonb_build_object('id',p_consent#>'{binding,id}','version',p_consent#>'{binding,version}')) ELSE '{}'::jsonb END,
    encode(extensions.digest(email,'sha256'),'hex'),agent,CASE WHEN p_consent->>'source'='klaro' THEN details.website_origin||'/form/'||details.link ELSE details.website_origin||'/' END,
    CASE WHEN phone IS NOT NULL THEN encode(extensions.digest(phone,'sha256'),'hex') END,
@@ -138,7 +153,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.capture_meta_purchase_consent_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Automated denial can affect only orders captured under that same consent
--- scope, and only if the saved denial is newer than the captured grant.
+-- scope. Only comparable CMP decision dates can prove that a denial is older.
 CREATE OR REPLACE FUNCTION public.revoke_meta_purchase_consent(p_token text,p_order_id bigint,p_denial jsonb)
 RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE overview jsonb; decision timestamptz; scope_hash text; affected integer;
@@ -147,23 +162,26 @@ BEGIN
  IF overview->>'code' IS DISTINCT FROM '200' THEN RETURN false; END IF;
  IF p_denial IS NOT NULL THEN
   IF jsonb_typeof(p_denial) IS DISTINCT FROM 'object' OR octet_length(p_denial::text)>2048
-    OR coalesce(p_denial->>'timestamp','') !~ '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$'
+    OR coalesce(p_denial->>'source','') NOT IN ('klaro','cookiebot','cookieconsent','wix','complianz')
+    OR NOT (p_denial->'ad_storage' IN ('true'::jsonb,'false'::jsonb)
+      AND p_denial->'ad_user_data' IN ('true'::jsonb,'false'::jsonb)
+      AND p_denial->'ad_personalization' IN ('true'::jsonb,'false'::jsonb))
+    OR NOT (p_denial ?& ARRAY['ad_storage','ad_user_data','ad_personalization'])
     OR NOT (p_denial @> '{"ad_storage":false}' OR p_denial @> '{"ad_user_data":false}' OR p_denial @> '{"ad_personalization":false}')
   THEN RETURN false; END IF;
-  BEGIN decision:=(p_denial->>'timestamp')::timestamptz;
-  EXCEPTION WHEN datetime_field_overflow OR invalid_datetime_format THEN RETURN false; END;
-  IF decision>statement_timestamp() OR decision<=statement_timestamp()-interval '365 days' THEN RETURN false; END IF;
+  decision:=public.meta_purchase_decision_at_internal(p_denial,clock_timestamp());
   scope_hash:=public.meta_purchase_consent_scope_internal(p_denial);
  END IF;
  UPDATE analytics.meta_purchase_deliveries SET revoked_at=clock_timestamp(),status=CASE WHEN status='pending' THEN 'revoked' ELSE status END,
   -- Prepare commits the send authorization; keep its live receipt fence after withdrawal.
-  done_at=clock_timestamp(),
+  done_at=CASE WHEN status='pending' THEN clock_timestamp() ELSE done_at END,
   lease=CASE WHEN prepared AND lease_until>clock_timestamp() THEN lease END,
   lease_until=CASE WHEN prepared AND lease_until>clock_timestamp() THEN lease_until END,
   consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
  WHERE order_id IN(SELECT (value->>'id')::bigint FROM jsonb_array_elements(overview->'orders'))
    AND revoked_at IS NULL
-   AND (p_denial IS NULL OR (consent_scope=scope_hash AND consent_decided_at<decision));
+   AND (p_denial IS NULL OR (consent_scope=scope_hash AND (decision IS NULL OR consent_decided_at IS NULL OR NOT isfinite(consent_decided_at)
+     OR consent_decided_at>consent_at OR decision>=consent_decided_at)));
  GET DIAGNOSTICS affected=ROW_COUNT;
  RETURN p_denial IS NULL OR affected>0;
 END $$;

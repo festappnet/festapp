@@ -409,7 +409,7 @@ smazaný záznam převzetí ukončí při následující sekundové kontrole. Pr
 blokování samo nedokládá souhlas. Atribut ignore ponechá helper dostupný i při
 automatickém blokování.
 
-Cookiebot SDK nenabízí srovnatelnou verzi zásad. Povinné `consentValidFrom` je
+Cookiebot SDK nenabízí srovnatelnou verzi zásad. Pro běžné měření je povinné `consentValidFrom`
 okamžik účinnosti archivovaného znění (UTC ISO s milisekundami a Z), vůči němuž se
 kontroluje `consentUTC`. Povinné `maxAgeSeconds` nastavte nejvýše na skutečnou
 platnost v Cookiebotu, maximálně 365 dní; ukázka používá 180 dní. Při změně
@@ -471,12 +471,12 @@ Moje weby**. Výše uvedené příklady popisují také přímé vývojářské 
 export neupravujte ani z něj neodstraňujte omezení.
 
 Complianz nadále vyžaduje ID zásad, které skutečně pokrývají formulář. Jeho
-podporované API nedokládá čas uložené volby. CookieConsent v3 nabízí jen volitelné
+podporované API nedokládá čas rozhodnutí, který Meta CAPI nevyžaduje. Pro CAPI se stejně jako u ostatních lišt uloží k objednávce stav všech tří reklamních účelů a serverový čas zachycení (`capturedAt`); `decidedAt` je pouze volitelný auditní údaj. Starší rozhodnutí než potvrzení vazby CAPI neblokuje. Lišta a zásady pořadatele musí zahrnovat reklamu přes Metu. Tento model umožňuje vyhodnotit pozdější platbu podle souhlasu zachyceného k objednávce (doklady: `docs/integrations/form-datalayer.md`, sekce „Meta CAPI consent“). CookieConsent v3 nabízí jen volitelné
 mapování kategorií, Cookiebot a Wix nevyžadují další technické údaje.
 
 Při potvrzení pokrytí server pro CookieConsent v3, Cookiebot a Wix uloží
 `consentValidFrom` podle času potvrzení a `maxAgeSeconds` nejvýše na 365 dní.
-Převezmou se pouze volby uložené po tomto potvrzení; vlastní expirace CMP platí
+Pro běžné měření se převezmou pouze volby uložené po tomto potvrzení; vlastní expirace CMP platí
 současně. Nejdříve zveřejněte odpovídající zásady, potvrďte pokrytí ve Festappu,
 importujte nový export a poté ve své liště vyžádejte novou volbu návštěvníků.
 Při změně rozsahu zvyšte také `measurement_consent_version` a celý postup
@@ -487,8 +487,10 @@ správce použije [Renew now v Cookiebot Manageru](https://support.cookiebot.com
 Do nové volby zůstane dostupná místní lišta formuláře i samotný nákup.
 
 Starší exporty se stejným `schemaVersion: 1` zůstávají podporované se všemi
-svými omezeními: `policyId`, `cbid`, `revision`, `consentValidFrom` i
-`maxAgeSeconds`. Migrace jejich konfiguraci, potvrzení ani verzi nepřepisuje.
+svými omezeními: `policyId`, `cbid` a `revision`; `consentValidFrom` a
+`maxAgeSeconds` nadále omezují běžné měření, nikoli CAPI. Čas capture vždy
+určuje server, klientské hodiny CAPI neblokují. Starý `timestamp` se přijímá
+jako volitelný `decidedAt` i během nasazení nového helperu. Migrace jejich konfiguraci, potvrzení ani verzi nepřepisuje.
 Nové potvrzení verzovanou konfiguraci nahradí; starý export pak není platný.
 Aktualizace CMS doplňků není potřeba, ale SQL a hostovaný helper musí být nasazeny
 společně. Starší helper nový export bez ruční revize odmítne a ponechá místní lištu.
@@ -519,3 +521,10 @@ přepínače organizace, pořadatele a formuláře, informace o soukromí, runti
 a kontroly souhlasu. Další žádost o schválení domény se neposílá.
 Odebrání uloženého webu při obnově politiky odvolá jeho samoobslužné povolení.
 Výslovně nastavené aplikační domény platformy zůstávají samostatně spravované.
+
+Pro Meta CAPI se aktuální úplné odmítnutí ve stejném scope s oprávněním kupujícího
+neporovnává s hodinami serveru. Jen pokud snímek i odmítnutí mají doložený čas
+rozhodnutí z lišty a odmítnutí je starší, neodvolá se. Platí to i pro odmítnutí
+během letícího checkoutu. Complianz může po odmítnutí ihned obnovit stránku a
+přerušit asynchronní odvolání; uložené odmítnutí se znovu vyhodnotí při další
+návštěvě přehledu objednávky. Samotné obnovení stránky objednávku neodvolává.

@@ -52,14 +52,15 @@ export function installHostConsentLink(win, productOrigin, source) {
             if (Date.now() >= record.until) return;
             const scope = consentScope(data.scope);
             if (!sameConsentScope(scope, data.scope)) return;
+            const includePurchaseConsent = data.includePurchaseConsent === true;
             const child = event.source;
             const session = {sequence:0, until:Date.now()+24*60*60*1000, generation:source?.generation,
                 envelope:{namespace:consentLinkNamespace, protocol:1, nonce:data.nonce, scope}};
             sessions.set(child, session);
             const send = () => {
                 if (sessions.get(child) !== session) return;
-                const choice = source?.generation === session.generation ? source?.read(scope) : null;
-                if (child.closed || Date.now() >= session.until || !choice) { end(child); return; }
+                const choice = source?.generation === session.generation ? source?.read({...scope,includePurchaseConsent}) : null;
+                if (child.closed || Date.now() >= session.until || !choice || (!includePurchaseConsent && choice.ordinaryValid === false)) { end(child); return; }
                 try { child.postMessage({...session.envelope, type:'response', sequence:++session.sequence,
                     choice, expiresAt:Math.min(session.until, Date.now()+60000)}, productOrigin); }
                 catch { end(child); }

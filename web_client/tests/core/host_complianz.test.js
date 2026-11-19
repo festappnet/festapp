@@ -12,7 +12,7 @@ function fixture(choice=both, config=complianzConfig) {
  const cmp=complianzFixture(win,{choice,prefix:'cmplz_rt_'});
  const source=createComplianzSource(win,config), registry=createConsentSourceRegistry();
  const stop=registry.connect(source);
- return {win,cmp,source,registry,read:()=>registry.read(scope),close(){stop();win.close()}};
+ return {win,cmp,source,registry,read:()=>{const value=registry.read(scope);if(!value)return value;const {purchaseConsent,...choice}=value;return choice;},close(){stop();win.close()}};
 }
 for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false,marketing:true}])
  test('saved scoped category choice '+JSON.stringify(choice),()=>{
@@ -20,6 +20,8 @@ for(const choice of [both,none,{analytics:true,marketing:false},{analytics:false
   finally{f.close()}
  });
 const invalid={
+ 'service consent via clean_cookies':f=>{f.win.complianz.clean_cookies=1},
+ 'serialized service consent via clean_cookies':f=>{f.win.complianz.clean_cookies='1'},
  'undecided':f=>f.cmp.choose(null),
  'closed without category decisions':f=>{f.cmp.choose(null);f.cmp.cookie('banner-status','dismissed');f.cmp.cookie('policy_id','42')},
  'old saved CMP policy':f=>f.cmp.cookie('policy_id','41'),
@@ -89,4 +91,13 @@ for(const value of ['',null,false,0,'0',undefined])test('serialized disabled CMP
   Object.assign(f.win.complianz,{forceEnableStats:value,tcf_active:value,consent_per_service:value});
   assert.deepEqual(f.read(),both);
  }finally{f.close()}
+});
+
+test('Complianz prefixed category grant carries capture time without a decision date',()=>{
+ const f=fixture();try {
+  const a=f.registry.read(scope).purchaseConsent;
+  assert.equal(a.source,'complianz');assert.equal(a.ad_user_data,true);
+  assert.ok(Number.isFinite(Date.parse(a.capturedAt)));assert.equal(a.decidedAt,undefined);
+  assert.equal(f.registry.read(scope).purchaseConsent.capturedAt,a.capturedAt);
+ } finally{f.close()}
 });

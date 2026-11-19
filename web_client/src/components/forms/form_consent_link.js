@@ -19,7 +19,7 @@ export function isConsentLinkOrigin(origin, local = false) {
     } catch { return false; }
 }
 // A linked visit owns a renewable source lease, never a persisted local choice.
-export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = () => {}, settled = () => {}}) {
+export function requestLinkedConsent({win, policy, hasChoice, accept, includePurchaseConsent = false, revoke = () => {}, settled = () => {}}) {
     let timer, watch, active = true, requested = false, connected = false, sequence = 0;
     let origin, peer, nonce, until, scope, visitUntil;
     const stop = () => {
@@ -60,7 +60,8 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
             until = Math.min(visitUntil, data.expiresAt);
             win.clearTimeout(timer); timer = win.setTimeout(disconnect, until-Date.now());
             peers.delete(win);
-            accept({...data.choice, ...(scope.binding && data.choice.purchaseConsent ? {purchaseConsent:{...data.choice.purchaseConsent, binding:scope.binding, websiteOrigin:origin}} : {})}, {origin, leaseId:nonce, expiresAt:until});
+            const {purchaseConsent,...ordinary}=data.choice;
+            accept({...ordinary, ...(scope.binding && purchaseConsent ? {purchaseConsent:{...purchaseConsent, binding:scope.binding, websiteOrigin:origin}} : {})}, {origin, leaseId:nonce, expiresAt:until});
         } catch { disconnect(); }
     };
     Object.defineProperty(stop, 'pending', {get:() => requested && active && !connected});
@@ -80,7 +81,7 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, revoke = (
         win.document.addEventListener('visibilitychange', check);
         requested = true;
         timer = win.setTimeout(disconnect, 1500);
-        peer.postMessage({namespace, protocol:1, type:'request', nonce, scope}, origin);
+        peer.postMessage({namespace, protocol:1, type:'request', nonce, scope, ...(includePurchaseConsent ? {includePurchaseConsent:true} : {})}, origin);
     } catch { disconnect(); }
     return stop;
 }

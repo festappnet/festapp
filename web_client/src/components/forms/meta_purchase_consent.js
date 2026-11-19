@@ -8,10 +8,13 @@ export function validMetaBrowserMatching(matching) {
     return Object.fromEntries(['fbp','fbc'].filter(key => validMetaBrowserId(matching?.[key])).map(key => [key,matching[key]]));
 }
 
-export function samePurchaseDecision(a,b) {
-    return !!a && !!b && a.source===b.source && a.timestamp===b.timestamp &&
-        a.consentRevision===b.consentRevision && a.websiteOrigin===b.websiteOrigin &&
-        a.binding?.id===b.binding?.id && a.binding?.version===b.binding?.version;
+function samePurchaseScope(a, b) {
+    return !!a && !!b && a.source === b.source && a.consentRevision === b.consentRevision &&
+        a.websiteOrigin === b.websiteOrigin && a.binding?.id === b.binding?.id &&
+        a.binding?.version === b.binding?.version;
+}
+export function samePurchaseDecision(a, b) {
+    return samePurchaseScope(a, b) && purposes.every(key => a[key] === b[key]);
 }
 
 export function metaBrowserMatching(snapshot, win) {
@@ -37,12 +40,10 @@ export function metaBrowserMatching(snapshot, win) {
 }
 function hasCurrentDecision(choice, now) {
     const snapshot = choice?.purchaseConsent;
-    const timestamp = Date.parse(snapshot?.timestamp);
     return !!snapshot &&
-        ['klaro','cookiebot','cookieconsent','wix'].includes(snapshot.source) &&
+        ['klaro','cookiebot','cookieconsent','wix','complianz'].includes(snapshot.source) &&
         /^[a-f0-9]{32}$/.test(snapshot.consentRevision || '') &&
         (snapshot.source === 'klaro' || validConsentBinding(snapshot.binding)) &&
-        Number.isFinite(timestamp) && timestamp <= now && now - timestamp < 365*86400000 &&
         (choice.expiresAt === undefined || (Number.isFinite(choice.expiresAt) && choice.expiresAt > now));
 }
 export function hasCurrentPurchaseConsent(choice, now = Date.now()) {
@@ -50,22 +51,39 @@ export function hasCurrentPurchaseConsent(choice, now = Date.now()) {
 }
 export function publicPurchaseDecision(snapshot) {
     if (!snapshot || typeof snapshot!=='object') return null;
-    const {source,timestamp,consentRevision,websiteOrigin,binding,ad_storage,ad_user_data,ad_personalization} = snapshot;
-    return {source,timestamp,consentRevision,websiteOrigin,ad_storage,ad_user_data,ad_personalization,
+    const {source,capturedAt,consentRevision,websiteOrigin,binding,ad_storage,ad_user_data,ad_personalization} = snapshot;
+    const decidedAt = snapshot.decidedAt ?? snapshot.timestamp;
+    return {source,capturedAt,...(decidedAt ? {decidedAt} : {}),consentRevision,websiteOrigin,ad_storage,ad_user_data,ad_personalization,
         ...(binding ? {binding:{id:binding.id,version:binding.version}} : {})};
 }
 export function currentPurchaseDenial(choice, now = Date.now()) {
-    if (!hasCurrentDecision(choice,now) || !purposes.some(key => choice.purchaseConsent[key] === false)) return null;
+    if (!hasCurrentDecision(choice,now) || !purposes.every(key => typeof choice.purchaseConsent[key] === 'boolean') || !purposes.some(key => choice.purchaseConsent[key] === false)) return null;
     return publicPurchaseDecision(choice.purchaseConsent);
 }
 export function purchaseConsentSnapshot(choice, notice, now = Date.now()) {
     if (!notice?.revision || !hasCurrentPurchaseConsent(choice,now)) return null;
     const snapshot = choice.purchaseConsent;
     if (snapshot.websiteOrigin !== notice.origin) return null;
-    return {source:snapshot.source, timestamp:snapshot.timestamp, consentRevision:snapshot.consentRevision,
+    return {source:snapshot.source, capturedAt:new Date(now).toISOString(), ...((snapshot.decidedAt ?? snapshot.timestamp) ? {decidedAt:snapshot.decidedAt ?? snapshot.timestamp} : {}), consentRevision:snapshot.consentRevision,
         websiteOrigin:notice.origin, ad_storage:true, ad_user_data:true, ad_personalization:true,
         ...(snapshot.binding ? {binding:{id:snapshot.binding.id,version:snapshot.binding.version}} : {}),
         revision:notice.revision, ...(choice.expiresAt !== undefined ? {transportExpiresAt:choice.expiresAt} : {})};
+}
+
+function comparableDecisionAt(snapshot, observedAt) {
+    const value = snapshot.decidedAt ?? snapshot.timestamp;
+    if (typeof value !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/.test(value)) return null;
+    const decision = Date.parse(value);
+    if (!Number.isFinite(decision) || decision > observedAt ||
+        new Date(decision).toISOString().slice(0, 19) !== value.slice(0, 19)) return null;
+    return decision;
+}
+
+function olderDecision(denial, grant, now) {
+    const deniedAt = comparableDecisionAt(denial, now);
+    const acceptedAt = comparableDecisionAt(grant, Math.min(now, Date.parse(grant.capturedAt) || now));
+    return deniedAt !== null && acceptedAt !== null && deniedAt < acceptedAt;
 }
 
 // The capability never enters the consent bridge or an analytics payload.
@@ -75,14 +93,15 @@ export class PurchaseConsentOrders {
     constructor({revoke, clock = () => Date.now()}) { Object.assign(this,{revoke,clock}); this.orders=new Map(); }
     observe(choice) {
         this.choice=choice;
-        for (const order of this.orders.values()) {
-            const denial=currentPurchaseDenial(choice,this.clock());
-            if (denial && denial.websiteOrigin === order.snapshot.websiteOrigin &&
-                denial.consentRevision === order.snapshot.consentRevision &&
-                denial.source === order.snapshot.source &&
-                denial.binding?.id === order.snapshot.binding?.id &&
-                denial.binding?.version === order.snapshot.binding?.version &&
-                Date.parse(denial.timestamp) > Date.parse(order.snapshot.timestamp)) order.revoked=true;
+        const now = this.clock();
+        const denial = currentPurchaseDenial(choice, now);
+        if (denial) {
+            for (const order of this.orders.values()) {
+                if (samePurchaseScope(denial, order.snapshot) && !olderDecision(denial, order.snapshot, now)) {
+                    order.revoked = true;
+                    order.denial = denial;
+                }
+            }
         }
         this.flush();
     }
@@ -92,6 +111,18 @@ export class PurchaseConsentOrders {
         this.orders.set(order,order);
         this.observe(this.choice);
         return order;
+    }
+    canDispatch(order) {
+        if (!this.orders.has(order)) return false;
+        const expiresAt = order.snapshot.transportExpiresAt;
+        if (!order.revoked && (expiresAt === undefined || expiresAt > this.clock())) {
+            order.dispatched = true;
+            return true;
+        }
+        // An earlier attempt could already have saved consent before its
+        // response was lost. Keep observing until its capability is recovered.
+        if (!order.dispatched) this.orders.delete(order);
+        return false;
     }
     authorize(order, scope) {
         if (!this.orders.has(order) || !scope?.token || !Number.isSafeInteger(scope.orderId)) return;
@@ -105,7 +136,7 @@ export class PurchaseConsentOrders {
     flush() {
         for (const [id,order] of this.orders) if(order.revoked && order.scope && !order.sending) {
             order.sending=true;
-            Promise.resolve().then(()=>this.revoke(order.scope)).then(ok=>{if(ok)this.orders.delete(id);})
+            Promise.resolve().then(()=>this.revoke(order.scope,order.denial)).then(ok=>{if(ok)this.orders.delete(id);})
                 .catch(()=>{}).finally(()=>{order.sending=false;});
         }
     }

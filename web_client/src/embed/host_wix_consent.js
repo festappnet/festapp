@@ -1,6 +1,7 @@
+import {purchaseObservation, auditDecision} from './purchase_observation.js';
 import {consentValidity} from './host_consent_validity.js';
 // Wix @wix/site consentPolicyManager's synchronous saved-policy boundary.
-// A default policy or missing creation date never imports.
+// Default policies never import; creation dates gate ordinary measurement only.
 export function createWixConsentSource(win, input) {
     let config;
     try {
@@ -9,6 +10,7 @@ export function createWixConsentSource(win, input) {
             !/^[a-f0-9]{32}$/.test(config.consentRevision) || config.origin !== win.location.origin || !consentValidity(config)) config = null;
     } catch { config = null; }
     const listeners = new Set();
+    const observePurchase = purchaseObservation(win);
     let pending = false, timer, last;
     const read = scope => {
         try {
@@ -20,15 +22,15 @@ export function createWixConsentSource(win, input) {
                 ? Date.parse(date) : Object.prototype.toString.call(date) === '[object Date]' ? date.getTime() : NaN;
             const now = win.Date.now();
             if (saved?.defaultPolicy !== false || p?.essential !== true ||
-                !['functional','analytics','advertising','dataToThirdParty'].every(k => typeof p[k] === 'boolean') ||
-                !consentValidity(config)(timestamp, now)) return null;
+                !['functional','analytics','advertising','dataToThirdParty'].every(k => typeof p[k] === 'boolean')) return null;
+            const ordinaryValid = consentValidity(config)(timestamp, now);
             const unsupportedConsent = typeof win.__tcfapi !== 'undefined';
             const marketing = !unsupportedConsent && p.advertising && p.dataToThirdParty;
-            const purchaseConsent = unsupportedConsent ? null : {
-                source:'wix',timestamp:new Date(timestamp).toISOString(),
+            const purchaseConsent = unsupportedConsent ? null : observePurchase({
+                source:'wix',...auditDecision(timestamp),
                 ad_storage:marketing,ad_user_data:marketing,ad_personalization:marketing,
-            };
-            return {purchaseConsent,consentRevision:config.consentRevision,analytics:p.analytics,marketing};
+            });
+            return {purchaseConsent,...(!ordinaryValid ? {ordinaryValid:false} : {}),consentRevision:config.consentRevision,analytics:ordinaryValid && p.analytics,marketing:ordinaryValid && marketing};
         } catch { return null; }
     };
     const tick = () => {

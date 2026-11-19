@@ -3545,6 +3545,14 @@
     }
   },
   "MetaCapi": {
+    "invalidCount": "Ungültig",
+    "expired": "Abgelaufen",
+    "connector_changed": "Nicht gesendet: Die Verbindungseinstellungen wurden geändert.",
+    "consent_invalid": "Nicht gesendet: Die gespeicherte Werbeeinwilligung ist nicht mehr gültig.",
+    "order_ineligible": "Nicht gesendet: Die Bestellung erfüllt die Voraussetzungen nicht mehr.",
+    "payment_too_old": "Nicht gesendet: Die Zahlung liegt mehr als 7 Tage zurück.",
+    "attempts_exhausted": "Nicht gesendet: Die Zustellversuche sind ausgeschöpft.",
+    "retention_expired": "Nicht gesendet: Die Aufbewahrungsfrist der Einwilligung ist abgelaufen.",
     "loadFailed": "Meta-CAPI-Einstellungen konnten nicht geladen werden",
     "platformDisabled": "Die Plattform hat Meta CAPI deaktiviert",
     "noWebsites": "Fügen Sie zuerst eine Website im Bereich Ereignisse und Einwilligung hinzu.",
