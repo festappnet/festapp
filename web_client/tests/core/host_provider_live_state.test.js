@@ -11,7 +11,7 @@ const consentRevision='a'.repeat(32), origin='https://host.example';
 const config=provider=>({provider,organization:1,unit:2,origin,consentRevision});
 const both={consentRevision,analytics:true,marketing:true};
 // Purchase snapshots are covered by provider tests; these cases bind coverage and lifetime.
-const choice=value=>{if(!value)return value;const {purchaseConsent,...rest}=value;return rest;};
+const choice=value=>{if(!value)return value;const {purchaseConsent,ordinaryValid,...rest}=value;return rest;};
 const coverage=()=>({consentValidFrom:new Date(Date.now()-1000).toISOString(),maxAgeSeconds:86400});
 
 test('Complianz cannot silently relabel a saved policy after coverage changes',()=>{
@@ -30,13 +30,13 @@ test('Cookiebot needs confirmed coverage even when its cookie and API agree',t=>
  const c={...config('cookiebot'),...coverage()};
  const source=createCookiebotSource(win,c);
  assert.deepEqual(choice(source.read()),both,'CBID need not be entered manually');
- const {timestamp,...snapshot}=source.read().purchaseConsent;
+ const {capturedAt,decidedAt,...snapshot}=source.read().purchaseConsent;
  assert.deepEqual(snapshot,{source:'cookiebot',ad_storage:true,ad_user_data:true,ad_personalization:true});
- assert.ok(Number.isFinite(Date.parse(timestamp)));
+ assert.ok(Number.isFinite(Date.parse(capturedAt)));
  assert.equal(createCookiebotSource(win,config('cookiebot')).read(),null);
- cmp.consentUTC=new win.Date(Date.parse(c.consentValidFrom)-1);assert.equal(source.read(),null);
+ cmp.consentUTC=new win.Date(Date.parse(c.consentValidFrom)-1);assert.deepEqual(choice(source.read()),{consentRevision,analytics:false,marketing:false});assert.equal(source.read().purchaseConsent.ad_storage,true);
  cmp.consentUTC=new win.Date(c.consentValidFrom);assert.deepEqual(choice(source.read()),both);
- win.Date.now=()=>cmp.consentUTC.getTime()+c.maxAgeSeconds*1000;assert.equal(source.read(),null);
+ win.Date.now=()=>cmp.consentUTC.getTime()+c.maxAgeSeconds*1000;assert.deepEqual(choice(source.read()),{consentRevision,analytics:false,marketing:false});assert.equal(source.read().purchaseConsent.ad_storage,true);
 });
 
 test('Cookiebot legacy CBID, cutoff and shorter lifetime remain binding',t=>{
@@ -46,7 +46,7 @@ test('Cookiebot legacy CBID, cutoff and shorter lifetime remain binding',t=>{
  assert.deepEqual(choice(source.read()),both);
  script.setAttribute('data-cbid','aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');assert.equal(source.read(),null);
  script.setAttribute('data-cbid',cookiebotConfig.cbid);
- cmp.consentUTC=new win.Date('2020-01-01T00:00:00Z');assert.equal(source.read(),null);
+ cmp.consentUTC=new win.Date('2020-01-01T00:00:00Z');assert.deepEqual(choice(source.read()),{consentRevision,analytics:false,marketing:false});assert.equal(source.read().purchaseConsent.ad_storage,true);
 });
 
 test('CookieConsent live revision also requires a saved decision after server confirmation',async t=>{
@@ -58,9 +58,9 @@ test('CookieConsent live revision also requires a saved decision after server co
  assert.equal(createCookieConsentSource(win,config('cookieconsent')).read(),null);
  assert.equal(createCookieConsentSource(win,{...c,revision:42}).read(),null,'legacy revision pin is enforced');
  const cookie=cmp.getCookie();
- cookie.lastConsentTimestamp=new Date(Date.parse(c.consentValidFrom)-1).toISOString();store(cookie);assert.equal(source.read(),null);
+ cookie.lastConsentTimestamp=new Date(Date.parse(c.consentValidFrom)-1).toISOString();store(cookie);assert.deepEqual(choice(source.read()),{consentRevision,analytics:false,marketing:false});assert.equal(source.read().purchaseConsent.ad_storage,true);
  cookie.lastConsentTimestamp=c.consentValidFrom;store(cookie);assert.deepEqual(choice(source.read()),both);
- win.Date.now=()=>Date.parse(c.consentValidFrom)+c.maxAgeSeconds*1000;assert.equal(source.read(),null);
+ win.Date.now=()=>Date.parse(c.consentValidFrom)+c.maxAgeSeconds*1000;assert.deepEqual(choice(source.read()),{consentRevision,analytics:false,marketing:false});assert.equal(source.read().purchaseConsent.ad_storage,true);
 });
 
 for(const extra of [{}, {consentValidFrom:'invalid'}, {maxAgeSeconds:0}, {maxAgeSeconds:365*86400+1}])
@@ -77,6 +77,6 @@ test('Wix coverage and lifetime are enforced even while saved policy remains ava
  const win={Date:{now:()=>now},location:{origin},consentPolicyManager:{getCurrentConsentPolicy:()=>saved}};
  const source=createWixConsentSource(win,c);
  assert.deepEqual(choice(source.read()),both);
- saved.createdDate='2020-01-01T00:00:00.000Z';assert.equal(source.read(),null);
- saved.createdDate=c.consentValidFrom;now=Date.parse(c.consentValidFrom)+c.maxAgeSeconds*1000;assert.equal(source.read(),null);
+ saved.createdDate='2020-01-01T00:00:00.000Z';assert.deepEqual(choice(source.read()),{consentRevision,analytics:false,marketing:false});assert.equal(source.read().purchaseConsent.ad_storage,true);
+ saved.createdDate=c.consentValidFrom;now=Date.parse(c.consentValidFrom)+c.maxAgeSeconds*1000;assert.deepEqual(choice(source.read()),{consentRevision,analytics:false,marketing:false});assert.equal(source.read().purchaseConsent.ad_storage,true);
 });

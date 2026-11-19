@@ -42,7 +42,7 @@ BEGIN
    c.website_origin=(SELECT rtrim(org.data->>'DEFAULT_URL','/') FROM public.units u
     JOIN public.organizations org ON org.id=u.organization WHERE u.id=p_unit)
    OR EXISTS(SELECT FROM analytics.website_consent_bindings b WHERE b.unit=p_unit
-    AND b.website_origin=c.website_origin AND b.provider_config->>'provider' IN ('cookiebot','cookieconsent','wix')
+    AND b.website_origin=c.website_origin AND b.provider_config->>'provider' IN ('cookiebot','cookieconsent','wix','complianz')
     AND public.website_consent_binding_effective_internal(b))
   ),false))
  INTO result FROM analytics.meta_purchase_connectors c WHERE c.unit=p_unit;

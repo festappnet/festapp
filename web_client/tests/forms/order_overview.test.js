@@ -455,12 +455,12 @@ test('a later explicit advertising denial withdraws Meta consent; unknown consen
     await loadOrderOverview(host, commands, scope);
     const settle = () => new Promise(resolve => setTimeout(resolve, 0));
     const granted = {
-        source: 'klaro', timestamp: new Date(Date.now()-1000).toISOString(), consentRevision: 'b'.repeat(32),
+        source: 'klaro', capturedAt: new Date(Date.now()-1000).toISOString(), consentRevision: 'b'.repeat(32),
         websiteOrigin: 'https://tickets.example', ad_storage: true, ad_user_data: true, ad_personalization: true,
     };
     const denied = {...granted, ad_user_data: false};
     for (const choice of [null, false, { marketing: false }, { marketing: true, purchaseConsent: null },
-        { marketing: true, purchaseConsent: granted }, { purchaseConsent: {...denied, timestamp:'not a time'} },
+        { marketing: true, purchaseConsent: granted }, { purchaseConsent: {...denied, ad_storage:undefined} },
         { purchaseConsent: denied, expiresAt:1 }]) {
         withdrawOverviewPurchaseConsent(host, choice); await settle();
     }

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Store a uniform Meta CAPI consent snapshot with each order, support Complianz and saved Klaro choices without decision dates, and retain scope-bound withdrawal after capture.
+
 - Detect Complianz policy IDs from approved organizer websites, recheck automatic confirmation on the server and offer reload and manual fallback while retaining the configured/current/saved policy pin.
 
 - Simplify website consent setup with server-issued coverage windows, retain explicit Complianz policy mapping and enforce all restrictions in existing exports.

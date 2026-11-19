@@ -8,7 +8,7 @@ BEGIN
  INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,revision,operator,reason) VALUES(org,true,1,'fixture','CAPI approval');
  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
  VALUES(un,'123456',gen_random_uuid(),'https://tickets.example',true);
- snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+ snapshot:=jsonb_build_object('source','klaro','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
   'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
   'ad_storage',true,'ad_user_data',true,'ad_personalization',true);
  PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot),'scoped saved standalone choice');
@@ -17,15 +17,20 @@ BEGIN
  PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot) IS FALSE,'missing standalone service URL returns false, never SQL NULL');
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=org;
  FOREACH bad IN ARRAY ARRAY['null'::jsonb,'{}'::jsonb,snapshot||'{"ad_user_data":false}',snapshot||'{"ad_personalization":false}',
-  snapshot||'{"ad_storage":false}',snapshot||'{"source":"invented"}',snapshot||'{"timestamp":"2026-99-99T00:00:00.000Z"}',
-  snapshot||'{"consentRevision":"obsolete"}',snapshot||'{"websiteOrigin":"https://attacker.example"}',
-  snapshot||'{"timestamp":"2000-01-01T00:00:00.000Z"}'] LOOP
+  snapshot||'{"ad_storage":false}',snapshot||'{"source":"invented"}',
+  snapshot||'{"consentRevision":"obsolete"}',snapshot||'{"websiteOrigin":"https://attacker.example"}'] LOOP
   PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,bad),'malformed, denied, stale or unbound choice fails closed');
  END LOOP;
  INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_at)
  VALUES(un,'https://tickets.example','html','{"provider":"cookiebot"}',1,true,snapshot->>'consentRevision',clock_timestamp()-interval '1 minute') RETURNING * INTO b;
  snapshot:=snapshot||jsonb_build_object('source','cookiebot','binding',jsonb_build_object('id',b.id,'version',b.version));
  PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot),'managed choice uses live exact binding');
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot||'{"decidedAt":"2000-01-01T00:00:00.000Z"}'),'decision before binding confirmation is accepted');
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot||'{"decidedAt":"invalid"}'),'invalid optional audit date does not invalidate consent');
+ UPDATE analytics.website_consent_bindings SET provider_config='{"provider":"complianz","policyId":"42"}' WHERE id=b.id;
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot||'{"source":"complianz"}'),'Complianz current grant without decision time');
+ UPDATE analytics.website_consent_bindings SET provider_config='{"provider":"cookiebot"}' WHERE id=b.id;
+
  -- Durable snapshot remains valid after the live transport permission expires.
  PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,snapshot||'{"transportExpiresAt":1}'),'transport expiry does not expire captured order consent');
  UPDATE analytics.website_consent_bindings SET version=2 WHERE id=b.id;
@@ -42,7 +47,7 @@ DO $$
 DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint; fid bigint:=(x->>'form')::bigint;
  snapshot jsonb; checkout jsonb; receipt jsonb; replay jsonb; oid bigint; b analytics.website_consent_bindings; claimed uuid:=gen_random_uuid();
  command_id uuid:=gen_random_uuid(); client_id uuid:=gen_random_uuid();
- other_command uuid:=gen_random_uuid(); other_order bigint; changed_checkout jsonb;
+ bad jsonb; other_command uuid:=gen_random_uuid(); other_order bigint; changed_checkout jsonb;
 BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
@@ -59,7 +64,7 @@ BEGIN
  INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_at)
  VALUES(un,'https://tickets.example','html','{"provider":"cookiebot"}',1,true,
   public.unit_measurement_consent_scope_internal(un)->>'consentRevision',clock_timestamp()-interval '1 minute') RETURNING * INTO b;
- snapshot:=jsonb_build_object('source','cookiebot','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+ snapshot:=jsonb_build_object('source','cookiebot','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
   'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
   'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Consent regression',
   'ad_storage',true,'ad_user_data',true,'ad_personalization',true,
@@ -73,6 +78,10 @@ BEGIN
  PERFORM assert_eq(receipt#>>'{data,code}','200','snapshot does not affect checkout');
  oid:=(receipt#>>'{data,order,id}')::bigint;
  PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'valid connected CMP captured');
+ PERFORM assert_true((SELECT consent_snapshot ? 'capturedAt' AND NOT consent_snapshot ? 'decidedAt'
+   AND (consent_snapshot->>'capturedAt')::timestamptz >= transaction_timestamp()
+   FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'server records capture time without requiring decision metadata');
+
  PERFORM assert_eq((SELECT fbp FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'fb.1.1795000000000.1234','matching is captured with this exact order');
  PERFORM assert_eq((SELECT host(client_ip) FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'2001:db8::1','trusted checkout header supplies the address');
  PERFORM assert_false(receipt::text LIKE '%fb.1.%' OR receipt::text LIKE '%2001:db8%','matching never enters the browser receipt');
@@ -137,6 +146,21 @@ BEGIN
  PERFORM public.capture_meta_purchase_consent_internal(oid,(snapshot-'binding')||'{"source":"klaro"}');
  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'missing service URL cannot capture');
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
+ FOREACH bad IN ARRAY ARRAY[snapshot-'capturedAt',snapshot||'{"capturedAt":"invalid"}'] LOOP
+  PERFORM public.capture_meta_purchase_consent_internal(oid,bad);
+  PERFORM assert_true((SELECT (consent_snapshot->>'capturedAt')::timestamptz>=transaction_timestamp() FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'client capture metadata never gates server capture');
+  DELETE FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+ END LOOP;
+ FOREACH bad IN ARRAY ARRAY[snapshot||'{"decidedAt":"2020-01-01T00:00:00.000Z"}',
+  snapshot||'{"decidedAt":"2099-01-01T00:00:00.000Z"}',(snapshot-'capturedAt')||'{"timestamp":"2020-01-01T00:00:00.000Z"}'] LOOP
+  PERFORM public.capture_meta_purchase_consent_internal(oid,bad);
+  PERFORM assert_true((SELECT consent_decided_at=coalesce(bad->>'decidedAt',bad->>'timestamp')::timestamptz
+   FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'valid, future and legacy decision dates are audit only');
+  DELETE FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+ END LOOP;
+ PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot||'{"decidedAt":"invalid"}');
+ PERFORM assert_true((SELECT consent_decided_at IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'malformed optional date degrades to NULL without blocking capture');
+ DELETE FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
  PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot);
  -- A snapshot captured on a live bridge stays durable after its lease expires.
  UPDATE analytics.meta_purchase_deliveries SET phone_hash=repeat('b',64),lease=claimed,lease_until=clock_timestamp()+interval '1 minute' WHERE order_id=oid;
@@ -152,15 +176,24 @@ BEGIN
  PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent'),'receipt is finalized');
  PERFORM assert_true((SELECT status='sent' AND consent_snapshot IS NULL AND phone_hash IS NULL AND fbp IS NULL AND fbc IS NULL AND client_ip IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'sent receipts contain no snapshot');
  PERFORM public.issue_order_overview_internal(oid,pg_temp.delivery('fixture',repeat('c',64),oid),gen_random_uuid());
- PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":false}'),
-  'a denial at the captured decision time cannot withdraw');
- snapshot:=snapshot||jsonb_build_object('timestamp',to_char(statement_timestamp()-interval '500 milliseconds','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'ad_storage',false);
+ UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp(),consent_decided_at=clock_timestamp() WHERE order_id=oid;
+ PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":false,"decidedAt":"2000-01-01T00:00:00.000Z"}'),
+  'a provably older CMP refusal cannot withdraw');
+ PERFORM pg_sleep(0.002);
+ snapshot:=snapshot||jsonb_build_object('capturedAt',to_char((clock_timestamp()) AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'ad_storage',false);
  PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"websiteOrigin":"https://other.example"}'),
   'another website cannot withdraw captured consent');
  PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":null}'),
   'an unknown purpose cannot withdraw captured consent');
+ FOREACH bad IN ARRAY ARRAY[snapshot||'{"source":"complianz"}',snapshot||'{"consentRevision":"obsolete"}',jsonb_set(snapshot,'{binding,version}','2')] LOOP
+  PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,bad),'foreign source, revision or binding cannot withdraw');
+ END LOOP;
+ FOREACH bad IN ARRAY ARRAY[snapshot||'{"capturedAt":"2000-01-01T00:00:00.000Z"}',snapshot||'{"capturedAt":"2099-01-01T00:00:00.000Z"}'] LOOP
+  PERFORM assert_true(public.revoke_meta_purchase_consent(repeat('c',64),oid,bad),'current refusal ignores client clock offset');
+  UPDATE analytics.meta_purchase_deliveries SET revoked_at=NULL WHERE order_id=oid;
+ END LOOP;
  PERFORM assert_true(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot),
-  'a later denial on the same site withdraws even after its sent snapshot was scrubbed');
+  'a current refusal without a decision date withdraws even after the snapshot was scrubbed');
  PERFORM assert_true((SELECT status='sent' AND revoked_at IS NOT NULL AND consent_snapshot IS NULL
   FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'withdrawal closes later Meta companion eligibility');
  UPDATE analytics.meta_purchase_deliveries SET phone_hash=repeat('b',64),fbp='fb.1.1795000000000.1234',fbc='fb.1.1795000000000.Click_123',client_ip='192.0.2.1',status='pending',consent_snapshot=snapshot,revoked_at=NULL WHERE order_id=oid;
@@ -227,7 +260,7 @@ BEGIN
   END IF;
   PERFORM assert_true(public.form_order_purchase_capi_required_internal(oid) IS NOT DISTINCT FROM (mode IN ('paid','no_browser_items')),
    'CAPI is required only when frozen at creation, missing flag fails closed');
-  snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  snapshot:=jsonb_build_object('source','klaro','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
    'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
    'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Cohort regression',
    'ad_storage',true,'ad_user_data',true,'ad_personalization',true);
@@ -326,7 +359,7 @@ BEGIN
   VALUES(un,'123456',vault.create_secret(repeat('t',40),'revocation-flight-'||un),'https://tickets.example',true);
   INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(fid,un);
   PERFORM public.purge_meta_purchase_data_internal();
-  snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  snapshot:=jsonb_build_object('source','klaro','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
    'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
    'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Withdrawal regression',
    'ad_storage',true,'ad_user_data',true,'ad_personalization',true);
@@ -459,7 +492,7 @@ BEGIN
   VALUES(un,'123456',vault.create_secret(repeat('t',40),'disconnect-flight-'||un),'https://tickets.example',true);
   INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(fid,un);
   PERFORM public.purge_meta_purchase_data_internal();
-  snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  snapshot:=jsonb_build_object('source','klaro','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
    'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
    'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Disconnect regression',
    'ad_storage',true,'ad_user_data',true,'ad_personalization',true);
@@ -539,7 +572,7 @@ BEGIN
   VALUES(un,'123456',vault.create_secret(repeat('t',40),'connector-lock-'||un),'https://tickets.example',true);
   INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(fid,un);
   PERFORM public.purge_meta_purchase_data_internal();
-  snapshot:=jsonb_build_object('source','klaro','timestamp',to_char(statement_timestamp()-interval '1 second','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  snapshot:=jsonb_build_object('source','klaro','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
    'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
    'revision',public.get_meta_purchase_consent(x->>'link')->>'revision','userAgent','Connector lock regression',
    'ad_storage',true,'ad_user_data',true,'ad_personalization',true);

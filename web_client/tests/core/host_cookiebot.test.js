@@ -58,7 +58,7 @@ const invalid={
  'throwing API':f=>Object.defineProperty(f.win,'Cookiebot',{get(){throw Error('broken')}}),
 };
 for(const [name,change] of Object.entries(invalid))test(name+' returns null',async()=>{
- const f=fixture();try{change(f);await settle();assert.equal(f.read(),null)}finally{f.close()}
+ const f=fixture();try{change(f);await settle();if(['future choice','missing date','invalid date','date string'].includes(name)){assert.equal(f.read(),null);assert.equal(f.source.read(scope).purchaseConsent.ad_storage,true);}else assert.equal(f.read(),null)}finally{f.close()}
 });
 test('organization, unit, semantic revision and configured origin bind the record',()=>{
  const f=fixture();try{
@@ -67,7 +67,7 @@ test('organization, unit, semantic revision and configured origin bind the recor
  const other=fixture(both,{...cookiebotConfig,origin:'https://other.example'});try{assert.equal(other.read(),null)}finally{other.close()}
 });
 test('expiry is enforced by elapsed age even while cookie and API remain present',()=>{
- const f=fixture();try{f.win.Date.now=()=>f.cmp.consentUTC.getTime()+cookiebotConfig.maxAgeSeconds*1000;assert.equal(f.read(),null)}finally{f.close()}
+ const f=fixture();try{f.win.Date.now=()=>f.cmp.consentUTC.getTime()+cookiebotConfig.maxAgeSeconds*1000;assert.equal(f.read(),null);assert.equal(f.source.read(scope).purchaseConsent.ad_storage,true)}finally{f.close()}
 });
 for(const cookie of ['-1','%zz',"{stamp:'-1',necessary:true,preferences:true,statistics:true,marketing:true,utc:1}",
  "{stamp:'x',stamp:'y'}","{stamp:'x',services:{ad:false}}",'{"statistics":true,}',

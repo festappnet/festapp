@@ -595,8 +595,8 @@ export class FormPage extends Component {
                     return ()=>{disposed=true;cleanup?.();};
                 }
             };
-            this.purchaseConsentOrders ??= new PurchaseConsentOrders({revoke:async scope=>{
-                const {data,error}=await SupabaseService.getClient().rpc('revoke_meta_purchase_consent',{p_token:scope.token,p_order_id:scope.orderId});
+            this.purchaseConsentOrders ??= new PurchaseConsentOrders({revoke:async (scope,denial)=>{
+                const {data,error}=await SupabaseService.getClient().rpc('revoke_meta_purchase_consent',{p_token:scope.token,p_order_id:scope.orderId,p_denial:denial});
                 return !error && data === true;
             }});
             const measurement=this.measurementSession=new FormMeasurementSession({model:formModel,transport,consentSource,

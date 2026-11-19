@@ -31,7 +31,7 @@ for(const [name,changes] of Object.entries({
  'malformed date':{createdDate:'yesterday'},'pre-cutoff':{createdDate:'2025-12-31T23:59:59.999Z'},
  expired:{createdDate:new Date(Date.now()-86400001)},future:{createdDate:new Date(Date.now()+120000)},
  'missing policy':{policy:null},'nonboolean purposes':{policy:{essential:true,functional:false,analytics:'true',advertising:true,dataToThirdParty:true}},
-})) test('native Wix '+name+' fails closed',t=>{const f=fixture(t,changes);assert.equal(f.read(),null);});
+})) test('native Wix '+name+' fails closed',t=>{const f=fixture(t,changes);if(["missing creation date", "malformed date", "pre-cutoff", "expired", "future"].includes(name)) {assert.equal(f.read(),null);assert.equal(f.source.read(scope).purchaseConsent.ad_storage,true);} else assert.equal(f.read(),null);});
 test('Wix requires third-party permission for marketing and clamps TCF',t=>{
  const f=fixture(t);f.record.policy.dataToThirdParty=false;assert.deepEqual(f.read(),{analytics:true,marketing:false});
  f.record.policy.dataToThirdParty=true;f.win.__tcfapi=()=>{};assert.deepEqual(f.read(),{analytics:true,marketing:false});assert.equal(f.source.read(scope).purchaseConsent,null);
@@ -53,7 +53,7 @@ test('invalid native mapping cannot echo requested notice revision',t=>{
 
 test('managed Wix snapshot preserves saved timestamp, binding and individual advertising denial',t=>{
  const f=fixture(t);const value=readConsentSource(f.source,scope);
- assert.equal(value.purchaseConsent.timestamp,f.record.createdDate.toISOString());
+ assert.equal(value.purchaseConsent.decidedAt,f.record.createdDate.toISOString());
  assert.deepEqual(value.purchaseConsent.binding,binding);
  assert.equal(value.purchaseConsent.websiteOrigin,origin);
  assert.equal(value.purchaseConsent.ad_user_data,true);
