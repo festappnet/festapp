@@ -1,6 +1,6 @@
 BEGIN;
 DO $$
-DECLARE org bigint; unit_id bigint; occ bigint; msg jsonb; replay jsonb; row jsonb; started jsonb; att uuid; token uuid; context jsonb; v_order_id bigint; editor uuid; foreign_occ bigint; v_history int;
+DECLARE org bigint; unit_id bigint; occ bigint; msg jsonb; replay jsonb; row jsonb; started jsonb; att uuid; token uuid; context jsonb; v_order_id bigint; editor uuid; foreign_occ bigint; v_history int; free_order bigint;
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Email contract fixture') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Email unit',org) RETURNING id INTO unit_id;
@@ -86,6 +86,29 @@ BEGIN
  PERFORM assert_eq(public.get_email_confirmation_status(repeat('c',64)),'invalid_email','verified address failure is visible through the bounded capability');
  UPDATE public.email_confirmation_receipts SET reads=15;
  PERFORM assert_eq(public.get_email_confirmation_status(repeat('c',64)),'unavailable','receipt rate budget enforced');
+
+ -- Free checkout creates both intents, but only the ticket email is sent.
+ UPDATE public.occasions SET features='[{"code":"ticket","is_enabled":true}]',is_order_synchronization_enabled=true WHERE id=occ;
+ INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code)
+ VALUES(public.next_order_sequence(occ),public.generate_order_symbol(),occ,'paid','{"email":"free@example.invalid"}',0,'CZK')
+ RETURNING id INTO free_order;
+ PERFORM public.enqueue_paid_order_tickets(free_order);
+ PERFORM public.enqueue_order_email('TICKET_ORDER_CONFIRMATION',
+   jsonb_build_object('order_id',free_order,'command_id','00000000-0000-4000-8000-000000000002'),org,occ,unit_id);
+ UPDATE public.email_messages SET workflow_state='cancelled',last_error='intent_invalid'
+ WHERE order_id=free_order AND message_kind='order_confirmation';
+ PERFORM assert_true(NOT public.create_email_confirmation_receipt('00000000-0000-4000-8000-000000000001',free_order,repeat('e',64)),
+   'confirmation command from another order cannot observe free ticket delivery');
+ PERFORM assert_true(public.create_email_confirmation_receipt('00000000-0000-4000-8000-000000000002',free_order,repeat('e',64)),
+   'free checkout receives delivery receipt');
+ msg:=public.enqueue_email('order_tickets',context,'free@example.invalid','{}','manual:unrelated-attempt',
+   'TICKET_ORDER_PAYMENT_DONE',now(),NULL,free_order,(SELECT email_payment_version FROM eshop.orders WHERE id=free_order));
+ UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now(),delivered_at=now()
+ WHERE message_id=(msg->>'message_id')::uuid;
+ PERFORM assert_eq(public.get_email_confirmation_status(repeat('e',64)),'queued','free checkout observes the queued ticket email');
+ UPDATE public.email_messages SET workflow_state='accepted',accepted_at=now(),delivered_at=now()
+ WHERE order_id=free_order AND message_kind='order_tickets' AND message_id<>(msg->>'message_id')::uuid;
+ PERFORM assert_eq(public.get_email_confirmation_status(repeat('e',64)),'delivered','free checkout shows delivered despite cancelled confirmation');
 
  -- Lease recovery still runs while provider access is paused/unavailable.
  UPDATE public.email_messages SET workflow_state='cancelled' WHERE workflow_state IN ('pending','preparing','blocked','retry_wait');

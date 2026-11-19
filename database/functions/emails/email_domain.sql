@@ -1,3 +1,11 @@
+-- Automatic confirmations and ticket emails share the same order snapshot identity.
+CREATE OR REPLACE FUNCTION public.order_email_automatic_key_internal(p_order bigint,p_version bigint,p_recipient text)
+RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
+ SELECT p_order||':'||p_version||':'||coalesce(p_recipient,'')||':false';
+$$;
+REVOKE ALL ON FUNCTION public.order_email_automatic_key_internal(bigint,bigint,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.order_email_automatic_key_internal(bigint,bigint,text) TO service_role;
+
 -- Invoker-only helper. Its ACL prevents public use; public domain commands own permissions.
 CREATE OR REPLACE FUNCTION public.enqueue_order_email(p_code text,p_data jsonb,p_org bigint,p_occ bigint,p_unit bigint,p_time timestamptz DEFAULT now(),p_request text DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
@@ -41,7 +49,7 @@ BEGIN
   IF v_existing.id IS NOT NULL THEN
    IF p_data->>'requested_by' IS NOT NULL THEN UPDATE public.email_messages SET post_action=post_action||jsonb_build_object('last_manual_request',jsonb_build_object('actor',p_data->>'requested_by','request',p_request,'at',now())) WHERE id=v_existing.id; END IF;
    RETURN jsonb_build_object('message_id',v_existing.message_id,'state',v_existing.workflow_state,'replayed',true);END IF;
-  v_base_key:=v_order.id||':'||v_version||':'||coalesce(v_recipient,'')||':false';
+  v_base_key:=public.order_email_automatic_key_internal(v_order.id,v_version,v_recipient);
   IF p_request IS NULL OR NOT EXISTS(SELECT 1 FROM public.email_messages WHERE order_id=v_order.id AND message_kind=v_kind AND recipient=v_recipient AND source_version=v_version) THEN v_key:=v_base_key;END IF;
  END IF;
  RETURN public.enqueue_email(v_kind,jsonb_build_object('organization',p_org,'occasion',p_occ,'unit',p_unit),v_recipient,p_data,v_key,

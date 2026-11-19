@@ -632,8 +632,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_counseling_slots_internal_v1(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='d5aeb346288644b1a3a8ad1258d9cdd8'),'current SQL source parity: public.create_counseling_slots_internal_v1(bigint,timestamp with time zone,timestamp with time zone,integer,bigint,integer,text,integer)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_delegated_occasion_client_sync_v1(uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='d0a4e48d60fd0929f893ebca64c42ca7'),'current SQL source parity: public.create_delegated_occasion_client_sync_v1(uuid,jsonb)');
--- supabase/migrations/20261112234500_admin_notification_delivery.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_email_confirmation_receipt(uuid,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='0a3df7798fa4a9303e7bf9f1da6afe79'),'current SQL source parity: public.create_email_confirmation_receipt(uuid,bigint,text)');
+-- supabase/migrations/20261119130000_free_checkout_ticket_delivery_receipt.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_email_confirmation_receipt(uuid,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='e993efb7cebadabab89475c0c6b078dc'),'current SQL source parity: public.create_email_confirmation_receipt(uuid,bigint,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_form_client_sync_v1(text,text,text,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='a52559d3acab584598711a470ec16e64'),'current SQL source parity: public.create_form_client_sync_v1(text,text,text,uuid)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -916,8 +916,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.enqueue_email(text,jsonb,text,jsonb,text,text,timestamp with time zone,timestamp with time zone,bigint,bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='cc6e24f69f01d46a02a2a63d479864e6'),'current SQL source parity: public.enqueue_email(text,jsonb,text,jsonb,text,text,timestamp with time zone,timestamp with time zone,bigint,bigint,jsonb)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.enqueue_notification_center_emails(integer)') AND md5(btrim(prosrc,E' \n\r\t'))='c6c15f4b5138e79ab9019bec1b7c18ab'),'current SQL source parity: public.enqueue_notification_center_emails(integer)');
--- supabase/migrations/20261111010000_access_membership.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.enqueue_order_email(text,jsonb,bigint,bigint,bigint,timestamp with time zone,text)') AND md5(btrim(prosrc,E' \n\r\t'))='bcf25a0f9290d8301799984b8e21c8e2'),'current SQL source parity: public.enqueue_order_email(text,jsonb,bigint,bigint,bigint,timestamp with time zone,text)');
+-- supabase/migrations/20261119130000_free_checkout_ticket_delivery_receipt.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.enqueue_order_email(text,jsonb,bigint,bigint,bigint,timestamp with time zone,text)') AND md5(btrim(prosrc,E' \n\r\t'))='959accebb0859d96412fdbdb33585398'),'current SQL source parity: public.enqueue_order_email(text,jsonb,bigint,bigint,bigint,timestamp with time zone,text)');
 -- supabase/migrations/20261113090000_ticket_wallet_queue_expand.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.enqueue_order_wallet_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c80e0992df59743b0b716173ce7769b4'),'current SQL source parity: public.enqueue_order_wallet_internal(bigint)');
 -- supabase/migrations/20261111010000_access_membership.sql
@@ -1934,6 +1934,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.order_discount_quote_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='efdd57f2184de715bc0754329c595cd7'),'current SQL source parity: public.order_discount_quote_internal(jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.order_editor_membership_as_actor_internal(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='aa05414eef3f73d8792cdaaa22023c39'),'current SQL source parity: public.order_editor_membership_as_actor_internal(uuid,bigint)');
+-- supabase/migrations/20261119130000_free_checkout_ticket_delivery_receipt.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.order_email_automatic_key_internal(bigint,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='571ea7686726bca5abb2f55c9a11f5d9'),'current SQL source parity: public.order_email_automatic_key_internal(bigint,bigint,text)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.order_email_current_issues(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='3489665404615714225dab54e36a27ff'),'current SQL source parity: public.order_email_current_issues(bigint)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql

@@ -204,7 +204,22 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_message uuid;
 BEGIN
  PERFORM public.require_service_role();
- SELECT message_id INTO v_message FROM public.email_messages WHERE message_kind='order_confirmation' AND data->>'command_id'=p_command::text AND order_id=p_order;
+ -- The checkout confirmation still proves that this command owns the order.
+ -- For free orders that issue tickets immediately, observe the replacement email.
+ SELECT coalesce(tickets.message_id,confirmation.message_id) INTO v_message
+ FROM public.email_messages confirmation
+ JOIN eshop.orders o ON o.id=confirmation.order_id
+ LEFT JOIN public.email_messages tickets ON o.price=0
+   AND public.order_checkout_email_kind_internal(o.id)='order_tickets'
+   AND tickets.organization=confirmation.organization
+   AND tickets.occasion=confirmation.occasion
+   AND tickets.order_id=o.id AND tickets.message_kind='order_tickets'
+   AND tickets.recipient=confirmation.recipient AND tickets.source_version=confirmation.source_version
+   AND tickets.dedupe_key=public.order_email_automatic_key_internal(o.id,confirmation.source_version,o.data->>'email')
+ WHERE confirmation.message_kind='order_confirmation'
+   AND confirmation.data->>'command_id'=p_command::text AND confirmation.order_id=p_order
+ ORDER BY confirmation.id
+ LIMIT 1;
  IF v_message IS NULL THEN RETURN false; END IF;
  INSERT INTO public.email_confirmation_receipts(token_hash,message_id,expires_at) VALUES(p_hash,v_message,now()+interval '15 minutes');
  RETURN true;
