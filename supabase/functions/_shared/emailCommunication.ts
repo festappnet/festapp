@@ -21,11 +21,22 @@ export function orderTemplateValues(
   symbol: string,
   tone: Tone,
   language: unknown = "cs",
+  orderTotal?: number,
 ) {
   return {
     ...orderIdentityValues(title, symbol),
-    orderCommunication: orderCommunication(code, title, tone, language),
+    orderCommunication: orderCommunication(code, title, tone, language, orderTotal),
+    ...(code === "TICKET_ORDER_PAYMENT_DONE"
+      ? { orderStatusSubject: orderPaymentSubject(language, orderTotal) }
+      : {}),
   };
+}
+
+function orderPaymentSubject(language: unknown, total?: number): string {
+  if (resolveEmailLanguage(language) === "en") {
+    return total === 0 ? "Registration confirmed" : "Payment received";
+  }
+  return total === 0 ? "Potvrzení rezervace" : "Přijatá platba";
 }
 
 /** Tone-aware introduction shared by delivery and every order preview. */
@@ -34,6 +45,7 @@ export function orderCommunication(
   title: string,
   tone: Tone,
   language: unknown = "cs",
+  orderTotal?: number,
 ): string {
   const name = escapeEmailHtml(title);
   const informal = tone === "informal";
@@ -55,6 +67,9 @@ export function orderCommunication(
           } objednávka na akci ${name} byla změněna.`
       }</p>`;
     case "TICKET_ORDER_PAYMENT_DONE":
+      if (orderTotal === 0) {
+        return orderCommunication("TICKET_ORDER_CONFIRMATION", title, tone, language);
+      }
       return english
         ? `<h3>Your payment for ${name} has arrived</h3><p>${greeting},<br>we confirm receipt of payment for your registration for ${name}.</p>`
         : `<h3>${

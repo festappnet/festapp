@@ -113,6 +113,7 @@ const emailTemplateVariables = <String, List<String>>{
   ],
   "TICKET_ORDER_PAYMENT_DONE": [
     "orderCommunication",
+    "orderStatusSubject",
     "tickets",
     "order_overview_url",
     "order_overview_button",
@@ -186,6 +187,7 @@ const emailVariableKinds = <String, EmailValueKind>{
   'offered_count': EmailValueKind.text,
   'offered_places': EmailValueKind.text,
   'orderCommunication': EmailValueKind.richBlock,
+  'orderStatusSubject': EmailValueKind.text,
   'orderSymbol': EmailValueKind.text,
   'order_overview_button': EmailValueKind.richBlock,
   'order_overview_url': EmailValueKind.url,

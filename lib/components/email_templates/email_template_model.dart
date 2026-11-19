@@ -253,6 +253,11 @@ class EmailTemplateModel {
       changeOverviewSub,
       balanceReasoningSub,
       orderCommunicationSub,
+      EmailTemplateSub(
+        code: 'orderStatusSubject',
+        description: 'EmailTemplates.authoring.labels.orderStatusSubject'.tr(),
+        defaultValue: '',
+      ),
       paymentDetailsSub,
       EmailTemplateSub(code: 'paymentAction', description: EmailTemplatesStrings.subPaymentAction, defaultValue: ''),
       EmailTemplateSub(code: 'paymentMethodName', description: EmailTemplatesStrings.subPaymentMethodName, defaultValue: ''),

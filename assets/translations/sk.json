@@ -1468,6 +1468,7 @@
       "expiresAt": "Platnosť odkazu",
       "platformLinks": "Odkazy na aplikáciu",
       "orderCommunication": "Úvod správy podľa tónu komunikácie",
+        "orderStatusSubject": "Predmet podľa stavu objednávky",
       "fullOrder": "Prehľad objednávky",
       "balanceReasoning": "Stav platby",
       "paymentDetails": "Platobné údaje",

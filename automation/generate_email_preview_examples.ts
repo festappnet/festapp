@@ -1,6 +1,6 @@
 import { waitlistEmailCopy, waitlistCountPhrase } from "../supabase/functions/_shared/waitlistEmailCopy.ts";
 import { emailVariableContract } from "../supabase/functions/_shared/emailVariables.ts";
-import { orderCommunication } from "../supabase/functions/_shared/emailCommunication.ts";
+import { orderCommunication, orderTemplateValues } from "../supabase/functions/_shared/emailCommunication.ts";
 import { communicationTones } from "../supabase/functions/_shared/communicationTone.ts";
 import { saleOpeningSubstitutions } from '../supabase/functions/_shared/saleOpeningPresentation.ts';
 import { confirmationPaymentSubstitutions, providerPaymentSubstitutions, updateBalanceReasoning, paidPaymentSubstitutions, reminderBalanceReasoning } from "../supabase/functions/_shared/orderEmailPresentation.ts";
@@ -168,7 +168,7 @@ for (const locale of ["cs", "en"] as const) {
             ...scalar,
             accountNumber: total > amountPaid ? fixture.accountNumber : '', iban: total > amountPaid ? formatIBAN(fixture.iban) : '', variableSymbol: total > amountPaid ? fixture.variableSymbol : '',
             paymentAction: total > amountPaid ? balanceReasoning : '', paymentMethodName: locale === 'cs' ? 'Bankovní převod' : 'Bank transfer',
-            orderCommunication: orderCommunication(templateCode, fixture.occasionTitle, tone, locale),
+            ...orderTemplateValues(templateCode, fixture.occasionTitle, fixture.orderSymbol, tone, locale, total),
             // Delivery is optional; absent ticket content renders as an empty block.
             tickets: "",
             deadline: formatDatetime(payment.deadline, locale),
@@ -286,14 +286,14 @@ for (const locale of ['cs','en'] as const) {
     const payment={payment_method:method,providerPayment:{status},collectionAction:{allowed:method!=='unknown'&&status==='open'}};
     const substitutions=providerPaymentSubstitutions(payment,name,locale,overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions).order_overview_button);
     records.push({templateCode,scenario:method+'-'+status,locale,tone:'formal',paymentMethod:method,collectionAllowed:payment.collectionAction.allowed,
-     values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),...substitutions,amount:formatCurrency(800,'CZK'),orderCommunication:orderCommunication(templateCode,fixture.occasionTitle,'formal',locale),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol)},requiredLinks:overviewRequiredLinks(fixture.overviewUrl,locale,fixture.overviewActions)});
+     values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),...substitutions,amount:formatCurrency(800,'CZK'),...orderTemplateValues(templateCode,fixture.occasionTitle,fixture.orderSymbol,'formal',locale,800),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol)},requiredLinks:overviewRequiredLinks(fixture.overviewUrl,locale,fixture.overviewActions)});
    }
   }
  }
  for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE']) {
   const payment={payment_method:'cash',amount:800,paid:0,currency_code:'CZK',data:{payment_policy:{cashInstructions:locale==='cs'?'U vstupu.':'At the entrance.'}},collectionAction:{allowed:true}};
   records.push({templateCode,scenario:'cash-unpaid',locale,tone:'formal',paymentMethod:'cash',collectionAllowed:true,values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),
-   ...confirmationPaymentSubstitutions(payment,[],locale,'formal'),orderCommunication:orderCommunication(templateCode,fixture.occasionTitle,'formal',locale),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol),accountNumber:'',iban:'',variableSymbol:'',paymentAction:'',paymentMethodName:locale==='cs'?'Hotovost':'Cash'},requiredLinks:[]});
+   ...confirmationPaymentSubstitutions(payment,[],locale,'formal'),...orderTemplateValues(templateCode,fixture.occasionTitle,fixture.orderSymbol,'formal',locale,800),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol),accountNumber:'',iban:'',variableSymbol:'',paymentAction:'',paymentMethodName:locale==='cs'?'Hotovost':'Cash'},requiredLinks:[]});
  }
 }
 const moneySlots: Record<string, string> = {
@@ -359,7 +359,7 @@ for (const record of records) {
     }
   }
   const templates: Record<string, string> = {
-    orderCommunication: orderCommunication(record.templateCode, "{{preview_occasion}}", record.tone, record.locale),
+    orderCommunication: orderCommunication(record.templateCode, "{{preview_occasion}}", record.tone, record.locale, zero ? 0 : undefined),
     fullOrder: generateFullOrder(
       fixture.orderData,
       tickets,

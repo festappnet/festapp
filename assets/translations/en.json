@@ -1340,6 +1340,7 @@
         "appLinks": "Application links",
         "orderSymbol": "Order symbol",
         "orderCommunication": "Message introduction for the communication tone",
+        "orderStatusSubject": "Subject based on the order status",
         "paymentAction": "Payment action",
         "paymentMethodName": "Payment method"
       },

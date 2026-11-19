@@ -136,6 +136,7 @@ export async function collectPwaShellManifest(buildDir) {
     '/festapp_update_prompt.js', '/festapp_pwa_bridge.js',
     '/festapp_flutter_bootstrap_guard.js',
     '/festapp-version.json', '/manifest.json', '/manifest.webmanifest',
+    '/occasion-card-preview.html',
     '/AssetManifest.json', '/FontManifest.json',
     '/loading-logo.svg', '/loading-animation.svg', '/loading-animation-light.svg',
     ...publicBrandFiles.map(name=>'/'+name),

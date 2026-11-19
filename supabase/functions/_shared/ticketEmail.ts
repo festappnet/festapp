@@ -7,11 +7,12 @@ export function ticketEmailSubstitutions(data: any, requestedLanguage = "cs", me
   const lang = resolveEmailLanguage(requestedLanguage);
   const { order, occasion, payment_info, form_data } = data;
   const tone = resolveCommunicationTone(form_data?.communication_tone);
+  const total = Number(payment_info?.amount ?? order.price ?? NaN);
   return {
     paymentAction: '', paymentMethodName: methodName ?? String(payment_info?.payment_method ?? ''),
-    ...orderTemplateValues("TICKET_ORDER_PAYMENT_DONE", occasion.title, order.order_symbol, tone, lang),
+    ...orderTemplateValues("TICKET_ORDER_PAYMENT_DONE", occasion.title, order.order_symbol, tone, lang, total),
     ...paidPaymentSubstitutions(
-      Number(payment_info?.amount ?? order.price ?? 0),
+      total,
       confirmedNetPayment(payment_info, Number(order.price ?? 0)),
       order.currency_code ?? "CZK",
       occasion.features ?? [],

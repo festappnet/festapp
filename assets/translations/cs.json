@@ -1340,6 +1340,7 @@
         "appLinks": "Odkazy na aplikaci",
         "orderSymbol": "Symbol objednávky",
         "orderCommunication": "Úvod zprávy podle tónu komunikace",
+        "orderStatusSubject": "Předmět podle stavu objednávky",
         "paymentAction": "Platební akce",
         "paymentMethodName": "Platební metoda"
       },

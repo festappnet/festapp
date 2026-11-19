@@ -122,6 +122,12 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
     }
   }
   assert.ok(html.includes('href="/login"'));
+  const createLinks = html.match(/<a[^>]*href="\/login\?create=1"/g) ?? [];
+  assert.equal(createLinks.length, 3, 'header, hero, and closing links carry the organizer intent');
+  assert.ok(!html.includes('href="/events?create=1"'));
+
+  assert.equal((html.match(/<article class="reference-card">/g) ?? []).length, 4);
+  assert.equal((html.match(/<a class="reference-card" href=/g) ?? []).length, 1);
   const footer = html.slice(html.indexOf('<footer'));
   for (const route of ['/rezervacni-system-s-planem-salu']) assert.ok(footer.includes(`href="${route}"`),'topic is discoverable from shared footer');
   const seatingSection = html.slice(html.indexOf('id="planek"'), html.indexOf('id="formular"'));

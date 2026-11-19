@@ -1907,6 +1907,58 @@ void main() {
 
   testWidgetsWithEnvironment(
     () => _environment,
+    'a superseded ticket preview refreshes without a spurious error toast',
+    (tester) async {
+      final previous = RightsService.occasionLinkModel;
+      addTearDown(
+        () => RightsService.occasionLinkModelNotifier.value = previous,
+      );
+      final toasts = <String>[];
+      const channel = MethodChannel('PonnamKarthik/fluttertoast');
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        toasts.add((call.arguments as Map)['msg'] as String);
+        return true;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.ticketLayoutsWrite: true},
+      );
+      final pending = Completer<TicketLayoutResources>();
+      final service = SettingsService()..pendingResolve = pending;
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: TicketSettings(
+                feature: TicketFeature(code: 'ticket', ticketType: 'named'),
+                occasionId: 7,
+                service: service,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(service.resolveCalls, 1);
+      RightsService.invalidateCapabilities();
+      RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.ticketLayoutsWrite: true},
+      );
+      service.pendingResolve = null;
+      pending.completeError(StateError('Ticket context changed'));
+      await tester.pumpAndSettle();
+      expect(toasts, isEmpty);
+      expect(service.resolveCalls, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
     'settings expose templates without a second type selector',
     (tester) async {
       for (final type in <String?>['named', 'wide', null]) {

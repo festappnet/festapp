@@ -117,6 +117,11 @@ export const emailVariableContract = {
       "repeatable": false,
       "html": true
     },
+    "orderStatusSubject": {
+      "kind": "text",
+      "repeatable": true,
+      "html": false
+    },
     "orderSymbol": {
       "kind": "text",
       "repeatable": true,
@@ -388,6 +393,7 @@ export const emailVariableContract = {
     ],
     "TICKET_ORDER_PAYMENT_DONE": [
       "orderCommunication",
+      "orderStatusSubject",
       "tickets",
       "order_overview_url",
       "order_overview_button",
