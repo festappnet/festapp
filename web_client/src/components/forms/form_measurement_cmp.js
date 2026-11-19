@@ -205,7 +205,9 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
                     // Focus the notice itself: no focus ring on the privacy link
                     // at page load, and Tab still enters the first control.
                     layer.focus({preventScroll: true});
-                } else if (layer) focusables(layer)[0]?.focus();
+                } else if (layer && !layer.contains(win.document.activeElement)) {
+                    focusables(layer)[0]?.focus();
+                }
             }, 5);
         }
     };
