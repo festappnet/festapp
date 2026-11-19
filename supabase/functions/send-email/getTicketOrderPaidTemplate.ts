@@ -1,7 +1,6 @@
 import { bankCollectionAllowed } from "../_shared/orderEmailPresentation.ts";
 import { orderTemplateValues, resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
-import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { confirmedNetPayment, paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
@@ -40,7 +39,7 @@ export async function getTicketOrderPaidTemplate(
   // 2. Get the communication tone
   const tone = resolveCommunicationTone(form_data?.communication_tone);
 
-  const totalAmount = Number(payment_info?.amount) || 0;
+  const totalAmount = Number(payment_info?.amount ?? order.price ?? NaN);
   const amountPaid = confirmedNetPayment(payment_info);
   const currency = order.currency_code || "CZK";
 
@@ -48,7 +47,7 @@ export async function getTicketOrderPaidTemplate(
     totalAmount, amountPaid, currency, occasion.features || [], lang, tone, payment_info,
   );
 
-  if (bankCollectionAllowed(payment_info) && ['CZK','EUR'].includes(payment_info.currency_code) && !(amountPaid >= totalAmount)) {
+  if (bankCollectionAllowed(payment_info) && ['CZK','EUR'].includes(payment_info.currency_code) && amountPaid < totalAmount) {
     const remainingAmount = totalAmount - amountPaid;
     // QR code for remaining amount
     try {
@@ -83,7 +82,7 @@ export async function getTicketOrderPaidTemplate(
   }
 
   const subs = {
-    ...orderTemplateValues("TICKET_ORDER_PAYMENT_DONE", occasion.title, order.order_symbol, tone, lang),
+    ...orderTemplateValues("TICKET_ORDER_PAYMENT_DONE", occasion.title, order.order_symbol, tone, lang, totalAmount),
     fullOrder: generateFullOrder(
       order.data,
       order.data.tickets,

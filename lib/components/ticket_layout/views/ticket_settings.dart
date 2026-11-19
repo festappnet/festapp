@@ -144,7 +144,7 @@ class _TicketSettingsState extends State<TicketSettings> {
     final key = _contextKey;
     final request = ++generation;
     if (unsupported) return;
-    await ExceptionHandler.guard(context, futureFunction: () async {
+    try {
       final next = await service.resolve(widget.occasionId, type,
           widget.feature.layout, widget.feature.ticketBackground,
           borrowResourcesOnly: widget.borrowResourcesOnly,
@@ -161,7 +161,11 @@ class _TicketSettingsState extends State<TicketSettings> {
       });
       old?.dispose();
       oldController?.dispose();
-    });
+    } catch (error) {
+      // A superseded preview has no effect on the saved event or current layout.
+      if (!mounted || request != generation || key != _contextKey) return;
+      await ExceptionHandler.handle(context, error: error);
+    }
   }
 
   StreamSubscription? _authChanges;

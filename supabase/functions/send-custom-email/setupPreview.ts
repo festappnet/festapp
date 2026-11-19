@@ -149,7 +149,7 @@ export async function setupPreviewResponse(
   ) {
     const substitutions = {
       ...fields,
-      ...orderTemplateValues(code, d.title ?? "", "PREVIEW", tone, lang),
+      ...orderTemplateValues(code, d.title ?? "", "PREVIEW", tone, lang, total),
       variableSymbol: paymentReferenceValue(previewPaymentInfo,{required:total>0&&isBankPaymentInfo(paymentInfo)}),
       accountNumber: paymentInfo.account_number_human_readable ?? paymentInfo.account_number ?? "",
       iban: "",

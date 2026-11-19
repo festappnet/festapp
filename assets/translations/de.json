@@ -1442,6 +1442,7 @@
       "expiresAt": "Gültigkeit des Links",
       "platformLinks": "App-Links",
       "orderCommunication": "Nachrichteneinleitung je nach Anrede",
+        "orderStatusSubject": "Betreff je nach Bestellstatus",
       "fullOrder": "Bestelldetails",
       "balanceReasoning": "Zahlungsstatus",
       "paymentDetails": "Zahlungsdaten",

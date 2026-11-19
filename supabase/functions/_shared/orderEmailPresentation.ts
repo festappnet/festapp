@@ -166,6 +166,15 @@ export function paidPaymentSubstitutions(
   tone: Tone,
   paymentInfo?: Fields,
 ) {
+  if (Number.isNaN(totalAmount)) totalAmount = 0;
+  else if (totalAmount === 0) {
+    return {
+      balanceReasoning: lang === "cs"
+        ? "<p>Rezervace je zdarma.</p>"
+        : "<p>Your registration is free of charge.</p>",
+      amount: formatCurrency(0, currency),
+    };
+  }
   if (paymentInfo && paymentInfo.payment_method !== 'bank' && paymentInfo.payment_method !== 'cash') return {...providerPaymentSubstitutions(paymentInfo, String(paymentInfo.payment_method ?? ''), lang), amount: formatCurrency(amountPaid, currency)};
   const tr = translation(lang);
   let balanceReasoning = "";

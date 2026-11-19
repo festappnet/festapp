@@ -4,7 +4,7 @@ import test, { before } from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 
-let OccasionCard, OccasionDetailDialog, AppConfig, RouterService;
+let OccasionCard, OccasionDetailDialog, AppConfig, RouterService, renderOccasionCardPreview, mountOccasionCardPreview, OccasionModel, createOccasionCardView;
 before(async () => {
     const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://tickets.invalid/' });
     for (const key of ['window', 'document', 'HTMLElement', 'customElements', 'Event', 'CustomEvent', 'DOMParser']) {
@@ -15,6 +15,9 @@ before(async () => {
     ({ OccasionDetailDialog } = await import('../../src/components/occasion/occasion_detail_dialog.js'));
     ({ AppConfig } = await import('../../src/app_config.js'));
     ({ RouterService } = await import('../../src/services/router_service.js'));
+    ({ renderOccasionCardPreview, mountOccasionCardPreview } = await import('../../src/components/occasion/occasion_card_preview.js'));
+    ({ OccasionModel } = await import('../../src/components/occasion/occasion_model.js'));
+    ({ createOccasionCardView } = await import('../../src/components/occasion/occasion_card_view.js'));
 });
 
 const occasion = {
@@ -22,6 +25,48 @@ const occasion = {
     start_time: '2026-11-01', end_time: '2026-11-03', form: { link: 'registration' },
     features: [{ code: 'form', is_enabled: true }],
 };
+
+test('settings render the public card with canonical feature parsing, safe draft updates and no reservation actions', () => {
+    const container = document.createElement('div');
+    for (const [locale, title] of [['cs', 'Skautský ples'], ['en', '<img src=x onerror=alert(1)>']]) {
+        const raw = { ...occasion, title, data: { image: 'https://img.festapp.net/images/ball.webp' },
+            features: [{ code: 'form', is_enabled: true, external_price: '350 Kč' }] };
+        renderOccasionCardPreview(container, { occasion: raw, locale });
+        const publicCard = createOccasionCardView(OccasionModel.fromJson(raw), { locale });
+        const preview = container.firstElementChild;
+        assert.equal(preview.inert, true);
+        assert.equal(preview.tabIndex, -1);
+        assert.equal(preview.onclick, null);
+        assert.equal(preview.innerHTML, publicCard.innerHTML);
+        assert.equal(preview.querySelector('.oc-title').textContent, title);
+        assert.equal(preview.querySelectorAll('img').length, 1);
+        assert.equal(container.children.length, 1);
+    }
+});
+
+test('preview accepts drafts only from its same-origin parent and reports content height', () => {
+    const dom = new JSDOM('<main id="preview"></main>', { url: 'https://tickets.invalid/occasion-card-preview.html' });
+    const host = dom.window;
+    const reports = [];
+    host.postMessage = (data, origin) => reports.push({ data, origin });
+    host.ResizeObserver = class { observe() {} };
+    mountOccasionCardPreview(host);
+    assert.equal(reports[0].data.type, 'festapp-occasion-card-ready');
+    const data = { type: 'festapp-occasion-card-draft', occasion, locale: 'cs', dark: false };
+    const send = (source, origin, payload = data) => host.dispatchEvent(new host.MessageEvent('message', { data: payload, source, origin }));
+    send(host, 'https://other.invalid');
+    send(window, host.location.origin);
+    assert.equal(host.document.querySelector('.oc-card'), null);
+    send(host, host.location.origin);
+    assert.equal(host.document.querySelector('.oc-title').textContent, occasion.title);
+    assert.equal(host.document.documentElement.lang, 'cs');
+    assert.equal(host.document.body.classList.contains('dark-mode'), false);
+    send(host, host.location.origin, { ...data, locale: 'en', dark: true });
+    assert.equal(host.document.body.classList.contains('dark-mode'), true);
+    assert.equal(reports.at(-1).data.type, 'festapp-occasion-card-height');
+    assert.ok(reports.every(report => report.origin === host.location.origin));
+    host.close();
+});
 
 test('cards expose real links, retain plain-click dialogs and allow modified clicks to follow the native destination', async t => {
     AppConfig.isAppSupported = true;

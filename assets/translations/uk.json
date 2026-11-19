@@ -979,6 +979,7 @@
       "expiresAt": "Строк дії посилання",
       "platformLinks": "Посилання на застосунок",
       "orderCommunication": "Вступ повідомлення відповідно до тону спілкування",
+        "orderStatusSubject": "Тема залежно від стану замовлення",
       "fullOrder": "Деталі замовлення",
       "balanceReasoning": "Стан оплати",
       "paymentDetails": "Платіжні дані",

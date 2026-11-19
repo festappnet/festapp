@@ -14,7 +14,7 @@ WITH defaults(code, subject, html) AS (VALUES
 {{fullOrder}}
 <p>Přejeme pěkný den</p>
 <p>Organizační tým {{occasionTitle}}</p>'),
-('TICKET_ORDER_PAYMENT_DONE','{{occasionTitle}} - Přijatá platba','{{orderCommunication}}
+('TICKET_ORDER_PAYMENT_DONE','{{occasionTitle}} - {{orderStatusSubject}}','{{orderCommunication}}
 {{balanceReasoning}}
 <p>Těšíme se na setkání!</p>
 <p>Organizační tým {{occasionTitle}}</p>

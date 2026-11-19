@@ -1,0 +1,4 @@
+/* Only the embedding canvas differs; the card uses occasion_card.css intact. */
+html, body { margin: 0; padding: 0; background: transparent; min-height: 0; }
+#preview { padding: 4px; }
+#preview .oc-card { cursor: default; }

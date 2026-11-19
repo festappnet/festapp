@@ -5,6 +5,7 @@ import {
   resolveEmailLanguage,
 } from "./emailCommunication.ts";
 import { renderEmail } from "./emailDelivery.ts";
+import { ticketEmailSubstitutions } from "./ticketEmail.ts";
 import { confirmationPaymentSubstitutions } from "./orderEmailPresentation.ts";
 import examples from "./emailPreviewScenarios.json" with { type: "json" };
 
@@ -100,5 +101,34 @@ Deno.test("cash fallback follows the same tone and preserves configured instruct
       tone,
     );
     assert.ok(custom.balanceReasoning.includes("Vlastní pokyny."));
+  }
+});
+
+Deno.test("ticket delivery renders free and paid subjects from the order total", async () => {
+  const code = "TICKET_ORDER_PAYMENT_DONE";
+  for (const [price, language, expected] of [
+    [0, "cs", "Potvrzení rezervace"],
+    [0, "en", "Registration confirmed"],
+    [120, "cs", "Přijatá platba"],
+    [120, "en", "Payment received"],
+  ] as const) {
+    const substitutions = ticketEmailSubstitutions({
+      order: { price, currency_code: "CZK", order_symbol: "PREVIEW", data: { tickets: [] } },
+      occasion: { title: "Handling dětí", features: [] },
+      payment_info: { amount: price, paid: price, payment_method: "bank", currency_code: "CZK" },
+    }, language);
+    const result = await renderEmail({
+      to: "preview@example.invalid",
+      templateCode: code,
+      context: { organization: 1 },
+      substitutions,
+    }, async () => ({ template: defaults.get(code)! }));
+    assert.equal(result.subject, 'Handling dětí - ' + expected);
+    if (price === 0) {
+      assert.match(result.html, language === "cs" ? /Rezervace je zdarma/ : /free of charge/);
+      assert.doesNotMatch(result.html, /platb[ayě]|uhrazen|payment|paid/i);
+    } else {
+      assert.match(result.html, language === "cs" ? /přijetí platby/ : /receipt of payment/);
+    }
   }
 });

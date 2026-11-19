@@ -1444,6 +1444,7 @@
       "expiresAt": "Ważność linku",
       "platformLinks": "Linki do aplikacji",
       "orderCommunication": "Wstęp wiadomości zgodny z formą zwracania się",
+        "orderStatusSubject": "Temat zależny od statusu zamówienia",
       "fullOrder": "Szczegóły zamówienia",
       "balanceReasoning": "Stan płatności",
       "paymentDetails": "Dane płatności",
