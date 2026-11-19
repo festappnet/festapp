@@ -167,7 +167,7 @@ Deno.test('production PDF encodes the saved table and seat choice in its printed
  const {prepareTicketRenderer}=await import('./ticketGeneration.ts');
  const {fontMetrics,futuraId}=await import('./ticketFonts.ts');
  const {PDFDocument,PDFRawStream}=await import('npm:pdf-lib');
- const fontkit=await import('npm:fontkit@3.0.0');
+ const fontkit=await import('./vendor/fontkit/fontkit.mjs');
  const {inflateSync}=await import('node:zlib');
  const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');
  const metrics=fontMetrics(font),encodingDoc=await PDFDocument.create();encodingDoc.registerFontkit(fontkit);
