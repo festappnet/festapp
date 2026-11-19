@@ -1,5 +1,5 @@
-name: Restore pinned browser dependencies
-description: Reuse Playwright binaries across jobs and Ubuntu packages for the WordPress engines.
+name: Restore Playwright browser binaries
+description: Cache browser binaries independently of host system package installation.
 inputs:
   profile:
     description: chromium or wordpress
@@ -15,29 +15,21 @@ runs:
         set -euo pipefail
         version="$(node -p "require('./web_client/package.json').devDependencies.playwright")"
         [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
-        base="cms-browsers-${RUNNER_OS}-${RUNNER_ARCH}-${ImageOS:?}-playwright-${version}"
-        case "$PROFILE" in
-          chromium) printf 'browsers=%s-chromium\n' "$base" >> "$GITHUB_OUTPUT" ;;
-          wordpress)
-            printf 'browsers=%s\n' "$base" >> "$GITHUB_OUTPUT"
-            archive_platform="cms-apt-${RUNNER_OS}-${RUNNER_ARCH}-${ImageOS}-"
-            archive_prefix="${archive_platform}playwright-${version}-"
-            printf 'archives=%s%s\narchive-prefix=%s\nlegacy-archive-prefix=%s\n' \
-              "$archive_prefix" "${ImageVersion:?}" "$archive_prefix" "$archive_platform" >> "$GITHUB_OUTPUT"
-            printf 'FESTAPP_CMS_APT_CACHE=%s/.cache/festapp-ci/playwright-apt\n' "$HOME" >> "$GITHUB_ENV" ;;
-          *) echo "Unknown browser profile: $PROFILE" >&2; exit 1 ;;
-        esac
-    - name: Restore Playwright browser binaries
+        [[ "$PROFILE" == chromium || "$PROFILE" == wordpress ]] || exit 1
+        base="playwright-binaries-v2-${RUNNER_OS}-${RUNNER_ARCH}-${ImageOS:?}-${version}"
+        printf 'chromium=%s-chromium\nwordpress=%s-firefox-webkit\n' "$base" "$base" >> "$GITHUB_OUTPUT"
+    - name: Restore Chromium and shared Playwright tools
       uses: actions/cache@v5
       with:
-        path: ~/.cache/ms-playwright
-        key: ${{ steps.key.outputs.browsers }}
-    - name: Restore Playwright system package archives
+        path: |
+          ~/.cache/ms-playwright/chromium*
+          ~/.cache/ms-playwright/ffmpeg*
+        key: ${{ steps.key.outputs.chromium }}
+    - name: Restore Firefox and WebKit
       if: inputs.profile == 'wordpress'
       uses: actions/cache@v5
       with:
-        path: ~/.cache/festapp-ci/playwright-apt/*.deb
-        key: ${{ steps.key.outputs.archives }}
-        restore-keys: |
-          ${{ steps.key.outputs.archive-prefix }}
-          ${{ steps.key.outputs.legacy-archive-prefix }}
+        path: |
+          ~/.cache/ms-playwright/firefox*
+          ~/.cache/ms-playwright/webkit*
+        key: ${{ steps.key.outputs.wordpress }}

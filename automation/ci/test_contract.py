@@ -22,10 +22,13 @@ class MirrorContractTest(unittest.TestCase):
         action_path = './.github/actions/restore-playwright-cache'
         steps = yaml.safe_load((ROOT / action_path / 'action.yml').read_text())['runs']['steps']
         command = steps[0]['run']
-        self.assertEqual(steps[1]['with']['key'], '${{ steps.key.outputs.browsers }}')
-        self.assertEqual(steps[2]['with']['key'], '${{ steps.key.outputs.archives }}')
+        self.assertEqual(steps[1]['with']['key'], '${{ steps.key.outputs.chromium }}')
+        self.assertEqual(steps[2]['with']['key'], '${{ steps.key.outputs.wordpress }}')
         self.assertEqual(steps[2]['if'], "inputs.profile == 'wordpress'")
-        self.assertIn('${{ steps.key.outputs.archive-prefix }}', steps[2]['with']['restore-keys'])
+        chromium_paths = set(steps[1]['with']['path'].splitlines())
+        wordpress_paths = set(steps[2]['with']['path'].splitlines())
+        self.assertFalse(chromium_paths & wordpress_paths)
+        self.assertEqual(wordpress_paths, {'~/.cache/ms-playwright/firefox*', '~/.cache/ms-playwright/webkit*'})
         for filename, job in (
             ('wix-checkout-compatibility.yml', 'wordpress-checkout-compatibility'),
             ('wix-checkout-compatibility.yml', 'wix-checkout-compatibility'),
@@ -52,19 +55,14 @@ class MirrorContractTest(unittest.TestCase):
                 return result.returncode, output.read_text() if output.exists() else ''
 
             chromium = key()
-            self.assertEqual(chromium, (0, 'browsers=cms-browsers-Linux-X64-ubuntu26-playwright-1.65.0-chromium\n'))
+            self.assertEqual(chromium, (0,
+                'chromium=playwright-binaries-v2-Linux-X64-ubuntu26-1.65.0-chromium\n'
+                'wordpress=playwright-binaries-v2-Linux-X64-ubuntu26-1.65.0-firefox-webkit\n'))
             self.assertEqual(chromium, key(app='2.0.0', ImageVersion='20261119.1'))
+            self.assertEqual(chromium, key(PROFILE='wordpress'))
             self.assertNotEqual(chromium, key(browser='1.66.0'))
             self.assertNotEqual(chromium, key(ImageOS='ubuntu24'))
             self.assertNotEqual(chromium, key(RUNNER_ARCH='ARM64'))
-            wordpress = key(PROFILE='wordpress')
-            archive_prefix = 'cms-apt-Linux-X64-ubuntu26-playwright-1.65.0-'
-            self.assertIn(f'archives={archive_prefix}20261111.82.6', wordpress[1])
-            other_image = key(PROFILE='wordpress', ImageVersion='20261119.1')
-            self.assertNotEqual(wordpress, other_image)
-            self.assertIn(f'archive-prefix={archive_prefix}\n', other_image[1])
-            self.assertNotIn(f'archive-prefix={archive_prefix}\n',
-                             key(PROFILE='wordpress', browser='1.66.0')[1])
             self.assertNotEqual(key(PROFILE='invalid')[0], 0)
             self.assertNotEqual(key(browser='^1.65.0')[0], 0)
             self.assertNotEqual(key(ImageOS='')[0], 0)

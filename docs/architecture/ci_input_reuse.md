@@ -183,16 +183,18 @@ image builds. Both configured core/PHP pairs are verified at runtime, with
 separate volumes and databases. The two core containers start concurrently.
 Their installations run concurrently once MariaDB creates both databases.
 The older core release is staged from its SHA-256-pinned archive. WP-CLI
-reads that archive offline. Hosted browser setup checks existing system
-dependencies before installing any missing packages.
-Owner labels fence creation and cleanup. Private state is never cached. Developer wp-env tooling and its dependency tests remain.
-The checkout, server-policy, CMS and optional hosted web build jobs share the
-same pinned Chromium cache for the runner OS and architecture. WordPress uses
-a separate browser cache because it also needs Firefox and WebKit. The WordPress
-runner caches downloaded apt archives by runner image and Playwright version.
-Other runner images on the same OS and architecture can seed that cache. Apt
-first tries the restored archives without network downloads. On a miss it
-refreshes the signed index before downloading, and verifies package checksums. Browsers are launched in a probe before and after any necessary install.
+reads that archive offline. All browser binaries come from the Playwright
+dependency in the workspace lockfile. Chromium and shared Playwright tools
+have one cache by browser version, OS and architecture. WordPress adds a
+disjoint cache for Firefox and WebKit. No apt archives travel between runners.
+The launch probes check the actual required engines before host package setup.
+A repair uses the library names reported by the same Playwright dependency.
+If the configured mirror or its package index fails, hosted Ubuntu retries
+against the signed official archives for its current release. Package
+resolution and installation use the same archive source. On failure the job
+reports bounded apt diagnostics. A successful install must pass the launch probes.
+Owner labels fence creation and cleanup. Private state is never cached.
+Developer wp-env tooling and its dependency tests remain.
 Deno reuses dependency downloads keyed by its pin and lockfile, and pnpm caches
 include the lockfiles installed by each job. Closing a pull request evicts its
 merge-ref caches so unused copies do not displace shared main-branch entries.
