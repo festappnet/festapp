@@ -202,6 +202,8 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
         ? t('blockedHint')
         : ambiguous
         ? t('chooseMessage')
+        : selected?.preparationFailed == true
+        ? selected!.reasonDescription
         : sourceBlocked
         ? (selected.data['resolution'] == 'waiting_repair' ||
                   const {
@@ -213,7 +215,7 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
               : t('reviewBlocked'))
         : addressProblem
         ? t('repairInstruction')
-        : issues.isNotEmpty
+        : issues.any((issue) => !issue.preparationFailed)
         ? t('verifyInstruction')
         : null;
 
@@ -322,6 +324,7 @@ class _OrderEmailContactEditorState extends State<OrderEmailContactEditor> {
                     !complaint &&
                     recipientIssues.any(
                       (issue) =>
+                          !issue.preparationFailed &&
                           (issue.isFailure || issue.uncertain) &&
                           issue.data['obsolete'] != true &&
                           issue.data['resolution'] != 'cancelled' &&
