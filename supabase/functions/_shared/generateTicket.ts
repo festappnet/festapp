@@ -5,7 +5,7 @@ import type { Resources } from './ticketGeneration.ts';
 import QRCode from "npm:qrcode";
 import { PDFDocument, PDFName, PDFOperator, PDFOperatorNames, type PDFPage, rgb, degrees, pushGraphicsState, popGraphicsState, rectangle, clip, endPath, setLineWidth, setTextRenderingMode, TextRenderingMode, setStrokingRgbColor } from "npm:pdf-lib";
 // Import all exports from fontkit (do not try to import a default)
-import * as fontkit from "npm:fontkit@3.0.0";
+import * as fontkit from "./vendor/fontkit/fontkit.mjs";
 
 /** A batch owns one decoded/compressed image; each output PDF gets its own copy. */
 export interface PreparedTicketBackground {

@@ -1,5 +1,5 @@
 import {preparedFont, readPreparedFont} from './ticketPreparedFont.ts';
-import * as fontkit from 'npm:fontkit@3.0.0';
+import * as fontkit from './vendor/fontkit/fontkit.mjs';
 import { PDFDocument } from 'npm:pdf-lib';
 import catalog from './ticket-assets/font-catalog.json' with {type:'json'};
 import type {FontMetrics} from './ticketText.ts';
