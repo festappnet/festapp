@@ -3,6 +3,16 @@ import 'package:festapp_core/forms.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('form display title does not fall back to the public link', () {
+    final named = FormDefinition(title: ' Vánoční pouť ', link: 'nrvi7fgx');
+    final unnamed = FormDefinition(title: ' ', link: 'nrvi7fgx');
+
+    expect(named.displayTitle, 'Vánoční pouť');
+    expect(named.toString(), 'Vánoční pouť');
+    expect(unnamed.displayTitle, isEmpty);
+    expect(unnamed.toString(), '---');
+  });
+
   test(
     'effective deadline distinguishes inherited null, zero and explicit values',
     () {

@@ -531,9 +531,12 @@ class FormDefinition {
     return CommunicationTone.resolve(data?[metaCommunicationTone]);
   }
 
+  String get displayTitle => title?.trim() ?? '';
+
   @override
   String toString() {
-    return title ?? link ?? "---";
+    final text = displayTitle;
+    return text.isEmpty ? '---' : text;
   }
 
   FormDefinition copyWith({
