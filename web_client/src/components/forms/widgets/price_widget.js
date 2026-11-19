@@ -142,10 +142,10 @@ export class PriceWidget {
             : '';
 
         this.element.innerHTML = `
-            <div style="display: flex; align-items: center;">
-                <span style="margin-right: 6px; font-weight: 600;">${totalItems}x</span>
-                <i class="material-icons" style="font-size: 24px; margin-right: 10px;">local_activity</i>
-                <span style="font-weight: 600;">${formattedPrice}</span>
+            <div class="floating-price-summary">
+                <span>${totalItems}×</span>
+                <i class="material-icons" aria-hidden="true">local_activity</i>
+                <span>${formattedPrice}</span>
             </div>
             ${metaHtml}
         `;

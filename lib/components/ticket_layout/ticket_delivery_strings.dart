@@ -7,6 +7,22 @@ import 'package:flutter/foundation.dart' show SynchronousFuture;
 
 import '../features/ticket_feature.dart';
 
+enum TicketWalletProvider {
+  google,
+  apple;
+
+  static Set<TicketWalletProvider> ready(Object? value) => {
+    if (value is Map)
+      for (final provider in values)
+        if (value[provider.name] == true) provider,
+  };
+
+  String emailBadge(String language) => switch (this) {
+    google => 'assets/brand/google-wallet/condensed/$language.png',
+    apple => 'assets/brand/apple-wallet/email/$language.png',
+  };
+}
+
 class TicketDeliveryStrings {
   static final _walletCopies = <String, Map<String, String>>{};
 

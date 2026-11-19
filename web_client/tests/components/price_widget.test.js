@@ -140,7 +140,8 @@ describe('PriceWidget Logic', () => {
         assert.ok(!mockSubmitBtn.classList.contains('disabled'), 'Submit button should NOT have disabled class');
 
         // Verify Content
-        assert.ok(widget.element.innerHTML.includes('1x'), 'Should display item count');
+        assert.ok(widget.element.innerHTML.includes('1×'), 'Should display item count');
+        assert.match(widget.element.innerHTML, /class="material-icons" aria-hidden="true"/);
         const expectedPrice = formatPrice(0, 'CZK', 0, 'cs-CZ').replace(/\u00A0/g, ' '); // Normalize NBSP
         
         // Easier: Check that the string is present, normalizing spaces

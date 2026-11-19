@@ -475,6 +475,24 @@ body.dark-mode .option-description {
     font-size: calc(1.1em * var(--font-scale));
 }
 
+.floating-price-summary {
+    display: flex;
+    align-items: center;
+    gap: .4em;
+    line-height: 1.1;
+}
+
+.floating-price-summary > span {
+    text-box: trim-both cap alphabetic;
+}
+
+.floating-price-summary > .material-icons {
+    display: block;
+    flex: none;
+    font-size: 1.25em;
+    line-height: 1;
+}
+
 .total-price {
     font-weight: bold;
     font-size: calc(1.3em * var(--font-scale));

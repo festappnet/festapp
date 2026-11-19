@@ -31,7 +31,14 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
-              child: TicketEmailPreview.walletSample(count: 3, language: 'en'),
+              child: TicketEmailPreview.walletSample(
+                count: 3,
+                providers: const {
+                  TicketWalletProvider.google,
+                  TicketWalletProvider.apple,
+                },
+                language: 'en',
+              ),
             ),
           ),
         ),
@@ -40,15 +47,19 @@ void main() {
       expect(find.text('Tickets on your phone'), findsOneWidget);
       expect(find.text('Ticket 2 of 3'), findsOneWidget);
       expect(find.byType(QrImageView), findsNothing);
-      expect(find.byType(Image), findsNWidgets(3));
+      expect(find.byType(Image), findsNWidgets(6));
       expect(find.byType(TextButton), findsNothing);
-      for (final image in tester.widgetList<Image>(find.byType(Image))) {
-        expect(image.height, 48);
-        expect(
-          (image.image as AssetImage).assetName,
-          'assets/brand/google-wallet/en.png',
-        );
-      }
+      final images = tester.widgetList<Image>(find.byType(Image));
+      expect(images.every((image) => image.height == 48), isTrue);
+      expect(
+        images.map((image) => (image.image as AssetImage).assetName),
+        unorderedEquals([
+          for (var index = 0; index < 3; index++) ...[
+            'assets/brand/google-wallet/condensed/en.png',
+            'assets/brand/apple-wallet/email/en.png',
+          ],
+        ]),
+      );
     },
   );
   test('Native Wallet appearance shares the backend contract and preserves overrides', () {

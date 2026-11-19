@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.20.636+1168
+version: 0.20.637+1169
 
 environment:
   sdk: ^3.14.0
@@ -184,6 +184,8 @@ flutter:
     - automation/tickets/setup-appearance-fonts.json
     - assets/email_templates/preview_examples.json
     - assets/brand/google-wallet/
+    - assets/brand/google-wallet/condensed/
+    - assets/brand/apple-wallet/email/
     - supabase/functions/_shared/ticket-assets/
     - supabase/functions/_shared/ticket-assets/backgrounds/
     - supabase/functions/_shared/ticket-assets/gallery-fonts/

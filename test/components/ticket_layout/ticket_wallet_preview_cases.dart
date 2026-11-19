@@ -12,6 +12,8 @@ import 'package:festapp_core/time.dart';
 import 'package:fstapp/components/features/ticket_feature.dart';
 import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/ticket_layout/google_wallet_appearance.dart';
+import 'package:fstapp/components/ticket_layout/ticket_delivery_strings.dart';
+import 'package:fstapp/components/ticket_layout/views/ticket_email_preview.dart';
 import 'package:fstapp/components/ticket_layout/views/ticket_wallet_appearance_editor.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/drop_file.dart';
@@ -135,6 +137,41 @@ void main() {
       }
     });
   }
+  testWidgets('ticket email preview uses only the ready Wallet providers', (
+    tester,
+  ) async {
+    await tester.runAsync(() => TicketDeliveryStrings.walletCopy('cs'));
+    final apple = 'assets/brand/apple-wallet/email/cs.png';
+    final google = 'assets/brand/google-wallet/condensed/cs.png';
+
+    for (final (projection, expected) in [
+      ({'apple': true, 'google': true}, [apple, google]),
+      ({'apple': true, 'google': false}, [apple]),
+      ({'apple': false, 'google': true}, [google]),
+      ({'apple': false, 'google': false}, <String>[]),
+    ]) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TicketEmailPreview.walletSample(
+              count: 1,
+              language: 'cs',
+              providers: TicketWalletProvider.ready(projection),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widgetList<Image>(find.byType(Image))
+            .map((image) => (image.image as AssetImage).assetName),
+        unorderedEquals(expected),
+      );
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('Wallet artwork editor fits its hint and keeps removal compact', (
     tester,
   ) async {
@@ -288,7 +325,7 @@ void main() {
                     width: 344,
                     child: TicketWalletCardPreview(
                       platform: platform,
-                  showSeat: true,
+                      showSeat: true,
                       previewLabel: 'Náhled',
                       sampleCodeLabel: 'UKÁZKA',
                       appearance: const GoogleWalletAppearance(
@@ -362,7 +399,7 @@ void main() {
                       ),
                       child: TicketWalletCardPreview(
                         platform: platform,
-                  showSeat: true,
+                        showSeat: true,
                         previewLabel: 'Náhled',
                         sampleCodeLabel: 'UKÁZKA',
                         appearance: const GoogleWalletAppearance(
