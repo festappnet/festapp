@@ -189,16 +189,30 @@ try {
      return result.stderr
     return None
 
+   elevation = ['sudo', '-n'] if os.getuid() else []
    apt = [
-    *(['sudo', '-n'] if os.getuid() else []),
-    'apt-get', '-o', 'Acquire::Retries=0', '-o', 'Acquire::http::Timeout=10',
-    '-o', 'Acquire::https::Timeout=10', '-o', 'DPkg::Lock::Timeout=10',
+    'apt-get', '-o', 'Acquire::Retries=1', '-o', 'Acquire::http::Timeout=10',
+    '-o', 'Acquire::https::Timeout=10', '-o', 'DPkg::Lock::Timeout=8',
    ]
+   archives = None
    if cache_path := os.environ.get('FESTAPP_CMS_APT_CACHE'):
     archives = Path(cache_path)
     archives.mkdir(parents=True, exist_ok=True)
     apt.extend(['-o', f'Dir::Cache::archives={archives}', '-o', 'APT::Keep-Downloaded-Packages=true'])
-   refresh = [*apt, 'update', '-o', 'APT::Update::Error-Mode=any']
+
+   def run_apt(command, label, seconds):
+    # Bound the privileged subprocess itself so a timed-out run cannot retain apt locks.
+    run([*elevation, 'timeout', '--kill-after=3s', f'{seconds}s', *apt, *command],
+        label=label, timeout=seconds + 6)
+
+   index_refreshed = False
+
+   def refresh_index():
+    nonlocal index_refreshed
+    if not index_refreshed:
+     run_apt(['update', '-o', 'APT::Update::Error-Mode=any'],
+             'browsers.refresh-package-index', 35)
+     index_refreshed = True
 
    def simulate_packages(engine):
     with timed_phase(f'cms.browsers.simulate-deps.{engine}'):
@@ -220,7 +234,7 @@ try {
      simulation = simulate_packages(engine)
      packages = simulated_missing_packages(simulation.stdout)
      if not packages and simulation.returncode and 'Unable to locate package' in simulation.stderr:
-      run(refresh, label='browsers.refresh-package-index', timeout=35)
+      refresh_index()
       packages = simulated_missing_packages(simulate_packages(engine).stdout)
     if not packages:
      raise RuntimeError(f'{engine} launch failed without a missing package list: {diagnostic[:900]}')
@@ -228,12 +242,17 @@ try {
    if missing:
     packages = sorted({package for names in missing.values() for package in names})
     phase(f'Installing missing Playwright system packages: {", ".join(packages)}')
-    install = [*apt, 'install', '--yes', '--no-install-recommends', '--', *packages]
-    try:
-     run(install, label='browsers.system-dependencies', timeout=45)
-    except RuntimeError:
-     run(refresh, label='browsers.refresh-package-index', timeout=35)
-     run(install, label='browsers.system-dependencies.retry', timeout=45)
+    install = ['install', '--yes', '--no-install-recommends', '--', *packages]
+    installed = False
+    if archives is not None and next(archives.glob('*.deb'), None):
+     try:
+      run_apt(['--no-download', *install], 'browsers.cached-system-dependencies', 25)
+      installed = True
+     except RuntimeError:
+      pass
+    if not installed:
+     refresh_index()
+     run_apt(install, 'browsers.system-dependencies', 60)
     for engine in missing:
      if probe_engine(engine, "probe.after-install") is not None:
       raise RuntimeError(f'{engine} launch failed after system package install; private log: {log}')

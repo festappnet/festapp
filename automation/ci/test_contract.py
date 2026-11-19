@@ -25,6 +25,7 @@ class MirrorContractTest(unittest.TestCase):
         self.assertEqual(steps[1]['with']['key'], '${{ steps.key.outputs.browsers }}')
         self.assertEqual(steps[2]['with']['key'], '${{ steps.key.outputs.archives }}')
         self.assertEqual(steps[2]['if'], "inputs.profile == 'wordpress'")
+        self.assertIn('${{ steps.key.outputs.archive-prefix }}', steps[2]['with']['restore-keys'])
         for filename, job in (
             ('wix-checkout-compatibility.yml', 'wordpress-checkout-compatibility'),
             ('wix-checkout-compatibility.yml', 'wix-checkout-compatibility'),
@@ -57,8 +58,13 @@ class MirrorContractTest(unittest.TestCase):
             self.assertNotEqual(chromium, key(ImageOS='ubuntu24'))
             self.assertNotEqual(chromium, key(RUNNER_ARCH='ARM64'))
             wordpress = key(PROFILE='wordpress')
-            self.assertIn('archives=cms-apt-Linux-X64-ubuntu26-20261111.82.6-1.65.0', wordpress[1])
-            self.assertNotEqual(wordpress, key(PROFILE='wordpress', ImageVersion='20261119.1'))
+            archive_prefix = 'cms-apt-Linux-X64-ubuntu26-playwright-1.65.0-'
+            self.assertIn(f'archives={archive_prefix}20261111.82.6', wordpress[1])
+            other_image = key(PROFILE='wordpress', ImageVersion='20261119.1')
+            self.assertNotEqual(wordpress, other_image)
+            self.assertIn(f'archive-prefix={archive_prefix}\n', other_image[1])
+            self.assertNotIn(f'archive-prefix={archive_prefix}\n',
+                             key(PROFILE='wordpress', browser='1.66.0')[1])
             self.assertNotEqual(key(PROFILE='invalid')[0], 0)
             self.assertNotEqual(key(browser='^1.65.0')[0], 0)
             self.assertNotEqual(key(ImageOS='')[0], 0)
