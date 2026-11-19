@@ -22,9 +22,8 @@
       {
         "id": "skautsky-ples-2026",
         "name": "Skautský ples 2026",
-        "publicUrl": "https://vstupenky.online/form/ples2026",
         "sourceType": "public_event_listing",
-        "sourceUrl": "https://vstupenky.online/",
+        "sourceUrl": "https://vstupenky.online/form/ples2026",
         "quote": null,
         "author": null,
         "metric": null,
@@ -38,9 +37,8 @@
       {
         "id": "sportovni-ples-2026",
         "name": "Sportovní ples Větřkovice 2026",
-        "publicUrl": "https://vstupenky.online/form/sportovni_ples_2026",
         "sourceType": "public_event_listing",
-        "sourceUrl": "https://vstupenky.online/",
+        "sourceUrl": "https://vstupenky.online/form/sportovni_ples_2026",
         "quote": null,
         "author": null,
         "metric": null,
@@ -54,9 +52,8 @@
       {
         "id": "ples-obce-vetrkovice-2026",
         "name": "Ples obce Větřkovice",
-        "publicUrl": "https://vstupenky.online/form/5a71dbd201cb44faaf471d938315b8f0",
         "sourceType": "public_event_listing",
-        "sourceUrl": "https://vstupenky.online/",
+        "sourceUrl": "https://vstupenky.online/form/5a71dbd201cb44faaf471d938315b8f0",
         "quote": null,
         "author": null,
         "metric": null,
@@ -70,9 +67,8 @@
       {
         "id": "farni-ples-2026",
         "name": "Farní ples",
-        "publicUrl": "https://vstupenky.online/form/farni-ples-2026-cernobily",
         "sourceType": "public_event_listing",
-        "sourceUrl": "https://vstupenky.online/",
+        "sourceUrl": "https://vstupenky.online/form/farni-ples-2026-cernobily",
         "quote": null,
         "author": null,
         "metric": null,
@@ -180,7 +176,7 @@
       "identifierLabel": "IČO"
     },
     "cta": {
-      "href": "/events?create=1",
+      "href": "/login?create=1",
       "label": "Založit akci zdarma",
       "note": "K založení akce potřebujete účet. Pokračujte přihlášením do administrace."
     },
