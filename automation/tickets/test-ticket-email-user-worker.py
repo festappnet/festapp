@@ -10,16 +10,22 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 FUNCTIONS = ROOT / 'supabase/functions'
 PINS = ROOT / 'automation/hetzner-supabase/runtime/pins.json'
-IMAGE = json.loads(PINS.read_text())['supabase']['images']['edgeRuntime']
+PRODUCTION_IMAGE = json.loads(PINS.read_text())['supabase']['images']['edgeRuntime']
+# The index contains the production ARM64 image and its AMD64 sibling for CI.
+IMAGE = 'supabase/edge-runtime:v1.77.9@sha256:6b850a2ccf0bf50ecac9accff8098095cd191c389c2a53c59b857aa0f53a8343'
+if PRODUCTION_IMAGE != 'supabase/edge-runtime:v1.77.9@sha256:37da62f867b8d7e636e9d62c65497ecaa9f05bfa37bc70c2dc9ccb06461ff982':
+    raise SystemExit('Update the isolated worker test image to match the production Edge runtime')
 RESULT = 'FESTAPP_TICKET_EMAIL_USER_WORKER '
 
 MAIN = r"""
 Deno.serve(async request => {
   const worker = await EdgeRuntime.userWorkers.create({
-    servicePath: '/fixture/worker',
+    servicePath: '/home/deno/functions/worker',
     memoryLimitMb: 512,
     workerTimeoutMs: 20_000,
+    noModuleCache: false,
     envVars: [],
+    staticPatterns: ['/home/deno/functions/_shared/ticket-assets/**/*'],
   });
   return worker.fetch(request);
 });
@@ -35,7 +41,6 @@ setTimeout(async () => {
 """
 
 WORKER = r"""
-import { TicketFontResolver, fontCatalog } from '../_shared/ticketFonts.ts';
 import { prepareTicketDelivery } from '../_shared/ticketDelivery.ts';
 import { drainEmails } from '../_shared/emailDispatcher.ts';
 import { preset } from '../_shared/ticketLayout.ts';
@@ -43,14 +48,14 @@ import { PDFDocument } from 'npm:pdf-lib';
 
 Deno.serve(async () => {
   try {
-    const asset = fontCatalog.find(f => f.family === 'Archivo' && f.weight === 400 && f.style === 'normal')!;
-    const font = await new TicketFontResolver({
-      bundled: async () => null,
-      store: {read: async () => null, create: async () => true},
-      fetch: async () => new Response(Uint8Array.from(atob(fontBase64), char => char.charCodeAt(0))),
-    }).resolve(asset.id);
+    let syncReadBlocked = false;
+    try {
+      Deno.readFileSync('/home/deno/functions/deno.lock');
+    } catch (error) {
+      syncReadBlocked = error instanceof Deno.errors.PermissionDenied;
+    }
+    if (!syncReadBlocked) throw new Error('Fixture must run without synchronous filesystem access');
     const template = preset('named');
-    template.fontId = font.id;
     const event = {id: 7, locale: 'cs', title: 'Maturitní ples EDUCAnet Praha', features: [{
       code: 'ticket', is_enabled: true, ticket_type: 'named', layout: {schemaVersion: 3, templates: {named: template}},
     }]};
@@ -58,6 +63,7 @@ Deno.serve(async () => {
     let pending = true;
     let sent = 0;
     let failed = 0;
+    let preparationError: string | undefined;
     const {claimed} = await drainEmails({
       now: Date.now,
       rpc: async name => {
@@ -70,11 +76,24 @@ Deno.serve(async () => {
       },
       prepare: async () => {
         const delivery = await prepareTicketDelivery(event, {}, tickets, async (...args) => {
-          const { prepareTicketRenderer } = await import('../_shared/ticketGeneration.ts');
-          return prepareTicketRenderer(...args, {
-            load: async () => ({fonts: {[font.id]: font}, font: font.bytes, metrics: font.metrics}),
-            products: async () => ({products: [], product_types: []}),
-          });
+          try {
+            const { prepareTicketRenderer } = await import('../_shared/ticketGeneration.ts');
+            const { TicketFontResolver, fontCatalog } = await import('../_shared/ticketFonts.ts');
+            const asset = fontCatalog.find(f => f.family === 'Archivo' && f.weight === 400 && f.style === 'normal')!;
+            const font = await new TicketFontResolver({
+              bundled: async () => null,
+              store: {read: async () => null, create: async () => true},
+              fetch: async () => new Response(Uint8Array.from(atob(fontBase64), char => char.charCodeAt(0))),
+            }).resolve(asset.id);
+            template.fontId = font.id;
+            return await prepareTicketRenderer(...args, {
+              load: async () => ({fonts: {[font.id]: font}, font: font.bytes, metrics: font.metrics}),
+              products: async () => ({products: [], product_types: []}),
+            });
+          } catch (error) {
+            preparationError = String(error);
+            throw error;
+          }
         });
         return {prepared: delivery.attachments, postAction: {}};
       },
@@ -87,7 +106,7 @@ Deno.serve(async () => {
         }
       },
     });
-    return Response.json({claimed, sent, failed});
+    return Response.json({claimed, sent, failed, preparationError});
   } catch (error) {
     return Response.json({error: String(error)}, {status: 500});
   }
@@ -106,9 +125,9 @@ with tempfile.TemporaryDirectory(prefix='.ticket-email-worker-', dir=ROOT) as te
     (fixture / 'worker/index.ts').write_text(f'const fontBase64 = {json.dumps(font)};\n' + WORKER)
     result = subprocess.run([
         'docker', 'run', '--rm', '--entrypoint', 'timeout',
-        '--mount', f'type=bind,source={fixture},target=/fixture,readonly',
+        '--mount', f'type=bind,source={fixture},target=/home/deno/functions,readonly',
         IMAGE, '45s', 'edge-runtime', 'start', '--ip', '127.0.0.1',
-        '--port', '9000', '--main-service', '/fixture/main', '--policy', 'per_request',
+        '--port', '9000', '--main-service', '/home/deno/functions/main', '--policy', 'per_request',
     ], capture_output=True, text=True, timeout=260)
     output = result.stdout + result.stderr
     lines = [line.split(RESULT, 1)[1] for line in output.splitlines() if RESULT in line]

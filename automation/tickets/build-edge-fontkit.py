@@ -14,6 +14,11 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--check', action='store_true')
 args = parser.parse_args()
 
+if args.check:
+    for source in (root / 'supabase/functions').rglob('*.ts'):
+        if 'npm:fontkit' in source.read_text():
+            raise SystemExit(f'Use the bundled Fontkit module in Edge code: {source.relative_to(root)}')
+
 with tempfile.TemporaryDirectory(prefix='festapp-edge-fontkit-') as temporary:
     output = Path(temporary) / 'fontkit.mjs'
     subprocess.run([
