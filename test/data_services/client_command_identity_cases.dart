@@ -1,4 +1,5 @@
 import 'package:fstapp/components/eshop/order_commands.dart';
+import 'package:fstapp/components/eshop/supabase_eshop_commands.dart';
 
 import '../support/fixtures/client_command_response_fixture.dart';
 
@@ -347,6 +348,54 @@ void main() {
       PathProviderPlatform.instance = provider;
       await directory.delete(recursive: true);
     });
+
+    test(
+      'an unresolved product save allows newer edits with their own command ID',
+      () async {
+        final calls = <Map<String, dynamic>>[];
+        final transport = ClientCommandTransport(
+          (name, parameters) async {
+            expect(name, 'manage_product');
+            calls.add(parameters);
+            if (calls.length == 1) throw TimeoutException('response lost');
+            return commandResponseFixture(
+              parameters['p_command_id'] as String,
+              status: calls.length == 2 ? 'applied' : 'conflict',
+              code: calls.length == 2 ? 200 : 409,
+              data: {'productId': 42, 'aggregate_version': 4},
+            );
+          },
+          principalBinding: 'backend:product-editor',
+          maxAttempts: 1,
+        );
+        Map<String, dynamic> scope() => {'p_occasion': 7, 'p_organization': 3};
+        final commands = SupabaseEshopCommands.withTransport(
+          transport,
+          productScope: scope,
+        );
+        final original = <String, dynamic>{
+          'id': 42,
+          'title': 'Original',
+          'expected_aggregate_version': 3,
+        };
+        // The released client reserved the entire product for this request.
+        await expectLater(
+          transport.invoke('manage_product', {
+            ...scope(),
+            'p_action': 'save',
+            'p_product': original,
+          }),
+          throwsA(isA<TimeoutException>()),
+        );
+        final saved = await commands.saveProduct({...original, 'title': 'New'});
+        expect(saved.aggregateVersion, 4);
+        expect(calls.last['p_product']['expected_aggregate_version'], 3);
+        expect(calls.last['p_command_id'], isNot(calls.first['p_command_id']));
+
+        await expectLater(commands.saveProduct(original), throwsStateError);
+        expect(calls.last['p_command_id'], calls.first['p_command_id']);
+      },
+    );
 
     test(
       'confirmed old form save never silently applies newer edits',

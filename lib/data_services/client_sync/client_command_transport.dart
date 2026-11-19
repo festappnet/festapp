@@ -92,6 +92,7 @@ class ClientCommandTransport {
     String functionName,
     Map<String, dynamic> parameters, {
     String? commandId,
+    bool reserveResource = true,
   }) async {
     final frozen = (jsonDecode(jsonEncode(parameters)) as Map)
         .cast<String, dynamic>();
@@ -112,7 +113,9 @@ class ClientCommandTransport {
                 functionName,
                 payload,
                 principalBinding: binding,
-                scopeBinding: jsonEncode(_resourceScope(frozen)),
+                scopeBinding: reserveResource
+                    ? jsonEncode(_resourceScope(frozen))
+                    : null,
                 requestJson: jsonEncode(frozen),
               )
             : const Uuid().v4());

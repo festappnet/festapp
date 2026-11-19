@@ -81,6 +81,9 @@ class SupabaseEshopCommands implements EshopCommands {
       await _transport.invoke(
         'manage_product',
         _productCommand('save', product),
+        // Existing products have a server-checked version. Different drafts can
+        // reach that check even if a prior request has an unresolved receipt.
+        reserveResource: product['id'] == null,
       ),
     );
     if (response.status == 'conflict') {
