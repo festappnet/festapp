@@ -280,9 +280,10 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         error!['code'] as String,
       ),
       'sent_in_flight' => MetaCapiStrings.sentInFlight,
-      'credentials' => error?['status'] == 'failed'
-          ? MetaCapiStrings.deliveryFailed
-          : MetaCapiStrings.credentials,
+      'credentials' =>
+        error?['status'] == 'failed'
+            ? MetaCapiStrings.deliveryFailed
+            : MetaCapiStrings.credentials,
       'rejected' => MetaCapiStrings.rejected,
       _ =>
         error?['status'] == 'pending'
@@ -290,6 +291,11 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
             : MetaCapiStrings.deliveryFailed,
     };
     final paused = data['paused_at'] != null;
+    final pausedAt = DateTime.tryParse(data['paused_at']?.toString() ?? '');
+    final statusDateFormat = DateFormat.yMd(context.locale.toString()).add_jm();
+    String withStatusDate(String message, DateTime? at) => at == null
+        ? message
+        : '$message · ${statusDateFormat.format(at.toLocal())}';
     final enabled = data['enabled'] == true;
     final websiteReady = data['website_ready'] != false;
     final hasReadyForm = forms.any(
@@ -346,7 +352,9 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
             if (paused)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
-                child: Text(MetaCapiStrings.credentials),
+                child: Text(
+                  withStatusDate(MetaCapiStrings.credentials, pausedAt),
+                ),
               ),
             if (_loadFailed) _retryLoad(),
             const SizedBox(height: 12),
@@ -453,9 +461,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
               ],
             ),
             if (error != null && !(paused && error['code'] == 'credentials'))
-              Text(
-                '$errorText${errorAt == null ? '' : ' · ${DateFormat.yMd(context.locale.toString()).add_jm().format(errorAt.toLocal())}'}',
-              ),
+              Text(withStatusDate(errorText, errorAt)),
             const SizedBox(height: 16),
             Text(
               forms.isEmpty ? MetaCapiStrings.noForms : MetaCapiStrings.forms,
