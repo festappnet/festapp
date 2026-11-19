@@ -328,6 +328,7 @@
       "cancelled": "Cancelled",
       "expired": "Expired",
       "send": "Accepted by provider",
+      "preparation_failed": "Не вдалося підготувати повідомлення",
       "not_accepted": "Provider did not accept message",
       "done": "Complete",
       "tracking_disabled": "Tracking disabled",
@@ -362,6 +363,7 @@
     "recovery": {
       "repairHeading": "Виправити адресу",
       "repairInstruction": "Доставка на цю адресу неможлива. Вкажіть іншу адресу.",
+      "preparationRetry": "Не вдалося підготувати повідомлення. Система автоматично повторить спробу.",
       "verifyInstruction": "Перед повторним надсиланням перевірте адресу клієнта та стан доставки.",
       "heading": "Доставка електронної пошти",
       "saveOnly": "Лише зберегти",
