@@ -17,6 +17,12 @@ class MetaCapiStrings {
   static String get enabled => 'MetaCapi.enabled'.tr();
   static String get token => 'MetaCapi.token'.tr();
   static String get saved => 'MetaCapi.saved'.tr();
+  static String get enableFormMeasurement =>
+      'MetaCapi.enableFormMeasurement'.tr();
+  static String get configureWebsiteConsent =>
+      'MetaCapi.configureWebsiteConsent'.tr();
+  static String get formMeasurementRequired =>
+      'MetaCapi.formMeasurementRequired'.tr();
   static String get active => 'MetaCapi.active'.tr();
   static String get paused => 'MetaCapi.paused'.tr();
   static String get off => 'MetaCapi.off'.tr();

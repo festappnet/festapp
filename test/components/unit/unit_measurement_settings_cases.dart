@@ -224,37 +224,27 @@ void main() {
                     return;
                   }
                   operations.add(operation);
-                  if (operation == 'save_unit_meta_purchase') {
-                    expect(
-                      params['p_dataset'],
-                      scenario == 'replacement' ? '987654' : '123456',
-                    );
-                    expect(
-                      params['p_website_origin'],
-                      scenario == 'replacement'
-                          ? 'https://organizer.example'
-                          : 'https://tickets.example',
-                    );
-                    if (params['p_enabled'] == true) {
-                      expect(
-                        saved,
-                        isTrue,
-                        reason: 'Enabling must never precede a successful token write',
-                      );
-                    }
-                    enabled = params['p_enabled'] == true;
-                    revision = 'revision';
-                  } else {
-                    expect(operation, 'set_unit_meta_purchase_token');
-                    expect(
-                      revision,
-                      isNotNull,
-                      reason: 'Save the connector before writing its token',
-                    );
+                  expect(operation, 'save_unit_meta_purchase');
+                  expect(
+                    params['p_dataset'],
+                    scenario == 'replacement' ? '987654' : '123456',
+                  );
+                  expect(
+                    params['p_website_origin'],
+                    scenario == 'replacement'
+                        ? 'https://organizer.example'
+                        : 'https://tickets.example',
+                  );
+                  if (hasDraft) {
                     expect(params['p_token'], 'secret-token-value');
                     await tokenWrite.future;
                     saved = true;
+                  } else {
+                    expect(params.containsKey('p_token'), isFalse);
                   }
+                  expect(params['p_enabled'], enable);
+                  enabled = params['p_enabled'] == true;
+                  revision = 'revision';
                 },
               ),
             ),
@@ -338,11 +328,8 @@ void main() {
       await tester.tap(save);
       await tester.pump();
       if (hasDraft) {
-        expect(operations, [
-          'save_unit_meta_purchase',
-          'set_unit_meta_purchase_token',
-        ]);
-        if (scenario == 'first token') expect(enabled, isFalse);
+        expect(operations, ['save_unit_meta_purchase']);
+        expect(enabled, isFalse);
         expect(tester.widget<SwitchListTile>(enabledSwitch).onChanged, isNull);
         if (scenario == 'token failure') {
           tokenWrite.completeError(StateError('Token could not be saved'));
@@ -351,18 +338,7 @@ void main() {
         }
       }
       await tester.pumpAndSettle();
-      expect(
-        operations,
-        scenario == 'first token'
-            ? [
-                'save_unit_meta_purchase',
-                'set_unit_meta_purchase_token',
-                'save_unit_meta_purchase',
-              ]
-            : hasDraft
-            ? ['save_unit_meta_purchase', 'set_unit_meta_purchase_token']
-            : ['save_unit_meta_purchase'],
-      );
+      expect(operations, ['save_unit_meta_purchase']);
       expect(enabled, enable && scenario != 'token failure');
       expect(saved, scenario != 'token failure');
       expect(tester.widget<TextField>(token).controller!.text, isEmpty);
@@ -376,6 +352,34 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
       await tester.pumpAndSettle();
     }
+  });
+
+  testWidgets('Meta CAPI refreshes after saving the first website', (
+    tester,
+  ) async {
+    var websites = <String>[];
+    Widget settings() => MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: UnitMetaCapiSettings(
+            unitId: 1,
+            savedWebsites: websites,
+            load: (_) async => {'allowed': true, 'websites': websites},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpWidget(settings());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(MetaCapiStrings.title));
+    await tester.pumpAndSettle();
+    final save = find.widgetWithText(FilledButton, CommonStrings.save);
+    expect(tester.widget<FilledButton>(save).onPressed, isNull);
+    websites = ['https://tickets.example'];
+    await tester.pumpWidget(settings());
+    await tester.pumpAndSettle();
+    expect(tester.widget<FilledButton>(save).onPressed, isNotNull);
+    expect(find.text(MetaCapiStrings.noWebsites), findsNothing);
   });
 
   testWidgets('Meta CAPI pause asks to replace the token', (tester) async {

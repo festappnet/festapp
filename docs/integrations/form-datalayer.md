@@ -346,9 +346,10 @@ Setting `meta_capi_enabled=false` immediately blocks capture, claiming and
 preparing deliveries, independently of organizer switches. A request already
 sent to Meta cannot be recalled. Organizer RPCs cannot change platform policy.
 
-Save the dataset ID, choose an approved/saved website, optionally enter a test
-event code and save the settings. Save the access token before enabling sending.
-Enable each owned form separately. In Meta
+Enter the dataset ID and access token, choose a saved website and optionally enter a
+test event code. Save can enable delivery together with the token. Configure
+website consent and enable measurement and Meta CAPI on each form you want to
+track. In Meta
 Events Manager, select the dataset → Settings → Conversions API → manual setup
 → Generate access token; paste it into the write-only token field and save.
 The saved token is never displayed. To replace it, enter and save a new token.
@@ -359,7 +360,7 @@ See [Meta's setup instructions](https://developers.facebook.com/docs/marketing-a
 The section shows active/off/paused, a 30-day queue summary and a redacted last
 error. The last error distinguishes pending retries from final failures with no
 further attempts. Credential errors pause sending and collection. Saving a replacement
-token clears the pause. Orders already `failed` after six attempts are never
+token clears the pause. Browser Purchase keeps its paid timing while CAPI is paused. Orders already `failed` after six attempts are never
 retried; pending orders remain eligible only within seven days of full payment.
 Changing dataset, website or test code advances the connector revision: pending
 orders captured for an earlier revision are invalidated and scrubbed by the

@@ -3600,12 +3600,7 @@
       "authenticated": true,
       "service_role": false
     },
-    "public.save_unit_meta_purchase(bigint,text,text,text,boolean)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
-    "public.set_unit_meta_purchase_token(bigint,text)": {
+    "public.save_unit_meta_purchase(bigint,text,text,text,boolean,text)": {
       "anon": false,
       "authenticated": true,
       "service_role": false

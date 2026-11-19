@@ -386,47 +386,55 @@ DECLARE x jsonb:=pg_temp.fixture(NULL); other jsonb:=pg_temp.fixture(NULL);
 BEGIN
  PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
  BEGIN PERFORM public.get_unit_meta_purchase(un); RAISE EXCEPTION 'non-admin read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true); RAISE EXCEPTION 'non-admin save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.set_unit_meta_purchase_token(un,repeat('s',32)); RAISE EXCEPTION 'non-admin token accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true,repeat('s',32)); RAISE EXCEPTION 'non-admin save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.set_form_meta_purchase(un,fid,true); RAISE EXCEPTION 'non-admin form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.delete_unit_meta_purchase(un); RAISE EXCEPTION 'non-admin delete accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,(x->>'actor')::uuid,true);
  PERFORM assert_eq(public.get_unit_meta_purchase(un),'{"allowed":false,"connected":false}'::jsonb,'no settings before platform approval');
  BEGIN PERFORM public.get_unit_meta_purchase((other->>'unit')::bigint); RAISE EXCEPTION 'foreign organization read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.save_unit_meta_purchase((other->>'unit')::bigint,'123456','https://tickets.example',NULL,true); RAISE EXCEPTION 'foreign save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.set_unit_meta_purchase_token((other->>'unit')::bigint,repeat('s',32)); RAISE EXCEPTION 'foreign token accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN PERFORM public.save_unit_meta_purchase((other->>'unit')::bigint,'123456','https://tickets.example',NULL,true,repeat('s',32)); RAISE EXCEPTION 'foreign save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.set_form_meta_purchase((other->>'unit')::bigint,(other->>'form')::bigint,true); RAISE EXCEPTION 'foreign form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.delete_unit_meta_purchase((other->>'unit')::bigint); RAISE EXCEPTION 'foreign delete accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true); RAISE EXCEPTION 'unapproved save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.set_unit_meta_purchase_token(un,repeat('s',32)); RAISE EXCEPTION 'unapproved token accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+ BEGIN PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true,repeat('s',32)); RAISE EXCEPTION 'unapproved save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.set_form_meta_purchase(un,fid,true); RAISE EXCEPTION 'unapproved form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  PERFORM public.delete_unit_meta_purchase(un); -- Admin cleanup is allowed without platform approval.
  INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
  VALUES(org,true,true,1,'fixture','CAPI settings');
  UPDATE public.units SET data=coalesce(data,'{}'::jsonb)||'{"measurement_websites":["https://tickets.example"]}'::jsonb WHERE id=un;
- result:=public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true);
+ BEGIN
+  PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true);
+  RAISE EXCEPTION 'enabled connector without a token accepted';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+ PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_connectors WHERE unit=un),'failed enable leaves no partial connector');
+ result:=public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,false);
  old_revision:=(result->>'revision')::uuid;
  PERFORM assert_true(result->'websites' ? 'https://tickets.example','saved website is selectable without a runtime deployment');
  PERFORM assert_false((result->>'token_saved')::boolean,'new connector has no token');
  BEGIN PERFORM public.save_unit_meta_purchase(un,'123456','https://attacker.example',NULL,true); RAISE EXCEPTION 'foreign origin accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
- BEGIN PERFORM public.set_unit_meta_purchase_token(un,E'secret\ntoo-short'); RAISE EXCEPTION 'invalid token accepted';
+ BEGIN PERFORM public.save_unit_meta_purchase(un,'654321','https://tickets.example','TEST42',true,E'secret\ntoo-short'); RAISE EXCEPTION 'invalid token accepted';
  EXCEPTION WHEN invalid_parameter_value THEN PERFORM assert_true(SQLERRM='Invalid Meta CAPI token','token validation does not echo input'); END;
+ PERFORM assert_true((SELECT dataset='123456' AND test_event_code IS NULL AND NOT enabled AND revision=old_revision
+  FROM analytics.meta_purchase_connectors WHERE unit=un),'invalid replacement keeps the saved configuration');
  UPDATE analytics.meta_purchase_connectors SET paused_at=clock_timestamp() WHERE unit=un;
- PERFORM public.set_unit_meta_purchase_token(un,repeat('secret-value-',3));
+ PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true,repeat('secret-value-',3));
  SELECT vault_secret INTO secret_id FROM analytics.meta_purchase_connectors WHERE unit=un;
  PERFORM assert_true(EXISTS(SELECT FROM vault.secrets WHERE id=secret_id),'token created in Vault');
  result:=public.get_unit_meta_purchase(un);
  PERFORM assert_true(result->'paused_at'='null'::jsonb AND result->'token_saved'='true'::jsonb,'saving token clears pause');
  PERFORM assert_false(result ? 'vault_secret' OR result ? 'token' OR result::text LIKE '%secret-value-%','projection contains no credential');
- PERFORM public.set_unit_meta_purchase_token(un,repeat('replacement-',3));
+ result:=public.save_unit_meta_purchase(un,'654321','https://tickets.example',NULL,true,repeat('replacement-',3));
  PERFORM assert_true((SELECT vault_secret=secret_id FROM analytics.meta_purchase_connectors WHERE unit=un),'token replacement reuses secret');
- result:=public.save_unit_meta_purchase(un,'654321','https://tickets.example',NULL,true);
  PERFORM assert_true((result->>'revision')::uuid<>old_revision,'dataset change advances revision');
  PERFORM public.set_form_meta_purchase(un,fid,true);
  BEGIN PERFORM public.set_form_meta_purchase(un,(other->>'form')::bigint,true); RAISE EXCEPTION 'foreign form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  PERFORM assert_eq(public.form_meta_purchase_unit_internal(fid),un,'approved owner selected');
+ UPDATE analytics.meta_purchase_connectors SET paused_at=clock_timestamp() WHERE unit=un;
+ PERFORM assert_true(public.form_meta_purchase_unit_internal(fid) IS NULL,'pause blocks CAPI collection');
+ PERFORM assert_eq(public.form_purchase_timing_internal(fid),'paid','pause preserves paid browser timing');
+ UPDATE analytics.meta_purchase_connectors SET paused_at=NULL WHERE unit=un;
  UPDATE analytics.organization_policy SET meta_capi_enabled=false WHERE organization=org;
  PERFORM assert_true(public.form_meta_purchase_unit_internal(fid) IS NULL,'platform stop blocks collection');
+ PERFORM assert_eq(public.form_purchase_timing_internal(fid),'paid','platform stop preserves paid browser timing');
  PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,'{}'::jsonb),'platform stop blocks consent');
  UPDATE analytics.organization_policy SET meta_capi_enabled=true WHERE organization=org;
  PERFORM public.delete_unit_meta_purchase(un);
@@ -603,7 +611,7 @@ BEGIN
   ELSIF result='final_failure' THEN
    UPDATE analytics.meta_purchase_deliveries SET attempts=5 WHERE order_id=oid;
   ELSIF result='older_token' THEN
-   PERFORM public.set_unit_meta_purchase_token(un,repeat('older-token-',3));
+   PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true,repeat('older-token-',3));
   END IF;
   PERFORM set_config('request.jwt.claim.sub','',true);
   IF result IN ('disabled','dataset','platform','form_disabled') THEN
@@ -626,7 +634,7 @@ BEGIN
   PERFORM assert_true(prepared_time IS NOT NULL,'prepare records the authorization instant');
   PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
   IF result IN ('newer_token','equal_token','legacy_prepare') THEN
-   PERFORM public.set_unit_meta_purchase_token(un,repeat('replacement-token-',3));
+   PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true,repeat('replacement-token-',3));
    SELECT token_changed_at INTO changed_time FROM analytics.meta_purchase_connectors WHERE unit=un;
    PERFORM assert_true(changed_time>=prepared_time,'token replacement records a time after prepare');
    PERFORM assert_true((SELECT revision=captured_revision FROM analytics.meta_purchase_connectors WHERE unit=un),'token replacement does not change destination revision');
@@ -656,14 +664,13 @@ END $$;
 -- behavior cases above cannot reproduce lock upgrading or wait timing across
 -- sessions; pin the actual lock clauses as well as their observable outcomes.
 DO $$
-DECLARE prepare_body text; capture_body text; form_body text; finish_body text; save_body text; token_body text; delete_body text;
+DECLARE prepare_body text; capture_body text; form_body text; finish_body text; save_body text; delete_body text;
 BEGIN
  SELECT prosrc INTO prepare_body FROM pg_proc WHERE oid='public.prepare_meta_purchase_delivery(bigint,uuid)'::regprocedure;
  SELECT prosrc INTO capture_body FROM pg_proc WHERE oid='public.capture_meta_purchase_consent_internal(bigint,jsonb)'::regprocedure;
  SELECT prosrc INTO form_body FROM pg_proc WHERE oid='public.set_form_meta_purchase(bigint,bigint,boolean)'::regprocedure;
  SELECT prosrc INTO finish_body FROM pg_proc WHERE oid='public.finish_meta_purchase_delivery(bigint,uuid,text)'::regprocedure;
- SELECT prosrc INTO save_body FROM pg_proc WHERE oid='public.save_unit_meta_purchase(bigint,text,text,text,boolean)'::regprocedure;
- SELECT prosrc INTO token_body FROM pg_proc WHERE oid='public.set_unit_meta_purchase_token(bigint,text)'::regprocedure;
+ SELECT prosrc INTO save_body FROM pg_proc WHERE oid='public.save_unit_meta_purchase(bigint,text,text,text,boolean,text)'::regprocedure;
  SELECT prosrc INTO delete_body FROM pg_proc WHERE oid='public.delete_unit_meta_purchase(bigint)'::regprocedure;
  PERFORM assert_true(prepare_body LIKE '%WHERE unit=connector_unit FOR NO KEY UPDATE%',
   'prepare acquires the final write-compatible connector lock before credential pause, without a shared-lock upgrade');
@@ -672,8 +679,7 @@ BEGIN
  PERFORM assert_true(form_body LIKE '%analytics.meta_purchase_connectors WHERE unit=p_unit FOR NO KEY UPDATE%',
   'form selection writes serialize with the connector lock held throughout prepare');
  PERFORM assert_true(finish_body LIKE '%analytics.meta_purchase_connectors WHERE unit=connector_unit FOR NO KEY UPDATE%'
-  AND save_body LIKE '%analytics.meta_purchase_connectors WHERE unit=p_unit FOR NO KEY UPDATE%'
-  AND token_body LIKE '%analytics.meta_purchase_connectors WHERE unit=p_unit FOR NO KEY UPDATE%',
+  AND save_body LIKE '%analytics.meta_purchase_connectors WHERE unit=p_unit FOR NO KEY UPDATE%',
   'all routine writers share the non-key-update lock protocol, compatible with capture key-share');
  PERFORM assert_true(delete_body LIKE '%analytics.meta_purchase_connectors WHERE unit=p_unit FOR UPDATE%'
   AND delete_body LIKE '%DELETE FROM analytics.meta_purchase_connectors WHERE unit=p_unit%',

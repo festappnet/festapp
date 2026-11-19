@@ -3407,12 +3407,8 @@
       "signature": "public.get_unit_meta_purchase(bigint)",
       "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
     },
-    "b5dea1e628b3fbc9810241057ff90392f92e0ba042bc146cd818cbf0a91c5b37": {
-      "signature": "public.save_unit_meta_purchase(bigint,text,text,text,boolean)",
-      "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
-    },
-    "81c11eb5ba351135eda834f3622f33ca75f36c93d479761c9b8d760701ab2647": {
-      "signature": "public.set_unit_meta_purchase_token(bigint,text)",
+    "3adc679ef02e3ce3bae2daae6b8e7d184edb3c225d552b34885126fa86ef7cc9": {
+      "signature": "public.save_unit_meta_purchase(bigint,text,text,text,boolean,text)",
       "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
     },
     "6d5bfb069505860a1330ba1ee3cd578356504668f60c8bda2e6a7345a63b0d55": {

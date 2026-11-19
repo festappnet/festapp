@@ -141,6 +141,7 @@ BEGIN
   JOIN analytics.conversion_facts f ON f."order"=d.order_id AND f.kind='order_fully_paid'
   WHERE d.status='pending' AND d.next_attempt_at<=clock_timestamp()
    AND (d.lease_until IS NULL OR d.lease_until<=clock_timestamp())
+   AND public.meta_purchase_platform_allowed_internal(c.unit)
    -- Same cohort filter as claiming, so unclaimable rows do not wake the worker.
    AND public.form_order_purchase_timing_internal(d.order_id)='paid'
    AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE

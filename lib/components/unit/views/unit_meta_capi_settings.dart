@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
@@ -11,11 +12,13 @@ import '../meta_capi_strings.dart';
 
 class UnitMetaCapiSettings extends StatefulWidget {
   final int unitId;
+  final List<String> savedWebsites;
   final Future<Map<String, dynamic>> Function(int)? load;
   final Future<void> Function(String, Map<String, dynamic>)? mutate;
   const UnitMetaCapiSettings({
     super.key,
     required this.unitId,
+    this.savedWebsites = const [],
     this.load,
     this.mutate,
   });
@@ -34,12 +37,24 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
   bool _busy = false;
   bool _loadFailed = false;
   bool _loading = false;
+  bool _refreshWebsites = false;
 
   @override
   void initState() {
     super.initState();
     _token.addListener(_tokenChanged);
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant UnitMetaCapiSettings oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (listEquals(widget.savedWebsites, oldWidget.savedWebsites)) return;
+    if (_loading) {
+      _refreshWebsites = true;
+    } else {
+      _load(preserveDraft: _data != null);
+    }
   }
 
   Future<void> _load({bool preserveDraft = false}) async {
@@ -78,7 +93,13 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     } catch (_) {
       if (mounted) setState(() => _loadFailed = true);
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        if (_refreshWebsites) {
+          _refreshWebsites = false;
+          await _load(preserveDraft: _data != null);
+        }
+      }
     }
   }
 
@@ -112,7 +133,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         try {
           await action();
         } finally {
-          // Clear credentials even if a later stage fails; reload partial saves.
+          // Clear the write-only credential after each save attempt.
           if (mounted) {
             if (!preserveDraft) _token.clear();
             await _load(preserveDraft: preserveDraft);
@@ -134,27 +155,12 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     if (_busy || !_form.currentState!.validate()) return;
     final token = _token.text;
     final enabled = _enabled;
-    final needsTokenFirst = enabled && _data?['token_saved'] != true;
-    if (needsTokenFirst && !_validDraftToken) return;
-    final settings = <String, dynamic>{
+    await _run('save_unit_meta_purchase', {
       'p_dataset': _dataset.text,
       'p_website_origin': _website,
       'p_test_event_code': _testCode.text,
-      'p_enabled': needsTokenFirst ? false : enabled,
-    };
-    await _perform(() async {
-      // Create/save the connector before writing Vault. A first token must be
-      // stored successfully before a separate call can enable the connector.
-      await _mutate('save_unit_meta_purchase', settings);
-      if (token.isNotEmpty) {
-        await _mutate('set_unit_meta_purchase_token', {'p_token': token});
-      }
-      if (needsTokenFirst) {
-        await _mutate('save_unit_meta_purchase', {
-          ...settings,
-          'p_enabled': true,
-        });
-      }
+      'p_enabled': enabled,
+      if (token.isNotEmpty) 'p_token': token,
     });
   }
 
@@ -268,8 +274,14 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
                   : MetaCapiStrings.deliveryFailed,
           };
     final paused = data['paused_at'] != null;
-    final active = data['enabled'] == true;
-    final statusColor = paused
+    final enabled = data['enabled'] == true;
+    final websiteReady = data['website_ready'] != false;
+    final hasReadyForm = forms.any(
+      (form) => form['enabled'] == true && form['measurement_ready'] != false,
+    );
+    final active = enabled && websiteReady && hasReadyForm;
+    final needsSetup = enabled && !active;
+    final statusColor = paused || needsSetup
         ? ThemeConfig.warningColor(context)
         : active
         ? ThemeConfig.greenColor(context)
@@ -285,7 +297,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
               child: Row(
                 children: [
                   Icon(
-                    paused
+                    paused || needsSetup
                         ? Icons.warning_amber_rounded
                         : active
                         ? Icons.check_circle_outline
@@ -299,9 +311,13 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
                           ? MetaCapiStrings.paused
                           : active
                           ? MetaCapiStrings.active
+                          : needsSetup
+                          ? websiteReady
+                                ? MetaCapiStrings.enableFormMeasurement
+                                : MetaCapiStrings.configureWebsiteConsent
                           : MetaCapiStrings.off,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: paused
+                        color: paused || needsSetup
                             ? Theme.of(context).colorScheme.onSurface
                             : statusColor,
                         fontWeight: FontWeight.bold,
@@ -422,6 +438,11 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
             for (final item in forms)
               SwitchListTile(
                 title: Text(item['title'] as String? ?? ''),
+                subtitle:
+                    item['enabled'] == true &&
+                        item['measurement_ready'] == false
+                    ? Text(MetaCapiStrings.formMeasurementRequired)
+                    : null,
                 value: item['enabled'] == true,
                 onChanged: _busy || _loading || data['revision'] == null
                     ? null

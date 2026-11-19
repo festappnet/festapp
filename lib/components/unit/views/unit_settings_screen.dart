@@ -872,6 +872,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                         UnitMetaCapiSettings(
                           key: ValueKey('meta-capi-${_unit.id}'),
                           unitId: _unit.id!,
+                          savedWebsites: _savedMeasurementWebsites,
                         ),
                         const SizedBox(height: 24),
                         if (_canEdit)
