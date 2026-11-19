@@ -182,9 +182,12 @@ BEGIN
  UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp(),consent_decided_at='2020-01-01T00:00:00Z' WHERE order_id=oid;
  PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":false,"decidedAt":"2000-01-01T00:00:00.000Z"}'),
   'a provably older CMP refusal cannot withdraw');
- UPDATE analytics.meta_purchase_deliveries SET consent_decided_at='2099-01-01T00:00:00Z' WHERE order_id=oid;
+ UPDATE analytics.meta_purchase_deliveries SET consent_decided_at='2099-01-01T00:00:00Z',
+  done_at=clock_timestamp()-interval '35 days' WHERE order_id=oid;
  PERFORM assert_true(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":false,"decidedAt":"2020-01-02T00:00:00.000Z"}'),
   'an old future-dated grant cannot veto a current refusal');
+ PERFORM assert_true((SELECT status='sent' AND done_at<statement_timestamp()-interval '30 days'
+  FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'withdrawal does not move a completed outcome into the current reporting window');
  UPDATE analytics.meta_purchase_deliveries SET revoked_at=NULL WHERE order_id=oid;
  PERFORM pg_sleep(0.002);
  snapshot:=snapshot||jsonb_build_object('capturedAt',to_char((clock_timestamp()) AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),'ad_storage',false);

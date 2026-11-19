@@ -179,7 +179,7 @@ BEGIN
  END IF;
  UPDATE analytics.meta_purchase_deliveries SET revoked_at=clock_timestamp(),status=CASE WHEN status='pending' THEN 'revoked' ELSE status END,
   -- Prepare commits the send authorization; keep its live receipt fence after withdrawal.
-  done_at=clock_timestamp(),
+  done_at=CASE WHEN status='pending' THEN clock_timestamp() ELSE done_at END,
   lease=CASE WHEN prepared AND lease_until>clock_timestamp() THEN lease END,
   lease_until=CASE WHEN prepared AND lease_until>clock_timestamp() THEN lease_until END,
   consent_snapshot=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,client_ip=NULL,client_agent=NULL,source_url=NULL
