@@ -109,6 +109,7 @@ async function cspReport(request) {
 const WEB_CLIENT_INDEX = "/webclient";
 const FLUTTER_ENTRY = "/flutter";
 const AUTH_BRIDGE = "/auth_bridge";
+const OCCASION_CARD_PREVIEW = "/occasion-card-preview";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
 const HELP_PAGES = Object.keys(CSP_MANIFEST.documents).filter(file => /^(?:napoveda|help)\/(?:[a-z-]+\/)?index\.html$/.test(file));
 const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
@@ -395,6 +396,14 @@ async function routeRequest(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
     if (path === "/_security/csp-report") return cspReport(request);
+    if (path === OCCASION_CARD_PREVIEW || path === OCCASION_CARD_PREVIEW + ".html") {
+      const res = await serveAsset(env, request, OCCASION_CARD_PREVIEW);
+      if (!res.ok) return notFound();
+      const response = htmlResponse(res.body, res.headers, 200, "occasion-card-preview");
+      response.headers.set("x-robots-tag", "noindex");
+      response.headers.set("x-frame-options", "SAMEORIGIN");
+      return response;
+    }
     // Reserve the complete document namespace, including retired assets that
     // can survive in an upstream asset cache after their source is removed.
     if (path === "/organizers" || path.startsWith("/organizers/")) {

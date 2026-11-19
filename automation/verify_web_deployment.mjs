@@ -61,6 +61,20 @@ async function fetchFresh(pathname) {
 
 const marketing = resolveContext(readConfig(configPath));
 async function verifyOnce() {
+  const preview = await fetchFresh('/occasion-card-preview.html');
+  assert.equal(preview.status, 200, 'occasion preview is unavailable');
+  assert.equal(preview.redirected, false, 'occasion preview redirects');
+  assert.match(preview.headers.get('content-type') || '', /^text\/html\b/i, 'occasion preview is not HTML');
+  assertRevalidated(preview, 'occasion preview');
+  const previewHtml = await preview.text();
+  assert.match(previewHtml, /<main id="preview">/, 'occasion preview returned fallback HTML');
+  const previewModule = previewHtml.match(/src="(\/web-assets\/occasionCardPreview-[A-Za-z0-9_.-]+\.js)"/)?.[1];
+  assert.ok(previewModule, 'occasion preview is missing its compiled module');
+  const previewScript = await fetchFresh(previewModule);
+  assert.equal(previewScript.status, 200, 'occasion preview module is unavailable');
+  assert.match(previewScript.headers.get('content-type') || '', /javascript/i, 'occasion preview module is not JavaScript');
+  assert.ok((await previewScript.arrayBuffer()).byteLength > 0, 'occasion preview module is empty');
+
   const updateAssets = new Set();
   const marketingAssets = new Set();
   for (const page of marketing.pages) {

@@ -39,6 +39,26 @@ test('generated Pages worker secures HTML and assets while preserving route bodi
   assert.equal(await temporary.text(),'/webclient');
 });
 
+test('occasion preview bypasses Pages .html redirects and remains embeddable on the same origin', async () => {
+  const paths = [];
+  const assets = { ASSETS: { fetch: async request => {
+    const pathname = new URL(request.url).pathname;
+    paths.push(pathname);
+    if (pathname.endsWith('.html')) return Response.redirect(origin + '/occasion-card-preview', 308);
+    if (pathname === '/occasion-card-preview') return new Response('<main id="preview"></main>');
+    return new Response('missing', { status: 404 });
+  } } };
+  for (const path of ['/occasion-card-preview.html', '/occasion-card-preview']) {
+    const response = await worker.fetch(new Request(origin + path), assets);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), '<main id="preview"></main>');
+    assert.match(response.headers.get('content-type'), /^text\/html/);
+    assert.equal(response.headers.get('x-frame-options'), 'SAMEORIGIN');
+    assert.match(response.headers.get('cache-control'), /no-cache/);
+  }
+  assert.deepEqual(paths, ['/occasion-card-preview', '/occasion-card-preview']);
+});
+
 test('empty form slug returns a secured 404 rather than a successful shell', async () => {
   const response = await worker.fetch(new Request(origin + '/form/'), env);
   assertPolicy(response);

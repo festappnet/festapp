@@ -37,6 +37,7 @@ export function shouldPrecache(relativePath) {
 export function deploymentUrl(url) {
   if (url === '/flutter') return '/flutter?pwa-cache=1';
   if (url === '/webclient') return '/webclient?pwa-cache=1';
+  if (url === '/occasion-card-preview') return '/occasion-card-preview.html';
   return url.endsWith('/index.html') ? url.slice(0, -'index.html'.length) : url;
 }
 
