@@ -547,8 +547,33 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     }
   }
 
+  Widget _measurementSection(List<Widget> children) => Padding(
+    padding: const EdgeInsets.only(top: 32),
+    child: ExpansionTile(
+      key: const PageStorageKey('unit-measurement-settings'),
+      maintainState: true,
+      expansionAnimationStyle: AnimationStyle.noAnimation,
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(top: 8, bottom: 16),
+      title: Text(FormStrings.measurementTitle),
+      children: children,
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
+    final measurementEnabled = _organizationMeasurementEnabled;
+    final unitId = _unit.id;
+    final metaCapiSettings = unitId == null
+        ? const SizedBox.shrink()
+        : UnitMetaCapiSettings(
+            key: ValueKey('meta-capi-$unitId'),
+            unitId: unitId,
+            savedWebsites: _savedMeasurementWebsites,
+            sectionBuilder: measurementEnabled
+                ? null
+                : (child) => _measurementSection([child]),
+          );
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Align(
@@ -793,87 +818,69 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                               OccasionSettingsStrings.timezonesLoading,
                             ),
                           ),
-                        if (_organizationMeasurementEnabled) ...[
-                          const SizedBox(height: 32),
-                          ExpansionTile(
-                            key: const PageStorageKey(
-                              'unit-measurement-settings',
-                            ),
-                            maintainState: true,
-                            expansionAnimationStyle: AnimationStyle.noAnimation,
-                            tilePadding: EdgeInsets.zero,
-                            childrenPadding: const EdgeInsets.only(
-                              top: 8,
-                              bottom: 16,
-                            ),
-                            title: Text(FormStrings.measurementTitle),
-                            children: [
-                              UnitMeasurementSettings(
-                                websiteConsentBuilder:
-                                    _canEdit && _unit.id != null
-                                    ? () => UnitWebsiteConsentSettings(
-                                        key: ValueKey(
-                                          'website-consent-${_unit.id}',
-                                        ),
-                                        unitId: _unit.id!,
-                                        websites: _savedMeasurementWebsites
-                                            .where(
-                                              UnitMeasurementSettings.parseWebsites(
-                                                _measurementWebsitesController
-                                                    .text,
-                                              ).contains,
-                                            )
-                                            .toList(),
-                                        saved: _measurementSaved,
-                                      )
-                                    : null,
-                                consentBridge: _measurementConsentBridge,
-                                onConsentBridgeChanged: (value) => setState(
-                                  () => _measurementConsentBridge = value,
-                                ),
-                                websitesController:
-                                    _measurementWebsitesController,
-                                savedWebsites: _savedMeasurementWebsites,
-                                approval: _measurementApproval,
-                                loadingApproval: _isLoadingMeasurementApproval,
-                                approvalLoadFailed:
-                                    _measurementApprovalLoadFailed,
-                                onRetryApproval: _loadMeasurementApproval,
-                                requestingApproval: _isRequestingMeasurement,
-                                onRequestApproval: _requestMeasurementApproval,
-                                enabled: _measurementEnabled,
-                                consentLayout: _measurementConsentLayout,
-                                hasStoredTitle: _storedConsentTitle != null,
-                                hasStoredText: _storedConsentText != null,
-                                onRestore: (controller) =>
-                                    _restoredConsent.add(controller),
-                                consentTitleController:
-                                    _measurementConsentTitleController,
-                                consentTextController:
-                                    _measurementConsentTextController,
-                                onConsentLayoutChanged: (value) => setState(
-                                  () => _measurementConsentLayout = value,
-                                ),
-                                canEdit:
-                                    _canEdit &&
-                                    !_isSaving &&
-                                    !_isRequestingMeasurement,
-                                privacyUrlController:
-                                    _measurementPrivacyUrlController,
-                                gtmController: _measurementGtmController,
-                                scriptsController:
-                                    _measurementScriptsController,
-                                onEnabledChanged: (value) =>
-                                    setState(() => _measurementEnabled = value),
+                        if (measurementEnabled)
+                          _measurementSection([
+                            UnitMeasurementSettings(
+                              websiteConsentBuilder:
+                                  _canEdit && _unit.id != null
+                                  ? () => UnitWebsiteConsentSettings(
+                                      key: ValueKey(
+                                        'website-consent-${_unit.id}',
+                                      ),
+                                      unitId: _unit.id!,
+                                      websites: _savedMeasurementWebsites
+                                          .where(
+                                            UnitMeasurementSettings.parseWebsites(
+                                              _measurementWebsitesController
+                                                  .text,
+                                            ).contains,
+                                          )
+                                          .toList(),
+                                      saved: _measurementSaved,
+                                    )
+                                  : null,
+                              consentBridge: _measurementConsentBridge,
+                              onConsentBridgeChanged: (value) => setState(
+                                () => _measurementConsentBridge = value,
                               ),
-                            ],
-                          ),
-                        ],
-                        UnitMetaCapiSettings(
-                          key: ValueKey('meta-capi-${_unit.id}'),
-                          unitId: _unit.id!,
-                          savedWebsites: _savedMeasurementWebsites,
-                        ),
+                              websitesController:
+                                  _measurementWebsitesController,
+                              savedWebsites: _savedMeasurementWebsites,
+                              approval: _measurementApproval,
+                              loadingApproval: _isLoadingMeasurementApproval,
+                              approvalLoadFailed:
+                                  _measurementApprovalLoadFailed,
+                              onRetryApproval: _loadMeasurementApproval,
+                              requestingApproval: _isRequestingMeasurement,
+                              onRequestApproval: _requestMeasurementApproval,
+                              enabled: _measurementEnabled,
+                              consentLayout: _measurementConsentLayout,
+                              hasStoredTitle: _storedConsentTitle != null,
+                              hasStoredText: _storedConsentText != null,
+                              onRestore: (controller) =>
+                                  _restoredConsent.add(controller),
+                              consentTitleController:
+                                  _measurementConsentTitleController,
+                              consentTextController:
+                                  _measurementConsentTextController,
+                              onConsentLayoutChanged: (value) => setState(
+                                () => _measurementConsentLayout = value,
+                              ),
+                              canEdit:
+                                  _canEdit &&
+                                  !_isSaving &&
+                                  !_isRequestingMeasurement,
+                              privacyUrlController:
+                                  _measurementPrivacyUrlController,
+                              gtmController: _measurementGtmController,
+                              scriptsController: _measurementScriptsController,
+                              onEnabledChanged: (value) =>
+                                  setState(() => _measurementEnabled = value),
+                            ),
+                            metaCapiSettings,
+                          ])
+                        else
+                          metaCapiSettings,
                         const SizedBox(height: 24),
                         if (_canEdit)
                           Row(

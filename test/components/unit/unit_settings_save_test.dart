@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/meta_capi_strings.dart';
 import 'package:fstapp/components/unit/db_units.dart';
 import 'package:fstapp/components/unit/unit_website_consent.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -46,6 +47,7 @@ void main() {
     var probeError = 'policy_changed';
     var approvalRequests = 0;
     var approvalReads = 0;
+    var metaCapiAllowed = false;
     late Map<String, dynamic> approval;
     final toasts = <MethodCall>[];
     setUpAll(() async {
@@ -101,6 +103,8 @@ void main() {
                 },
             },
           };
+        } else if (request.url.path.endsWith('/get_unit_meta_purchase')) {
+          body = {'allowed': metaCapiAllowed, 'connected': false};
         } else if (request.url.path.endsWith(
           '/get_unit_measurement_approval',
         )) {
@@ -207,6 +211,7 @@ void main() {
       probeError = 'policy_changed';
       approvalRequests = 0;
       approvalReads = 0;
+      metaCapiAllowed = false;
       approval = {
         'request_state': 'not_requested',
         'can_request': true,
@@ -387,6 +392,7 @@ void main() {
             'measurement_consent_title': csDefaultTitle,
           },
         };
+        metaCapiAllowed = true;
         final unit = UnitModel.fromJson(Map<String, dynamic>.from(stored));
         final rights = RightsContextFixture(
           context: OccasionLinkModel.fromJson({
@@ -419,6 +425,8 @@ void main() {
           findsNothing,
           reason: 'Measurement starts collapsed',
         );
+        final metaCapi = find.text(MetaCapiStrings.title);
+        expect(metaCapi, findsNothing, reason: 'Meta CAPI starts collapsed');
         final payments = find.byKey(
           const PageStorageKey('unit-payment-settings'),
         );
@@ -446,6 +454,13 @@ void main() {
         );
         await tester.pumpAndSettle();
         await toggleMeasurement(tester);
+        expect(
+          find.descendant(
+            of: find.byKey(const PageStorageKey('unit-measurement-settings')),
+            matching: metaCapi,
+          ),
+          findsOneWidget,
+        );
         await tester.ensureVisible(find.text(FormStrings.measurementAdvanced));
         await tester.tap(find.text(FormStrings.measurementAdvanced));
         await tester.pumpAndSettle();

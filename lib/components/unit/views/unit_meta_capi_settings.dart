@@ -13,12 +13,14 @@ import '../meta_capi_strings.dart';
 class UnitMetaCapiSettings extends StatefulWidget {
   final int unitId;
   final List<String> savedWebsites;
+  final Widget Function(Widget child)? sectionBuilder;
   final Future<Map<String, dynamic>> Function(int)? load;
   final Future<void> Function(String, Map<String, dynamic>)? mutate;
   const UnitMetaCapiSettings({
     super.key,
     required this.unitId,
     this.savedWebsites = const [],
+    this.sectionBuilder,
     this.load,
     this.mutate,
   });
@@ -233,9 +235,15 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
 
   @override
   Widget build(BuildContext context) {
+    final section = _buildSection(context);
+    if (section == null) return const SizedBox.shrink();
+    return widget.sectionBuilder?.call(section) ?? section;
+  }
+
+  Widget? _buildSection(BuildContext context) {
     // A known platform denial exposes only authorized disconnect cleanup.
     if (_data?['allowed'] == false) {
-      if (_data?['connected'] != true) return const SizedBox.shrink();
+      if (_data?['connected'] != true) return null;
       return Padding(
         padding: const EdgeInsets.only(top: 32),
         child: Row(

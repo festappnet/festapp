@@ -328,8 +328,7 @@ payment processing retryable.
 ### Meta CAPI settings
 
 The platform must first approve the organization. Organization administrators
-then open Unit settings → Meta Conversions API (beside the existing event and
-consent settings). Before initial approval the section is hidden; there is no request button.
+then open Unit settings → Events and consent → Meta Conversions API. Before initial approval the section is hidden; there is no request button.
 If approval is removed from an existing connector, only a platform-disabled
 notice and Disconnect remain visible. No settings or delivery details are exposed. The platform uses its protected database administration boundary:
 
