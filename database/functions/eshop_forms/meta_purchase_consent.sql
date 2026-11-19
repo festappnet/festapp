@@ -18,7 +18,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,extens
  JOIN public.units u ON u.id=o.unit JOIN analytics.meta_purchase_connectors c ON c.unit=u.id
  CROSS JOIN LATERAL (SELECT public.meta_purchase_consent_revision_internal(f.id) revision) v
  WHERE f.id=public.resolve_form_link_internal(p_form_link) AND public.can_read_public_form_measurement(f.id) AND v.revision IS NOT NULL
-  AND public.form_measurement_visitor_role_internal(f.id)<>'staff'
+  AND c.paused_at IS NULL AND public.form_measurement_visitor_role_internal(f.id)<>'staff'
   AND public.meta_purchase_retention_ready_internal();
 $$;
 REVOKE ALL ON FUNCTION public.get_meta_purchase_consent(text) FROM PUBLIC,anon,authenticated,service_role;

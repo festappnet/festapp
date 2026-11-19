@@ -81,6 +81,7 @@ BEGIN
  UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp()-interval '8 days' WHERE order_id=oid;
  -- Delivery is disabled; PostgreSQL retention still runs.
  UPDATE analytics.meta_purchase_connectors SET paused_at=clock_timestamp() WHERE unit=un;
+ PERFORM assert_true(public.get_meta_purchase_consent(x->>'link') IS NULL,'paused delivery cannot authorize checkout matching');
  PERFORM public.purge_meta_purchase_data_internal();
  UPDATE analytics.meta_purchase_connectors SET paused_at=NULL WHERE unit=un;
  PERFORM assert_true((SELECT client_ip IS NULL AND fbp IS NOT NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'seven-day IP cleanup also covers unpaid orders and retains younger matching');
