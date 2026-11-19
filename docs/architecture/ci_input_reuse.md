@@ -190,8 +190,9 @@ The checkout, server-policy, CMS and optional hosted web build jobs share the
 same pinned Chromium cache for the runner OS and architecture. WordPress uses
 a separate browser cache because it also needs Firefox and WebKit. The WordPress
 runner caches downloaded apt archives by runner image and Playwright version.
-Apt still resolves and verifies the packages against its signed repository
-index. Browsers are launched in a probe before and after any necessary install.
+Other runner images on the same OS and architecture can seed that cache. Apt
+first tries the restored archives without network downloads. On a miss it
+refreshes the signed index before downloading, and verifies package checksums. Browsers are launched in a probe before and after any necessary install.
 Deno reuses dependency downloads keyed by its pin and lockfile, and pnpm caches
 include the lockfiles installed by each job. Closing a pull request evicts its
 merge-ref caches so unused copies do not displace shared main-branch entries.

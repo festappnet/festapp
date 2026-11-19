@@ -20,7 +20,10 @@ runs:
           chromium) printf 'browsers=%s-chromium\n' "$base" >> "$GITHUB_OUTPUT" ;;
           wordpress)
             printf 'browsers=%s\n' "$base" >> "$GITHUB_OUTPUT"
-            printf 'archives=cms-apt-%s-%s-%s-%s-%s\n' "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "${ImageVersion:?}" "$version" >> "$GITHUB_OUTPUT"
+            archive_platform="cms-apt-${RUNNER_OS}-${RUNNER_ARCH}-${ImageOS}-"
+            archive_prefix="${archive_platform}playwright-${version}-"
+            printf 'archives=%s%s\narchive-prefix=%s\nlegacy-archive-prefix=%s\n' \
+              "$archive_prefix" "${ImageVersion:?}" "$archive_prefix" "$archive_platform" >> "$GITHUB_OUTPUT"
             printf 'FESTAPP_CMS_APT_CACHE=%s/.cache/festapp-ci/playwright-apt\n' "$HOME" >> "$GITHUB_ENV" ;;
           *) echo "Unknown browser profile: $PROFILE" >&2; exit 1 ;;
         esac
@@ -35,3 +38,6 @@ runs:
       with:
         path: ~/.cache/festapp-ci/playwright-apt/*.deb
         key: ${{ steps.key.outputs.archives }}
+        restore-keys: |
+          ${{ steps.key.outputs.archive-prefix }}
+          ${{ steps.key.outputs.legacy-archive-prefix }}
