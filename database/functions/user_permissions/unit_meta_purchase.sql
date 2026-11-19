@@ -5,4 +5,3 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,exte
 $$;
 REVOKE ALL ON FUNCTION public.can_manage_unit_meta_purchase(bigint) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.can_manage_unit_meta_purchase(bigint) TO authenticated;
-
