@@ -4,8 +4,8 @@ export const limits = Object.freeze({minHeight:120, legacyMinHeight:240, viewpor
 export const validId = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
 export const viewport = value => Number.isFinite(value) && value >= limits.legacyMinHeight && value <= limits.viewportMax;
 export const minimumHeight = offer => offer === limits.minHeight ? limits.minHeight : limits.legacyMinHeight;
-const toChild = new Set(['init','viewport','theme','price-ready','price-activate','measurement-consent','measurement-ack']);
-const toHost = new Set(['ready','resize','scroll-request','scroll-save','scroll-restore','scroll-discard','price','measurement-context','measurement-activate','analytics']);
+const toChild = new Set(['init','viewport','theme','price-ready','price-activate','measurement-consent','measurement-ack','meta-checkout-matching']);
+const toHost = new Set(['ready','resize','scroll-request','scroll-save','scroll-restore','scroll-discard','price','measurement-context','measurement-activate','analytics','meta-checkout-matching-request']);
 const bounded = (value, min, max) => Number.isFinite(value) && value >= min && value <= max;
 export function validMessage(data, destination) {
     if (!data || typeof data !== 'object' || Array.isArray(data) || data.namespace !== namespace || data.protocol !== protocol ||

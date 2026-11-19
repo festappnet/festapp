@@ -11,13 +11,19 @@ export const supabaseAdmin = createClient(
  * This is used for RLS (Row Level Security) operations.
  * * @param authorizationHeader - The full Bearer token string.
  */
-export function createUserClient(authorizationHeader: string) {
+export function createUserClient(
+  authorizationHeader: string,
+  clientIp?: string | null,
+) {
   return createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     {
       global: {
-        headers: { Authorization: authorizationHeader },
+        headers: {
+          Authorization: authorizationHeader,
+          ...(clientIp ? { "X-Festapp-Client-IP": clientIp } : {}),
+        },
       },
     },
   );

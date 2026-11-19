@@ -102,6 +102,7 @@ export class EmbedBridge {
     publishHeight() { return this.layout.publishHeight(); }
     scrollTo(...args) { return this.layout.scrollTo(...args); }
     subscribe(...args) { return this.measurement.subscribe(...args); }
+    collectMetaCheckoutMatching(snapshot) { return this.measurement.collectMetaCheckoutMatching(snapshot); }
     setMeasurementRuntime(...args) { return this.measurement.setMeasurementRuntime(...args); }
     selection(...args) { return this.measurement.selection(...args); }
     connectConsent(...args) { return this.measurement.connectConsent(...args); }

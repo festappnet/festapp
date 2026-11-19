@@ -8,6 +8,22 @@ export function createBrowserStorage(resolve = () => globalThis.localStorage) {
             try { return resolve()?.getItem(key) ?? null; }
             catch { return null; }
         },
+        keys(prefix) {
+            const keys = new Set();
+            try {
+                const storage = resolve();
+                for (let i = 0; i < (storage?.length ?? 0); i++) {
+                    const key = storage.key(i);
+                    if (key?.startsWith(prefix)) keys.add(key);
+                }
+            } catch { /* The current page can still recover its in-memory commands. */ }
+            for (const [key, value] of memory) {
+                if (!key.startsWith(prefix)) continue;
+                if (value === null) keys.delete(key);
+                else keys.add(key);
+            }
+            return [...keys];
+        },
         setItem(key, value) {
             value = String(value);
             try {

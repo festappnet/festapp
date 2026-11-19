@@ -246,7 +246,15 @@ Deno.serve(async (req) => {
       } authorization`,
     );
     const rpcResult = await executeTicketOrderRpc(
-      userScoped ? createUserClient(authorizationHeader!) : supabaseAdmin,
+      // Caddy replaces this header from its trusted proxy resolution; the gateway and
+      // the function router preserve it. Never accept an address from JSON or
+      // use the untrusted CF/X-Forwarded-For alternatives here.
+      userScoped
+        ? createUserClient(
+          authorizationHeader!,
+          req.headers.get("x-festapp-client-ip"),
+        )
+        : supabaseAdmin,
       rpcName,
       rpcParameters,
     );

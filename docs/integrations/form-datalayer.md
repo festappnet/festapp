@@ -351,22 +351,48 @@ The Edge worker claims only the original CAPI-enabled paid cohort after a full
 payment fact exists. Before sending, it rechecks the saved snapshot, live binding,
 destination and eligible balance. It sends the normalized email hash, checkout
 user agent, canonical source URL, amount and currency with the first settlement
-time and stable event ID. Retries keep that ID and time. No client IP, phone or
-Meta cookie IDs are stored for this pilot. Snapshot and matching data are erased
-on terminal outcomes and expire after 30 days. Operational receipts without those
-identifiers remain for 90 days, with the non-contact decision timestamp and a
-digest of its consent scope to check later refusals.
+time and stable event ID. Retries keep that ID and time. With a valid saved
+advertising choice, matching also includes a SHA-256 phone hash (digits including
+the country code), validated `fbp`/`fbc`, and the checkout IP. A national phone
+number needs one configured prefix. An ambiguous number is omitted. When a pilot
+checkout is confirmed, the form checks the current notice and asks its bound host
+for matching once. The host checks the live lease and the same saved advertising
+decision before reading first-party `_fbp`/`_fbc`. A current `fbclid` can supply
+`fbc` when the matching cookie is missing or belongs to an older click. Renewals
+and withdrawals of the consent connection carry only consent. Matching stays out
+of dataLayer, checkout receipts and the checkout command's identity.
+
+Standalone forms derive `fbc` from a consented `fbclid` in the form URL. The form
+origin is shared by multiple organizers, so their browser cookies are never read
+there. The new-tab consent link transfers only consent.
+
+The checkout Edge function forwards only `X-Festapp-Client-IP`, which canonical
+Caddy configuration replaces from trusted proxy resolution and the gateway/router
+preserves. SQL validates the address; JSON payloads and untrusted forwarded-IP
+headers do not supply it. Raw IP expires after seven days, including unpaid and
+paused deliveries. The database retention job runs every minute in the runtime
+database independently of the Edge worker and still scrubs expired rows if
+delivery is disabled. Delivery also checks IP expiry before returning a payload.
+Snapshot, cookie IDs and contact hashes expire after 30 days. All matching data
+are erased on terminal outcomes or authorized consent withdrawal. Operational
+receipts without those identifiers remain for 90 days, with the decision timestamp
+and a digest of its consent scope to check later refusals.
 
 For the first test run, deploy the migration, proof-only `process-meta-purchases`
-function and web client on the same canonical release. The migration leaves the
-scheduler inactive and provisions no destinations. Use the canonical backend
-operator workflow to register the token in Vault, configure a connector in
-`analytics.meta_purchase_connectors` with the organizer Unit, test dataset,
-test event code and actual HTTPS checkout origin, then allow the one pilot form
-in `analytics.meta_purchase_forms` before enabling it. Verify the consent notice
-and privacy policy cover Meta and disable earlier Festapp Purchase tags in the
-organizer's container. Activate only the `festapp_meta_purchase_delivery` cron
-job after the proof endpoint validates. During testing, use a dedicated Meta
+function and web client on the same canonical release. Install
+`automation/hetzner-supabase/runtime/install-meta-purchase-schedules.sh` on the
+canonical host. It verifies both control-plane jobs, starts the independent
+retention job and provisions new delivery jobs inactive. Verify a successful
+retention sweep before activating delivery or enabling a connector. Capture
+closes when the last successful sweep is older than ten minutes.
+
+Use the canonical backend operator workflow to register the token in Vault,
+configure the organizer Unit, test dataset, test event code and HTTPS checkout
+origin in `analytics.meta_purchase_connectors`, and allow one pilot form in
+`analytics.meta_purchase_forms`. Verify that the consent notice and privacy
+policy cover Meta and retire earlier Festapp Purchase tags for the pilot form.
+Activate the `festapp_meta_purchase_delivery` job after its proof endpoint
+validates, then enable the connector. During testing, use a dedicated Meta
 dataset and test the bank balance payment, a card payment, and withdrawal
 before settlement. Compare the stable event ID and value in Meta Test Events
 with the private settlement record.

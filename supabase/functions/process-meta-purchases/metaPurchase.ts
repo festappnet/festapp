@@ -7,6 +7,10 @@ export interface MetaPurchase {
   value: number;
   currency: string;
   emailHash: string;
+  phoneHash?: string | null;
+  fbp?: string | null;
+  fbc?: string | null;
+  clientIp?: string | null;
   clientAgent: string;
   sourceUrl: string;
 }
@@ -38,6 +42,12 @@ export async function sendMetaPurchase(
             user_data: {
               em: [purchase.emailHash],
               client_user_agent: purchase.clientAgent,
+              ...(purchase.phoneHash ? { ph: [purchase.phoneHash] } : {}),
+              ...(purchase.fbp ? { fbp: purchase.fbp } : {}),
+              ...(purchase.fbc ? { fbc: purchase.fbc } : {}),
+              ...(purchase.clientIp
+                ? { client_ip_address: purchase.clientIp }
+                : {}),
             },
             custom_data: { value: purchase.value, currency: purchase.currency },
           }],
