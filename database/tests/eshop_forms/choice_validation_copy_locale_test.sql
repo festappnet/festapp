@@ -1,7 +1,8 @@
 DO $$
 DECLARE actor uuid; org bigint; unit_id bigint; occ bigint; f bigint; result jsonb;
   field_type text; choices jsonb; payload jsonb; cmd uuid:=gen_random_uuid(); copied bigint;
-  primary_type bigint; empty_type bigint;
+  primary_type bigint; empty_type bigint; source_plan bigint; target_occasion bigint;
+  target_link text:='choices-target-'||gen_random_uuid();
   link text:='choices-'||gen_random_uuid();
 BEGIN
   PERFORM create_user_for_test('choice-editor','choice-editor@example.invalid');
@@ -42,15 +43,33 @@ BEGIN
   INSERT INTO eshop.products(occasion,product_type,title,price,currency_code,is_hidden) VALUES(occ,primary_type,'Standard',100,'CZK',false);
   INSERT INTO eshop.product_types(occasion,title,type) VALUES(occ,'Unused','spot') RETURNING id INTO empty_type;
   INSERT INTO public.form_fields(form,type,product_type,is_ticket_field,is_hidden) VALUES(f,'product_type',primary_type,true,true),(f,'product_type',empty_type,true,true);
+  INSERT INTO eshop.blueprints(occasion,organization,title)
+    VALUES(occ,org,'Source plan') RETURNING id INTO source_plan;
+  UPDATE public.forms SET blueprint=source_plan WHERE id=f;
   result:=public.duplicate_form_to_occasion_client_sync_v1(f,link,cmd,'cs');
   copied:=(result#>>'{data,formId}')::bigint;
   PERFORM assert_eq((SELECT count(*)::integer FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type WHERE ff.form=copied AND pt.type='spot'),1,'Standalone copy drops obsolete empty selector');
   PERFORM assert_false(EXISTS(SELECT 1 FROM public.form_fields ff JOIN eshop.product_types pt ON pt.id=ff.product_type WHERE ff.form=copied AND pt.type='spot' AND ff.is_hidden),'Standalone copy has canonical primary visibility');
   PERFORM public.assert_form_primary_products_internal(copied);
+  PERFORM assert_eq((SELECT blueprint FROM public.forms WHERE id=copied),source_plan,'Same-occasion copy keeps its scoped plan');
 
   PERFORM assert_false((SELECT data ? 'analytics' FROM public.forms WHERE id=copied),'form copy omits measurement code');
   PERFORM assert_eq((SELECT title FROM public.forms WHERE id=copied),'Přihláška (kopie)','Czech copy title');
   PERFORM assert_eq(public.duplicate_form_to_occasion_client_sync_v1(f,link,cmd,'cs')#>>'{data,formId}',copied::text,'copy replay keeps identity');
   result:=public.duplicate_form_to_occasion_client_sync_v1(f,link,gen_random_uuid());
   PERFORM assert_eq((SELECT title FROM public.forms WHERE id=(result#>>'{data,formId}')::bigint),'Přihláška (copy)','older caller English default');
+  -- A standalone copy across occasions has no binding to the source plan.
+  INSERT INTO public.occasions(organization,unit,title,link,start_time,end_time)
+    VALUES(org,unit_id,'Copy destination',target_link,now(),now()+interval '1 day') RETURNING id INTO target_occasion;
+  PERFORM public.reserve_public_link_internal('occasion',target_occasion,target_link,true);
+  INSERT INTO public.occasion_users(occasion,"user",is_editor,is_editor_order,is_editor_view,is_editor_order_view)
+    VALUES(target_occasion,actor,true,true,true,true);
+  result:=public.duplicate_form_to_occasion_client_sync_v1(f,target_link,gen_random_uuid(),'cs');
+  copied:=(result#>>'{data,formId}')::bigint;
+  PERFORM assert_eq((SELECT occasion FROM public.forms WHERE id=copied),target_occasion,'Copy belongs to the destination occasion');
+  SELECT jsonb_build_object('id',id,'occasion',occasion,'blueprint',blueprint,'title','Updated copy')
+    INTO payload FROM public.forms WHERE id=copied;
+  result:=public.update_form_client_sync_v1(payload,gen_random_uuid());
+  PERFORM assert_eq(result->>'code','200','The destination form saves without Foreign blueprint');
+  PERFORM assert_true((SELECT blueprint IS NULL FROM public.forms WHERE id=copied),'Copy has no source plan');
 END $$;

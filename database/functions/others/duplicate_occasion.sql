@@ -357,7 +357,7 @@ BEGIN
                 WHERE uba.unit = v_target_unit AND uba.bank_account = rec.bank_account)
               THEN false ELSE rec.is_open END,
             NULL,
-            COALESCE(new_bp_id, rec.blueprint), rec.header, rec.header_off, now(), rec.title, rec.participant_capacity, rec.waitlist_enabled, rec.show_remaining_capacity, rec.waitlist_offer_duration_seconds)
+            new_bp_id, rec.header, rec.header_off, now(), rec.title, rec.participant_capacity, rec.waitlist_enabled, rec.show_remaining_capacity, rec.waitlist_offer_duration_seconds)
     RETURNING id INTO v_new_id;
 
     UPDATE public.forms SET link=public.reserve_public_link_internal('form',v_new_id,NULL,true) WHERE id=v_new_id;
