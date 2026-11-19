@@ -109,8 +109,8 @@ repository.
   checks block release, including pre-existing failures. Do not bypass the gate
   or substitute targeted tests/build success. A current successful job may
   attest unchanged inputs using `automation/ci/selection.py`; only verified
-  direct successful executions from main or internal PRs within seven days can
-  supply that evidence. Reused jobs cannot become execution evidence.
+  direct successful executions from main or internal PRs within the retention
+  window in `automation/ci/checks.json` can supply that evidence. Reused jobs cannot become execution evidence.
   Draft PRs defer these lanes until Ready for review. See `CONTRIBUTING.md`.
 
 

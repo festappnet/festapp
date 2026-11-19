@@ -1,6 +1,7 @@
 import unittest
 
-from automation.testing.cms_browser_dependencies import missing_playwright_packages, simulated_missing_packages
+from automation.testing.cms_browser_dependencies import (missing_playwright_packages, simulated_missing_packages,
+                                                          ubuntu_archive_sources, apt_failure_summary)
 
 
 class MissingPlaywrightPackagesTest(unittest.TestCase):
@@ -34,6 +35,23 @@ class MissingPlaywrightPackagesTest(unittest.TestCase):
         self.assertEqual(simulated_missing_packages(report), ("libflite1", "libwebpdemux2:amd64"))
         self.assertEqual(simulated_missing_packages("All system dependencies are installed."), ())
         self.assertEqual(simulated_missing_packages("Missing system dependencies (2):\n  libflite1"), ())
+
+
+class UbuntuPackageRepairTest(unittest.TestCase):
+    def test_archive_tracks_the_host_release_and_requires_signed_packages(self):
+        release = 'ID=ubuntu\nVERSION_CODENAME="resolute"\n'
+        amd64 = ubuntu_archive_sources(release, 'x86_64')
+        self.assertIn('https://archive.ubuntu.com/ubuntu resolute-updates', amd64)
+        self.assertIn('https://security.ubuntu.com/ubuntu resolute-security', amd64)
+        self.assertEqual(amd64.count('signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg'), 3)
+        self.assertIn('https://ports.ubuntu.com/ubuntu-ports resolute-security',
+                      ubuntu_archive_sources(release, 'aarch64'))
+        self.assertIsNone(ubuntu_archive_sources('ID=debian\nVERSION_CODENAME=bookworm', 'x86_64'))
+        self.assertIsNone(ubuntu_archive_sources('ID=ubuntu\nVERSION_CODENAME="invalid suite"', 'x86_64'))
+
+    def test_summary_surfaces_apt_errors_without_dumping_success_output(self):
+        self.assertEqual(apt_failure_summary('Reading lists\nE: Package not found\n', 100),
+                         'exit 100: E: Package not found')
 
 
 if __name__ == "__main__":

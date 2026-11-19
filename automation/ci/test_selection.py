@@ -394,6 +394,7 @@ class ReusePolicyTest(unittest.TestCase):
                         created_at=datetime.now(timezone.utc).isoformat(), html_url=URL)
         self.job = dict(id=456, run_id=123, run_attempt=1, name='server-policy',
                         status='completed', conclusion='success', html_url=URL+'/job/456',
+                        completed_at=datetime.now(timezone.utc).isoformat(),
                         steps=[dict(name='All lane tests executed', conclusion='success'),dict(name='Lane coverage verified',conclusion='success')])
         self.tools = dict(RUNNER_OS='Linux',RUNNER_ARCH='X64',ImageOS='ubuntu24',ImageVersion='fixture',
                           node='22.23.4',pnpm='11.24.0',python='fixture')
@@ -413,7 +414,7 @@ class ReusePolicyTest(unittest.TestCase):
         self.original_contract=copy.deepcopy(self.contract)
 
     def evaluate(self, fingerprint=None, runs=None, definition=None, consume=False,
-                 expire_endpoint=None, expire_unit=None, jobs=None):
+                 expire_endpoint=None, expire_unit=None, jobs=None, artifacts=None, before_consume=None):
         import hashlib, io, zipfile
         archive = io.BytesIO()
         with zipfile.ZipFile(archive,'w') as bundle:
@@ -431,9 +432,12 @@ class ReusePolicyTest(unittest.TestCase):
                     return self.run
                 return next(run for run in runs if run['id'] == run_id)
             if endpoint.startswith('actions/workflows/'):
-                return {'workflow_runs':runs if runs is not None else [self.run]}
+                page = int(endpoint.rsplit('&page=', 1)[1]) if '&page=' in endpoint else 1
+                listed = runs if runs is not None else [self.run]
+                return {'workflow_runs':listed[(page-1)*100:page*100]}
             if endpoint.endswith('/artifacts?per_page=100'):
-                return {'artifacts':[] if self.missing else [self.artifact]}
+                run_id = int(endpoint.split('/')[2])
+                return {'artifacts':(artifacts or {}).get(run_id, [] if self.missing else [self.artifact])}
             if '/jobs?' in endpoint:
                 run_id = int(endpoint.split('/')[2])
                 return {'jobs': (jobs or {}).get(run_id, [self.job])}
@@ -467,6 +471,8 @@ class ReusePolicyTest(unittest.TestCase):
             result=selection.decide('server-policy','push',None,'refs/heads/main',SHA,
                                     'fixture/repo',self.contract,self.contract)
             if consume:
+                if before_consume:
+                    before_consume()
                 result.update(schemaVersion=2,sha=SHA,lane='server-policy',definition='trusted')
                 with selection.lookup():selection.verify_plan(result,'server-policy',SHA,'fixture/repo',self.contract)
             return result
@@ -525,10 +531,53 @@ class ReusePolicyTest(unittest.TestCase):
         for field,value in [('head_repository',{'id':8}),('repository',{'id':8}),
                             ('run_attempt',2),('event','pull_request_target'),
                             ('path','.github/workflows/other.yml'),
-                            ('created_at',(datetime.now(timezone.utc)-timedelta(days=8)).isoformat())]:
+                            ('created_at',(datetime.now(timezone.utc)-timedelta(days=91)).isoformat())]:
             with self.subTest(field=field):
                 old=self.run[field];self.run[field]=value
                 self.assertTrue(self.evaluate()['run']);self.run[field]=old
+
+    def test_retention_uses_direct_job_completion_and_allows_an_old_workflow_rerun(self):
+        now = datetime.now(timezone.utc)
+        self.run.update(created_at=(now-timedelta(days=120)).isoformat(),
+                        updated_at=(now-timedelta(days=45)).isoformat(), run_attempt=2)
+        self.job.update(completed_at=(now-timedelta(days=45)).isoformat(), run_attempt=2)
+        self.receipt['execution']['attempt'] = 2
+        self.artifact['name'] = 'ci-server-policy-2'
+        self.assertFalse(self.evaluate(consume=True)['run'])
+        self.job['completed_at'] = (now-timedelta(days=91)).isoformat()
+        self.assertTrue(self.evaluate()['run'])
+
+    def test_the_ninetieth_day_boundary_and_consumption_recheck(self):
+        now = datetime(2026, 11, 19, tzinfo=timezone.utc)
+        cutoff, _ = selection.evidence_window(self.contract, now)
+        self.assertEqual(cutoff, now-timedelta(days=90))
+        self.assertTrue(selection.recent_execution({'completed_at': cutoff.isoformat()}, cutoff, now))
+        self.assertFalse(selection.recent_execution(
+            {'completed_at': (cutoff-timedelta(seconds=1)).isoformat()}, cutoff, now))
+        self.assertFalse(selection.recent_execution(
+            {'completed_at': (now+timedelta(seconds=1)).isoformat()}, cutoff, now))
+
+        def expire():
+            self.job['completed_at'] = (datetime.now(timezone.utc)-timedelta(days=91)).isoformat()
+        with self.assertRaises(ValueError):
+            self.evaluate(consume=True, before_consume=expire)
+
+    def test_workflow_history_continues_past_the_first_page(self):
+        forks = [dict(self.run, id=1000+index, run_number=1000+index,
+                      head_repository={'id':8}) for index in range(100)]
+        result = self.evaluate(runs=forks+[self.run], consume=True)
+        self.assertFalse(result['run'])
+        self.assertEqual(result['runId'], self.run['id'])
+
+    def test_missing_or_expired_newer_artifact_does_not_hide_older_direct_execution(self):
+        newer = dict(self.run, id=124, run_number=2)
+        job = dict(self.job, id=457, run_id=124)
+        expired = {**self.artifact, 'workflow_run':dict(self.artifact['workflow_run'], id=124),
+                   'expires_at':(datetime.now(timezone.utc)-timedelta(seconds=1)).isoformat()}
+        for stale in ([], [expired]):
+            result = self.evaluate(runs=[newer,self.run], jobs={124:[job]}, artifacts={124:stale})
+            self.assertFalse(result['run'])
+            self.assertEqual(result['runId'], self.run['id'])
 
     def test_pending_failure_skipped_and_newer_attempt_never_hide_behind_old_success(self):
         for field,value in [('status','in_progress'),('conclusion','skipped'),('conclusion','cancelled')]:

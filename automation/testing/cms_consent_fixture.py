@@ -18,6 +18,7 @@ import socket
 import subprocess
 import sys
 import time
+import tempfile
 import uuid
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -25,7 +26,7 @@ sys.path.insert(0,str(ROOT/'automation/ci'))
 sys.path.insert(0,str(ROOT/'automation'))
 from telemetry import phase as timed_phase, emit
 from wordpress_runtime import WordPress
-from cms_browser_dependencies import missing_playwright_packages, simulated_missing_packages
+from cms_browser_dependencies import missing_playwright_packages, simulated_missing_packages, ubuntu_archive_sources, apt_failure_summary
 from cms_fixture_rest import prepare_rest_image, start_rest, stop_rest
 from cms_fixture_postgres import CmsPostgres
 parser=argparse.ArgumentParser(description=__doc__)
@@ -162,9 +163,8 @@ try:
   def cache_bytes():return sum(p.stat().st_size for p in browser_cache.rglob('*') if p.is_file()) if browser_cache.exists() else 0
   cache_before=cache_bytes();browser_started=time.monotonic()
   engines = list(dict.fromkeys(case[4] for case in cases))
-  shell_only = ['--only-shell'] if engines == ['chromium'] else []
   playwright=['pnpm','--dir',ROOT/'web_client','exec','playwright']
-  run([*playwright,'install',*shell_only,*engines],label='browsers.install')
+  run([*playwright,'install','--only-shell',*engines],label='browsers.install')
   if sys.platform.startswith('linux'):
    # Package checks may flag optional dependencies on newer runner images.
    # Verify the exact pinned browser and launch configuration used by the suite.
@@ -190,70 +190,66 @@ try {
     return None
 
    elevation = ['sudo', '-n'] if os.getuid() else []
-   apt = [
-    'apt-get', '-o', 'Acquire::Retries=1', '-o', 'Acquire::http::Timeout=10',
-    '-o', 'Acquire::https::Timeout=10', '-o', 'DPkg::Lock::Timeout=8',
-   ]
-   archives = None
-   if cache_path := os.environ.get('FESTAPP_CMS_APT_CACHE'):
-    archives = Path(cache_path)
-    archives.mkdir(parents=True, exist_ok=True)
-    apt.extend(['-o', f'Dir::Cache::archives={archives}', '-o', 'APT::Keep-Downloaded-Packages=true'])
+   apt = ['apt-get','-o','Acquire::Retries=2','-o','Acquire::http::Timeout=10',
+          '-o','Acquire::https::Timeout=10','-o','DPkg::Lock::Timeout=15']
 
-   def run_apt(command, label, seconds):
-    # Bound the privileged subprocess itself so a timed-out run cannot retain apt locks.
-    run([*elevation, 'timeout', '--kill-after=3s', f'{seconds}s', *apt, *command],
-        label=label, timeout=seconds + 6)
-
-   index_refreshed = False
-
-   def refresh_index():
-    nonlocal index_refreshed
-    if not index_refreshed:
-     run_apt(['update', '-o', 'APT::Update::Error-Mode=any'],
-             'browsers.refresh-package-index', 35)
-     index_refreshed = True
-
-   def simulate_packages(engine):
-    with timed_phase(f'cms.browsers.simulate-deps.{engine}'):
-     result = subprocess.run([*map(str, playwright), 'install-deps', '--dry-run', engine],
-                             cwd=ROOT, env=env, capture_output=True, text=True, timeout=20)
+   def run_apt(command, label, seconds, apt_config=None):
+    options=['-c',str(apt_config)] if apt_config else []
+    with timed_phase(f'cms.{label}'):
+     result=subprocess.run([*elevation,'timeout','--kill-after=3s',f'{seconds}s',*apt,*options,*command],
+                           env=env,capture_output=True,text=True,timeout=seconds+6)
     with log.open('a') as output:
-     output.write(result.stdout + result.stderr)
-    return result
+     output.write(result.stdout+result.stderr)
+    if result.returncode:
+     raise RuntimeError(f'{label}: {apt_failure_summary(result.stdout+result.stderr,result.returncode)}')
 
-   missing = {}
-   for engine in engines:
-    diagnostic = probe_engine(engine)
-    if diagnostic is None:
-     continue
-    packages = missing_playwright_packages(diagnostic)
-    if not packages:
-     # Linux loaders can exit before Playwright prints its mapped package list.
-     # Ask the pinned installer for its package simulation without running apt update.
-     simulation = simulate_packages(engine)
-     packages = simulated_missing_packages(simulation.stdout)
-     if not packages and simulation.returncode and 'Unable to locate package' in simulation.stderr:
-      refresh_index()
-      packages = simulated_missing_packages(simulate_packages(engine).stdout)
-    if not packages:
-     raise RuntimeError(f'{engine} launch failed without a missing package list: {diagnostic[:900]}')
-    missing[engine] = packages
+   def simulate_packages(engine, apt_config):
+    with timed_phase(f'cms.browsers.simulate-deps.{engine}'):
+     result=subprocess.run([*map(str,playwright),'install-deps','--dry-run',engine],cwd=ROOT,
+                           env={**env,**({'APT_CONFIG':str(apt_config)} if apt_config else {})},
+                           capture_output=True,text=True,timeout=25)
+    with log.open('a') as output:
+     output.write(result.stdout+result.stderr)
+    packages=simulated_missing_packages(result.stdout)
+    if not packages and result.returncode:
+     raise RuntimeError(f'Playwright dependency simulation failed for {engine}: {apt_failure_summary(result.stderr,result.returncode)}')
+    return packages
+
+   missing={engine:diagnostic for engine in engines if (diagnostic:=probe_engine(engine)) is not None}
    if missing:
-    packages = sorted({package for names in missing.values() for package in names})
-    phase(f'Installing missing Playwright system packages: {", ".join(packages)}')
-    install = ['install', '--yes', '--no-install-recommends', '--', *packages]
-    installed = False
-    if archives is not None and next(archives.glob('*.deb'), None):
-     try:
-      run_apt(['--no-download', *install], 'browsers.cached-system-dependencies', 25)
-      installed = True
-     except RuntimeError:
-      pass
-    if not installed:
-     refresh_index()
-     run_apt(install, 'browsers.system-dependencies', 60)
-    for engine in missing:
+    def install(apt_config=None, refresh=False):
+     if refresh:
+      run_apt(['update','-o','APT::Update::Error-Mode=any'],
+              'browsers.refresh-package-index',60,apt_config)
+     packages=set()
+     for engine, diagnostic in missing.items():
+      # A launch diagnostic can identify only the small set of libraries the engine actually needs.
+      found=missing_playwright_packages(diagnostic) or simulate_packages(engine,apt_config)
+      packages.update(found)
+     if not packages:
+      raise RuntimeError('Playwright found no missing system package for the failed browser launch')
+     phase(f'Installing {len(packages)} Playwright system packages')
+     run_apt(['install','--yes','--no-install-recommends','--',*sorted(packages)],
+             'browsers.system-dependencies',90,apt_config)
+
+    try:
+     install()
+    except RuntimeError as native_error:
+     phase(f'Host package repair failed: {native_error}')
+     # Hosted Ubuntu mirror and package indices can move independently of a runner build.
+     # Use one signed, fresh official index for both resolution and installation on retry.
+     sources=ubuntu_archive_sources(Path('/etc/os-release').read_text(),os.uname().machine) if env.get('GITHUB_ACTIONS')=='true' else None
+     if sources is None:
+      install(refresh=True)
+     else:
+      with tempfile.TemporaryDirectory(prefix='festapp-browser-apt-') as scratch:
+       source_path=Path(scratch)/'ubuntu.list'
+       source_path.write_text(sources)
+       config_path=Path(scratch)/'apt.conf'
+       config_path.write_text(f'Dir::Etc::sourcelist "{source_path}";\nDir::Etc::sourceparts "-";\nAPT::Get::List-Cleanup "false";\n')
+       phase('Refreshing signed Ubuntu package indices from the official archive')
+       install(config_path,refresh=True)
+   for engine in missing:
      if probe_engine(engine, "probe.after-install") is not None:
       raise RuntimeError(f'{engine} launch failed after system package install; private log: {log}')
   emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)

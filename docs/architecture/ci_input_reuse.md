@@ -8,7 +8,7 @@ mirror remains available explicitly for diagnosis and offline work.
 ## One dependency map
 
 `checks.json` owns job inputs, independent documentation paths, scenario inventory
-and the seven-day reuse limit. `run.py affected` and `selection.py fingerprint`
+and the 90-day evidence retention policy. `run.py affected` and `selection.py fingerprint`
 use the same `owners()` function. Unknown paths and unregistered tests select
 all jobs. Shared contracts have all consumers. Known Flutter package paths include
 locks and manifests; unknown packages remain conservative. Git tree entries bind
@@ -96,7 +96,7 @@ and receipt in both selection and consumption. A failed or pending matching main
 job blocks older evidence only for matching units. An unresolved PR can have an
 unknown merge checkout and blocks older evidence for all unresolved units. A completed skipped workflow
 whose lane job is confirmed skipped with no steps does not block older evidence.
-Units already verified against newer runs retain that evidence. Reuse never turns a reused row into direct execution and never refreshes the original run's seven-day age. Mixed aggregates can supply their executed rows only. `All lane tests executed` marks a full execution; `Some lane tests executed` marks a mixed run; `Lane coverage verified` is emitted only after the canonical runner admits complete coverage. Reuse-only jobs have no execution marker and are ignored before ZIP downloads.
+Units already verified against newer runs retain that evidence. Reuse never turns a reused row into direct execution and never changes the direct job's completion time. Mixed aggregates can supply their executed rows only. `All lane tests executed` marks a full execution; `Some lane tests executed` marks a mixed run; `Lane coverage verified` is emitted only after the canonical runner admits complete coverage. Reuse-only jobs have no execution marker and are ignored before ZIP downloads.
 
 Internal PR evidence can be consumed on subsequent PR updates or main even when
 merge, squash or rebase changes commit identities. The actual checkout digest
@@ -117,6 +117,12 @@ verification never admits that unit. Selection still walks newest runs first;
 the retained proofs are rechecked with fresh GitHub status at consumption.
 Timeout before any proof is verified still runs the full lane. This avoids
 discarding valid coverage while searching older history for newly changed units.
+Run discovery pages newest workflow history while the lookup budget permits.
+Freshness is measured from the direct job's completion, including successful
+reruns of older workflows. Upload retention uses the same configured limit.
+An expired or missing artifact cannot supply evidence. The selector can still
+look for older independent evidence if the newer job itself passed.
+Changing the trusted selector and upload policy requires a new execution baseline.
 The job summary links the original execution and input fingerprint. Exact-main
 release admission still rejects missing, skipped, pending or failed current jobs.
 
@@ -183,16 +189,18 @@ image builds. Both configured core/PHP pairs are verified at runtime, with
 separate volumes and databases. The two core containers start concurrently.
 Their installations run concurrently once MariaDB creates both databases.
 The older core release is staged from its SHA-256-pinned archive. WP-CLI
-reads that archive offline. Hosted browser setup checks existing system
-dependencies before installing any missing packages.
-Owner labels fence creation and cleanup. Private state is never cached. Developer wp-env tooling and its dependency tests remain.
-The checkout, server-policy, CMS and optional hosted web build jobs share the
-same pinned Chromium cache for the runner OS and architecture. WordPress uses
-a separate browser cache because it also needs Firefox and WebKit. The WordPress
-runner caches downloaded apt archives by runner image and Playwright version.
-Other runner images on the same OS and architecture can seed that cache. Apt
-first tries the restored archives without network downloads. On a miss it
-refreshes the signed index before downloading, and verifies package checksums. Browsers are launched in a probe before and after any necessary install.
+reads that archive offline. All browser binaries come from the Playwright
+dependency in the workspace lockfile. Chromium and shared Playwright tools
+have one cache by browser version, OS and architecture. WordPress adds a
+disjoint cache for Firefox and WebKit. No apt archives travel between runners.
+The launch probes check the actual required engines before host package setup.
+A repair uses the library names reported by the same Playwright dependency.
+If the configured mirror or its package index fails, hosted Ubuntu retries
+against the signed official archives for its current release. Package
+resolution and installation use the same archive source. On failure the job
+reports bounded apt diagnostics. A successful install must pass the launch probes.
+Owner labels fence creation and cleanup. Private state is never cached.
+Developer wp-env tooling and its dependency tests remain.
 Deno reuses dependency downloads keyed by its pin and lockfile, and pnpm caches
 include the lockfiles installed by each job. Closing a pull request evicts its
 merge-ref caches so unused copies do not displace shared main-branch entries.
