@@ -11,7 +11,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import signal
 import socket
@@ -25,7 +24,7 @@ sys.path.insert(0,str(ROOT/'automation/ci'))
 sys.path.insert(0,str(ROOT/'automation'))
 from telemetry import phase as timed_phase, emit
 from wordpress_runtime import WordPress
-from cms_browser_dependencies import missing_playwright_packages, simulated_missing_packages
+from cms_browser_runtime import browser_image, cms_browser_command
 from cms_fixture_rest import prepare_rest_image, start_rest, stop_rest
 from cms_fixture_postgres import CmsPostgres
 parser=argparse.ArgumentParser(description=__doc__)
@@ -67,11 +66,14 @@ def input_digests():
  paths=set()
  for directory in ['integrations/wordpress/shared','integrations/joomla/shared','integrations/wix/src','web_client/src']:
   paths.update(p for p in (ROOT/directory).rglob('*') if p.is_file())
- for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_browser_dependencies.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','integrations/wordpress/core-archives.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
+ for name in ['automation/testing/cms_consent_fixture.py','automation/testing/cms_browser_runtime.py','automation/testing/cms_fixture_rest.py','automation/testing/cms_fixture_postgres.py','automation/local_db/runtime.py','automation/local_db/images.py','automation/local_db/test-base.json','automation/testing/wordpress_runtime.py','integrations/wordpress/docker-images.json','integrations/wordpress/core-archives.json','web_client/scripts/cms_consent_fixture_server.mjs','web_client/scripts/cms_consent_fixture_prepare.mjs','web_client/scripts/test_cms_managed_consent_browser.mjs','web_client/scripts/native_browser.mjs','supabase/migrations/20261114170000_website_consent_bindings.sql','automation/release/help/help.js','automation/release/help/en/embed-generator.html']:
   paths.add(ROOT/name)
  return {p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
 source_inputs=input_digests()
 processes=[]
+container_browser=sys.platform.startswith('linux')
+browser_container=project+'-browser'
+browser_timings=os.environ.get('FESTAPP_TIMINGS')
 started={'backend':False,'wordpress':False,'joomla':False}
 
 def run(command,cwd=ROOT,extra=None,capture=False,label='command',timeout=180):
@@ -158,105 +160,25 @@ try:
     run(['docker','exec','--user','www-data',jprefix+'-'+str(major),'php','cli/joomla.php','extension:install','--path','/tmp/'+archive])
   run(['python3','tests/consent-installed.py'],joomla)
  def prepare_browsers():
-  browser_cache=Path(os.environ.get('PLAYWRIGHT_BROWSERS_PATH',Path.home()/('Library/Caches/ms-playwright' if sys.platform=='darwin' else '.cache/ms-playwright')))
-  def cache_bytes():return sum(p.stat().st_size for p in browser_cache.rglob('*') if p.is_file()) if browser_cache.exists() else 0
-  cache_before=cache_bytes();browser_started=time.monotonic()
   engines = list(dict.fromkeys(case[4] for case in cases))
-  shell_only = ['--only-shell'] if engines == ['chromium'] else []
-  playwright=['pnpm','--dir',ROOT/'web_client','exec','playwright']
-  run([*playwright,'install',*shell_only,*engines],label='browsers.install')
-  if sys.platform.startswith('linux'):
-   # Package checks may flag optional dependencies on newer runner images.
-   # Verify the exact pinned browser and launch configuration used by the suite.
-   probe = [
-    'node', '--input-type=module', '-e',
-    '''import {createNativeBrowser} from './scripts/native_browser.mjs';
-const owner = await createNativeBrowser({engine: process.argv[1]});
-try {
-  const context = await owner.context();
-  await context.newPage();
-} finally {
-  await owner.close();
-}''',
-   ]
-   def probe_engine(engine, stage="probe"):
-    with timed_phase(f'cms.browsers.{stage}.{engine}'):
-     result = subprocess.run([*probe, engine], cwd=ROOT/'web_client', env=env,
-                             capture_output=True, text=True, timeout=30)
-    if result.returncode:
-     with log.open('a') as output:
-      output.write(result.stdout + result.stderr)
-     return result.stderr
-    return None
-
-   elevation = ['sudo', '-n'] if os.getuid() else []
-   apt = [
-    'apt-get', '-o', 'Acquire::Retries=1', '-o', 'Acquire::http::Timeout=10',
-    '-o', 'Acquire::https::Timeout=10', '-o', 'DPkg::Lock::Timeout=8',
-   ]
-   archives = None
-   if cache_path := os.environ.get('FESTAPP_CMS_APT_CACHE'):
-    archives = Path(cache_path)
-    archives.mkdir(parents=True, exist_ok=True)
-    apt.extend(['-o', f'Dir::Cache::archives={archives}', '-o', 'APT::Keep-Downloaded-Packages=true'])
-
-   def run_apt(command, label, seconds):
-    # Bound the privileged subprocess itself so a timed-out run cannot retain apt locks.
-    run([*elevation, 'timeout', '--kill-after=3s', f'{seconds}s', *apt, *command],
-        label=label, timeout=seconds + 6)
-
-   index_refreshed = False
-
-   def refresh_index():
-    nonlocal index_refreshed
-    if not index_refreshed:
-     run_apt(['update', '-o', 'APT::Update::Error-Mode=any'],
-             'browsers.refresh-package-index', 35)
-     index_refreshed = True
-
-   def simulate_packages(engine):
-    with timed_phase(f'cms.browsers.simulate-deps.{engine}'):
-     result = subprocess.run([*map(str, playwright), 'install-deps', '--dry-run', engine],
-                             cwd=ROOT, env=env, capture_output=True, text=True, timeout=20)
-    with log.open('a') as output:
-     output.write(result.stdout + result.stderr)
-    return result
-
-   missing = {}
-   for engine in engines:
-    diagnostic = probe_engine(engine)
-    if diagnostic is None:
-     continue
-    packages = missing_playwright_packages(diagnostic)
-    if not packages:
-     # Linux loaders can exit before Playwright prints its mapped package list.
-     # Ask the pinned installer for its package simulation without running apt update.
-     simulation = simulate_packages(engine)
-     packages = simulated_missing_packages(simulation.stdout)
-     if not packages and simulation.returncode and 'Unable to locate package' in simulation.stderr:
-      refresh_index()
-      packages = simulated_missing_packages(simulate_packages(engine).stdout)
-    if not packages:
-     raise RuntimeError(f'{engine} launch failed without a missing package list: {diagnostic[:900]}')
-    missing[engine] = packages
-   if missing:
-    packages = sorted({package for names in missing.values() for package in names})
-    phase(f'Installing missing Playwright system packages: {", ".join(packages)}')
-    install = ['install', '--yes', '--no-install-recommends', '--', *packages]
-    installed = False
-    if archives is not None and next(archives.glob('*.deb'), None):
-     try:
-      run_apt(['--no-download', *install], 'browsers.cached-system-dependencies', 25)
-      installed = True
-     except RuntimeError:
-      pass
-    if not installed:
-     refresh_index()
-     run_apt(install, 'browsers.system-dependencies', 60)
-    for engine in missing:
-     if probe_engine(engine, "probe.after-install") is not None:
-      raise RuntimeError(f'{engine} launch failed after system package install; private log: {log}')
-  emit('cms.browsers.cache',browser_started,bytesBefore=cache_before,bytesAfter=cache_bytes(),binaryCache='cold' if cache_before==0 else 'warm',networkTransferBytes=None)
+  if not container_browser:
+   shell_only = ['--only-shell'] if engines == ['chromium'] else []
+   run(['pnpm','--dir',ROOT/'web_client','exec','playwright','install',*shell_only,*engines],label='browsers.install')
+   return
+  image=browser_image(ROOT)
+  if subprocess.run(['docker','image','inspect',image],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode:
+   run(['docker','pull',image],label='browsers.pull-pinned-image')
+  probe = ['--input-type=module','-e','''import {createNativeBrowser} from './scripts/native_browser.mjs';
+for (const engine of process.argv.slice(1)) {
+  const owner = await createNativeBrowser({engine});
+  try {
+    const context = await owner.context();
+    await context.newPage();
+  } finally {
+    await owner.close();
+  }
+}''',*engines]
+  run(cms_browser_command(ROOT,browser_container,probe,{},browser_timings),label='browsers.probe-pinned-image')
  preparation = [('browsers',prepare_browsers)]
  if needs_joomla:preparation.append(('joomla',prepare_joomla))
  with ThreadPoolExecutor(max_workers=len(preparation)+2+2*needs_wordpress) as workers:
@@ -299,7 +221,9 @@ try {
   if platform=='wix':extra['FESTAPP_CMS_TEST_IFRAME']='1'
   if coop:extra['FESTAPP_CMS_EXPECT_COOP']='1'
   else:extra['FESTAPP_CMS_TEST_WITHDRAWAL']='1'
-  output=run(['node','web_client/scripts/test_cms_managed_consent_browser.mjs'],extra=extra,capture=True,label=f'case.{case_index}.{platform}.{engine}')
+  script='scripts/test_cms_managed_consent_browser.mjs'
+  command=cms_browser_command(ROOT,browser_container,[script],extra,browser_timings) if container_browser else ['node','web_client/'+script]
+  output=run(command,extra=extra,capture=True,label=f'case.{case_index}.{platform}.{engine}')
   lines=[line for line in output.splitlines() if line.startswith('PASS ')];assert lines,output
   for line in lines:phase(line)
   results.append({'platform':platform,'variant':variant,'engine':engine,'result':'passed','scenario':'blocked COOP fallback' if coop else 'grant/refusal/withdrawal/disable/stale export','boundary':'modeled CMP; modeled Wix Site mode'})
@@ -307,6 +231,11 @@ try {
  (fixture/'result.json').write_text(json.dumps({'sourceInputs':source_inputs,'project':project,'basePort':base,'suite':args.suite,'cases':results,'state':'passed','productionWrites':False},indent=2)+'\n')
  phase(f'PASS complete owned CMS/backend matrix: {len(results)} cases; receipt {fixture}/result.json')
 finally:
+ if container_browser:
+  try:
+   subprocess.run(['docker','rm','-f',browser_container],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,timeout=15)
+  except (OSError,subprocess.TimeoutExpired) as error:
+   phase(f'Owned browser cleanup failed: {error}')
  if not args.keep:
   for p in reversed(processes):
    if p.poll() is None:
