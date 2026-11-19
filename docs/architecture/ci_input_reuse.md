@@ -183,17 +183,18 @@ image builds. Both configured core/PHP pairs are verified at runtime, with
 separate volumes and databases. The two core containers start concurrently.
 Their installations run concurrently once MariaDB creates both databases.
 The older core release is staged from its SHA-256-pinned archive. WP-CLI
-reads that archive offline. Hosted WordPress browser cases run inside the same Linux
-Playwright image, pinned by digest and checked against the dependency version.
-The image provides Chromium, Firefox, WebKit, and their system libraries. The
-browser process joins the runner's loopback network to reach the existing owned
-fixture and receives only the fixture environment variables and read-only
-JavaScript inputs. The source receipt includes the image pin. macOS keeps its
-native local browser runner. Chromium-only hosted CMS cases share the pinned
-host Chromium cache by runner OS and architecture with other browser jobs. The
-host launch probe switches to the same immutable image if Chromium is
-unavailable. Owner labels fence creation and cleanup. Private fixture state is
-never cached.
+reads that archive offline. All browser binaries come from the Playwright
+dependency in the workspace lockfile. Chromium and shared Playwright tools
+have one cache by browser version, OS and architecture. WordPress adds a
+disjoint cache for Firefox and WebKit. No apt archives travel between runners.
+The launch probes check the actual required engines before host package setup.
+A repair uses the library names reported by the same Playwright dependency.
+If the configured mirror or its package index fails, hosted Ubuntu retries
+against the signed official archives for its current release. Package
+resolution and installation use the same archive source. On failure the job
+reports bounded apt diagnostics. A successful install must pass the launch probes.
+Owner labels fence creation and cleanup. Private state is never cached.
+Developer wp-env tooling and its dependency tests remain.
 Deno reuses dependency downloads keyed by its pin and lockfile, and pnpm caches
 include the lockfiles installed by each job. Closing a pull request evicts its
 merge-ref caches so unused copies do not displace shared main-branch entries.

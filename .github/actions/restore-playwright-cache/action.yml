@@ -1,18 +1,35 @@
-name: Restore pinned browser dependencies
-description: Reuse pinned Chromium binaries across compatible host jobs.
+name: Restore Playwright browser binaries
+description: Cache browser binaries independently of host system package installation.
+inputs:
+  profile:
+    description: chromium or wordpress
+    default: chromium
 runs:
   using: composite
   steps:
     - id: key
       shell: bash
+      env:
+        PROFILE: ${{ inputs.profile }}
       run: |
         set -euo pipefail
         version="$(node -p "require('./web_client/package.json').devDependencies.playwright")"
         [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
-        printf 'browsers=cms-browsers-%s-%s-%s-playwright-%s-chromium\n' \
-          "$RUNNER_OS" "$RUNNER_ARCH" "${ImageOS:?}" "$version" >> "$GITHUB_OUTPUT"
-    - name: Restore Playwright browser binaries
+        [[ "$PROFILE" == chromium || "$PROFILE" == wordpress ]] || exit 1
+        base="playwright-binaries-v2-${RUNNER_OS}-${RUNNER_ARCH}-${ImageOS:?}-${version}"
+        printf 'chromium=%s-chromium\nwordpress=%s-firefox-webkit\n' "$base" "$base" >> "$GITHUB_OUTPUT"
+    - name: Restore Chromium and shared Playwright tools
       uses: actions/cache@v5
       with:
-        path: ~/.cache/ms-playwright
-        key: ${{ steps.key.outputs.browsers }}
+        path: |
+          ~/.cache/ms-playwright/chromium*
+          ~/.cache/ms-playwright/ffmpeg*
+        key: ${{ steps.key.outputs.chromium }}
+    - name: Restore Firefox and WebKit
+      if: inputs.profile == 'wordpress'
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cache/ms-playwright/firefox*
+          ~/.cache/ms-playwright/webkit*
+        key: ${{ steps.key.outputs.wordpress }}

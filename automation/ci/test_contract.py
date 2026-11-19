@@ -9,7 +9,6 @@ import tempfile
 import unittest
 import time
 from unittest.mock import patch
-from automation.testing.cms_browser_runtime import browser_image, cms_browser_command
 import yaml
 import run as runner
 
@@ -23,8 +22,15 @@ class MirrorContractTest(unittest.TestCase):
         action_path = './.github/actions/restore-playwright-cache'
         steps = yaml.safe_load((ROOT / action_path / 'action.yml').read_text())['runs']['steps']
         command = steps[0]['run']
-        self.assertEqual(steps[1]['with']['key'], '${{ steps.key.outputs.browsers }}')
+        self.assertEqual(steps[1]['with']['key'], '${{ steps.key.outputs.chromium }}')
+        self.assertEqual(steps[2]['with']['key'], '${{ steps.key.outputs.wordpress }}')
+        self.assertEqual(steps[2]['if'], "inputs.profile == 'wordpress'")
+        chromium_paths = set(steps[1]['with']['path'].splitlines())
+        wordpress_paths = set(steps[2]['with']['path'].splitlines())
+        self.assertFalse(chromium_paths & wordpress_paths)
+        self.assertEqual(wordpress_paths, {'~/.cache/ms-playwright/firefox*', '~/.cache/ms-playwright/webkit*'})
         for filename, job in (
+            ('wix-checkout-compatibility.yml', 'wordpress-checkout-compatibility'),
             ('wix-checkout-compatibility.yml', 'wix-checkout-compatibility'),
             ('seat-checkout-regressions.yml', 'seat-checkout'),
             ('image-upload-regressions.yml', 'server-policy'),
@@ -44,36 +50,22 @@ class MirrorContractTest(unittest.TestCase):
                 output.unlink(missing_ok=True)
                 result = subprocess.run(['bash', '-e', '-c', command], cwd=root, capture_output=True,
                     env={**os.environ, 'RUNNER_OS': 'Linux', 'RUNNER_ARCH': 'X64', 'ImageOS': 'ubuntu26',
-                         'ImageVersion': '20261111.82.6', 'GITHUB_OUTPUT': str(output),
+                         'ImageVersion': '20261111.82.6', 'PROFILE': 'chromium', 'GITHUB_OUTPUT': str(output),
                          'GITHUB_ENV': str(root / 'env'), **platform})
                 return result.returncode, output.read_text() if output.exists() else ''
 
             chromium = key()
-            self.assertEqual(chromium, (0, 'browsers=cms-browsers-Linux-X64-ubuntu26-playwright-1.65.0-chromium\n'))
+            self.assertEqual(chromium, (0,
+                'chromium=playwright-binaries-v2-Linux-X64-ubuntu26-1.65.0-chromium\n'
+                'wordpress=playwright-binaries-v2-Linux-X64-ubuntu26-1.65.0-firefox-webkit\n'))
             self.assertEqual(chromium, key(app='2.0.0', ImageVersion='20261119.1'))
+            self.assertEqual(chromium, key(PROFILE='wordpress'))
             self.assertNotEqual(chromium, key(browser='1.66.0'))
             self.assertNotEqual(chromium, key(ImageOS='ubuntu24'))
             self.assertNotEqual(chromium, key(RUNNER_ARCH='ARM64'))
+            self.assertNotEqual(key(PROFILE='invalid')[0], 0)
             self.assertNotEqual(key(browser='^1.65.0')[0], 0)
             self.assertNotEqual(key(ImageOS='')[0], 0)
-
-    def test_cms_browser_image_matches_the_frozen_playwright_dependency(self):
-        image = browser_image(ROOT)
-        self.assertRegex(image, r'^mcr\.microsoft\.com/playwright:v[0-9.]+-noble@sha256:[0-9a-f]{64}$')
-        command = cms_browser_command(ROOT, 'owned-browser', ['scripts/test.mjs'], {
-            'FESTAPP_CMS_TEST_ENGINE': 'webkit',
-        })
-        self.assertIn('--network=host', command)
-        self.assertIn('--pull=never', command)
-        self.assertIn('--rm', command)
-        self.assertIn('FESTAPP_CMS_TEST_ENGINE', command)
-        self.assertEqual(command[-3:], [image, 'node', 'scripts/test.mjs'])
-        with self.assertRaises(ValueError):
-            cms_browser_command(ROOT, 'owned-browser', [], {'GH_TOKEN': 'synthetic'})
-        workflow = yaml.safe_load((ROOT / '.github/workflows/wix-checkout-compatibility.yml').read_text())
-        cms_steps = workflow['jobs']['wordpress-checkout-compatibility']['steps']
-        cache = next(step for step in cms_steps if step.get('uses') == './.github/actions/restore-playwright-cache')
-        self.assertEqual(cache['if'], "github.job == 'wix-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
 
     def test_selection_covers_provisioning_tests_and_execution_evidence(self):
         contract = json.loads((ROOT / 'automation/ci/checks.json').read_text())
@@ -113,10 +105,8 @@ class MirrorContractTest(unittest.TestCase):
                     elif name == 'server-policy' and step.get('name') in ('Install Python YAML parser', 'Install pinned Deno'):
                         outputs = {'Install Python YAML parser': 'python_yaml', 'Install pinned Deno': 'deno'}
                         self.assertEqual(step['if'], f"steps.selection.outputs.{outputs[step['name']]} == 'true'")
-                    elif step.get('name') in ('Restore pinned WordPress core archive', 'Restore pinned host Chromium'):
-                        cms_job = ('wordpress-checkout-compatibility' if step['name']=='Restore pinned WordPress core archive'
-                                   else 'wix-checkout-compatibility')
-                        self.assertEqual(step['if'], f"github.job == '{cms_job}' && steps.selection.outputs.cms == 'true'")
+                    elif step.get('name') == 'Restore pinned WordPress core archive':
+                        self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
                     else:
                         self.assertIn(step['if'], ("steps.selection.outputs.run == 'true'","steps.selection.outputs.cms == 'true'",
                                                   "steps.selection.outputs.sql == 'true'","steps.selection.outputs.flutter == 'true'",
