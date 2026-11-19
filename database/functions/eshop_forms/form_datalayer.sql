@@ -11,7 +11,8 @@ RETURNS bigint LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT c.unit FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
  JOIN analytics.meta_purchase_forms m ON m.form=f.id AND m.unit=o.unit
  JOIN analytics.meta_purchase_connectors c ON c.unit=m.unit
- WHERE f.id=p_form AND c.enabled AND NOT public.is_demo_occasion(o.id);
+ WHERE f.id=p_form AND c.enabled AND c.paused_at IS NULL
+  AND public.meta_purchase_platform_allowed_internal(c.unit) AND NOT public.is_demo_occasion(o.id);
 $$;
 REVOKE ALL ON FUNCTION public.form_meta_purchase_unit_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

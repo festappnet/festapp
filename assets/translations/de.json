@@ -3540,5 +3540,38 @@
       "swapUsedGroup": "Eine unteilbare Gruppe mit einem verwendeten Anmeldung kann nicht getauscht werden.",
       "releaseTemporaryReservationProtected": "Einige Plätze gehören bereits zu einer Bestellung. Verwalten Sie deren Anmeldungen separat."
     }
+  },
+  "MetaCapi": {
+    "loadFailed": "Meta-CAPI-Einstellungen konnten nicht geladen werden",
+    "platformDisabled": "Die Plattform hat Meta CAPI deaktiviert",
+    "noWebsites": "Fügen Sie zuerst eine Website im Bereich Ereignisse und Einwilligung hinzu.",
+    "noForms": "Sie haben noch keine Formulare.",
+    "deliveryFailed": "Der Kauf konnte nicht gesendet werden. Es erfolgen keine weiteren Versuche.",
+    "sentInFlight": "Der Kauf wurde vor Abschluss der Trennung oder des Einwilligungswiderrufs gesendet.",
+    "tokenRequired": "Geben Sie ein Zugriffstoken ein, um den Versand zu aktivieren.",
+    "title": "Meta Conversions API",
+    "dataset": "Dataset-ID",
+    "website": "Website",
+    "testCode": "Testereigniscode",
+    "testHelp": "Test events im Events Manager. Solange der Code eingetragen ist, werden Käufe nur zum Test gesendet.",
+    "enabled": "Bezahlte Käufe an Meta senden",
+    "token": "Zugriffstoken",
+    "saved": "Das Token ist gespeichert. Geben Sie nur beim Ersetzen ein neues ein.",
+    "active": "Aktiv",
+    "paused": "Pausiert — ersetzen Sie das Token",
+    "off": "Aus",
+    "pending": "Ausstehend",
+    "sent": "Gesendet",
+    "failed": "Fehlgeschlagen",
+    "revoked": "Widerrufen",
+    "queue": "Käufe der letzten 30 Tage",
+    "disconnect": "Trennen",
+    "confirm": "Meta CAPI trennen und gespeicherte Abgleichdaten der Käufe sowie das Token löschen?",
+    "forms": "Formulare",
+    "unavailable": "Meta-CAPI-Einstellungen konnten nicht geladen oder gespeichert werden. Versuchen Sie es erneut.",
+    "credentials": "Meta hat das Token abgelehnt. Ersetzen Sie es.",
+    "rejected": "Meta hat einen Kauf abgelehnt. Prüfen Sie Dataset und Website.",
+    "retry": "Die Übertragung ist vorübergehend fehlgeschlagen; ein weiterer Versuch ist geplant.",
+    "invalid": "Geben Sie einen gültigen Wert ein."
   }
 }

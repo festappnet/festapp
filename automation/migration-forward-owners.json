@@ -564,7 +564,8 @@
         "eshop_forms/meta_purchase_worker.sql",
         "eshop_orders/create_ticket_order_client_sync_v1.sql"
       ],
-      "sha256": "1ad3a9424e99c01a56d06bb8d6ae026592aa90f042be6bcb25ce28986be20ccc"
+      "sha256": "1ad3a9424e99c01a56d06bb8d6ae026592aa90f042be6bcb25ce28986be20ccc",
+      "checkSources": true
     },
     {
       "migration": "20261119120000_default_form_close_at_occasion_end.sql",
@@ -594,11 +595,28 @@
     },
     {
       "migration": "20261119200000_meta_purchase_revocation_in_flight.sql",
-      "active": true,
+      "active": false,
       "header": "-- Preserve the prepared receipt fence after consent withdrawal without rescheduling delivery.",
       "sources": [
         "eshop_forms/meta_purchase_consent.sql",
         "eshop_forms/meta_purchase_worker.sql"
+      ],
+      "sha256": "0ff98a626b99530874d54b7b54db6b2e865c45aa26b4cf88e3156534f80607a6",
+      "checkSources": true
+    },
+    {
+      "migration": "20261119210000_meta_purchase_settings.sql",
+      "active": true,
+      "header": "-- Organization-approved Meta CAPI settings. No live activation.\nALTER TABLE analytics.meta_purchase_connectors ADD COLUMN IF NOT EXISTS token_changed_at timestamptz;\nALTER TABLE analytics.meta_purchase_deliveries ADD COLUMN IF NOT EXISTS prepared_at timestamptz;",
+      "sources": [
+        "user_permissions/unit_meta_purchase.sql",
+        "eshop_forms/meta_purchase_settings.sql",
+        "eshop_forms/form_datalayer.sql",
+        "eshop_forms/meta_purchase_consent.sql",
+        "eshop_forms/meta_purchase_worker.sql"
+      ],
+      "retiredSources": [
+        "eshop_forms/meta_purchase_schema.sql"
       ]
     }
   ]

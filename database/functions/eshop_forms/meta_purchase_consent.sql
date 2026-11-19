@@ -41,7 +41,7 @@ BEGIN
  BEGIN decision:=(p_snapshot->>'timestamp')::timestamptz; EXCEPTION WHEN datetime_field_overflow OR invalid_datetime_format THEN RETURN false; END;
  IF decision>statement_timestamp() OR decision<=statement_timestamp()-interval '365 days' THEN RETURN false; END IF;
  SELECT * INTO c FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND enabled AND paused_at IS NULL;
- IF NOT FOUND OR p_snapshot->>'websiteOrigin' IS DISTINCT FROM c.website_origin THEN RETURN false; END IF;
+ IF NOT FOUND OR NOT public.meta_purchase_platform_allowed_internal(p_unit) OR p_snapshot->>'websiteOrigin' IS DISTINCT FROM c.website_origin THEN RETURN false; END IF;
  IF p_snapshot->>'source'='klaro' THEN
   SELECT rtrim(org.data->>'DEFAULT_URL','/') INTO service_origin FROM public.units u JOIN public.organizations org ON org.id=u.organization WHERE u.id=p_unit;
   RETURN coalesce(NOT p_snapshot ? 'binding' AND c.website_origin=service_origin
@@ -82,12 +82,19 @@ BEGIN
   IF (p_consent->>'transportExpiresAt')::bigint<=extract(epoch FROM clock_timestamp())*1000
     OR (p_consent->>'transportExpiresAt')::bigint>extract(epoch FROM clock_timestamp())*1000+60000 THEN RETURN; END IF;
  END IF;
- SELECT o.form,o.price,o.data,oc.unit,f.link,c.website_origin,c.revision
+ SELECT o.form,o.price,o.data,oc.unit,f.link,c.website_origin,c.revision,c.enabled,c.paused_at,
+  public.meta_purchase_platform_allowed_internal(c.unit) platform_allowed
  INTO details
  FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion JOIN public.forms f ON f.id=o.form
  JOIN analytics.meta_purchase_connectors c ON c.unit=oc.unit
- WHERE o.id=p_order;
- IF NOT FOUND OR coalesce(details.price,0)<=0
+ WHERE o.id=p_order
+ -- Capture coexists with routine non-key writes and worker activity. Only
+ -- disconnect/key changes may skip optional matching. Destination revisions
+ -- captured during an edit are revalidated by prepare before any send.
+ FOR KEY SHARE OF c SKIP LOCKED;
+ IF NOT FOUND THEN RETURN; END IF;
+ IF details.enabled IS DISTINCT FROM true OR details.paused_at IS NOT NULL
+    OR details.platform_allowed IS DISTINCT FROM true OR coalesce(details.price,0)<=0
     OR public.form_measurement_visitor_role_internal(details.form)='staff'
     OR coalesce(details.link,'') !~ '^[a-zA-Z0-9_-]+$'
     OR public.meta_purchase_consent_revision_internal(details.form) IS DISTINCT FROM p_consent->>'revision'
@@ -123,6 +130,10 @@ BEGIN
    CASE WHEN phone IS NOT NULL THEN encode(extensions.digest(phone,'sha256'),'hex') END,
    fbp,fbc,address)
  ON CONFLICT(order_id) DO NOTHING;
+EXCEPTION WHEN lock_not_available OR deadlock_detected OR serialization_failure THEN
+ -- Matching is optional. Roll back this capture only; never fail the checkout
+ -- for lock contention (including a configured lock_timeout).
+ RETURN;
 END $$;
 REVOKE ALL ON FUNCTION public.capture_meta_purchase_consent_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated,service_role;
 

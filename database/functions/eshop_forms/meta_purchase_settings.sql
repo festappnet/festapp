@@ -1,0 +1,150 @@
+-- Platform policy is intentionally independent of organizer configuration.
+ALTER TABLE analytics.organization_policy ADD COLUMN IF NOT EXISTS meta_capi_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE analytics.meta_purchase_connectors ALTER COLUMN vault_secret DROP NOT NULL;
+CREATE INDEX IF NOT EXISTS meta_purchase_unit_history ON analytics.meta_purchase_deliveries(unit,consent_at DESC);
+-- Keep terminal delivery audit rows after disconnecting a connector.
+ALTER TABLE analytics.meta_purchase_deliveries DROP CONSTRAINT meta_purchase_deliveries_unit_fkey;
+ALTER TABLE analytics.meta_purchase_deliveries ADD CONSTRAINT meta_purchase_deliveries_unit_fkey
+ FOREIGN KEY(unit) REFERENCES public.units(id) ON DELETE CASCADE;
+
+CREATE OR REPLACE FUNCTION public.meta_purchase_platform_allowed_internal(p_unit bigint)
+RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT coalesce((SELECT p.meta_capi_enabled FROM public.units u
+ JOIN analytics.organization_policy p ON p.organization=u.organization WHERE u.id=p_unit),false);
+$$;
+REVOKE ALL ON FUNCTION public.meta_purchase_platform_allowed_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Saved websites remain available even before a separate runtime is provisioned.
+CREATE OR REPLACE FUNCTION public.unit_meta_purchase_origins_internal(p_unit bigint)
+RETURNS text[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT ARRAY(SELECT DISTINCT origin FROM public.units u CROSS JOIN LATERAL (
+  SELECT unnest(public.unit_measurement_parent_origins_internal(p_unit)) origin
+  UNION ALL SELECT jsonb_array_elements_text(CASE WHEN jsonb_typeof(u.data->'measurement_websites')='array'
+   THEN u.data->'measurement_websites' ELSE '[]'::jsonb END)
+ ) sites WHERE u.id=p_unit AND origin ~ '^https://[a-z0-9.-]+$' ORDER BY origin);
+$$;
+REVOKE ALL ON FUNCTION public.unit_meta_purchase_origins_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.get_unit_meta_purchase(p_unit bigint)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE result jsonb;
+BEGIN
+ IF NOT public.can_manage_unit_meta_purchase(p_unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Meta CAPI access denied'; END IF;
+ IF NOT public.meta_purchase_platform_allowed_internal(p_unit) THEN
+  RETURN jsonb_build_object('allowed',false,'connected',EXISTS(SELECT FROM analytics.meta_purchase_connectors WHERE unit=p_unit));
+ END IF;
+ SELECT jsonb_build_object('dataset',c.dataset,'website_origin',c.website_origin,'test_event_code',c.test_event_code,
+  'enabled',c.enabled,'paused_at',c.paused_at,'token_saved',c.vault_secret IS NOT NULL,'revision',c.revision)
+ INTO result FROM analytics.meta_purchase_connectors c WHERE c.unit=p_unit;
+ RETURN coalesce(result,'{}'::jsonb)||jsonb_build_object('allowed',true,
+  'websites',to_jsonb(public.unit_meta_purchase_origins_internal(p_unit)),
+  'queue',(SELECT jsonb_build_object('pending',count(*) FILTER(WHERE status='pending'),
+    'sent',count(*) FILTER(WHERE status='sent'),'failed',count(*) FILTER(WHERE status='failed'),
+    'revoked',count(*) FILTER(WHERE status='revoked')) FROM analytics.meta_purchase_deliveries
+    WHERE unit=p_unit AND consent_at>=statement_timestamp()-interval '30 days'),
+  'last_error',coalesce((SELECT jsonb_build_object('code',error_code,'status',status,'at',coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))))
+    FROM analytics.meta_purchase_deliveries WHERE unit=p_unit AND error_code IS NOT NULL
+    ORDER BY coalesce(done_at,next_attempt_at) DESC LIMIT 1),
+    (SELECT jsonb_build_object('code','credentials','status','pending','at',paused_at) FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND paused_at IS NOT NULL)),
+  'forms',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'enabled',m.form IS NOT NULL) ORDER BY f.id),'[]'::jsonb)
+    FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
+    LEFT JOIN analytics.meta_purchase_forms m ON m.form=f.id AND m.unit=p_unit WHERE o.unit=p_unit));
+END $$;
+
+CREATE OR REPLACE FUNCTION public.save_unit_meta_purchase(p_unit bigint,p_dataset text,p_website_origin text,p_test_event_code text,p_enabled boolean)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ IF NOT public.can_manage_unit_meta_purchase(p_unit) OR NOT public.meta_purchase_platform_allowed_internal(p_unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Meta CAPI not allowed'; END IF;
+ -- Serialize settings writers without blocking the delivery FK's key-share lock.
+ PERFORM 1 FROM public.units WHERE id=p_unit FOR NO KEY UPDATE;
+ PERFORM 1 FROM analytics.meta_purchase_connectors WHERE unit=p_unit FOR NO KEY UPDATE;
+ IF p_dataset IS NULL OR p_dataset !~ '^[0-9]{5,30}$' OR p_website_origin IS NULL
+  OR NOT coalesce(p_website_origin=ANY(public.unit_meta_purchase_origins_internal(p_unit)),false)
+  OR p_website_origin !~ '^https://[a-z0-9.-]+$'
+  OR (nullif(p_test_event_code,'') IS NOT NULL AND p_test_event_code !~ '^[A-Za-z0-9_-]{1,60}$') OR p_enabled IS NULL THEN
+  RAISE invalid_parameter_value USING MESSAGE='Invalid Meta CAPI settings'; END IF;
+ INSERT INTO analytics.meta_purchase_connectors(unit,dataset,website_origin,test_event_code,enabled)
+ VALUES(p_unit,p_dataset,p_website_origin,nullif(p_test_event_code,''),p_enabled)
+ ON CONFLICT(unit) DO UPDATE SET dataset=EXCLUDED.dataset,website_origin=EXCLUDED.website_origin,
+ test_event_code=EXCLUDED.test_event_code,enabled=EXCLUDED.enabled,
+ revision=CASE WHEN (analytics.meta_purchase_connectors.dataset,analytics.meta_purchase_connectors.website_origin,analytics.meta_purchase_connectors.test_event_code)
+  IS DISTINCT FROM (EXCLUDED.dataset,EXCLUDED.website_origin,EXCLUDED.test_event_code) THEN gen_random_uuid() ELSE analytics.meta_purchase_connectors.revision END;
+ RETURN public.get_unit_meta_purchase(p_unit);
+END $$;
+
+CREATE OR REPLACE FUNCTION public.set_unit_meta_purchase_token(p_unit bigint,p_token text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE secret_id uuid;
+BEGIN
+ IF NOT public.can_manage_unit_meta_purchase(p_unit) OR NOT public.meta_purchase_platform_allowed_internal(p_unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Meta CAPI not allowed'; END IF;
+ IF p_token IS NULL OR length(p_token) NOT BETWEEN 16 AND 4096 OR p_token ~ '[[:cntrl:]]' THEN
+  RAISE invalid_parameter_value USING MESSAGE='Invalid Meta CAPI token'; END IF;
+ -- Serialize settings writers without blocking the delivery FK's key-share lock.
+ PERFORM 1 FROM public.units WHERE id=p_unit FOR NO KEY UPDATE;
+ SELECT vault_secret INTO secret_id FROM analytics.meta_purchase_connectors WHERE unit=p_unit FOR NO KEY UPDATE;
+ IF NOT FOUND THEN RAISE invalid_parameter_value USING MESSAGE='Save Meta CAPI settings first'; END IF;
+ -- Never propagate Vault errors, which can include sensitive arguments.
+ BEGIN
+  IF secret_id IS NULL THEN
+   secret_id:=vault.create_secret(p_token);
+   -- Only first provisioning changes the unique secret reference. Replacing
+   -- an existing token must not implicitly upgrade the connector's row lock.
+   UPDATE analytics.meta_purchase_connectors SET vault_secret=secret_id WHERE unit=p_unit;
+  ELSE PERFORM vault.update_secret(secret_id,p_token); END IF;
+ EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION USING MESSAGE='Could not save Meta CAPI token'; END;
+ UPDATE analytics.meta_purchase_connectors SET paused_at=NULL,token_changed_at=clock_timestamp() WHERE unit=p_unit;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.set_form_meta_purchase(p_unit bigint,p_form bigint,p_enabled boolean)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+BEGIN
+ IF NOT public.can_manage_unit_meta_purchase(p_unit) OR NOT public.meta_purchase_platform_allowed_internal(p_unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Meta CAPI not allowed'; END IF;
+ -- Serialize settings writers without blocking the delivery FK's key-share lock.
+ PERFORM 1 FROM public.units WHERE id=p_unit FOR NO KEY UPDATE;
+ PERFORM 1 FROM analytics.meta_purchase_connectors WHERE unit=p_unit FOR NO KEY UPDATE;
+ IF NOT EXISTS(SELECT FROM public.forms f JOIN public.occasions o ON o.id=f.occasion WHERE f.id=p_form AND o.unit=p_unit)
+  OR p_enabled IS NULL THEN RAISE insufficient_privilege USING MESSAGE='Meta CAPI form denied'; END IF;
+ IF p_enabled THEN INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES(p_form,p_unit) ON CONFLICT(form) DO NOTHING;
+ ELSE DELETE FROM analytics.meta_purchase_forms WHERE form=p_form AND unit=p_unit; END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.delete_unit_meta_purchase(p_unit bigint)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
+DECLARE secret_id uuid;
+BEGIN
+ -- Withdrawing platform approval must never prevent authorized cleanup.
+ IF NOT public.can_manage_unit_meta_purchase(p_unit) THEN
+  RAISE insufficient_privilege USING MESSAGE='Meta CAPI access denied'; END IF;
+ -- Serialize settings writers without blocking the delivery FK's key-share lock.
+ PERFORM 1 FROM public.units WHERE id=p_unit FOR NO KEY UPDATE;
+ -- All delivery boundaries take the connector before any delivery row locks.
+ SELECT vault_secret INTO secret_id FROM analytics.meta_purchase_connectors WHERE unit=p_unit FOR UPDATE;
+ UPDATE analytics.meta_purchase_deliveries SET status=CASE WHEN status='pending' THEN 'revoked' ELSE status END,
+  revoked_at=coalesce(revoked_at,clock_timestamp()),done_at=coalesce(done_at,clock_timestamp()),
+  -- Like consent withdrawal, disconnect erases data but retains the live sender's receipt fence.
+  lease=CASE WHEN prepared AND lease_until>clock_timestamp() THEN lease END,
+  lease_until=CASE WHEN prepared AND lease_until>clock_timestamp() THEN lease_until END,
+  consent_snapshot=NULL,consent_scope=NULL,consent_decided_at=NULL,email_hash=NULL,phone_hash=NULL,fbp=NULL,fbc=NULL,
+  client_ip=NULL,client_agent=NULL,source_url=NULL WHERE unit=p_unit;
+ DELETE FROM analytics.meta_purchase_connectors WHERE unit=p_unit;
+ DELETE FROM vault.secrets WHERE id=secret_id;
+END $$;
+
+REVOKE ALL ON FUNCTION public.get_unit_meta_purchase(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.get_unit_meta_purchase(bigint) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.save_unit_meta_purchase(bigint,text,text,text,boolean) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.save_unit_meta_purchase(bigint,text,text,text,boolean) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.set_unit_meta_purchase_token(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.set_unit_meta_purchase_token(bigint,text) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.set_form_meta_purchase(bigint,bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.set_form_meta_purchase(bigint,bigint,boolean) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.delete_unit_meta_purchase(bigint) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.delete_unit_meta_purchase(bigint) TO authenticated;

@@ -282,6 +282,15 @@
       "evidence": "database/tests/eshop/orders/fakturoid_deletion_context_test.sql",
       "owner": "Festapp backend maintainers",
       "reviewBy": "2026-11-16"
+    },
+    {
+      "operation": "unit.meta-purchase.settings",
+      "budget": "authenticated organization configuration",
+      "source": "database/functions/eshop_forms/meta_purchase_settings.sql",
+      "admission": "can_manage_unit_meta_purchase + platform organization policy (disconnect cleanup requires only organization admin and non-demo unit); unit row serializes writes; bounded dataset, token and code; no token reads",
+      "evidence": "database/tests/eshop_forms/meta_purchase_consent_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19"
     }
   ],
   "edgeFunctions": [

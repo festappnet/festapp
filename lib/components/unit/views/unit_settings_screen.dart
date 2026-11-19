@@ -5,6 +5,7 @@ import '../../payments/payment_policy_settings.dart';
 import 'package:festapp_core/communication_tone.dart';
 
 import 'unit_measurement_settings.dart';
+import 'unit_meta_capi_settings.dart';
 import 'unit_website_consent_settings.dart';
 import '../unit_measurement_approval.dart';
 
@@ -868,6 +869,10 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
                             ],
                           ),
                         ],
+                        UnitMetaCapiSettings(
+                          key: ValueKey('meta-capi-${_unit.id}'),
+                          unitId: _unit.id!,
+                        ),
                         const SizedBox(height: 24),
                         if (_canEdit)
                           Row(

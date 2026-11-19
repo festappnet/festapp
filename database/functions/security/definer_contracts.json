@@ -3398,6 +3398,30 @@
     "f075ae77c09eeb8249d1db56fca90f076116ecec84ca1e7cf9757dcf4b0e70b2": {
       "signature": "public.finish_meta_purchase_delivery(bigint,uuid,text)",
       "source": "database/functions/eshop_forms/meta_purchase_worker.sql"
+    },
+    "9cf96c3bf385eb27e4ec200b2792b0efc3f8347765c61c979db74bb522b79126": {
+      "signature": "public.can_manage_unit_meta_purchase(bigint)",
+      "source": "database/functions/user_permissions/unit_meta_purchase.sql"
+    },
+    "7891e9455b1fb811939157fd1040cfb7f3868f5912d02eb40ee96f28d5748d02": {
+      "signature": "public.get_unit_meta_purchase(bigint)",
+      "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
+    },
+    "b5dea1e628b3fbc9810241057ff90392f92e0ba042bc146cd818cbf0a91c5b37": {
+      "signature": "public.save_unit_meta_purchase(bigint,text,text,text,boolean)",
+      "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
+    },
+    "81c11eb5ba351135eda834f3622f33ca75f36c93d479761c9b8d760701ab2647": {
+      "signature": "public.set_unit_meta_purchase_token(bigint,text)",
+      "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
+    },
+    "6d5bfb069505860a1330ba1ee3cd578356504668f60c8bda2e6a7345a63b0d55": {
+      "signature": "public.set_form_meta_purchase(bigint,bigint,boolean)",
+      "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
+    },
+    "e0cc815f28bfe84a1e9449510749adf97ea1e17dbb50cf6920a3793439ac2367": {
+      "signature": "public.delete_unit_meta_purchase(bigint)",
+      "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
     }
   }
 }
