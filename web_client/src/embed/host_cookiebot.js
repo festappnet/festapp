@@ -1,3 +1,4 @@
+import {purchaseObservation, auditDecision} from './purchase_observation.js';
 import {consentValidity} from './host_consent_validity.js';
 // Cookiebot storage expiry and the confirmed coverage window both apply.
 const events = ['CookiebotOnConsentReady', 'CookiebotOnLoad', 'CookiebotOnAccept',
@@ -47,6 +48,7 @@ export function createCookiebotSource(win, input) {
         else config = Object.freeze(config);
     } catch { config = null; }
     const listeners = new Set();
+    const observePurchase = purchaseObservation(win);
     let timer, last, pending = false;
     const read = scope => {
         try {
@@ -65,20 +67,21 @@ export function createCookiebotSource(win, input) {
                 (cmp.responseMode !== undefined && !['optin', 'leveloptin', 'inlineoptin'].includes(cmp.responseMode))) return null;
             const accepted = consent.preferences || consent.statistics || consent.marketing;
             if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
-            const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
+            const id = cmp.consentID, utc = (typeof cmp.consentUTC?.getTime === 'function' ? cmp.consentUTC.getTime() : NaN), now = win.Date.now();
             // consentUTC can lead Date.now() by a few ms right after a choice (measured).
-            if (!consentId(id) || consent.stamp !== id || !consentValidity(config)(utc, now)) return null;
+            if (!consentId(id) || consent.stamp !== id) return null;
+            const ordinaryValid = consentValidity(config)(utc, now);
             // Cookiebot writes storage and its cached API non-atomically. Until
             // both agree, no reader may reuse the previous grant: the same
             // mismatch also means withdrawal in another tab or cookie removal.
             if (!persisted(win.document, id)) return null;
             const unsupportedConsent = script.tcf || typeof win.__tcfapi !== 'undefined';
             const marketing = !unsupportedConsent && consent.marketing;
-            const purchaseConsent = unsupportedConsent ? null : {
-                source:'cookiebot',timestamp:new Date(utc).toISOString(),
+            const purchaseConsent = unsupportedConsent ? null : observePurchase({
+                source:'cookiebot',...auditDecision(utc),
                 ad_storage:marketing,ad_user_data:marketing,ad_personalization:marketing,
-            };
-            return {purchaseConsent,consentRevision:config.consentRevision,analytics:consent.statistics,marketing};
+            });
+            return {purchaseConsent,...(!ordinaryValid ? {ordinaryValid:false} : {}),consentRevision:config.consentRevision,analytics:ordinaryValid && consent.statistics,marketing:ordinaryValid && marketing};
         } catch { return null; }
     };
     const tick = () => {

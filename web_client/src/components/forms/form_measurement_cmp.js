@@ -1,3 +1,4 @@
+import {purchaseObservation} from '../../embed/purchase_observation.js';
 import klaro from 'klaro';
 import {prepareConsentLink, requestLinkedConsent} from './form_consent_link.js';
 import {applyKlaroVisitChoice, bindKlaroConsent} from './form_measurement_consent.js';
@@ -92,6 +93,7 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
     let manager, unbind, choices, activeLayer, opener, draft, stopLink, remoteLease, remoteChoice, effectiveChoice;
     // Remote choice lives only in this controller; local saves keep Klaro storage.
     let imported = false;
+    const observePurchase = purchaseObservation(win);
     const hadConsentSpace = win.document.body.classList.contains('festapp-consent-space');
     win.document.body.classList.add('festapp-consent-space');
     let focusTimer, disposed = false;
@@ -246,7 +248,7 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
         remoteLease = null; remoteChoice = null;
     };
     const expireImportedChoice = () => {
-        if (disposed || !imported || hasLocalChoice()) return;
+        if (disposed || (!imported && !remoteChoice) || hasLocalChoice()) return;
         retireImport(); draft = {analytics:false, marketing:false};
         applyKlaroVisitChoice(manager, null);
         showNormal();
@@ -254,16 +256,19 @@ export function startMeasurementConsent({win = window, model, setConsent, host, 
     const publishChoice = choice => {
         effectiveChoice = choice;
         if (!choice || typeof choice !== 'object') { setConsent(choice); return; }
-        let purchaseConsent = imported ? remoteChoice?.purchaseConsent : null;
-        if (!imported) {
+        let purchaseConsent = remoteChoice?.purchaseConsent ?? null;
+        if (!imported && manager.confirmed && typeof manager.savedConsents?.marketing === 'boolean') {
+            purchaseConsent = {source:'klaro', consentRevision:policy.consent_revision,
+                websiteOrigin:win.location.origin, ad_storage:manager.savedConsents.marketing === true,
+                ad_user_data:manager.savedConsents.marketing === true, ad_personalization:manager.savedConsents.marketing === true};
             try {
                 const record = JSON.parse(decodeURIComponent(win.document.cookie.split('; ').find(c => c.startsWith(config.storageName+'-decision='))?.split('=').slice(1).join('=') || 'null'));
-                if (manager.confirmed && record?.marketing === manager.savedConsents?.marketing && record?.analytics === manager.savedConsents?.analytics)
-                    purchaseConsent = {source:'klaro', timestamp:record.timestamp, consentRevision:policy.consent_revision,
-                        websiteOrigin:win.location.origin, ad_storage:record.marketing, ad_user_data:record.marketing, ad_personalization:record.marketing};
-            } catch { /* An unversioned old choice has no verifiable decision time. */ }
+                if (record?.marketing === manager.savedConsents.marketing && record?.analytics === manager.savedConsents.analytics && Number.isFinite(Date.parse(record.timestamp)))
+                    purchaseConsent.decidedAt = new Date(record.timestamp).toISOString();
+            } catch { /* Optional audit metadata never blocks a saved choice. */ }
         }
-        setConsent({...choice, ...(includePurchaseConsent ? {purchaseConsent} : {}), ...(imported ? remoteLease : {})});
+        if (purchaseConsent && !remoteChoice) purchaseConsent=observePurchase(purchaseConsent);
+        setConsent({...choice, ...(includePurchaseConsent ? {purchaseConsent} : {}), ...(remoteChoice ? remoteLease : {})});
     };
     const style = win.document.createElement('style');
     const colors = noticeColors(win);
@@ -429,9 +434,24 @@ ${layout}`;
     };
     try {
         enhance();
-        const remoteOptions = {win, policy, hasChoice:hasLocalChoice, settled:showNormal, revoke:expireImportedChoice,
+        const remoteOptions = {win, policy, includePurchaseConsent, hasChoice:hasLocalChoice, settled:showNormal, revoke:expireImportedChoice,
             accept:(choice, metadata) => {
                 if (hasLocalChoice()) return;
+                if (choice.ordinaryValid === false) {
+                    if (!includePurchaseConsent) {
+                        if (imported || remoteChoice) expireImportedChoice(); else showNormal();
+                        return;
+                    }
+                    const alreadyCapiOnly = remoteChoice?.ordinaryValid === false;
+                    const wasImported = imported;
+                    imported = false;
+                    remoteLease = {leaseId:metadata.leaseId, expiresAt:metadata.expiresAt};
+                    remoteChoice = {...choice};
+                    if (wasImported) { draft = {analytics:false,marketing:false}; applyKlaroVisitChoice(manager,null); }
+                    else publishChoice(effectiveChoice || {analytics:false,marketing:false});
+                    if (!alreadyCapiOnly) showNormal();
+                    return;
+                }
                 const unchanged = imported && remoteChoice.analytics === choice.analytics && remoteChoice.marketing === choice.marketing;
                 imported = true;
                 remoteLease = {leaseId:metadata.leaseId, expiresAt:metadata.expiresAt};

@@ -265,7 +265,7 @@ test('analytics granted and advertising denied preserves general purchase indepe
  assert.equal(f.transport.grant.consent.analytics,true);assert.equal(f.transport.grant.consent.marketing,false);
 });
 const advertisingChoice = () => ({analytics:true,marketing:true,purchaseConsent:{
- source:'klaro',timestamp:new Date(Date.now()-1000).toISOString(),consentRevision:'a'.repeat(32),
+ source:'klaro',capturedAt:new Date(Date.now()-1000).toISOString(),consentRevision:'a'.repeat(32),
  ad_storage:true,ad_user_data:true,ad_personalization:true,
 }});
 

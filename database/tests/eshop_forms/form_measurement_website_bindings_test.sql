@@ -7,7 +7,7 @@ BEGIN
  PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"complianz","policyId":"42"}'),'{"provider":"complianz","policyId":"42"}'::jsonb,'Complianz retains explicit policy coverage');
  rejected:=false;
  BEGIN PERFORM public.normalize_website_consent_provider_internal('{"provider":"complianz"}'); EXCEPTION WHEN invalid_parameter_value THEN rejected:=true; END;
- PERFORM assert_true(rejected,'Complianz without comparable timestamp needs a policy ID');
+ PERFORM assert_true(rejected,'Complianz needs an explicitly covered policy ID');
  PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"cookiebot"}'),'{"provider":"cookiebot"}'::jsonb,'Cookiebot needs no mapping');
  PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"wix"}'),'{"provider":"wix"}'::jsonb,'Wix needs no mapping');
  PERFORM assert_eq(public.normalize_website_consent_provider_internal('{"provider":"cookieconsent"}'),'{"provider":"cookieconsent"}'::jsonb,'CookieConsent categories optional');
@@ -43,6 +43,16 @@ BEGIN
  PERFORM assert_eq(exported#>>'{binding,version}','2','version advances');
  PERFORM assert_eq(exported#>>'{providerConfig,maxAgeSeconds}','31536000','server owns age ceiling');
  PERFORM assert_true((exported#>>'{providerConfig,consentValidFrom}')::timestamptz >= transaction_timestamp(),'new coverage cannot predate confirmation');
+ UPDATE analytics.organization_policy SET meta_capi_enabled=true WHERE organization=org;
+ INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
+ VALUES(un,'123456',gen_random_uuid(),'https://organizer.example',true);
+ PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,jsonb_build_object(
+  'source','cookieconsent','capturedAt',to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+  'decidedAt','2000-01-01T00:00:00.000Z','websiteOrigin','https://organizer.example',
+  'consentRevision',legacy_revision,'binding',exported->'binding',
+  'ad_storage',true,'ad_user_data',true,'ad_personalization',true)),
+  'CAPI accepts a saved decision before confirmation while ordinary bridge retains its cutoff');
+
  PERFORM assert_false(exported->'providerConfig' ? 'revision','new CookieConsent exports use server coverage time');
  PERFORM assert_eq(public.form_measurement_runtime_internal(fid)#>>'{website_consent_bindings,0,effective}','true','policy advertises effective binding');
  PERFORM assert_false((public.form_measurement_runtime_internal(fid)->'website_consent_bindings')::text LIKE '%statistika%','public policy redacts provider config');

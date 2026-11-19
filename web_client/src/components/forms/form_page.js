@@ -595,9 +595,9 @@ export class FormPage extends Component {
                     return ()=>{disposed=true;cleanup?.();};
                 }
             };
-            this.purchaseConsentOrders ??= new PurchaseConsentOrders({revoke:async scope=>{
-                const {data,error}=await SupabaseService.getClient().rpc('revoke_meta_purchase_consent',{p_token:scope.token,p_order_id:scope.orderId});
-                return !error && data === true;
+            this.purchaseConsentOrders ??= new PurchaseConsentOrders({revoke:async (scope,denial)=>{
+                const {error}=await SupabaseService.getClient().rpc('revoke_meta_purchase_consent',{p_token:scope.token,p_order_id:scope.orderId,p_denial:denial});
+                return !error;
             }});
             const measurement=this.measurementSession=new FormMeasurementSession({model:formModel,transport,consentSource,
                 onConsent:choice=>this.purchaseConsentOrders.observe(choice), entryAllowed:this.analyticsEntryAllowed,policySource:()=>DbForms.getMeasurementPolicy(formModel.link),
@@ -996,7 +996,7 @@ export class FormPage extends Component {
             }
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }
-        const retryPayload = JSON.parse(JSON.stringify(payload));
+        const retryPayload = structuredClone(payload);
         const pinnedScope = retrySubmission?.waitlistScope ?? this.waitlistScope;
         const pinnedTicketIds = retrySubmission?.ticketIds ?? formModel.selectedTicketIds;
         const acceptanceOrder = retrySubmission?.acceptanceOrder ?? (formModel.offerBundle ? {
@@ -1022,9 +1022,9 @@ export class FormPage extends Component {
                 await submittedSession?.awaitPendingReservations();
                 submittedCapability = submittedSession?.captureReservationCapability();
             }
-            if (matchingRequest) {
-                const matching=await matchingRequest;
-                if (Object.keys(matching).length)payload.metaPurchaseConsent={...metaPurchaseConsent,matching};
+            const matching = matchingRequest ? await matchingRequest : null;
+            if (payload.metaPurchaseConsent && matching && Object.keys(matching).length) {
+                payload.metaPurchaseConsent = {...payload.metaPurchaseConsent, matching};
             }
             return formModel.demoSimulation
             ? Promise.resolve({ success: true, data: { demoSimulation: true } })
@@ -1033,7 +1033,10 @@ export class FormPage extends Component {
                 .then(data => ({ success: true, data: { ...data, ticketOrder: { order: data.order, analytics:data.analytics } } }))
             : formModel.offerBundle
             ? this.waitlistCommands.accept(pinnedScope, pinnedTicketIds, acceptanceOrder, {reusePendingOnly:!!retrySubmission}).then(data => ({ success: true, data }))
-            : FormNetwork.submitOrder(payload, {reusePendingOnly:!!retrySubmission});
+            : FormNetwork.submitOrder(payload, {
+                reusePendingOnly: !!retrySubmission,
+                canSendMetaPurchaseConsent: () => this.purchaseConsentOrders?.canDispatch(consentAttempt),
+            });
         });
         const retryOriginal = () => this.submitOrder(form,formModel,document.body,{
             payload:retryPayload, capability:submittedCapability, acceptanceOrder, consentAttempt,

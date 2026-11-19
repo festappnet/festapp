@@ -18,9 +18,9 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
         try {
             const scope = consentScope(record.manifest, window.location.origin);
             const choice = record.choice?.read(record.manifest);
-            const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
+            const saved = record.choice?.readPurchase?.(record.manifest);
             record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : undefined;
-            const snapshot = publicPurchaseDecision(choice?.purchaseConsent || saved?.purchaseConsent);
+            const snapshot = publicPurchaseDecision((saved ?? choice)?.purchaseConsent);
             return {...measurementConsent(choice), ...(snapshot ? {purchaseConsent:snapshot} : {})};
         }
         catch { return measurementConsent(false); }
@@ -42,7 +42,9 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             const legacyRead = scopedChoice(record, () => consentMode.read());
             bindChoice(frame, record, notify => ({
                 read:manifest => usesHostDataLayer(frame) ? false : consentSource?.configured
-                    ? consentSource.read(consentScope(manifest, window.location.origin)) : managedConsentOrigin(manifest, window.location.origin) ? false : legacyRead(manifest),
+                    ? consentSource.read({...consentScope(manifest, window.location.origin),includePurchaseConsent:true}) : managedConsentOrigin(manifest, window.location.origin) ? false : legacyRead(manifest),
+                readPurchase:manifest => usesHostDataLayer(frame) && consentSource?.configured
+                    ? consentSource.read({...consentScope(manifest, window.location.origin),includePurchaseConsent:true}) : null,
                 dispose:(() => {
                     const a = consentMode.subscribe(notify), b = consentSource?.subscribe(notify);
                     return () => { a(); b?.(); };
@@ -83,7 +85,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             try { adapter?.dispose?.(); } catch { /* Retired source cannot retain a choice. */ }
             if (owns && currentRecord(frame, record)) syncConsent(frame, record);
         };
-        try { adapter = connect(notify); binding.read = adapter.read; }
+        try { adapter = connect(notify); binding.read = adapter.read; binding.readPurchase = adapter.readPurchase; }
         catch { binding.read = () => false; }
         notify();
         return binding.dispose;
@@ -95,7 +97,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             return bindChoice(frame, record, notify => {
                 const dispose = source.subscribe(notify);
                 return {dispose, read:manifest => {
-                    return readConsentSource(source, consentScope(manifest, window.location.origin));
+                    return readConsentSource(source, {...consentScope(manifest, window.location.origin),includePurchaseConsent:true});
                 }};
             });
         },
@@ -133,7 +135,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             if(data.type==='meta-checkout-matching-request') {
                 // The canonical child asks only after a fresh pilot lookup during
                 // checkout. The parent independently checks its lease and saved choice.
-                const {requestId,leaseId,manifest,origin,revision,consentRevision,decisionAt,binding}=data.matchingRequest || {};
+                const {requestId,leaseId,manifest,origin,revision,consentRevision,binding}=data.matchingRequest || {};
                 if (suspended || !currentRecord(frame,record) || !validId(requestId) ||
                     !record.lease || Date.now()>=record.lease.until || leaseId!==record.lease.id ||
                     !sameMeasurementManifest(manifest,record.manifest) ||
@@ -142,8 +144,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
                 const choice=readChoice(frame,record);
                 const scope=consentScope(record.manifest,origin);
                 if (!sameConsentBinding(scope?.binding,binding) || !sameConsentBinding(record.consentBinding,binding) ||
-                    !hasCurrentPurchaseConsent(choice) || choice.purchaseConsent.consentRevision!==consentRevision ||
-                    choice.purchaseConsent.timestamp!==decisionAt)return true;
+                    !hasCurrentPurchaseConsent(choice) || choice.purchaseConsent.consentRevision!==consentRevision)return true;
                 record.channel.send('meta-checkout-matching',{requestId,leaseId,
                     matching:metaBrowserMatching(choice.purchaseConsent,window)});
                 return true;

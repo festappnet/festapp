@@ -185,24 +185,26 @@
       const value = source?.read({ ...scope, requiredPurposes: [...scope.requiredPurposes] });
       const matches = value?.consentRevision !== void 0 ? scope.consentRevision !== void 0 && value.consentRevision === scope.consentRevision : value?.processingRevision === scope.processingRevision;
       if (!matches || scope.binding && !sameConsentBinding(value?.binding, scope.binding)) return null;
-      const choice = measurementConsent(value);
+      if (value.ordinaryValid === false && (scope.includePurchaseConsent !== true || !value.purchaseConsent)) return null;
+      const choice = { ...measurementConsent(value), ...value.ordinaryValid === false ? { ordinaryValid: false } : {} };
       if (!value.purchaseConsent) return choice;
       const purpose = (key) => {
         const direct = value[key], saved = value.purchaseConsent[key];
         if (direct === false || saved === false) return false;
-        if (!choice.marketing) return void 0;
         const grants = [value, value.purchaseConsent].filter((record) => Object.hasOwn(record, key));
         return grants.length && grants.every((record) => record[key] === true) ? true : void 0;
       };
+      const projected = Object.fromEntries(["ad_storage", "ad_user_data", "ad_personalization"].map((key) => [key, purpose(key)]));
+      if (!choice.marketing && value.ordinaryValid !== false && Object.values(projected).every((value2) => value2 === true))
+        return { ...choice, purchaseConsent: null };
       return { ...choice, purchaseConsent: {
         source: value.purchaseConsent.source,
-        timestamp: value.purchaseConsent.timestamp,
+        capturedAt: value.purchaseConsent.capturedAt,
+        ...value.purchaseConsent.decidedAt ?? value.purchaseConsent.timestamp ? { decidedAt: value.purchaseConsent.decidedAt ?? value.purchaseConsent.timestamp } : {},
         consentRevision: value.consentRevision,
         binding: value.binding,
         websiteOrigin: scope.websiteOrigin,
-        ad_storage: purpose("ad_storage"),
-        ad_user_data: purpose("ad_user_data"),
-        ad_personalization: purpose("ad_personalization")
+        ...projected
       } };
     } catch {
       return null;
@@ -330,6 +332,7 @@
         if (Date.now() >= record.until) return;
         const scope = consentScope(data.scope);
         if (!sameConsentScope(scope, data.scope)) return;
+        const includePurchaseConsent = data.includePurchaseConsent === true;
         const child = event.source;
         const session = {
           sequence: 0,
@@ -340,8 +343,8 @@
         sessions.set(child, session);
         const send = () => {
           if (sessions.get(child) !== session) return;
-          const choice = source?.generation === session.generation ? source?.read(scope) : null;
-          if (child.closed || Date.now() >= session.until || !choice) {
+          const choice = source?.generation === session.generation ? source?.read({ ...scope, includePurchaseConsent }) : null;
+          if (child.closed || Date.now() >= session.until || !choice || !includePurchaseConsent && choice.ordinaryValid === false) {
             end(child);
             return;
           }
@@ -381,6 +384,27 @@
     };
   }
 
+  // src/embed/purchase_observation.js
+  function purchaseObservation(win) {
+    let previous, capturedAt;
+    return (value) => {
+      const key = JSON.stringify(value);
+      if (key !== previous) {
+        previous = key;
+        capturedAt = new Date(win.Date?.now?.() ?? Date.now()).toISOString();
+      }
+      return { ...value, capturedAt };
+    };
+  }
+  function auditDecision(value) {
+    try {
+      const date = Object.prototype.toString.call(value) === "[object Date]" ? value.getTime() : typeof value === "number" ? value : Date.parse(value);
+      return Number.isFinite(date) ? { decidedAt: new Date(date).toISOString() } : {};
+    } catch {
+      return {};
+    }
+  }
+
   // src/embed/host_consent_validity.js
   var instant = (value) => typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
   function consentValidity(config) {
@@ -399,6 +423,7 @@
       config = null;
     }
     const listeners = /* @__PURE__ */ new Set();
+    const observePurchase = purchaseObservation(win);
     let pending = false, timer, last;
     const read = (scope) => {
       try {
@@ -408,17 +433,18 @@
         const date = saved?.createdDate;
         const timestamp2 = typeof date === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{3})?(?:Z|[+-]\d\d:\d\d)$/.test(date) ? Date.parse(date) : Object.prototype.toString.call(date) === "[object Date]" ? date.getTime() : NaN;
         const now = win.Date.now();
-        if (saved?.defaultPolicy !== false || p?.essential !== true || !["functional", "analytics", "advertising", "dataToThirdParty"].every((k) => typeof p[k] === "boolean") || !consentValidity(config)(timestamp2, now)) return null;
+        if (saved?.defaultPolicy !== false || p?.essential !== true || !["functional", "analytics", "advertising", "dataToThirdParty"].every((k) => typeof p[k] === "boolean")) return null;
+        const ordinaryValid = consentValidity(config)(timestamp2, now);
         const unsupportedConsent = typeof win.__tcfapi !== "undefined";
         const marketing = !unsupportedConsent && p.advertising && p.dataToThirdParty;
-        const purchaseConsent = unsupportedConsent ? null : {
+        const purchaseConsent = unsupportedConsent ? null : observePurchase({
           source: "wix",
-          timestamp: new Date(timestamp2).toISOString(),
+          ...auditDecision(timestamp2),
           ad_storage: marketing,
           ad_user_data: marketing,
           ad_personalization: marketing
-        };
-        return { purchaseConsent, consentRevision: config.consentRevision, analytics: p.analytics, marketing };
+        });
+        return { purchaseConsent, ...!ordinaryValid ? { ordinaryValid: false } : {}, consentRevision: config.consentRevision, analytics: ordinaryValid && p.analytics, marketing: ordinaryValid && marketing };
       } catch {
         return null;
       }
@@ -484,22 +510,31 @@
       config = null;
     }
     const listeners = /* @__PURE__ */ new Set();
+    const observePurchase = purchaseObservation(win);
     let timer, last, pending = false;
     const read = (scope) => {
       try {
         if (!config || pending || scope && (scope.organization !== config.organization || scope.unit !== config.unit || scope.consentRevision !== config.consentRevision)) return null;
         const cmp = win.complianz;
-        if (cmp?.consenttype !== "optin" || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) || typeof win.cmplz_get_cookie !== "function" || typeof win.cmplz_get_banner_status !== "function" || typeof win.cmplz_has_consent !== "function" || win.cmplz_get_banner_status() !== "dismissed" || policyId(cmp.current_policy_id) !== config.policyId || policyId(win.cmplz_get_cookie("policy_id")) !== config.policyId) return null;
+        if (cmp?.consenttype !== "optin" || !disabled(cmp.forceEnableStats) || !disabled(cmp.consent_per_service) || !disabled(cmp.clean_cookies) || typeof win.cmplz_get_cookie !== "function" || typeof win.cmplz_get_banner_status !== "function" || typeof win.cmplz_has_consent !== "function" || win.cmplz_get_banner_status() !== "dismissed" || policyId(cmp.current_policy_id) !== config.policyId || policyId(win.cmplz_get_cookie("policy_id")) !== config.policyId) return null;
         const stats = win.cmplz_get_cookie("statistics"), ads = win.cmplz_get_cookie("marketing");
         if (![stats, ads].every((value) => ["allow", "deny"].includes(value))) return null;
         const services = win.cmplz_get_cookie("consented_services");
         if (services && services !== "[]" && services !== "{}") return null;
         const analytics = win.cmplz_has_consent("statistics"), marketing = win.cmplz_has_consent("marketing");
         if (typeof analytics !== "boolean" || typeof marketing !== "boolean") return null;
+        const unsupportedConsent = !disabled(cmp.tcf_active) || typeof win.__tcfapi !== "undefined";
+        const granted = ads === "allow" && marketing;
         return {
           consentRevision: config.consentRevision,
           analytics: stats === "allow" && analytics,
-          marketing: ads === "allow" && marketing && disabled(cmp.tcf_active) && typeof win.__tcfapi === "undefined"
+          marketing: granted && !unsupportedConsent,
+          purchaseConsent: unsupportedConsent ? null : observePurchase({
+            source: "complianz",
+            ad_storage: granted,
+            ad_user_data: granted,
+            ad_personalization: granted
+          })
         };
       } catch {
         return null;
@@ -593,6 +628,7 @@
       config = null;
     }
     const listeners = /* @__PURE__ */ new Set();
+    const observePurchase = purchaseObservation(win);
     let timer, last, pending = false;
     const read = (scope) => {
       try {
@@ -602,19 +638,20 @@
         cmp.responseMode !== void 0 && !["optin", "leveloptin", "inlineoptin"].includes(cmp.responseMode)) return null;
         const accepted = consent.preferences || consent.statistics || consent.marketing;
         if (cmp.consented !== accepted || cmp.declined !== !accepted) return null;
-        const id = cmp.consentID, utc = cmp.consentUTC?.getTime(), now = win.Date.now();
-        if (!consentId(id) || consent.stamp !== id || !consentValidity(config)(utc, now)) return null;
+        const id = cmp.consentID, utc = typeof cmp.consentUTC?.getTime === "function" ? cmp.consentUTC.getTime() : NaN, now = win.Date.now();
+        if (!consentId(id) || consent.stamp !== id) return null;
+        const ordinaryValid = consentValidity(config)(utc, now);
         if (!persisted(win.document, id)) return null;
         const unsupportedConsent = script.tcf || typeof win.__tcfapi !== "undefined";
         const marketing = !unsupportedConsent && consent.marketing;
-        const purchaseConsent = unsupportedConsent ? null : {
+        const purchaseConsent = unsupportedConsent ? null : observePurchase({
           source: "cookiebot",
-          timestamp: new Date(utc).toISOString(),
+          ...auditDecision(utc),
           ad_storage: marketing,
           ad_user_data: marketing,
           ad_personalization: marketing
-        };
-        return { purchaseConsent, consentRevision: config.consentRevision, analytics: consent.statistics, marketing };
+        });
+        return { purchaseConsent, ...!ordinaryValid ? { ordinaryValid: false } : {}, consentRevision: config.consentRevision, analytics: ordinaryValid && consent.statistics, marketing: ordinaryValid && marketing };
       } catch {
         return null;
       }
@@ -675,6 +712,7 @@
       config = null;
     }
     const listeners = /* @__PURE__ */ new Set();
+    const observePurchase = purchaseObservation(win);
     let timer, last, pending = false;
     const read = (scope) => {
       try {
@@ -682,8 +720,8 @@
         const cmp = win.CookieConsent;
         if (cmp?.validConsent() !== true || cmp.getConfig("mode") !== "opt-in" || !revision(cmp.getConfig("revision")) || config.revision !== void 0 && cmp.getConfig("revision") !== config.revision) return null;
         const cookie = cmp.getCookie(), categories = cmp.getConfig("categories");
-        if (cookie?.revision !== cmp.getConfig("revision") || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) || typeof cookie.consentId !== "string" || !cookie.consentId || !timestamp(cookie.consentTimestamp) || !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() || !cookie.services || typeof cookie.services !== "object" || Array.isArray(cookie.services)) return null;
-        if (config.consentValidFrom !== void 0 && !consentValidity(config)(Date.parse(cookie.lastConsentTimestamp), win.Date.now())) return null;
+        if (cookie?.revision !== cmp.getConfig("revision") || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) || typeof cookie.consentId !== "string" || !cookie.consentId || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() || !cookie.services || typeof cookie.services !== "object" || Array.isArray(cookie.services)) return null;
+        const ordinaryValid = timestamp(cookie.consentTimestamp) && timestamp(cookie.lastConsentTimestamp) && (config.consentValidFrom === void 0 || consentValidity(config)(Date.parse(cookie.lastConsentTimestamp), win.Date.now()));
         const choice = {};
         for (const purpose of ["analytics", "marketing"]) {
           const name = config.categories[purpose], category = categories?.[name];
@@ -694,14 +732,14 @@
         }
         const unsupportedConsent = typeof win.__tcfapi !== "undefined";
         const marketing = !unsupportedConsent && choice.marketing;
-        const purchaseConsent = unsupportedConsent ? null : {
+        const purchaseConsent = unsupportedConsent ? null : observePurchase({
           source: "cookieconsent",
-          timestamp: new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(),
+          ...auditDecision(cookie.lastConsentTimestamp),
           ad_storage: marketing,
           ad_user_data: marketing,
           ad_personalization: marketing
-        };
-        return { purchaseConsent, consentRevision: config.consentRevision, analytics: choice.analytics, marketing };
+        });
+        return { purchaseConsent, ...!ordinaryValid ? { ordinaryValid: false } : {}, consentRevision: config.consentRevision, analytics: ordinaryValid && choice.analytics, marketing: ordinaryValid && marketing };
       } catch {
         return null;
       }
@@ -863,18 +901,19 @@
   }
   function hasCurrentDecision(choice, now) {
     const snapshot = choice?.purchaseConsent;
-    const timestamp2 = Date.parse(snapshot?.timestamp);
-    return !!snapshot && ["klaro", "cookiebot", "cookieconsent", "wix"].includes(snapshot.source) && /^[a-f0-9]{32}$/.test(snapshot.consentRevision || "") && (snapshot.source === "klaro" || validConsentBinding(snapshot.binding)) && Number.isFinite(timestamp2) && timestamp2 <= now && now - timestamp2 < 365 * 864e5 && (choice.expiresAt === void 0 || Number.isFinite(choice.expiresAt) && choice.expiresAt > now);
+    return !!snapshot && ["klaro", "cookiebot", "cookieconsent", "wix", "complianz"].includes(snapshot.source) && /^[a-f0-9]{32}$/.test(snapshot.consentRevision || "") && (snapshot.source === "klaro" || validConsentBinding(snapshot.binding)) && (choice.expiresAt === void 0 || Number.isFinite(choice.expiresAt) && choice.expiresAt > now);
   }
   function hasCurrentPurchaseConsent(choice, now = Date.now()) {
     return hasCurrentDecision(choice, now) && purposes.every((key) => choice.purchaseConsent[key] === true);
   }
   function publicPurchaseDecision(snapshot) {
     if (!snapshot || typeof snapshot !== "object") return null;
-    const { source, timestamp: timestamp2, consentRevision, websiteOrigin, binding, ad_storage, ad_user_data, ad_personalization } = snapshot;
+    const { source, capturedAt, consentRevision, websiteOrigin, binding, ad_storage, ad_user_data, ad_personalization } = snapshot;
+    const decidedAt = snapshot.decidedAt ?? snapshot.timestamp;
     return {
       source,
-      timestamp: timestamp2,
+      capturedAt,
+      ...decidedAt ? { decidedAt } : {},
       consentRevision,
       websiteOrigin,
       ad_storage,
@@ -1037,9 +1076,9 @@
       try {
         const scope = consentScope(record.manifest, window.location.origin);
         const choice = record.choice?.read(record.manifest);
-        const saved = !record.explicitChoice && usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read(scope) : null;
+        const saved = record.choice?.readPurchase?.(record.manifest);
         record.consentBinding = (choice || saved) && scope?.binding ? scope.binding : void 0;
-        const snapshot = publicPurchaseDecision(choice?.purchaseConsent || saved?.purchaseConsent);
+        const snapshot = publicPurchaseDecision((saved ?? choice)?.purchaseConsent);
         return { ...measurementConsent(choice), ...snapshot ? { purchaseConsent: snapshot } : {} };
       } catch {
         return measurementConsent(false);
@@ -1072,7 +1111,8 @@
       if (!record.choice && automatic) {
         const legacyRead = scopedChoice(record, () => consentMode.read());
         bindChoice(frame, record, (notify) => ({
-          read: (manifest) => usesHostDataLayer(frame) ? false : consentSource?.configured ? consentSource.read(consentScope(manifest, window.location.origin)) : managedConsentOrigin(manifest, window.location.origin) ? false : legacyRead(manifest),
+          read: (manifest) => usesHostDataLayer(frame) ? false : consentSource?.configured ? consentSource.read({ ...consentScope(manifest, window.location.origin), includePurchaseConsent: true }) : managedConsentOrigin(manifest, window.location.origin) ? false : legacyRead(manifest),
+          readPurchase: (manifest) => usesHostDataLayer(frame) && consentSource?.configured ? consentSource.read({ ...consentScope(manifest, window.location.origin), includePurchaseConsent: true }) : null,
           dispose: (() => {
             const a = consentMode.subscribe(notify), b = consentSource?.subscribe(notify);
             return () => {
@@ -1121,6 +1161,7 @@
       try {
         adapter = connect(notify);
         binding.read = adapter.read;
+        binding.readPurchase = adapter.readPurchase;
       } catch {
         binding.read = () => false;
       }
@@ -1134,7 +1175,7 @@
         return bindChoice(frame, record, (notify) => {
           const dispose = source.subscribe(notify);
           return { dispose, read: (manifest) => {
-            return readConsentSource(source, consentScope(manifest, window.location.origin));
+            return readConsentSource(source, { ...consentScope(manifest, window.location.origin), includePurchaseConsent: true });
           } };
         });
       },
@@ -1176,11 +1217,11 @@
     });
     return { api, stopHeartbeat, revoke, syncConsent, receive(frame, record, data) {
       if (data.type === "meta-checkout-matching-request") {
-        const { requestId, leaseId, manifest, origin, revision: revision2, consentRevision, decisionAt, binding } = data.matchingRequest || {};
+        const { requestId, leaseId, manifest, origin, revision: revision2, consentRevision, binding } = data.matchingRequest || {};
         if (suspended || !currentRecord(frame, record) || !validId(requestId) || !record.lease || Date.now() >= record.lease.until || leaseId !== record.lease.id || !sameMeasurementManifest(manifest, record.manifest) || !measurementManifest(manifest, manifest?.form_link) || origin !== window.location.origin || !/^[0-9a-f]{32}$/.test(revision2 || "")) return true;
         const choice = readChoice(frame, record);
         const scope = consentScope(record.manifest, origin);
-        if (!sameConsentBinding(scope?.binding, binding) || !sameConsentBinding(record.consentBinding, binding) || !hasCurrentPurchaseConsent(choice) || choice.purchaseConsent.consentRevision !== consentRevision || choice.purchaseConsent.timestamp !== decisionAt) return true;
+        if (!sameConsentBinding(scope?.binding, binding) || !sameConsentBinding(record.consentBinding, binding) || !hasCurrentPurchaseConsent(choice) || choice.purchaseConsent.consentRevision !== consentRevision) return true;
         record.channel.send("meta-checkout-matching", {
           requestId,
           leaseId,

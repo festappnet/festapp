@@ -76,7 +76,7 @@ export class EmbedMeasurement {
             this.checkoutMatching={id,leaseId,finish};
             this.send('meta-checkout-matching-request',{matchingRequest:{requestId:id,leaseId,
                 manifest:this.measurementManifest,origin:snapshot.websiteOrigin,revision:snapshot.revision,
-                consentRevision:snapshot.consentRevision,decisionAt:snapshot.timestamp,binding:snapshot.binding}});
+                consentRevision:snapshot.consentRevision,binding:snapshot.binding}});
         });
     }
     hostContext() {return this.selection()?{origin:this.origin,instance:this.instance}:null;}

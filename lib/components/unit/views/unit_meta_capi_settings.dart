@@ -270,24 +270,25 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     final forms = data['forms'] as List? ?? const [];
     final error = data['last_error'] as Map?;
     final errorAt = DateTime.tryParse(error?['at']?.toString() ?? '');
-    final errorText = error?['status'] == 'failed'
-        ? MetaCapiStrings.deliveryFailed
-        : switch (error?['code']) {
-            'connector_changed' ||
-            'consent_invalid' ||
-            'order_ineligible' ||
-            'payment_too_old' ||
-            'attempts_exhausted' ||
-            'retention_expired' =>
-              MetaCapiStrings.outcomeReason(error!['code'] as String),
-            'sent_in_flight' => MetaCapiStrings.sentInFlight,
-            'credentials' => MetaCapiStrings.credentials,
-            'rejected' => MetaCapiStrings.rejected,
-            _ =>
-              error?['status'] == 'pending'
-                  ? MetaCapiStrings.retry
-                  : MetaCapiStrings.deliveryFailed,
-          };
+    final errorText = switch (error?['code']) {
+      'connector_changed' ||
+      'consent_invalid' ||
+      'order_ineligible' ||
+      'payment_too_old' ||
+      'attempts_exhausted' ||
+      'retention_expired' => MetaCapiStrings.outcomeReason(
+        error!['code'] as String,
+      ),
+      'sent_in_flight' => MetaCapiStrings.sentInFlight,
+      'credentials' => error?['status'] == 'failed'
+          ? MetaCapiStrings.deliveryFailed
+          : MetaCapiStrings.credentials,
+      'rejected' => MetaCapiStrings.rejected,
+      _ =>
+        error?['status'] == 'pending'
+            ? MetaCapiStrings.retry
+            : MetaCapiStrings.deliveryFailed,
+    };
     final paused = data['paused_at'] != null;
     final enabled = data['enabled'] == true;
     final websiteReady = data['website_ready'] != false;
@@ -342,6 +343,11 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
                 ],
               ),
             ),
+            if (paused)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(MetaCapiStrings.credentials),
+              ),
             if (_loadFailed) _retryLoad(),
             const SizedBox(height: 12),
             TextFormField(
@@ -440,11 +446,13 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
                 Text('${MetaCapiStrings.sent}: ${queue['sent'] ?? 0}'),
                 Text('${MetaCapiStrings.failed}: ${queue['failed'] ?? 0}'),
                 Text('${MetaCapiStrings.revoked}: ${queue['revoked'] ?? 0}'),
-                Text('${MetaCapiStrings.invalidCount}: ${queue['invalid'] ?? 0}'),
+                Text(
+                  '${MetaCapiStrings.invalidCount}: ${queue['invalid'] ?? 0}',
+                ),
                 Text('${MetaCapiStrings.expired}: ${queue['expired'] ?? 0}'),
               ],
             ),
-            if (error != null)
+            if (error != null && !(paused && error['code'] == 'credentials'))
               Text(
                 '$errorText${errorAt == null ? '' : ' · ${DateFormat.yMd(context.locale.toString()).add_jm().format(errorAt.toLocal())}'}',
               ),

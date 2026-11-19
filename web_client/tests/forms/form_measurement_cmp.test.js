@@ -6,6 +6,9 @@ import {JSDOM} from 'jsdom';
 
 const bundle = await build({stdin:{contents:`
 import {startMeasurementConsent} from './src/components/forms/form_measurement_cmp.js';
+import * as klaroModule from 'klaro';
+const klaroApi=klaroModule.default||klaroModule;
+window.getFixtureManager=()=>klaroApi.getManager({storageName:'festapp-measurement-1-2-a'});
 import {createEmbedConsentSource} from './src/components/forms/form_measurement_embed_consent.js';
 import {LocalizationService} from './src/services/localization_service.js';
 window.startManagedEmbed = (translations, bridge, notify) => {
@@ -750,20 +753,41 @@ test('CAPI snapshot uses actual saved Klaro decision time and keeps it across re
    if(first) {
     assert.equal(values.at(-1).purchaseConsent,null);
     win.document.querySelector('.cm-btn-success').click();await settle();
-    saved=values.at(-1).purchaseConsent.timestamp;
+    saved=values.at(-1).purchaseConsent.decidedAt;
+    const observed=values.at(-1).purchaseConsent.capturedAt;
     assert.ok(Date.parse(saved)<=Date.now());
     win.document.querySelector('.festapp-consent-fab').click();await settle();
     win.document.querySelector('#service-item-analytics').click();await settle();
     assert.equal(values.at(-1).analytics,false,'ordinary consent is clamped by the unsaved draft');
-    assert.equal(values.at(-1).purchaseConsent.timestamp,saved,'the saved CAPI decision does not change');
+    assert.equal(values.at(-1).purchaseConsent.decidedAt,saved,'the saved CAPI decision does not change');
+    assert.equal(values.at(-1).purchaseConsent.capturedAt,observed,'unsaved drafts do not advance CAPI observation');
     assert.equal(values.at(-1).purchaseConsent.ad_user_data,true);
     key(win,win.document.querySelector('#service-item-analytics'),'Escape');await settle();
    }
    const snapshot=values.at(-1).purchaseConsent;
-   assert.equal(snapshot.timestamp,saved);
+   assert.equal(snapshot.decidedAt,saved);
    assert.equal(snapshot.source,'klaro');
    assert.equal(snapshot.ad_user_data,true);
    assert.equal(snapshot.consentRevision,'b'.repeat(32));
+   assert.ok(Number.isFinite(Date.parse(snapshot.capturedAt)));
+   for(const part of win.document.cookie.split('; ')) {const name=part.split('=')[0];if(name.endsWith('-decision'))win.document.cookie=name+'=;max-age=0;path=/';}
+   saved=undefined;
   } finally {cleanup?.();win.close();}
  }
+});
+
+test('unknown Klaro saved marketing never creates a denial or breaks publication',async()=>{
+ const win=new JSDOM('<html lang="en"><body><main></main></body></html>',{url:'https://tickets.example/form/summer',runScripts:'outside-only',pretendToBeVisual:true}).window;
+ const values=[];let cleanup;
+ try{
+  win.eval(bundle.outputFiles[0].text);cleanup=win.startFixture(cs(),{includePurchaseConsent:true,setConsent:v=>values.push(v)});await settle();
+  win.document.querySelector('.cm-btn-success').click();await settle();
+  const manager=win.getFixtureManager(), saved=manager.savedConsents;
+  for(const marketing of [undefined,null,'true']) {
+   manager.savedConsents={...saved,marketing};manager.applyConsents();await settle();
+   assert.equal(values.at(-1).purchaseConsent,null);
+  }
+  manager.savedConsents=null;assert.doesNotThrow(()=>manager.applyConsents());await settle();
+  assert.equal(values.at(-1).purchaseConsent,null);
+ }finally{cleanup?.();win.close()}
 });

@@ -1,4 +1,6 @@
 -- Explain terminal Meta purchase outcomes without retaining matching data.
+CREATE INDEX meta_purchase_unit_outcome_history ON analytics.meta_purchase_deliveries(unit,(coalesce(done_at,consent_at)));
+DROP INDEX analytics.meta_purchase_unit_history;
 
 -- SOURCE: eshop_forms/meta_purchase_settings.sql
 CREATE OR REPLACE FUNCTION public.get_unit_meta_purchase(p_unit bigint)
@@ -16,7 +18,7 @@ BEGIN
    c.website_origin=(SELECT rtrim(org.data->>'DEFAULT_URL','/') FROM public.units u
     JOIN public.organizations org ON org.id=u.organization WHERE u.id=p_unit)
    OR EXISTS(SELECT FROM analytics.website_consent_bindings b WHERE b.unit=p_unit
-    AND b.website_origin=c.website_origin AND b.provider_config->>'provider' IN ('cookiebot','cookieconsent','wix')
+    AND b.website_origin=c.website_origin AND b.provider_config->>'provider' IN ('cookiebot','cookieconsent','wix','complianz')
     AND public.website_consent_binding_effective_internal(b))
   ),false))
  INTO result FROM analytics.meta_purchase_connectors c WHERE c.unit=p_unit;
@@ -27,10 +29,13 @@ BEGIN
     'revoked',count(*) FILTER(WHERE status='revoked'),
     'invalid',count(*) FILTER(WHERE status='invalid'),'expired',count(*) FILTER(WHERE status='expired')) FROM analytics.meta_purchase_deliveries
     WHERE unit=p_unit AND coalesce(done_at,consent_at)>=statement_timestamp()-interval '30 days'),
-  'last_error',coalesce((SELECT jsonb_build_object('code',error_code,'status',status,'at',coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))))
-    FROM analytics.meta_purchase_deliveries WHERE unit=p_unit AND error_code IS NOT NULL
-    ORDER BY coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))) DESC LIMIT 1),
-    (SELECT jsonb_build_object('code','credentials','status','pending','at',paused_at) FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND paused_at IS NOT NULL)),
+  'last_error',coalesce(
+    (SELECT jsonb_build_object('code',error_code,'status',status,'at',outcome_at) FROM (
+      SELECT error_code,status,coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))) AS outcome_at
+      FROM analytics.meta_purchase_deliveries WHERE unit=p_unit AND error_code IS NOT NULL
+     ) outcomes ORDER BY outcome_at DESC LIMIT 1),
+    (SELECT jsonb_build_object('code','credentials','status','pending','at',paused_at)
+      FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND paused_at IS NOT NULL)),
   'forms',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'enabled',m.form IS NOT NULL,
      'measurement_ready',public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(f.id))) ORDER BY f.id),'[]'::jsonb)
     FROM public.forms f JOIN public.occasions o ON o.id=f.occasion

@@ -53,7 +53,7 @@ for(const [name,change] of Object.entries({
  'missing expiry':c=>delete c.expirationTime,'malformed expiry':c=>c.expirationTime='tomorrow',
  'stored services':c=>c.services.analytics=['ga'],'missing services':c=>delete c.services,
 }))test(name+' fails closed despite cached validConsent',async()=>{
- const f=await fixture();try{const c=f.cmp.getCookie();change(c);f.store(c);assert.equal(f.cmp.validConsent(),true);assert.equal(f.read(),null)}finally{f.close()}
+ const f=await fixture();try{const c=f.cmp.getCookie();change(c);f.store(c);assert.equal(f.cmp.validConsent(),true);if(['missing timestamp','malformed timestamp'].includes(name)){assert.equal(f.read(),null);assert.equal(f.source.read(scope).purchaseConsent.ad_storage,true);}else assert.equal(f.read(),null)}finally{f.close()}
 });
 test('missing/broken APIs and non-boolean category responses fail closed',async()=>{
  const f=await fixture();try{

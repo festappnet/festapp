@@ -3,7 +3,7 @@ import { claimTicketOrderIdentity, terminalOrderResponse } from './ticket_order_
 import { withCheckoutOrigin } from '../../services/checkout_origin.js';
 
 export class DbOrders {
-    static async sendOrder(orderData, {reusePendingOnly = false} = {}) {
+    static async sendOrder(orderData, {reusePendingOnly = false, canSendMetaPurchaseConsent} = {}) {
         orderData = withCheckoutOrigin(orderData);
         const client = SupabaseService.getClient();
         if (!client) throw new Error('Supabase client not initialized');
@@ -12,6 +12,9 @@ export class DbOrders {
         const intent = await claimTicketOrderIdentity(SupabaseService.endpoint, orderData, session.data?.session?.user?.id, undefined, {requirePending:reusePendingOnly});
         // A lost response cannot prove that the server rejected the order.
         // Preserve the pending identity so an in-page retry replays this intent.
+        if (intent.orderDetails.metaPurchaseConsent && canSendMetaPurchaseConsent && !canSendMetaPurchaseConsent()) {
+            delete intent.orderDetails.metaPurchaseConsent;
+        }
         let response;
         try {
             response = await client.functions.invoke('send-ticket-order', {

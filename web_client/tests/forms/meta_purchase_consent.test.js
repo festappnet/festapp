@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {purchaseConsentSnapshot, PurchaseConsentOrders} from '../../src/components/forms/meta_purchase_consent.js';
 const now = Date.now();
 const notice = {revision:'a'.repeat(32),origin:'https://organizer.example'};
-const choice = () => ({marketing:true, expiresAt:now+60000, purchaseConsent:{source:'cookiebot',timestamp:new Date(now-1000).toISOString(),
+const choice = () => ({marketing:true, expiresAt:now+60000, purchaseConsent:{source:'cookiebot',capturedAt:new Date(now-1000).toISOString(),
     websiteOrigin:notice.origin,consentRevision:'b'.repeat(32),binding:{id:'11111111-1111-1111-1111-111111111111',version:1},ad_storage:true,ad_user_data:true,ad_personalization:true}});
 test('snapshot requires every saved advertising purpose and a live transport',()=>{
     assert.ok(purchaseConsentSnapshot(choice(),notice,now));
@@ -16,27 +16,28 @@ test('snapshot requires every saved advertising purpose and a live transport',()
     const denied=choice(); denied.marketing=false; denied.purchaseConsent.ad_user_data=false;
     assert.equal(purchaseConsentSnapshot(denied,notice,now),null);
     assert.equal(purchaseConsentSnapshot(choice(),{...notice,origin:'https://other.example'},now),null);
-    for(const timestamp of [undefined,'invalid',new Date(now+1).toISOString(),new Date(now-365*86400000).toISOString()]) {
-        const value=choice(); value.purchaseConsent.timestamp=timestamp;
-        assert.equal(purchaseConsentSnapshot(value,notice,now),null);
+    for(const capturedAt of [undefined,'invalid',new Date(now+1).toISOString(),new Date(now-365*86400000).toISOString()]) {
+        const value=choice(); value.purchaseConsent.capturedAt=capturedAt;
+        assert.ok(purchaseConsentSnapshot(value,notice,now));
     }
 });
 const denyAdvertising = () => {
     const denied=choice();
     denied.purchaseConsent.ad_storage=false;
-    denied.purchaseConsent.timestamp=new Date(now-1).toISOString();
+    denied.purchaseConsent.capturedAt=new Date(now+1).toISOString();
     return denied;
 };
 
 test('only a newer saved denial in the captured consent scope withdraws checkout consent',async()=>{
     const calls=[];
-    const orders=new PurchaseConsentOrders({clock:()=>now,revoke:async scope=>{calls.push(scope);return true;}});
-    orders.observe(choice());
+    const orders=new PurchaseConsentOrders({clock:()=>now+1000,revoke:async scope=>{calls.push(scope);return true;}});
+    const grant=choice();grant.purchaseConsent.decidedAt=new Date(now-1000).toISOString();
+    orders.observe(grant);
     const scope={token:'buyer-capability',orderId:42};
-    orders.track(scope,purchaseConsentSnapshot(choice(),notice,now),notice);
+    orders.track(scope,purchaseConsentSnapshot(grant,notice,now),notice);
     const unrelated=denyAdvertising(),older=denyAdvertising();
     unrelated.purchaseConsent.binding.version++;
-    older.purchaseConsent.timestamp=new Date(now-2000).toISOString();
+    older.purchaseConsent.decidedAt=new Date(now-2000).toISOString();
     for (const value of [false,null,unrelated,older]) orders.observe(value);
     await new Promise(resolve=>setImmediate(resolve));
     assert.deepEqual(calls,[]);
@@ -47,7 +48,7 @@ test('only a newer saved denial in the captured consent scope withdraws checkout
 
 test('denial during submit is retained until buyer capability arrives, and failed withdrawal retries',async()=>{
     let calls=0;
-    const orders=new PurchaseConsentOrders({clock:()=>now,revoke:async()=>++calls>1});
+    const orders=new PurchaseConsentOrders({clock:()=>now+1000,revoke:async()=>++calls>1});
     orders.observe(denyAdvertising());
     orders.track({token:'capability',orderId:7},purchaseConsentSnapshot(choice(),notice,now),notice);
     await new Promise(resolve=>setImmediate(resolve));
@@ -58,11 +59,29 @@ test('denial during submit is retained until buyer capability arrives, and faile
     assert.equal(orders.orders.size,0);
 });
 
+test('withdrawal stays attached after an uncertain order response and is omitted from retry', async () => {
+    const calls = [];
+    const tracker = new PurchaseConsentOrders({ clock: () => now, revoke: async scope => {
+        calls.push(scope);
+        return true;
+    } });
+    const attempt = tracker.capture(purchaseConsentSnapshot(choice(), notice, now), notice);
+    assert.equal(tracker.canDispatch(attempt), true);
+    tracker.observe(denyAdvertising());
+    assert.equal(tracker.canDispatch(attempt), false);
+    const scope = { token: 'recovered-capability', orderId: 9 };
+    tracker.authorize(attempt, scope);
+    await new Promise(resolve => setImmediate(resolve));
+    tracker.observe(denyAdvertising());
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(calls, [scope]);
+});
+
 test('source snapshot never upgrades individually denied advertising purposes',async()=>{
     const {readConsentSource}=await import('../../src/components/forms/measurement_consent_source.js');
     const scope={consentRevision:'b'.repeat(32),websiteOrigin:notice.origin,requiredPurposes:['analytics','marketing']};
     for(const key of ['ad_storage','ad_user_data','ad_personalization']) for (const denied of [false,'denied',null]) for (const location of ['raw','snapshot']) {
-        const raw={marketing:true,consentRevision:scope.consentRevision,purchaseConsent:{source:'cookiebot',timestamp:new Date(now-1000).toISOString(),ad_storage:true,ad_user_data:true,ad_personalization:true}};
+        const raw={marketing:true,consentRevision:scope.consentRevision,purchaseConsent:{source:'cookiebot',capturedAt:new Date(now-1000).toISOString(),ad_storage:true,ad_user_data:true,ad_personalization:true}};
         (location === 'raw' ? raw : raw.purchaseConsent)[key]=denied;
         const value=readConsentSource({read:()=>raw},scope);
         assert.equal(value.purchaseConsent[key],denied===false ? false : undefined);
@@ -92,22 +111,22 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
             consentSource:{configured:true,read:()=>saved,subscribe:callback=>{notify=callback;return ()=>{};}}});
         host.syncConsent(frame,record);
         assert.equal(messages.at(-1).consent.marketing,false,'the host owns tag consent');
-        assert.equal(messages.at(-1).consent.purchaseConsent.timestamp,saved.purchaseConsent.timestamp);
+        assert.equal(messages.at(-1).consent.purchaseConsent.capturedAt,saved.purchaseConsent.capturedAt);
         assert.equal(messages.at(-1).binding.version,1);
         assert.equal(messages.at(-1).consent.purchaseConsent.matching,undefined);
         assert.equal(cookieReads,0,'consent renewal never reads Meta cookies');
         const {measurementManifest}=await import('../../src/components/forms/form_measurement_contract.js');
         const {policy}=await import('../support/measurement_fixture.js');
         const request={requestId:'checkout-1',leaseId:record.lease.id,manifest:record.manifest,origin:notice.origin,
-            revision:notice.revision,decisionAt:saved.purchaseConsent.timestamp,consentRevision:saved.purchaseConsent.consentRevision,
+            revision:notice.revision,consentRevision:saved.purchaseConsent.consentRevision,
             binding:saved.purchaseConsent.binding};
         host.receive(frame,record,{type:'meta-checkout-matching-request',matchingRequest:request});
         assert.equal(cookieReads,0,'consent-only manifest cannot read Meta cookies');
-        record.manifest=measurementManifest(policy,policy.form_link);
+        record.manifest=measurementManifest({...policy,measurement_consent_bridge:true},policy.form_link);
         const live={...request,manifest:{...record.manifest,consent_revision:record.manifest.consent_revision}};
         live.manifest.website_consent_bindings=[{websiteOrigin:notice.origin,effective:true,...request.binding}];
         record.manifest=live.manifest;
-        for(const wrong of [{...live,leaseId:'obsolete'},{...live,revision:undefined},{...live,decisionAt:'older'}]) {
+        for(const wrong of [{...live,leaseId:'obsolete'},{...live,revision:undefined},{...live,consentRevision:'obsolete'}]) {
             host.receive(frame,record,{type:'meta-checkout-matching-request',matchingRequest:wrong});
         }
         assert.equal(cookieReads,0,'no matching for stale or unscoped requests');
@@ -118,7 +137,7 @@ test('host dataLayer bridge carries the saved CAPI snapshot while keeping host t
         saved=null;notify();
         assert.equal(messages.at(-1).consent.purchaseConsent,undefined,'source loss cannot retain a snapshot');
         const {purchase}=await import('../support/measurement_fixture.js');
-        record.manifest=measurementManifest(policy,policy.form_link);record.lease.generation=1;
+        record.manifest=measurementManifest({...policy,measurement_consent_bridge:true},policy.form_link);record.lease.generation=1;
         record.pageContext={page_type:'confirmation',language:'en'};
         const delivery={type:'analytics',measurement:{protocol:3,manifest:record.manifest,generation:1,leaseId:record.lease.id}};
         const meta={...purchase,event:'meta_purchase',meta_purchase_allowed:true,meta_purchase_expires_at:Date.now()+60000};
@@ -150,7 +169,7 @@ test('client snapshot also excludes unknown fields and missing notice cannot bre
 });
 
 test('denial then regrant before submit response remains withdrawn for the original snapshot',async()=>{
- const calls=[],orders=new PurchaseConsentOrders({clock:()=>now,revoke:async scope=>{calls.push(scope);return true;}});
+ const calls=[],orders=new PurchaseConsentOrders({clock:()=>now+1000,revoke:async scope=>{calls.push(scope);return true;}});
  orders.observe(choice());
  const attempt=orders.capture(purchaseConsentSnapshot(choice(),notice,now),notice);
  orders.observe(denyAdvertising());
@@ -171,7 +190,7 @@ test('generic source cannot fill missing individual ad purposes from marketing',
   assert.equal(purchaseConsentSnapshot(value,notice,now),null);
  }
  for (const marketing of [true,false]) {
-  const raw={marketing,consentRevision:scope.consentRevision,purchaseConsent:{source:'cookiebot',timestamp:new Date(now-1000).toISOString()}};
+  const raw={marketing,consentRevision:scope.consentRevision,purchaseConsent:{source:'cookiebot',capturedAt:new Date(now-1000).toISOString()}};
   const value=readConsentSource({read:()=>raw},scope);
   for (const key of ['ad_storage','ad_user_data','ad_personalization']) assert.equal(value.purchaseConsent[key],undefined);
  }
@@ -312,4 +331,83 @@ test('checkout only asks the host after a fresh notice and discards matching if 
         return {fbp:'fb.1.1795000000000.mustBeDiscarded'};
     });
     assert.deepEqual(await collect(),{});
+});
+
+for (const offset of [-3600000,3600000]) test('withdrawal during checkout survives client clock offset '+offset,async()=>{
+ const calls=[],orders=new PurchaseConsentOrders({clock:()=>now+offset+1000,revoke:async(scope,denial)=>{calls.push({scope,denial});return true;}});
+ const grant=choice();grant.expiresAt=now+offset+60000;grant.purchaseConsent.capturedAt=new Date(now+offset).toISOString();
+ const order=orders.capture(purchaseConsentSnapshot(grant,notice,now+offset),notice);
+ const denial=denyAdvertising();denial.expiresAt=now+offset+60000;denial.purchaseConsent.capturedAt=new Date(now+offset+50).toISOString();
+ orders.observe(denial);orders.observe(grant);
+ orders.authorize(order,{token:'buyer',orderId:99});await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,1);assert.equal(calls[0].denial.ad_storage,false);
+});
+test('generic marketing denial or unknown state cannot grant CAPI, while ordinary-only cutoff can',async()=>{
+ const {readConsentSource}=await import('../../src/components/forms/measurement_consent_source.js');
+ const scope={consentRevision:'b'.repeat(32),requiredPurposes:['analytics','marketing'],websiteOrigin:notice.origin,includePurchaseConsent:true};
+ for (const marketing of [false,undefined,null]) {
+  const raw={...choice(),consentRevision:scope.consentRevision,marketing};
+  assert.equal(purchaseConsentSnapshot(readConsentSource({read:()=>raw},scope),notice),null);
+ }
+ const raw={...choice(),binding:choice().purchaseConsent.binding,consentRevision:scope.consentRevision,marketing:false,ordinaryValid:false};
+ assert.ok(purchaseConsentSnapshot(readConsentSource({read:()=>raw},scope),notice));
+});
+
+test('explicit bridge carries CAPI-only consent and never falls back over an explicit denial',async()=>{
+ const {JSDOM}=await import('jsdom');const {build}=await import('esbuild');
+ const bundle=await build({stdin:{contents:`import {createHostMeasurement} from './src/embed/host_measurement.js';window.createHostMeasurement=createHostMeasurement;`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
+ const win=new JSDOM('',{url:notice.origin,runScripts:'outside-only'}).window;
+ try{
+  win.eval(bundle.outputFiles[0].text);const frame=win.document.createElement('iframe'),messages=[];
+  const snapshot=choice().purchaseConsent;
+  const manifest={organization:1,unit:2,processing_revision:'revision',consent_revision:snapshot.consentRevision,measurement_consent_bridge:true,
+   website_consent_bindings:[{...snapshot.binding,effective:true,websiteOrigin:notice.origin}]};
+  const record={manifest,channel:{send:(type,data)=>messages.push(data.measurement)}};
+  const host=win.createHostMeasurement({frames:new Map([[frame,record]]),currentRecord:()=>true,scan(){},disposeRecord(){},
+   consentSource:{configured:true,read:()=>{throw Error('explicit choice must own CAPI');},subscribe:()=>()=>{}}});
+  for(const decidedAt of [undefined,'2000-01-01T00:00:00.000Z']) {
+   host.api.connectMeasurementConsent(frame,{subscribe:()=>()=>{},read:()=>({ordinaryValid:false,analytics:false,marketing:false,
+    consentRevision:snapshot.consentRevision,binding:snapshot.binding,purchaseConsent:{...snapshot,decidedAt}})});
+   const value=messages.at(-1).consent;assert.equal(value.analytics,false);assert.equal(value.marketing,false);
+   assert.equal(value.purchaseConsent.ad_storage,true);assert.equal(value.purchaseConsent.decidedAt,decidedAt);
+  }
+  host.api.connectMeasurementConsent(frame,{subscribe:()=>()=>{},read:()=>({analytics:false,marketing:false,consentRevision:snapshot.consentRevision,binding:snapshot.binding})});
+  assert.equal(messages.at(-1).consent.purchaseConsent,undefined,'no configured-source fallback over explicit denial');
+  host.stopHeartbeat(record);
+ }finally{win.close()}
+});
+
+test('complete partial advertising refusals cross the explicit bridge and withdraw the captured order',async()=>{
+ const {JSDOM}=await import('jsdom');const {build}=await import('esbuild');
+ const bundle=await build({stdin:{contents:`import {createHostMeasurement} from './src/embed/host_measurement.js';window.createHostMeasurement=createHostMeasurement;`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
+ const win=new JSDOM('',{url:notice.origin,runScripts:'outside-only'}).window;
+ try{
+  win.eval(bundle.outputFiles[0].text);const frame=win.document.createElement('iframe'),messages=[];
+  const snapshot=choice().purchaseConsent;
+  const record={manifest:{organization:1,unit:2,processing_revision:'revision',consent_revision:snapshot.consentRevision,measurement_consent_bridge:true,
+   website_consent_bindings:[{...snapshot.binding,effective:true,websiteOrigin:notice.origin}]},channel:{send:(type,data)=>messages.push(data.measurement)}};
+  const host=win.createHostMeasurement({frames:new Map([[frame,record]]),currentRecord:()=>true,scan(){},disposeRecord(){}});
+  let raw,notify;
+  const source={subscribe:fn=>{notify=fn;return ()=>{};},read:()=>({...raw,consentRevision:snapshot.consentRevision,binding:snapshot.binding})};
+  for(const purpose of ['ad_storage','ad_user_data','ad_personalization']) {
+   raw={analytics:true,marketing:true,purchaseConsent:{...snapshot}};
+   host.api.connectMeasurementConsent(frame,source);
+   const initial=messages.at(-1).consent,calls=[];
+   const orders=new PurchaseConsentOrders({revoke:async(scope,denial)=>{calls.push({scope,denial});return true;}});
+   orders.observe(initial);orders.track({token:'buyer-capability',orderId:42},purchaseConsentSnapshot(initial,notice),notice);
+   raw={analytics:true,marketing:false,purchaseConsent:{...snapshot,[purpose]:false}};notify();
+   const refusal=messages.at(-1).consent;
+   assert.equal(purchaseConsentSnapshot(refusal,notice),null,'a refusal cannot become a grant');
+   orders.observe(refusal);await new Promise(resolve=>setImmediate(resolve));
+   assert.equal(calls.length,1,purpose);
+   for(const key of ['ad_storage','ad_user_data','ad_personalization'])assert.equal(calls[0].denial[key],key!==purpose);
+  }
+  host.stopHeartbeat(record);
+ }finally{win.close()}
+});
+test('ordinary-invalid source without a purchase snapshot remains unknown even for a CAPI caller',async()=>{
+ const {readConsentSource}=await import('../../src/components/forms/measurement_consent_source.js');
+ const scope={consentRevision:'b'.repeat(32),requiredPurposes:['analytics','marketing'],includePurchaseConsent:true};
+ for(const purchaseConsent of [null,undefined])assert.equal(readConsentSource({read:()=>({consentRevision:scope.consentRevision,
+  analytics:false,marketing:false,ordinaryValid:false,purchaseConsent})},scope),null);
 });

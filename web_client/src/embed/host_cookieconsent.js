@@ -1,3 +1,4 @@
+import {purchaseObservation, auditDecision} from './purchase_observation.js';
 import {consentValidity} from './host_consent_validity.js';
 // CookieConsent v3 category-level opt-in records. The organizer archives the
 // coverage mapping; CMP state is not a cryptographic coverage attestation.
@@ -20,6 +21,7 @@ export function createCookieConsentSource(win, input) {
         else config = Object.freeze({...config, categories:Object.freeze({...categories})});
     } catch { config = null; }
     const listeners = new Set();
+    const observePurchase = purchaseObservation(win);
     let timer, last, pending = false;
     const read = scope => {
         try {
@@ -32,10 +34,11 @@ export function createCookieConsentSource(win, input) {
             // storage too, including expirationTime (upstream v3 utils/cookies.js).
             const cookie = cmp.getCookie(), categories = cmp.getConfig('categories');
             if (cookie?.revision !== cmp.getConfig('revision') || !Array.isArray(cookie.categories) || !cookie.categories.every(categoryName) ||
-                typeof cookie.consentId !== 'string' || !cookie.consentId || !timestamp(cookie.consentTimestamp) ||
-                !timestamp(cookie.lastConsentTimestamp) || !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() ||
+                typeof cookie.consentId !== 'string' || !cookie.consentId ||
+                !Number.isFinite(cookie.expirationTime) || cookie.expirationTime <= win.Date.now() ||
                 !cookie.services || typeof cookie.services !== 'object' || Array.isArray(cookie.services)) return null;
-            if (config.consentValidFrom !== undefined && !consentValidity(config)(Date.parse(cookie.lastConsentTimestamp), win.Date.now())) return null;
+            const ordinaryValid = timestamp(cookie.consentTimestamp) && timestamp(cookie.lastConsentTimestamp) &&
+                (config.consentValidFrom === undefined || consentValidity(config)(Date.parse(cookie.lastConsentTimestamp), win.Date.now()));
             const choice = {};
             for (const purpose of ['analytics', 'marketing']) {
                 const name = config.categories[purpose], category = categories?.[name];
@@ -50,11 +53,11 @@ export function createCookieConsentSource(win, input) {
             }
             const unsupportedConsent = typeof win.__tcfapi !== 'undefined';
             const marketing = !unsupportedConsent && choice.marketing;
-            const purchaseConsent = unsupportedConsent ? null : {
-                source:'cookieconsent',timestamp:new Date(Date.parse(cookie.lastConsentTimestamp)).toISOString(),
+            const purchaseConsent = unsupportedConsent ? null : observePurchase({
+                source:'cookieconsent',...auditDecision(cookie.lastConsentTimestamp),
                 ad_storage:marketing,ad_user_data:marketing,ad_personalization:marketing,
-            };
-            return {purchaseConsent,consentRevision:config.consentRevision,analytics:choice.analytics,marketing};
+            });
+            return {purchaseConsent,...(!ordinaryValid ? {ordinaryValid:false} : {}),consentRevision:config.consentRevision,analytics:ordinaryValid && choice.analytics,marketing:ordinaryValid && marketing};
         } catch { return null; }
     };
     const tick = () => {
