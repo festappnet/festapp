@@ -120,6 +120,7 @@
       "cancelled": "Zrušeno",
       "expired": "Platnost zprávy vypršela",
       "send": "Přijato poskytovatelem",
+      "preparation_failed": "Příprava zprávy selhala",
       "not_accepted": "Poskytovatel zprávu nepřijal",
       "done": "Dokončeno",
       "tracking_disabled": "Sledování je vypnuté",
@@ -154,6 +155,7 @@
     "recovery": {
       "repairHeading": "Opravit e-mail",
       "repairInstruction": "Na tuto adresu nelze doručovat. Zadejte jiný e-mail.",
+      "preparationRetry": "Příprava zprávy selhala. Systém pokus zopakuje automaticky.",
       "verifyInstruction": "Před dalším odesláním ověřte e-mail zákazníka a stav doručení.",
       "heading": "Doručení e-mailu",
       "saveOnly": "Pouze uložit",
