@@ -58,7 +58,14 @@ class _SongbookPageState extends State<SongbookPage> {
 
   @override
   Widget build(BuildContext context) {
-    isDarkMode = isDarkMode ?? ThemeConfig.isDarkMode(context);
+    isDarkMode ??= ThemeConfig.isDarkMode(context);
+    final dark = isDarkMode ?? isDarkModeDefault;
+    final theme = dark ? darkTheme : lightTheme;
+    final barBackground =
+        theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface;
+    final barForeground =
+        theme.appBarTheme.foregroundColor ??
+        ThemeConfig.textColorForBackground(barBackground);
     return PopScope(
       onPopInvokedWithResult: (result, x) {
         if (_isDialogOpen) {
@@ -71,7 +78,7 @@ class _SongbookPageState extends State<SongbookPage> {
         result = true; // Allow page pop
       },
       child: Theme(
-        data: isDarkMode ?? isDarkModeDefault ? darkTheme : lightTheme,
+        data: theme,
         child: Scaffold(
           appBar: AppBar(
             title: Text(
@@ -93,20 +100,24 @@ class _SongbookPageState extends State<SongbookPage> {
             actions: [
               Row(
                 children: [
-                  Icon(Icons.wb_sunny, color: Colors.grey),
-                  Switch(
-                    value: isDarkMode ?? isDarkModeDefault,
-                    onChanged: (value) {
-                      setState(() {
-                        isDarkMode = value;
-                      });
-                    },
-                    activeThumbColor: Colors.grey[600],
-                    inactiveThumbColor: Colors.grey[400],
-                    inactiveTrackColor: Colors.grey[300],
-                    activeTrackColor: Colors.grey[600],
+                  Icon(Icons.wb_sunny, color: barForeground),
+                  Tooltip(
+                    message: CommonStrings.dark,
+                    child: Switch(
+                      value: dark,
+                      onChanged: (value) {
+                        setState(() {
+                          isDarkMode = value;
+                        });
+                      },
+                      activeThumbColor: barBackground,
+                      activeTrackColor: barForeground,
+                      inactiveThumbColor: barForeground,
+                      inactiveTrackColor: barBackground,
+                      trackOutlineColor: WidgetStatePropertyAll(barForeground),
+                    ),
                   ),
-                  Icon(Icons.nightlight_round, color: Colors.grey),
+                  Icon(Icons.nightlight_round, color: barForeground),
                 ],
               ),
             ],
