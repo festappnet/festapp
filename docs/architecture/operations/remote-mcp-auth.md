@@ -31,7 +31,9 @@ exact trusted HTTPS `allowedOrigins`, explicit `dataProfile` and optional
 ceiling must include base access and all dependency scopes. Static registrations
 take precedence. The maintained provider owns fetch safety, metadata identity,
 caching and exact redirect matching. Festapp admits only public native metadata
-clients with literal loopback HTTP callbacks. Remote web CIMD and open dynamic
+clients with literal IP loopback (`127.0.0.1`, `[::1]`) HTTP callbacks; the
+`localhost` callback exception applies only to static registrations, because
+callback form-action CSP is derived from `clients`. Remote web CIMD and open dynamic
 registration are not enabled. Removing trust rejects existing credentials on
 their next use. Supabase-authenticated fetch is never reused for metadata fetch.
 
@@ -48,6 +50,34 @@ The fixed `/oauth/callback` must be registered for Inspector, independently of
 Codex's `/callback`. OAuth error pages classify client, metadata, scope and
 callback failures without echoing request parameters, credentials or details.
 See the [setup workflow](../../../tools/festapp/README.md#official-inspector-web-ui).
+
+### Claude Code client registration
+
+In the protected `remote-config.json`, add a `clients` entry by copying
+`festapp-codex`. Keep its data profile, scope ceiling, resource and transport
+restrictions, and consent settings. Set the following fields on the copy.
+
+```json
+{
+  "id": "festapp-claude-code",
+  "name": "Claude Code",
+  "applicationType": "native",
+  "tokenEndpointAuthMethod": "none",
+  "redirectUris": ["http://localhost/callback"]
+}
+```
+
+Only protected static public native registrations can use this HTTP
+`localhost` exception. The registered URI must be in canonical URL form,
+with no raw `?`, `#` or `@`. Trusted metadata clients and Inspector use
+loopback IP literals. The provider requires the registered host and path
+and allows the local listener port to vary. The code exchange requires the
+complete redirect URI used at authorization.
+
+Before rollout, validate the protected configuration against the candidate
+image. Once the issuer loads it, follow the [Claude Code connection guide](../../../tools/festapp/README.md#claude-code-remote-connection)
+and verify that first-party consent returns to the local listener and
+Claude Code lists the tools for the approved grant.
 
 ## Delegation scope and creation
 
@@ -134,8 +164,8 @@ must be explicitly registered, never accepted from arbitrary request metadata.
 
 The separately registered public native client `festapp-codex` uses
 `applicationType: native` and `http://127.0.0.1/callback`. Its callback port may
-vary as required for a local listener; the path is exact, and non-loopback hosts
-are rejected. Native callback configuration rejects userinfo, query and fragment.
+vary as required for a local listener; the path is exact, and other hosts are
+rejected. Native callback configuration rejects userinfo, query and fragment.
 This does not widen web-client redirects or enable dynamic registration.
 
 The browser logs into downstream Supabase normally. Explicit consent binds one
