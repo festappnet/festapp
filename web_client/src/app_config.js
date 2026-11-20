@@ -32,7 +32,8 @@ export class AppConfig {
 
     
     // Localization
-    static supportedLanguages = ['cs', 'en', 'es'];
+    static supportedLanguages = ['cs', 'en', 'es', 'sk'];
+    static legacyAutoLanguage = null;
     static defaultLanguage = 'cs';
 
     // Local Storage Keys

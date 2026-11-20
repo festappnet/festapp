@@ -3,6 +3,20 @@ import { AppConfig } from '../app_config.js';
 
 // EasyLocalization/SharedPreferences encodes its browser value as JSON.
 const sharedLocaleKey = 'flutter.locale';
+const explicitLocaleKey = 'flutter.locale.manuallySelected';
+const languageCode = value => typeof value === 'string' ? value.toLowerCase().split(/[-_]/)[0] : null;
+const supportedLanguage = locale => AppConfig.supportedLanguages.includes(locale);
+
+function browserLocale() {
+    const preferences = globalThis.navigator?.languages;
+    const candidates = preferences?.length ? preferences : [globalThis.navigator?.language];
+    return candidates.map(languageCode).find(supportedLanguage) ?? AppConfig.defaultLanguage;
+}
+
+function saveLocale(locale) {
+    browserStorage.setItem(sharedLocaleKey, JSON.stringify(locale));
+    browserStorage.removeItem(AppConfig.Keys.locale);
+}
 // Public documents are published in these languages independently of the
 // tenant's application language selector. They never persist a preference.
 const publicDocumentLocales = ['cs', 'en'];
@@ -11,10 +25,10 @@ const supportsLocale = (locale, persist) => AppConfig.supportedLanguages.include
 function savedLocale() {
     let shared;
     try { shared = JSON.parse(browserStorage.getItem(sharedLocaleKey)); } catch { /* Ignore corrupt preferences. */ }
-    const normalize = value => typeof value === 'string' ? value.toLowerCase().split(/[-_]/)[0] : null;
+    const manuallySelected = browserStorage.getItem(explicitLocaleKey) === 'true';
     for (const candidate of [shared, browserStorage.getItem(AppConfig.Keys.locale)]) {
-        const locale = normalize(candidate);
-        if (AppConfig.supportedLanguages.includes(locale)) return locale;
+        const locale = languageCode(candidate);
+        if (supportedLanguage(locale) && (manuallySelected || locale !== AppConfig.legacyAutoLanguage)) return locale;
     }
     return null;
 }
@@ -51,23 +65,10 @@ export class LocalizationService {
     }
 
     static async _initialize({locale, persist = true} = {}) {
-        // 1. Load preference
         const saved = savedLocale();
-        if (locale !== undefined) {
-            if (!supportsLocale(locale, persist)) throw new Error('Unsupported document locale');
-            LocalizationService.currentLocale = locale;
-        } else if (saved && AppConfig.supportedLanguages.includes(saved)) {
-            LocalizationService.currentLocale = saved;
-        } else {
-            // Auto-detect? For now default to CS as primary
-            // Or prioritize browser lang if supported
-             const browserLang = navigator.language.split('-')[0];
-             if (AppConfig.supportedLanguages.includes(browserLang)) {
-                 LocalizationService.currentLocale = browserLang;
-             }
-        }
-
-        await LocalizationService.loadTranslations(LocalizationService.currentLocale, {persist});
+        if (locale !== undefined && !supportsLocale(locale, persist)) throw new Error('Unsupported document locale');
+        const selected = locale ?? saved ?? browserLocale();
+        await LocalizationService.loadTranslations(selected, {persist, save: persist && locale === undefined && saved !== null});
         if (persist) LocalizationService._startPreferenceSync();
     }
 
@@ -78,7 +79,7 @@ export class LocalizationService {
             if (locale && locale !== LocalizationService.currentLocale) window.location.reload();
         };
         const storage = event => {
-            if (event.key === sharedLocaleKey || event.key === AppConfig.Keys.locale || event.key === null) sync();
+            if ([sharedLocaleKey, explicitLocaleKey, AppConfig.Keys.locale, null].includes(event.key)) sync();
         };
         window.addEventListener('storage', storage);
         window.addEventListener('focus', sync);
@@ -91,24 +92,23 @@ export class LocalizationService {
         };
     }
 
-    static async loadTranslations(locale, {persist = true} = {}) {
+    static async loadTranslations(locale, {persist = true, save = persist} = {}) {
         if (!supportsLocale(locale, persist)) throw new Error('Unsupported locale');
-        try {
-            const fallback = persist && locale !== AppConfig.defaultLanguage
-                ? loadCatalog(AppConfig.defaultLanguage).catch(() => ({}))
-                : {};
-            const [translations, fallbackTranslations] = await Promise.all([loadCatalog(locale), fallback]);
-            LocalizationService.translations = translations;
-            LocalizationService.fallbackTranslations = fallbackTranslations;
-            LocalizationService.currentLocale = locale;
-            if (persist) {
-                browserStorage.setItem(sharedLocaleKey, JSON.stringify(locale));
-                browserStorage.removeItem(AppConfig.Keys.locale);
-            }
-            document.documentElement.lang = locale;
-        } catch (e) {
-            console.error("Failed to load translations", e);
+        const defaultLocale = AppConfig.defaultLanguage;
+        const fallback = persist && locale !== defaultLocale ? loadCatalog(defaultLocale) : null;
+        const [primary, secondary] = await Promise.allSettled([loadCatalog(locale), fallback]);
+        const defaultCatalog = secondary.status === 'fulfilled' ? secondary.value : null;
+        if (primary.status === 'rejected' && defaultCatalog === null) {
+            console.error('Failed to load translations', primary.reason);
+            return false;
         }
+        const selected = primary.status === 'fulfilled';
+        LocalizationService.translations = selected ? primary.value : defaultCatalog;
+        LocalizationService.fallbackTranslations = selected ? defaultCatalog ?? {} : {};
+        LocalizationService.currentLocale = selected ? locale : defaultLocale;
+        if (save && selected) saveLocale(locale);
+        document.documentElement.lang = LocalizationService.currentLocale;
+        return selected;
     }
 
     static tr(key, args = {}, fallback = key) {
@@ -133,8 +133,10 @@ export class LocalizationService {
     }
 
     static async setLocale(locale) {
-        await LocalizationService.loadTranslations(locale);
-        // Reload page to re-render everything with new strings
-        window.location.reload();
+        if (await LocalizationService.loadTranslations(locale, {save: false})) {
+            browserStorage.setItem(explicitLocaleKey, 'true');
+            saveLocale(locale);
+            window.location.reload();
+        }
     }
 }

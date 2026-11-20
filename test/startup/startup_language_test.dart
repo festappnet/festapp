@@ -1,4 +1,5 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -10,6 +11,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('regional portal selects the first supported browser language', () {
+    const supported = [Locale('cs'), Locale('sk')];
+    Locale resolve(List<Locale> browser) =>
+        resolveBrowserLocale(browser, supportedLocales: supported);
+
+    expect(
+      resolve(const [Locale('sk', 'SK'), Locale('cs', 'CZ')]),
+      const Locale('sk'),
+    );
+    expect(
+      resolve(const [Locale('cs', 'CZ'), Locale('sk', 'SK')]),
+      const Locale('cs'),
+    );
+    expect(
+      resolve(const [Locale('en', 'US'), Locale('sk', 'SK')]),
+      const Locale('sk'),
+    );
+    expect(resolve(const [Locale('en', 'US')]), const Locale('cs'));
+  });
+
   for (final saved in ['cs', 'en', 'sk', 'de', 'pl', 'uk']) {
     testWidgets('startup failure honors saved $saved while device is English', (
       tester,
@@ -20,7 +41,8 @@ void main() {
       final language = await resolveStartupLanguage(defaultLanguage: 'cs');
       expect(language, saved);
       await tester.pumpWidget(
-        MaterialApp(builder: DependencyMaterialBridge.builder,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
           home: StartupFailureScreen(
             phase: 'S05',
             language: language,
