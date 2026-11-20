@@ -214,11 +214,10 @@ export class UserHeader extends HTMLElement {
             container.classList.add('has-public-navigation');
             const navigation = document.createElement('nav');
             navigation.className = 'header-public-navigation';
-            const english = document.documentElement.lang.startsWith('en');
-            navigation.setAttribute('aria-label', english ? 'Main navigation' : 'Hlavní navigace');
+            navigation.setAttribute('aria-label', CommonStrings.mainNavigation);
             const onHome = window.location.pathname === '/';
-            const primaryLink = onHome ? ['/events', english ? 'Find an event' : 'Najít akci'] : ['/', english ? 'For organizers' : 'Pro pořadatele'];
-            for (const [href, label] of [primaryLink, [helpRoot, english ? 'Help' : 'Nápověda']]) {
+            const primaryLink = onHome ? ['/events', CommonStrings.findEvent] : ['/', CommonStrings.forOrganizers];
+            for (const [href, label] of [primaryLink, [helpRoot, CommonStrings.help]]) {
                 const link = document.createElement('a');
                 link.href = href;
                 link.textContent = label;

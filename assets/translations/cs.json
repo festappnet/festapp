@@ -2029,6 +2029,10 @@
     "pregeneratedTicketsDescription": "Umožní vytvářet dávky vstupenek pro tisk a ruční prodej."
   },
   "FeatureUser": {
+    "mainNavigation": "Hlavní navigace",
+    "findEvent": "Najít akci",
+    "forOrganizers": "Pro pořadatele",
+    "help": "Nápověda",
     "signupLegalNotice": "Vytvořením účtu souhlasíte s {terms} a berete na vědomí {privacy}.",
     "signupTerms": "podmínkami používání",
     "signupPrivacy": "zásady ochrany osobních údajů",

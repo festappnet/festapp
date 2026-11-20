@@ -889,6 +889,13 @@
     "allowAdminAssign": "Administrátori môžu priraďovať existujúcich účastníkov"
   },
   "FeatureUser": {
+    "mainNavigation": "Hlavná navigácia",
+    "findEvent": "Nájsť podujatie",
+    "forOrganizers": "Pre organizátorov",
+    "help": "Pomoc",
+    "addEvent": "Vytvoriť podujatie zdarma",
+    "addEventShort": "Vytvoriť zdarma",
+    "myEvents": "Moje podujatia",
     "invitationSent": "Odoslané",
     "invitationFailed": "Neúspešné",
     "retryFailedInvitations": "Skontrolovať a zopakovať neodoslané",

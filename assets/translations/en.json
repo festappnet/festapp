@@ -2028,6 +2028,10 @@
     "pregeneratedTicketsDescription": "Create batches of tickets for printing and manual sales."
   },
   "FeatureUser": {
+    "mainNavigation": "Main navigation",
+    "findEvent": "Find an event",
+    "forOrganizers": "For organizers",
+    "help": "Help",
     "signupLegalNotice": "By clicking “{button}”, you agree to the {terms} and acknowledge the {privacy}.",
     "signupTerms": "terms of use",
     "signupPrivacy": "privacy policy",
