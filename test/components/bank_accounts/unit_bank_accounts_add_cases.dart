@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/bank_accounts/views/unit_bank_accounts_screen.dart';
 import 'package:http/http.dart' as http;
@@ -114,9 +115,24 @@ void main() {
       await tester.pumpAndSettle();
       final national = find.byKey(const ValueKey('bank-account-national'));
       final iban = find.byKey(const ValueKey('bank-account-iban'));
+      final bankCode = find.byKey(const ValueKey('bank-account-bank-code'));
+      final slash = find.text('/');
+      expect(
+        tester.getRect(national).right,
+        lessThan(tester.getRect(slash).left),
+      );
+      expect(
+        tester.getRect(slash).right,
+        lessThan(tester.getRect(bankCode).left),
+      );
       await tester.enterText(national, '19-20001457 / 0800');
       await tester.pump();
       expect(find.text('Česká spořitelna, a.s.'), findsOneWidget);
+      expect(
+        tester.widget<TextFormField>(national).controller!.text,
+        '19-20001457',
+      );
+      expect(tester.widget<TextFormField>(bankCode).controller!.text, '0800');
 
       await tester.tap(find.text(BankAccountStrings.inputModeIban));
       await tester.pumpAndSettle();
@@ -127,15 +143,12 @@ void main() {
 
       await tester.tap(find.text(BankAccountStrings.inputModeSplit));
       await tester.pumpAndSettle();
-      await tester.enterText(national, '19-20001457 / 9999');
+      await tester.enterText(bankCode, '9999');
       final save = find.text(BankAccountStrings.saveChanges);
       await tester.ensureVisible(save);
       await tester.tap(save);
       await tester.pumpAndSettle();
-      expect(
-        find.text(BankAccountStrings.invalidNationalAccount),
-        findsOneWidget,
-      );
+      expect(find.text(CommonStrings.invalidFormat), findsOneWidget);
 
       await tester.tap(find.text(BankAccountStrings.inputModeIban));
       await tester.pumpAndSettle();
@@ -150,8 +163,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.widget<TextFormField>(national).controller!.text,
-        '19-20001457/0800',
+        '19-20001457',
       );
+      expect(tester.widget<TextFormField>(bankCode).controller!.text, '0800');
 
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
