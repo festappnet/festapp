@@ -45,8 +45,15 @@ const approvalRequestInspection = new Map([
     ['units.metaCapiApproval.request', 'festapp_units_meta_capi_approval_inspect'],
 ]);
 export function safeError(error, { operation } = {}) {
-    if (error instanceof OperationError && error.code === 'COMMITTED_READBACK_FAILED')
-        return { code: error.code, message: `Committed commandId=${error.receiptId}; receiptId=${error.receiptId}. Result readback failed. Do not submit a new command; inspect the saved resource.`, retryable: false };
+    if (error instanceof OperationError && error.code === 'COMMITTED_READBACK_FAILED') {
+        const { commandId, receiptId, occasionId, formId } = error.receipt;
+        const target = formId ? ` Form ID ${formId} in occasion ${occasionId}.` : '';
+        const recovery = operation === 'forms.delete' ? 'Check the form list in administration.'
+            : formId ? 'Check the form in administration or inspect it by ID.'
+            : 'Check the saved result in administration.';
+        return { code: error.code, retryable: false,
+            message: `Committed commandId=${commandId}, receiptId=${receiptId}. Result readback failed.${target} ${recovery} If you need the original result, retry only with the same commandId and identical payload.` };
+    }
     const inspect = approvalRequestInspection.get(operation);
     const recovery = inspect && `The approval request outcome is uncertain. Check with ${inspect} and obtain fresh approval before sending a new request.`;
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError')

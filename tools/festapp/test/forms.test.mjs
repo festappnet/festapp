@@ -128,9 +128,13 @@ test('inspect projects future snapshot/envelope keys but validates known values'
  assert.equal(result.ok,true);assert(!JSON.stringify(result).includes('do-not-return'));
  const invalid=fixture({occasionId:7,authoring:{...state,products:'private-invalid-value'}});
  const lines=[],original=console.error;console.error=line=>lines.push(line);
- try{assert.equal((await invalid.ops.invoke('forms.inspect',{occasionId:7,formId:42})).ok,false);}
+ try{
+  assert.equal((await invalid.ops.invoke('forms.inspect',{occasionId:7,formId:42})).ok,false);
+  assert.equal((await f.ops.invoke('forms.inspect',{occasionId:7,formId:43})).ok,false);
+ }
  finally{console.error=original;}
- assert(lines.some(line=>line.includes('schema_validation')&&line.includes('invalid_type')));
+ assert(lines.map(JSON.parse).some(entry=>entry.issues?.some(issue=>issue.path==='authoring.products'&&issue.code==='invalid_type')));
+ assert(lines.map(JSON.parse).some(entry=>entry.phase==='identity'));
  assert(!lines.join('').includes('private-invalid-value'));
 });
 

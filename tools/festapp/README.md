@@ -188,9 +188,14 @@ fields still undergo type validation; unknown properties are never forwarded.
 
 After an attested write commit, a failed result projection or follow-up read returns
 `COMMITTED_READBACK_FAILED` with `retryable:false`. The existing error message
-contains `commandId` and `receiptId` (the HTTP problem uses its existing `title`).
-The write succeeded: inspect the saved resource instead of creating a replacement
-command. The MCP stores no failure state of its own. Only the canonical SQL
+contains `commandId` and `receiptId` plus the verified form identity when available.
+Check the saved resource in administration. For a deleted form, check the form list.
+If you need the original result, use the identical command ID and payload.
+
+For HTTP clients, `Festapp-Write-Outcome: committed` confirms the write.
+Read `Festapp-Command-Id` and `Festapp-Receipt-Id` for recovery. Verified form
+identity is available in `Festapp-Occasion-Id` and `Festapp-Form-Id`. The v1
+problem body retains its existing outcome enum and a stable problem title. The MCP stores no failure state of its own. Only the canonical SQL
 receipt envelope (`mutation.commandId` and `receiptId` equal to the command ID)
 attests a commit, and the SQL receipt owner replays that committed receipt for
 the same command. A replay therefore returns `COMMITTED_READBACK_FAILED` again
@@ -203,7 +208,7 @@ keep their existing errors. Only calls that sent the command ID count.
 Form write receipts and public links are built from their contract keys only.
 New internal form snapshot keys are projected away before strict validation;
 invalid known values remain errors. Server diagnostics include operation, phase,
-issue codes and depths, never snapshot values or upstream exception messages.
+issue codes and depths, and allowlisted form paths. They omit snapshot values, unknown keys and upstream exception messages.
 Public `/healthz` includes `sourceCommit`, a validated build SHA or `null` for an
 unidentified development build. Production images inherit `FESTAPP_SOURCE_SHA`.
 

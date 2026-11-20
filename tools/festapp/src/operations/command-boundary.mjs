@@ -4,7 +4,7 @@ import { OperationError, commandEdgeResponse } from '../errors.mjs';
 // No upstream messages, values, unknown keys, tokens or schema error objects are
 // logged. Codes and depths distinguish schema drift from transport failures.
 // Logging is best effort: it must never replace the error being reported.
-export function outputDiagnostic(operation, error, phase = 'output') {
+export function outputDiagnostic(operation, error, phase = 'output', projectPath) {
     try {
         const issues = error?.name === 'ZodError' && Array.isArray(error?.issues) ? error.issues : null;
         console.error(JSON.stringify({ event: 'festapp_output_failure', operation, phase,
@@ -12,16 +12,16 @@ export function outputDiagnostic(operation, error, phase = 'output') {
                 error instanceof OperationError ? error.code :
                 ['TimeoutError', 'AbortError'].includes(error?.name) ? error.name : 'upstream_failure',
             ...(issues ? { issues: issues.slice(0, 20).map(issue => ({
-                code: issue?.code, depth: Array.isArray(issue?.path) ? issue.path.length : 0,
+                code: issue?.code, ...(projectPath ? { path: projectPath(issue?.path ?? []) } : {}), depth: Array.isArray(issue?.path) ? issue.path.length : 0,
                 ...(typeof issue?.expected === 'string' ? { expected: issue.expected } : {}),
             })) } : {}),
         }));
     } catch { /* Diagnostics are optional. */ }
 }
 
-export function parseOutput(schema, value, operation) {
+export function parseOutput(schema, value, operation, projectPath) {
     try { return schema.parse(value); }
-    catch (error) { outputDiagnostic(operation, error); throw error; }
+    catch (error) { outputDiagnostic(operation, error, 'output', projectPath); throw error; }
 }
 
 // Ticket layout saves keep their own pending-intent recovery (pending/resume),
@@ -58,7 +58,7 @@ function committedEnvelope(method, params, response, commandId) {
 // conflicts and receipt expiry authoritative on every replay.
 export async function commandBoundary(client, descriptor, args, run) {
     if (descriptor.domainReadOnly || UNGUARDED.has(descriptor.id)) return run(client);
-    let receiptId;
+    let receiptId, formId;
     const observe = async (target, method, params) => {
         const response = await target[method](...params);
         const envelope = committedEnvelope(method, params, response, args.commandId);
@@ -74,12 +74,13 @@ export async function commandBoundary(client, descriptor, args, run) {
         const value = Reflect.get(target, key);
         return typeof value === 'function' ? value.bind(target) : value;
     } });
-    try { return await run(tracked); }
+    try { return await run(tracked, id => { formId = id; }); }
     catch (error) {
         if (!receiptId) throw error;
         outputDiagnostic(descriptor.id, error, 'after_commit');
         const failure = new OperationError('COMMITTED_READBACK_FAILED', false);
-        failure.receiptId = receiptId;
+        failure.cause = error;
+        failure.receipt = { commandId: receiptId, receiptId, ...(formId ? { occasionId: args.occasionId, formId } : {}) };
         throw failure;
     }
 }

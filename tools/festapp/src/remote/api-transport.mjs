@@ -11,19 +11,20 @@ export function stepUpChallenge(endpoint) {
     return `DPoP error="insufficient_user_authentication", acr_values="${STRONG_AUTHENTICATION_ACR}", max_age="${STEP_UP_MAX_AGE_SECONDS}", resource_metadata=${JSON.stringify(metadata)}`;
 }
 
-export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer' } = {}) {
-    // A raw committed-readback error carries its receipt only as a property;
-    // safeError renders it into the message used as the problem title.
-    const raw = error instanceof Error && error.code === 'COMMITTED_READBACK_FAILED';
-    const safe = !raw && error?.code && errorStatuses[error.code] ? error : safeError(error);
+export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer', receipt } = {}) {
+    const safe = error?.code && errorStatuses[error.code] ? error : safeError(error);
     const status = errorStatuses[safe.code] ?? 502;
     if (status === 401 && endpoint) res.set('WWW-Authenticate', `${authScheme === 'DPoP' ? 'DPoP' : 'Bearer'} resource_metadata="${new URL(endpoint.publicBase).origin}/.well-known/oauth-protected-resource/integrations", error="${safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' ? 'insufficient_user_authentication' : 'invalid_token'}"`);
     if (safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' && endpoint) res.set('WWW-Authenticate', stepUpChallenge(endpoint));
     if (status === 429 && error?.retryAfter) res.set('Retry-After', String(error.retryAfter));
+    if (safe.code === 'COMMITTED_READBACK_FAILED' && receipt) {
+        res.set({ 'Festapp-Write-Outcome': 'committed', 'Festapp-Command-Id': receipt.commandId, 'Festapp-Receipt-Id': receipt.receiptId });
+        if (receipt.formId) res.set({ 'Festapp-Occasion-Id': String(receipt.occasionId), 'Festapp-Form-Id': String(receipt.formId) });
+    }
     if (status === 405) res.set('Allow', 'POST');
     return res.status(status).set({ 'X-Request-Id': requestId, 'Cache-Control': 'no-store' }).type('application/problem+json').json({
         type: 'https://api.festapp.net/integrations/problems/' + safe.code.toLowerCase(),
-        title: safe.code === 'COMMITTED_READBACK_FAILED' ? safe.message : safe.code, status, code: safe.code, requestId, retryable: Boolean(safe.retryable), outcome,
+        title: safe.code, status, code: safe.code, requestId, retryable: Boolean(safe.retryable), outcome,
     });
 }
 // Approval requests run in one SQL transaction: these outcomes are rolled back
@@ -104,9 +105,16 @@ export function installApi(app, { config, run }) {
                 }
                 check(known.has(id), 'UNKNOWN_OPERATION');
                 check(owner.permitsOperation(id), 'FORBIDDEN');
-                let retryAfter;
-                const result = await operations.invoke(id, req.body, { onAccepted: () => { accepted = true; }, onRetryAfter: seconds => { retryAfter = seconds; } });
-                if (!result.ok) return sendProblem(res, retryAfter ? { ...result.error, retryAfter } : result.error, { requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, outcome: !accepted || known.get(id).domainReadOnly || definiteRejection(id, result.error) ? 'rejected' : 'unknown' });
+                let retryAfter, receipt;
+                const result = await operations.invoke(id, req.body, {
+                    onAccepted: () => { accepted = true; },
+                    onRetryAfter: seconds => { retryAfter = seconds; },
+                    onCommittedReadbackFailure: value => { receipt = value; },
+                });
+                if (!result.ok) return sendProblem(res, retryAfter ? { ...result.error, retryAfter } : result.error, {
+                    requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, receipt,
+                    outcome: !accepted || known.get(id).domainReadOnly || definiteRejection(id, result.error) ? 'rejected' : 'unknown',
+                });
                 const descriptor = publicCatalog(owner.orderSummaryOnly ? 'order-summary' : 'operator').find(d => d.id === id);
                 check(descriptor.output.safeParse(result).success, 'UPSTREAM_CONTRACT_FAILURE');
                 return res.set({ 'X-Request-Id': result.meta.requestId, 'Cache-Control': 'no-store' }).json(result);

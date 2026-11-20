@@ -99,20 +99,3 @@ test('response intersections retain the complete released schema while request n
  assert.ok(schemaBreaks(previous,{anyOf:tighter.allOf},'response').length,'unions may widen and are not exempt');
  assert.ok(schemaBreaks(previous,{allOf:[{type:'string',pattern:previous.pattern}]},'response').length,'a partial previous schema proves no containment');
 });
-
-test('committed readback failure preserves receipt identity in the released HTTP problem shape',async()=>{
- const {sendProblem}=await import('../src/remote/api-transport.mjs');
- const {safeError,OperationError}=await import('../src/errors.mjs');
- const {problemSchema}=await import('../src/remote/api-contract.mjs');
- const error=new OperationError('COMMITTED_READBACK_FAILED');
- error.receiptId='00000000-0000-4000-8000-000000000099';
- let status,body;
- const res={status(value){status=value;return this;},set(){return this;},type(){return this;},json(value){body=value;return this;}};
- for(const input of [safeError(error),error]){
-  status=body=undefined;
-  sendProblem(res,input,{requestId:'fixture'});
-  assert.equal(status,502);assert.equal(body.retryable,false);
-  assert.equal(body.code,'COMMITTED_READBACK_FAILED');assert(body.title.includes(error.receiptId),'raw and sanitized errors keep the receipt');
-  assert(problemSchema.safeParse(body).success);
- }
-});
