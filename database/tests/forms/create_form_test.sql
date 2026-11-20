@@ -18,6 +18,11 @@ DECLARE
     v_second_json jsonb;
     v_second_form_id bigint;
     v_second_type bigint;
+    v_first_product bigint;
+    v_second_product bigint;
+    v_checkout_order bigint;
+    v_checkout jsonb;
+    v_result jsonb;
 BEGIN
     -- 1. Setup Isolated Data
     -- Create temporary Org/Unit/Occasion to avoid polluting real data (e.g. Occasion 1)
@@ -115,6 +120,30 @@ BEGIN
         'An unrelated empty spot group is neither adopted nor filled');
     PERFORM assert_eq((SELECT count(*) FROM eshop.product_types WHERE occasion = v_occasion_id AND type = 'spot'),
         3::bigint, 'Each form creation adds exactly one primary group');
+
+    -- Exercise checkout against both forms' independently created variants.
+    SELECT id INTO STRICT v_first_product FROM eshop.products WHERE product_type = v_first_type;
+    UPDATE eshop.products SET price = 0 WHERE product_type = v_second_type RETURNING id INTO v_second_product;
+    UPDATE public.forms SET is_open = true WHERE id = v_second_form_id;
+    v_checkout_order := public.allocate_ticket_order_identity_internal(v_second_form_id);
+    v_checkout := jsonb_build_object(
+        'form', v_second_json->>'key', 'secret', gen_random_uuid(), 'email', 'new-form@example.invalid',
+        'fields', '[]'::jsonb,
+        'ticket', jsonb_build_array(jsonb_build_object('fields',
+            jsonb_build_array(jsonb_build_object('product_type', v_first_product)))));
+    PERFORM set_config('request.jwt.claim.sub', '', true);
+    PERFORM set_config('request.jwt.claim.role', 'anon', true);
+    v_result := public.finalize_ticket_order_internal_v1(v_checkout_order, v_checkout);
+    PERFORM assert_eq(v_result->>'errorCode', 'PRODUCT_SCOPE_MISMATCH',
+        'A checkout cannot select the other form''s live variant: '||v_result::text);
+    v_checkout := jsonb_set(v_checkout, '{ticket,0,fields,0,product_type}', to_jsonb(v_second_product));
+    v_result := public.finalize_ticket_order_internal_v1(v_checkout_order, v_checkout);
+    PERFORM assert_eq(v_result->>'code', '200', 'Checkout can sell its own variant: '||v_result::text);
+    PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.order_product_ticket
+        WHERE "order" = v_checkout_order AND product = v_second_product),
+        'The new order has the new form''s variant');
+    PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.order_product_ticket
+        WHERE product = v_first_product), 'The original live stock stays untouched');
 
     -- ROLLBACK handles cleanup, but using isolated IDs prevents leak if commit happens accidentally
 END;
