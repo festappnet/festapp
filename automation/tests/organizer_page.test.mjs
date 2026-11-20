@@ -121,9 +121,11 @@ test('tenant generator produces truthful standalone HTML and removes page/nav on
       assert.ok(product.includes('poster="/organizers-media/check-in-live-portrait.webp" width="430" height="900"'));
     }
   }
-  assert.ok(html.includes('href="/login"'));
+  const header = html.match(/<header class="site-header[^>]*>.*?<\/header>/s)?.[0];
+  assert.match(header, /class="header-signin" href="\/login"/);
+  assert.doesNotMatch(header, /header-cta|Založit akci zdarma/);
   const createLinks = html.match(/<a[^>]*href="\/login\?create=1"/g) ?? [];
-  assert.equal(createLinks.length, 3, 'header, hero, and closing links carry the organizer intent');
+  assert.equal(createLinks.length, 2, 'hero and closing links carry the organizer intent');
   assert.ok(!html.includes('href="/events?create=1"'));
 
   assert.equal((html.match(/<article class="reference-card">/g) ?? []).length, 4);
