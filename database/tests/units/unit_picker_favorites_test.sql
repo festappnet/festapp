@@ -23,40 +23,52 @@ BEGIN
   INSERT INTO public.occasion_users(occasion, "user", is_editor_order_view)
     VALUES (event_id, owner_id, true);
 
-  IF has_table_privilege('anon', 'public.unit_picker_favorites', 'SELECT,INSERT,DELETE') THEN
-    RAISE EXCEPTION 'Anonymous access to favorites';
+  IF has_table_privilege('anon', 'public.unit_picker_favorites', 'SELECT,INSERT,DELETE')
+     OR has_table_privilege('authenticated', 'public.unit_picker_favorites', 'SELECT,INSERT,DELETE')
+     OR has_function_privilege('anon', 'public.get_unit_picker_favorites(uuid)', 'EXECUTE')
+     OR has_function_privilege('anon', 'public.set_unit_picker_favorite(uuid,bigint,boolean)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Unexpected API access to favorites';
   END IF;
 
   SET LOCAL ROLE authenticated;
   PERFORM set_config('request.jwt.claim.sub', owner_id::text, true);
-  INSERT INTO public.unit_picker_favorites VALUES (owner_id, first_unit), (owner_id, second_unit);
-  INSERT INTO public.unit_picker_favorites VALUES (owner_id, first_unit) ON CONFLICT DO NOTHING;
-  IF (SELECT count(*) FROM public.unit_picker_favorites) <> 2 THEN
+  PERFORM public.set_unit_picker_favorite(owner_id, first_unit, true);
+  PERFORM public.set_unit_picker_favorite(owner_id, second_unit, true);
+  PERFORM public.set_unit_picker_favorite(owner_id, first_unit, true);
+  IF public.get_unit_picker_favorites(owner_id) IS DISTINCT FROM ARRAY[first_unit, second_unit] THEN
     RAISE EXCEPTION 'Two accessible favorites must persist independently';
   END IF;
 
   BEGIN
-    INSERT INTO public.unit_picker_favorites VALUES (owner_id, hidden_unit);
+    PERFORM public.set_unit_picker_favorite(owner_id, hidden_unit, true);
     RAISE EXCEPTION 'An inaccessible unit was accepted';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
 
   PERFORM set_config('request.jwt.claim.sub', other_id::text, true);
-  IF EXISTS (SELECT 1 FROM public.unit_picker_favorites WHERE user_id = owner_id) THEN
+  IF public.get_unit_picker_favorites(other_id) IS DISTINCT FROM ARRAY[]::bigint[] THEN
     RAISE EXCEPTION 'Another account can read favorites';
   END IF;
-  DELETE FROM public.unit_picker_favorites WHERE user_id = owner_id;
-  IF FOUND THEN RAISE EXCEPTION 'Another account can delete favorites'; END IF;
   BEGIN
-    INSERT INTO public.unit_picker_favorites VALUES (owner_id, first_unit);
+    PERFORM public.get_unit_picker_favorites(owner_id);
+    RAISE EXCEPTION 'Another account can request favorites';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.set_unit_picker_favorite(owner_id, first_unit, false);
+    RAISE EXCEPTION 'Another account can delete favorites';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.set_unit_picker_favorite(owner_id, first_unit, true);
     RAISE EXCEPTION 'Another account can write favorites';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
-  INSERT INTO public.unit_picker_favorites VALUES (other_id, first_unit);
+  PERFORM public.set_unit_picker_favorite(other_id, first_unit, true);
 
   PERFORM set_config('request.jwt.claim.sub', owner_id::text, true);
-  DELETE FROM public.unit_picker_favorites WHERE user_id = owner_id AND unit_id = first_unit;
-  IF (SELECT array_agg(unit_id) FROM public.unit_picker_favorites) IS DISTINCT FROM ARRAY[second_unit] THEN
+  PERFORM public.set_unit_picker_favorite(owner_id, first_unit, false);
+  IF public.get_unit_picker_favorites(owner_id) IS DISTINCT FROM ARRAY[second_unit] THEN
     RAISE EXCEPTION 'Removing one favorite must preserve the other';
   END IF;
 
