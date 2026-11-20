@@ -7,6 +7,10 @@ class AdministrationStrings {
       'Administration.findUnitHint'.tr(); // "Find unit..."
   static String get newUnitButton =>
       'Administration.newUnitButton'.tr(); // "New unit"
+  static String get addOrganizationFavorite =>
+      'Administration.addOrganizationFavorite'.tr();
+  static String get removeOrganizationFavorite =>
+      'Administration.removeOrganizationFavorite'.tr();
   static String get findOccasionHint =>
       'Administration.findOccasionHint'.tr(); // "Find occasion..."
   static String get newOccasionButton =>

@@ -1457,6 +1457,8 @@
     "cardTooltipUnassigned": "{count} unassigned spot(s)"
   },
   "Administration": {
+    "addOrganizationFavorite": "Add to favorites",
+    "removeOrganizationFavorite": "Remove from favorites",
     "webAnalytics": "Web analytics",
     "openCloudflareAnalytics": "Open analytics in Cloudflare",
     "organizationSettings": "Organization settings",

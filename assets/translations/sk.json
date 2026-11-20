@@ -1098,6 +1098,8 @@
     "removePlace": "Odobrať priradenie miesta"
   },
   "Administration": {
+    "addOrganizationFavorite": "Pridať medzi obľúbené",
+    "removeOrganizationFavorite": "Odstrániť z obľúbených",
     "webAnalytics": "Webová analytika",
     "analyticsVisits": "Návštevnosť a zdroje návštev",
     "analyticsPages": "Zobrazenia stránok",

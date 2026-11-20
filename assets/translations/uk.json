@@ -1138,6 +1138,8 @@
     "removePlace": "Прибрати призначення місця"
   },
   "Administration": {
+    "addOrganizationFavorite": "Додати до обраного",
+    "removeOrganizationFavorite": "Видалити з обраного",
     "webAnalytics": "Вебаналітика",
     "analyticsVisits": "Відвідування та джерела трафіку",
     "analyticsPages": "Перегляди сторінок",
