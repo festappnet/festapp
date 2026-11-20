@@ -116,6 +116,11 @@ be removed, hidden or demoted to an ordinary group. At least one visible variant
 must remain; names and prices stay editable. The editor protects these controls
 locally, and SQL rechecks the invariant atomically for form and catalog saves.
 Form creation and both copy commands validate this invariant before returning.
+Creation adds a new `spot` group with one starter variant for the new form, so
+a draft never shares another form's stock or orders. A form that binds the
+occasion's seating plan instead shares the plan's group: the `spot` group of
+most products bound to plan seats/areas (lowest ID on ties). It gets no
+unseated starter. A plan without bound products gets the fresh group as well.
 Copies canonicalize hidden primary child selectors to visible and omit empty
 hidden primary selectors. Seat-selection mode already suppresses these selectors
 in both clients; persisted visibility must not encode that presentation choice.

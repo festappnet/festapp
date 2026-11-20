@@ -310,13 +310,14 @@
     },
     {
       "migration": "20261114160000_canonical_seated_form_writers.sql",
-      "active": true,
+      "active": false,
       "header": "-- Canonical primary selectors and validation at every form construction boundary.",
       "sources": [
         "eshop_forms/duplicate_form_to_occasion.sql",
         "others/duplicate_occasion.sql",
         "eshop_forms/form_creation_domain.sql"
-      ]
+      ],
+      "sha256": "0cdcf41685b67111721339ca50d918212301cd436f9b91daa55fd6ff7ba9afae"
     },
     {
       "migration": "20261114233000_order_item_terminology.sql",
@@ -727,6 +728,14 @@
       "sources": [
         "eshop/format_occasion_report_text.sql",
         "eshop/get_report_ws.sql"
+      ]
+    },
+    {
+      "migration": "20261120130000_form_creation_own_primary_group.sql",
+      "active": true,
+      "header": "-- A new form owns a fresh primary admission group; a form bound to the seating plan shares the plan's group.",
+      "sources": [
+        "eshop_forms/form_creation_domain.sql"
       ]
     }
   ]

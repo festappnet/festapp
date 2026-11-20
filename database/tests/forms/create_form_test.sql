@@ -1,5 +1,6 @@
 -- Test: create_form
 -- Goal: Verify that create_form function asserts uniqueness, creates form, default fields, and product.
+-- Every new form owns a fresh primary 'spot' group; it never shares another form's stock (#960).
 
 DO $$
 DECLARE
@@ -11,6 +12,12 @@ DECLARE
     v_form_id bigint;
     v_field_count int;
     v_product_count int;
+    v_first_type bigint;
+    v_first_products jsonb;
+    v_orphan_type bigint;
+    v_second_json jsonb;
+    v_second_form_id bigint;
+    v_second_type bigint;
 BEGIN
     -- 1. Setup Isolated Data
     -- Create temporary Org/Unit/Occasion to avoid polluting real data (e.g. Occasion 1)
@@ -65,6 +72,49 @@ BEGIN
     WHERE pt.occasion = v_occasion_id AND pt.type = 'spot';
     
     PERFORM assert_true(v_product_count >= 1, 'Spot product should exist');
+
+    -- 6. First form in an empty occasion: exactly one primary group with one starter variant.
+    SELECT ff.product_type INTO v_first_type FROM public.form_fields ff
+    WHERE ff.form = v_form_id AND ff.type = 'product_type' AND ff.is_ticket_field;
+    PERFORM assert_not_null(v_first_type, 'First form binds its primary group');
+    PERFORM assert_eq((SELECT count(*) FROM eshop.product_types WHERE occasion = v_occasion_id AND type = 'spot'),
+        1::bigint, 'First form creates one primary group');
+    PERFORM assert_eq((SELECT jsonb_agg(jsonb_build_array(title, price, currency_code)) FROM eshop.products
+        WHERE product_type = v_first_type), '[["Variant 1", 100, "CZK"]]'::jsonb, 'First form gets the starter variant');
+
+    -- Emulate a live offer: a renamed, capacity-limited variant, plus an unrelated empty spot group.
+    UPDATE eshop.products SET title = 'Live admission', price = 250, maximum = 40 WHERE product_type = v_first_type;
+    SELECT jsonb_agg(to_jsonb(p) ORDER BY p.id) INTO v_first_products FROM eshop.products p WHERE p.product_type = v_first_type;
+    INSERT INTO eshop.product_types(title, type, occasion) VALUES ('Orphan', 'spot', v_occasion_id)
+    RETURNING id INTO v_orphan_type;
+
+    -- 7. A second form in the same occasion owns a fresh group and starter variant.
+    SELECT create_form(v_occasion_id, 'test-form-second-' || floor(random()*100000)::text, 'Second Form')
+    INTO v_second_json;
+    v_second_form_id := (v_second_json->>'id')::bigint;
+    SELECT ff.product_type INTO v_second_type FROM public.form_fields ff
+    WHERE ff.form = v_second_form_id AND ff.type = 'product_type' AND ff.is_ticket_field;
+    PERFORM assert_not_null(v_second_type, 'Second form binds its primary group');
+    PERFORM assert_true(v_second_type NOT IN (v_first_type, v_orphan_type),
+        'Second form must not reuse an existing spot group');
+    PERFORM assert_eq((SELECT jsonb_build_array(title, type, occasion) FROM eshop.product_types WHERE id = v_second_type),
+        jsonb_build_array('Spot', 'spot', v_occasion_id), 'Second form group uses the canonical defaults');
+    PERFORM assert_eq((SELECT jsonb_agg(jsonb_build_array(title, price, currency_code, occasion)) FROM eshop.products
+        WHERE product_type = v_second_type), jsonb_build_array(jsonb_build_array('Variant 1', 100, 'CZK', v_occasion_id)),
+        'Second form gets its own starter variant');
+
+    -- 8. Existing offers stay untouched.
+    PERFORM assert_eq((SELECT jsonb_agg(to_jsonb(p) ORDER BY p.id) FROM eshop.products p WHERE p.product_type = v_first_type),
+        v_first_products, 'First form products, price and capacity stay unchanged');
+    PERFORM assert_eq((SELECT ff.product_type FROM public.form_fields ff
+        WHERE ff.form = v_form_id AND ff.type = 'product_type' AND ff.is_ticket_field), v_first_type,
+        'First form keeps its own primary group');
+    PERFORM assert_false(EXISTS(SELECT 1 FROM public.form_fields WHERE form = v_second_form_id AND product_type = v_first_type),
+        'Second form has no field bound to the first form group');
+    PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.products WHERE product_type = v_orphan_type),
+        'An unrelated empty spot group is neither adopted nor filled');
+    PERFORM assert_eq((SELECT count(*) FROM eshop.product_types WHERE occasion = v_occasion_id AND type = 'spot'),
+        3::bigint, 'Each form creation adds exactly one primary group');
 
     -- ROLLBACK handles cleanup, but using isolated IDs prevents leak if commit happens accidentally
 END;
