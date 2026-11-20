@@ -54,10 +54,17 @@ export class DelegatedOwner {
         check(scopes, 'FORBIDDEN');
         return [{ type: 'oauth2', scopes }];
     }
+    // The client registration decides what any connection may ever obtain. Outside it, reconnecting
+    // cannot help, so callers report FORBIDDEN rather than a scope gap or a scope challenge.
+    clientPermitsOperation(id) {
+        const allowedOperations = clientPolicy(this.config, this.token.clientId)?.allowedOperations;
+        return (!allowedOperations || allowedOperations.includes(id)) &&
+            clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id));
+    }
     challengeFor(code, id) {
         if (['AUTHENTICATION_REQUIRED', 'MFA_REQUIRED'].includes(code))
             return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
-        if (code === 'INSUFFICIENT_SCOPE' && clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)))
+        if (code === 'INSUFFICIENT_SCOPE' && this.clientPermitsOperation(id))
             return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'insufficient_scope', description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id) });
     }
     current() {
@@ -79,7 +86,7 @@ export class DelegatedOwner {
     }
     authorizeOperation(id, args) {
         const access = accessSelection(this.current().access);
-        check(clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)), 'FORBIDDEN');
+        check(this.clientPermitsOperation(id), 'FORBIDDEN');
         check(this.allowedOperations.includes(id) && this.permitsOperation(id), 'INSUFFICIENT_SCOPE');
         this.operationId = id;
         if (['context.inspect', 'access.inspect'].includes(id)) return;

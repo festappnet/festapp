@@ -109,7 +109,10 @@ export function installApi(app, { config, run }) {
                     return res.set({ 'X-Request-Id': requestId, 'Cache-Control': 'no-store' }).type(content.mimeType).send(Buffer.from(content.blob, 'base64'));
                 }
                 check(known.has(id), 'UNKNOWN_OPERATION');
-                check(owner.permitsOperation(id), 'FORBIDDEN');
+                // Same split as delegated authorization and the MCP scope challenge: an operation the
+                // client may never use is FORBIDDEN; one this connection did not grant is a scope gap.
+                check(owner.clientPermitsOperation(id), 'FORBIDDEN');
+                check(owner.permitsOperation(id), 'INSUFFICIENT_SCOPE');
                 let retryAfter, receipt;
                 const result = await operations.invoke(id, req.body, {
                     onAccepted: () => { accepted = true; },
