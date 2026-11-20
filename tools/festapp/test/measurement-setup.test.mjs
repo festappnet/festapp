@@ -31,7 +31,11 @@ function fixture(handlers={},{allowed=true,manage=true,activationUrl=SERVICE+'/b
   allowedOperations:allowedOperations??[...measurementSetupDescriptors.map(d=>d.id),'forms.embedCode',...ops],
   delegatedUnitContext:async(_client,unitId)=>{assert.equal(unitId,UNIT);return{organizationId:ORG,unitId};},
   delegatedContext:async()=>({organizationId:ORG,unitId:UNIT}),
-  authorized:fn=>fn({rpc:async(name,args)=>{
+  authorized:fn=>fn({functions:{invoke:async(name,{body})=>{
+   calls.push({name,args:body});
+   assert(handlers[name],'unexpected Edge function '+name);
+   return handlers[name](body);
+  }},rpc:async(name,args)=>{
    calls.push({name,args});
    if(name==='get_operator_access_v1')return{data:{units:allowed?[{id:UNIT,title:'Organizer',canCreateOccasions:false}]:[],occasions:[]}};
    const handler=handlers[name];
@@ -116,7 +120,7 @@ test('units.settings.save names exactly the stored keys and runtime columns that
  assert.match(description,/explicit measurement_consent_version 1 where none is stored does not/);
  assert.match(description,/Every enabled website consent binding then becomes confirmation_required/);
  assert.match(description,/Platform approval that provisions or changes the measurement runtime has the same effect/);
- assert.match(description,/MCP cannot confirm/);assert.match(description,/website_ready/);assert.match(description,/festapp_units_website_consent_inspect/);
+ assert.match(description,/organizer’s explicit confirmation/);assert.match(description,/festapp_units_website_consent_save/);assert.match(description,/website_ready/);assert.match(description,/festapp_units_website_consent_inspect/);
  assert.doesNotMatch(description,/Other keys/);
  // Only enabled bindings move to confirmation_required.
  const bindingsSql=readFileSync(new URL('database/functions/eshop_forms/website_consent_bindings.sql',root),'utf8');
@@ -159,6 +163,74 @@ test('setup reads fail closed for a foreign organization, a unit outside live ac
  const denied=fixture({get_unit_website_consent_bindings:()=>({error:{code:'42501',message:'private'}})});
  const error=(await denied.ops.invoke('units.websiteConsent.inspect',{unitId:UNIT})).error;
  assert.equal(error.code,'FORBIDDEN');assert.match(error.message,/manager role/);assert(!error.message.includes('private'));
+});
+
+test('website consent changes have their own grant and require original versions',async()=>{
+ const ids=['units.websiteConsent.probeComplianz','units.websiteConsent.save','units.websiteConsent.disable'];
+ for(const id of ids)assert.deepEqual(scopesForOperation(id),[...READ,'festapp:unit-website-consent:write']);
+ for(const lang of EMBED_LANGUAGES){
+  const catalog=JSON.parse(readFileSync(new URL(`assets/translations/${lang}.json`,root),'utf8'));
+  assert(catalog.McpConnection.unitWebsiteConsentWrite,lang);
+ }
+ const save={unitId:UNIT,websiteOrigin:SITE,platform:'wordpress',providerConfig:{provider:'complianz',policyId:'42'},
+  expectedVersion:2,expectedConsentRevision:REVISION,coverageConfirmed:true};
+ const snapshot=()=>({data:bindings()});
+ const saved={...bindings().bindings[0],version:3};
+ const f=fixture({get_unit_website_consent_bindings:snapshot,
+  save_unit_website_consent_binding:args=>{
+   assert.deepEqual(args,{p_unit:UNIT,p_website_origin:SITE,p_platform:'wordpress',p_provider_config:save.providerConfig,
+    p_expected_version:2,p_expected_consent_revision:REVISION,p_confirm:false});
+   return {data:bindings({bindings:[{...saved,state:'draft'}]})};
+  },
+  disable_unit_website_consent_binding:args=>{
+   assert.deepEqual(args,{p_binding:BINDING,p_expected_version:2});
+   return {data:bindings({bindings:[{...saved,state:'disabled'}]})};
+  },
+  'probe-complianz':args=>{
+   if(!args.confirm){assert.deepEqual(args,{unitId:UNIT,origin:SITE});return {data:{policyId:'42'}};}
+   assert.deepEqual(args,{unitId:UNIT,origin:SITE,confirm:true,platform:'wordpress',expectedPolicyId:'42',version:2,revision:REVISION});
+   return {data:bindings({bindings:[saved]})};
+  }});
+ const probed=await f.ops.invoke(ids[0],{unitId:UNIT,websiteOrigin:SITE});
+ assert.deepEqual(probed.data,{unitId:UNIT,websiteOrigin:SITE,policyId:'42'});
+ const draft=await f.ops.invoke(ids[1],{...save,coverageConfirmed:false});
+ assert.equal(draft.data.bindings[0].state,'draft');assert.equal(draft.data.bindings[0].version,3);
+ assert(!JSON.stringify(draft).includes('policyId'));
+ const confirmed=await f.ops.invoke(ids[1],{...save,verifyComplianz:true});
+ assert.equal(confirmed.data.bindings[0].state,'ready');assert.equal(confirmed.data.bindings[0].version,3);
+ const disabled=await f.ops.invoke(ids[2],{unitId:UNIT,bindingId:BINDING,expectedVersion:2});
+ assert.equal(disabled.data.bindings[0].state,'disabled');
+ for(const [id,args,expected] of [
+  [ids[0],{unitId:UNIT,websiteOrigin:'https://other.example.com'},'WEBSITE_CONSENT_CHANGE_REJECTED'],
+  [ids[1],{...save,expectedVersion:1},'WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED'],
+  [ids[1],{...save,expectedConsentRevision:'0'.repeat(32)},'WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED'],
+  [ids[1],{...save,verifyComplianz:true,coverageConfirmed:false},'INVALID_INPUT'],
+  [ids[2],{unitId:UNIT,bindingId:OTHER,expectedVersion:2},'NOT_FOUND_OR_INACCESSIBLE'],
+ ]){
+  const attempt=fixture({get_unit_website_consent_bindings:snapshot});
+  assert.equal((await attempt.ops.invoke(id,args)).error.code,expected);
+  assert(!attempt.names().some(name=>name==='probe-complianz'||/^(save|disable)_/.test(name)));
+ }
+ const conflict=fixture({get_unit_website_consent_bindings:snapshot,'probe-complianz':()=>({error:{context:{status:409}}})});
+ const changed=await conflict.ops.invoke(ids[1],{...save,verifyComplianz:true});
+ assert.equal(changed.error.code,'WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED');
+ const timeout=fixture({get_unit_website_consent_bindings:snapshot,save_unit_website_consent_binding:()=>{throw new DOMException('Timeout','TimeoutError');}});
+ const uncertain=await timeout.ops.invoke(ids[1],save);
+ assert.equal(uncertain.error.retryable,false);assert.match(uncertain.error.message,/festapp_units_website_consent_inspect/);
+});
+
+test('form measurement details project current purchase timing and Meta CAPI state only',async()=>{
+ const occasionId=5,formId=6;
+ const status={requested_enabled:true,organization_allowed:true,organization_enabled:true,unit_enabled:true,
+  runtime_supported:true,eligible:true,blocked_reasons:[],policy_revision:1,consent_required:true,enhanced_conversions_unavailable:false};
+ const f=fixture({get_form_for_authoring:args=>{
+  assert.deepEqual(args,{p_occasion:occasionId,p_organization:ORG,p_unit:UNIT,p_form:formId});
+  return {data:{occasionId,authoring:{form:{id:formId,occasion:occasionId,
+   measurement_status:{...status,purchase_timing:'paid',meta_purchase_enabled:true,unknownInternal:'private'}}}}};
+ }},{ops:['forms.measurement.inspect']});
+ const result=await f.ops.invoke('forms.measurement.inspect',{occasionId,formId});
+ assert.deepEqual(result.data,{occasionId,formId,status,purchaseTiming:'paid',metaPurchaseEnabled:true});
+ assert.deepEqual(scopesForOperation('forms.measurement.inspect'),['festapp:ticket-layouts:read','festapp:forms:read']);
 });
 
 test('consent export proves binding ownership, version and readiness before reading it',async()=>{
@@ -314,7 +386,7 @@ test('embed labels load lazily, fail only the embed tool and ship in the image',
 test('HTTP API requires whole-organizer consent, the approval request scope and exposes Retry-After for limited requests',async t=>{
  let requests=0,requestError;
  const scopes=[...READ,'festapp:unit-approvals:request'];
- const f=await setup(t,{apiPolicy:{allowedScopes:[...scopes,'festapp:unit-settings:write'],allowedOperations:measurementSetupDescriptors.map(d=>d.id)},fetchImpl:async url=>{
+ const f=await setup(t,{apiPolicy:{allowedScopes:[...scopes,'festapp:unit-settings:write','festapp:unit-website-consent:write'],allowedOperations:measurementSetupDescriptors.map(d=>d.id)},fetchImpl:async url=>{
   const name=url.pathname.split('/').at(-1);
   if(name==='can_manage_unit_configuration')return reply(true);
   if(name==='get_unit_measurement_approval')return reply({approved:false,runtime_supported:true,requested_at:null,approved_origins:[],saved_origins:[SITE],requested_origins:[],request_state:'not_requested',can_request:true});

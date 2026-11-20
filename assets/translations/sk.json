@@ -2607,6 +2607,7 @@
     "unitPeopleRevoke": "Odoberať prístup k organizátorovi",
     "unitSettingsRead": "Čítať nastavenia organizátora",
     "unitSettingsWrite": "Meniť nastavenia organizátora",
+    "unitWebsiteConsentWrite": "Ukladať, potvrdzovať a vypínať väzby súhlasu webu",
     "unitApprovalsRequest": "Žiadať o schválenie merania a Meta CAPI (pošle e-mail všetkým správcom organizácie)",
     "emailTemplatesRead": "Čítať e-mailové šablóny, bannery a ukážkové náhľady",
     "emailTemplatesWrite": "Upravovať e-mailové šablóny a bannery, obnovovať dedičnosť",

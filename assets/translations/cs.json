@@ -4244,6 +4244,7 @@
     "unitPeopleRevoke": "Odebírat přístup lidí k pořadateli",
     "unitSettingsRead": "Číst nastavení pořadatele",
     "unitSettingsWrite": "Měnit nastavení pořadatele",
+    "unitWebsiteConsentWrite": "Ukládat, potvrzovat a vypínat vazby souhlasu webu",
     "unitApprovalsRequest": "Žádat o schválení měření a Meta CAPI (pošle e-mail všem správcům organizace)",
     "emailTemplatesRead": "Číst e-mailové šablony, bannery a ukázkové náhledy",
     "emailTemplatesWrite": "Upravovat e-mailové šablony a bannery, obnovovat dědičnost",
