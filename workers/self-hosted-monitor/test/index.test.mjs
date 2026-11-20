@@ -62,9 +62,13 @@ test("email queue health failure shares the same SDK batch", async () => {
 
 test("other health failures retain heartbeat reporting without inventing a stalled queue", async () => {
   const writes = [], requests = [], batches = [];
-  await assert.rejects(runProbes(environment(writes), transport({ requests, batches, emailFailed: true, emailAlerts: ["quota_stale"] })), /external health probe failed/);
+  await assert.rejects(runProbes(environment(writes), transport({
+    requests, batches, emailFailed: true, emailAlerts: ["unexpected-backend-string", "abuse_ordinary_backlog", "quota_stale"],
+  })), /external health probe failed/);
   assert.equal(batches[0].events.length, 2);
   assert.equal(batches[0].events.some(e => e.error_code === "email_queue_stalled"), false);
+  assert.deepEqual(batches[0].events.find(e => e.check_id === "email-delivery").context, { reason: "quota_stale", count: 3 });
+  assert.deepEqual(writes[0].value.email.alerts, ["quota_stale", "abuse_ordinary_backlog", "unknown_health_alert"]);
 });
 
 test("a stalled queue incident must be recorded, not just its heartbeat", async () => {
