@@ -56,10 +56,10 @@ test('session rotation is serialized across owners and persisted before reads', 
     assert(f.calls.filter((c) => c.url.pathname === '/auth/v1/user').length >= 3,
         'login and both authorized reads must validate the user');
 });
-test('password login uses the organization-scoped sign-in address once', async (t) => {
-    const signInEmail = async (typed, profileValue) => {
+test('password login distinguishes a personal address from an internal sign-in address', async (t) => {
+    const signInEmail = async (typed, profileValue, options) => {
         const f = await fixture(t, profileValue ? { profileValue } : {});
-        await f.owner.login(typed, 'test');
+        await f.owner.login(typed, 'test', options);
         const call = f.calls.find((c) => c.url.pathname === '/auth/v1/token');
         assert.equal(call.url.searchParams.get('grant_type'), 'password');
         assert.equal(f.store.value().userId, actor);
@@ -67,12 +67,17 @@ test('password login uses the organization-scoped sign-in address once', async (
     };
     assert.equal(await signInEmail('name@example.com'), '1+name@example.com');
     assert.equal(await signInEmail(' name@example.com '), '1+name@example.com');
-    assert.equal(await signInEmail('1+name@example.com'), '1+name@example.com');
+    assert.equal(await signInEmail('1+name@example.com'), '1+1+name@example.com');
+    assert.equal(await signInEmail('1+name@example.com', undefined, { canonicalEmail: true }), '1+name@example.com');
     const other = profile('http://127.0.0.1:54321', 7);
     assert.equal(await signInEmail('name@example.com', other), '7+name@example.com');
-    assert.equal(await signInEmail('7+name@example.com', other), '7+name@example.com');
-    // Only this profile's prefix is recognized, as in AppConfig.removeUserPrefix.
+    assert.equal(await signInEmail(' 7+Name@Example.com ', other, { canonicalEmail: true }), '7+name@example.com');
     assert.equal(await signInEmail('1+name@example.com', other), '7+1+name@example.com');
+    const f = await fixture(t, { profileValue: other });
+    await assert.rejects(f.owner.login('1+name@example.com', 'test', { canonicalEmail: true }), {
+        code: 'AUTHENTICATION_REQUIRED',
+    });
+    assert.equal(f.calls.filter((c) => c.url.pathname === '/auth/v1/token').length, 0);
 });
 test('foreign organization is denied and never reaches domain commands', async (t) => {
     const f = await fixture(t, {
