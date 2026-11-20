@@ -9,6 +9,13 @@ it is prepared separately from the local stdio release. The operator catalog inc
 operations according to delegated permissions. No arbitrary SQL or shell tool is
 exposed. The public ChatGPT summary client remains limited to its read scopes.
 
+Local stdio uses the workstation's ordinary user session and exposes context,
+access discovery and ticket-layout tools. Forms, orders and event administration
+use the hosted OAuth connection, where the user selects the resources and
+permissions and can revoke that connection independently. Sensitive operations
+also require fresh MFA assurance. A local profile has no setting that grants
+hosted permissions.
+
 The E0 surface is:
 
 - `festapp_context_inspect`: verified ordinary-user identity and pinned target.
