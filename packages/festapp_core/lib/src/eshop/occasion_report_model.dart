@@ -122,6 +122,7 @@ class OccasionReport {
   final DateTime generatedAt;
   final ReportCounts orders, tickets;
   final int spotsTotal, spotsOccupied, spotsFree;
+  final int formCapacityTotal, formCapacityOccupied;
   final List<ReportMoney> money;
   final List<ReportProduct> products;
   final Map<String, int> warnings;
@@ -159,6 +160,8 @@ class OccasionReport {
       spotsTotal = r['spots']['total'] as int,
       spotsOccupied = r['spots']['occupied'] as int,
       spotsFree = r['spots']['free'] as int,
+      formCapacityTotal = r['form_capacity']?['total'] as int? ?? 0,
+      formCapacityOccupied = r['form_capacity']?['occupied'] as int? ?? 0,
       money = List.unmodifiable([
         for (final m in r['money_by_currency'])
           ReportMoney(Map<String, dynamic>.from(m)),
@@ -174,6 +177,9 @@ class OccasionReport {
         spotsFree < 0 ||
         spotsTotal != spotsOccupied + spotsFree) {
       throw const FormatException('Invalid report spots');
+    }
+    if (formCapacityTotal < 0 || formCapacityOccupied < 0) {
+      throw const FormatException('Invalid report form capacity');
     }
   }
 

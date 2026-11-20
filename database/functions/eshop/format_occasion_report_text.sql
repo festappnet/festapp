@@ -9,7 +9,12 @@ BEGIN
       result := result || '  ' || (item->>'state') || ': ' || (item->>'count') || E'\n';
     END LOOP;
   END LOOP;
-  result := result || 'Místa (obsazená / celkem): ' || (report->'spots'->>'occupied') || ' / ' || (report->'spots'->>'total') || E'\n';
+  IF coalesce((report#>>'{spots,total}')::bigint,0)>0 THEN
+    result := result || 'Místa (obsazená / celkem): ' || (report->'spots'->>'occupied') || ' / ' || (report->'spots'->>'total') || E'\n';
+  END IF;
+  IF coalesce((report#>>'{form_capacity,total}')::bigint,0)>0 THEN
+    result := result || 'Kapacita formulářů (obsazeno / celkem): ' || (report#>>'{form_capacity,occupied}') || ' / ' || (report#>>'{form_capacity,total}') || E'\n';
+  END IF;
   IF coalesce((report#>>'{ticket_batches,total}')::bigint,0)>0 THEN
     result:=result||'Předgenerované - neprodáno: '||(report#>>'{ticket_batches,available}')||E'\n'
       ||'Předgenerované - prodáno: '||(report#>>'{ticket_batches,sold_active}')||E'\n'

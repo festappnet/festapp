@@ -785,6 +785,7 @@ class _ReportTabState extends State<ReportTab> {
                         final metricCount = 1 +
                             (ReportStrings.hasTickets ? 1 : 0) +
                             (r.spotsTotal > 0 ? 1 : 0) +
+                            (r.formCapacityTotal > 0 ? 1 : 0) +
                             r.money.length;
                         final columns = math.min(
                             metricCount,
@@ -819,6 +820,13 @@ class _ReportTabState extends State<ReportTab> {
                               _summary(
                                 ReportStrings.spots,
                                 '${r.spotsOccupied} / ${r.spotsTotal}',
+                                width,
+                              ),
+                            if (r.formCapacityTotal > 0)
+                              _summary(
+                                ReportStrings.formOccupancy(
+                                    hasSeats: r.spotsTotal > 0),
+                                '${r.formCapacityOccupied} / ${r.formCapacityTotal}',
                                 width,
                               ),
                             for (final m in r.money)

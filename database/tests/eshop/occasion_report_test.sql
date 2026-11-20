@@ -2,7 +2,7 @@ BEGIN;
 DO $$
 DECLARE u uuid; org bigint; unit_id bigint; occ bigint; other_occ bigint;
   p1 bigint; p2 bigint; p3 bigint; p4 bigint; o1 bigint; o2 bigint; o3 bigint; o4 bigint;
-  bank bigint; product1 bigint; product2 bigint; ticket_id bigint; r jsonb; m jsonb;
+  bank bigint; product1 bigint; product2 bigint; ticket_id bigint; limited_form bigint; r jsonb; m jsonb;
 BEGIN
   PERFORM create_user_for_test('report_metrics','report-metrics@test.local');
   u:=get_user_id('report_metrics');
@@ -22,6 +22,11 @@ BEGIN
   PERFORM assert_eq((r->>'code')::int,200,'empty succeeds');
   PERFORM assert_eq(r->'report'->'orders','{"total":0,"by_state":[]}'::jsonb,'empty counts');
   PERFORM assert_eq(r->'report'->'money_by_currency','[]'::jsonb,'empty money');
+  PERFORM assert_eq(r->'report'->'form_capacity','{"total":0,"occupied":0}'::jsonb,'no limited forms');
+  INSERT INTO public.forms(occasion,title,participant_capacity)
+    VALUES(occ,'Limited registrations',46) RETURNING id INTO limited_form;
+  INSERT INTO public.forms(occasion,title,participant_capacity)
+    VALUES(occ,'Second limited form',4),(other_occ,'Unrelated capacity',100),(occ,'Unlimited',NULL);
   INSERT INTO eshop.bank_accounts(title) VALUES('Report bank') RETURNING id INTO bank;
   INSERT INTO eshop.payment_info(paid,returned,currency_code,deposit_amount) VALUES(120,20,'CZK',50) RETURNING id INTO p1;
   INSERT INTO eshop.payment_info(paid,returned,currency_code) VALUES(30,5,'EUR') RETURNING id INTO p2;
@@ -41,6 +46,7 @@ BEGIN
   INSERT INTO eshop.products(title,occasion) VALUES('Same title',occ) RETURNING id INTO product2;
   INSERT INTO eshop.tickets(occasion,state) VALUES(occ,'paid') RETURNING id INTO ticket_id;
   INSERT INTO eshop.order_product_ticket("order",product,ticket) VALUES(o1,product1,ticket_id),(o1,product2,ticket_id),(o4,product1,NULL);
+  UPDATE eshop.orders SET form=limited_form WHERE id=o1;
   INSERT INTO eshop.spots(occasion,title,secret,order_product_ticket) VALUES(occ,'Seat',gen_random_uuid(),(SELECT min(id) FROM eshop.order_product_ticket WHERE "order"=o1));
   SET LOCAL ROLE authenticated;
   r:=public.get_report_ws('report-metrics');
@@ -48,6 +54,8 @@ BEGIN
   PERFORM assert_eq((r->>'code')::int,200,'metrics succeeds');
   PERFORM assert_eq((r->'report'->'valid'->'orders'->>'total')::int,5,'valid orders exclude storno, retain unknown/future');
   PERFORM assert_eq((r->'report'->'valid'->'tickets'->>'total')::int,1,'valid ticket deduplicated');
+  PERFORM assert_eq(r->'report'->'form_capacity','{"total":50,"occupied":1}'::jsonb,
+    'only limited forms of the selected occasion contribute and products do not duplicate occupancy');
   PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'valid'->'order_days') x),5,'valid history matches count');
   PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'timeline'->'tickets') x),1,'ticket timeline deduplicates multiple products');
   PERFORM assert_eq((SELECT sum((x->>'count')::int)::int FROM jsonb_array_elements(r->'report'->'valid'->'ticket_days') x),1,'valid ticket history');
@@ -62,6 +70,8 @@ BEGIN
   DELETE FROM eshop.tickets WHERE occasion=occ AND id<>ticket_id;
   r:=public.get_report_ws('report-metrics');
   UPDATE eshop.tickets SET state='storno' WHERE id=ticket_id;
+  PERFORM assert_eq((public.get_report_ws('report-metrics')#>>'{report,form_capacity,occupied}')::int,0,
+    'cancelled admissions release form capacity');
   PERFORM assert_eq((public.get_report_ws('report-metrics')->'report'->'valid'->'tickets'->>'total')::int,0,'partially cancelled ticket excluded');
   PERFORM assert_eq(public.get_report_ws('report-metrics')->'report'->'valid'->'ticket_days','[]'::jsonb,'cancelled ticket excluded from history');
   UPDATE eshop.tickets SET state='paid' WHERE id=ticket_id;

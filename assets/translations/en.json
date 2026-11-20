@@ -3250,6 +3250,7 @@
     "orders": "Orders",
     "tickets": "Tickets",
     "spots": "Seat occupancy",
+    "formCapacity": "Form capacity",
     "free": "Free seats",
     "products": "Products in confirmed orders",
     "noType": "Without type",

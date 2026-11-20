@@ -111,6 +111,11 @@ BEGIN
     SELECT count(*) AS total,count(*) FILTER (WHERE order_product_ticket IS NOT NULL) AS occupied,
       count(*) FILTER (WHERE order_product_ticket IS NULL) AS free
     FROM eshop.spots WHERE occasion IN (SELECT id FROM scope)
+  ), form_capacity AS (
+    SELECT coalesce(sum(f.participant_capacity),0) AS total,
+      coalesce(sum((public.get_form_capacity_snapshot_internal(f.id,statement_timestamp())->>'occupiedPeople')::bigint),0) AS occupied
+    FROM public.forms f JOIN scope s ON s.id=f.occasion
+    WHERE f.participant_capacity IS NOT NULL
   ), products AS (
     SELECT p.id::text AS product_id,coalesce(p.title,'') AS product_title,
       pt.id::text AS type_id,pt.title AS type_title,count(*) AS confirmed_count
@@ -129,6 +134,7 @@ BEGIN
     'schema_version',1,'occasion',jsonb_build_object('id',s.id::text,'title',coalesce(s.title,'')),
     'generated_at',to_char(statement_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
     'spots',(SELECT to_jsonb(spots) FROM spots),
+    'form_capacity',(SELECT to_jsonb(form_capacity) FROM form_capacity),
     'orders',jsonb_build_object('total',(SELECT count(*) FROM orders_scope),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM order_states x),'[]'::jsonb)),
     'tickets',jsonb_build_object('total',(SELECT count(*) FROM ticket_scope),'by_state',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY state) FROM ticket_states x),'[]'::jsonb)),
     'valid',jsonb_build_object(

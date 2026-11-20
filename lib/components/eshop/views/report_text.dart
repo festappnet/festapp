@@ -20,10 +20,17 @@ String formatReportText(OccasionReport report, {String? locale}) {
 
   counts(ReportStrings.orders, report.orders);
   if (ReportStrings.hasTickets) counts(ReportStrings.tickets, report.tickets);
-  text
-    ..writeln(
-        '${ReportStrings.spots}: ${report.spotsOccupied} / ${report.spotsTotal}')
-    ..writeln('${ReportStrings.free}: ${report.spotsFree}');
+  if (report.spotsTotal > 0) {
+    text
+      ..writeln(
+          '${ReportStrings.spots}: ${report.spotsOccupied} / ${report.spotsTotal}')
+      ..writeln('${ReportStrings.free}: ${report.spotsFree}');
+  }
+  if (report.formCapacityTotal > 0) {
+    final label = ReportStrings.formOccupancy(hasSeats: report.spotsTotal > 0);
+    text.writeln(
+        '$label: ${report.formCapacityOccupied} / ${report.formCapacityTotal}');
+  }
   if ((report.ticketBatches['total'] ?? 0) > 0) {
     text.writeln(
         '${TicketBatchStrings.title}: ${report.ticketBatches['total']}');
