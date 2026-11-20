@@ -47,6 +47,7 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     if (descriptor.id === 'units.appLanding.save') Object.assign(request,{unitId:3,occasionId:7,expectedOccasionId:null});
     if (descriptor.id === 'units.appLanding.inspect') request.unitId=3;
     if (descriptor.id === 'information.save') Object.assign(request,{occasionId:7,expectedVersion:0,information:{id:1,title:'Photo galleries',description:'<p><a href="https://example.invalid/gallery">Previous event gallery</a></p>',type:null,isHidden:false,order:1,data:null}});
+    if (descriptor.id === 'songs.save') Object.assign(request,{occasionId:7,expectedVersion:null,information:{title:'Opening song',description:'<p>Sing together</p>',type:'song',isHidden:false,order:1,data:null}});
     if (descriptor.id === 'webhooks.update') request.state = 'active';
     if (descriptor.id === 'webhooks.create') request.url = 'https://receiver.example.invalid/webhooks/festapp';
     if (descriptor.id === 'orders.update') request.changes = {note:'Updated order note'};
