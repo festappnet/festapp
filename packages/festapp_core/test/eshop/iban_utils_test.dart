@@ -34,6 +34,39 @@ void main() {
         expect(IbanUtils.isValidIban('CZ4808000000001920001453'), true);
       });
 
+      test(
+        'accepts a Slovak IBAN pasted with spaces and lowercase letters',
+        () {
+          const pasted = 'sk68 0720 0002 8919\n8742 6353';
+          expect(IbanUtils.normalizeIban(pasted), 'SK6807200002891987426353');
+          expect(IbanUtils.isValidIban(pasted), isTrue);
+        },
+      );
+
+      test(
+        'rejects Slovak IBANs with the wrong length, letters or checksum',
+        () {
+          expect(IbanUtils.isValidIban('SK260720000289198742635'), isFalse);
+          expect(IbanUtils.isValidIban('SK240720X002891987426353'), isFalse);
+          expect(IbanUtils.isValidIban('SK6807200002891987426354'), isFalse);
+        },
+      );
+
+      test('converts the NBS domestic example to and from a Slovak IBAN', () {
+        const iban = 'SK6807200002891987426353';
+        expect(IbanUtils.generateSkIban('0720', '289', '1987426353'), iban);
+        final account = IbanUtils.parseSkIban(iban)!;
+        expect(account.bankCode, '0720');
+        expect(account.bankName, 'Národná banka Slovenska');
+        expect(account.prefix, '289');
+        expect(account.number, '1987426353');
+        expect(IbanUtils.parseCzIban(iban), isNull);
+        expect(
+          () => IbanUtils.generateSkIban('0720', '289', '1987426354'),
+          throwsFormatException,
+        );
+      });
+
       test('Should parse real IBAN', () {
         final parsed = IbanUtils.parseCzIban('CZ4808000000001920001453');
         expect(parsed?.bankCode, '0800');

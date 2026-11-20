@@ -1350,6 +1350,17 @@
     "importFailed": "Не вдалося імпортувати зображення або буфер обміну. Чернетку збережено."
   },
   "BankAccount": {
+    "accountFormat": "Формат рахунку",
+    "inputModeSplit": "Чеський рахунок",
+    "inputModeSlovak": "Словацький рахунок",
+    "invalidSlovakAccount": "Перевірте номер рахунку та код банку. Наприклад, 289-1987426353/0720.",
+    "inputModeIban": "IBAN",
+    "accountNumberLabel": "Номер рахунку",
+    "bankCodeLabel": "Код банку",
+    "creditorNameLabel": "Ім’я власника рахунку",
+    "creditorNameHelp": "Ім’я, указане в платіжних інструкціях.",
+    "supportedCurrencies": "Підтримувані валюти",
+    "addCurrency": "Додати валюту",
     "invalidNationalAccount": "Перевірте номер рахунку та код банку. Наприклад, 20001457/0800.",
     "diagnostic": {
       "title": "Остання зареєстрована помилка",
