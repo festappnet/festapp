@@ -6,3 +6,9 @@
 4. Přidat dopřednou databázovou migraci. Na jednorázové změně pravidel ověřit původní ochrany a nové případy v dočasné databázi. Vyčerpání běžného limitu, více akcí jednoho pořadatele, jiný pořadatel, společný strop, opakování stejného požadavku, změněný příjemce, odebraný přístup a zahájení skutečného odeslání.
 
 Rozhodnutí používá stávající HTTP kontrakt a nepotřebuje novou verzi webu. Nasazení probíhá jedinou databázovou migrací. Před nasazením ověřit shodu s hlavní větví a po nasazení zkontrolovat nové rozpočty i zachování stávajících počítadel.
+
+## Systémové doručení objednávek
+
+- První potvrzení z checkoutu a plánovanou připomínku bankovní platby označuje jejich interní databázový producent. Třídu určuje původ společně s uloženým příjemcem, typem zprávy a verzí objednávky nebo připomínky. Přímá žádost o odeslání toto označení nepředá.
+- Systémová potvrzení a připomínky mají vlastní rozpočet 12 zpráv za krátké okno a 60 za den na adresu. Příjemce má stejný strop při zahájení odeslání. Úspěšně zaplacené objednávky dál využívají svou stávající kapacitu 120 zpráv denně na adresu při odeslání. Kapacita poskytovatele a ověření platnosti zprávy platí pro každou třídu.
+- Vytvoření objednávky kupujícím může cílit na jím zadanou adresu. Vyšší rozpočet u potvrzení má proto hranici také pro pořadatele a organizaci a zachovává existující omezení vytváření objednávek. Přihlášení, ruční odeslání a hromadné kampaně mají samostatné stávající pojistky. Dříve uložené zprávy bez prokazatelného označení si ponechají dosavadní třídu.

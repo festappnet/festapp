@@ -20,6 +20,9 @@ DECLARE
     v_client uuid:=gen_random_uuid();
     v_user_email text := 'checkout-limit@example.invalid';
     v_user_id uuid;
+    v_order_id bigint;
+    v_claim jsonb;
+    v_error_detail text;
 BEGIN
     PERFORM set_config('festapp.email_wake','scheduled',true);
     -- 1. Setup Full Environment (Self-Contained)
@@ -101,7 +104,7 @@ BEGIN
     INSERT INTO public.abuse_budget_usage(rule_key,scope_id,bucket_at,amount,expires_at)
     SELECT rule_key,public.abuse_recipient_key_v1(v_user_email),
       date_trunc('hour',clock_timestamp()),base_limit,clock_timestamp()+interval '25 hours'
-    FROM public.abuse_policy_rules WHERE rule_key='email.ordinary.recipient.day';
+    FROM public.abuse_policy_rules WHERE rule_key IN ('email.ordinary.recipient.day','email.transactional.recipient.day','email.send.ordinary.recipient.day');
 
     v_receipt:=public.create_ticket_order_client_sync_v1(v_input_data,v_command,v_client);
     v_result:=v_receipt->'data';
@@ -114,11 +117,38 @@ BEGIN
     PERFORM assert_eq((SELECT count(*) FROM eshop.orders WHERE occasion=v_occasion_id),0::bigint,'Denied checkout leaves no allocated order');
     PERFORM assert_eq((SELECT count(*) FROM eshop.tickets WHERE occasion=v_occasion_id),0::bigint,'Denied checkout leaves no tickets');
     PERFORM assert_eq((SELECT order_product_ticket IS NULL FROM eshop.spots WHERE id=v_spot_id),true,'Seat remains available');
-    DELETE FROM public.abuse_budget_usage WHERE rule_key='email.ordinary.recipient.day'
+    DELETE FROM public.abuse_budget_usage WHERE rule_key='email.transactional.recipient.day'
       AND scope_id=public.abuse_recipient_key_v1(v_user_email);
     PERFORM assert_eq((public.create_ticket_order_client_sync_v1(v_input_data,v_command,v_client)->'data')-'analytics',v_result,
       'Transport replay retains the original rejection after capacity recovers');
     v_receipt:=public.create_ticket_order_client_sync_v1(v_input_data,gen_random_uuid(),v_client);
-    PERFORM assert_eq(v_receipt#>>'{data,code}','200','New explicit attempt succeeds when budget is available: '||v_receipt::text);
+    PERFORM assert_eq(v_receipt#>>'{data,code}','200','New attempt can use transactional capacity while the ordinary recipient budget is exhausted: '||v_receipt::text);
     PERFORM assert_eq((SELECT count(*) FROM eshop.orders WHERE occasion=v_occasion_id),1::bigint,'Exactly one order exists after retry');
+    v_order_id := (v_receipt#>>'{data,order,id}')::bigint;
+    PERFORM assert_eq((SELECT array_agg(message_kind ORDER BY message_kind) FROM public.email_messages
+      WHERE order_id=v_order_id AND admission_class='transactional'),
+      ARRAY['order_confirmation','order_reminder']::text[],
+      'System checkout and schedule are recorded in their own quota class');
+    SET LOCAL ROLE service_role;
+    BEGIN
+      PERFORM public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object(
+        'order_id',v_order_id,'systemOrderDelivery','payment_reminder','is_deposit_reminder',true),
+        (SELECT organization FROM public.occasions WHERE id=v_occasion_id),v_occasion_id,v_unit_id);
+      RAISE EXCEPTION 'A direct enqueue cannot assign system origin';
+    EXCEPTION WHEN SQLSTATE 'PT429' THEN
+      GET STACKED DIAGNOSTICS v_error_detail = PG_EXCEPTION_DETAIL;
+      PERFORM assert_eq(v_error_detail::jsonb->>'ruleKey','email.ordinary.recipient.day','Direct sends still have the ordinary limit');
+    END;
+    RESET ROLE;
+    UPDATE public.email_capacity SET paused=false,shared_account=false,daily_quota=100,provider_sent_24h=0,max_rate=100,
+      rate_factor=1,max_sending=2,max_preparing=2,quota_at=now(),next_send_at=now(),circuit_until=NULL,provider_outage_streak=0,probe_until=NULL;
+    PERFORM set_config('request.jwt.claim.role','service_role',true);
+    v_claim:=public.claim_email();
+    PERFORM assert_eq(v_claim->>'message_kind','order_confirmation','The existing worker claims checkout confirmation first');
+    PERFORM public.prepare_email((v_claim->>'message_id')::uuid,(v_claim->>'lease_token')::uuid,'{"ciphertext":"fixture"}');
+    PERFORM assert_eq(public.begin_email_send((v_claim->>'attempt_id')::uuid,(v_claim->>'lease_token')::uuid)->>'disposition',
+      'send','The fenced send uses transactional capacity despite an exhausted ordinary send budget');
+    PERFORM assert_eq((SELECT sum(amount) FROM public.abuse_budget_usage
+      WHERE rule_key='email.send.transactional.recipient.day' AND scope_id=public.abuse_recipient_key_v1(v_user_email)),1::numeric,
+      'The actual send charges the correct limit');
 END $$;

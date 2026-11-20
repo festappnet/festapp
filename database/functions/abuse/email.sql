@@ -8,7 +8,7 @@ REVOKE ALL ON FUNCTION public.abuse_recipient_key_v1(text) FROM PUBLIC,anon,auth
 -- Shared classification also adopts pending pre-cutover intents without recharging them.
 CREATE OR REPLACE FUNCTION public.email_admission_class_v1(m public.email_messages) RETURNS text
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE o eshop.orders; commitment boolean:=false;
+DECLARE o eshop.orders; pi eshop.payment_info; commitment boolean:=false;
 BEGIN
  IF m.message_kind='admin_notification_digest' AND m.organization IS NULL AND m.recipient_user IS NOT NULL
   AND EXISTS(SELECT 1 FROM public.notification_center_email_dispatches d WHERE d.id=m.notification_dispatch_id AND d.recipient=m.recipient_user) THEN RETURN 'notification'; END IF;
@@ -21,6 +21,24 @@ BEGIN
    AND NOT m.data ? 'requested_by';
  END IF;
  IF commitment THEN RETURN 'commitment'; END IF;
+ -- A delivery orchestration marker is only issued by the private checkout and reminder producers.
+ -- Bind it to the current order recipient, kind, and generation before assigning capacity.
+ IF m.order_id IS NOT NULL AND m.data ? 'systemOrderDelivery'
+    AND NOT m.data ?| ARRAY['requested_by','manual','recipient'] THEN
+  SELECT * INTO o FROM eshop.orders WHERE id=m.order_id AND occasion=m.occasion;
+  IF FOUND AND m.recipient IS NOT NULL AND m.recipient=o.data->>'email' THEN
+   IF m.message_kind='order_confirmation' AND m.data->>'systemOrderDelivery'='checkout'
+      AND m.data ? 'command_id' AND m.dedupe_key=public.order_email_automatic_key_internal(o.id,o.email_payment_version,m.recipient)
+      AND m.source_version=o.email_payment_version AND o.state IN ('ordered','paid','preparing_payment')
+   THEN RETURN 'transactional'; END IF;
+   IF m.message_kind='order_reminder' AND m.data->>'systemOrderDelivery'='payment_reminder' THEN
+    SELECT * INTO pi FROM eshop.payment_info WHERE id=o.payment_info;
+    IF FOUND AND pi.payment_method='bank' AND m.source_version=pi.email_reminder_version
+       AND m.dedupe_key=o.id||':'||pi.email_reminder_version||':'||m.recipient||':'||coalesce(m.data->>'is_deposit_reminder','false')
+    THEN RETURN 'transactional'; END IF;
+   END IF;
+  END IF;
+ END IF;
  RETURN CASE WHEN m.message_kind IN ('registration','sign_in','reset_password','google_mailbox','gotrue') THEN 'auth' ELSE 'ordinary' END;
 END $$;
 REVOKE ALL ON FUNCTION public.email_admission_class_v1(public.email_messages) FROM PUBLIC,anon,authenticated,service_role;
@@ -28,11 +46,12 @@ REVOKE ALL ON FUNCTION public.email_admission_class_v1(public.email_messages) FR
 CREATE OR REPLACE FUNCTION public.admit_email_intent_v1(p_message bigint,p_recheck boolean DEFAULT false) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE m public.email_messages; policy jsonb; scopes jsonb; costs jsonb; r jsonb;
- is_auth boolean; unit_count bigint; org_count bigint; unit_bytes bigint; org_bytes bigint; growth bigint:=0; policies jsonb; resend_scopes jsonb; limit_detail text;
+ admission_group text; is_auth boolean; unit_count bigint; org_count bigint; unit_bytes bigint; org_bytes bigint; growth bigint:=0; policies jsonb; resend_scopes jsonb; limit_detail text;
 BEGIN
  SELECT * INTO STRICT m FROM public.email_messages WHERE id=p_message;
+ admission_group:=public.email_admission_class_v1(m);
 
- IF public.email_admission_class_v1(m)='notification' THEN
+ IF admission_group='notification' THEN
   scopes:=jsonb_build_object('global','all','recipient',m.recipient_user::text);
   PERFORM public.abuse_charge_v1(public.abuse_effective_rules_v1('email.payload',NULL,NULL),scopes,
    jsonb_build_object('email.payload.bytes',octet_length(m.data::text)+coalesce(octet_length(m.prepared::text),0)));
@@ -55,7 +74,7 @@ BEGIN
   UPDATE public.email_messages SET admission_class='notification',priority=80 WHERE id=m.id;
   RETURN;
  END IF;
- policies:=public.abuse_policy_bundle_v1(ARRAY['email.payload','email.actor','email.backlog','email.auth.backlog','email.auth','email.ordinary'],m.unit,m.organization);
+ policies:=public.abuse_policy_bundle_v1(ARRAY['email.payload','email.actor','email.backlog','email.auth.backlog','email.auth','email.ordinary','email.transactional'],m.unit,m.organization);
  IF m.unit IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.units WHERE id=m.unit AND organization=m.organization) THEN
   RAISE invalid_parameter_value USING MESSAGE='email_scope_mismatch'; END IF;
  scopes:=jsonb_build_object('unit',m.unit,'organization',m.organization,'global','all',
@@ -63,7 +82,7 @@ BEGIN
  PERFORM public.abuse_charge_v1(policies->'email.payload',scopes,
   jsonb_build_object('email.payload.bytes',octet_length(m.data::text)+coalesce(octet_length(m.prepared::text),0)));
  -- Neither caller priority nor request data can claim the reserved class.
- IF public.email_admission_class_v1(m)='commitment' THEN
+ IF admission_group='commitment' THEN
   UPDATE public.email_messages SET admission_class='commitment',priority=5 WHERE id=m.id;
   RETURN;
  END IF;
@@ -72,8 +91,9 @@ BEGIN
   IF resend_scopes IS NOT NULL THEN scopes:=scopes||jsonb_build_object('actor',resend_scopes->'actor'); END IF;
   IF scopes->>'actor' IS NOT NULL THEN PERFORM public.abuse_charge_v1(policies->'email.actor',scopes); END IF;
  END IF;
- is_auth:=public.email_admission_class_v1(m)='auth';
- UPDATE public.email_messages SET admission_class=CASE WHEN is_auth THEN 'auth' ELSE 'ordinary' END WHERE id=m.id;
+ is_auth:=admission_group='auth';
+ UPDATE public.email_messages SET admission_class=admission_group,
+  priority=CASE WHEN admission_group='transactional' THEN least(priority,10) ELSE priority END WHERE id=m.id;
  policy:=policies->(CASE WHEN is_auth THEN 'email.auth.backlog' ELSE 'email.backlog' END);
  -- Null Unit auth has an explicit tenant/global class, never a synthetic Unit.
  IF m.unit IS NULL THEN policy:=jsonb_set(policy,'{rules}',(SELECT jsonb_agg(value) FROM jsonb_array_elements(policy->'rules') WHERE value->>'scope_kind'<>'unit')); END IF;
@@ -86,12 +106,12 @@ BEGIN
   coalesce(sum(octet_length(data::text)+coalesce(octet_length(prepared::text),0)) FILTER(WHERE unit=m.unit),0),
   coalesce(sum(octet_length(data::text)+coalesce(octet_length(prepared::text),0)),0)
  INTO unit_count,org_count,unit_bytes,org_bytes FROM public.email_messages
- WHERE organization=m.organization AND admission_class=CASE WHEN is_auth THEN 'auth' ELSE 'ordinary' END AND workflow_state IN ('pending','blocked','preparing','sending','retry_wait','unknown');
+ WHERE organization=m.organization AND admission_class=admission_group AND workflow_state IN ('pending','blocked','preparing','sending','retry_wait','unknown');
  costs:=jsonb_build_object('email.auth.backlog.organization',org_count,'email.backlog.unit',unit_count,'email.backlog.organization',org_count,
   'email.backlog.unit.bytes',unit_bytes,'email.backlog.organization.bytes',org_bytes);
  PERFORM public.abuse_charge_v1(policy,scopes,costs);
  IF p_recheck THEN RETURN; END IF;
- policy:=policies->(CASE WHEN is_auth THEN 'email.auth' ELSE 'email.ordinary' END);
+ policy:=policies->('email.'||admission_group);
  IF NOT is_auth AND m.unit IS NULL THEN
   -- System producers without a Unit retain tenant and recipient bounds.
   policy:=jsonb_set(policy,'{rules}',(SELECT jsonb_agg(value) FROM jsonb_array_elements(policy->'rules') WHERE value->>'scope_kind'<>'unit'));

@@ -12,7 +12,7 @@ BEGIN
   WHERE EXISTS(SELECT 1 FROM eshop.orders o WHERE o.payment_info=pi.id AND o.occasion=p_occasion_id AND (p_payment_info_id IS NULL OR pi.id=p_payment_info_id));
 
   PERFORM public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object(
-      'order_id', o.id
+      'systemOrderDelivery', 'payment_reminder', 'order_id', o.id
     ),occ.organization,o.occasion,occ.unit,pi.deadline - make_interval(secs=>coalesce((f.data->>'reminder_interval_seconds')::bigint,(form_settings.feature->>'reminder_interval_seconds')::bigint,86400))) FROM eshop.payment_info pi
   JOIN
     eshop.orders o ON pi.id = o.payment_info
@@ -40,7 +40,7 @@ BEGIN
     AND COALESCE((f.data->>'is_reminder_enabled')::boolean, (form_settings.feature->>'reminder_is_enabled')::boolean, TRUE) IS TRUE;
 
   PERFORM public.enqueue_order_email('TICKET_ORDER_REMINDER',jsonb_build_object(
-      'order_id', o.id,
+      'systemOrderDelivery', 'payment_reminder', 'order_id', o.id,
       'is_deposit_reminder', true
     ),occ.organization,o.occasion,occ.unit,(occ.start_time - make_interval(days => (deposit_settings.feature->>'deposit_deadline_days')::int)) - make_interval(secs=>coalesce((f.data->>'reminder_interval_seconds')::bigint,(form_settings.feature->>'reminder_interval_seconds')::bigint,86400))) FROM eshop.payment_info pi
   JOIN
