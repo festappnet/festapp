@@ -2,6 +2,7 @@ import 'package:fstapp/services/import_file.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
+import 'package:fstapp/startup/startup_language.dart';
 import 'package:fstapp/components/app_management/language_model.dart';
 import 'package:fstapp/components/groups/user_group_info_model.dart';
 import 'package:fstapp/components/users/user_info_model.dart';
@@ -304,7 +305,10 @@ class DialogHelper {
     );
     if (!context.mounted) return selectedLocale;
     if (selectedLocale != null) {
-      context.setLocale(selectedLocale.locale);
+      await rememberSharedLocaleChoice(selectedLocale.locale);
+      if (!context.mounted) return selectedLocale;
+      await context.setLocale(selectedLocale.locale);
+      if (!context.mounted) return selectedLocale;
       ToastHelper.Show(
           context, CommonStrings.languageSetTo(language: selectedLocale.name));
     }

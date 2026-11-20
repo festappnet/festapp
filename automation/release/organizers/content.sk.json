@@ -1,0 +1,470 @@
+{
+  "schemaVersion": 1,
+  "publicProjection": {
+    "bookingUrl": "https://cal.com/michael-bujnovsky-5srszz/ukazka",
+    "contact": "info@vstupenky.online",
+    "references": [
+      {
+        "id": "ples-akh-2026",
+        "name": "Ples AKH 2026",
+        "publicUrl": "https://vstupenky.online/form/4aa0bcbb7d114ceb9f07762cc8660c1b",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/ples-akh-2026.png",
+        "dateLabel": "20. novembra 2026",
+        "date": "2026-11-20",
+        "sourceImage": "https://img.festapp.net/images/1072585/1791309488039-ozzub5-1791309486943.png",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "skautsky-ples-2026",
+        "name": "Skautský ples 2026",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/form/ples2026",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/skautsky-ples-2026.jpg",
+        "dateLabel": "14. februára 2026",
+        "date": "2026-02-14",
+        "statusLabel": "Archív",
+        "sourceImage": "https://img.festapp.net/images/1763720153077.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "sportovni-ples-2026",
+        "name": "Sportovní ples Větřkovice 2026",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/form/sportovni_ples_2026",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/sportovni-ples-2026.jpg",
+        "dateLabel": "13. februára 2026",
+        "date": "2026-02-13",
+        "statusLabel": "Archív",
+        "sourceImage": "https://img.festapp.net/images/1768234882028.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "ples-obce-vetrkovice-2026",
+        "name": "Ples obce Větřkovice",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/form/5a71dbd201cb44faaf471d938315b8f0",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/ples-obce-vetrkovice-2026.jpg",
+        "dateLabel": "23. januára 2026",
+        "date": "2026-01-23",
+        "statusLabel": "Archív",
+        "sourceImage": "https://img.festapp.net/images/1767629085704.jpg",
+        "verifiedAt": "2026-10-22"
+      },
+      {
+        "id": "farni-ples-2026",
+        "name": "Farní ples",
+        "sourceType": "public_event_listing",
+        "sourceUrl": "https://vstupenky.online/form/farni-ples-2026-cernobily",
+        "quote": null,
+        "author": null,
+        "metric": null,
+        "image": "/organizers-media/farni-ples-2026.jpg",
+        "dateLabel": "17. januára 2026",
+        "date": "2026-01-17",
+        "statusLabel": "Archív",
+        "sourceImage": "https://img.festapp.net/images/1763253346916.jpg",
+        "verifiedAt": "2026-10-22"
+      }
+    ],
+    "seo": {
+      "title": "Predaj vstupeniek na podujatia | vstupenky.online",
+      "description": "Predávajte vstupenky na svoje podujatie. Vlastný plánik sály, výber miest, QR platby bez transakčných poplatkov a kontrola vstupeniek telefónom.",
+      "image": "/android-chrome-512x512.png",
+      "imageAlt": "Logo vstupenky.online",
+      "imageWidth": 512,
+      "imageHeight": 512,
+      "catalogTitle": "Podujatia a plesy - vstupenky online | vstupenky.online",
+      "catalogDescription": "Vyberte si podujatie alebo ples a kúpte si vstupenky online. Pozrite si nadchádzajúce podujatia, informácie organizátorov a dostupné miesta."
+    },
+    "page": {
+      "PAGE_SKIP_TO_CONTENT": "Preskočiť na obsah",
+      "PAGE_APP_NAME_HOME": "{{APP_NAME}} - úvodná stránka",
+      "PAGE_MAIN_NAVIGATION": "Hlavná navigácia",
+      "PAGE_CREATE_YOUR_OWN_EVENT": "Vytvoriť podujatie zdarma",
+      "PAGE_CREATE_EVENT": "Vytvoriť zdarma",
+      "PAGE_SIGN_IN": "Prihlásiť sa",
+      "PAGE_TICKETS": "Predávajte vstupenky",
+      "PAGE_FOR_YOUR_EVENT": "online aj na mieste",
+      "PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN": "Hostia si vyberú miesta priamo v plániku sály.",
+      "PAGE_CARD_PAYMENTS_WITH_STRIPE": "Pri vstupe stačí načítať vstupenku z telefónu.",
+      "PAGE_CREATE_EVENT_10": "Vytvoriť podujatie zdarma",
+      "PAGE_EXPLORE_THE_FEATURES": "Dohodnúť ukážku",
+      "PAGE_EVENTS_ON_FESTAPP_TICKETS": "Ukážky organizátorov",
+      "PAGE_FIND_YOUR_NEXT_EVENT": "Podujatia na vstupenky.online",
+      "PAGE_BROWSE_ALL_EVENTS": "Nájsť podujatie",
+      "PAGE_FROM_THE_FIRST_TABLE_TO_THE_LAST_GUEST": "Od prvého stola až po posledného hosťa",
+      "PAGE_ONE_EVENT": "Ako prebieha predaj",
+      "PAGE_EVERYTHING_IN_ITS_PLACE": "z pohľadu organizátora",
+      "PAGE_PRODUCT_FEATURES": "Ukážky funkcií",
+      "PAGE_01_SEATING_PLAN": "Plánik sály",
+      "PAGE_02_FORM": "Predaj a vstupenky",
+      "PAGE_03_TICKET": "03 Vstupenka",
+      "PAGE_04_CHOOSE_SEATS": "04 Výber miest",
+      "PAGE_05_CHECK_IN": "05 Kontrola vstupeniek",
+      "PAGE_06_OVERVIEW": "Správa a kontrola vstupeniek",
+      "PAGE_CARD_PAYMENTS_WITH_STRIPE_25": "Platba cez QR kód priamo na Váš účet",
+      "PAGE_FROM_YOUR_GUEST": "Od hosťa.",
+      "PAGE_TO_YOUR_STRIPE_ACCOUNT": "Priamo na Váš účet.",
+      "PAGE_GUESTS_PAY_BY_CARD_THROUGH_STRIPE_CHECKOUT_THE_P": "Hosť načíta QR kód vo svojej bankovej aplikácii. Peniaze posiela priamo Vám, bez platobnej brány a sprostredkovateľa.",
+      "PAGE_CONNECT_AND_VERIFY_YOUR_STRIPE_ACCOUNT_BEFORE_OP": "Okamžitým prevodom, ak ho podporujú obe banky.",
+      "PAGE_WANT_TO_OFFER_BANK_TRANSFERS_TOO": "Chcete prijímať aj platby kartou?",
+      "PAGE_CONTACT_US": "Napíšte nám",
+      "PAGE_CARD_PAYMENT_FROM_GUEST_TO_THE_ORGANIZER_S_STRIP": "Priamy bankový prevod od hosťa na účet organizátora",
+      "PAGE_GUEST": "Hosť",
+      "PAGE_STRIPE_CHECKOUT": "Jeho banková aplikácia",
+      "PAGE_YOUR_ACCOUNT": "Váš účet",
+      "PAGE_YOUR_CONNECTED_STRIPE_ACCOUNT": "Priamo vo Vašej banke",
+      "PAGE_STRIPE": "0 Kč",
+      "PAGE_PROVIDER_PROCESSING_FEES_APPLY": "transakčný poplatok za prevod cez QR kód",
+      "PAGE_CONTACT_US_ABOUT_SERVICE_PRICING_STRIPE_FEES_DEP": "Cenu služby dohodneme samostatne. Platby kartou sú dostupné po dohode.",
+      "PAGE_PREPARE_SELL_APPLAUSE": "Príprava. Predaj. Potlesk.",
+      "PAGE_YOU_PREPARE_THE_EVENT": "Vy pripravíte podujatie.",
+      "PAGE_WE_HELP_WITH_THE_TICKETS": "My pomôžeme so vstupenkami.",
+      "PAGE_PREPARE_YOUR_EVENT": "Pripravte podujatie",
+      "PAGE_EVENT_DETAILS_FORMS_AND_TICKETS_IN_ONE_PLACE_ARR": "Informácie, formulár a vstupenky na jednom mieste. Priestor usporiadate podľa svojej sály.",
+      "PAGE_OPEN_TICKET_SALES": "Otvorte predaj",
+      "PAGE_SHARE_YOUR_LINK_GUESTS_FILL_IN_THE_FORM_AND_CHOO": "Zdieľajte odkaz. Hostia vyplnia formulár a vyberú si vstupenky.",
+      "PAGE_WELCOME_YOUR_GUESTS": "Privítajte hostí",
+      "PAGE_KEEP_TRACK_OF_ORDERS_CHECK_TICKETS_AT_THE_DOOR_U": "Objednávky vidíte v prehľade. Pri vstupe overíte vstupenky pomocou QR kódu.",
+      "PAGE_PRICING_AND_SUPPORT": "Cena a podpora",
+      "PAGE_LET_S_SET_UP_TICKETS_FOR_YOUR_EVENT": "Cena pre organizátorov",
+      "PAGE_BOOK_A_30_MINUTE_WALKTHROUGH_OF_THE_SERVICE_AND_": "Podujatie vytvoríte zdarma. Na cene služby sa dohodneme podľa toho, čo pre svoje podujatie potrebujete.",
+      "PAGE_BOOK_A_DEMO": "Dohodnúť ukážku",
+      "PAGE_FOR_TECHNICAL_TEAMS": "Pre technické tímy",
+      "PAGE_OPEN_CODE_YOUR_POSSIBILITIES": "Otvorený zdrojový kód",
+      "PAGE_ALONGSIDE_OUR_SERVICE_YOU_CAN_USE_THE_OPEN_FESTA": "Okrem našej služby môžete využiť aj otvorenú platformu Festapp a prispôsobiť ju svojmu tímu.",
+      "PAGE_OPEN_SOURCE": "Open source",
+      "PAGE_THE_SOURCE_IS_PUBLIC_UNDER_THE_MIT_LICENSE_EXPLO": "Zdrojový kód je verejný pod licenciou MIT. Pozrite sa, ako platforma funguje, alebo sa zapojte do vývoja.",
+      "PAGE_SOURCE_CODE_ON_GITHUB": "Zdrojový kód na GitHube",
+      "PAGE_SELF_HOSTING": "Vlastný hosting",
+      "PAGE_RUN_FESTAPP_ON_YOUR_OWN_INFRASTRUCTURE_THE_DOCUM": "Festapp môžete prevádzkovať na vlastnej infraštruktúre. Dokumentácia popisuje nastavenie aplikácie aj serverovej časti.",
+      "PAGE_SELF_HOSTING_GUIDE": "Návod na vlastnú prevádzku",
+      "PAGE_CONNECT_YOUR_AI_AGENT": "Prepojenie s AI agentom",
+      "PAGE_THROUGH_MCP_YOUR_AGENT_CAN_USE_SUPPORTED_PLATFOR": "Cez MCP môže Váš agent používať podporované funkcie platformy podľa oprávnení Vášho účtu.",
+      "PAGE_SET_UP_MCP_ACCESS": "Ako nastaviť prepojenie cez MCP",
+      "PAGE_YOUR_EVENT_UNDER_YOUR_CONTROL": "Vaše podujatie máte pod kontrolou.",
+      "PAGE_PREPARE_YOUR": "Pripravte svoje",
+      "PAGE_NEXT": "ďalšie",
+      "PAGE_EVENT": "podujatie.",
+      "PAGE_FESTAPP_FESTAPP_NET": "Festapp - festapp.net",
+      "PAGE_PROVIDER_NAME_REGISTRATION_NO_06455361": "{{PROVIDER_NAME}}, IČO 06455361",
+      "PAGE_LEGAL_AND_SUPPORT_LINKS": "Právne informácie a podpora",
+      "PAGE_EVENTS": "Podujatia",
+      "PAGE_BROWSE_EVENTS": "Plesy v Česku",
+      "PAGE_PRIVACY": "Ochrana súkromia",
+      "PAGE_TERMS": "Podmienky",
+      "PAGE_SUPPORT": "Podpora"
+    },
+    "locale": "sk",
+    "languageTag": "sk-SK",
+    "ogLocale": "sk_SK",
+    "provider": {
+      "name": "Michael Bujnovský",
+      "identifier": "06455361",
+      "identifierLabel": "IČO"
+    },
+    "cta": {
+      "href": "/login?create=1",
+      "label": "Vytvoriť podujatie zdarma",
+      "note": "Na vytvorenie podujatia potrebujete účet. Pokračujte prihlásením do administrácie."
+    },
+    "serviceName": "Predaj vstupeniek na podujatia",
+    "serviceType": "Predaj vstupeniek a správa podujatí",
+    "ui": {
+      "play": "Prehrať",
+      "pause": "Pozastaviť",
+      "retry": "Skúsiť znova",
+      "replay": "Prehrať znova",
+      "failed": "Video sa nepodarilo prehrať.",
+      "download": "Otvoriť video",
+      "referenceLabel": "Ukážky podujatí, posuvná galéria",
+      "previous": "Predchádzajúce podujatie",
+      "next": "Ďalšie podujatie",
+      "position": "{first}-{last} z {count} podujatí",
+      "total": "{count} podujatí",
+      "imagePrefix": "Úvodný obrázok:",
+      "catalogNav": "Hlavná navigácia",
+      "organizers": "Pre organizátorov",
+      "related": "Ďalšie možnosti",
+      "home": "Úvodná stránka",
+      "contactAction": "Dohodnúť ukážku",
+      "legalNav": "Právne informácie a podpora",
+      "closing": "Pripravte svoje ďalšie podujatie.",
+      "priceNote": "Cenu služby dohodneme samostatne. Prejdeme si s Vami podujatie aj konkrétnu ponuku.",
+      "breadcrumbs": "Umiestnenie na webe"
+    },
+    "footerLinks": [
+      {
+        "href": "/events",
+        "label": "Podujatia"
+      },
+      {
+        "href": "https://plesy.vstupenky.online",
+        "label": "Plesy v Česku"
+      },
+      {
+        "href": "/privacy/",
+        "label": "Ochrana súkromia"
+      },
+      {
+        "href": "/terms/",
+        "label": "Podmienky"
+      },
+      {
+        "href": "/support/",
+        "label": "Podpora"
+      }
+    ],
+    "referencesHeading": "Podujatia na vstupenky.online",
+    "catalogLabel": "Nájsť podujatie",
+    "gettingStarted": {
+      "steps": [
+        {
+          "title": "Pripravte si základné údaje",
+          "text": "Názov, termín, miesto a kontaktný e-mail. Pri platenom podujatí aj účet na príjem platieb."
+        },
+        {
+          "title": "Vytvorte podujatie a uložte koncept",
+          "text": "V sprievodcovi nastavte ponuku, plánik a vzhľad vstupenky. K uloženému konceptu sa môžete kedykoľvek vrátiť."
+        },
+        {
+          "title": "Skontrolujte formulár a otvorte predaj",
+          "text": "Zverejnenie v katalógu a otvorenie predaja nastavujete zvlášť. Pred zdieľaním odkazu overte ponuku a kapacitu."
+        }
+      ]
+    },
+    "pricingFacts": [
+      [
+        "Vytvorenie podujatia",
+        "Zdarma"
+      ],
+      [
+        "Bankový prevod cez QR kód",
+        "Priamo na účet organizátora. Za spracovanie prevodu neúčtujeme transakčný poplatok."
+      ],
+      [
+        "Platby kartou",
+        "Po dohode. Poplatky a výplaty sa riadia podmienkami platobnej brány."
+      ],
+      [
+        "Cena služby",
+        "V ponuke uvedieme cenu za online predaj a zvlášť prípadnú prípravu plánika, tlač vstupeniek alebo pomoc so spustením predaja."
+      ]
+    ],
+    "homeFaq": [
+      {
+        "question": "Čo je zdarma a za čo ako organizátor zaplatím?",
+        "answer": "Podujatie vytvoríte zdarma. Za spracovanie prevodu cez QR kód neúčtujeme transakčný poplatok. Cenu služby dohodneme podľa Vášho podujatia. Pri platbách kartou platia aj podmienky platobnej brány.",
+        "guide": {
+          "href": "#cena",
+          "label": "Podmienky a cena služby"
+        }
+      },
+      {
+        "question": "Na aký účet prídu tržby a kedy ich dostanem?",
+        "answer": "Pri prevode cez QR kód platí hosť priamo na účet organizátora nastavený vo formulári. Čas pripísania závisí od bánk. Platby kartou sprístupňujeme po dohode a termín výplaty určujú podmienky platobnej brány.",
+        "guide": {
+          "href": "/platby-a-objednavky",
+          "label": "Platby a prehľad tržieb"
+        }
+      },
+      {
+        "question": "Čo si mám pripraviť pred spustením predaja?",
+        "answer": "Pripravte údaje o podujatí, druhy vstupeniek, ceny a kapacitu. Pri platenej ponuke nastavte príjem platieb. Predaj môžete pripraviť v koncepte a otvoriť ho po kontrole formulára a ceny v rekapitulácii.",
+        "guide": {
+          "href": "/napoveda/zaciname/#kontrola",
+          "label": "Kontrola pred spustením predaja"
+        }
+      },
+      {
+        "question": "Už predávam inde. Ako presuniem rozbehnuté podujatie?",
+        "answer": "Pripravte prehľad predaných vstupeniek a obsadených miest. Pri presune ich započítajte do dostupnej kapacity. Napíšte nám, aké údaje viete exportovať, a prejdeme si s Vami postup.",
+        "guide": {
+          "href": "#kontakt",
+          "label": "Prebrať presun konkrétneho podujatia"
+        }
+      },
+      {
+        "question": "Čo ak musím stornovať vstupenku a vrátiť peniaze?",
+        "answer": "Môžete stornovať jednu vstupenku alebo celú objednávku. Peniaze vráťte v samostatnom kroku podľa spôsobu platby a výsledok overte v detaile objednávky.",
+        "guide": {
+          "href": "/napoveda/objednavky/#zmena",
+          "label": "Storno vstupenky alebo objednávky"
+        }
+      },
+      {
+        "question": "Môžem predávať na vlastnom webe a zdieľať ten istý formulár aj inde?",
+        "answer": "Áno. Formulár môžete vložiť na vlastný web a jeho verejnú adresu zdieľať aj e-mailom alebo na sociálnych sieťach. Objednávky z oboch ciest uvidíte pri tom istom podujatí a čerpajú z rovnakej kapacity.",
+        "guide": {
+          "href": "/prodej-vstupenek-na-vlastnim-webu",
+          "label": "Ako vložiť predaj na vlastný web"
+        }
+      },
+      {
+        "question": "Čo ak pri vstupe vypadne internet?",
+        "answer": "Kontrolu vstupeniek offline povoľte a pripravte na každom telefóne ešte s pripojením. Pri výpadku skener pracuje s uloženými údajmi. Nové vstupy z ostatných telefónov sa zobrazia po synchronizácii.",
+        "guide": {
+          "href": "/napoveda/odbaveni/#offline",
+          "label": "Príprava skenera na výpadok internetu"
+        }
+      },
+      {
+        "question": "Kto zodpovedá za údaje, ktoré zbieram od hostí?",
+        "answer": "Organizátor určuje, aké údaje vo formulári potrebuje a na čo ich použije. Zásady ochrany osobných údajov popisujú, ako údaje ďalej spracúva vstupenky.online.",
+        "guide": {
+          "href": "/privacy/",
+          "label": "Ochrana osobných údajov"
+        }
+      }
+    ],
+    "referenceCase": {
+      "title": "Divadlo s balkónom a lóžami",
+      "text": "V editore usporiadate sedadlá do oblúka pred javiskom a pridáte samostatné miesta na balkóne a v lóžach.",
+      "href": "/rezervacni-system-s-planem-salu#usporadani",
+      "label": "Pozrieť šablóny sál"
+    },
+    "pages": [
+      {
+        "id": "home",
+        "path": "/"
+      }
+    ],
+    "helpLink": {
+      "href": "/napoveda/",
+      "label": "Pomoc"
+    },
+    "redirects": [],
+    "regionalHome": {
+      "priceLead": "Ak chcete konkrétnu ponuku, napíšte nám typ podujatia, počet miest a s čím pri predaji potrebujete pomôcť.",
+      "priceContact": "Napísať ohľadom ceny",
+      "faqHeading": "Najčastejšie otázky pred spustením predaja",
+      "overviewHeading": "Funkcie pre organizátorov",
+      "overview": [
+        {
+          "path": "/rezervacni-system-s-planem-salu",
+          "linkLabel": "Vlastný plánik sály",
+          "overview": {
+            "points": [
+              "Okrúhle stoly, rady aj vlastné rozloženie",
+              "Priradenie vstupeniek k miestam",
+              "Výber miesta priamo v objednávke"
+            ]
+          }
+        },
+        {
+          "path": "/online-prodej-vstupenek",
+          "linkLabel": "Online predaj vstupeniek",
+          "overview": {
+            "points": [
+              "Druhy vstupeniek a spoločné kapacity",
+              "Vlastné otázky a doplnkové produkty",
+              "Vzhľad vstupenky a PDF"
+            ]
+          }
+        },
+        {
+          "path": "/platby-a-objednavky",
+          "linkLabel": "Platby a objednávky",
+          "overview": {
+            "points": [
+              "Prevod cez QR kód priamo na Váš účet",
+              "Párovanie prevodov a prehľad úhrad",
+              "Doručenie a opätovné odoslanie vstupeniek"
+            ]
+          }
+        },
+        {
+          "path": "/prodej-vstupenek-na-miste",
+          "linkLabel": "Predaj vstupeniek na mieste",
+          "overview": {
+            "points": [
+              "Tlačové PDF alebo ZIP so samostatnými vstupenkami",
+              "Evidencia hotovosti",
+              "Uvoľnenie nepredaných miest"
+            ]
+          }
+        },
+        {
+          "path": "/odbaveni-vstupenek",
+          "linkLabel": "Kontrola vstupeniek cez QR kód",
+          "overview": {
+            "points": [
+              "Overenie úhrady a predchádzajúceho použitia",
+              "Ručné zadanie kódu",
+              "Nastavenie údajov pre obsluhu"
+            ]
+          }
+        },
+        {
+          "path": "/prodej-vstupenek-na-vlastnim-webu",
+          "linkLabel": "Predaj na vlastnom webe",
+          "overview": {
+            "points": [
+              "Vloženie cez HTML",
+              "WordPress, Wix, Joomla a Webnode",
+              "Priamy odkaz do e-mailu a na sociálne siete"
+            ]
+          }
+        }
+      ],
+      "gettingStartedHeading": "Ako vytvoriť prvé podujatie",
+      "gettingStartedCaption": "Výber šablóny vstupenky pri príprave podujatia",
+      "gettingStartedLink": "Pozrieť celý postup",
+      "quickLinks": {
+        "demo": "Vyskúšať výber miest",
+        "features": "Funkcie",
+        "price": "Cena"
+      },
+      "contact": {
+        "title": "Napíšte nám",
+        "email": "Váš e-mail",
+        "message": "Vaša správa",
+        "submit": "Odoslať správu",
+        "noScript": "Ak chcete odoslať formulár, povoľte JavaScript.",
+        "required": "Napíšte, prosím, správu.",
+        "pending": "Odosielame…",
+        "success": "Ďakujeme, správu sme prijali.",
+        "rateLimited": "Prijímame príliš veľa správ. Skúste to, prosím, o chvíľu.",
+        "invalid": "Skontrolujte, prosím, e-mail a text správy.",
+        "error": "Správu sa nepodarilo odoslať. Skúste to, prosím, znova."
+      },
+      "seatDemo": {
+        "heading": "Vyskúšajte si výber miest",
+        "event": "Ples pod hviezdami",
+        "description": "Vyskúšajte si vybrať miesta pri jednom stole. Ide o ukážku bez rezervácie a platby.",
+        "open": "Otvoriť plánik",
+        "zoomLabel": "Mierka plánika",
+        "zoomIn": "Priblížiť plánik",
+        "zoomOut": "Oddialiť plánik",
+        "fit": "Celá sála",
+        "available": "Voľné",
+        "occupied": "Obsadené",
+        "selected": "Vybrané miesta",
+        "none": "Zatiaľ žiadne",
+        "price": "Ukážková cena",
+        "zero": "0 €",
+        "clear": "Vymazať výber",
+        "posterAlt": "Plánik stolov okolo tanečného parketu",
+        "details": "Ako vyzerá výber na telefóne a prehľad platby",
+        "loading": "Načítavame plánik…",
+        "ready": "Plánik je pripravený.",
+        "error": "Plánik sa nepodarilo načítať. Skúste to, prosím, znova.",
+        "ticket": "Vstupenka"
+      }
+    }
+  }
+}

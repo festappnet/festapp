@@ -80,7 +80,7 @@ test('startup policy generation is deterministic and idempotent for both shells'
     t.after(() => rm(root, {recursive:true, force:true}));
     await mkdir(join(root, 'web_client/src/services'), {recursive:true});
     await mkdir(join(root, 'web_client/src/runtime'), {recursive:true});
-    for (const name of ['page_context.js','update_policy.js','worker_shell.js','runtime_state.js']) await writeFile(join(root, 'web_client/src/runtime', name), await readFile(new URL(`../../src/runtime/${name}`, import.meta.url)));
+    for (const name of ['page_context.js','update_policy.js','worker_shell.js','runtime_state.js','locale_preference.js']) await writeFile(join(root, 'web_client/src/runtime', name), await readFile(new URL(`../../src/runtime/${name}`, import.meta.url)));
     await mkdir(join(root, 'web'), {recursive:true});
     await writeFile(join(root, 'web_client/src/services/theme_preference.js'), source);
     for (const shell of ['web', 'web_client']) {

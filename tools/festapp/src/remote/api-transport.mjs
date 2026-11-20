@@ -1,3 +1,4 @@
+import { imageUploadBodyLimit, imageUploadOperation } from '../operations/images.mjs';
 import express from 'express';
 import { STRONG_AUTHENTICATION_ACR, STEP_UP_MAX_AGE_SECONDS } from '../auth/assurance.mjs';
 import { randomUUID, createHash } from 'node:crypto';
@@ -11,12 +12,16 @@ export function stepUpChallenge(endpoint) {
     return `DPoP error="insufficient_user_authentication", acr_values="${STRONG_AUTHENTICATION_ACR}", max_age="${STEP_UP_MAX_AGE_SECONDS}", resource_metadata=${JSON.stringify(metadata)}`;
 }
 
-export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer' } = {}) {
+export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer', receipt } = {}) {
     const safe = error?.code && errorStatuses[error.code] ? error : safeError(error);
     const status = errorStatuses[safe.code] ?? 502;
     if (status === 401 && endpoint) res.set('WWW-Authenticate', `${authScheme === 'DPoP' ? 'DPoP' : 'Bearer'} resource_metadata="${new URL(endpoint.publicBase).origin}/.well-known/oauth-protected-resource/integrations", error="${safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' ? 'insufficient_user_authentication' : 'invalid_token'}"`);
     if (safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' && endpoint) res.set('WWW-Authenticate', stepUpChallenge(endpoint));
     if (status === 429 && error?.retryAfter) res.set('Retry-After', String(error.retryAfter));
+    if (safe.code === 'COMMITTED_READBACK_FAILED' && receipt) {
+        res.set({ 'Festapp-Write-Outcome': 'committed', 'Festapp-Command-Id': receipt.commandId, 'Festapp-Receipt-Id': receipt.receiptId });
+        if (receipt.formId) res.set({ 'Festapp-Occasion-Id': String(receipt.occasionId), 'Festapp-Form-Id': String(receipt.formId) });
+    }
     if (status === 405) res.set('Allow', 'POST');
     return res.status(status).set({ 'X-Request-Id': requestId, 'Cache-Control': 'no-store' }).type('application/problem+json').json({
         type: 'https://api.festapp.net/integrations/problems/' + safe.code.toLowerCase(),
@@ -27,7 +32,9 @@ export function sendProblem(res, error, { requestId = randomUUID(), endpoint, ou
 // before any email is queued, so the write is known not to have happened.
 const APPROVAL_REQUESTS = new Set(['units.measurementApproval.request', 'units.metaCapiApproval.request']);
 const APPROVAL_REJECTIONS = new Set(['APPROVAL_REQUEST_LIMITED', 'APPROVAL_REQUEST_NO_RECIPIENT', 'APPROVAL_REQUEST_REJECTED']);
-export const definiteRejection = (id, error) => APPROVAL_REQUESTS.has(id) && APPROVAL_REJECTIONS.has(error?.code);
+export const definiteRejection = (id, error) =>
+    (APPROVAL_REQUESTS.has(id) && APPROVAL_REJECTIONS.has(error?.code)) ||
+    (id === imageUploadOperation && ['IMAGE_UPLOAD_REJECTED', 'FORBIDDEN', 'AUTHENTICATION_REQUIRED'].includes(error?.code));
 export function installApi(app, { config, run }) {
     // Immutable build artifacts are loaded once, never generated per request.
     const docs = new Map();
@@ -67,10 +74,12 @@ export function installApi(app, { config, run }) {
         res.type('json').send(bytes);
     });
     const parser = express.json({ limit: '48kb', strict: true });
+    const imageParser = express.json({ limit: imageUploadBodyLimit, strict: true });
     const route = [API_PREFIX + '/operations/:operation', API_PREFIX + '/artifacts/read'];
     app.post(route, (req, res, next) => {
         if (!req.is('application/json')) return sendProblem(res, { code: 'UNSUPPORTED_MEDIA_TYPE' }, { outcome: 'rejected' });
-        parser(req, res, error => {
+        const parse = req.params.operation === imageUploadOperation ? imageParser : parser;
+        parse(req, res, error => {
             if (error) return sendProblem(res, { code: error.type === 'entity.too.large' ? 'BODY_TOO_LARGE' : 'MALFORMED_JSON' }, { outcome: 'rejected' });
             const stack = [[req.body, 0]];
             let nodes = 0;
@@ -101,9 +110,16 @@ export function installApi(app, { config, run }) {
                 }
                 check(known.has(id), 'UNKNOWN_OPERATION');
                 check(owner.permitsOperation(id), 'FORBIDDEN');
-                let retryAfter;
-                const result = await operations.invoke(id, req.body, { onAccepted: () => { accepted = true; }, onRetryAfter: seconds => { retryAfter = seconds; } });
-                if (!result.ok) return sendProblem(res, retryAfter ? { ...result.error, retryAfter } : result.error, { requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, outcome: !accepted || known.get(id).domainReadOnly || definiteRejection(id, result.error) ? 'rejected' : 'unknown' });
+                let retryAfter, receipt;
+                const result = await operations.invoke(id, req.body, {
+                    onAccepted: () => { accepted = true; },
+                    onRetryAfter: seconds => { retryAfter = seconds; },
+                    onCommittedReadbackFailure: value => { receipt = value; },
+                });
+                if (!result.ok) return sendProblem(res, retryAfter ? { ...result.error, retryAfter } : result.error, {
+                    requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, receipt,
+                    outcome: !accepted || known.get(id).domainReadOnly || definiteRejection(id, result.error) ? 'rejected' : 'unknown',
+                });
                 const descriptor = publicCatalog(owner.orderSummaryOnly ? 'order-summary' : 'operator').find(d => d.id === id);
                 check(descriptor.output.safeParse(result).success, 'UPSTREAM_CONTRACT_FAILURE');
                 return res.set({ 'X-Request-Id': result.meta.requestId, 'Cache-Control': 'no-store' }).json(result);

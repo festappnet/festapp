@@ -10,11 +10,13 @@ class AsyncDownloadButton extends StatefulWidget {
     required this.loadingLabel,
     required this.onDownload,
     this.iconOnly = false,
+    this.iconColor,
   });
 
   final String label, loadingLabel;
   final Future<void> Function()? onDownload;
   final bool iconOnly;
+  final Color? iconColor;
 
   @override
   State<AsyncDownloadButton> createState() => _AsyncDownloadButtonState();
@@ -47,7 +49,12 @@ class _AsyncDownloadButtonState extends State<AsyncDownloadButton> {
     return Semantics(
       liveRegion: _busy,
       child: widget.iconOnly
-          ? IconButton(icon: icon, tooltip: label, onPressed: onPressed)
+          ? IconButton(
+              icon: icon,
+              color: widget.iconColor,
+              tooltip: label,
+              onPressed: onPressed,
+            )
           : TextButton.icon(
               icon: icon,
               label: Text(label),

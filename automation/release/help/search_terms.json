@@ -360,5 +360,224 @@
       "reserved seat",
       "selected tickets"
     ]
+  },
+  "sk": {
+    "overview": [
+      "pomoc pre organizátorov",
+      "návod",
+      "kde začať"
+    ],
+    "getting-started": [
+      "vytvoriť podujatie",
+      "založiť akciu",
+      "nové podujatie",
+      "registrácia organizátora",
+      "koncept podujatia",
+      "sprievodca",
+      "wizard"
+    ],
+    "event-settings": [
+      "zmeniť termín",
+      "premenovať podujatie",
+      "upraviť podujatie",
+      "zverejnenie v katalógu",
+      "administrácia",
+      "časové pásmo"
+    ],
+    "form": [
+      "zverejniť formulár",
+      "otvoriť predaj",
+      "povinné polia",
+      "odkaz na formulár",
+      "prihláška",
+      "zatvoriť predaj"
+    ],
+    "ticket-pricing": [
+      "cenník",
+      "ceny lístkov",
+      "zmeniť cenu",
+      "kapacitné skupiny",
+      "vypredané",
+      "zásoby",
+      "zľavové kódy",
+      "kupón",
+      "percentuálna zľava",
+      "pevná zľava"
+    ],
+    "seating": [
+      "miestenky",
+      "sedadlá",
+      "stoly",
+      "sála",
+      "rezervácia miest",
+      "zasadací poriadok",
+      "sedenie"
+    ],
+    "ticket-design": [
+      "PDF",
+      "tlač vstupeniek",
+      "logo",
+      "šablóna vstupenky",
+      "QR kód na vstupenke"
+    ],
+    "bank-accounts": [
+      "nastavenie banky",
+      "bankový účet",
+      "pridať účet",
+      "IBAN",
+      "bankové spojenie",
+      "slovenský účet"
+    ],
+    "fio-token": [
+      "Fio",
+      "API token",
+      "autorizácia tokenu",
+      "prepojenie banky",
+      "automatické párovanie"
+    ],
+    "payments": [
+      "splatnosť",
+      "variabilný symbol",
+      "bankový účet",
+      "QR platba",
+      "párovanie platieb",
+      "Fio",
+      "hotovosť"
+    ],
+    "embed": [
+      "iframe",
+      "HTML",
+      "vložiť formulár",
+      "webová stránka",
+      "generátor kódu",
+      "automatická výška"
+    ],
+    "measurement": [
+      "GTM",
+      "Google Tag Manager",
+      "GA4",
+      "Google Ads",
+      "Meta Pixel",
+      "Meta CAPI",
+      "dataLayer",
+      "meranie nákupu",
+      "súhlas s cookies",
+      "prenos súhlasu"
+    ],
+    "wix": [
+      "Wix",
+      "Wix App Market",
+      "widget",
+      "doplnok Wix",
+      "inštalácia Wix"
+    ],
+    "wordpress": [
+      "WordPress",
+      "Gutenberg",
+      "blok WordPress",
+      "doplnok",
+      "vlastné HTML"
+    ],
+    "joomla": [
+      "jumla",
+      "modul Joomla",
+      "inštalácia rozšírenia",
+      "loadmoduleid",
+      "vstupenky v článku"
+    ],
+    "webnode": [
+      "Webnode",
+      "Web note",
+      "Webnot",
+      "vložiť kód",
+      "vlastné HTML"
+    ],
+    "ai-agents": [
+      "MCP",
+      "AI agent",
+      "umelá inteligencia",
+      "pripojenie asistenta",
+      "automatizácia formulárov",
+      "Claude Code"
+    ],
+    "mcp-reference": [
+      "dokumentácia MCP",
+      "podporované nástroje",
+      "prehľad API",
+      "prompty",
+      "oprávnenia agenta",
+      "spevník",
+      "piesne",
+      "informačné stránky",
+      "termín hry",
+      "úvodné podujatie aplikácie",
+      "kód na vloženie formulára",
+      "súhlas webu",
+      "schválenie merania",
+      "Meta CAPI"
+    ],
+    "webhooks": [
+      "webhook",
+      "webhooky",
+      "API",
+      "nová objednávka",
+      "automatizácia",
+      "podpis správy",
+      "vlastná aplikácia"
+    ],
+    "orders": [
+      "nedoručené vstupenky",
+      "neprišli lístky",
+      "e-mail neprišiel",
+      "znovu poslať vstupenky",
+      "preklep v e-maile",
+      "zmena objednávky",
+      "storno objednávky"
+    ],
+    "unmatched-payment": [
+      "nesprávny variabilný symbol",
+      "chybný VS",
+      "chýbajúci variabilný symbol",
+      "nespárovaná platba",
+      "ručné párovanie",
+      "vyhľadať a pripojiť transakciu",
+      "platba pri inej objednávke"
+    ],
+    "check-in": [
+      "skener",
+      "scanner",
+      "odbavenie",
+      "kontrola vstupu",
+      "offline",
+      "použitá vstupenka",
+      "kamera"
+    ],
+    "scanner-settings": [
+      "nastavenia skenera",
+      "čo zobraziť",
+      "údaje pri skenovaní",
+      "interná poznámka",
+      "skryť cenu"
+    ],
+    "troubleshooting": [
+      "nefunguje formulár",
+      "orezaný formulár",
+      "nevidím tlačidlo",
+      "posúvanie",
+      "pomalé načítanie",
+      "cache"
+    ],
+    "customer-self-service": [
+      "zákaznícka samoobsluha",
+      "storno",
+      "schváliť storno",
+      "povinný dôvod",
+      "vrátenie peňazí",
+      "presun termínu",
+      "zmena údajov",
+      "storno jednej vstupenky",
+      "miestenka",
+      "vybrané vstupenky"
+    ]
   }
 }

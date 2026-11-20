@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, connect, apiRequest, httpRequest } from './api-fixture.mjs';
-import { parseRemoteConfig } from '../src/remote/config.mjs';
-import { profile } from './fixture.mjs';
+import { parseRemoteConfig, READ_SCOPE } from '../src/remote/config.mjs';
+import { profile, reply } from './fixture.mjs';
 import { generateKeyPair, exportJWK, SignJWT, calculateJwkThumbprint } from 'jose';
 import { randomUUID, createHash } from 'node:crypto';
 
@@ -29,6 +29,46 @@ test('real OAuth API grants isolate resources, transports, immutable profile and
     assert.equal(grant.proofProfile,'bearer');assert.equal(grant.profileBinding,profile().binding);
     f.storage.revoke(grant.id);
     assert.equal((await apiRequest(f,global.tokens)).status,401);
+});
+
+test('API form writes expose a verified receipt after readback failure and revoke invalid sessions', async t => {
+    const commandId = '00000000-0000-4000-8000-00000000abcd';
+    const scopes = [READ_SCOPE, 'festapp:forms:read', 'festapp:forms:write'];
+    let authFailure = false;
+    const commands = [];
+    const f = await setup(t, {
+        apiPolicy: { allowedScopes: scopes, allowedOperations: ['context.inspect', 'forms.create'] },
+        fetchImpl: (url, init) => {
+            if (url.pathname.endsWith('/rpc/manage_form')) {
+                commands.push(JSON.parse(init.body).p_command_id);
+                return reply({ code: 200, status: commands.length === 1 ? 'applied' : 'unchanged',
+                    mutation: { commandId, receiptId: commandId },
+                    data: { occasionId: 7, formId: 42, authoring: { form: { id: 42, occasion: 7 } } } });
+            }
+            if (url.pathname.endsWith('/rpc/get_form_for_authoring'))
+                return authFailure ? reply({ code: 'session_not_found', message: 'fixture session invalid' }, 401)
+                    : reply({ message: 'fixture read unavailable' }, 503);
+        },
+    });
+    const { tokens } = await connect(f, { scope: scopes.join(' ') });
+    const payload = { commandId: commandId.toUpperCase(), occasionId: 7, title: 'Evening' };
+    for (const revoked of [false, true]) {
+        authFailure = revoked;
+        const response = await apiRequest(f, tokens, 'forms.create', payload);
+        assert.equal(response.status, 502, await response.clone().text());
+        const problem = await response.json();
+        assert.equal(problem.code, 'COMMITTED_READBACK_FAILED');
+        assert.equal(problem.title, problem.code);
+        assert.equal(problem.retryable, false);
+        assert.equal(problem.outcome, 'unknown');
+        assert.equal(response.headers.get('festapp-write-outcome'), 'committed');
+        assert.equal(response.headers.get('festapp-command-id'), commandId);
+        assert.equal(response.headers.get('festapp-receipt-id'), commandId);
+        assert.equal(response.headers.get('festapp-occasion-id'), '7');
+        assert.equal(response.headers.get('festapp-form-id'), '42');
+    }
+    assert.deepEqual(commands, [commandId, commandId]);
+    assert.equal((await apiRequest(f, tokens)).status, 401);
 });
 
 test('concurrency rejection is retryable and admission recovers after active requests finish', { timeout: 10000 }, async t => {
@@ -431,4 +471,64 @@ test('all delegated operations use one catalog, validation and executor through 
         else assert.equal(http.code,tool.error.code,descriptor.id);
     }
     assert.equal(publicCatalog().length,operationIds.length);
+});
+
+test('occasion image uploads use the actor session and preserve the ordinary API body cap', async t => {
+    const scopes = [READ_SCOPE, 'festapp:program:read', 'festapp:program:write'];
+    const uploadUrl = 'https://a.img.festapp.net/images/123-portrait.webp';
+    const content = Buffer.alloc(64 * 1024, 28);
+    let mode = 'success';
+    let uploads = 0;
+    const f = await setup(t, {
+        apiPolicy: { allowedScopes: scopes, allowedOperations: ['context.inspect', 'images.upload'] },
+        fetchImpl: async (url, init) => {
+            if (url.pathname.endsWith('/rpc/get_image_project_access_v1')) {
+                const binding = JSON.parse(init.body);
+                assert.equal(binding.p_occasion, 7);
+                assert.equal(binding.p_unit, null);
+                return reply(binding.p_project === 'a' && mode !== 'denied');
+            }
+            if (url.href !== 'https://image-api.festapp.net/upload') return;
+            uploads++;
+            assert.match(init.headers.Authorization, /^Bearer ey/);
+            assert.equal(init.redirect, 'error');
+            assert.equal(init.body.get('projectId'), 'a');
+            assert.equal(init.body.get('occasionId'), '7');
+            assert.equal(init.body.get('profile'), 'portrait');
+            const file = init.body.get('file');
+            assert.equal(file.name, 'portrait.jpg');
+            assert.equal(file.type, 'image/jpeg');
+            assert.deepEqual(Buffer.from(await file.arrayBuffer()), content);
+            if (mode === 'bad-file') return reply({}, 415);
+            if (mode === 'lost-response') return reply({}, 502);
+            return reply({ url: uploadUrl, projectId: 'a' });
+        },
+    });
+    const { tokens } = await connect(f, { occasionIds: [7], scope: scopes.join(' ') });
+    const payload = { occasionId: 7, filename: 'portrait.jpg', profile: 'portrait', contentBase64: content.toString('base64') };
+    let response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 200, await response.clone().text());
+    assert.deepEqual((await response.json()).data, { url: uploadUrl });
+    assert.equal(uploads, 1);
+
+    response = await apiRequest(f, tokens, 'context.inspect', { query: payload.contentBase64 });
+    assert.equal(response.status, 413);
+    response = await apiRequest(f, tokens, 'images.upload', { ...payload, occasionId: 8 });
+    assert.equal(response.status, 403);
+    mode = 'denied';
+    response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 403);
+    assert.equal(uploads, 1);
+
+    mode = 'bad-file';
+    response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 422);
+    assert.equal((await response.json()).outcome, 'rejected');
+    mode = 'lost-response';
+    response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 502);
+    const problem = await response.json();
+    assert.equal(problem.outcome, 'unknown');
+    assert.equal(problem.retryable, false);
+    assert.equal(uploads, 3);
 });

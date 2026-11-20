@@ -4,9 +4,11 @@ import {renderPressPage} from './press.mjs';
 import {renderFaqItems, renderPricingFacts, renderTopicPage} from './topic_pages.mjs';
 import {renderTopicLinks} from './site_shell.mjs';
 
-export function renderLandingContent(content, manifest, page = {id: "home"}, pages = []) {
+export function renderLandingContent(content, manifest, page = {id: "home"}, pages = [], {regional: useRegionalLayout = content.publicProjection?.locale === 'cs'} = {}) {
   const projection = content.publicProjection ?? {};
   const ui = projection.ui;
+  const regional = projection.regionalHome;
+  const isRegionalHome = useRegionalLayout && page.id === 'home';
   const references = projection.references ?? [];
   const clips = new Map((manifest.clips ?? []).map(clip => [clip.id, clip]));
   function player(ids, hero = false, compact = false) {
@@ -29,13 +31,14 @@ export function renderLandingContent(content, manifest, page = {id: "home"}, pag
   }
   const sectionLinks = section => section.links?.length ? `<div class="product-links">${section.links.map(item=>`<a class="topic-text-link" href="${publicUrl(item.href)}">${escape(item.label)}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>`).join('')}</div>` : '';
   const sections = (manifest.sections ?? []).filter(section => page.id === "home" || (page.sections ?? []).includes(section.id)).map(section => {
-    const copy=`<div class="feature-copy">${projection.locale === 'cs' ? '' : `<p class="eyebrow">${escape(section.eyebrow)}</p>`}<h2 id="${escape(section.id)}-title">${escape(section.title)}</h2><p>${escape(section.description)}</p>${section.features?.length ? `<ul class="feature-tools">${section.features.map(feature=>`<li>${escape(feature)}</li>`).join('')}</ul>` : ''}${section.detail ? `<p class="feature-detail">${escape(section.detail)}</p>` : ''}${sectionLinks(section)}</div>`;
+    const copy=`<div class="feature-copy">${isRegionalHome ? '' : `<p class="eyebrow">${escape(section.eyebrow)}</p>`}<h2 id="${escape(section.id)}-title">${escape(section.title)}</h2><p>${escape(section.description)}</p>${section.features?.length ? `<ul class="feature-tools">${section.features.map(feature=>`<li>${escape(feature)}</li>`).join('')}</ul>` : ''}${section.detail ? `<p class="feature-detail">${escape(section.detail)}</p>` : ''}${sectionLinks(section)}</div>`;
     if (section.composition) {
       const companion=section.companion;
       const secondary=companion ? `<figure class="product-ticket"><img loading="lazy" src="${publicUrl(companion.image)}" width="${companion.width}" height="${companion.height}" alt="${escape(companion.alt)}"><figcaption>${escape(companion.caption)}</figcaption></figure>` : `<figure class="product-scanner">${player(section.secondaryClips,false,true)}<figcaption>${escape(section.secondaryLabel)}</figcaption></figure>`;
       return `<section class="feature product-pair product-pair-${escape(section.composition)}" id="${escape(section.id)}" aria-labelledby="${escape(section.id)}-title"><div class="wrap">${copy}<div class="product-pair-media"><figure class="product-primary">${player(section.clips)}${section.primaryLabel ? `<figcaption>${escape(section.primaryLabel)}</figcaption>` : ''}</figure>${secondary}</div></div></section>`;
     }
-    return `<section class="feature reveal" id="${escape(section.id)}" aria-labelledby="${escape(section.id)}-title"><div class="feature-inner wrap">${copy}<div class="feature-media">${player(section.clips)}</div></div>${gallery(section)}</section>`;
+    const media = player(section.clips);
+    return `<section class="feature reveal${media ? '' : ' feature-text-only'}" id="${escape(section.id)}" aria-labelledby="${escape(section.id)}-title"><div class="feature-inner wrap">${copy}${media ? `<div class="feature-media">${media}</div>` : ''}</div>${gallery(section)}</section>`;
   }).join('');
   const referenceCard = ref => {
     const image = ref.image ? `<div class="reference-image"><img loading="lazy" src="${publicUrl(ref.image)}" width="640" height="360" alt="${escape(ui.imagePrefix)} ${escape(ref.name)}"></div>` : '';
@@ -51,18 +54,17 @@ export function renderLandingContent(content, manifest, page = {id: "home"}, pag
   const footer = `<nav aria-label="${escape(ui.legalNav)}">${(projection.footerLinks ?? []).map(link=>`<a href="${publicUrl(link.href)}">${escape(link.label)}</a>`).join('')}</nav>`;
   const referencesSection = references.length ? `<section id="reference" class="references wrap" aria-labelledby="references-title"><h2 id="references-title">${escape(projection.referencesHeading)}</h2>${referenceStrip}<div class="catalog-action"><a class="button primary" href="/events">${escape(projection.catalogLabel)}</a></div></section>` : '';
   const topic = page.id === 'home' ? '' : page.id === 'press' ? renderPressPage(page, projection) : renderTopicPage(page,{projection,player,related,sections});
-  const isCzechHome = projection.locale === 'cs' && page.id === 'home';
   return { TOPIC_LINKS: renderTopicLinks(pages), REFERENCE_STRIP: referenceStrip, REFERENCES_SECTION: referencesSection,
-    GETTING_STARTED: isCzechHome ? renderGettingStarted(projection) : '',
-    PRICING_FACTS: isCzechHome ? renderPricingFacts(projection.pricingFacts) : '',
-    PRODUCT_PROOF: isCzechHome ? renderProductProof(projection.productProof, player) : '',
-    PRODUCT_OVERVIEW: isCzechHome ? renderProductOverview(pages) : '',
-    REFERENCE_CASE: isCzechHome ? renderReferenceCase(projection.referenceCase) : '',
+    GETTING_STARTED: isRegionalHome ? renderGettingStarted(projection) : '',
+    PRICING_FACTS: isRegionalHome ? renderPricingFacts(projection.pricingFacts) : '',
+    PRODUCT_PROOF: isRegionalHome ? renderProductProof(projection.productProof, player, regional?.seatDemo) : '',
+    PRODUCT_OVERVIEW: isRegionalHome ? renderProductOverview(regional?.overview ?? pages, regional?.overviewHeading) : '',
+    REFERENCE_CASE: isRegionalHome ? renderReferenceCase(projection.referenceCase) : '',
     HERO_SECONDARY_HREF: publicUrl(projection.bookingUrl),
     HERO_SECONDARY_LABEL: escape(projection.templateTexts.PAGE_EXPLORE_THE_FEATURES),
-    HERO_QUICK_LINKS: isCzechHome ? '<nav class="hero-demo-links" aria-label="Pro pořadatele"><a href="#ukazka-nakupu">Vyzkoušet výběr míst</a><a href="#funkce">Funkce</a><a href="#cena">Cena</a></nav>' : '',
-    ORGANIZER_CONTACT: isCzechHome ? renderOrganizerContact() : '',
-    HOME_FAQ: isCzechHome ? `<section class="faq wrap reveal" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">Co řeší pořadatelé před prodejem</h2>${renderFaqItems(projection.homeFaq)}</section>` : '',
+    HERO_QUICK_LINKS: isRegionalHome ? `<nav class="hero-demo-links" aria-label="${escape(ui.organizers)}"><a href="#ukazka-nakupu">${escape(regional?.quickLinks.demo ?? 'Vyzkoušet výběr míst')}</a><a href="#funkce">${escape(regional?.quickLinks.features ?? 'Funkce')}</a><a href="#cena">${escape(regional?.quickLinks.price ?? 'Cena')}</a></nav>` : '',
+    ORGANIZER_CONTACT: isRegionalHome ? renderOrganizerContact(regional?.contact) : '',
+    HOME_FAQ: isRegionalHome ? `<section class="faq wrap reveal" id="faq" aria-labelledby="faq-title"><h2 id="faq-title">${escape(regional?.faqHeading ?? 'Co řeší pořadatelé před prodejem')}</h2>${renderFaqItems(projection.homeFaq)}</section>` : '',
     DEMO_SECTIONS: sections, HERO_MEDIA: '', TOPIC_CONTENT: topic, RELATED_LINKS: related,
     FOOTER_LINKS: footer, DEMO_BOOKING_HREF: publicUrl(projection.bookingUrl),
   };
@@ -73,57 +75,58 @@ function renderReferenceCase(example) {
   return `<section id="priklad-salu" class="wrap reference-case" aria-labelledby="reference-case-title">
     <div><h2 id="reference-case-title">${escape(example.title)}</h2><p>${escape(example.text)}</p>
       <a class="topic-text-link" href="${publicUrl(example.href)}">${escape(example.label)}</a></div>
-    <img loading="lazy" src="${publicUrl(example.image)}" width="${example.width}" height="${example.height}" alt="${escape(example.alt)}">
+    ${example.image ? `<img loading="lazy" src="${publicUrl(example.image)}" width="${example.width}" height="${example.height}" alt="${escape(example.alt)}">` : ''}
   </section>`;
 }
 
-function renderOrganizerContact() {
+function renderOrganizerContact(copy = {}) {
   return `
     <section class="organizer-contact wrap" id="kontakt" aria-labelledby="contact-title">
-      <h2 id="contact-title">Napište nám</h2>
+      <h2 id="contact-title">${escape(copy.title ?? 'Napište nám')}</h2>
       <form data-organizer-contact method="post" action="https://api.festapp.net/functions/v1/organizer-contact" hidden>
-        <label for="contact-email">Váš e-mail</label>
+        <label for="contact-email">${escape(copy.email ?? 'Váš e-mail')}</label>
         <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="254" required>
-        <label for="contact-message">Vaše zpráva</label>
+        <label for="contact-message">${escape(copy.message ?? 'Vaše zpráva')}</label>
         <textarea id="contact-message" name="message" rows="4" maxlength="1000" required></textarea>
-        <button class="button primary" type="submit">Odeslat zprávu</button>
+        <button class="button primary" type="submit">${escape(copy.submit ?? 'Odeslat zprávu')}</button>
         <p data-contact-status role="status" aria-live="polite"></p>
       </form>
-      <noscript><p>Pro odeslání formuláře zapněte JavaScript.</p></noscript>
+      <noscript><p>${escape(copy.noScript ?? 'Pro odeslání formuláře zapněte JavaScript.')}</p></noscript>
     </section>`;
 }
 
-function renderProductProof(cards = [], player) {
-  if (!cards.length) return '';
+function renderProductProof(cards = [], player, copy = null) {
+  if (!cards.length && !copy) return '';
+  const text = copy ?? {};
   return `
     <section id="ukazka-nakupu" class="wrap product-proof" aria-labelledby="product-proof-title">
-      <h2 id="product-proof-title">Vyzkoušejte si výběr míst</h2>
+      <h2 id="product-proof-title">${escape(text.heading ?? 'Vyzkoušejte si výběr míst')}</h2>
       <div class="seat-demo" data-seat-demo>
         <div class="seat-demo-copy">
-          <h3>Ples pod hvězdami</h3>
-          <p>Zkuste si vybrat místa u jednoho stolu. V ukázce se místa nerezervují a nic se neplatí.</p>
-          <button class="button primary" type="button" data-seat-start hidden>Otevřít plánek</button>
-          <div class="seat-demo-controls" data-seat-controls role="group" aria-label="Měřítko plánku" hidden>
-            <button type="button" data-seat-zoom-in aria-label="Přiblížit plánek">+</button>
-            <button type="button" data-seat-zoom-out aria-label="Oddálit plánek">−</button>
-            <button type="button" data-seat-fit>Celý sál</button>
+          <h3>${escape(text.event ?? 'Ples pod hvězdami')}</h3>
+          <p>${escape(text.description ?? 'Zkuste si vybrat místa u jednoho stolu. V ukázce se místa nerezervují a nic se neplatí.')}</p>
+          <button class="button primary" type="button" data-seat-start hidden>${escape(text.open ?? 'Otevřít plánek')}</button>
+          <div class="seat-demo-controls" data-seat-controls role="group" aria-label="${escape(text.zoomLabel ?? 'Měřítko plánku')}" hidden>
+            <button type="button" data-seat-zoom-in aria-label="${escape(text.zoomIn ?? 'Přiblížit plánek')}">+</button>
+            <button type="button" data-seat-zoom-out aria-label="${escape(text.zoomOut ?? 'Oddálit plánek')}">−</button>
+            <button type="button" data-seat-fit>${escape(text.fit ?? 'Celý sál')}</button>
           </div>
           <div class="seat-demo-summary" data-seat-summary hidden>
-            <p class="seat-demo-legend"><span>Volná</span><span>Obsazená</span></p>
+            <p class="seat-demo-legend"><span>${escape(text.available ?? 'Volná')}</span><span>${escape(text.occupied ?? 'Obsazená')}</span></p>
             <dl aria-live="polite" aria-atomic="true">
-              <div><dt>Vybraná místa</dt><dd data-seat-labels>Zatím žádná</dd></div>
-              <div><dt>Ukázková cena</dt><dd data-seat-total>0 Kč</dd></div>
+              <div><dt>${escape(text.selected ?? 'Vybraná místa')}</dt><dd data-seat-labels>${escape(text.none ?? 'Zatím žádná')}</dd></div>
+              <div><dt>${escape(text.price ?? 'Ukázková cena')}</dt><dd data-seat-total>${escape(text.zero ?? '0 Kč')}</dd></div>
             </dl>
-            <button type="button" class="topic-text-link" data-seat-clear disabled>Vymazat výběr</button>
+            <button type="button" class="topic-text-link" data-seat-clear disabled>${escape(text.clear ?? 'Vymazat výběr')}</button>
           </div>
           <p data-seat-load-status role="status"></p>
         </div>
         <div class="seat-demo-stage">
-          <img data-seat-poster src="/organizers-media/scout-reference-plan.webp" width="688" height="688" alt="Plánek stolů kolem tanečního parketu" loading="lazy">
+          <img data-seat-poster src="${copy ? '/organizers-media/layout-sal-s-parketem-wood.svg' : '/organizers-media/scout-reference-plan.webp'}" width="688" height="688" alt="${escape(text.posterAlt ?? 'Plánek stolů kolem tanečního parketu')}" loading="lazy">
           <div class="seat-demo-map" data-seat-map hidden></div>
         </div>
       </div>
-      <details class="product-proof-details">
+      ${cards.length ? `<details class="product-proof-details">
       <summary>Jak vypadá výběr na telefonu a přehled platby</summary>
       <div class="product-proof-grid">${cards.map(card => {
         const media = player([card.clip], false, card.compact);
@@ -137,16 +140,16 @@ function renderProductProof(cards = [], player) {
             <div class="product-proof-media">${media}</div>
           </figure>`;
       }).join('')}</div>
-      </details>
+      </details>` : ''}
     </section>`;
 }
 
-function renderProductOverview(pages) {
+function renderProductOverview(pages, heading = 'Funkce pro pořadatele') {
   const products = pages.filter(page => page.overview);
   if (!products.length) return '';
   return `
     <section class="wrap product-overview" id="funkce" aria-labelledby="product-overview-title">
-      <h2 id="product-overview-title">Funkce pro pořadatele</h2>
+      <h2 id="product-overview-title">${escape(heading)}</h2>
       <ul class="product-directory">${products.map(({overview, path, linkLabel}) => `
         <li><a href="${publicUrl(path)}">
           <span class="product-directory-title">${escape(linkLabel)}</span>
@@ -157,20 +160,21 @@ function renderProductOverview(pages) {
 
 function renderGettingStarted(projection) {
   const guide = projection.gettingStarted;
+  const regional = projection.regionalHome;
   if (!guide) return '';
   return `
     <section class="wrap getting-started" id="prvni-akce" aria-labelledby="getting-started-title">
-      <h2 id="getting-started-title">Jak založit první akci</h2>
-      <div class="getting-started-body">
+      <h2 id="getting-started-title">${escape(regional?.gettingStartedHeading ?? 'Jak založit první akci')}</h2>
+      <div class="getting-started-body${guide.image ? '' : ' getting-started-text-only'}">
         <ol>${guide.steps.map(step => `
           <li><h3>${escape(step.title)}</h3><p>${escape(step.text)}</p></li>`).join('')}</ol>
-        <figure>
+        ${guide.image ? `<figure>
           <img loading="lazy" src="${publicUrl(guide.image)}" width="${Number(guide.imageWidth)}" height="${Number(guide.imageHeight)}" alt="${escape(guide.imageAlt)}">
-          <figcaption>Výběr šablony vstupenky při přípravě akce</figcaption>
-        </figure>
+          <figcaption>${escape(regional?.gettingStartedCaption ?? 'Výběr šablony vstupenky při přípravě akce')}</figcaption>
+        </figure>` : ''}
       </div>
       <div class="actions">
-        <a class="topic-text-link" href="/napoveda/zaciname/">Prohlédnout celý postup</a>
+        <a class="topic-text-link" href="/napoveda/zaciname/">${escape(regional?.gettingStartedLink ?? 'Prohlédnout celý postup')}</a>
       </div>
     </section>`;
 }

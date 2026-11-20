@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from '../web_client/node_modules/parse5/dist/index.js';
 
+import { localizedAssets } from './release/organizers/public_languages.mjs';
 import { BASE_POLICY, CSP_MODE, scriptPolicy, headerBlock } from './lib/csp_policy.mjs';
 export { BASE_POLICY, scriptPolicy, headerBlock };
 export function inlineHashes(html) {
@@ -29,6 +30,14 @@ export async function generateManifest(dir, target = 'cloudflare') {
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
+  const alternateRoot = localizedAssets.slice(1);
+  try {
+    for (const locale of (await readdir(path.join(dir, alternateRoot))).sort()) {
+      if (!/^[a-z]{2}$/.test(locale)) continue;
+      const home = path.join(alternateRoot, locale, 'organizers-page');
+      if ((await stat(path.join(dir, home))).isFile()) entries['organizer-home-' + locale] = home;
+    }
+  } catch (error) { if (error.code !== 'ENOENT') throw error; }
   try {
     const marketing = JSON.parse(await readFile(path.join(dir,'organizer-pages.json'),'utf8'));
     for (const page of marketing.pages.filter(page=>page.id !== 'home')) entries['organizer-' + page.id] = page.asset.slice(1);

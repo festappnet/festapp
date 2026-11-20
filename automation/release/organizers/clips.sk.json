@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "clips": [],
+  "sections": [
+    {
+      "id": "planek",
+      "eyebrow": "Priestor pre hostí",
+      "title": "Usaďte hostí podľa seba",
+      "description": "Presuňte alebo otočte stôl a pridajte miesta, aby skupiny mohli sedieť spolu.",
+      "clips": [],
+      "links": [
+        {
+          "href": "/rezervacni-system-s-planem-salu",
+          "label": "Pozrieť možnosti plánika"
+        }
+      ]
+    },
+    {
+      "id": "formular",
+      "eyebrow": "Predaj vstupeniek",
+      "title": "Od ponuky až po vstupenku",
+      "description": "Ponúknite vstupné aj varianty večere. Upravte požadované údaje a vzhľad vstupenky.",
+      "detail": "Počet miest a počet porcií nastavíte oddelene. Cenové varianty vstupeniek môžu využívať spoločnú kapacitu.",
+      "clips": [],
+      "links": [
+        {
+          "href": "/napoveda/prodejni-formular/",
+          "label": "Nastavenie predaja"
+        },
+        {
+          "href": "/napoveda/vzhled-vstupenky/",
+          "label": "Vzhľad vstupenky"
+        }
+      ]
+    },
+    {
+      "id": "prehled",
+      "eyebrow": "Správa podujatia",
+      "title": "Prehľad počas predaja aj pri vstupe",
+      "description": "Sledujte objednávky a platby, vyhľadajte konkrétnu vstupenku alebo exportujte zoznam vstupeniek.",
+      "detail": "Pri vstupe načítajte QR kód telefónom, overte stav vstupenky a potvrďte vstup.",
+      "clips": [],
+      "links": [
+        {
+          "href": "/napoveda/objednavky/",
+          "label": "Správa objednávok"
+        },
+        {
+          "href": "/napoveda/odbaveni/",
+          "label": "Kontrola vstupeniek pri vstupe"
+        }
+      ]
+    }
+  ]
+}

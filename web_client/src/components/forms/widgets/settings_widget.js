@@ -45,11 +45,7 @@ export class SettingsWidget {
                 return { id: lang, label: name[0].toLocaleUpperCase(lang) + name.slice(1) };
             }),
             currentValue: LocalizationService.currentLocale,
-            onSelect: (val) => {
-                if (val !== LocalizationService.currentLocale) {
-                     LocalizationService.setLocale(val);
-                }
-            }
+            onSelect: (val) => LocalizationService.setLocale(val)
         });
 
         // Version

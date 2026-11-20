@@ -33,6 +33,7 @@ export class DelegatedOwner {
         const grant = this.current();
         this.config = contextConfig(config, grant.profileBinding);
         this.session = boundOwner(this.config, storage, grant.binding, options);
+        this.imageUploadFetch = options.fetchImpl;
         this.profile = this.session.profile;
         this.layoutProfile = this.config.profile;
         this.root = storage.root;
@@ -146,7 +147,8 @@ export class DelegatedOwner {
             const current = this.storage.get('Delegation', this.token.grantId);
             if (!connectionActive(current) || this.token.exp * 1000 <= Date.now())
                 error = new OperationError('AUTHENTICATION_REQUIRED');
-            if (error.code === 'AUTHENTICATION_REQUIRED' || error.code === 'MFA_REQUIRED')
+            const reason = error.code === 'COMMITTED_READBACK_FAILED' ? error.cause?.code : error.code;
+            if (reason === 'AUTHENTICATION_REQUIRED' || reason === 'MFA_REQUIRED')
                 this.storage.revoke(this.token.grantId);
             throw error;
         }

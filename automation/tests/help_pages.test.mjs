@@ -240,7 +240,7 @@ test('Flutter projects the help language published by the tenant', t => {
    /static const bool organizerLandingEnabled = (true|false);/,
    `static const bool organizerLandingEnabled = ${enabled};`,
   ));
-  const run = spawnSync('python3', ['-', flutterPath, languages, enabled, rendered.stdout], {
+  const run = spawnSync('python3', ['-', flutterPath, languages, enabled, rendered.stdout, ''], {
    input: projection,
    encoding: 'utf8',
    env: {
@@ -256,4 +256,40 @@ test('Flutter projects the help language published by the tenant', t => {
    [expected],
   );
  }
+});
+
+test('bilingual help shares every Czech route, gives each language its own canonical and keeps Slovak navigation', t => {
+ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-bilingual-help-'));
+ t.after(() => fs.rmSync(temporary, {recursive:true, force:true}));
+ const config = path.join(temporary, 'project.conf');
+ const bundle = path.join(temporary, 'bundle');
+ fs.mkdirSync(bundle);
+ fs.writeFileSync(path.join(bundle, 'sitemap.xml'), '<urlset></urlset>');
+ fs.writeFileSync(config, 'WEB_LINK=https://vstupenky.online\nWEB_ORGANIZER_LANDING_ENABLED=true\nWEB_ORGANIZER_CONTENT_PROFILE=vstupenky-cs\nWEB_SUPPORTED_LANGUAGES=cs,sk\n');
+ const run = spawnSync(process.execPath, [path.join(root, 'automation/release/render_help_pages.mjs'),
+  '--config', config, '--output-root', bundle, '--localized'], {encoding:'utf8'});
+ assert.equal(run.status, 0, run.stderr);
+ const read = (language, slug) => fs.readFileSync(path.join(bundle, language === 'sk' ? '_localized/sk' : '', 'napoveda', slug, 'index.html'), 'utf8');
+ const pages = JSON.parse(fs.readFileSync(path.join(root, 'automation/release/help/pages.json')));
+ for (const {slug} of pages) {
+  const canonical = 'https://vstupenky.online/napoveda/' + (slug ? slug + '/' : '');
+  for (const language of ['cs', 'sk']) {
+   const html = read(language, slug);
+   assert.ok(html.includes(`<html lang="${language}">`));
+   const footer = html.match(/<footer\b[\s\S]*?<\/footer>/)[0];
+   assert.match(footer, /<nav\b[^>]*>[\s\S]*<span class="public-language-switch" role="group"/);
+   assert.doesNotMatch(html.slice(0, html.indexOf(footer)), /class="public-language-switch"/);
+   assert.ok(html.includes(`rel="canonical" href="${canonical}${language === 'sk' ? '?lang=sk' : ''}"`));
+   assert.ok(html.includes(`hreflang="cs" href="${canonical}"`));
+   assert.ok(html.includes(`hreflang="sk" href="${canonical}?lang=sk"`));
+  }
+ }
+ const sitemap = fs.readFileSync(path.join(bundle, 'sitemap.xml'), 'utf8');
+ assert.match(sitemap, /<loc>https:\/\/vstupenky\.online\/napoveda\/zaciname\/\?lang=sk<\/loc>/);
+ const article = read('sk', 'zaciname');
+ assert.match(article, /\/napoveda\/[^"\s]+\/\?lang=sk"/);
+ assert.match(article, /name="lang" value="sk"/);
+ const search = article.match(/<script src="\/napoveda\/assets\/sk\/(search\.[^"]+)"/)[1];
+ assert.match(fs.readFileSync(path.join(bundle, 'napoveda/assets/sk', search), 'utf8'), /"url":"\/napoveda\/zaciname\/\?lang=sk"/);
+ assert.doesNotMatch(article, /guide-screenshot|data-help-workflow="undefined"/);
 });

@@ -1,3 +1,4 @@
+import { imageUploadBodyLimit, imageUploadTool } from '../operations/images.mjs';
 import {createWebhookWorker} from './webhook-worker.mjs';
 import { createHostedRunner } from './hosted-runner.mjs';
 import { resourceEndpoint, clientForResource, grantEndpoint, ingressEndpoint, API_PREFIX } from './endpoints.mjs';
@@ -221,7 +222,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const source = readFileSync(new URL(`../../../../automation/release/legal/mcp-${kind}.${language}.md`, import.meta.url), 'utf8');
         app.get(language === 'en' ? `/${kind}` : `/cs/${kind}`, (_req, res) => res.type('html').send(publicDocument(source, language)));
     }
-    app.get('/healthz', (_req, res) => res.json({ ok: true }));
+    app.get('/healthz', (_req, res) => res.json({ ok: true, sourceCommit: /^[a-f0-9]{40}$/i.test(process.env.FESTAPP_SOURCE_SHA ?? '') ? process.env.FESTAPP_SOURCE_SHA : null }));
     const run = createHostedRunner({ config, storage, provider, fetchImpl, audit, limit });
     installApi(app, { config, run });
     const legacyMake = config.clients.some(c => c.transports?.includes('legacy-make'));
@@ -468,7 +469,21 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
     });
     const challenge = (res, scheme) => res.status(401).set('WWW-Authenticate',
         authChallenge(config, { scheme, error: 'invalid_token', description: 'Connect your Festapp account.' })).json({ error: 'invalid_token' });
-    app.post(['/mcp', ...(legacyMake ? ['/make/v1/operations/:operation'] : [])], express.json({ limit: '48kb' }), async (req, res) => {
+    const ordinaryBody = express.json({ limit: '48kb' });
+    const mcpBody = express.json({
+        limit: imageUploadBodyLimit,
+        verify: (req, _res, body) => { req.mcpBodyBytes = body.length; },
+    });
+    app.post(['/mcp', ...(legacyMake ? ['/make/v1/operations/:operation'] : [])], (req, res, next) => {
+        const parse = req.path === '/mcp' ? mcpBody : ordinaryBody;
+        parse(req, res, error => {
+            if (error) return next(error);
+            if (req.mcpBodyBytes > 48 * 1024 &&
+                (req.body?.method !== 'tools/call' || req.body.params?.name !== imageUploadTool))
+                return res.sendStatus(413);
+            next();
+        });
+    }, async (req, res) => {
         const make = req.path !== '/mcp';
         try { return await run(req, resourceEndpoint(config, config.resource), make ? 'legacy-make' : 'mcp', async ({ operations, owner, client, requestId }) => {
             if (make) {

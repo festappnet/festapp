@@ -71,12 +71,16 @@ class BankAccountStrings {
   static String get creditorNameHelp => 'BankAccount.creditorNameHelp'.tr();
   static String get accountNumberLabel => 'BankAccount.accountNumberLabel'.tr();
 
+  static String get accountFormat => 'BankAccount.accountFormat'.tr();
+  static String get inputModeSlovak => 'BankAccount.inputModeSlovak'.tr();
+  static String get invalidSlovakAccount =>
+      'BankAccount.invalidSlovakAccount'.tr();
+
   static String get inputModeSplit => 'BankAccount.inputModeSplit'.tr();
   static String get inputModeIban => 'BankAccount.inputModeIban'.tr();
-  static String get fullFormatLabel => 'BankAccount.fullFormatLabel'.tr();
-  static String get prefixLabel => 'BankAccount.prefixLabel'.tr();
+  static String get invalidNationalAccount =>
+      'BankAccount.invalidNationalAccount'.tr();
   static String get bankCodeLabel => 'BankAccount.bankCodeLabel'.tr();
-  static String get ibanValidationHelp => 'BankAccount.ibanValidationHelp'.tr();
 
   static String get saveChanges => CommonStrings.save;
 

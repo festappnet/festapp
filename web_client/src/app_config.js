@@ -33,12 +33,12 @@ export class AppConfig {
     
     // Localization
     static supportedLanguages = ['cs', 'en', 'sk', 'pl'];
+    static legacyAutoLanguage = null;
     static defaultLanguage = 'cs';
 
     // Local Storage Keys
     static Keys = {
         theme: 'theme',
-        locale: 'locale',
         auth: 'sb-kjdpmixlnhntmxjedpxh-auth-token'
     };
 }

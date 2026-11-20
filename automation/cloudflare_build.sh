@@ -114,6 +114,13 @@ const AUTH_BRIDGE = "/auth_bridge";
 const OCCASION_CARD_PREVIEW = "/occasion-card-preview";
 const FORCED_OCCASION_PATH = null; // replaced from project.conf after generation
 const HELP_PAGES = Object.keys(CSP_MANIFEST.documents).filter(file => /^(?:napoveda|help)\/(?:[a-z-]+\/)?index\.html$/.test(file));
+const LOCALIZED_ASSETS = "/_localized"; // private document variants, not public URLs
+function localizedDocument(url, document) {
+  const requested = url.searchParams.getAll("lang");
+  if (requested.length !== 1 || !/^[a-z]{2}$/.test(requested[0])) return document;
+  const variant = LOCALIZED_ASSETS.slice(1) + "/" + requested[0] + "/" + document;
+  return Object.hasOwn(CSP_MANIFEST.documents, variant) ? variant : document;
+}
 const CANONICAL_ORIGIN = null; // stamped from tenant WEB_LINK
 const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]}; // stamped from shared context
 const ORGANIZERS_ENABLED = MARKETING.enabled;
@@ -290,7 +297,16 @@ async function handleSitemap(request, env) {
   const xmlHeaders = { "content-type": "application/xml", "cache-control": "no-store, max-age=0" };
 
   const helpEntries = HELP_PAGES.map(file => `<url><loc>${escapeHtml(baseUrl)}/${file.replace(/index\.html$/, "")}</loc></url>`).join("");
-  const organizerEntry = MARKETING.sitemapPaths.filter(path=>path !== "/").map(path=>`<url><loc>${escapeHtml(baseUrl + path)}</loc></url>`).join("") + helpEntries;
+  const translatedEntries = Object.keys(CSP_MANIFEST.documents)
+    .filter(file => file.startsWith(LOCALIZED_ASSETS.slice(1) + "/"))
+    .flatMap(file => {
+      const [, locale, ...segments] = file.split("/");
+      const document = segments.join("/");
+      const path = document === "organizers-page" ? "/" : HELP_PAGES.includes(document)
+        ? "/" + document.replace(/index\.html$/, "") : null;
+      return path ? [`<url><loc>${escapeHtml(baseUrl + path + "?lang=" + locale)}</loc></url>`] : [];
+    }).join("");
+  const organizerEntry = MARKETING.sitemapPaths.filter(path=>path !== "/").map(path=>`<url><loc>${escapeHtml(baseUrl + path)}</loc></url>`).join("") + helpEntries + translatedEntries;
   const fallback = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -412,6 +428,8 @@ async function routeRequest(request, env) {
       return Response.redirect(new URL("/",url).href,301);
     }
 
+    if (path === LOCALIZED_ASSETS || path.startsWith(LOCALIZED_ASSETS + "/")) return notFound();
+
     const marketingPage = ORGANIZERS_ENABLED ? MARKETING.pages.find(page=>page.path === path || (page.path !== '/' && page.path + '/' === path)) : null;
     const marketingRedirect = ORGANIZERS_ENABLED ? (MARKETING.redirects ?? []).find(redirect=>path === redirect.from || path === redirect.from + '/') : null;
     if (marketingRedirect) return Response.redirect(new URL(marketingRedirect.to + url.search,url).href,308);
@@ -456,8 +474,9 @@ async function routeRequest(request, env) {
       }
       if (marketingPage && path !== marketingPage.path) return Response.redirect(new URL(marketingPage.path + url.search,url).href,308);
       if (marketingPage) {
-        const res = await serveAsset(env, request, marketingPage.asset);
-        const response = res.ok ? htmlResponse(publicAnalyticsHtml(await res.text(), request), res.headers, 200, CSP_MANIFEST.documents[marketingPage.asset.slice(1)]?.profile || "organizers") : notFound();
+        const document = localizedDocument(url, marketingPage.asset.slice(1));
+        const res = await serveAsset(env, request, "/" + document);
+        const response = res.ok ? htmlResponse(publicAnalyticsHtml(await res.text(), request), res.headers, 200, CSP_MANIFEST.documents[document]?.profile || "organizers") : notFound();
         response.headers.set("referrer-policy", "origin");
         return response;
       }
@@ -475,9 +494,11 @@ async function routeRequest(request, env) {
         // Conditional browser headers can make ASSETS return a bodyless 304.
         // This route assembles the full HTML response, so fetch the document
         // through the same unconditional asset boundary as other HTML entries.
-        const response = await serveAsset(env, request, path);
+        const variant = localizedDocument(url, document);
+        const asset = variant === document ? path : "/" + variant.replace(/index\.html$/, "");
+        const response = await serveAsset(env, request, asset);
         if (!response.ok) return notFound();
-        return htmlResponse(response.body, response.headers, 200, CSP_MANIFEST.documents[document].profile);
+        return htmlResponse(response.body, response.headers, 200, CSP_MANIFEST.documents[variant].profile);
       }
     }
 

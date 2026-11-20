@@ -10,12 +10,20 @@ const measurementSetupExamples = {
     'units.websiteConsent.inspect': {unitId:3,organizationId:1,consentRevision:REVISION,savedOrigins:[SITE],
         bindings:[{id:UUID,websiteOrigin:SITE,platform:'wordpress',provider:'complianz',version:2,state:'confirmation_required'}],truncated:false},
     'units.websiteConsent.export': {unitId:3,bindingId:UUID,bindingVersion:2,websiteOrigin:SITE,provider:'cookiebot',consentExport:CONSENT_EXPORT},
+    'units.websiteConsent.probeComplianz': {unitId:3,websiteOrigin:SITE,policyId:'42'},
+    'forms.measurement.inspect': {occasionId:7,formId:42,purchaseTiming:'paid',metaPurchaseEnabled:true,
+        status:{requested_enabled:true,organization_allowed:true,organization_enabled:true,unit_enabled:true,
+            runtime_supported:true,eligible:true,blocked_reasons:[],policy_revision:1,consent_required:true,enhanced_conversions_unavailable:false}},
     'units.measurementApproval.inspect': {unitId:3,approved:false,runtimeSupported:true,requestState:'requested',canRequest:false,
         requestedAt:'2026-11-13T12:00:00Z',approvedOrigins:[],savedOrigins:[SITE],requestedOrigins:[SITE],truncated:false},
     'units.metaCapiApproval.inspect': {unitId:3,organizationId:1,approved:false,requestState:'not_requested',canRequest:true,requestedAt:null},
     'forms.embedCode': {occasionId:7,formId:42,slug:'summer-festival',publicUrl:SERVICE+'/form/summer-festival',
         embedCode:formEmbedCode({tenantUrl:SERVICE,savedLink:'summer-festival',...embedLabels('en')})},
 };
+for (const [action,state] of [['save','ready'],['disable','disabled']]) {
+    const inspected=measurementSetupExamples['units.websiteConsent.inspect'];
+    measurementSetupExamples['units.websiteConsent.'+action]={...inspected,bindings:[{...inspected.bindings[0],version:3,state}]};
+}
 measurementSetupExamples['units.measurementApproval.request'] = measurementSetupExamples['units.measurementApproval.inspect'];
 measurementSetupExamples['units.metaCapiApproval.request'] = {...measurementSetupExamples['units.metaCapiApproval.inspect'],requestState:'requested',canRequest:false,requestedAt:'2026-11-13T12:00:00Z'};
 export function schemaExample(schema, root = schema, key = '', depth = 0) {
@@ -65,9 +73,19 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     if (descriptor.id === 'units.appLanding.inspect') request.unitId=3;
     if (descriptor.id === 'information.save') Object.assign(request,{occasionId:7,expectedVersion:0,information:{id:1,title:'Photo galleries',description:'<p><a href="https://example.invalid/gallery">Previous event gallery</a></p>',type:null,isHidden:false,order:1,data:null}});
     if (/^units\.(websiteConsent|measurementApproval|metaCapiApproval)\./.test(descriptor.id)) request.unitId=3;
-    if (descriptor.id === 'units.websiteConsent.export') Object.assign(request,{bindingId:UUID,expectedVersion:2});
+    if (descriptor.id === 'units.websiteConsent.probeComplianz') request.websiteOrigin=SITE;
+    if (descriptor.id === 'units.websiteConsent.save') Object.assign(request,{websiteOrigin:SITE,platform:'wordpress',
+        providerConfig:{provider:'complianz',policyId:'42'},expectedVersion:2,expectedConsentRevision:REVISION,coverageConfirmed:true,verifyComplianz:true});
+    if (descriptor.id === 'forms.measurement.inspect') Object.assign(request,{occasionId:7,formId:42});
+    if (['units.websiteConsent.export','units.websiteConsent.disable'].includes(descriptor.id)) Object.assign(request,{bindingId:UUID,expectedVersion:2});
     if (descriptor.id === 'forms.embedCode') Object.assign(request,{occasionId:7,formId:42,language:'en'});
     if (descriptor.id === 'songs.save') Object.assign(request,{occasionId:7,expectedVersion:null,information:{title:'Opening song',description:'<p>Sing together</p>',type:'song',isHidden:false,order:1,data:null}});
+    if (descriptor.id === 'images.upload') Object.assign(request, {
+        occasionId: 7,
+        filename: 'speaker.png',
+        contentBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6ZsAAAAASUVORK5CYII=',
+        profile: 'portrait',
+    });
     if (descriptor.id === 'webhooks.update') request.state = 'active';
     if (descriptor.id === 'webhooks.create') request.url = 'https://receiver.example.invalid/webhooks/festapp';
     if (descriptor.id === 'orders.update') request.changes = {note:'Updated order note'};
@@ -78,6 +96,7 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     if (outputSchema.properties?.data) response.data = schemaExample(outputSchema.properties.data,outputSchema,'data');
     if (descriptor.id.startsWith('units.appLanding.')) Object.assign(response.data,{organizationId:1,unitId:3,enabled:true,occasionId:7,canManage:true,...(descriptor.id.endsWith('.save')?{status:'applied'}:{})});
     if (measurementSetupExamples[descriptor.id]) response.data = structuredClone(measurementSetupExamples[descriptor.id]);
+    if (descriptor.id === 'images.upload') response.data = { url: 'https://img.festapp.net/images/1700000000000-example.webp' };
     if (descriptor.id === 'ticket_layouts.preview') response.data.image={mimeType:'image/png',data:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6ZsAAAAASUVORK5CYII='};
     if (descriptor.id === 'seats.preview_swap') {
         response.data.sourceSpotIds = [response.data.firstSpotId];

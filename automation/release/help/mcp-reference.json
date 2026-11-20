@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "9f440a1cdcc898fdd925d51f920fba67903489ad5d95aef12da6ccd653c6bbfc",
+  "sourceDigest": "9feb7a80b1af5f1f104ce3e5300434931fdec64e2cadfa5556e6cf88752038fb",
   "permissions": [
     {
       "scope": "festapp:information:read",
       "labels": {
         "cs": "Číst informační stránky a zpěvníky akcí",
-        "en": "Read event information pages and songbooks"
+        "en": "Read event information pages and songbooks",
+        "sk": "Čítať informačné stránky a spevníky podujatí"
       },
       "operations": [
         "information.list",
@@ -20,7 +21,8 @@
       "scope": "festapp:information:write",
       "labels": {
         "cs": "Upravovat informační stránky a zpěvníky akcí",
-        "en": "Edit event information pages and songbooks"
+        "en": "Edit event information pages and songbooks",
+        "sk": "Upravovať informačné stránky a spevníky podujatí"
       },
       "operations": [
         "information.save",
@@ -34,7 +36,8 @@
       "scope": "festapp:webhooks:read",
       "labels": {
         "cs": "Číst webhooky a historii doručení",
-        "en": "Read webhooks and delivery history"
+        "en": "Read webhooks and delivery history",
+        "sk": "Čítať webhooky a históriu doručenia"
       },
       "operations": [
         "webhooks.list",
@@ -48,7 +51,8 @@
       "scope": "festapp:webhooks:write",
       "labels": {
         "cs": "Spravovat webhooky a jejich doručování",
-        "en": "Manage webhooks and their delivery"
+        "en": "Manage webhooks and their delivery",
+        "sk": "Spravovať webhooky a ich doručovanie"
       },
       "operations": [
         "webhooks.create",
@@ -66,7 +70,8 @@
       "scope": "festapp:history:delete",
       "labels": {
         "cs": "Odstraňovat záznamy historie objednávek",
-        "en": "Delete persisted order history"
+        "en": "Delete persisted order history",
+        "sk": "Odstraňovať záznamy histórie objednávok"
       },
       "operations": [
         "history.delete"
@@ -79,7 +84,8 @@
       "scope": "festapp:orders:delete",
       "labels": {
         "cs": "Odstraňovat objednávky a volitelně externí faktury",
-        "en": "Delete orders and optionally external invoices"
+        "en": "Delete orders and optionally external invoices",
+        "sk": "Odstraňovať objednávky a voliteľne externé faktúry"
       },
       "operations": [
         "orders.deletion.inspect",
@@ -93,7 +99,8 @@
       "scope": "festapp:lifecycle:read",
       "labels": {
         "cs": "Číst stav kopírování a uložené návrhy akcí",
-        "en": "Read copy recovery and saved setup drafts"
+        "en": "Read copy recovery and saved setup drafts",
+        "sk": "Čítať stav kopírovania a uložené návrhy akcií"
       },
       "operations": [
         "lifecycle.inspect",
@@ -106,7 +113,8 @@
       "scope": "festapp:lifecycle:write",
       "labels": {
         "cs": "Kopírovat a odstraňovat akce; obnovovat kopírování médií",
-        "en": "Copy and delete occasions; resume media copies"
+        "en": "Copy and delete occasions; resume media copies",
+        "sk": "Kopírovať a odstraňovať akcie; obnovovať kopírovanie médií"
       },
       "operations": [
         "occasions.copy",
@@ -121,7 +129,8 @@
       "scope": "festapp:setup:finalize",
       "labels": {
         "cs": "Dokončovat uložené návrhy akcí včetně nastavení prodeje",
-        "en": "Finalize saved occasion drafts and their sales settings"
+        "en": "Finalize saved occasion drafts and their sales settings",
+        "sk": "Dokončovať uložené návrhy akcií vrátane nastavenia predaja"
       },
       "operations": [
         "occasions.setup.finalize"
@@ -134,7 +143,8 @@
       "scope": "festapp:units:delete",
       "labels": {
         "cs": "Odstraňovat pořadatele",
-        "en": "Delete organizers"
+        "en": "Delete organizers",
+        "sk": "Odstraňovať organizátorov"
       },
       "operations": [
         "units.delete"
@@ -145,7 +155,8 @@
       "scope": "festapp:quotes:read",
       "labels": {
         "cs": "Číst citáty pořadatele",
-        "en": "Read organizer quotes"
+        "en": "Read organizer quotes",
+        "sk": "Čítať citáty organizátora"
       },
       "operations": [
         "units.quotes.list"
@@ -156,7 +167,8 @@
       "scope": "festapp:quotes:write",
       "labels": {
         "cs": "Upravovat a odstraňovat citáty pořadatele",
-        "en": "Edit and delete organizer quotes"
+        "en": "Edit and delete organizer quotes",
+        "sk": "Upravovať a odstraňovať citáty organizátora"
       },
       "operations": [
         "units.quotes.save",
@@ -170,7 +182,8 @@
       "scope": "festapp:legal:read",
       "labels": {
         "cs": "Číst právní údaje pořadatele a stav ověření",
-        "en": "Read organizer legal identity and verification status"
+        "en": "Read organizer legal identity and verification status",
+        "sk": "Čítať právne údaje organizátora a stav overenia"
       },
       "operations": [
         "units.legal.inspect"
@@ -181,7 +194,8 @@
       "scope": "festapp:legal:write",
       "labels": {
         "cs": "Upravovat právní údaje a odesílat je k ověření",
-        "en": "Edit legal identity and submit it for verification"
+        "en": "Edit legal identity and submit it for verification",
+        "sk": "Upravovať právne údaje a odosielať ich na overenie"
       },
       "operations": [
         "units.legal.save",
@@ -195,7 +209,8 @@
       "scope": "festapp:banks:read",
       "labels": {
         "cs": "Číst propojené bankovní účty a stav synchronizace",
-        "en": "Read linked banks and synchronization state"
+        "en": "Read linked banks and synchronization state",
+        "sk": "Čítať prepojené bankové účty a stav synchronizácie"
       },
       "operations": [
         "banks.list",
@@ -210,7 +225,8 @@
       "scope": "festapp:bank-users:read",
       "labels": {
         "cs": "Číst přístupy k bankovnímu účtu včetně e-mailů",
-        "en": "Read bank account members and their emails"
+        "en": "Read bank account members and their emails",
+        "sk": "Čítať prístupy k bankovému účtu vrátane e-mailov"
       },
       "operations": [
         "banks.users"
@@ -223,7 +239,8 @@
       "scope": "festapp:banks:write",
       "labels": {
         "cs": "Spravovat bankovní účty, vazby, role a synchronizaci",
-        "en": "Manage bank accounts, links, roles and synchronization"
+        "en": "Manage bank accounts, links, roles and synchronization",
+        "sk": "Spravovať bankové účty, väzby, roly a synchronizáciu"
       },
       "operations": [
         "banks.save",
@@ -241,7 +258,8 @@
       "scope": "festapp:cards:read",
       "labels": {
         "cs": "Číst stav kartového providera a dopad odpojení",
-        "en": "Read card-provider state and disconnection impact"
+        "en": "Read card-provider state and disconnection impact",
+        "sk": "Čítať stav kartového providera a dopad odpojenia"
       },
       "operations": [
         "cards.status",
@@ -253,7 +271,8 @@
       "scope": "festapp:cards:write",
       "labels": {
         "cs": "Pozastavit, obnovit nebo odpojit platby kartou",
-        "en": "Pause, resume or disconnect card payments"
+        "en": "Pause, resume or disconnect card payments",
+        "sk": "Pozastaviť, obnoviť alebo odpojiť platby kartou"
       },
       "operations": [
         "cards.pause",
@@ -267,7 +286,8 @@
       "scope": "festapp:refund-decisions:read",
       "labels": {
         "cs": "Číst zaznamenané částečné refundace a rozhodnutí o vstupenkách",
-        "en": "Read observed partial refunds and ticket decisions"
+        "en": "Read observed partial refunds and ticket decisions",
+        "sk": "Čítať zaznamenané čiastočné refundácie a rozhodnutia o vstupenkách"
       },
       "operations": [
         "cards.refund.inspect"
@@ -280,7 +300,8 @@
       "scope": "festapp:refund-decisions:write",
       "labels": {
         "cs": "Rozhodovat o platnosti vstupenek po zaznamenané částečné refundaci",
-        "en": "Decide ticket validity after an observed partial refund"
+        "en": "Decide ticket validity after an observed partial refund",
+        "sk": "Rozhodovať o platnosti vstupeniek po zaznamenanej čiastočnej refundácii"
       },
       "operations": [
         "cards.refund.decide"
@@ -293,7 +314,8 @@
       "scope": "festapp:history:read",
       "labels": {
         "cs": "Číst historii změn a aktivity akce",
-        "en": "Read occasion audit and activity history"
+        "en": "Read occasion audit and activity history",
+        "sk": "Čítať históriu zmien a aktivity akcie"
       },
       "operations": [
         "history.commits",
@@ -306,7 +328,8 @@
       "scope": "festapp:order-history:read",
       "labels": {
         "cs": "Číst historii objednávek a doručování e-mailů",
-        "en": "Read order and email delivery history"
+        "en": "Read order and email delivery history",
+        "sk": "Čítať históriu objednávok a doručovania e-mailov"
       },
       "operations": [
         "history.orders",
@@ -320,7 +343,8 @@
       "scope": "festapp:feedback:read",
       "labels": {
         "cs": "Číst zpětnou vazbu k programu",
-        "en": "Read event feedback"
+        "en": "Read event feedback",
+        "sk": "Čítať spätnú väzbu k programu"
       },
       "operations": [
         "feedback.list"
@@ -331,7 +355,8 @@
       "scope": "festapp:report-exports:read",
       "labels": {
         "cs": "Exportovat prodejní reporty",
-        "en": "Export canonical sales reports"
+        "en": "Export canonical sales reports",
+        "sk": "Exportovať predajné reporty"
       },
       "operations": [
         "reports.export"
@@ -344,7 +369,8 @@
       "scope": "festapp:export-people:read",
       "labels": {
         "cs": "Exportovat vybrané údaje účastníků",
-        "en": "Export selected participant fields"
+        "en": "Export selected participant fields",
+        "sk": "Exportovať vybrané údaje účastníkov"
       },
       "operations": [
         "exports.people"
@@ -357,7 +383,8 @@
       "scope": "festapp:export-orders:read",
       "labels": {
         "cs": "Exportovat souhrny objednávek",
-        "en": "Export order summaries"
+        "en": "Export order summaries",
+        "sk": "Exportovať súhrny objednávok"
       },
       "operations": [
         "exports.orders"
@@ -370,7 +397,8 @@
       "scope": "festapp:export-events:read",
       "labels": {
         "cs": "Exportovat položky programu",
-        "en": "Export program items"
+        "en": "Export program items",
+        "sk": "Exportovať položky programu"
       },
       "operations": [
         "exports.events"
@@ -383,7 +411,8 @@
       "scope": "festapp:export-places:read",
       "labels": {
         "cs": "Exportovat místa",
-        "en": "Export places"
+        "en": "Export places",
+        "sk": "Exportovať miesta"
       },
       "operations": [
         "exports.places"
@@ -396,7 +425,8 @@
       "scope": "festapp:export-speakers:read",
       "labels": {
         "cs": "Exportovat řečníky",
-        "en": "Export speakers"
+        "en": "Export speakers",
+        "sk": "Exportovať rečníkov"
       },
       "operations": [
         "exports.speakers"
@@ -409,7 +439,8 @@
       "scope": "festapp:export-feedback:read",
       "labels": {
         "cs": "Exportovat zpětnou vazbu",
-        "en": "Export event feedback"
+        "en": "Export event feedback",
+        "sk": "Exportovať spätnú väzbu"
       },
       "operations": [
         "exports.feedback"
@@ -422,7 +453,8 @@
       "scope": "festapp:program:read",
       "labels": {
         "cs": "Číst program a vzájemně výlučné skupiny",
-        "en": "Read program items and exclusive groups"
+        "en": "Read program items and exclusive groups",
+        "sk": "Čítať program a vzájomne sa vylučujúce skupiny"
       },
       "operations": [
         "events.list",
@@ -437,13 +469,15 @@
       "scope": "festapp:program:write",
       "labels": {
         "cs": "Upravovat a odstraňovat program a vzájemně výlučné skupiny",
-        "en": "Edit and delete program items and exclusive groups"
+        "en": "Edit and delete program items and exclusive groups",
+        "sk": "Upravovať a odstraňovať program a vzájomne sa vylučujúce skupiny"
       },
       "operations": [
         "events.save",
         "events.delete",
         "exclusiveGroups.save",
-        "exclusiveGroups.delete"
+        "exclusiveGroups.delete",
+        "images.upload"
       ],
       "requires": [
         "festapp:program:read"
@@ -453,7 +487,8 @@
       "scope": "festapp:map:read",
       "labels": {
         "cs": "Číst místa, typy míst, cesty a ikony",
-        "en": "Read places, place types, paths and icons"
+        "en": "Read places, place types, paths and icons",
+        "sk": "Čítať miesta, typy miest, cesty a ikony"
       },
       "operations": [
         "places.list",
@@ -470,7 +505,8 @@
       "scope": "festapp:map:write",
       "labels": {
         "cs": "Upravovat, přesouvat a odstraňovat místa a cesty",
-        "en": "Edit, move and delete places and paths"
+        "en": "Edit, move and delete places and paths",
+        "sk": "Upravovať, presúvať a odstraňovať miesta a cesty"
       },
       "operations": [
         "places.save",
@@ -489,7 +525,8 @@
       "scope": "festapp:speakers:read",
       "labels": {
         "cs": "Číst řečníky, témata a konzultační termíny",
-        "en": "Read speakers, topics and counseling slots"
+        "en": "Read speakers, topics and counseling slots",
+        "sk": "Čítať rečníkov, témy a konzultačné termíny"
       },
       "operations": [
         "speakers.list",
@@ -505,7 +542,8 @@
       "scope": "festapp:speakers:write",
       "labels": {
         "cs": "Spravovat řečníky, jejich přiřazení a konzultační termíny",
-        "en": "Manage speakers, assignments and counseling slots"
+        "en": "Manage speakers, assignments and counseling slots",
+        "sk": "Spravovať rečníkov, ich priradenia a konzultačné termíny"
       },
       "operations": [
         "speakers.save",
@@ -525,7 +563,8 @@
       "scope": "festapp:activities:read",
       "labels": {
         "cs": "Číst publikované aktivity a vlastní návrh",
-        "en": "Read published activities and your own draft"
+        "en": "Read published activities and your own draft",
+        "sk": "Čítať publikované aktivity a vlastný návrh"
       },
       "operations": [
         "activities.inspect"
@@ -536,7 +575,8 @@
       "scope": "festapp:activities:write",
       "labels": {
         "cs": "Ukládat, zahazovat a publikovat plány aktivit",
-        "en": "Save, discard and publish activity plans"
+        "en": "Save, discard and publish activity plans",
+        "sk": "Ukladať, zahadzovať a publikovať plány aktivít"
       },
       "operations": [
         "activities.saveDraft",
@@ -551,7 +591,8 @@
       "scope": "festapp:services:read",
       "labels": {
         "cs": "Číst stravovací a ubytovací služby",
-        "en": "Read food and accommodation services"
+        "en": "Read food and accommodation services",
+        "sk": "Čítať stravovacie a ubytovacie služby"
       },
       "operations": [
         "services.list"
@@ -562,7 +603,8 @@
       "scope": "festapp:services:write",
       "labels": {
         "cs": "Vytvářet, upravovat a odstraňovat definice služeb",
-        "en": "Create, edit and delete service definitions"
+        "en": "Create, edit and delete service definitions",
+        "sk": "Vytvárať, upravovať a odstraňovať definície služieb"
       },
       "operations": [
         "services.create",
@@ -577,7 +619,8 @@
       "scope": "festapp:attendance:write",
       "labels": {
         "cs": "Měnit účast osob na událostech programu",
-        "en": "Change participant attendance at program events"
+        "en": "Change participant attendance at program events",
+        "sk": "Meniť účasť osôb na udalostiach programu"
       },
       "operations": [
         "attendance.set"
@@ -590,7 +633,8 @@
       "scope": "festapp:scanner:read",
       "labels": {
         "cs": "Číst způsobilost vstupenky ke kontrole",
-        "en": "Read ticket check-in eligibility"
+        "en": "Read ticket check-in eligibility",
+        "sk": "Čítať spôsobilosť vstupenky na kontrolu"
       },
       "operations": [
         "scanner.inspect"
@@ -601,7 +645,8 @@
       "scope": "festapp:scanner:admit",
       "labels": {
         "cs": "Provádět kontrolu vstupenek přes skener",
-        "en": "Record ticket check-in through the scanner"
+        "en": "Record ticket check-in through the scanner",
+        "sk": "Vykonávať kontrolu vstupeniek cez skener"
       },
       "operations": [
         "scanner.admit"
@@ -614,7 +659,8 @@
       "scope": "festapp:blueprints:read",
       "labels": {
         "cs": "Číst plánky, obchodní vazby a fonty",
-        "en": "Read blueprint drafts, bindings and fonts"
+        "en": "Read blueprint drafts, bindings and fonts",
+        "sk": "Čítať plániky, obchodné väzby a písma"
       },
       "operations": [
         "blueprints.list",
@@ -628,7 +674,8 @@
       "scope": "festapp:blueprints:write",
       "labels": {
         "cs": "Ukládat celé návrhy plánků a připravovat texty",
-        "en": "Save complete blueprint drafts and prepare text"
+        "en": "Save complete blueprint drafts and prepare text",
+        "sk": "Ukladať celé návrhy plánikov a pripravovať texty"
       },
       "operations": [
         "blueprints.save",
@@ -642,7 +689,8 @@
       "scope": "festapp:ticket-artwork:preview",
       "labels": {
         "cs": "Zobrazovat náhled vzhledu vzorové vstupenky",
-        "en": "Preview synthetic ticket artwork"
+        "en": "Preview synthetic ticket artwork",
+        "sk": "Zobrazovať náhľad vzhľadu vzorovej vstupenky"
       },
       "operations": [
         "ticket_layouts.preview"
@@ -653,7 +701,8 @@
       "scope": "festapp:ticket-artwork:write",
       "labels": {
         "cs": "Ukládat vzhled vstupenek a obnovovat nedokončené ukládání",
-        "en": "Save ticket artwork and resume pending saves"
+        "en": "Save ticket artwork and resume pending saves",
+        "sk": "Ukladať vzhľad vstupeniek a obnovovať nedokončené ukladanie"
       },
       "operations": [
         "ticket_layouts.save",
@@ -668,7 +717,8 @@
       "scope": "festapp:people:read",
       "labels": {
         "cs": "Číst účastníky a jejich profil v akci",
-        "en": "Read occasion participants and profiles"
+        "en": "Read occasion participants and profiles",
+        "sk": "Čítať účastníkov a profily akcie"
       },
       "operations": [
         "profiles.list",
@@ -680,7 +730,8 @@
       "scope": "festapp:people:write",
       "labels": {
         "cs": "Vytvářet, upravovat, importovat a odebírat účastníky",
-        "en": "Create, edit, import and remove participants"
+        "en": "Create, edit, import and remove participants",
+        "sk": "Vytvárať, upravovať, importovať a odoberať účastníkov"
       },
       "operations": [
         "profiles.create",
@@ -697,7 +748,8 @@
       "scope": "festapp:people:roles",
       "labels": {
         "cs": "Měnit role, schvalování a dobrovolnictví účastníků",
-        "en": "Change participant roles, approval and volunteer status"
+        "en": "Change participant roles, approval and volunteer status",
+        "sk": "Meniť roly, schvaľovanie a dobrovoľníctvo účastníkov"
       },
       "operations": [
         "profiles.roles"
@@ -710,7 +762,8 @@
       "scope": "festapp:groups:read",
       "labels": {
         "cs": "Číst skupiny a jejich členství",
-        "en": "Read groups and memberships"
+        "en": "Read groups and memberships",
+        "sk": "Čítať skupiny a členstvo"
       },
       "operations": [
         "groups.list",
@@ -722,7 +775,8 @@
       "scope": "festapp:groups:write",
       "labels": {
         "cs": "Spravovat skupiny a jejich členství",
-        "en": "Manage groups and memberships"
+        "en": "Manage groups and memberships",
+        "sk": "Spravovať skupiny a členstvo"
       },
       "operations": [
         "groups.save",
@@ -738,7 +792,8 @@
       "scope": "festapp:unit-people:read",
       "labels": {
         "cs": "Číst lidi a role u pořadatele",
-        "en": "Read organizer people and roles"
+        "en": "Read organizer people and roles",
+        "sk": "Čítať ľudí a roly organizátora"
       },
       "operations": [
         "units.people.list"
@@ -749,7 +804,8 @@
       "scope": "festapp:unit-people:write",
       "labels": {
         "cs": "Upravovat profilové údaje lidí u pořadatele",
-        "en": "Edit organizer member profile fields"
+        "en": "Edit organizer member profile fields",
+        "sk": "Upravovať profily členov organizátora"
       },
       "operations": [
         "units.people.create",
@@ -763,7 +819,8 @@
       "scope": "festapp:unit-people:roles",
       "labels": {
         "cs": "Měnit role lidí u pořadatele",
-        "en": "Change organizer member roles"
+        "en": "Change organizer member roles",
+        "sk": "Meniť roly členov organizátora"
       },
       "operations": [
         "units.people.roles"
@@ -776,7 +833,8 @@
       "scope": "festapp:unit-people:revoke",
       "labels": {
         "cs": "Odebírat přístup lidí k pořadateli",
-        "en": "Revoke organizer access"
+        "en": "Revoke organizer access",
+        "sk": "Odoberať prístup k organizátorovi"
       },
       "operations": [
         "units.people.revoke"
@@ -789,7 +847,8 @@
       "scope": "festapp:occasion-settings:read",
       "labels": {
         "cs": "Číst nastavení akce a hry",
-        "en": "Read occasion and game settings"
+        "en": "Read occasion and game settings",
+        "sk": "Čítať nastavenia akcie a hry"
       },
       "operations": [
         "occasions.settings.inspect",
@@ -801,7 +860,8 @@
       "scope": "festapp:occasion-settings:write",
       "labels": {
         "cs": "Měnit nastavení akce, hry a veřejný odkaz",
-        "en": "Change occasion settings, game and public link"
+        "en": "Change occasion settings, game and public link",
+        "sk": "Meniť nastavenia akcie, hry a verejný odkaz"
       },
       "operations": [
         "occasions.settings.save",
@@ -817,7 +877,8 @@
       "scope": "festapp:unit-settings:read",
       "labels": {
         "cs": "Číst nastavení pořadatele",
-        "en": "Read organizer settings"
+        "en": "Read organizer settings",
+        "sk": "Čítať nastavenia organizátora"
       },
       "operations": [
         "units.settings.inspect",
@@ -833,7 +894,8 @@
       "scope": "festapp:unit-settings:write",
       "labels": {
         "cs": "Měnit nastavení pořadatele",
-        "en": "Change organizer settings"
+        "en": "Change organizer settings",
+        "sk": "Meniť nastavenia organizátora"
       },
       "operations": [
         "units.settings.save",
@@ -844,10 +906,27 @@
       ]
     },
     {
+      "scope": "festapp:unit-website-consent:write",
+      "labels": {
+        "cs": "Ukládat, potvrzovat a vypínat vazby souhlasu webu",
+        "en": "Save, confirm and disable website consent bindings",
+        "sk": "Ukladať, potvrdzovať a vypínať väzby súhlasu webu"
+      },
+      "operations": [
+        "units.websiteConsent.probeComplianz",
+        "units.websiteConsent.save",
+        "units.websiteConsent.disable"
+      ],
+      "requires": [
+        "festapp:unit-settings:read"
+      ]
+    },
+    {
       "scope": "festapp:unit-approvals:request",
       "labels": {
         "cs": "Žádat o schválení měření a Meta CAPI (pošle e-mail všem správcům organizace)",
-        "en": "Request measurement and Meta CAPI approval (emails all organization administrators)"
+        "en": "Request measurement and Meta CAPI approval (emails all organization administrators)",
+        "sk": "Žiadať o schválenie merania a Meta CAPI (pošle e-mail všetkým správcom organizácie)"
       },
       "operations": [
         "units.measurementApproval.request",
@@ -861,11 +940,13 @@
       "scope": "festapp:forms:read",
       "labels": {
         "cs": "Číst formuláře, pole a prodejní kapacitu",
-        "en": "Read forms, fields and sales capacity"
+        "en": "Read forms, fields and sales capacity",
+        "sk": "Čítať formuláre, polia a predajnú kapacitu"
       },
       "operations": [
         "forms.list",
-        "forms.inspect"
+        "forms.inspect",
+        "forms.measurement.inspect"
       ],
       "requires": []
     },
@@ -873,7 +954,8 @@
       "scope": "festapp:forms:write",
       "labels": {
         "cs": "Vytvářet, upravovat, kopírovat a mazat formuláře",
-        "en": "Create, edit, copy and delete forms"
+        "en": "Create, edit, copy and delete forms",
+        "sk": "Vytvárať, upravovať, kopírovať a mazať formuláre"
       },
       "operations": [
         "forms.publicLink",
@@ -893,7 +975,8 @@
       "scope": "festapp:email-templates:read",
       "labels": {
         "cs": "Číst e-mailové šablony, bannery a ukázkové náhledy",
-        "en": "Read email templates, banners and synthetic previews"
+        "en": "Read email templates, banners and synthetic previews",
+        "sk": "Čítať e-mailové šablóny, bannery a ukážkové náhľady"
       },
       "operations": [
         "email_templates.list",
@@ -907,7 +990,8 @@
       "scope": "festapp:email-templates:write",
       "labels": {
         "cs": "Upravovat e-mailové šablony a bannery, obnovovat dědičnost",
-        "en": "Edit email templates and banners; restore inheritance"
+        "en": "Edit email templates and banners; restore inheritance",
+        "sk": "Upravovať e-mailové šablóny a bannery, obnovovať dedičnosť"
       },
       "operations": [
         "email_templates.change",
@@ -921,7 +1005,8 @@
       "scope": "festapp:orders:create",
       "labels": {
         "cs": "Vytvářet administrátorské objednávky",
-        "en": "Create administrator orders"
+        "en": "Create administrator orders",
+        "sk": "Vytvárať administrátorské objednávky"
       },
       "operations": [
         "forms.previewOrder",
@@ -936,7 +1021,8 @@
       "scope": "festapp:waitlist:accept",
       "labels": {
         "cs": "Přijímat nabídky a vytvářet objednávky za účastníky",
-        "en": "Accept offers and create orders for participants"
+        "en": "Accept offers and create orders for participants",
+        "sk": "Prijímať ponuky a vytvárať objednávky za účastníkov"
       },
       "operations": [
         "waitlist.previewAccept",
@@ -951,7 +1037,8 @@
       "scope": "festapp:waitlist:read",
       "labels": {
         "cs": "Číst čekací listinu a nabídky",
-        "en": "Read waitlist tickets and offers"
+        "en": "Read waitlist tickets and offers",
+        "sk": "Čítať čakaciu listinu a ponuky"
       },
       "operations": [
         "waitlist.detail"
@@ -964,7 +1051,8 @@
       "scope": "festapp:waitlist:write",
       "labels": {
         "cs": "Spravovat a odesílat nabídky čekací listiny",
-        "en": "Manage and send waitlist offers"
+        "en": "Manage and send waitlist offers",
+        "sk": "Spravovať a odosielať ponuky čakacej listiny"
       },
       "operations": [
         "waitlist.proposal",
@@ -982,7 +1070,8 @@
       "scope": "festapp:orders:read",
       "labels": {
         "cs": "Číst objednávky, kontaktní údaje a počty vstupenek",
-        "en": "Read orders, contact details and ticket counts"
+        "en": "Read orders, contact details and ticket counts",
+        "sk": "Čítať objednávky, kontaktné údaje a počty vstupeniek"
       },
       "operations": [
         "orders.report",
@@ -995,7 +1084,8 @@
       "scope": "festapp:orders:write",
       "labels": {
         "cs": "Měnit údaje a položky objednávek a rušit objednávky",
-        "en": "Edit order details and products, and cancel orders"
+        "en": "Edit order details and products, and cancel orders",
+        "sk": "Meniť údaje a položky objednávok a stornovať ich"
       },
       "operations": [
         "orders.update",
@@ -1009,7 +1099,8 @@
       "scope": "festapp:payments:write",
       "labels": {
         "cs": "Zapisovat ruční platby a označovat objednávky jako zaplacené",
-        "en": "Record manual payments and mark orders paid"
+        "en": "Record manual payments and mark orders paid",
+        "sk": "Zapisovať ručné platby a označovať objednávky ako zaplatené"
       },
       "operations": [
         "orders.mark_paid",
@@ -1023,7 +1114,8 @@
       "scope": "festapp:tickets:send",
       "labels": {
         "cs": "Odesílat zákazníkům vstupenky e-mailem",
-        "en": "Email tickets to customers"
+        "en": "Email tickets to customers",
+        "sk": "Odosielať zákazníkom vstupenky e-mailom"
       },
       "operations": [
         "orders.send_tickets"
@@ -1036,7 +1128,8 @@
       "scope": "festapp:seats:read",
       "labels": {
         "cs": "Číst místa a jejich provozní stav",
-        "en": "Read seats and their operational state"
+        "en": "Read seats and their operational state",
+        "sk": "Čítať miesta a ich prevádzkový stav"
       },
       "operations": [
         "seats.list"
@@ -1047,7 +1140,8 @@
       "scope": "festapp:seats:release-holds",
       "labels": {
         "cs": "Uvolňovat dočasné rezervace vybraných míst",
-        "en": "Release temporary holds on selected seats"
+        "en": "Release temporary holds on selected seats",
+        "sk": "Uvoľňovať dočasné rezervácie vybraných miest"
       },
       "operations": [
         "seats.preview_release",
@@ -1061,7 +1155,8 @@
       "scope": "festapp:seats:create-orders",
       "labels": {
         "cs": "Vytvářet objednávky z míst a nahrazovat původní vstupenky",
-        "en": "Create orders from seats and replace original tickets"
+        "en": "Create orders from seats and replace original tickets",
+        "sk": "Vytvárať objednávky z miest a nahrádzať pôvodné vstupenky"
       },
       "operations": [
         "seats.preview_order",
@@ -1076,7 +1171,8 @@
       "scope": "festapp:seats:cancel-tickets",
       "labels": {
         "cs": "Rušit vstupenky vybrané v plánku",
-        "en": "Cancel tickets selected on a map"
+        "en": "Cancel tickets selected on a map",
+        "sk": "Rušiť vstupenky vybrané v plániku"
       },
       "operations": [
         "seats.preview_cancel",
@@ -1091,7 +1187,8 @@
       "scope": "festapp:seats:swap",
       "labels": {
         "cs": "Prohazovat místa vstupenek a upravovat cenu objednávky",
-        "en": "Swap ticket seats and update order totals"
+        "en": "Swap ticket seats and update order totals",
+        "sk": "Vymieňať miesta vstupeniek a upravovať cenu objednávky"
       },
       "operations": [
         "seats.preview_swap",
@@ -1106,7 +1203,8 @@
       "scope": "festapp:seats:block",
       "labels": {
         "cs": "Blokovat a odblokovat vybraná místa",
-        "en": "Block and unblock selected seats"
+        "en": "Block and unblock selected seats",
+        "sk": "Blokovať a odblokovať vybrané miesta"
       },
       "operations": [
         "seats.preview_block",
@@ -1120,7 +1218,8 @@
       "scope": "festapp:inventory:read",
       "labels": {
         "cs": "Číst sklady, kapacity, nastavení a obsazení kontextů",
-        "en": "Read stock pools, capacity, settings and context occupancy"
+        "en": "Read stock pools, capacity, settings and context occupancy",
+        "sk": "Čítať sklady, kapacity, nastavenia a obsadenie kontextov"
       },
       "operations": [
         "inventory.pools.list",
@@ -1136,7 +1235,8 @@
       "scope": "festapp:inventory:write",
       "labels": {
         "cs": "Upravovat sklady, jejich kontexty a zdroje",
-        "en": "Edit stock pools, contexts and resources"
+        "en": "Edit stock pools, contexts and resources",
+        "sk": "Upravovať sklady, ich kontexty a zdroje"
       },
       "operations": [
         "inventory.change",
@@ -1150,7 +1250,8 @@
       "scope": "festapp:standing-inventory:write",
       "labels": {
         "cs": "Připravit zásoby pro vstupenky na stání",
-        "en": "Prepare standing admission inventory"
+        "en": "Prepare standing admission inventory",
+        "sk": "Pripraviť zásoby pre vstupenky na státie"
       },
       "operations": [
         "inventory.prepare_standing"
@@ -1163,7 +1264,8 @@
       "scope": "festapp:product-schedules:read",
       "labels": {
         "cs": "Číst cenové vlny a plánované změny produktů",
-        "en": "Read product price waves and scheduled changes"
+        "en": "Read product price waves and scheduled changes",
+        "sk": "Čítať cenové vlny a plánované zmeny produktov"
       },
       "operations": [
         "product_schedules.list"
@@ -1176,7 +1278,8 @@
       "scope": "festapp:product-schedules:write",
       "labels": {
         "cs": "Plánovat, přesouvat a rušit ceny a viditelnost produktů",
-        "en": "Schedule, move and cancel product prices and visibility"
+        "en": "Schedule, move and cancel product prices and visibility",
+        "sk": "Plánovať, presúvať a rušiť ceny a viditeľnosť produktov"
       },
       "operations": [
         "product_schedules.change"
@@ -1190,7 +1293,8 @@
       "scope": "festapp:product-options:read",
       "labels": {
         "cs": "Číst dostupné typy produktů a skladové volby",
-        "en": "Read available product types and stock choices"
+        "en": "Read available product types and stock choices",
+        "sk": "Čítať dostupné typy produktov a skladové možnosti"
       },
       "operations": [
         "products.options"
@@ -1203,7 +1307,8 @@
       "scope": "festapp:products:read",
       "labels": {
         "cs": "Číst produkty, ceny a skladová přiřazení",
-        "en": "Read products, prices and inventory assignments"
+        "en": "Read products, prices and inventory assignments",
+        "sk": "Čítať produkty, ceny a skladové priradenia"
       },
       "operations": [
         "products.list"
@@ -1214,7 +1319,8 @@
       "scope": "festapp:products:write",
       "labels": {
         "cs": "Vytvářet, upravovat a odstraňovat produkty",
-        "en": "Create, edit and delete products"
+        "en": "Create, edit and delete products",
+        "sk": "Vytvárať, upravovať a odstraňovať produkty"
       },
       "operations": [
         "products.save",
@@ -5721,6 +5827,40 @@
       }
     },
     {
+      "id": "forms.measurement.inspect",
+      "name": "festapp_forms_measurement_inspect",
+      "description": "Read effective form measurement status, the browser purchase timing and whether this form has an effective Meta CAPI purchase connector. A null value means the installed database does not report that value. The organization switch and Meta CAPI connector credentials are managed in administration. Returns no credentials, public form keys or customer data.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:forms:read"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "formId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId",
+          "formId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "id": "forms.paymentOptions",
       "name": "festapp_forms_payment_options",
       "description": "Read existing linked non-cash bank accounts, registered provider recipient options for the explicit live/test environment, per-provider availability and the current sale policy for a form. Requires form authoring rights and forms write consent because this is an authoring selection context. Reads persisted state only; never onboards an account, refreshes a provider, creates a payment or changes configuration. Returned availability is momentary; saving revalidates actual scope and compatibility.",
@@ -7796,6 +7936,57 @@
         "required": [
           "occasionId",
           "orderId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "images.upload",
+      "name": "festapp_images_upload",
+      "description": "Upload one approved public JPEG, PNG or WebP image for an occasion. Supply the file bytes as base64, up to 1 MiB. Use the returned Festapp URL in the event description or speaker image field. This operation does not edit a record. A lost response can leave an uploaded asset, so do not retry automatically.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:program:read",
+        "festapp:program:write"
+      ],
+      "readOnly": false,
+      "destructive": false,
+      "idempotent": false,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:jpe?g|png|webp)$"
+          },
+          "contentBase64": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 1398104,
+            "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+          },
+          "profile": {
+            "default": "standard",
+            "type": "string",
+            "enum": [
+              "standard",
+              "portrait"
+            ]
+          }
+        },
+        "required": [
+          "occasionId",
+          "filename",
+          "contentBase64"
         ],
         "additionalProperties": false
       }
@@ -16006,7 +16197,7 @@
     {
       "id": "units.measurementApproval.request",
       "name": "festapp_units_measurement_approval_request",
-      "description": "Ask the platform to approve the form dataLayer and measurement runtime for this organizer and its currently saved websites. When the platform then provisions or changes the measurement runtime, consentRevision changes: every enabled website consent binding becomes confirmation_required and must be reconfirmed in organizer administration (see festapp_units_website_consent_inspect). Mention this when asking for approval. Sends a measurement approval request email to every administrator of the organization who has a deliverable address, with the organizer, organization and saved websites and a link to organization settings; the platform then confirms the approval. Approve the exact change first: name the organizer and that all organization administrators will be emailed. Uses the administration request owner; there is no commandId. While a request is active, after approval or for a demo organizer nothing is sent and the current status is returned. After an uncertain response, inspect with festapp_units_measurement_approval_inspect and wait while requestState is requested. If requestState is retry_available, a new request can send another round of emails. Obtain fresh approval before sending a new request. APPROVAL_REQUEST_LIMITED means nothing was sent; when retryable, its message states the seconds to wait. APPROVAL_REQUEST_NO_RECIPIENT means no administrator has a deliverable email address; nothing was sent and the request stays available. Requires whole-organizer consent and its live manager role.",
+      "description": "Ask the platform to approve the form dataLayer and measurement runtime for this organizer and its currently saved websites. When the platform then provisions or changes the measurement runtime, consentRevision changes: every enabled website consent binding becomes confirmation_required and needs fresh organizer confirmation (see festapp_units_website_consent_inspect). Mention this when asking for approval. Sends a measurement approval request email to every administrator of the organization who has a deliverable address, with the organizer, organization and saved websites and a link to organization settings; the platform then confirms the approval. Approve the exact change first: name the organizer and that all organization administrators will be emailed. Uses the administration request owner; there is no commandId. While a request is active, after approval or for a demo organizer nothing is sent and the current status is returned. After an uncertain response, inspect with festapp_units_measurement_approval_inspect and wait while requestState is requested. If requestState is retry_available, a new request can send another round of emails. Obtain fresh approval before sending a new request. APPROVAL_REQUEST_LIMITED means nothing was sent; when retryable, its message states the seconds to wait. APPROVAL_REQUEST_NO_RECIPIENT means no administrator has a deliverable email address; nothing was sent and the request stays available. Requires whole-organizer consent and its live manager role.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",
@@ -16803,7 +16994,7 @@
     {
       "id": "units.settings.save",
       "name": "festapp_units_settings_save",
-      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned analytics/measurement configuration, including the GTM container ID and custom tracking code, with explicit organizer consent and live manager authorization. measurement_consent_bridge defaults to false; enable it only when the organizer operates the host website as the same controller and its banner explicitly covers the embedded form and measurement services. Explicit adapters remain available independently. measurement_websites contains up to 10 exact HTTPS origins without paths. Saving confirms organizer operation of those websites; after initial organizer platform/runtime approval, all saved websites are admitted automatically without another domain request. Browser-canonical origins are required; this never grants visitor consent. Measurement configuration uses measurement_consent_bridge, measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. Visitor consent does not gate measurement: on an eligible form GTM and Unit scripts load at once, and the choice is passed as Consent Mode state for the organizer's container. Successful browser purchase/generate_lead events can carry bounded buyer email/phone to approved measurement recipients, also under denied choice. measurement_consent_version is a positive nondecreasing integer (historical default 1); increase it to require new consent when remote tags or purposes change. Omission preserves the version; null and decreases are rejected. Festapp cannot detect remote tag or policy content changes at the same ID/URL. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Website consent bindings: consentRevision hashes the stored measurement_gtm_container, measurement_scripts, measurement_privacy_url, measurement_consent_title, measurement_consent_text and measurement_consent_version together with the platform-owned measurement runtime profile and collector origins. Any change to those stored values changes it, including setting or clearing an empty text; resending identical values, null for an unset key, or an explicit measurement_consent_version 1 where none is stored does not. Every enabled website consent binding then becomes confirmation_required and the website is treated as unbound until a manager confirms it again in organizer administration; MCP cannot confirm it. Platform approval that provisions or changes the measurement runtime has the same effect without any save. Meta CAPI website_ready for a connector website other than the tenant address depends on that binding and is false until then. Turning measurement_consent_bridge off or removing a website from measurement_websites does not change the revision but makes the affected bindings unavailable while that lasts. Before saving such a change, check festapp_units_website_consent_inspect and obtain approval for this effect too. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
+      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned analytics/measurement configuration, including the GTM container ID and custom tracking code, with explicit organizer consent and live manager authorization. measurement_consent_bridge defaults to false; enable it only when the organizer operates the host website as the same controller and its banner explicitly covers the embedded form and measurement services. Explicit adapters remain available independently. measurement_websites contains up to 10 exact HTTPS origins without paths. Saving confirms organizer operation of those websites; after initial organizer platform/runtime approval, all saved websites are admitted automatically without another domain request. Browser-canonical origins are required; this never grants visitor consent. Measurement configuration uses measurement_consent_bridge, measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. Visitor consent does not gate measurement: on an eligible form GTM and Unit scripts load at once, and the choice is passed as Consent Mode state for the organizer's container. Successful browser purchase/generate_lead events can carry bounded buyer email/phone to approved measurement recipients, also under denied choice. measurement_consent_version is a positive nondecreasing integer (historical default 1); increase it to require new consent when remote tags or purposes change. Omission preserves the version; null and decreases are rejected. Festapp cannot detect remote tag or policy content changes at the same ID/URL. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Website consent bindings: consentRevision hashes the stored measurement_gtm_container, measurement_scripts, measurement_privacy_url, measurement_consent_title, measurement_consent_text and measurement_consent_version together with the platform-owned measurement runtime profile and collector origins. Any change to those stored values changes it, including setting or clearing an empty text; resending identical values, null for an unset key, or an explicit measurement_consent_version 1 where none is stored does not. Every enabled website consent binding then becomes confirmation_required and the website is treated as unbound until a manager confirms it again with the organizer’s explicit confirmation in administration or with festapp_units_website_consent_save. Platform approval that provisions or changes the measurement runtime has the same effect without any save. Meta CAPI website_ready for a connector website other than the tenant address depends on that binding and is false until then. Turning measurement_consent_bridge off or removing a website from measurement_websites does not change the revision but makes the affected bindings unavailable while that lasts. Before saving such a change, check festapp_units_website_consent_inspect and obtain approval for this effect too. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",
@@ -16998,6 +17189,47 @@
       }
     },
     {
+      "id": "units.websiteConsent.disable",
+      "name": "festapp_units_website_consent_disable",
+      "description": "Disable a website consent binding so form embeds stop accepting its website cookie choices. The stored configuration is retained. Get the bindingId and version from festapp_units_website_consent_inspect and obtain explicit approval for that website before disabling. Requires whole-organizer consent and its live manager role. After an uncertain result, inspect units.websiteConsent.inspect with the same unitId. Compare the binding version and state before trying again; obtain fresh approval if the version or consentRevision changed.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:unit-settings:read",
+        "festapp:unit-website-consent:write"
+      ],
+      "readOnly": false,
+      "destructive": false,
+      "idempotent": false,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "bindingId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "unitId",
+          "bindingId",
+          "expectedVersion"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "id": "units.websiteConsent.export",
       "name": "festapp_units_website_consent_export",
       "description": "Read the consent import text of one ready website consent binding, exactly as the organizer administration copies it. Pass consentExport unchanged to festapp_forms_embed_code for an HTML embed on that website. It contains public identifiers that become part of the website code, no credentials. Use bindingId and version from festapp_units_website_consent_inspect; a changed binding returns WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED and a binding that is not ready returns WEBSITE_CONSENT_NOT_READY. Requires whole-organizer consent and its live manager role.",
@@ -17040,7 +17272,7 @@
     {
       "id": "units.websiteConsent.inspect",
       "name": "festapp_units_website_consent_inspect",
-      "description": "Read the state of website consent bindings (the organizer's cookie banner on its own websites passed to embedded forms) and the current consentRevision. ready means the binding is used; confirmation_required means the consent notice changed after confirmation (see festapp_units_settings_save) and the website is treated as unbound until reconfirmed; unavailable means the consent bridge is off, the website is no longer saved or the organizer is a demo; draft/disabled are not used; unknown is a newer server state and is never ready. Bindings of saved websites are listed first; truncated means more than 100 bindings or saved websites exist and the rest are omitted. Returns platform and banner provider only, no provider configuration. Confirmation of a binding is the organizer's own statement about its website banner and happens only in organizer administration; MCP cannot confirm, change or disable bindings. Requires whole-organizer consent and its live manager role.",
+      "description": "Read the state of website consent bindings (the organizer's cookie banner on its own websites passed to embedded forms) and the current consentRevision. ready means the binding is used; confirmation_required means the consent notice changed after confirmation (see festapp_units_settings_save) and the website is treated as unbound until reconfirmed; unavailable means the consent bridge is off, the website is no longer saved or the organizer is a demo; draft/disabled are not used; unknown is a newer server state and is never ready. Bindings of saved websites are listed first; truncated means more than 100 bindings or saved websites exist and the rest are omitted. Returns platform and banner provider only, no provider configuration. Confirmation is the organizer's own statement about its website banner. A tool cannot determine whether the banner covers the organizer's actual processing. Requires whole-organizer consent and its live manager role.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read"
@@ -17061,6 +17293,185 @@
         },
         "required": [
           "unitId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "units.websiteConsent.probeComplianz",
+      "name": "festapp_units_website_consent_probe_complianz",
+      "description": "Detect the publicly declared Complianz policy ID on the exact saved website using the organizer administration probe. Requires whole-organizer consent and its live manager role. Detection sends a public website request and does not confirm coverage. Use the detected policy ID in the binding only after the organizer verifies it.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:unit-settings:read",
+        "festapp:unit-website-consent:write"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "websiteOrigin": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "unitId",
+          "websiteOrigin"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "units.websiteConsent.save",
+      "name": "festapp_units_website_consent_save",
+      "description": "Create or replace the consent binding for an exact saved website. Use expectedVersion 0 for a missing binding; get the current version and expectedConsentRevision from festapp_units_website_consent_inspect. Get approval for the exact website, platform, provider configuration and whether it will be enabled. Set coverageConfirmed true only when the organizer explicitly confirms that its website banner covers this processing and these analytics and marketing choices. False saves a draft and removes prior confirmation. When using a detected Complianz policy ID, set verifyComplianz true to recheck it before confirming.  Requires whole-organizer consent and its live manager role. After an uncertain result, inspect units.websiteConsent.inspect with the same unitId. Compare the binding version and state before trying again; obtain fresh approval if the version or consentRevision changed.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:unit-settings:read",
+        "festapp:unit-website-consent:write"
+      ],
+      "readOnly": false,
+      "destructive": false,
+      "idempotent": false,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "websiteOrigin": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "wordpress",
+              "joomla",
+              "wix",
+              "html"
+            ]
+          },
+          "providerConfig": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "complianz"
+                  },
+                  "policyId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,15}$"
+                  }
+                },
+                "required": [
+                  "provider",
+                  "policyId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "cookiebot"
+                  }
+                },
+                "required": [
+                  "provider"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "wix"
+                  }
+                },
+                "required": [
+                  "provider"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "cookieconsent"
+                  },
+                  "categories": {
+                    "type": "object",
+                    "properties": {
+                      "analytics": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "marketing": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      }
+                    },
+                    "required": [
+                      "analytics",
+                      "marketing"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "provider"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedConsentRevision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "coverageConfirmed": {
+            "type": "boolean"
+          },
+          "verifyComplianz": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "unitId",
+          "websiteOrigin",
+          "platform",
+          "providerConfig",
+          "expectedVersion",
+          "expectedConsentRevision",
+          "coverageConfirmed"
         ],
         "additionalProperties": false
       }

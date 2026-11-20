@@ -27,14 +27,18 @@ const operationPermissionMessages = new Map([
 ]);
 // Domain outcomes whose remedy is not obvious from the code alone.
 const outcomeMessages = new Map([
+    ['IMAGE_UPLOAD_REJECTED', () => 'The image service rejected the file. Check its format, size and available storage.'],
+    ['IMAGE_UPLOAD_OUTCOME_UNKNOWN', () => 'The image service may have stored the file. Check the occasion before uploading it again.'],
     ['APPROVAL_REQUEST_LIMITED', error => error.retryable
         ? `Approval request emails are temporarily limited. Nothing was sent; retry after ${error.retryAfter ?? 60} seconds.`
         : 'Approval request emails exceed a limit that waiting does not resolve. Nothing was sent; the platform operator must review the limit.'],
     ['APPROVAL_REQUEST_NO_RECIPIENT', () => 'No organization administrator has a deliverable email address. Nothing was sent and the request remains available; an administrator must verify the account email first.'],
     ['APPROVAL_REQUEST_REJECTED', () => 'The request was not sent: the saved organizer websites or the organization service address are invalid. Check the organizer websites; the platform operator owns the service address.'],
-    ['WEBSITE_CONSENT_NOT_READY', () => 'Only a confirmed, ready website consent binding can be exported. Inspect the bindings; confirmation happens in organizer administration.'],
-    ['WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED', () => 'The website consent binding changed. Inspect the bindings again and use the current version.'],
+    ['WEBSITE_CONSENT_NOT_READY', () => 'Only a confirmed, ready website consent binding can be exported. Inspect the bindings and obtain confirmation from the organizer.'],
+    ['WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED', () => 'The website consent binding changed. Inspect the binding and the current consent revision. For a detected Complianz policy, check the policy ID again before confirming.'],
     ['WEBSITE_CONSENT_REJECTED', () => 'The website consent binding cannot be exported because the organization service address is not configured. The platform operator owns that address.'],
+    ['WEBSITE_CONSENT_CHANGE_REJECTED', () => 'Check that the exact HTTPS origin is saved for this organizer and the selected provider configuration is valid.'],
+    ['COMPLIANZ_POLICY_NOT_FOUND', () => 'The saved website did not expose a recognized Complianz policy ID. Inspect the website or obtain its policy ID directly from the organizer.'],
     ['CONSENT_EXPORT_REJECTED', () => 'consentExport must be a valid export for the selected organizer and service. Read the current export with festapp_units_website_consent_export and pass it unchanged.'],
     ['CONSENT_EXPORT_SERVICE_MISMATCH', () => 'consentExport names a different service address than this tenant web address. Reading it again returns the same address; the platform operator must align the organization service address with the tenant web address. The administration rejects the same export.'],
     ['EMBED_LABELS_UNAVAILABLE', () => 'This server build lacks the translated embed texts for the selected language. Choose another language or ask the platform operator to redeploy; other tools are unaffected.'],
@@ -45,8 +49,20 @@ const approvalRequestInspection = new Map([
     ['units.metaCapiApproval.request', 'festapp_units_meta_capi_approval_inspect'],
 ]);
 export function safeError(error, { operation } = {}) {
+    if (error instanceof OperationError && error.code === 'COMMITTED_READBACK_FAILED') {
+        const { commandId, receiptId, occasionId, formId } = error.receipt;
+        const target = formId ? ` Form ID ${formId} in occasion ${occasionId}.` : '';
+        const recovery = operation === 'forms.delete' ? 'Check the form list in administration.'
+            : formId ? 'Check the form in administration or inspect it by ID.'
+            : 'Check the saved result in administration.';
+        return { code: error.code, retryable: false,
+            message: `Committed commandId=${commandId}, receiptId=${receiptId}. Result readback failed.${target} ${recovery} If you need the original result, retry only with the same commandId and identical payload.` };
+    }
     const inspect = approvalRequestInspection.get(operation);
-    const recovery = inspect && `The approval request outcome is uncertain. Check with ${inspect} and obtain fresh approval before sending a new request.`;
+    const recovery = inspect ? `The approval request outcome is uncertain. Check with ${inspect} and obtain fresh approval before sending a new request.` :
+        ['units.websiteConsent.save','units.websiteConsent.disable'].includes(operation)
+            ? 'The binding outcome is uncertain. Inspect it with festapp_units_website_consent_inspect before trying again.'
+            : undefined;
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError')
         return { code: 'TIMEOUT', message: recovery || 'TIMEOUT', retryable: !recovery };
     const known = error instanceof OperationError;
@@ -54,8 +70,8 @@ export function safeError(error, { operation } = {}) {
         ? operationPermissionMessages.get(operation) ?? permissionMessages.get(error.code)
         : permissionMessages.get(error?.code) ?? (known ? outcomeMessages.get(error.code)?.(error) : undefined) ?? error?.code;
     const retryable = known ? !permissionMessages.has(error.code) && error.retryable : true;
-    // A lost response may hide a new round of email. Only an explicit queue
-    // rejection establishes that the approval request transaction rolled back.
+    // An uncertain result can follow a committed write. Explicit queue
+    // rejection is safe to report with its own retry information.
     if (retryable && recovery && error?.code !== 'APPROVAL_REQUEST_LIMITED')
         return { code: known ? error.code : 'UNAVAILABLE', message: recovery, retryable: false };
     return {

@@ -759,6 +759,86 @@
       "capturedAt": "2026-11-12T17:08:56.137818+00:00",
       "captureStep": "event-settings-current-20261112/event-settings-advanced",
       "alt": "Pokročilá nastavení akce s e-mailem pro odpovědi, časovým pásmem Europe/Prague a začátkem sekce Funkce."
+    },
+    {
+      "mediaId": "cs/discount-codes/settings",
+      "file": "cs/discount-codes/settings.png",
+      "sha256": "2e05d48cb6f6cc80212f167a639e6d9373f6cd50910dcf75d257791cb7d36a9d",
+      "capturedAt": "2026-11-20T09:55:42.640020+00:00",
+      "captureStep": "discount-codes-20261120/settings",
+      "alt": "Karta Slevové kódy s přepínačem Zapnuto v nastavení akce."
+    },
+    {
+      "mediaId": "cs/discount-codes/list",
+      "file": "cs/discount-codes/list.png",
+      "sha256": "9b5343f7c0922686d9f934c6d6b2e89d0d2b371dbbcf9b97f5a1caa3cdc73b48",
+      "capturedAt": "2026-11-20T09:55:27.112889+00:00",
+      "captureStep": "discount-codes-20261120/list",
+      "alt": "Seznam slevových kódů u produktů s aktivním kódem TANEC10."
+    },
+    {
+      "mediaId": "cs/discount-codes/editor",
+      "file": "cs/discount-codes/editor.png",
+      "sha256": "6108e2905c44360acdbd5ff9c024a5509a0084d806a4f6610175d50d13fe6edf",
+      "capturedAt": "2026-11-20T09:55:32.999457+00:00",
+      "captureStep": "discount-codes-20261120/editor",
+      "alt": "Editor kódu TANEC10 s procentní slevou 10 % a limitem 50 objednávek."
+    },
+    {
+      "mediaId": "cs/discount-codes/checkout-applied",
+      "file": "cs/discount-codes/checkout-applied.png",
+      "sha256": "89449d90a20e96aeff2eb31f91d0573f73211e808895942ab349b8dde2ebc33b",
+      "capturedAt": "2026-11-20T09:44:33.200675+00:00",
+      "captureStep": "discount-codes-20261120/checkout-applied",
+      "alt": "Prodejní formulář s kódem TANEC10, původní cenou 500 Kč a cenou po slevě 450 Kč."
+    },
+    {
+      "mediaId": "cs/discount-codes/checkout-review",
+      "file": "cs/discount-codes/checkout-review.png",
+      "sha256": "d73138a862142d6956c75fda09854345790f535bbf84fb9b91c7f17fb473b719",
+      "capturedAt": "2026-11-20T09:46:08.553806+00:00",
+      "captureStep": "discount-codes-20261120/checkout-review",
+      "alt": "Souhrn objednávky se vstupenkou na ples a slevou 50 Kč po zadání kódu TANEC10."
+    },
+    {
+      "mediaId": "en/discount-codes/settings",
+      "file": "en/discount-codes/settings.png",
+      "sha256": "bf0b90db4fa31ddd783c6572a3141269b2cfe67b58adf11a8c186f3e14d5f104",
+      "capturedAt": "2026-11-20T09:56:39.471076+00:00",
+      "captureStep": "discount-codes-20261120/settings",
+      "alt": "Discount codes card with the feature switched on in the event settings."
+    },
+    {
+      "mediaId": "en/discount-codes/list",
+      "file": "en/discount-codes/list.png",
+      "sha256": "20506fe7b8f1682b1c29bd70621a410ec62a42d45d3aa41895a93198cf759afe",
+      "capturedAt": "2026-11-20T09:56:20.782931+00:00",
+      "captureStep": "discount-codes-20261120/list",
+      "alt": "Discount codes list in Products with the active code DANCE10."
+    },
+    {
+      "mediaId": "en/discount-codes/editor",
+      "file": "en/discount-codes/editor.png",
+      "sha256": "1b802432e542b1501a26f13b17fca52f93f9d0b64f5d141f63e999b56d2dd683",
+      "capturedAt": "2026-11-20T09:56:21.534093+00:00",
+      "captureStep": "discount-codes-20261120/editor",
+      "alt": "DANCE10 editor with a ten percent discount and a limit of 50 orders."
+    },
+    {
+      "mediaId": "en/discount-codes/checkout-applied",
+      "file": "en/discount-codes/checkout-applied.png",
+      "sha256": "823db0659f8ad958fba27bc55470e34ef2f45155e3dc3e41f49e2ea1acae8045",
+      "capturedAt": "2026-11-20T09:45:12.977585+00:00",
+      "captureStep": "discount-codes-20261120/checkout-applied",
+      "alt": "Checkout form with DANCE10 applied, showing the original €50 price and a discounted price of €45."
+    },
+    {
+      "mediaId": "en/discount-codes/checkout-review",
+      "file": "en/discount-codes/checkout-review.png",
+      "sha256": "8c3c1028f9eb009346a5c1099e618ca43190fc6b0f8e6f8fe8a575661682b514",
+      "capturedAt": "2026-11-20T09:45:42.320580+00:00",
+      "captureStep": "discount-codes-20261120/checkout-review",
+      "alt": "Order summary for the Spring Ball with a €5 discount from DANCE10."
     }
   ],
   "chapters": [
@@ -1339,6 +1419,105 @@
         "verification": "Current actual CS/EN renderer shows submitted phone and only cancel/move actions; no mutation or email challenge for recapture",
         "captureScope": "Viewport focused on customer actions; mobile answer text is above the viewport"
       }
+    },
+    {
+      "id": "discount-codes-20261120",
+      "guides": [
+        "ticket-pricing",
+        "order-form",
+        "orders"
+      ],
+      "locales": [
+        "cs",
+        "en"
+      ],
+      "sourceState": "841bd71cb, current discount administration and checkout source on the capture date",
+      "environment": {
+        "backend": "Owned disposable local Supabase, canonical schema through migration 20261120120000",
+        "application": "Real Flutter web ticketing app and Vite web checkout in isolated muted headless Chrome, light theme",
+        "runtimeAdapters": [
+          "Local E2E backend URL and fixture anon key. Flutter entry uses the current app-config v219 contract and reserved sync origin, and existing E2E notification stubs.",
+          "Vite serves unmodified checkout components with a loopback Supabase endpoint."
+        ],
+        "fixtures": [
+          "Slavnostní ples U Lípy, Spolek U Lípy, TANEC10, 500 CZK",
+          "Linden Hall Spring Ball, Linden Hall Society, DANCE10, 50 EUR"
+        ]
+      },
+      "steps": [
+        {
+          "step": "Open event settings Features",
+          "outcome": "Discount codes feature enabled in real Flutter UI; settings screenshots."
+        },
+        {
+          "step": "Open Products and Discount codes, open persisted code",
+          "outcome": "Real local list and editor displayed percentage, active status, limit, restricted form and product."
+        },
+        {
+          "step": "Complete form and apply code",
+          "outcome": "Real quote_order_discount RPC returned CS 500 Kč - 50 Kč = 450 Kč and EN €50 - €5 = €45."
+        },
+        {
+          "step": "Continue to review",
+          "outcome": "Real review displayed code and matching totals with bank payment available. No order submitted."
+        }
+      ],
+      "notVerified": [
+        "Feature activation in UI, order submission, payment, delivery and customer order overview.",
+        "Event feature flags were prepared in the disposable fixture. Both code definitions were persisted by the actual authenticated management RPC."
+      ],
+      "screenshots": [
+        {
+          "mediaId": "cs/discount-codes/settings",
+          "file": "cs/discount-codes/settings.png",
+          "sha256": "2e05d48cb6f6cc80212f167a639e6d9373f6cd50910dcf75d257791cb7d36a9d"
+        },
+        {
+          "mediaId": "cs/discount-codes/list",
+          "file": "cs/discount-codes/list.png",
+          "sha256": "9b5343f7c0922686d9f934c6d6b2e89d0d2b371dbbcf9b97f5a1caa3cdc73b48"
+        },
+        {
+          "mediaId": "cs/discount-codes/editor",
+          "file": "cs/discount-codes/editor.png",
+          "sha256": "6108e2905c44360acdbd5ff9c024a5509a0084d806a4f6610175d50d13fe6edf"
+        },
+        {
+          "mediaId": "cs/discount-codes/checkout-applied",
+          "file": "cs/discount-codes/checkout-applied.png",
+          "sha256": "89449d90a20e96aeff2eb31f91d0573f73211e808895942ab349b8dde2ebc33b"
+        },
+        {
+          "mediaId": "cs/discount-codes/checkout-review",
+          "file": "cs/discount-codes/checkout-review.png",
+          "sha256": "d73138a862142d6956c75fda09854345790f535bbf84fb9b91c7f17fb473b719"
+        },
+        {
+          "mediaId": "en/discount-codes/settings",
+          "file": "en/discount-codes/settings.png",
+          "sha256": "bf0b90db4fa31ddd783c6572a3141269b2cfe67b58adf11a8c186f3e14d5f104"
+        },
+        {
+          "mediaId": "en/discount-codes/list",
+          "file": "en/discount-codes/list.png",
+          "sha256": "20506fe7b8f1682b1c29bd70621a410ec62a42d45d3aa41895a93198cf759afe"
+        },
+        {
+          "mediaId": "en/discount-codes/editor",
+          "file": "en/discount-codes/editor.png",
+          "sha256": "1b802432e542b1501a26f13b17fca52f93f9d0b64f5d141f63e999b56d2dd683"
+        },
+        {
+          "mediaId": "en/discount-codes/checkout-applied",
+          "file": "en/discount-codes/checkout-applied.png",
+          "sha256": "823db0659f8ad958fba27bc55470e34ef2f45155e3dc3e41f49e2ea1acae8045"
+        },
+        {
+          "mediaId": "en/discount-codes/checkout-review",
+          "file": "en/discount-codes/checkout-review.png",
+          "sha256": "8c3c1028f9eb009346a5c1099e618ca43190fc6b0f8e6f8fe8a575661682b514"
+        }
+      ]
     }
   ],
   "notVerified": [

@@ -265,3 +265,19 @@ test('offline layout migration is restartable and never infers a foreign profile
     await assert.rejects(()=>migrateLayoutIntents(config,storage),/PENDING_RECOVERY_REQUIRED/);
     assert.equal((await store.read(foreign,actor,7)).commandId,retained.commandId);
 });
+test('ticket layout saves keep pending recovery instead of the committed readback guard', async (t) => {
+    const f = await setup(t, async (body) => {
+        const value = receipt(body.p_command_id);
+        delete value.sync;
+        return reply(value);
+    });
+    const result = await f.ops.invoke('ticket_layouts.save', request(f.owner.profile));
+    assert.equal(result.ok, false);
+    assert.notEqual(result.error.code, 'COMMITTED_READBACK_FAILED');
+    const pending = (await f.ops.invoke('ticket_layouts.pending', { occasionId: 7 })).data.intent;
+    assert.equal(pending.commandId, f.sent[0].p_command_id);
+    const resumed = await f.ops.invoke('ticket_layouts.resume', { occasionId: 7, commandId: pending.commandId });
+    assert.notEqual(resumed.error.code, 'COMMITTED_READBACK_FAILED');
+    assert(await f.ops.invoke('ticket_layouts.pending', { occasionId: 7 }).then(r => r.data.intent));
+    assert.equal(f.sent[1].p_command_id, pending.commandId);
+});

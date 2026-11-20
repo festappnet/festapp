@@ -102,23 +102,7 @@ class TicketEditorWidgets {
       VoidCallback refresh) {
     List<Widget> children = [];
     if (_featureEnabled(form, FeatureConstants.blueprint)) {
-      children.add(buildSpotFieldEditor(context, form, () {
-        if (!form.usesSeatSelection) {
-          for (final productType in allProductTypes
-              .where((type) => type.type == ProductModel.spotType)) {
-            final alreadyAdded = form.relatedFields.any((field) =>
-                field.definition.isTicketField == true &&
-                field.definition.type == FormMetadata.fieldTypeProductType &&
-                (identical(field.definition.productType, productType) ||
-                    (productType.id != null &&
-                        field.definition.productType?.id == productType.id)));
-            if (!alreadyAdded) {
-              _addExistingProductType(form, productType);
-            }
-          }
-        }
-        refresh();
-      }));
+      children.add(buildSpotFieldEditor(context, form, refresh));
       children.add(const SizedBox(height: 16));
     }
 

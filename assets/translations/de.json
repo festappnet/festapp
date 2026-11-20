@@ -269,6 +269,18 @@
     "validationSummary": "Prüfen Sie die markierten Felder. Ihre Änderungen wurden noch nicht gespeichert."
   },
   "BankAccount": {
+    "accountFormat": "Kontoformat",
+    "inputModeSplit": "Tschechisches Konto",
+    "inputModeSlovak": "Slowakisches Konto",
+    "invalidSlovakAccount": "Prüfen Sie die Kontonummer und die Bankleitzahl. Beispiel: 289-1987426353/0720.",
+    "inputModeIban": "IBAN",
+    "accountNumberLabel": "Kontonummer",
+    "bankCodeLabel": "Bankleitzahl",
+    "creditorNameLabel": "Name des Kontoinhabers",
+    "creditorNameHelp": "Name in den Zahlungsanweisungen.",
+    "supportedCurrencies": "Unterstützte Währungen",
+    "addCurrency": "Währung hinzufügen",
+    "invalidNationalAccount": "Prüfen Sie die Kontonummer und die Bankleitzahl. Beispiel: 20001457/0800.",
     "diagnostic": {
       "title": "Letzter erfasster Fehler",
       "invalidResponse": "Der Kontoauszug konnte nicht gelesen werden. Die Antwort hat ein unerwartetes Format.",
@@ -2329,6 +2341,7 @@
     "unitPeopleRevoke": "Zugriff auf den Veranstalter entziehen",
     "unitSettingsRead": "Veranstaltereinstellungen lesen",
     "unitSettingsWrite": "Veranstaltereinstellungen ändern",
+    "unitWebsiteConsentWrite": "Website-Einwilligungsbindungen speichern, bestätigen und deaktivieren",
     "unitApprovalsRequest": "Freigabe von Messung und Meta CAPI anfordern (E-Mail an alle Organisationsadministratoren)",
     "emailTemplatesRead": "E-Mail-Vorlagen, Banner und Beispielvorschauen lesen",
     "emailTemplatesWrite": "E-Mail-Vorlagen und Banner bearbeiten; Vererbung wiederherstellen",

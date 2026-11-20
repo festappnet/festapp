@@ -74,6 +74,51 @@ test('seating public commands: actual two-connection serial outcomes and permiss
    assert.equal(saved.status,'applied',JSON.stringify(saved));await left.query('COMMIT');
    assert.equal((await competing).status,'conflict');
   });
+  await t.test('form create waits on the plan before claiming a conflicting receipt', async () => {
+   const f = await rpc(db, 'SELECT public.blueprint_test_fixture_internal() result');
+   const { link } = await row(db, 'SELECT link FROM public.occasions WHERE id=$1', [f.occasion]);
+   const commandId = randomUUID();
+   await Promise.all([identity(left, f.actor), identity(right, f.actor)]);
+   await left.query('BEGIN');
+   await left.query('SELECT public.lock_blueprint_scope_internal(ARRAY[$1::bigint])', [f.occasion]);
+   const competing = rpc(right, 'SELECT public.create_form_client_sync_v1($1,$2,$3,$4) result',
+     [link, null, 'New form', commandId]).catch(error => error);
+   await waitRight();
+   assert.equal((await row(db, 'SELECT wait_event FROM pg_stat_activity WHERE pid=$1', [right.processID])).wait_event, 'advisory');
+   const claim = await rpc(left, 'SELECT public.begin_client_mutation_v1($1,$2,$3,$4,$5) result',
+     [commandId, 'inventory.form.save', f.occasion, f.actor, 'a'.repeat(64)]);
+   assert.equal(claim.disposition, 'claimed');
+   await left.query('COMMIT');
+   const conflict = await competing;
+   assert.equal(conflict.code, '22023');
+   assert.match(conflict.message, /command id was already used/);
+   assert.equal((await row(db, 'SELECT count(*)::int n FROM public.forms WHERE occasion=$1', [f.occasion])).n, 1);
+  });
+  await t.test('product delete observes the new seated form after waiting for its creation', async () => {
+   const f = await rpc(db, 'SELECT public.blueprint_test_fixture_internal() result');
+   const { link } = await row(db, 'SELECT link FROM public.occasions WHERE id=$1', [f.occasion]);
+   await Promise.all([identity(left, f.actor), identity(right, f.actor)]);
+   const saved = await rpc(left, 'SELECT public.update_blueprint_client_sync_v1($1::jsonb,$2) result',
+     [JSON.stringify(f.request), randomUUID()]);
+   assert.equal(saved.status, 'applied', JSON.stringify(saved));
+   await db.query('UPDATE public.occasions SET features=$2 WHERE id=$1',
+     [f.occasion, JSON.stringify([{code: 'blueprint', is_enabled: true}])]);
+   await db.query('DELETE FROM public.form_fields WHERE form=$1', [f.form]);
+   await left.query('BEGIN');
+   const created = await rpc(left, 'SELECT public.create_form_client_sync_v1($1,$2,$3,$4) result',
+     [link, null, 'Plan form', randomUUID()]);
+   assert.equal(created.status, 'applied', JSON.stringify(created));
+   const deleteCommand = randomUUID();
+   const deletion = rpc(right, 'SELECT public.delete_product_client_sync_v1($1,$2,$3) result',
+     [f.product, deleteCommand, 0]).catch(error => error);
+   await waitRight();
+   assert.equal((await row(db, 'SELECT wait_event FROM pg_stat_activity WHERE pid=$1', [right.processID])).wait_event, 'advisory');
+   await left.query('COMMIT');
+   assert.match((await deletion).message, /FORM_DELETE_primary_product/);
+   const bound = await row(db, 'SELECT p.id FROM public.form_fields ff JOIN eshop.products p ON p.product_type=ff.product_type WHERE ff.form=$1 AND NOT p.is_hidden',
+     [created.data.form.id]);
+   assert.equal(String(bound.id), String(f.product));
+  });
   await t.test('forward cutover connects an existing configuration without changing orders or seats',async()=>{
    const f=await fixture(1);await identity(right,f.actor);
    const generic=await fixture(2,1);

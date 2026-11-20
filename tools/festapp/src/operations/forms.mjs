@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {outputDiagnostic,parseOutput} from './command-boundary.mjs';
 import {check,upstream,OperationError} from '../errors.mjs';
 import {EMBED_LANGUAGES,embedLabels,EmbedCodeError,formEmbedCode} from './form-embed.mjs';
 // Worst case: a 16384-character export escaped to six characters per character, plus the fixed markup.
@@ -66,6 +67,10 @@ const measurementStatusCore=z.strictObject({requested_enabled:z.boolean(),organi
 const measurementStatus=z.preprocess(value=>value&&typeof value==='object'&&!Array.isArray(value)
  ?Object.fromEntries(Object.entries(value).filter(([key])=>Object.hasOwn(measurementStatusCore.shape,key))):value,measurementStatusCore);
 const measurementStatusOrUnknown=measurementStatus.nullish().default(null);
+const measurementDetails=z.strictObject({
+ occasionId:id,formId:id,status:measurementStatusOrUnknown,
+ purchaseTiming:z.enum(['order','paid']).nullable(),metaPurchaseEnabled:z.boolean().nullable(),
+});
 // The UI snapshot can gain internal fields independently. Project only the MCP
 // allowlist; unknown fields never reach the tool response. Missing status is unknown.
 const formState=z.object({...formMetadata,measurement_status:measurementStatusOrUnknown,data:z.json().optional(),header:text.optional(),header_off:text.optional(),
@@ -74,7 +79,27 @@ const summary=z.strictObject({...formMetadata,response_count:version.optional(),
  fields:z.array(z.strictObject({id,type:z.string().nullable(),is_ticket_field:z.boolean().nullable()})).optional()});
 const snapshot=z.strictObject({form:formState,
  fields:z.array(z.json()).max(500),productTypes:z.array(z.json()),products:z.array(z.json()),productVersions:versions,productTypeVersions:versions});
+// Only project object keys owned by the released snapshot contract. Known
+// values still undergo strict validation; z.json payloads retain their semantics.
+const pick=(value,keys)=>value&&typeof value==='object'&&!Array.isArray(value)
+ ?Object.fromEntries(Object.entries(value).filter(([key])=>keys.includes(key))):value;
+const projectSnapshot=value=>pick(value,Object.keys(snapshot.shape));
+const projectInspect=value=>{
+ const projected=pick(value,['occasionId','authoring']);
+ return projected&&typeof projected==='object'?{...projected,authoring:projectSnapshot(projected.authoring)}:projected;
+};
 const receipt=z.strictObject({measurement_status_is_historical:z.literal(true).optional(),current_measurement_status:measurementStatus.nullable().optional(),occasionId:id,formId:id,commandId:z.uuid(),status:z.enum(['applied','unchanged']),authoring:snapshot.nullable()});
+const pathFields=shape=>Object.fromEntries(Object.keys(shape).map(key=>[key,null]));
+const statusPaths=pathFields(measurementStatusCore.shape);
+const snapshotPaths={...pathFields(snapshot.shape),form:{...pathFields(formState.shape),measurement_status:statusPaths}};
+const inspectPaths={occasionId:null,authoring:snapshotPaths};
+const receiptPaths={...pathFields(receipt.shape),authoring:snapshotPaths,current_measurement_status:statusPaths};
+function formOutput(schema,value,operation,fields){
+ return parseOutput(schema,value,operation,path=>path.map(key=>{
+  if(!fields||!Object.hasOwn(fields,key)){fields=null;return '*';}
+  fields=fields[key];return key;
+ }).join('.'));
+}
 const paymentPolicy=z.strictObject({reservationSeconds:version,fullPaymentOnly:z.boolean(),depositsSupported:z.boolean(),surchargesSupported:z.boolean()});
 const paymentRecipient=z.strictObject({connectionId:z.uuid(),name:z.string().nullable(),livemode:z.boolean().optional()});
 const paymentReason=z.strictObject({code:z.string().nullable()});
@@ -101,6 +126,7 @@ const paymentOptions=z.strictObject({occasionId:id,formId:id,livemode:z.boolean(
 export const formDataSchemas={
  'forms.list':z.strictObject({occasionId:id,forms:z.array(summary).max(100),nextCursor:id.nullable()}),
  'forms.inspect':z.strictObject({occasionId:id,authoring:snapshot}),
+ 'forms.measurement.inspect':measurementDetails,
  'forms.publicLink':z.strictObject({occasionId:id,formId:id,slug:z.string(),publicPath:z.string()}),
  'forms.setPublicLink':z.strictObject({occasionId:id,formId:id,slug:z.string(),publicPath:z.string(),commandId:z.uuid(),status:z.enum(['applied','unchanged'])}),
  'forms.embedCode':z.strictObject({occasionId:id,formId:id,slug:z.string(),publicUrl:z.string().max(EMBED_CODE_MAX),embedCode:z.string().max(EMBED_CODE_MAX)}),
@@ -112,6 +138,9 @@ const approval='Approve the exact change and original aggregate/product versions
 export const formDescriptors=[
  {id:'forms.list',name:'festapp_forms_list',domainReadOnly:true,description:'List the same form summary/capacity/response counts as administration. is_open is only the manual switch, not current availability. registrationMode is the effective server state after the manual/time gate: closed means disabled or outside the scheduled window, blueprint means seating flow, regular means standard registration, waitlist means no public capacity with waitlist enabled, full means no public capacity without waitlist. is_open=true with registrationMode=closed is closed to registration. Server pages by ID; continue with nextCursor as after. Response counts use the canonical form FK; only rows without that FK use their retained historical UUID binding. No public links/keys, HTML or answers.',input:z.strictObject({occasionId:id,after:id.optional(),limit:z.number().int().min(1).max(100).default(50)})},
  {id:'forms.inspect',name:'festapp_forms_inspect',domainReadOnly:true,description:'Read one saved form, field definitions and only its related products/type versions through the administration projection. Use the narrow settings patch in forms.save for supported metadata. No unrelated catalog, bank account details, public form access key or link. '+approval,input:z.strictObject({occasionId:id,formId:id})},
+ {id:'forms.measurement.inspect',name:'festapp_forms_measurement_inspect',domainReadOnly:true,
+  description:'Read effective form measurement status, the browser purchase timing and whether this form has an effective Meta CAPI purchase connector. A null value means the installed database does not report that value. The organization switch and Meta CAPI connector credentials are managed in administration. Returns no credentials, public form keys or customer data.',
+  input:z.strictObject({occasionId:id,formId:id})},
  {id:'forms.paymentOptions',name:'festapp_forms_payment_options',domainReadOnly:true,idempotent:true,destructive:false,description:'Read existing linked non-cash bank accounts, registered provider recipient options for the explicit live/test environment, per-provider availability and the current sale policy for a form. Requires form authoring rights and forms write consent because this is an authoring selection context. Reads persisted state only; never onboards an account, refreshes a provider, creates a payment or changes configuration. Returned availability is momentary; saving revalidates actual scope and compatibility.',input:z.strictObject({occasionId:id,formId:id,livemode:z.boolean()})},
  {id:'forms.publicLink',name:'festapp_forms_public_link',domainReadOnly:true,description:'Explicitly read the saved public slug/path for one form. Requires forms-write consent and current form-author authority. Returns no access UUID, customer answer or token. Generic form reads continue to omit links.',input:z.strictObject({occasionId:id,formId:id})},
  {id:'forms.embedCode',name:'festapp_forms_embed_code',domainReadOnly:true,description:'Generate the website embed code for one form, identical to the administration Embed on website dialog for the same choices: HTML for any website, including a WordPress Custom HTML block. Uses the saved public slug and the tenant web address, never a draft; a form without a saved slug returns FORM_PUBLIC_LINK_REQUIRED. language selects the dialog language of the iframe title and fallback link text and must be chosen explicitly. height automatic (default) resizes the iframe to the form, fixed keeps 800 px. hostDataLayer (default true) adds data-festapp-datalayer, which passes form events to the website dataLayer when measurement is eligible; it does not enable measurement. consentExport is optional text from festapp_units_website_consent_export for the website where the code is placed, passed unchanged. An invalid export envelope or an export for a different organizer returns CONSENT_EXPORT_REJECTED. Use the current export for the website. The generator does not check whether the binding remains ready after export. CONSENT_EXPORT_SERVICE_MISMATCH means the organization service address differs from the tenant web address, which only the platform operator can align, so rereading does not help. The form appearance (design.embed_inherit_style) belongs to the form. Generates text only: nothing is saved or published. Requires forms-write consent and current form-author authority, like festapp_forms_public_link.',input:z.strictObject({occasionId:id,formId:id,language:z.enum(EMBED_LANGUAGES),height:z.enum(['automatic','fixed']).default('automatic'),hostDataLayer:z.boolean().default(true),consentExport:z.string().min(1).max(16384).optional()})},
@@ -121,14 +150,14 @@ export const formDescriptors=[
  {id:'forms.duplicate',name:'festapp_forms_duplicate',domainReadOnly:false,idempotent:true,destructive:true,description:'Copy a form through the same atomic duplication command as the UI. Both source and target must be in this connection consent and pass their live permissions. Locale and commandId remain fixed across retry; one response loss never creates a second copy. '+approval,input:z.strictObject({occasionId:id,sourceOccasionId:id,sourceFormId:id,locale:z.enum(['cs','en','sk','de','pl','uk']).default('cs'),commandId:z.uuid()})},
  {id:'forms.delete',name:'festapp_forms_delete',domainReadOnly:false,idempotent:true,destructive:true,description:'Delete an unused form through the existing UI lifecycle owner and its original version. A form with orders rejects deletion. Its public slug reservation remains a tombstone; it is not reassigned. '+approval,input:z.strictObject({occasionId:id,formId:id,expectedVersion:version,commandId:z.uuid()})},
 ];
-export async function invokeFormOperation(owner,client,operation,args){
+export async function invokeFormOperation(owner,client,operation,args,onFormReceipt){
  const scope=await owner.delegatedContext(client,args.occasionId);
  const base={p_occasion:args.occasionId,p_organization:scope.organizationId,p_unit:scope.unitId};
  let name,params;
  if(operation==='forms.publicLink'||operation==='forms.embedCode'){name='get_form_public_link';params={...base,p_form:args.formId};}
  else if(operation==='forms.list'){name='get_form_catalog_page';params={...base,p_after:args.after??null,p_limit:args.limit};}
  else if(operation==='forms.paymentOptions'){name='get_form_payment_options';params={...base,p_form:args.formId,p_livemode:args.livemode};}
- else if(operation==='forms.inspect'){name='get_form_for_authoring';params={...base,p_form:args.formId};}
+ else if(operation==='forms.inspect'||operation==='forms.measurement.inspect'){name='get_form_for_authoring';params={...base,p_form:args.formId};}
  else{
   const action=operation.slice('forms.'.length);let payload;
   if(action==='setPublicLink'){payload={id:args.formId,expected_aggregate_version:args.expectedVersion,link:args.slug};name='manage_form';params={...base,p_action:'public_link',p_payload:payload,p_command_id:args.commandId};}
@@ -151,11 +180,15 @@ export async function invokeFormOperation(owner,client,operation,args){
  if(operation==='forms.publicLink'||operation==='forms.setPublicLink'){
   if(operation==='forms.setPublicLink'){
    if(data?.code===409)throw new OperationError('FORM_CHANGED_RELOAD_REQUIRED');
+   if(data?.code===410)throw new OperationError('COMMAND_EXPIRED_DO_NOT_REPLAY');
    check(data?.code===200&&data.mutation?.commandId===args.commandId&&data.mutation?.receiptId===args.commandId,'FORM_CHANGE_REJECTED');
   }
   const link=operation==='forms.publicLink'?data:data.publicLink;
-  check(link?.occasionId===args.occasionId&&link.formId===args.formId&&typeof link.slug==='string');
-  return formDataSchemas[operation].parse({...link,publicPath:'/form/'+encodeURIComponent(link.slug),...(operation==='forms.setPublicLink'?{commandId:args.commandId,status:data.status}:{})});
+  check(link?.occasionId===args.occasionId&&link.formId===args.formId);
+  if(operation==='forms.setPublicLink')onFormReceipt?.(link.formId);
+  check(typeof link.slug==='string');
+  // Explicit contract keys only: a new internal link field must not fail a committed write.
+  return parseOutput(formDataSchemas[operation],{occasionId:link.occasionId,formId:link.formId,slug:link.slug,publicPath:'/form/'+encodeURIComponent(link.slug),...(operation==='forms.setPublicLink'?{commandId:args.commandId,status:data.status}:{})},operation);
  }
  if(operation==='forms.embedCode'){
   check(data?.occasionId===args.occasionId&&data.formId===args.formId&&(data.slug===null||typeof data.slug==='string'));
@@ -182,11 +215,25 @@ export async function invokeFormOperation(owner,client,operation,args){
   check(Object.entries(parsed.data.availability.providers).every(([method,value])=>value.collectionAvailable!==true||policy.methods[method]?.policyEnabled===true));
   return parsed.data;
  }
- if(operation==='forms.list'||operation==='forms.inspect'){
-  check(data?.occasionId===args.occasionId);
-  if(operation==='forms.inspect')check(data?.authoring?.form?.id===args.formId&&data.authoring.form.occasion===args.occasionId);
-  else check(Array.isArray(data.forms)&&data.forms.every(f=>f.occasion===args.occasionId));
-  return formDataSchemas[operation].parse(data);
+ if(operation==='forms.measurement.inspect'){
+  const form=data?.authoring?.form;
+  check(data?.occasionId===args.occasionId&&form?.id===args.formId&&form.occasion===args.occasionId);
+  const status=form.measurement_status;
+  return measurementDetails.parse({occasionId:args.occasionId,formId:args.formId,status,
+   purchaseTiming:status?.purchase_timing??null,metaPurchaseEnabled:status?.meta_purchase_enabled??null});
+ }
+ if(operation==='forms.inspect'){
+  const result=formOutput(formDataSchemas[operation],projectInspect(data),operation,inspectPaths);
+  if(result.occasionId!==args.occasionId||result.authoring.form.id!==args.formId||result.authoring.form.occasion!==args.occasionId){
+   const error=new OperationError('UPSTREAM_CONTRACT_FAILURE');
+   outputDiagnostic(operation,error,'identity');
+   throw error;
+  }
+  return result;
+ }
+ if(operation==='forms.list'){
+  check(data?.occasionId===args.occasionId&&Array.isArray(data.forms)&&data.forms.every(f=>f.occasion===args.occasionId));
+  return parseOutput(formDataSchemas[operation],data,operation);
  }
  if(data?.code===409)throw new OperationError('FORM_CHANGED_RELOAD_REQUIRED');
  if(data?.code===410)throw new OperationError('COMMAND_EXPIRED_DO_NOT_REPLAY');
@@ -194,14 +241,17 @@ export async function invokeFormOperation(owner,client,operation,args){
  check(data?.code===200&&data.mutation?.commandId===args.commandId&&data.mutation?.receiptId===args.commandId&&data.data?.occasionId===args.occasionId);
  if(operation==='forms.save')check(data.data.formId===args.form.id);
  if(operation==='forms.delete')check(data.data.formId===args.formId);
+ check(id.safeParse(data.data.formId).success);
  if(data.data.authoring)check(data.data.authoring.form.id===data.data.formId&&data.data.authoring.form.occasion===args.occasionId);
+ onFormReceipt?.(data.data.formId);
  let liveStatus;
  if (data.data.authoring) {
   // Never rewrite the durable receipt or present its saved policy as current.
   const live=await client.rpc('get_form_for_authoring',{...base,p_form:data.data.formId});
   upstream(live.error);check(live.data?.occasionId===args.occasionId && live.data.authoring?.form?.id===data.data.formId);
-  liveStatus=measurementStatusOrUnknown.parse(live.data.authoring.form.measurement_status);
+  liveStatus=formOutput(measurementStatusOrUnknown,live.data.authoring.form.measurement_status,operation,statusPaths);
  }
- return formDataSchemas[operation].parse({...data.data,commandId:args.commandId,status:data.status,
-  ...(data.data.authoring ? {measurement_status_is_historical:true,current_measurement_status:liveStatus} : {})});
+ // Explicit receipt keys only, like inspect: new internal receipt fields must not fail a committed write.
+ return formOutput(formDataSchemas[operation],{occasionId:data.data.occasionId,formId:data.data.formId,authoring:projectSnapshot(data.data.authoring),commandId:args.commandId,status:data.status,
+  ...(data.data.authoring ? {measurement_status_is_historical:true,current_measurement_status:liveStatus} : {})},operation,receiptPaths);
 }

@@ -5,9 +5,11 @@ import { RightsService } from '../services/rights_service.js';
 import { AppConfig } from '../app_config.js';
 import { initializeCoreServices } from '../startup/initialize_core_services.js';
 import '../components/users/user_header.js';
+import { initPublicLanguage } from './public_language.js';
 
 export async function initAccountHeader() {
     const marketingLocale = document.documentElement.lang;
+    if (initPublicLanguage()) return;
     ThemeService.init();
     document.body.dataset.publicTheme = "initialized";
     const fallback = document.querySelector('.site-header');

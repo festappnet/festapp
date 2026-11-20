@@ -9,6 +9,13 @@ it is prepared separately from the local stdio release. The operator catalog inc
 operations according to delegated permissions. No arbitrary SQL or shell tool is
 exposed. The public ChatGPT summary client remains limited to its read scopes.
 
+Local stdio uses the workstation's ordinary user session and exposes context,
+access discovery and ticket-layout tools. Forms, orders and event administration
+use the hosted OAuth connection, where the user selects the resources and
+permissions and can revoke that connection independently. Sensitive operations
+also require fresh MFA assurance. A local profile has no setting that grants
+hosted permissions.
+
 The E0 surface is:
 
 - `festapp_context_inspect`: verified ordinary-user identity and pinned target.
@@ -186,6 +193,32 @@ new internal UI fields are omitted from MCP output. Missing measurement status
 is `null` (unknown), including the authorized readback after a mutation. Known
 fields still undergo type validation; unknown properties are never forwarded.
 
+After an attested write commit, a failed result projection or follow-up read returns
+`COMMITTED_READBACK_FAILED` with `retryable:false`. The existing error message
+contains `commandId` and `receiptId` plus the verified form identity when available.
+Check the saved resource in administration. For a deleted form, check the form list.
+If you need the original result, use the identical command ID and payload.
+
+For HTTP clients, `Festapp-Write-Outcome: committed` confirms the write.
+Read `Festapp-Command-Id` and `Festapp-Receipt-Id` for recovery. Verified form
+identity is available in `Festapp-Occasion-Id` and `Festapp-Form-Id`. The v1
+problem body retains its existing outcome enum and a stable problem title. The MCP stores no failure state of its own. Only the canonical SQL
+receipt envelope (`mutation.commandId` and `receiptId` equal to the command ID)
+attests a commit, and the SQL receipt owner replays that committed receipt for
+the same command. A replay therefore returns `COMMITTED_READBACK_FAILED` again
+while readback still fails, or the saved result once it recovers; current
+authorization, payload conflicts (409) and receipt expiry (410) still win.
+Unconfirmed transport failures retain their existing same-command retry policy.
+Writes without that envelope (for example bank sync actions and scanner
+admission) and ticket layout saves, which keep their pending/resume recovery,
+keep their existing errors. Only calls that sent the command ID count.
+Form write receipts and public links are built from their contract keys only.
+New internal form snapshot keys are projected away before strict validation;
+invalid known values remain errors. Server diagnostics include operation, phase,
+issue codes and depths, and allowlisted form paths. They omit snapshot values, unknown keys and upstream exception messages.
+Public `/healthz` includes `sourceCommit`, a validated build SHA or `null` for an
+unidentified development build. Production images inherit `FESTAPP_SOURCE_SHA`.
+
 ## Verification and next wave
 
 ```sh
@@ -334,12 +367,25 @@ References: [MCP SDK v2 migration](https://ts.sdk.modelcontextprotocol.io/v2/mig
 [Supabase password authentication](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
 [Keychain binding](https://github.com/Brooooooklyn/keyring-node).
 
+### Upload occasion images
+
+`festapp_images_upload` and `POST /integrations/v1/operations/images.upload`
+accept an occasion ID, filename and base64-encoded JPEG, PNG or WebP file up to
+1 MiB. Use profile `portrait` for speaker photos or `standard` for images in
+descriptions. The operation requires the program write scope, consent for the
+occasion and live image upload rights. It returns the public Festapp image URL.
+Pass that URL to the speaker or event save operation to place the image.
+Check the occasion before repeating an upload with an uncertain outcome.
+
 ### Codex remote connection
 
 Register a separate public client `festapp-codex` with `applicationType: "native"`
-and redirect URI `http://127.0.0.1/callback`. Native clients accept only literal
-IP loopback HTTP callbacks; the maintained provider permits a variable port,
-while the callback path remains exact. Web clients retain their HTTPS policy.
+and redirect URI `http://127.0.0.1/callback`. Native clients accept HTTP
+callbacks on `127.0.0.1` or `[::1]`; public native clients statically configured
+in `clients` may also register exactly `localhost`. Trusted client metadata
+documents (CIMD) stay limited to the IP literals. The registered hostname and
+path govern access; the maintained provider permits a variable port, while the
+callback path remains exact. Web clients retain their HTTPS policy.
 
 ```sh
 codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex
@@ -360,6 +406,26 @@ existing grant.
 
 Complete the fresh browser login and occasion consent for this client. The
 native client uses the same scoped read handlers and separate OAuth grant.
+
+### Claude Code remote connection
+
+Once the issuer has enabled the Claude Code client, run the command from the
+project where you use Claude Code. If you previously added `festapp` with the
+Codex client ID in this project, remove that local entry first with `claude mcp remove --scope local festapp`. To keep the existing
+entry, use a different server name in the command and select that name in
+`/mcp`.
+
+```sh
+claude mcp add --transport http --scope local --client-id festapp-claude-code --callback-port 51789 festapp https://mcp.vstupenky.online/mcp
+```
+
+Open `/mcp`, select the server and authenticate. Sign in to vstupenky.online
+in your browser, choose the occasions to share, and approve the connection.
+Return to Claude Code and check the connection and available tools in `/mcp`.
+If port 51789 is busy, choose a free port with `--callback-port`.
+
+Self-hosted operators must [register the Claude Code client](../../docs/architecture/operations/remote-mcp-auth.md#claude-code-client-registration)
+before using this command with their issuer.
 
 ### First-party consent
 
@@ -456,7 +522,7 @@ released baseline is sealed. A generated file is not evidence of publication.
 
 API and MCP use `DELEGATED_OPERATIONS` and the same `Operations` executor,
 input/output validation, SQL authorization, preview/version checks and receipts.
-The operator contract exposes 194 operations for Bearer clients and all 216 for
+The operator contract exposes 198 operations for Bearer clients and all 220 for
 registered DPoP + PAR clients. The 22 sensitive operations additionally require
 GoTrue-verified AAL2 authentication no older than 300 seconds; refreshing tokens
 does not renew that authentication time. The first-party consent upgrades a

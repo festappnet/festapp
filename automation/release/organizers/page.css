@@ -584,3 +584,17 @@ body.dark-mode[data-topic="home"]:lang(cs) .hero-outlines .architectural-plan{
   .seat-demo-stage{border-radius:0 0 15px 15px}
   .seat-demo-stage img,.seat-demo-map{height:clamp(280px,85vw,420px)}
 }
+
+.public-language-switch {
+  display: inline-flex;
+  gap: 0.75rem;
+}
+
+.public-language-switch [aria-current="page"] {
+  font-weight: 700;
+}
+
+.feature-text-only .feature-inner,
+.getting-started-text-only {
+  grid-template-columns: minmax(0, 1fr);
+}

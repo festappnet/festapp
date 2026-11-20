@@ -10,10 +10,14 @@ export function validScopeCeiling(scopes) {
         scopes.every(s => DOMAIN_SCOPES.includes(s)) && validPermissions(scopes.filter(s => MCP_SCOPES.includes(s)));
 }
 
-export function validRedirect(uri, applicationType, local = false) {
+export function validRedirect(uri, applicationType, { local = false, allowLocalhost = false } = {}) {
     let u;
     try { u = new URL(uri); } catch { return false; }
     if (u.username || u.password || u.search || u.hash || /[\s\\]/u.test(uri)) return false;
+    if (applicationType === 'native' && u.hostname === 'localhost') {
+        // Only protected static registrations opt in and contribute to form-action CSP.
+        return allowLocalhost && u.protocol === 'http:' && uri === u.href && !/[?#@]/u.test(uri);
+    }
     const loopback = u.protocol === 'http:' && ['127.0.0.1', '[::1]'].includes(u.hostname);
     return applicationType === 'native' ? loopback : u.protocol === 'https:' || (local && loopback);
 }
