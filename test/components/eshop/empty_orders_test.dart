@@ -25,6 +25,7 @@ import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:festapp_core/time.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/app_router.dart';
@@ -181,6 +182,7 @@ void main() {
   var fail = false;
   var includeOrder = false;
   var repairReads = 0;
+  var historyAfterWaitlist = false;
   var groupSelection = false;
   var bellEntry = false;
   var incidentEntry = false;
@@ -298,7 +300,51 @@ void main() {
         }
         if (isOrders && groupSelection)
           groupRequest = jsonDecode(request.body) as Map<String, dynamic>;
-        if (request.url.path.endsWith('/get_order_history')) repairReads++;
+        if (request.url.path.endsWith('/get_order_history')) {
+          repairReads++;
+          if (historyAfterWaitlist) {
+            final order = {
+              'id': 4,
+              'order_sequence': 4,
+              'occasion': 1,
+              'order_symbol': 'ORDER4',
+              'state': 'ordered',
+              'price': 1350,
+              'currency_code': 'CZK',
+              'updated_at': '2026-11-10T12:00:01Z',
+              'data': <String, dynamic>{},
+            };
+            return http.Response(
+              jsonEncode({
+                'code': 200,
+                'data': {
+                  'order': order,
+                  'history': [
+                    {
+                      'id': 7,
+                      'order': 4,
+                      'created_at': '2026-11-10T12:00:00Z',
+                      'state': 'ordered',
+                      'price': null,
+                      'currency_code': 'CZK',
+                      'data': {'action': 'waitlist_accept'},
+                    },
+                    {
+                      ...order,
+                      'id': 8,
+                      'order': 4,
+                      'created_at': order['updated_at'],
+                    },
+                  ],
+                  'users': [],
+                },
+              }),
+              200,
+              request: request,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+        }
         if (fail && isOrders) {
           return http.Response(
             jsonEncode({'message': 'Unavailable', 'code': 'XX000'}),
@@ -675,6 +721,27 @@ void main() {
     expect(find.text('Zatím nejsou žádné objednávky.'), findsOneWidget);
     expect(find.text('Došlo k neočekávané chybě.'), findsNothing);
   });
+  testWidgets('history shows the first price after waitlist acceptance', (
+    tester,
+  ) async {
+    fail = false;
+    includeOrder = true;
+    detailNavigation = true;
+    historyAfterWaitlist = true;
+    OccasionTimeContext.initializeTimeZones();
+    addTearDown(() {
+      includeOrder = false;
+      detailNavigation = false;
+      historyAfterWaitlist = false;
+    });
+    await showOrders(tester, path: '/empty?orderId=4&orderTab=history');
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('1350'), findsOneWidget);
+    expect(find.text('Přijato'), findsOneWidget);
+  });
+
   testWidgets(
     'payments show server overdue notice above canonical transactions',
     (tester) async {
