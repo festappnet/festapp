@@ -1,0 +1,66 @@
+[
+  {
+    "id": "basics",
+    "slug": "zaciname-s-akci",
+    "title": "Sprievodca vytvorením nového podujatia",
+    "seoTitle": "Ako vytvoriť podujatie od konceptu po uloženie",
+    "description": "Vytvorte nové podujatie krok za krokom. Názov, termín, ponuku, plán sály, vzhľad vstupenky a platobný účet nastavíte v jednom sprievodcovi.",
+    "intro": "Táto časť je určená na vytvorenie nového podujatia. Po dokončení sprievodcu pokračujte návodmi na úpravy v administrácii."
+  },
+  {
+    "id": "administration",
+    "slug": "sprava-akce",
+    "title": "Úpravy existujúceho podujatia a formulára",
+    "seoTitle": "Ako upraviť existujúce podujatie a predajný formulár",
+    "description": "V administrácii zmeňte údaje podujatia, obsah formulára aj otvorenie predaja.",
+    "intro": "Vyberte podujatie v administrácii a otvorte príslušnú kartu. Návody opisujú, ako upraviť a uložiť existujúce podujatie."
+  },
+  {
+    "id": "tickets",
+    "slug": "vstupenky-a-planek",
+    "title": "Vstupenky a plán sály: ceny, miesta a PDF",
+    "seoTitle": "Správa vstupeniek: ceny, kapacity, plán sály a PDF",
+    "description": "Pripravte ponuku, ceny a dostupnosť vstupeniek. Priraďte miesta a skontrolujte podobu vstupenky s QR kódom.",
+    "intro": "Ponuku, plán sály aj dizajn vstupenky upravujete v samostatných editoroch už vytvoreného podujatia. Zmeny uložte v príslušnom editore."
+  },
+  {
+    "id": "banking",
+    "slug": "bankovni-ucty-a-propojeni",
+    "title": "Bankové účty a príjem platieb",
+    "seoTitle": "Bankový účet, token Fio API a platby za vstupenky",
+    "description": "Pripravte účet organizátora, prepojte Fio a overte platobné údaje. Účet sa vyberá podľa meny a poradia účtov.",
+    "intro": "Účty a prepojenia spravujete v nastaveniach organizátora. Formulár používa prvý účet v poradí, ktorý podporuje príslušnú menu."
+  },
+  {
+    "id": "integrations",
+    "slug": "integrace",
+    "title": "Integrácie: web, AI a API",
+    "seoTitle": "Integrácia predaja vstupeniek na web, AI a API",
+    "description": "Vložte predaj na svoj web, pripojte asistenta cez MCP alebo prepojte vlastnú aplikáciu cez API a webhooky.",
+    "intro": "Vyberte návod pre svoj web, asistenta alebo vlastnú aplikáciu."
+  },
+  {
+    "id": "orders",
+    "slug": "objednavky-a-platby",
+    "title": "Objednávky a platby: od účtu po doručenie",
+    "seoTitle": "Platby a objednávky: účet, párovanie a doručenie",
+    "description": "Pripravte platobné údaje, overte zostatok objednávky a vyriešte chybný e-mail alebo nedoručené vstupenky.",
+    "intro": "Príjem platieb nastavte pred otvorením predaja. V objednávke rozlišujte jej vytvorenie, skutočnú úhradu a stav doručenia. Storno objednávky samo nevráti peniaze."
+  },
+  {
+    "id": "check-in",
+    "slug": "odbaveni-navstevniku",
+    "title": "Kontrola vstupeniek a potvrdenie vstupu",
+    "seoTitle": "Kontrola vstupeniek: QR skener a práca bez internetu",
+    "description": "Pripravte prístup obsluhy, skener a záložný postup. Zistite, ako postupovať pri použitej vstupenke a ako odoslať offline záznamy.",
+    "intro": "Pred otvorením sály overte podujatie, prístup obsluhy a funkčné zariadenia. Návody rozlišujú načítanie QR kódu, potvrdenie vstupu a miestny záznam, ktorý ešte čaká na server."
+  },
+  {
+    "id": "troubleshooting",
+    "slug": "pomoc-a-reseni-potizi",
+    "title": "Pomoc s predajom vstupeniek",
+    "seoTitle": "Pomoc pri problémoch s formulárom, platbou a e-mailom",
+    "description": "Nájdite postup, keď sa formulár zobrazuje nesprávne, platba chýba alebo zákazník nedostal vstupenky.",
+    "intro": "Určite, či sa problém týka zobrazenia na webe, platby alebo doručenia. Ak potrebujete podporu, pripravte verejný odkaz a opis problému."
+  }
+]

@@ -49,6 +49,10 @@ export class CommonStrings {
     static get createAccount() { return LocalizationService.tr("FeatureUser.createAccount"); }
     static get signIn() { return LocalizationService.tr("FeatureUser.signIn"); }
     static get signOut() { return LocalizationService.tr("FeatureUser.signOut"); }
+    static get mainNavigation() { return LocalizationService.tr('FeatureUser.mainNavigation', {}, 'Main navigation'); }
+    static get findEvent() { return LocalizationService.tr('FeatureUser.findEvent', {}, 'Find an event'); }
+    static get forOrganizers() { return LocalizationService.tr('FeatureUser.forOrganizers', {}, 'For organizers'); }
+    static get help() { return LocalizationService.tr('FeatureUser.help', {}, 'Help'); }
     static get addEvent() { return LocalizationService.tr("FeatureUser.addEvent", {}, "Create your own event"); }
     static get addEventShort() { return LocalizationService.tr("FeatureUser.addEventShort", {}, "+ Event"); }
     static get myEvents() { return LocalizationService.tr("FeatureUser.myEvents", {}, "My events"); }

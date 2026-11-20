@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readConfig, resolveContext } from './release/organizers/context.mjs';
-import { verifyMarketingHtml } from './release/organizers/verify.mjs';
+import { localizedPublicDocuments, verifyLocalizedHtml, verifyMarketingHtml } from './release/organizers/verify.mjs';
 
 import assert from 'node:assert/strict';
 import { webProfileContract } from './lib/web_profile_contract.mjs';
@@ -59,7 +59,12 @@ async function fetchFresh(pathname) {
   });
 }
 
-const marketing = resolveContext(readConfig(configPath));
+const config = readConfig(configPath);
+const marketing = resolveContext(config);
+const localized = await localizedPublicDocuments(config);
+// The registry starts with the homepage, help index and first article.
+const probePaths = new Set([...new Set(localized.map(doc => doc.path))].slice(0, 3));
+const localizedProbes = localized.filter(doc => probePaths.has(doc.path));
 async function verifyOnce() {
   const preview = await fetchFresh('/occasion-card-preview.html');
   assert.equal(preview.status, 200, 'occasion preview is unavailable');
@@ -85,6 +90,21 @@ async function verifyOnce() {
     for (const match of html.matchAll(/(?:src|href)="(\/co-je-nove\/_assets\/[^"?#]+)"/g)) updateAssets.add(match[1]);
     if (!page.type) {
       for (const match of html.matchAll(/(?:src|href)="(\/organizers-assets\/[^"?#]+)"/g)) marketingAssets.add(match[1]);
+    }
+  }
+
+  if (localized.length) {
+    await Promise.all(localizedProbes.map(async doc => {
+      const response = await fetchFresh(doc.route);
+      assert.equal(response.status, 200, `localized document ${doc.route}`);
+      assertRevalidated(response, doc.route);
+      verifyLocalizedHtml(await response.text(), doc);
+    }));
+    const sitemap = await fetchFresh('/sitemap.xml');
+    assert.equal(sitemap.status, 200, 'localized sitemap is unavailable');
+    const xml = await sitemap.text();
+    for (const {canonical} of localized) {
+      assert.ok(xml.includes(`<loc>${canonical}</loc>`), `sitemap omits ${canonical}`);
     }
   }
 

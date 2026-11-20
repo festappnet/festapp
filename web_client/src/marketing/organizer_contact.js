@@ -1,4 +1,4 @@
-export function initOrganizerContact(root = document) {
+export function initOrganizerContact(root = document, copy = {}) {
     const form = root.querySelector('[data-organizer-contact]');
     if (!form) return;
 
@@ -16,7 +16,7 @@ export function initOrganizerContact(root = document) {
         if (pending) return;
         const payload = { email: email.value.trim(), message: message.value.trim() };
         if (!payload.message) {
-            message.setCustomValidity('Napište prosím zprávu.');
+            message.setCustomValidity(copy.required ?? 'Napište prosím zprávu.');
             message.reportValidity();
             return;
         }
@@ -26,7 +26,7 @@ export function initOrganizerContact(root = document) {
         }
         pending = true;
         email.readOnly = message.readOnly = button.disabled = true;
-        status.textContent = 'Odesíláme…';
+        status.textContent = copy.pending ?? 'Odesíláme…';
         try {
             const response = await win.fetch(form.action, {
                 method: 'POST',
@@ -37,16 +37,16 @@ export function initOrganizerContact(root = document) {
             if (response.status === 202) {
                 form.reset();
                 previous = undefined;
-                status.textContent = 'Děkujeme, zprávu jsme přijali.';
+                status.textContent = copy.success ?? 'Děkujeme, zprávu jsme přijali.';
             } else if (response.status === 429) {
-                status.textContent = 'Teď přijímáme příliš mnoho zpráv. Zkuste to prosím za chvíli.';
+                status.textContent = copy.rateLimited ?? 'Teď přijímáme příliš mnoho zpráv. Zkuste to prosím za chvíli.';
             } else if (response.status === 400) {
-                status.textContent = 'Zkontrolujte prosím e-mail a text zprávy.';
+                status.textContent = copy.invalid ?? 'Zkontrolujte prosím e-mail a text zprávy.';
             } else {
-                status.textContent = 'Zprávu se nepodařilo odeslat. Zkuste to prosím znovu.';
+                status.textContent = copy.error ?? 'Zprávu se nepodařilo odeslat. Zkuste to prosím znovu.';
             }
         } catch {
-            status.textContent = 'Zprávu se nepodařilo odeslat. Zkuste to prosím znovu.';
+            status.textContent = copy.error ?? 'Zprávu se nepodařilo odeslat. Zkuste to prosím znovu.';
         } finally {
             pending = false;
             email.readOnly = message.readOnly = button.disabled = false;

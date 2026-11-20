@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM,VirtualConsole} from 'jsdom';
+import { createBrowserStorage } from '../../src/services/browser_storage.js';
+import { initPublicLanguage } from '../../src/marketing/public_language.js';
 import {initHelpNavigation} from '../../src/marketing/help_navigation.js';
 const html = (title, content = '', runtime = 'current.js') => `<!doctype html><html lang="cs"><head><title>${title}</title><meta name="description" content="${title}"><link rel="canonical" href="https://vstupenky.online/napoveda/${title}/"><link href="/napoveda/assets/help.123.css" rel="stylesheet"></head><body><user-header>Account</user-header><div id="help-search-dialog">Search</div><div class="help-layout"><nav><a href="/napoveda/objednavky/">Orders</a><a href="/napoveda/vlozeni-na-web/">Embed</a></nav><main><h1>${title}</h1>${content}</main></div><script data-help-runtime src="/napoveda/assets/runtime/${runtime}"></script></body></html>`;
 const response = text => ({ok:true,headers:new Headers({'content-type':'text/html'}),text:async()=>text});
@@ -45,13 +47,13 @@ test('modified clicks, new tabs, downloads, anchors and external links retain no
 });
 
 test('generator binds on a newly inserted guide without a page reload or duplicate handlers',async t=>{
- const content=readFileSync(new URL('../../../automation/release/help/embed-generator.html',import.meta.url),'utf8');
+ const content=readFileSync(new URL('../../../automation/release/help/embed-generator.html',import.meta.url),'utf8').replaceAll('{{FORM_ORIGIN}}', 'https://vstupenky.online');
  const generator=readFileSync(new URL('../../../automation/release/help/help.js',import.meta.url),'utf8');
  const win=fixture(t,async()=>response(html('Embed',content)));
  win.eval(generator);const changed=done(win);click(win,'/napoveda/vlozeni-na-web/');await changed;
  const form=win.document.querySelector('[data-embed-generator]');form.querySelector('input[type=url]').value='https://vstupenky.online/form/example';
  form.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));
- assert.equal(form.querySelector('[data-embed-output]').hidden,false);assert.match(form.querySelector('textarea').value,/iframe/);
+ assert.equal(form.querySelector('[data-embed-output]').hidden,false);assert.match(form.querySelector('[data-embed-output] textarea').value,/iframe/);
 });
 
 test('back and forward restore the reading position of each guide',async t=>{
@@ -80,7 +82,7 @@ test('clicking the current guide scrolls to its top without document navigation'
 
 
 test('English help navigation retains the account header and never falls into a Czech path',async t=>{
- const english=text=>html(text).replaceAll('lang="cs"','lang="en"').replaceAll('https://vstupenky.online','https://tickets.festapp.net').replaceAll('/napoveda/','/help/');
+ const english=text=>html(text).replaceAll('lang="cs"','lang="en"').replaceAll('https://vstupenky.online','https://tickets.festapp.net').replaceAll('/napoveda/','/help/').replaceAll('/objednavky/','/orders/');
  const dom=new JSDOM(english('Home'),{url:'https://tickets.festapp.net/help/',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
  t.after(()=>dom.window.close());const win=dom.window;win.scrollTo=()=>{};
  win.fetch=async pathname=>{assert.equal(pathname,'/help/orders/');return response(english('Orders'));};
@@ -88,4 +90,42 @@ test('English help navigation retains the account header and never falls into a 
  assert.equal(click(win,'/help/orders/'),false);await changed;
  assert.equal(win.location.pathname,'/help/orders/');assert.equal(win.document.querySelector('user-header'),header);
  assert.equal(win.document.documentElement.lang,'en');
+});
+
+test('soft article navigation updates the language links and hreflang, while switching language reloads the document', async t => {
+ const page = slug => html(slug || 'Home')
+  .replace('</head>', `<link rel="alternate" hreflang="sk" href="https://vstupenky.online/napoveda/${slug ? slug + '/' : ''}?lang=sk"></head>`)
+  .replace('<user-header>', `<nav class="public-language-switch"><a data-public-language="sk" href="/napoveda/${slug ? slug + '/' : ''}?lang=sk">Slovenčina</a></nav><user-header>`);
+ const dom = new JSDOM(page(''), {url:'https://vstupenky.online/napoveda/',virtualConsole:new VirtualConsole()});
+ t.after(() => dom.window.close());
+ const win = dom.window;
+ win.scrollTo = () => {};
+ let requests = 0;
+ win.fetch = async () => {requests++;return response(page('objednavky'));};
+ initHelpNavigation(win);
+ const changed = done(win);
+ assert.equal(click(win, '/napoveda/objednavky/'), false);
+ await changed;
+ assert.equal(win.document.querySelector('link[hreflang=sk]').href, 'https://vstupenky.online/napoveda/objednavky/?lang=sk');
+ assert.equal(click(win, '/napoveda/objednavky/?lang=sk'), true);
+ assert.equal(requests, 1);
+});
+
+test('an explicit language survives a direct return to public help without overriding shared links', t => {
+    const dom = new JSDOM('<html lang="cs"><a data-public-language="cs">Čeština</a><a data-public-language="sk">Slovenčina</a>', {
+        url:'https://vstupenky.online/napoveda/platby/#potize',
+    });
+    t.after(() => dom.window.close());
+    const storage = createBrowserStorage(() => dom.window.localStorage);
+    storage.setItem('flutter.locale', '"sk"');
+    let navigation;
+    const win = {document:dom.window.document, location:{href:dom.window.location.href, replace:href => {navigation=href;}}};
+    assert.equal(initPublicLanguage(win, storage), false, 'automatic preferences do not redirect public pages');
+    storage.setItem('flutter.locale.manuallySelected', 'true');
+    assert.equal(initPublicLanguage(win, storage), true);
+    assert.equal(navigation, 'https://vstupenky.online/napoveda/platby/?lang=sk#potize');
+    navigation = undefined;
+    win.location.href = 'https://vstupenky.online/napoveda/platby/?lang=cs#potize';
+    assert.equal(initPublicLanguage(win, storage), false);
+    assert.equal(navigation, undefined);
 });

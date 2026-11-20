@@ -25,7 +25,7 @@ for (const route of ['/', '/napoveda/']) test(`public ${route} waits for shared 
             initializeCoreServices: () => new Promise(resolve => { complete = resolve; }),
             initDemoPlayers() {}, initMotion() {}, initReferenceCarousels() {},
             initOrganizerContact() {}, initSeatDemo() {},
-            initHelpNavigation() {}, initTopicTools: () => initTopicTools(dom.window.document),
+            initPublicLanguage() {}, initHelpNavigation() {}, initTopicTools: () => initTopicTools(dom.window.document),
         });
         const entry = route === '/' ? source : readFileSync(new URL('../../src/marketing/help.js', import.meta.url), 'utf8').replace(/^import .*;\n/gm, '');
         vm.runInContext(accountSource + '\n' + entry, context);

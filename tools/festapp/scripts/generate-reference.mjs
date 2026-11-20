@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {catalogProjection,schemaProjection} from '../src/operations/contract-projection.mjs';
 import {DELEGATED_OPERATIONS, MCP_PERMISSIONS, scopesForOperation} from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import {clientAllowsScopes} from '../src/remote/config.mjs';
-import {referenceSourceDigest} from '../../../automation/release/help/mcp_reference.mjs';
+import {MCP_REFERENCE_LOCALES, referenceSourceDigest} from '../../../automation/release/help/mcp_reference.mjs';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const read = file => JSON.parse(fs.readFileSync(path.join(root,file),'utf8'));
@@ -18,10 +18,10 @@ const tool = d => ({id:d.id,name:d.name,description:d.description,scopes:scopesF
 const descriptors = catalog(ids);
 if (new Set(descriptors.map(d=>d.id)).size !== descriptors.length || ids.some(id=>!descriptors.some(d=>d.id===id)))
   throw new Error('MCP permission/catalog coverage mismatch');
-const translations = Object.fromEntries(['cs','en'].map(locale=>[locale,read(`assets/translations/${locale}.json`).McpConnection]));
+const translations = Object.fromEntries(MCP_REFERENCE_LOCALES.map(locale=>[locale,read(`assets/translations/${locale}.json`).McpConnection]));
 const result = {
   schemaVersion:1,sourceDigest:referenceSourceDigest(root),
-  permissions:Object.entries(MCP_PERMISSIONS).map(([scope,p])=>({scope,labels:Object.fromEntries(['cs','en'].map(locale=>{
+  permissions:Object.entries(MCP_PERMISSIONS).map(([scope,p])=>({scope,labels:Object.fromEntries(MCP_REFERENCE_LOCALES.map(locale=>{
     if(!translations[locale][p.label]) throw new Error(`Missing ${locale} MCP permission label: ${p.label}`);
     return [locale,translations[locale][p.label]];
   })),operations:p.operations,requires:p.requires})),
