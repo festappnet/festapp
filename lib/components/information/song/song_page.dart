@@ -66,6 +66,15 @@ class _SongbookPageState extends State<SongbookPage> {
     final barForeground =
         theme.appBarTheme.foregroundColor ??
         ThemeConfig.textColorForBackground(barBackground);
+    final switchOutline = dark
+        ? Color.lerp(barBackground, barForeground, 0.37)!
+        : barForeground;
+    final activeTrack = dark
+        ? Color.lerp(barBackground, barForeground, 0.12)!
+        : barForeground;
+    final activeThumb = dark
+        ? Color.lerp(barBackground, barForeground, 0.47)!
+        : barBackground;
     return PopScope(
       onPopInvokedWithResult: (result, x) {
         if (_isDialogOpen) {
@@ -100,7 +109,7 @@ class _SongbookPageState extends State<SongbookPage> {
             actions: [
               Row(
                 children: [
-                  Icon(Icons.wb_sunny, color: barForeground),
+                  Icon(Icons.wb_sunny, color: switchOutline),
                   Tooltip(
                     message: CommonStrings.dark,
                     child: Switch(
@@ -110,14 +119,14 @@ class _SongbookPageState extends State<SongbookPage> {
                           isDarkMode = value;
                         });
                       },
-                      activeThumbColor: barBackground,
-                      activeTrackColor: barForeground,
+                      activeThumbColor: activeThumb,
+                      activeTrackColor: activeTrack,
                       inactiveThumbColor: barForeground,
                       inactiveTrackColor: barBackground,
-                      trackOutlineColor: WidgetStatePropertyAll(barForeground),
+                      trackOutlineColor: WidgetStatePropertyAll(switchOutline),
                     ),
                   ),
-                  Icon(Icons.nightlight_round, color: barForeground),
+                  Icon(Icons.nightlight_round, color: switchOutline),
                 ],
               ),
             ],
