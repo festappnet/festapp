@@ -38,6 +38,7 @@ DECLARE
     is_editor_view_on_occasion_bool BOOLEAN;
     user_occasions_json jsonb;
     user_units_json jsonb;
+    favorite_unit_ids bigint[];
     current_user_id UUID := auth.uid();
 BEGIN
     -- A direct unit link must stay inside the requested tenant.
@@ -315,9 +316,12 @@ BEGIN
     END IF;
 
     -- Fetch units for the user based on unit rights or occasion rights
-    SELECT jsonb_agg(jsonb_build_object('id', u.id, 'title', u.title) ORDER BY u.title)
-    INTO user_units_json
+    SELECT jsonb_agg(jsonb_build_object('id', u.id, 'title', u.title) ORDER BY u.title),
+           COALESCE(array_agg(u.id ORDER BY u.id) FILTER (WHERE favorite.unit_id IS NOT NULL), '{}')
+    INTO user_units_json, favorite_unit_ids
     FROM public.units u
+    LEFT JOIN public.unit_picker_favorites favorite
+      ON favorite.user_id = current_user_id AND favorite.unit_id = u.id
     WHERE u.organization = org_id AND (
         EXISTS (
             SELECT 1
@@ -340,6 +344,7 @@ BEGIN
     -- Fetch user information along with associated units and occasions
     SELECT to_jsonb(ui)::jsonb || jsonb_build_object(
             'units', COALESCE(user_units_json, '[]'::jsonb),
+            'favorite_unit_ids', favorite_unit_ids,
             'occasions', COALESCE(user_occasions_json, '[]'::jsonb)
           )
       INTO user_info_json

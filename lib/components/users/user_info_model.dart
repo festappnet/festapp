@@ -28,6 +28,7 @@ class UserInfoModel extends IHasId {
   PlaceModel? accommodationPlace;
   Set<UserGroupInfoModel>? userGroups;
   List<UnitModel>? units;
+  final Set<int>? favoriteUnitIds;
   List<OccasionModel>? occasions;
 
   UserGroupInfoModel? eventUserGroup;
@@ -83,6 +84,7 @@ class UserInfoModel extends IHasId {
     this.companions,
     this.companionParent,
     this.units,
+    this.favoriteUnitIds,
     this.occasions,
     this.eventIds,
     this.userGroups,
@@ -114,6 +116,7 @@ class UserInfoModel extends IHasId {
       companions: companions,
       companionParent: companionParent,
       units: units,
+      favoriteUnitIds: favoriteUnitIds,
       occasions: occasions,
       eventIds: eventIds,
       userGroups: userGroups,
@@ -152,6 +155,7 @@ class UserInfoModel extends IHasId {
           ? List<UnitModel>.from(
               json[unitsField].map((u) => UnitModel.fromJson(u)))
           : null,
+      favoriteUnitIds: (json['favorite_unit_ids'] as List?)?.cast<int>().toSet(),
       occasions: json[occasionsField] != null
           ? List<OccasionModel>.from(
               json[occasionsField].map((o) => OccasionModel.fromJson(o)))

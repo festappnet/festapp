@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setup, connect, apiRequest, httpRequest } from './api-fixture.mjs';
-import { parseRemoteConfig } from '../src/remote/config.mjs';
-import { profile } from './fixture.mjs';
+import { parseRemoteConfig, READ_SCOPE } from '../src/remote/config.mjs';
+import { profile, reply } from './fixture.mjs';
 import { generateKeyPair, exportJWK, SignJWT, calculateJwkThumbprint } from 'jose';
 import { randomUUID, createHash } from 'node:crypto';
 
@@ -29,6 +29,46 @@ test('real OAuth API grants isolate resources, transports, immutable profile and
     assert.equal(grant.proofProfile,'bearer');assert.equal(grant.profileBinding,profile().binding);
     f.storage.revoke(grant.id);
     assert.equal((await apiRequest(f,global.tokens)).status,401);
+});
+
+test('API form writes expose a verified receipt after readback failure and revoke invalid sessions', async t => {
+    const commandId = '00000000-0000-4000-8000-00000000abcd';
+    const scopes = [READ_SCOPE, 'festapp:forms:read', 'festapp:forms:write'];
+    let authFailure = false;
+    const commands = [];
+    const f = await setup(t, {
+        apiPolicy: { allowedScopes: scopes, allowedOperations: ['context.inspect', 'forms.create'] },
+        fetchImpl: (url, init) => {
+            if (url.pathname.endsWith('/rpc/manage_form')) {
+                commands.push(JSON.parse(init.body).p_command_id);
+                return reply({ code: 200, status: commands.length === 1 ? 'applied' : 'unchanged',
+                    mutation: { commandId, receiptId: commandId },
+                    data: { occasionId: 7, formId: 42, authoring: { form: { id: 42, occasion: 7 } } } });
+            }
+            if (url.pathname.endsWith('/rpc/get_form_for_authoring'))
+                return authFailure ? reply({ code: 'session_not_found', message: 'fixture session invalid' }, 401)
+                    : reply({ message: 'fixture read unavailable' }, 503);
+        },
+    });
+    const { tokens } = await connect(f, { scope: scopes.join(' ') });
+    const payload = { commandId: commandId.toUpperCase(), occasionId: 7, title: 'Evening' };
+    for (const revoked of [false, true]) {
+        authFailure = revoked;
+        const response = await apiRequest(f, tokens, 'forms.create', payload);
+        assert.equal(response.status, 502, await response.clone().text());
+        const problem = await response.json();
+        assert.equal(problem.code, 'COMMITTED_READBACK_FAILED');
+        assert.equal(problem.title, problem.code);
+        assert.equal(problem.retryable, false);
+        assert.equal(problem.outcome, 'unknown');
+        assert.equal(response.headers.get('festapp-write-outcome'), 'committed');
+        assert.equal(response.headers.get('festapp-command-id'), commandId);
+        assert.equal(response.headers.get('festapp-receipt-id'), commandId);
+        assert.equal(response.headers.get('festapp-occasion-id'), '7');
+        assert.equal(response.headers.get('festapp-form-id'), '42');
+    }
+    assert.deepEqual(commands, [commandId, commandId]);
+    assert.equal((await apiRequest(f, tokens)).status, 401);
 });
 
 test('concurrency rejection is retryable and admission recovers after active requests finish', { timeout: 10000 }, async t => {

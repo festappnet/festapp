@@ -269,6 +269,17 @@
     "validationSummary": "Prüfen Sie die markierten Felder. Ihre Änderungen wurden noch nicht gespeichert."
   },
   "BankAccount": {
+    "accountFormat": "Kontoformat",
+    "inputModeSplit": "Tschechisches Konto",
+    "inputModeSlovak": "Slowakisches Konto",
+    "invalidSlovakAccount": "Prüfen Sie die Kontonummer und die Bankleitzahl. Beispiel: 289-1987426353/0720.",
+    "inputModeIban": "IBAN",
+    "accountNumberLabel": "Kontonummer",
+    "bankCodeLabel": "Bankleitzahl",
+    "creditorNameLabel": "Name des Kontoinhabers",
+    "creditorNameHelp": "Name in den Zahlungsanweisungen.",
+    "supportedCurrencies": "Unterstützte Währungen",
+    "addCurrency": "Währung hinzufügen",
     "invalidNationalAccount": "Prüfen Sie die Kontonummer und die Bankleitzahl. Beispiel: 20001457/0800.",
     "diagnostic": {
       "title": "Letzter erfasster Fehler",

@@ -638,13 +638,13 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_delegated_occasion_client_sync_v1(uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='d0a4e48d60fd0929f893ebca64c42ca7'),'current SQL source parity: public.create_delegated_occasion_client_sync_v1(uuid,jsonb)');
 -- supabase/migrations/20261119130000_free_checkout_ticket_delivery_receipt.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_email_confirmation_receipt(uuid,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='e993efb7cebadabab89475c0c6b078dc'),'current SQL source parity: public.create_email_confirmation_receipt(uuid,bigint,text)');
--- supabase/migrations/20261120130000_form_creation_own_primary_group.sql
+-- supabase/migrations/20261120140000_form_creation_own_primary_group.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_form_client_sync_v1(text,text,text,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='74951018e84cfb22aaca69062bcbd4db'),'current SQL source parity: public.create_form_client_sync_v1(text,text,text,uuid)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_form_internal_v1(bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='977f69fd0d21952271f92fad0a71a3f6'),'current SQL source parity: public.create_form_internal_v1(bigint,text,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_form_ws(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='d823e4013862697dc9ff1c6ba2d3b4d4'),'current SQL source parity: public.create_form_ws(jsonb)');
--- supabase/migrations/20261120130000_form_creation_own_primary_group.sql
+-- supabase/migrations/20261120140000_form_creation_own_primary_group.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_initial_occasion_form_internal_v1(bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='ae823427ddb316fe67789db097b400fa'),'current SQL source parity: public.create_initial_occasion_form_internal_v1(bigint,text,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.create_occasion_client_sync_v1(uuid,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='bc5c707d2445c5d2d7e5a4f11549b517'),'current SQL source parity: public.create_occasion_client_sync_v1(uuid,jsonb)');
@@ -812,11 +812,11 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_place_type_client_sync_v1(bigint,bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='51d3411d14ff067ef64a6e2393b34ec2'),'current SQL source parity: public.delete_place_type_client_sync_v1(bigint,bigint,uuid,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_product(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='22e88f486c76113e6702de01a3e8eb2f'),'current SQL source parity: public.delete_product(bigint)');
--- supabase/migrations/20261120130000_form_creation_own_primary_group.sql
+-- supabase/migrations/20261120140000_form_creation_own_primary_group.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_product_client_sync_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='55d4e36ed33404dd85e7dd2570a5fcdc'),'current SQL source parity: public.delete_product_client_sync_v1(bigint,uuid)');
--- supabase/migrations/20261120130000_form_creation_own_primary_group.sql
+-- supabase/migrations/20261120140000_form_creation_own_primary_group.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_product_client_sync_v1(bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5ef929caa6cc1ead1746dd2a6184e9a2'),'current SQL source parity: public.delete_product_client_sync_v1(bigint,uuid,bigint)');
--- supabase/migrations/20261120130000_form_creation_own_primary_group.sql
+-- supabase/migrations/20261120140000_form_creation_own_primary_group.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_product_domain_command_internal_v1(bigint,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='b46273659dcff70521fa0b99552d48a8'),'current SQL source parity: public.delete_product_domain_command_internal_v1(bigint,uuid,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.delete_product_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f05023ade6f0016322594d176c22be88'),'current SQL source parity: public.delete_product_internal_v1(bigint)');
@@ -1074,8 +1074,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_all_occasions_for_edit_v182(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='718fd93cb15409b131b35228674f0b76'),'current SQL source parity: public.get_all_occasions_for_edit_v182(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_all_users_from_unit(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1c604c8e0796d9d650e2f04a83315adc'),'current SQL source parity: public.get_all_users_from_unit(bigint)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_app_config_v218(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f567fcd5c2c64ff88a410c1330b3f7da'),'current SQL source parity: public.get_app_config_v218(jsonb)');
+-- supabase/migrations/20261120130000_organization_favorites_in_app_config.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_app_config_v218(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='9385b50fcaf07c3f5f0aea7587869ca5'),'current SQL source parity: public.get_app_config_v218(jsonb)');
 -- supabase/migrations/20261113190000_apple_ticket_wallet_updates.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_apple_ticket_wallet(text,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='ec756090de0e7fb9be28fc97a9179215'),'current SQL source parity: public.get_apple_ticket_wallet(text,text,text)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
@@ -1554,7 +1554,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.initialize_notification_center_internal(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='f7ba094e544f3a050cf6a2cbdc22967a'),'current SQL source parity: public.initialize_notification_center_internal(bigint,text)');
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.initialize_occasion_setup_draft_defaults(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a9d94bd8ff4ec2ee46ced12347077c17'),'current SQL source parity: public.initialize_occasion_setup_draft_defaults(uuid,bigint)');
--- supabase/migrations/20261120130000_form_creation_own_primary_group.sql
+-- supabase/migrations/20261120140000_form_creation_own_primary_group.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.insert_form_for_occasion_internal_v1(bigint,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='e25f9dece1c848b539d0e81a4e004fd6'),'current SQL source parity: public.insert_form_for_occasion_internal_v1(bigint,text,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.insert_manual_transaction(double precision,text,integer,text,text,text,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='9aa7a570397fff763886b741dff4c3a2'),'current SQL source parity: public.insert_manual_transaction(double precision,text,integer,text,text,text,integer)');

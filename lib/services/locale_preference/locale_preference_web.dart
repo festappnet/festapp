@@ -15,6 +15,11 @@ class _BrowserStore implements LocalePreferenceStore {
   bool get enabled => true;
   String? _supported(String? value) {
     final language = value?.toLowerCase().split(RegExp('[_-]')).first;
+    if (language == AppConfig.legacyAutoLanguage &&
+        web.window.localStorage.getItem('flutter.$explicitLocalePreference') !=
+            'true') {
+      return null;
+    }
     return AppConfig.availableLanguages().any(
           (item) => item.locale.languageCode == language,
         )
@@ -44,6 +49,7 @@ class _BrowserStore implements LocalePreferenceStore {
   VoidCallback listen(VoidCallback onChanged) {
     final storage = ((web.StorageEvent event) {
       if (event.key == 'flutter.locale' ||
+          event.key == 'flutter.$explicitLocalePreference' ||
           event.key == 'locale' ||
           event.key == null) {
         onChanged();

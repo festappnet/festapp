@@ -94,6 +94,9 @@ Future<void> startApplication({Future<void> Function()? initialize}) async {
             .map((e) => e.locale)
             .toList(),
         path: "assets/translations",
+        startLocale: kIsWeb
+            ? resolveBrowserLocale(WidgetsBinding.instance.platformDispatcher.locales)
+            : null,
         fallbackLocale: AppConfig.availableLanguages()
             .map((e) => e.locale)
             .first,

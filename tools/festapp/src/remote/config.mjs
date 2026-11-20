@@ -82,13 +82,14 @@ export function parseRemoteConfig(raw) {
         if (client.allowedScopes && !validScopeCeiling(client.allowedScopes))
             throw new Error('INVALID_CLIENT_SCOPE_CEILING');
     }
-    for (const client of config.clients) for (const uri of client.redirectUris) {
-        if (!validRedirect(uri, client.applicationType, local))
-            throw new Error('INVALID_REMOTE_REDIRECT');
-    }
     const normalized = { ...config, profile, contexts, issuer: url.origin, resource: url.origin + '/mcp' };
     const endpoints = normalizeEndpoints(normalized);
     const clients = config.clients.map(client => normalizeClient(client, normalized, endpoints));
+    for (const client of clients) {
+        const allowLocalhost = client.tokenEndpointAuthMethod === 'none';
+        if (!client.redirectUris.every(uri => validRedirect(uri, client.applicationType, { local, allowLocalhost })))
+            throw new Error('INVALID_REMOTE_REDIRECT');
+    }
     return Object.freeze({ ...config, clients, endpoints, profile, ...(contexts ? { contexts: Object.freeze(contexts) } : {}), issuer: url.origin, resource: url.origin + '/mcp' });
 }
 

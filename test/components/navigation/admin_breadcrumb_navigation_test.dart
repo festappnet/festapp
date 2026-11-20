@@ -79,6 +79,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final previousPreferences = SharedPreferencesAsyncPlatform.instance;
   final remoteFavorites = <String, Set<int>>{};
+  final requests = <String>[];
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
     SharedPreferencesAsyncPlatform.instance =
@@ -88,26 +89,19 @@ void main() {
       url: 'https://fixture.test',
       publishableKey: 'fixture',
       httpClient: MockClient((request) async {
+        requests.add(request.url.path);
         expect(request.method, 'POST');
+        expect(request.url.path, '/rest/v1/rpc/set_unit_picker_favorite');
         final args = jsonDecode(request.body) as Map<String, dynamic>;
         final account = args['p_user_id'] as String;
         final favorites = remoteFavorites.putIfAbsent(account, () => {});
-        if (request.url.path == '/rest/v1/rpc/set_unit_picker_favorite') {
-          final unitId = args['p_unit_id'] as int;
-          if (args['p_favorite'] as bool) {
-            favorites.add(unitId);
-          } else {
-            favorites.remove(unitId);
-          }
-          return http.Response('', 204, request: request);
+        final unitId = args['p_unit_id'] as int;
+        if (args['p_favorite'] as bool) {
+          favorites.add(unitId);
+        } else {
+          favorites.remove(unitId);
         }
-        expect(request.url.path, '/rest/v1/rpc/get_unit_picker_favorites');
-        return http.Response(
-          jsonEncode(favorites.toList()),
-          200,
-          headers: {'content-type': 'application/json'},
-          request: request,
-        );
+        return http.Response('', 204, request: request);
       }),
       authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
     );
@@ -189,6 +183,7 @@ void main() {
       'organization favorites preserve picker behavior at width $width',
       (tester) async {
         remoteFavorites.clear();
+        requests.clear();
         tester.view.physicalSize = Size(width, 800);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
@@ -207,10 +202,11 @@ void main() {
         void setUnits(int count, {String account = 'first-account'}) {
           RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
             unit: units.first,
-            userInfo: UserInfoModel(
-              id: account,
-              units: units.take(count).toList(),
-            ),
+            userInfo: UserInfoModel.fromJson({
+              'id': account,
+              'units': units.take(count).map((unit) => unit.toJson()).toList(),
+              'favorite_unit_ids': remoteFavorites[account]?.toList() ?? [],
+            }),
           );
         }
 
@@ -283,9 +279,19 @@ void main() {
         expect(remoteFavorites['first-account'], {4});
         await closePicker();
 
-        // A different device adds a favorite while the picker is closed.
+        // The same app context retains a successful write when reopened.
+        await tester.tap(find.byIcon(Icons.unfold_more_rounded));
+        await tester.pump();
+        expect(find.byIcon(Icons.star), findsOneWidget);
+        expect(y('Delta'), lessThan(y('Alfa')));
+        await closePicker();
+
+        // The next app context carries changes written on another device.
         remoteFavorites['first-account']!.add(2);
-        await openPicker();
+        setUnits(5);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byIcon(Icons.unfold_more_rounded));
+        await tester.pump();
         expect(y('Beta'), lessThan(y('Delta')));
         expect(y('Delta'), lessThan(y('Alfa')));
         expect(find.byIcon(Icons.star), findsNWidgets(2));
@@ -296,6 +302,10 @@ void main() {
         expect(find.byIcon(Icons.star), findsNothing);
         expect(y('Alfa'), lessThan(y('Delta')));
         await closePicker();
+        expect(
+          requests,
+          List.filled(3, '/rest/v1/rpc/set_unit_picker_favorite'),
+        );
         await tester.pumpWidget(const SizedBox.shrink());
         router.dispose();
       },

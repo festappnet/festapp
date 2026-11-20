@@ -73,8 +73,6 @@ class _PickerGroupHeading {
 class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _displayItems = [];
-  Set<int>? _favoriteIds;
-  final Set<int> _savingFavoriteIds = {};
 
   int? _favoriteId(T item) {
     if (widget.unitFavorites == null) return null;
@@ -82,44 +80,19 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
     return id is int ? id : null;
   }
 
-  Future<void> _loadFavorites(UnitPickerFavorites favorites) async {
-    final stored = await ExceptionHandler.guard(
-      context,
-      futureFunction: favorites.load,
-    );
-    if (!mounted || stored == null) return;
-    _favoriteIds = stored;
-    _filterItems();
-  }
-
   Future<void> _toggleFavorite(int id) async {
-    final favoriteIds = _favoriteIds;
-    if (favoriteIds == null || _savingFavoriteIds.contains(id)) return;
-
-    final makeFavorite = !favoriteIds.contains(id);
-    setState(() => _savingFavoriteIds.add(id));
-    final saved = await ExceptionHandler.guardVoid(
+    final favorites = widget.unitFavorites!;
+    await ExceptionHandler.guardVoid(
       context,
-      futureFunction: () => widget.unitFavorites!.save(id, makeFavorite),
+      futureFunction: () => favorites.save(id, !favorites.isFavorite(id)),
     );
-    if (!mounted) return;
-    _savingFavoriteIds.remove(id);
-    if (saved) {
-      if (makeFavorite) {
-        favoriteIds.add(id);
-      } else {
-        favoriteIds.remove(id);
-      }
-    }
-    _filterItems();
   }
 
   @override
   void initState() {
     super.initState();
     _processItems(widget.items);
-    final favorites = widget.unitFavorites;
-    if (favorites != null) _loadFavorites(favorites);
+    widget.unitFavorites?.addListener(_filterItems);
     if (widget.hintText.isNotEmpty) {
       _searchController.addListener(_filterItems);
     }
@@ -127,6 +100,7 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
 
   @override
   void dispose() {
+    widget.unitFavorites?.removeListener(_filterItems);
     _searchController.removeListener(_filterItems);
     _searchController.dispose();
     super.dispose();
@@ -139,14 +113,14 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
     final List<dynamic> display;
     if (groupId == null || groupTitle == null) {
       final ordered = _datedItems(sourceItems, now);
-      final favoriteIds = _favoriteIds;
-      if (favoriteIds == null || favoriteIds.isEmpty) {
+      final unitFavorites = widget.unitFavorites;
+      if (unitFavorites == null) {
         display = ordered;
       } else {
         final favorites = <T>[];
         final otherEntries = <dynamic>[];
         for (final entry in ordered) {
-          if (entry is T && favoriteIds.contains(_favoriteId(entry))) {
+          if (entry is T && unitFavorites.isFavorite(_favoriteId(entry))) {
             favorites.add(entry);
           } else {
             otherEntries.add(entry);
@@ -425,11 +399,12 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                             );
 
                       final favoriteId = _favoriteId(item);
+                      final favorites = widget.unitFavorites;
                       final isFavorite =
-                          _favoriteIds?.contains(favoriteId) ?? false;
-                      final favoriteActionPending =
-                          _favoriteIds == null ||
-                          _savingFavoriteIds.contains(favoriteId);
+                          favorites?.isFavorite(favoriteId) ?? false;
+                      final canToggleFavorite =
+                          favoriteId != null &&
+                          !favorites!.isSaving(favoriteId);
                       final check = isSelected
                           ? Icon(
                               Icons.check,
@@ -459,9 +434,7 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                                     if (check != null) check,
                                     IconButton(
                                       iconSize: iconSize,
-                                      color: favoriteActionPending
-                                          ? theme.disabledColor
-                                          : isFavorite
+                                      color: isFavorite
                                           ? theme.primaryColor
                                           : iconColor,
                                       tooltip: isFavorite
@@ -472,8 +445,9 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                                       isSelected: isFavorite,
                                       icon: const Icon(Icons.star_border),
                                       selectedIcon: const Icon(Icons.star),
-                                      onPressed: () =>
-                                          _toggleFavorite(favoriteId),
+                                      onPressed: canToggleFavorite
+                                          ? () => _toggleFavorite(favoriteId)
+                                          : null,
                                     ),
                                   ],
                                 ),

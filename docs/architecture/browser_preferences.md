@@ -12,10 +12,20 @@ not account data and do not synchronize across devices or tenant domains.
   EasyLocalization; `LocalizationService` writes the same encoding. The former
   public `locale` key is read only for migration. `prepareSharedLocale` performs
   that migration before EasyLocalization initializes its cached locale.
+- `flutter.locale.manuallySelected`: the value `true` records a choice made
+  through either language selector, including a click on the active language.
+  The regional migration treats cached Czech without this marker as automatic.
+  Older manually selected Czech can be indistinguishable from an automatic
+  value. Choosing Czech again records the explicit preference.
 
-Both applications receive changes through storage events and reconcile on focus
-or page restoration. Flutter updates its localization provider; public app pages
-reload when their selected language changes, as with their language selector.
+Without an explicit choice, the first supported browser language wins, then
+the tenant default. The public startup shell and the public app use the same
+locale resolver. If the selected translation catalog is unavailable, the
+public app can render the default catalog while preserving the stored choice.
+
+Both applications reconcile shared changes on storage events, focus and page
+restoration. An open public page compares the latest stored choice with its
+last observed choice so catalog fallback does not cause repeated reloads.
 Explicitly localized marketing URLs keep their document language and never
 replace the application preference.
 

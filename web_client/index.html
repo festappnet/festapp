@@ -36,6 +36,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#232529" data-light-color="#ebf1f6">
+    <meta name="festapp-supported-languages" content="cs,en,es,sk">
+    <meta name="festapp-legacy-auto-language" content="">
     <meta name="color-scheme" content="light dark">
 <script id="festapp-runtime-startup">
 // Generated from web_client/src/runtime.
@@ -139,6 +141,41 @@ function installRuntimeState(win) {
     }
     return runtime;
 }
+const sharedLocaleKey = 'flutter.locale';
+const explicitLocaleKey = 'flutter.locale.manuallySelected';
+const legacyLocaleKey = 'locale';
+
+const languageCode = value => typeof value === 'string' ? value.toLowerCase().split(/[-_]/)[0] : null;
+
+function preferredBrowserLocale(languages, fallback, navigator) {
+    const preferences = navigator?.languages;
+    const candidates = preferences?.length ? preferences : [navigator?.language];
+    return candidates.map(languageCode).find(locale => languages.includes(locale)) ?? fallback;
+}
+
+function storedLocale(languages, legacyAutoLanguage, read) {
+    let shared;
+    try { shared = JSON.parse(read(sharedLocaleKey)); } catch { /* Ignore corrupt preferences. */ }
+    const manuallySelected = read(explicitLocaleKey) === 'true';
+    for (const candidate of [shared, read(legacyLocaleKey)]) {
+        const locale = languageCode(candidate);
+        if (languages.includes(locale) && (manuallySelected || locale !== legacyAutoLanguage)) return locale;
+    }
+    return null;
+}
+
+function applyStartupLocale(window) {
+    const {document} = window;
+    const languages = document.querySelector('meta[name="festapp-supported-languages"]')?.content.split(',') ?? [];
+    const legacy = document.querySelector('meta[name="festapp-legacy-auto-language"]')?.content || null;
+    const fallback = languages[0] ?? document.documentElement.lang ?? 'en';
+    const read = key => {
+        try { return window.localStorage.getItem(key); } catch { return null; }
+    };
+    document.documentElement.dataset.startupLocale = storedLocale(languages, legacy, read)
+        ?? preferredBrowserLocale(languages, fallback, window.navigator);
+}
+applyStartupLocale(window);
 window.__FESTAPP_CLIENT_RUNTIME__ = 'web';
 installRuntimeState(window);
 if (pageContext(window.location) === 'public-embed') document.documentElement.dataset.embedStartup = 'true';
@@ -263,10 +300,16 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     <script>
         // This handshake must not depend on the module it unlocks. A resumed
         // mobile worker can forget the client generation before loading JS.
-        window.__FESTAPP_BUILD_VERSION__ = "0.20.647+1183";
-        const startupCopy = navigator.language.startsWith('cs') || navigator.language.startsWith('sk')
-            ? { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' }
-            : { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' };
+        window.__FESTAPP_BUILD_VERSION__ = "0.20.648+1186";
+        const startupMessages = {
+            cs: { loading: 'Načítám aplikaci…', retry: 'Zkusit znovu', failed: 'Stránku se nepodařilo načíst.' },
+            sk: { loading: 'Načítava sa aplikácia…', retry: 'Skúsiť znova', failed: 'Stránku sa nepodarilo načítať.' },
+            en: { loading: 'Loading…', retry: 'Try again', failed: 'The page could not be loaded.' },
+            es: { loading: 'Cargando…', retry: 'Intentar de nuevo', failed: 'No se pudo cargar la página.' },
+            pl: { loading: 'Ładowanie…', retry: 'Spróbuj ponownie', failed: 'Nie udało się wczytać strony.' },
+        };
+        const startupLocale = document.documentElement.dataset.startupLocale;
+        const startupCopy = startupMessages[startupLocale] ?? startupMessages.en;
         function reportFestappClientVersion() {
             try {
                 navigator.serviceWorker?.controller?.postMessage({
@@ -412,7 +455,9 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     </div>
     <script>
         window.applyFestappStartupTheme();
-        document.getElementById('web-client-startup').setAttribute('aria-label', startupCopy.loading);
+        const startupStatus = document.getElementById('web-client-startup');
+        startupStatus.lang = Object.hasOwn(startupMessages, startupLocale) ? startupLocale : 'en';
+        startupStatus.setAttribute('aria-label', startupCopy.loading);
         document.querySelector('#web-client-startup button').textContent = startupCopy.retry;
         document.querySelector('#web-client-startup button').addEventListener('click', () => window.retryFestappWebClient());
     </script>

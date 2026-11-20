@@ -271,6 +271,17 @@
     "validationSummary": "Sprawdź wyróżnione pola. Zmiany nie zostały jeszcze zapisane."
   },
   "BankAccount": {
+    "accountFormat": "Format rachunku",
+    "inputModeSplit": "Rachunek czeski",
+    "inputModeSlovak": "Rachunek słowacki",
+    "invalidSlovakAccount": "Sprawdź numer rachunku i kod banku. Na przykład 289-1987426353/0720.",
+    "inputModeIban": "IBAN",
+    "accountNumberLabel": "Numer rachunku",
+    "bankCodeLabel": "Kod banku",
+    "creditorNameLabel": "Nazwa właściciela rachunku",
+    "creditorNameHelp": "Nazwa podawana w instrukcjach płatności.",
+    "supportedCurrencies": "Obsługiwane waluty",
+    "addCurrency": "Dodaj walutę",
     "invalidNationalAccount": "Sprawdź numer rachunku i kod banku. Na przykład 20001457/0800.",
     "diagnostic": {
       "title": "Ostatni zarejestrowany błąd",

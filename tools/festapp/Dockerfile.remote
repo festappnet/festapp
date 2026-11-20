@@ -19,6 +19,8 @@ COPY automation/release/help/mcp_reference.mjs ./automation/release/help/mcp_ref
 RUN test -n "$FESTAPP_SOURCE_SHA" && pnpm --dir tools/festapp run api:prepare
 
 FROM node:24.22.1-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c
+ARG FESTAPP_SOURCE_SHA
+ENV FESTAPP_SOURCE_SHA=$FESTAPP_SOURCE_SHA
 ENV NODE_ENV=production
 WORKDIR /app
 COPY tools/festapp/package.json tools/festapp/pnpm-lock.yaml tools/festapp/pnpm-workspace.yaml ./tools/festapp/

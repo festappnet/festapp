@@ -732,6 +732,14 @@
       ]
     },
     {
+      "migration": "20261120130000_organization_favorites_in_app_config.sql",
+      "active": true,
+      "header": "-- Include organization favorites in the existing app context response.",
+      "sources": [
+        "others/get_app_config.sql"
+      ]
+    },
+    {
       "migration": "20261119050000_scope_form_blueprints_on_copy.sql",
       "active": false,
       "checkSources": true,
@@ -742,7 +750,7 @@
       "sha256": "e6b2d4932eaba894def702bdafdea3cac24ed3de5d1d320d813518d2bd53e6f5"
     },
     {
-      "migration": "20261120130000_form_creation_own_primary_group.sql",
+      "migration": "20261120140000_form_creation_own_primary_group.sql",
       "active": true,
       "header": "-- Form and product commands use a single locking order and shared plan bindings.",
       "sources": [
