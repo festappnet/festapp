@@ -1,3 +1,4 @@
+import {commandBoundary, outputDiagnostic} from './command-boundary.mjs';
 import {informationDescriptors,informationDataSchemas,invokeInformationOperation} from './information.mjs';
 import {webhookDescriptors,webhookDataSchemas,invokeWebhookOperation} from './webhooks.mjs';
 import { inventoryAssignmentDescriptors, inventoryAssignmentDataSchemas, invokeInventoryAssignmentOperation } from './inventory-assignments.mjs';
@@ -353,7 +354,7 @@ export class Operations {
             check(parsed.success, 'INVALID_INPUT');
             const args = parsed.data;
             await this.owner.authorizeOperation?.(id, args);
-            return await this.owner.authorized(async (client, context) => {
+            return await this.owner.authorized(async (client, context) => commandBoundary(client, descriptor, args, async (client) => {
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);
                 onAccepted?.();
@@ -541,13 +542,15 @@ export class Operations {
                     };
                 }
                 const schema = this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(id) ? publicOrderPage : dataSchemas[id];
-                check(schema.safeParse(data).success);
+                const output = schema.safeParse(data);
+                if (!output.success) outputDiagnostic(id, output.error);
+                check(output.success);
                 if (this.owner.orderSummaryOnly && id === 'context.inspect') {
                     const { userId, ...publicContext } = data;
                     data = publicContext;
                 }
                 return { ok: true, operation: id, data, meta };
-            });
+            }));
         } catch (error) {
             // The released error envelope stays unchanged; HTTP adapters may expose Retry-After.
             if (Number.isSafeInteger(error?.retryAfter) && error.retryAfter > 0) onRetryAfter?.(error.retryAfter);

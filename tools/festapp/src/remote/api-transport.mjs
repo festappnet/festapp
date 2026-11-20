@@ -12,7 +12,10 @@ export function stepUpChallenge(endpoint) {
 }
 
 export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer' } = {}) {
-    const safe = error?.code && errorStatuses[error.code] ? error : safeError(error);
+    // A raw committed-readback error carries its receipt only as a property;
+    // safeError renders it into the message used as the problem title.
+    const raw = error instanceof Error && error.code === 'COMMITTED_READBACK_FAILED';
+    const safe = !raw && error?.code && errorStatuses[error.code] ? error : safeError(error);
     const status = errorStatuses[safe.code] ?? 502;
     if (status === 401 && endpoint) res.set('WWW-Authenticate', `${authScheme === 'DPoP' ? 'DPoP' : 'Bearer'} resource_metadata="${new URL(endpoint.publicBase).origin}/.well-known/oauth-protected-resource/integrations", error="${safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' ? 'insufficient_user_authentication' : 'invalid_token'}"`);
     if (safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' && endpoint) res.set('WWW-Authenticate', stepUpChallenge(endpoint));
@@ -20,7 +23,7 @@ export function sendProblem(res, error, { requestId = randomUUID(), endpoint, ou
     if (status === 405) res.set('Allow', 'POST');
     return res.status(status).set({ 'X-Request-Id': requestId, 'Cache-Control': 'no-store' }).type('application/problem+json').json({
         type: 'https://api.festapp.net/integrations/problems/' + safe.code.toLowerCase(),
-        title: safe.code, status, code: safe.code, requestId, retryable: Boolean(safe.retryable), outcome,
+        title: safe.code === 'COMMITTED_READBACK_FAILED' ? safe.message : safe.code, status, code: safe.code, requestId, retryable: Boolean(safe.retryable), outcome,
     });
 }
 // Approval requests run in one SQL transaction: these outcomes are rolled back

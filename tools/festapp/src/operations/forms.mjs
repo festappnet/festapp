@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {parseOutput} from './command-boundary.mjs';
 import {check,upstream,OperationError} from '../errors.mjs';
 import {EMBED_LANGUAGES,embedLabels,EmbedCodeError,formEmbedCode} from './form-embed.mjs';
 // Worst case: a 16384-character export escaped to six characters per character, plus the fixed markup.
@@ -74,6 +75,15 @@ const summary=z.strictObject({...formMetadata,response_count:version.optional(),
  fields:z.array(z.strictObject({id,type:z.string().nullable(),is_ticket_field:z.boolean().nullable()})).optional()});
 const snapshot=z.strictObject({form:formState,
  fields:z.array(z.json()).max(500),productTypes:z.array(z.json()),products:z.array(z.json()),productVersions:versions,productTypeVersions:versions});
+// Only project object keys owned by the released snapshot contract. Known
+// values still undergo strict validation; z.json payloads retain their semantics.
+const pick=(value,keys)=>value&&typeof value==='object'&&!Array.isArray(value)
+ ?Object.fromEntries(Object.entries(value).filter(([key])=>keys.includes(key))):value;
+const projectSnapshot=value=>pick(value,Object.keys(snapshot.shape));
+const projectInspect=value=>{
+ const projected=pick(value,['occasionId','authoring']);
+ return projected&&typeof projected==='object'?{...projected,authoring:projectSnapshot(projected.authoring)}:projected;
+};
 const receipt=z.strictObject({measurement_status_is_historical:z.literal(true).optional(),current_measurement_status:measurementStatus.nullable().optional(),occasionId:id,formId:id,commandId:z.uuid(),status:z.enum(['applied','unchanged']),authoring:snapshot.nullable()});
 const paymentPolicy=z.strictObject({reservationSeconds:version,fullPaymentOnly:z.boolean(),depositsSupported:z.boolean(),surchargesSupported:z.boolean()});
 const paymentRecipient=z.strictObject({connectionId:z.uuid(),name:z.string().nullable(),livemode:z.boolean().optional()});
@@ -151,11 +161,13 @@ export async function invokeFormOperation(owner,client,operation,args){
  if(operation==='forms.publicLink'||operation==='forms.setPublicLink'){
   if(operation==='forms.setPublicLink'){
    if(data?.code===409)throw new OperationError('FORM_CHANGED_RELOAD_REQUIRED');
+   if(data?.code===410)throw new OperationError('COMMAND_EXPIRED_DO_NOT_REPLAY');
    check(data?.code===200&&data.mutation?.commandId===args.commandId&&data.mutation?.receiptId===args.commandId,'FORM_CHANGE_REJECTED');
   }
   const link=operation==='forms.publicLink'?data:data.publicLink;
   check(link?.occasionId===args.occasionId&&link.formId===args.formId&&typeof link.slug==='string');
-  return formDataSchemas[operation].parse({...link,publicPath:'/form/'+encodeURIComponent(link.slug),...(operation==='forms.setPublicLink'?{commandId:args.commandId,status:data.status}:{})});
+  // Explicit contract keys only: a new internal link field must not fail a committed write.
+  return parseOutput(formDataSchemas[operation],{occasionId:link.occasionId,formId:link.formId,slug:link.slug,publicPath:'/form/'+encodeURIComponent(link.slug),...(operation==='forms.setPublicLink'?{commandId:args.commandId,status:data.status}:{})},operation);
  }
  if(operation==='forms.embedCode'){
   check(data?.occasionId===args.occasionId&&data.formId===args.formId&&(data.slug===null||typeof data.slug==='string'));
@@ -186,7 +198,7 @@ export async function invokeFormOperation(owner,client,operation,args){
   check(data?.occasionId===args.occasionId);
   if(operation==='forms.inspect')check(data?.authoring?.form?.id===args.formId&&data.authoring.form.occasion===args.occasionId);
   else check(Array.isArray(data.forms)&&data.forms.every(f=>f.occasion===args.occasionId));
-  return formDataSchemas[operation].parse(data);
+  return parseOutput(formDataSchemas[operation],operation==='forms.inspect'?projectInspect(data):data,operation);
  }
  if(data?.code===409)throw new OperationError('FORM_CHANGED_RELOAD_REQUIRED');
  if(data?.code===410)throw new OperationError('COMMAND_EXPIRED_DO_NOT_REPLAY');
@@ -200,8 +212,9 @@ export async function invokeFormOperation(owner,client,operation,args){
   // Never rewrite the durable receipt or present its saved policy as current.
   const live=await client.rpc('get_form_for_authoring',{...base,p_form:data.data.formId});
   upstream(live.error);check(live.data?.occasionId===args.occasionId && live.data.authoring?.form?.id===data.data.formId);
-  liveStatus=measurementStatusOrUnknown.parse(live.data.authoring.form.measurement_status);
+  liveStatus=parseOutput(measurementStatusOrUnknown,live.data.authoring.form.measurement_status,operation);
  }
- return formDataSchemas[operation].parse({...data.data,commandId:args.commandId,status:data.status,
-  ...(data.data.authoring ? {measurement_status_is_historical:true,current_measurement_status:liveStatus} : {})});
+ // Explicit receipt keys only, like inspect: new internal receipt fields must not fail a committed write.
+ return parseOutput(formDataSchemas[operation],{occasionId:data.data.occasionId,formId:data.data.formId,authoring:projectSnapshot(data.data.authoring),commandId:args.commandId,status:data.status,
+  ...(data.data.authoring ? {measurement_status_is_historical:true,current_measurement_status:liveStatus} : {})},operation);
 }

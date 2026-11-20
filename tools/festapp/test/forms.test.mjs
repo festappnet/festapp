@@ -121,3 +121,96 @@ test('organizer consent bridge configuration accepts only explicit booleans and 
  assert.deepEqual(input.parse({...args,changes:{settings:{}}}).changes.settings,{});
  for (const value of [null,'true',1]) assert.equal(input.safeParse({...args,changes:{settings:{measurement_consent_bridge:value}}}).success,false);
 });
+
+test('inspect projects future snapshot/envelope keys but validates known values',async()=>{
+ const f=fixture({occasionId:7,private_extra:'do-not-return',authoring:{...state,private_extra:'do-not-return'}});
+ const result=await f.ops.invoke('forms.inspect',{occasionId:7,formId:42});
+ assert.equal(result.ok,true);assert(!JSON.stringify(result).includes('do-not-return'));
+ const invalid=fixture({occasionId:7,authoring:{...state,products:'private-invalid-value'}});
+ const lines=[],original=console.error;console.error=line=>lines.push(line);
+ try{assert.equal((await invalid.ops.invoke('forms.inspect',{occasionId:7,formId:42})).ok,false);}
+ finally{console.error=original;}
+ assert(lines.some(line=>line.includes('schema_validation')&&line.includes('invalid_type')));
+ assert(!lines.join('').includes('private-invalid-value'));
+});
+
+const commandId='00000000-0000-4000-8000-000000000099';
+const writeArgs=operation=>({occasionId:7,commandId,...(operation==='forms.save'?{form:{id:42,expected_aggregate_version:0,expected_product_versions:{},expected_product_type_versions:{}}}
+ :operation==='forms.duplicate'?{sourceOccasionId:7,sourceFormId:42,locale:'en'}:operation==='forms.delete'?{formId:42,expectedVersion:0}
+ :operation==='forms.setPublicLink'?{formId:42,expectedVersion:0,slug:'evening'}:{title:'Evening'})});
+// The fake SQL owner replays the same committed receipt for the same command, like client_mutation_receipts.
+function writeFixture(operation,write,read){
+ const calls=[];
+ const owner={root:'/tmp/form-boundary',profile:{name:'fixture',organizationId:3,tenantId:'fixture'},allowedOperations:[operation],
+  delegatedContext:async()=>({organizationId:3,unitId:8}),authorized:fn=>fn({rpc:async(name,params)=>{
+   calls.push(name);
+   if(name==='manage_form')return{error:null,data:write(params)};
+   return read();
+  }},{})};
+ return{ops:new Operations(owner),calls};
+}
+const committed=(data,status='applied')=>({code:200,status,mutation:{commandId,receiptId:commandId},data});
+
+test('committed form writes retain command identity when readback fails; replay returns the same outcome from SQL',async()=>{
+ for(const operation of ['forms.create','forms.save','forms.duplicate','forms.delete'])for(const failure of ['network','invalid','snapshot']){
+  if(operation==='forms.delete'&&failure!=='snapshot')continue;
+  let replay=false;
+  // forms.delete has no follow-up read; its readback failure is an invalid receipt.
+  const authoring=operation==='forms.delete'?{...state}:failure==='snapshot'?{...state,products:false}:state;
+  const f=writeFixture(operation,()=>committed({occasionId:7,formId:42,authoring},replay?'unchanged':'applied'),()=>{
+   if(failure==='network')throw new Error('PRIVATE server failure');
+   return{error:null,data:{occasionId:7,authoring:{...state,form:{...state.form,measurement_status:{private:'secret'}}}}};
+  });
+  const args=writeArgs(operation);
+  const first=await f.ops.invoke(operation,args);replay=true;
+  const second=await f.ops.invoke(operation,args);
+  assert.equal(first.error?.code,'COMMITTED_READBACK_FAILED',JSON.stringify(first));
+  assert.equal(first.error.retryable,false);assert.match(first.error.message,new RegExp(commandId));
+  assert.deepEqual(second.error,first.error);assert(!JSON.stringify(first).includes('PRIVATE'));
+  assert.equal(f.calls.filter(name=>name==='manage_form').length,2,'replay is admitted by SQL again');
+  assert(f.ops.catalog.find(d=>d.id===operation).output.safeParse(first).success);
+ }
+});
+
+test('replay after a committed readback failure reports SQL conflict, expiry or the recovered result',async()=>{
+ for(const [reply,expected] of [[{code:409,status:'conflict'},'FORM_CHANGED_RELOAD_REQUIRED'],[{code:410,status:'expired'},'COMMAND_EXPIRED_DO_NOT_REPLAY'],[null,null]]){
+  let replay=false;
+  const f=writeFixture('forms.create',()=>replay&&reply?reply:committed({occasionId:7,formId:42,authoring:state},replay?'unchanged':'applied'),
+   ()=>replay?{error:null,data:{occasionId:7,authoring:state}}:{error:{message:'PRIVATE readback failure'},data:null});
+  const args=writeArgs('forms.create');
+  assert.equal((await f.ops.invoke('forms.create',args)).error.code,'COMMITTED_READBACK_FAILED');
+  replay=true;
+  const second=await f.ops.invoke('forms.create',args);
+  if(expected)assert.equal(second.error?.code,expected,JSON.stringify(second));
+  else{assert.equal(second.ok,true,JSON.stringify(second));assert.equal(second.data.status,'unchanged');assert.equal(second.data.formId,42);}
+ }
+});
+
+test('form write receipts and public links project away unknown upstream keys before strict validation',async()=>{
+ for(const operation of ['forms.create','forms.save','forms.duplicate','forms.delete','forms.setPublicLink']){
+  const authoring=operation==='forms.delete'?null:{...state,private_extra:'do-not-return'};
+  const f=writeFixture(operation,()=>operation==='forms.setPublicLink'
+   ?{code:200,status:'applied',mutation:{commandId,receiptId:commandId},publicLink:{occasionId:7,formId:42,slug:'evening',private_extra:'do-not-return'}}
+   :committed({occasionId:7,formId:42,authoring,private_extra:'do-not-return'}),
+   ()=>({error:null,data:{occasionId:7,authoring:state}}));
+  const result=await f.ops.invoke(operation,writeArgs(operation));
+  assert.equal(result.ok,true,operation+' '+JSON.stringify(result));
+  assert(!JSON.stringify(result).includes('do-not-return'),operation);
+  assert.equal(result.data.commandId,commandId);
+ }
+ const link=fixture({occasionId:7,formId:42,slug:'evening',private_extra:'do-not-return'});
+ const owner=link.ops.owner;owner.allowedOperations.push('forms.publicLink');
+ const read=await link.ops.invoke('forms.publicLink',{occasionId:7,formId:42});
+ assert.equal(read.ok,true,JSON.stringify(read));assert.equal(read.data.publicPath,'/form/evening');assert(!JSON.stringify(read).includes('do-not-return'));
+});
+
+test('setPublicLink: readback failure after commit, and SQL conflict or expiry on replay',async()=>{
+ const link=(extra={})=>({code:200,status:'applied',mutation:{commandId,receiptId:commandId},publicLink:{occasionId:7,formId:42,slug:'evening',...extra}});
+ const broken=writeFixture('forms.setPublicLink',()=>link({slug:null}),()=>{throw new Error('unexpected read');});
+ const first=await broken.ops.invoke('forms.setPublicLink',writeArgs('forms.setPublicLink'));
+ assert.equal(first.error?.code,'COMMITTED_READBACK_FAILED',JSON.stringify(first));assert.match(first.error.message,new RegExp(commandId));
+ for(const [reply,expected] of [[{code:409},'FORM_CHANGED_RELOAD_REQUIRED'],[{code:410,mutation:{expired:true}},'COMMAND_EXPIRED_DO_NOT_REPLAY'],[{code:422,status:'rejected'},'FORM_CHANGE_REJECTED']]){
+  const f=writeFixture('forms.setPublicLink',()=>reply,()=>{throw new Error('unexpected read');});
+  assert.equal((await f.ops.invoke('forms.setPublicLink',writeArgs('forms.setPublicLink'))).error?.code,expected);
+ }
+});

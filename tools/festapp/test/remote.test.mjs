@@ -1375,7 +1375,9 @@ test('real HTTP quotas reject N+1, preserve Make JSON and health, reset without 
     assert.equal(rejected.status, 429); assert.equal(rejected.headers.get('Retry-After'), '60');
     const denied = await status(); assert.equal(denied.status, 429); await denied.text();
     const make = await fetch(f.issuer + '/make/v1'); assert.equal(make.status, 429); assert.equal((await make.json()).error.code, 'TEMPORARILY_LIMITED');
-    assert.equal((await f.browser('/healthz')).status, 200);
+    const health = await f.browser('/healthz');
+    assert.equal(health.status, 200);
+    assert.equal((await health.json()).ok, true);
     now = 60000;
     const resumed = await status(); assert.equal(resumed.status, 200); assert.deepEqual(await resumed.json(), baseline);
     assert.equal(f.storage.values('Delegation').length, 0);
@@ -2127,4 +2129,17 @@ test('issuer uses the shared first-party connection theme and serves its own fon
     assert.equal(font.status, 200);
     assert.match(font.headers.get('content-type'), /font/);
     assert((await font.arrayBuffer()).byteLength > 1000);
+});
+
+test('public health reports only a validated source commit', async t => {
+    const f = await setup(t);
+    const previous = process.env.FESTAPP_SOURCE_SHA;
+    t.after(() => { if (previous === undefined) delete process.env.FESTAPP_SOURCE_SHA; else process.env.FESTAPP_SOURCE_SHA = previous; });
+    const sha = 'ab12'.repeat(10);
+    for (const [value, expected] of [[sha, sha], [undefined, null], ['dirty', null], ['a'.repeat(39), null], ['a'.repeat(41), null], [sha + '\nsecret', null], ['g'.repeat(40), null]]) {
+        if (value === undefined) delete process.env.FESTAPP_SOURCE_SHA; else process.env.FESTAPP_SOURCE_SHA = value;
+        const response = await f.browser('/healthz');
+        assert.equal(response.status, 200);
+        assert.deepEqual(await response.json(), { ok: true, sourceCommit: expected }, String(value));
+    }
 });
