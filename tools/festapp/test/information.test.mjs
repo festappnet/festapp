@@ -11,7 +11,6 @@ import {reply} from './fixture.mjs';
 const information={id:12,title:'Fotogalerie z minulých let',description:'<p>Existing galleries</p>',type:null,isHidden:false,order:4,data:{style:'default'}};
 const snapshot={information,aggregateVersion:2};
 const scope='festapp:ticket-layouts:read festapp:information:read festapp:information:write';
-const songScope='festapp:ticket-layouts:read festapp:songs:read festapp:songs:write';
 const informationOperations=informationDescriptors.filter(d=>d.id.startsWith('information.')).map(d=>d.id);
 function fixture(){
  const calls=[];
@@ -68,9 +67,9 @@ test('HTTP API shares the canonical information owner, permission checks and con
  response=await apiRequest(f,read.tokens,'information.save',args);assert.equal(response.status,403);assert.equal(calls,before);
 });
 
-test('MCP songbook tools require dedicated consent and save a typed song through the same RPC',async t=>{
- assert.deepEqual(scopesForOperation('songs.save'),songScope.split(' '));
- assert.deepEqual(scopesForOperation('songs.inspect'),songScope.split(' ').slice(0,2));
+test('MCP songbook tools reuse the content scopes and save a typed song through the same RPC',async t=>{
+ assert.deepEqual(scopesForOperation('songs.save'),scope.split(' '));
+ assert.deepEqual(scopesForOperation('songs.inspect'),scope.split(' ').slice(0,2));
  const song={...information,type:'song',description:'<p>First line<br>Second line</p>'};
  const {owner,client,calls}=fixture();
  owner.allowedOperations=['songs.list','songs.inspect','songs.save'];
@@ -93,11 +92,11 @@ test('MCP songbook tools require dedicated consent and save a typed song through
   assert.equal(schema.safeParse({...args,information:malformed}).success,false);
 });
 
-test('delegated writes require songbook consent independently of information consent',async t=>{
+test('the existing content write scope saves songs while read-only connections cannot',async t=>{
  const song={...information,type:'song'};
  let calls=0;
  const f=await setup(t,{apiPolicy:{
-  allowedScopes:[...new Set([...scope.split(' '),...songScope.split(' ')])],
+  allowedScopes:scope.split(' '),
   allowedOperations:informationDescriptors.map(d=>d.id),
  },fetchImpl:async(url,init)=>{
   if(!url.pathname.endsWith('/rpc/manage_information_authoring'))return;
@@ -107,13 +106,10 @@ test('delegated writes require songbook consent independently of information con
   return reply({code:200,status:'applied',mutation:{commandId:args.p_command_id,receiptId:args.p_command_id},data:{information:song,aggregateVersion:3}});
  }});
  const args={occasionId:7,commandId:randomUUID(),expectedVersion:2,information:song};
- for(const narrow of [scope,songScope.split(' ').slice(0,2).join(' ')]){
-  const {tokens}=await connect(f,{occasionIds:[7],scope:narrow});
-  const response=await apiRequest(f,tokens,'songs.save',args);
-  assert.equal(response.status,403);
- }
+ const read=await connect(f,{occasionIds:[7],scope:scope.split(' ').slice(0,2).join(' ')});
+ assert.equal((await apiRequest(f,read.tokens,'songs.save',args)).status,403);
  assert.equal(calls,0);
- const {tokens}=await connect(f,{occasionIds:[7],scope:songScope});
+ const {tokens}=await connect(f,{occasionIds:[7],scope});
  const response=await apiRequest(f,tokens,'songs.save',args);
  assert.equal(response.status,200,await response.clone().text());
  assert.equal((await response.json()).data.information.type,'song');

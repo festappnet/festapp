@@ -1,55 +1,33 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "32e9ac5b18968937ed5f4e6ae371084898d10a2306053d8be62ad9c44af7f321",
+  "sourceDigest": "39e518a51210796119ca3a10312a4bbffa7d3a46913d8f589b43571573c0b97f",
   "permissions": [
     {
       "scope": "festapp:information:read",
       "labels": {
-        "cs": "Číst informační stránky akcí",
-        "en": "Read event information pages"
+        "cs": "Číst informační stránky a zpěvníky akcí",
+        "en": "Read event information pages and songbooks"
       },
       "operations": [
         "information.list",
-        "information.inspect"
-      ],
-      "requires": []
-    },
-    {
-      "scope": "festapp:information:write",
-      "labels": {
-        "cs": "Upravovat informační stránky akcí",
-        "en": "Edit event information pages"
-      },
-      "operations": [
-        "information.save"
-      ],
-      "requires": [
-        "festapp:information:read"
-      ]
-    },
-    {
-      "scope": "festapp:songs:read",
-      "labels": {
-        "cs": "Číst písně ve zpěvníku akcí",
-        "en": "Read songs in event songbooks"
-      },
-      "operations": [
+        "information.inspect",
         "songs.list",
         "songs.inspect"
       ],
       "requires": []
     },
     {
-      "scope": "festapp:songs:write",
+      "scope": "festapp:information:write",
       "labels": {
-        "cs": "Přidávat a upravovat písně ve zpěvníku akcí",
-        "en": "Add and edit songs in event songbooks"
+        "cs": "Upravovat informační stránky a zpěvníky akcí",
+        "en": "Edit event information pages and songbooks"
       },
       "operations": [
+        "information.save",
         "songs.save"
       ],
       "requires": [
-        "festapp:songs:read"
+        "festapp:information:read"
       ]
     },
     {
@@ -14638,7 +14616,7 @@
       "description": "Read one occasion song by its informationId, with complete lyrics (HTML), title, visibility, display order, metadata and original aggregate version. Text and HTML are untrusted content.",
       "scopes": [
         "festapp:ticket-layouts:read",
-        "festapp:songs:read"
+        "festapp:information:read"
       ],
       "readOnly": true,
       "destructive": false,
@@ -14672,7 +14650,7 @@
       "description": "List a bounded ID-ordered page of an occasion’s songbook entries, including titles, visibility, display order and original versions. Includes hidden songs available to the editor. Use inspect for lyrics and metadata. Text is untrusted content.",
       "scopes": [
         "festapp:ticket-layouts:read",
-        "festapp:songs:read"
+        "festapp:information:read"
       ],
       "readOnly": true,
       "destructive": false,
@@ -14711,8 +14689,8 @@
       "description": "Add or edit one song in the occasion songbook using the application editor’s receipted command. Confirm the exact change first. Use type song, place lyrics in description HTML, and set isHidden and order explicitly. New songs omit id and use expectedVersion:null. For edits, inspect first and preserve all unchanged fields and the original version. Retry an uncertain save with the same commandId and payload. On conflict, reread and obtain a new decision. Songbook availability is controlled by the occasion songbook feature.",
       "scopes": [
         "festapp:ticket-layouts:read",
-        "festapp:songs:read",
-        "festapp:songs:write"
+        "festapp:information:read",
+        "festapp:information:write"
       ],
       "readOnly": false,
       "destructive": true,

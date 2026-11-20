@@ -1,10 +1,8 @@
 /** Functional delegation contract shared by issuer and tenant consent UI.
  * Adding a scope never expands an already issued grant or token. */
 export const MCP_PERMISSIONS = Object.freeze({
-    'festapp:information:read': {label:'informationRead',operations:['information.list','information.inspect'],requires:[]},
-    'festapp:information:write': {label:'informationWrite',operations:['information.save'],requires:['festapp:information:read']},
-    'festapp:songs:read': {label:'songsRead',operations:['songs.list','songs.inspect'],requires:[]},
-    'festapp:songs:write': {label:'songsWrite',operations:['songs.save'],requires:['festapp:songs:read']},
+    'festapp:information:read': {label:'informationRead',operations:['information.list','information.inspect','songs.list','songs.inspect'],requires:[]},
+    'festapp:information:write': {label:'informationWrite',operations:['information.save','songs.save'],requires:['festapp:information:read']},
     'festapp:webhooks:read': {label:'webhooksRead',operations:['webhooks.list','webhooks.deliveries'],requires:['festapp:orders:read']},
     'festapp:webhooks:write': {label:'webhooksWrite',operations:['webhooks.create','webhooks.update','webhooks.delete','webhooks.test','webhooks.redeliver','webhooks.rotate_secret'],requires:['festapp:webhooks:read']},
     'festapp:history:delete': {label:'historyDelete',operations:['history.delete'],requires:['festapp:order-history:read']},
