@@ -91,10 +91,13 @@ class AppConfig {
     return isNotificationsSupported && oneSignalAppId.isNotEmpty;
   }
 
+  static const String? legacyAutoLanguage = null;
+
   static List<LanguageModel> availableLanguages() => [
         LanguageModel(const Locale("cs"), "Čeština"),
         LanguageModel(const Locale("en"), "English"),
         LanguageModel(const Locale("es"), "Español"),
+        LanguageModel(const Locale("sk"), "Slovenčina"),
       ];
 
   /// This is the single definition place for the prefix structure.

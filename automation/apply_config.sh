@@ -47,6 +47,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 fi
 
 # Source the config (DOMAIN)
+unset WEB_LEGACY_AUTO_LANGUAGE
 source "$CONFIG_FILE"
 # VERSION in older tenant inputs is ignored. Main owns the software generation.
 VERSION="$(node "$PROJECT_ROOT/automation/release/project_version.mjs" --full)"
@@ -285,13 +286,13 @@ if [ -f "$INDEX_FILE" ]; then
     # crawlers before a forced-occasion tenant hands off to Flutter. Keep its
     # title and descriptions tenant-owned instead of leaking the generic
     # vstupenky.online branding into every production application.
-    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" "$WEB_SUPPORTED_LANGUAGES" "${WEB_PAGE_TITLE:-$APP_NAME}" <<'PY'
+    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" "$WEB_SUPPORTED_LANGUAGES" "${WEB_PAGE_TITLE:-$APP_NAME}" "${WEB_LEGACY_AUTO_LANGUAGE:-}" <<'PY'
 from write_if_changed import write_text
 import html
 import re
 import sys
 
-path, app_name, app_description, domain, languages, page_title = sys.argv[1:]
+path, app_name, app_description, domain, languages, page_title, legacy_auto_language = sys.argv[1:]
 source = open(path, encoding="utf-8").read()
 title = html.escape(page_title, quote=True)
 site_name = html.escape(app_name, quote=True)
@@ -323,6 +324,8 @@ def replace_meta(attribute, key, value):
     if count != 1:
         raise SystemExit(f"missing {attribute}={key} metadata in {path}")
 
+replace_meta("name", "festapp-supported-languages", html.escape(languages, quote=True))
+replace_meta("name", "festapp-legacy-auto-language", html.escape(legacy_auto_language, quote=True))
 replace_meta("name", "description", description)
 for property_name, value in (
     ("og:url", origin + "/"),
@@ -601,12 +604,12 @@ PY
     fi
 
     # Update tenant-specific web behavior from the canonical configuration.
-    python3 - "$APP_CONFIG" "$WEB_IS_ALL_UNIT" "$WEB_SUPPORTED_LANGUAGES" <<'PY'
+    python3 - "$APP_CONFIG" "$WEB_IS_ALL_UNIT" "$WEB_SUPPORTED_LANGUAGES" "${WEB_LEGACY_AUTO_LANGUAGE:-}" <<'PY'
 from write_if_changed import write_text
 import re
 import sys
 
-path, is_all_unit, supported_languages = sys.argv[1:]
+path, is_all_unit, supported_languages, legacy_auto_language = sys.argv[1:]
 if is_all_unit not in {"true", "false"}:
     raise SystemExit("WEB_IS_ALL_UNIT must be true or false")
 languages = supported_languages.split(",")
@@ -617,6 +620,10 @@ source = re.sub(r"static isAllUnit = .*;", f"static isAllUnit = {is_all_unit};",
 language_list = ", ".join(repr(language) for language in languages)
 source = re.sub(r"static supportedLanguages = .*;", f"static supportedLanguages = [{language_list}];", source)
 source = re.sub(r"static defaultLanguage = .*;", f"static defaultLanguage = {languages[0]!r};", source)
+if legacy_auto_language and legacy_auto_language not in languages:
+    raise SystemExit("WEB_LEGACY_AUTO_LANGUAGE must be a supported language")
+legacy = repr(legacy_auto_language) if legacy_auto_language else "null"
+source = re.sub(r"static legacyAutoLanguage = .*;", f"static legacyAutoLanguage = {legacy};", source)
 write_text(path, source, encoding="utf-8")
 PY
 
@@ -1040,7 +1047,7 @@ for file, declaration in [('web_client/src/app_config.js', 'static organizerLand
 LANDING_CONFIG
 
 organizer_help_language="$(node "$PROJECT_ROOT/automation/release/render_help_pages.mjs" --config "$CONFIG_FILE" --published-language)"
-python3 - "$PROJECT_ROOT/lib/app_config.dart" "$WEB_SUPPORTED_LANGUAGES" "$WEB_ORGANIZER_LANDING_ENABLED" "$organizer_help_language" <<'FLUTTER_LANGUAGES'
+python3 - "$PROJECT_ROOT/lib/app_config.dart" "$WEB_SUPPORTED_LANGUAGES" "$WEB_ORGANIZER_LANDING_ENABLED" "$organizer_help_language" "${WEB_LEGACY_AUTO_LANGUAGE:-}" <<'FLUTTER_LANGUAGES'
 from write_if_changed import write_text
 from pathlib import Path
 import re,sys
@@ -1052,6 +1059,8 @@ entries='\n'.join('        LanguageModel(const Locale("'+code+'"), "'+names[code
 source,count=re.subn(r'static List<LanguageModel> availableLanguages\(\) => \[[\s\S]*?\];', 'static List<LanguageModel> availableLanguages() => [\n'+entries+'\n      ];',p.read_text())
 if count != 1: raise SystemExit('Missing Flutter language adapter')
 help_language = sys.argv[4]
+legacy = f'"{sys.argv[5]}"' if sys.argv[5] else 'null'
+source = re.sub(r'static const String\? legacyAutoLanguage = .*;', f'static const String? legacyAutoLanguage = {legacy};', source)
 source = re.sub(r'^  static const String\?? organizerHelpLanguage = .*;\n', '', source, flags=re.M)
 literal = f'"{help_language}"'
 marker = '  static const bool organizerLandingEnabled = ' + sys.argv[3] + ';'

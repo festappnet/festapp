@@ -1,8 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 function configureStartupThemes(root, {check = false} = {}) {
-    const runtimeSource = ['page_context.js', 'update_policy.js', 'worker_shell.js', 'runtime_state.js'].map(name =>
-        fs.readFileSync(path.join(root, 'web_client/src/runtime', name), 'utf8').replace(/^import .*;\n/gm, '').replaceAll('export ', '').trim()).join('\n');
+    const readRuntime = name => fs.readFileSync(path.join(root, 'web_client/src/runtime', name), 'utf8')
+        .replace(/^import .*;\n/gm, '').replaceAll('export ', '').trim();
+    const runtimeSource = ['page_context.js', 'update_policy.js', 'worker_shell.js', 'runtime_state.js'].map(readRuntime).join('\n');
     const source = fs.readFileSync(path.join(root, 'web_client/src/services/theme_preference.js'), 'utf8').trim();
     const script = `<script id="festapp-startup-theme">\n${source}\n</script>`;
     for (const entry of ['web/index.html', 'web_client/index.html']) {
@@ -16,7 +17,7 @@ function configureStartupThemes(root, {check = false} = {}) {
 // Generated from web_client/src/runtime.
 (function() {
 ${runtimeSource}
-window.__FESTAPP_CLIENT_RUNTIME__ = '${entry === 'web_client/index.html' ? 'web' : 'flutter'}';
+${entry === 'web_client/index.html' ? readRuntime('locale_preference.js') + '\napplyStartupLocale(window);\n' : ''}window.__FESTAPP_CLIENT_RUNTIME__ = '${entry === 'web_client/index.html' ? 'web' : 'flutter'}';
 installRuntimeState(window);
 ${entry === 'web_client/index.html' ? "if (pageContext(window.location) === 'public-embed') document.documentElement.dataset.embedStartup = 'true';" : ''}
 })();
