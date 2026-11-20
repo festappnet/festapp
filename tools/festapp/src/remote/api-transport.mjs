@@ -23,6 +23,11 @@ export function sendProblem(res, error, { requestId = randomUUID(), endpoint, ou
         title: safe.code, status, code: safe.code, requestId, retryable: Boolean(safe.retryable), outcome,
     });
 }
+// Approval requests run in one SQL transaction: these outcomes are rolled back
+// before any email is queued, so the write is known not to have happened.
+const APPROVAL_REQUESTS = new Set(['units.measurementApproval.request', 'units.metaCapiApproval.request']);
+const APPROVAL_REJECTIONS = new Set(['APPROVAL_REQUEST_LIMITED', 'APPROVAL_REQUEST_NO_RECIPIENT', 'APPROVAL_REQUEST_REJECTED']);
+export const definiteRejection = (id, error) => APPROVAL_REQUESTS.has(id) && APPROVAL_REJECTIONS.has(error?.code);
 export function installApi(app, { config, run }) {
     // Immutable build artifacts are loaded once, never generated per request.
     const docs = new Map();
@@ -96,8 +101,9 @@ export function installApi(app, { config, run }) {
                 }
                 check(known.has(id), 'UNKNOWN_OPERATION');
                 check(owner.permitsOperation(id), 'FORBIDDEN');
-                const result = await operations.invoke(id, req.body, { onAccepted: () => { accepted = true; } });
-                if (!result.ok) return sendProblem(res, result.error, { requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, outcome: !accepted || known.get(id).domainReadOnly ? 'rejected' : 'unknown' });
+                let retryAfter;
+                const result = await operations.invoke(id, req.body, { onAccepted: () => { accepted = true; }, onRetryAfter: seconds => { retryAfter = seconds; } });
+                if (!result.ok) return sendProblem(res, retryAfter ? { ...result.error, retryAfter } : result.error, { requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, outcome: !accepted || known.get(id).domainReadOnly || definiteRejection(id, result.error) ? 'rejected' : 'unknown' });
                 const descriptor = publicCatalog(owner.orderSummaryOnly ? 'order-summary' : 'operator').find(d => d.id === id);
                 check(descriptor.output.safeParse(result).success, 'UPSTREAM_CONTRACT_FAILURE');
                 return res.set({ 'X-Request-Id': result.meta.requestId, 'Cache-Control': 'no-store' }).json(result);

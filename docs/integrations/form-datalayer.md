@@ -45,6 +45,19 @@ resets to off, `analytics:null` clears form intent. Copies reset form intent;
 there is no copied per-form destination. The canonical Unit configuration JSON
 also owns the script-length limit used by generated Dart/JS constants.
 
+A changed stored GTM container, scripts, privacy URL, consent title/text or consent
+version changes `consentRevision` (`unit_measurement_consent_scope_internal`); every
+website consent binding then needs reconfirmation in Unit settings, and Meta CAPI
+`website_ready` for a connector website that relies on such a binding is false until
+then. The `units.settings.save` description states this. MCP reads binding state
+(`units.websiteConsent.inspect`), the import text of a ready binding
+(`units.websiteConsent.export`), dataLayer and Meta CAPI approval
+(`units.measurementApproval.inspect`, `units.metaCapiApproval.inspect`) and generates
+the form embed code (`forms.embedCode`, the server port of `formEmbedCode`, checked
+against `packages/festapp_contracts/form-embed-code-cases.json`). It can send the two
+approval requests (`*.request`, organizer settings write) but never confirms, changes
+or disables bindings.
+
 Units store nullable `measurement_privacy_url` as an absolute HTTPS URL without credentials (maximum 2048 characters). A valid URL is required for measurement, conversion recording/export and the consent notice, including host dataLayer transport; partial configuration can still be saved, and changing a valid URL invalidates the processing revision and saved choice.
 
 ## Database authority

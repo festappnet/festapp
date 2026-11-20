@@ -202,6 +202,7 @@
         "festapp:occasion-settings:write",
         "festapp:unit-settings:read",
         "festapp:unit-settings:write",
+        "festapp:unit-approvals:request",
         "festapp:forms:read",
         "festapp:forms:write",
         "festapp:email-templates:read",

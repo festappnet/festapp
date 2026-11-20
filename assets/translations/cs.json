@@ -4233,6 +4233,7 @@
     "unitPeopleRevoke": "Odebírat přístup lidí k pořadateli",
     "unitSettingsRead": "Číst nastavení pořadatele",
     "unitSettingsWrite": "Měnit nastavení pořadatele",
+    "unitApprovalsRequest": "Žádat o schválení měření a Meta CAPI (pošle e-mail všem správcům organizace)",
     "emailTemplatesRead": "Číst e-mailové šablony, bannery a ukázkové náhledy",
     "emailTemplatesWrite": "Upravovat e-mailové šablony a bannery, obnovovat dědičnost",
     "productSchedulesRead": "Číst cenové vlny a plánované změny produktů",

@@ -456,7 +456,7 @@ released baseline is sealed. A generated file is not evidence of publication.
 
 API and MCP use `DELEGATED_OPERATIONS` and the same `Operations` executor,
 input/output validation, SQL authorization, preview/version checks and receipts.
-The operator contract exposes 174 operations for Bearer clients and all 196 for
+The operator contract exposes 194 operations for Bearer clients and all 216 for
 registered DPoP + PAR clients. The 22 sensitive operations additionally require
 GoTrue-verified AAL2 authentication no older than 300 seconds; refreshing tokens
 does not renew that authentication time. The first-party consent upgrades a
@@ -468,6 +468,10 @@ with the fixed deadline and 30-day idle limit. Exact spent-token replay evidence
 is packed into capped encrypted buckets in the existing store. No service
 credentials grant exists. Registration ceilings never grant account roles or
 expand existing connections; the user must explicitly approve the requested scopes.
+Measurement and Meta CAPI approval requests use their own `festapp:unit-approvals:request`
+scope rather than `festapp:unit-settings:write`: they email every organization administrator
+and the Meta CAPI request is organization-wide. Add it to a client registration ceiling only
+where those requests are intended; existing settings grants do not include it.
 
 Artwork recovery is shared across API/MCP connections of the same actor and
 canonical tenant. Preserve the full original `saveRequest`: repeating it retains

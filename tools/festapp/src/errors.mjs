@@ -18,6 +18,27 @@ const operationPermissionMessages = new Map([
     ['forms.save', 'Saving this form was denied. Your account needs form editor rights for this event or its organizer unit, and the form must belong to an event included in this connection. Ask the event organizer to verify your role and check the selected event and form. OAuth consent does not grant account permissions; reconnect only if the connection access or scopes need changing.'],
     ['units.settings.inspect', 'Reading organizer settings requires a live manager role for that organizer. Check the selected organizer and ask its administrator to verify the account role. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
     ['units.settings.save', 'Changing analytics or other organizer settings requires a live manager role for that organizer. Check the selected organizer and ask its administrator to verify the account role. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
+    ['units.websiteConsent.inspect', 'Reading website consent bindings requires a live manager role for that organizer and whole-organizer consent. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
+    ['units.websiteConsent.export', 'Exporting a website consent binding requires a live manager role for that organizer and whole-organizer consent. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
+    ['units.measurementApproval.inspect', 'Reading the measurement approval requires organizer administration access or a manager role for that organizer and whole-organizer consent.'],
+    ['units.measurementApproval.request', 'Requesting measurement approval requires a live manager role for that organizer and whole-organizer consent. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
+    ['units.metaCapiApproval.inspect', 'Reading the Meta Conversions API approval requires organizer administration access or a manager role for that organizer and whole-organizer consent.'],
+    ['units.metaCapiApproval.request', 'Requesting Meta Conversions API approval requires a live manager role for that organizer and whole-organizer consent. Event or form editor rights and OAuth consent do not grant an organizer manager role.'],
+]);
+// Domain outcomes whose remedy is not obvious from the code alone.
+const outcomeMessages = new Map([
+    ['APPROVAL_REQUEST_LIMITED', error => error.retryable
+        ? `Approval request emails are temporarily limited. Nothing was sent; retry after ${error.retryAfter ?? 60} seconds.`
+        : 'Approval request emails exceed a limit that waiting does not resolve. Nothing was sent; the platform operator must review the limit.'],
+    ['APPROVAL_REQUEST_NO_RECIPIENT', () => 'No organization administrator has a deliverable email address. Nothing was sent and the request remains available; an administrator must verify the account email first.'],
+    ['APPROVAL_REQUEST_REJECTED', () => 'The request was not sent: the saved organizer websites or the organization service address are invalid. Check the organizer websites; the platform operator owns the service address.'],
+    ['WEBSITE_CONSENT_NOT_READY', () => 'Only a confirmed, ready website consent binding can be exported. Inspect the bindings; confirmation happens in organizer administration.'],
+    ['WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED', () => 'The website consent binding changed. Inspect the bindings again and use the current version.'],
+    ['WEBSITE_CONSENT_REJECTED', () => 'The website consent binding cannot be exported because the organization service address is not configured. The platform operator owns that address.'],
+    ['CONSENT_EXPORT_REJECTED', () => 'consentExport is not an unchanged export for this service. Read it again with festapp_units_website_consent_export and pass the text unchanged.'],
+    ['CONSENT_EXPORT_SERVICE_MISMATCH', () => 'consentExport names a different service address than this tenant web address. Reading it again returns the same address; the platform operator must align the organization service address with the tenant web address. The administration rejects the same export.'],
+    ['EMBED_LABELS_UNAVAILABLE', () => 'This server build lacks the translated embed texts for the selected language. Choose another language or ask the platform operator to redeploy; other tools are unaffected.'],
+    ['FORM_PUBLIC_LINK_REQUIRED', () => 'The form has no saved public link yet. Save the form with a public link before generating embed code.'],
 ]);
 export function safeError(error, { operation } = {}) {
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError')
@@ -25,7 +46,7 @@ export function safeError(error, { operation } = {}) {
     const known = error instanceof OperationError;
     const message = error?.code === 'FORBIDDEN'
         ? operationPermissionMessages.get(operation) ?? permissionMessages.get(error.code)
-        : permissionMessages.get(error?.code) ?? error?.code;
+        : permissionMessages.get(error?.code) ?? (known ? outcomeMessages.get(error.code)?.(error) : undefined) ?? error?.code;
     return {
         code: known ? error.code : 'UNAVAILABLE',
         message: known ? message : 'Operation unavailable',

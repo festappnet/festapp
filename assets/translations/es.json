@@ -4225,6 +4225,7 @@
     "unitPeopleRevoke": "Revocar el acceso al organizador",
     "unitSettingsRead": "Leer los ajustes del organizador",
     "unitSettingsWrite": "Cambiar los ajustes del organizador",
+    "unitApprovalsRequest": "Solicitar la aprobación de la medición y de Meta CAPI (envía un correo a todos los administradores de la organización)",
     "emailTemplatesRead": "Leer plantillas de correo, banners y vistas previas de muestra",
     "emailTemplatesWrite": "Editar plantillas de correo y banners; restaurar la herencia",
     "productSchedulesRead": "Leer los tramos de precio y los cambios programados de los productos",

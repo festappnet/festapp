@@ -4231,6 +4231,7 @@
     "unitPeopleRevoke": "Revoke organizer access",
     "unitSettingsRead": "Read organizer settings",
     "unitSettingsWrite": "Change organizer settings",
+    "unitApprovalsRequest": "Request measurement and Meta CAPI approval (emails all organization administrators)",
     "emailTemplatesRead": "Read email templates, banners and synthetic previews",
     "emailTemplatesWrite": "Edit email templates and banners; restore inheritance",
     "productSchedulesRead": "Read product price waves and scheduled changes",
