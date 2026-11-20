@@ -5,8 +5,8 @@ import { documentLocales } from './public_languages.mjs';
 import { resolveUpdates } from '../platform_updates/context.mjs';
 import { resolvePages, resolveRedirects } from './page_definitions.mjs';
 const directory = path.dirname(fileURLToPath(import.meta.url));
-const pageClipIds = (page, projection) => [
-  ...(page.id === 'home' && projection.locale === 'cs' ? (projection.productProof ?? []).map(card => card.clip) : []),
+const pageClipIds = (page, projection, template) => [
+  ...(page.id === 'home' && template === 'regional' ? (projection.productProof ?? []).map(card => card.clip) : []),
   ...(page.feature?.editor?.clips ?? []),
   ...(page.feature?.buyer?.clips ?? []),
   ...(page.workflow?.demos ?? []).flatMap(demo => demo.clips ?? []),
@@ -29,6 +29,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   const profile = profiles[profileId];
   const locale = documentLocale ?? config.WEB_SUPPORTED_LANGUAGES?.split(',')[0]?.trim();
   if (!profile || profile.locale !== locale) throw new Error('Missing marketing profile/locale; no fallback');
+  const template = profile.template ?? (profile.locale === 'cs' ? 'regional' : 'standard');
   const content = JSON.parse(fs.readFileSync(path.join(profilesDir,profile.content),'utf8'));
   const projection = content.publicProjection;
   if (projection?.page) projection.templateTexts = projection.page;
@@ -43,7 +44,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   }
   if (!config.APP_NAME?.trim() || (projection.seo.siteName && projection.seo.siteName !== config.APP_NAME)) throw new Error('Marketing brand must agree with config');
   projection.seo.siteName = config.APP_NAME;
-  if (projection.homeStyle !== undefined && (projection.homeStyle !== 'illustrated' || locale !== 'en' || !Array.isArray(projection.homeMedia) || !projection.homeMedia.length)) throw new Error('Invalid illustrated homepage profile');
+  if (projection.homeStyle !== undefined && (projection.homeStyle !== 'illustrated' || template === 'regional' || !Array.isArray(projection.homeMedia) || !projection.homeMedia.length)) throw new Error('Invalid illustrated homepage profile');
   const clips = JSON.parse(fs.readFileSync(path.join(profilesDir,profile.clips),'utf8'));
   const pages = resolvePages(projection.pages.map(page=>page.id === 'home' ? {...page,title:projection.seo.title,description:projection.seo.description} : page), context.origin);
   const redirects = resolveRedirects(projection.redirects, pages);
@@ -59,7 +60,7 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
     if (ref.publicUrl) safeLink(ref.publicUrl);
     else if (!ref.statusLabel?.trim()) throw new Error('Reference without a public link requires a status');
   }
-  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page => pageClipIds(page, projection))].filter(Boolean));
+  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page => pageClipIds(page, projection, template))].filter(Boolean));
   const clipIds = new Set();
   for (const clip of clips.clips ?? []) {
     if (clip.captureStatus === "pending" && usedClips.has(clip.id) && !preview) throw new Error("English product recordings are incomplete");
@@ -68,21 +69,21 @@ export function resolveContext(config, { profilesDir = directory, preview = fals
   }
   for (const section of clips.sections ?? []) for (const id of [...(section.clips ?? []), ...(section.secondaryClips ?? [])]) if (!clipIds.has(id)) throw new Error(`Missing required clip ${id}`);
   for (const page of pages) for (const id of page.sections ?? []) if (!(clips.sections ?? []).some(section => section.id === id)) throw new Error(`Missing required section ${id}`);
-  for (const page of pages) for (const id of pageClipIds(page, projection)) if (!clipIds.has(id)) throw new Error(`Missing required feature clip ${id}`);
+  for (const page of pages) for (const id of pageClipIds(page, projection, template)) if (!clipIds.has(id)) throw new Error(`Missing required feature clip ${id}`);
   if (profile.platformUpdates !== undefined && typeof profile.platformUpdates !== 'boolean') throw new Error('Invalid platformUpdates capability');
   const updates=profile.platformUpdates===true ? resolveUpdates(context.origin,updatesOptions) : null;
   for (const page of updates?.pages ?? []) {
     if (pages.some(existing=>existing.path===page.path || existing.id===page.id || existing.asset===page.asset)) throw new Error('Duplicate public update URL/identity');
     pages.push(page);
   }
-  return { ...context, updates, locale, profileId, pages, redirects, projection, clips };
+  return { ...context, updates, locale, profileId, template, pages, redirects, projection, clips };
 }
 export function marketingMedia(context) {
   if (!context.enabled) return [];
-  const {projection, clips, pages} = context;
-  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page => pageClipIds(page, projection))].filter(Boolean));
+  const {projection, clips, pages, template} = context;
+  const usedClips = new Set([clips.hero, ...(clips.sections ?? []).flatMap(section=>[...(section.clips ?? []), ...(section.secondaryClips ?? [])]), ...pages.flatMap(page => pageClipIds(page, projection, template))].filter(Boolean));
   return [...new Set([...(projection.homeMedia ?? []), projection.seo.image, ...pages.flatMap(page=>[page.heroImage,page.heroMobileImage?.src,page.heroDocument?.href,...(page.feature?.layouts ?? []).map(layout=>layout.image),...(page.workflow?.demos ?? []).map(demo=>demo.image?.src)]), ...(projection.references ?? []).map(ref=>ref.image), projection.gettingStarted?.image, projection.referenceCase?.image,
-    projection.locale === 'cs' ? '/organizers-media/scout-reference-plan.webp' : undefined,
+    context.template === 'regional' && !projection.regionalHome?.seatDemo ? '/organizers-media/scout-reference-plan.webp' : undefined,
     projection.regionalHome?.seatDemo ? '/organizers-media/layout-sal-s-parketem-wood.svg' : undefined,
     ...(clips.clips ?? []).filter(clip=>usedClips.has(clip.id)).flatMap(clip=>[clip.src,clip.poster,clip.mobileSrc,clip.mobilePoster]),
     ...(clips.sections ?? []).flatMap(section=>[section.companion?.image,...(section.showcase?.items ?? []).map(item=>item.image)]), ...(context.updates?.assets ?? [])].filter(Boolean))];

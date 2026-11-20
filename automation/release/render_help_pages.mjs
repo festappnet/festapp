@@ -1,6 +1,6 @@
 import {execFileSync} from 'node:child_process';
 import {readConfig} from './organizers/context.mjs';
-import {documentLocales, localizedAssets, publicAlternates, publicDocumentLinks, publicLanguageSwitch, publicLanguageUrl} from './organizers/public_languages.mjs';
+import {documentLocales, localizedAssets, publicAlternates, publicDocumentLinks, publicLanguageSwitch, publicLanguageUrl, readPublicProfiles} from './organizers/public_languages.mjs';
 import writeIfChanged from '../lib/write_if_changed.cjs';
 import {publicRuntime} from './organizers/public_runtime.mjs';
 import { helpActionWebPath, publicHelpRoot } from '../../web_client/src/services/help_action_routes.js';
@@ -16,16 +16,20 @@ import {renderSiteShell, publicThemeHead, publicThemeBody} from './organizers/si
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const arg = name => {const i = process.argv.indexOf(name); return i < 0 ? null : process.argv[i + 1];};
 const configPath = path.resolve(arg('--config') || path.join(root, 'automation/project.conf'));
-const config = fs.readFileSync(configPath, 'utf8');
-const value = key => (config.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1] || '').trim().replace(/^(['"])(.*)\1$/, '$2');
-const configuredLocale = value('WEB_SUPPORTED_LANGUAGES').split(',')[0] || 'cs';
+const config = readConfig(configPath);
+const value = key => config[key] ?? '';
+const profiles = readPublicProfiles();
+const primary = profiles[value('WEB_ORGANIZER_CONTENT_PROFILE')];
+const configuredLocale = value('WEB_SUPPORTED_LANGUAGES').split(',')[0]?.trim() || 'cs';
 const locale = arg('--locale') || configuredLocale;
 const preview = process.argv.includes('--preview');
-const locales = documentLocales(readConfig(configPath));
+const locales = documentLocales(config, profiles).filter((language, index) => index === 0 || profiles[primary?.translations?.[language]]?.help);
 const localized = process.argv.includes('--localized') && locales.length > 1;
 const translated = localized && locales.slice(1).includes(locale);
-const profile = value('WEB_ORGANIZER_CONTENT_PROFILE');
-const enabled = value('WEB_ORGANIZER_LANDING_ENABLED') === 'true' && ['vstupenky-cs', 'festapp-en'].includes(profile);
+const selected = translated ? profiles[primary.translations[locale]]
+  : preview && locale !== configuredLocale ? Object.values(profiles).find(profile => profile.locale === locale && profile.help)
+  : primary;
+const enabled = value('WEB_ORGANIZER_LANDING_ENABLED') === 'true' && Boolean(primary?.help);
 if (process.argv.includes('--published-language')) {
   process.stdout.write(enabled && ['cs', 'en'].includes(configuredLocale) ? configuredLocale : '');
   process.exit(0);
@@ -50,23 +54,23 @@ if (path.basename(target) !== helpRoot.slice(1,-1)) throw new Error('Help output
 target = fs.mkdtempSync(path.join(os.tmpdir(), 'festapp-help-'));
 process.on('exit', () => fs.rmSync(target,{recursive:true,force:true}));
 const directory = path.join(root, 'automation/release/help');
-const source = locale === 'cs' ? directory : path.join(directory, locale);
-const readPages = language => JSON.parse(fs.readFileSync(path.join(directory, language === 'cs' ? 'pages.json' : `pages.${language}.json`), 'utf8'));
-const pages = readPages(locale);
+const source = path.join(directory, selected.help.source);
+const readPages = profile => JSON.parse(fs.readFileSync(path.join(directory, profile.help.pages), 'utf8'));
+const pages = readPages(selected);
 if (translated) {
   const identity = rows => rows.map(({id, slug, category}) => ({id, slug, category}));
-  if (JSON.stringify(identity(pages)) !== JSON.stringify(identity(readPages(configuredLocale)))) {
+  if (JSON.stringify(identity(pages)) !== JSON.stringify(identity(readPages(primary)))) {
     throw new Error('Translated help must cover the default help routes in the same order');
   }
 }
-const ui = translated
-  ? JSON.parse(fs.readFileSync(path.join(directory, `ui.${locale}.json`), 'utf8'))
+const ui = selected.help.ui
+  ? JSON.parse(fs.readFileSync(path.join(directory, selected.help.ui), 'utf8'))
   : JSON.parse(fs.readFileSync(path.join(directory, 'ui.json'), 'utf8'))[locale];
-const site = JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers', locale === 'cs' ? 'content.json' : `content.${locale}.json`), 'utf8')).publicProjection;
+const site = JSON.parse(fs.readFileSync(path.join(root, 'automation/release/organizers', selected.content), 'utf8')).publicProjection;
 const brand = locale !== 'en' ? (value('APP_NAME') || 'vstupenky.online') : 'Festapp Tickets';
 const origin = new URL(value('WEB_LINK')).origin;
 // Shared authored endpoint metadata also serves builds without generated API files.
-const apiEndpoint = profile === 'vstupenky-cs' ? 'regional-api' : 'global-api';
+const apiEndpoint = selected.help.apiEndpoint;
 const apiFacade = JSON.parse(fs.readFileSync(path.join(root,'packages/festapp_contracts/api-facades.json'),'utf8'))
   .find(endpoint => endpoint.endpointId === apiEndpoint);
 if (!apiFacade) throw new Error('Missing canonical API facade');
@@ -100,10 +104,18 @@ const mcpReference = hasMcpGuides ? readMcpReference(root) : null;
 const mcpPrompts = JSON.parse(read('mcp-prompts.json'));
 if(hasMcpGuides)assets['mcp-reference.json'] = JSON.stringify(mcpReference,null,2)+'\n';
 const wordpressPublished = JSON.parse(read('download.json')).directoryStatus === 'published';
-const categories = JSON.parse(read(translated ? `categories.${locale}.json` : 'categories.json'));
+const helpCategories = profile => JSON.parse(read(profile.help.categories ?? 'categories.json'))
+  .map(category => ({...(profile.help.categories ? category : category[profile.locale]), category:category.id}));
+const categories = helpCategories(selected);
+if (translated) {
+  const routes = rows => rows.map(({category, slug}) => ({category, slug}));
+  if (JSON.stringify(routes(categories)) !== JSON.stringify(routes(helpCategories(primary)))) {
+    throw new Error('Translated help must cover the default category routes in the same order');
+  }
+}
 const usedMediaIds = new Set([
  ...pages.flatMap(page=>[page.preview,...[...fs.readFileSync(path.join(source,(page.slug||'index')+'.html'),'utf8').matchAll(/\{\{(?:MEDIA|PREVIEW):([a-z0-9/-]+)\}\}/g)].map(match=>match[1])]),
- ...categories.map(category => (translated ? category : category[locale]).preview),
+ ...categories.map(category => category.preview),
 ].filter(Boolean));
 const media = JSON.parse(read('media.json')).filter(item => item.locale === locale && usedMediaIds.has(item.id) && (locale !== 'en' || !/^en\/(?:wordpress|joomla|wix)\//.test(item.id)) && (wordpressPublished || !/\/wordpress\/(?:01-get-started|02-block-editor)$/.test(item.id)));
 const mediaWorkflows = new Map(media.map(item => [item.id,item.workflow]));
@@ -136,7 +148,7 @@ const script = read('help.js'); const jsName = `help.${digest(script)}.js`; asse
 const generator = fs.readFileSync(path.join(source,'embed-generator.html'),'utf8');
 const href = page => publicLanguageUrl(helpRoot + (page.slug ? page.slug + '/' : ''), locale, translated ? configuredLocale : locale);
 const indexHref = publicLanguageUrl(helpRoot, locale, translated ? configuredLocale : locale);
-const categoryPages = categories.map(category => ({...(translated ? category : category[locale]), id:'category.'+category.id, category:category.id, label:ui.categories[category.id], collection:true}));
+const categoryPages = categories.map(category => ({...category, id:'category.'+category.category, label:ui.categories[category.category], collection:true}));
 const categoryFor = page => categoryPages.find(category => category.category === page.category);
 const allPages = [...pages, ...categoryPages];
 if (new Set(allPages.map(page => page.slug)).size !== allPages.length) throw new Error('Duplicate help route');
@@ -159,7 +171,7 @@ const searchIcon = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" 
 const searchChrome = `<div class="help-toolbar"><div class="help-toolbar-inner"><a href="${helpRoot}" class="help-toolbar-home">${escape(ui.organizerHelp)}</a><button type="button" class="help-search-trigger" data-search-open aria-haspopup="dialog" aria-controls="help-search-dialog" hidden>${searchIcon}<span>${escape(ui.searchTrigger)}</span><kbd data-search-shortcut>Ctrl K</kbd></button></div></div><dialog id="help-search-dialog" class="help-search-dialog" aria-labelledby="help-search-title"><div class="help-search-top"><h2 id="help-search-title">${escape(ui.searchLabel)}</h2><button type="button" data-search-close aria-label="${escape(ui.searchClose)}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><form class="help-search" data-help-search role="search" action="${helpRoot}" method="get">${translated ? `<input type="hidden" name="lang" value="${locale}">` : ''}<div class="help-search-fields">${searchIcon}<input id="help-query" name="q" aria-label="${escape(ui.searchLabel)}" type="search" maxlength="200" placeholder="${escape(ui.searchPlaceholder)}" autocomplete="off" autofocus><button type="button" data-search-clear hidden>${escape(ui.searchClear)}</button></div><div class="help-search-options"><label for="help-category">${escape(ui.searchCategory)}</label><select id="help-category" name="category"><option value="">${escape(ui.searchAll)}</option>${categoryPages.map(category => `<option value="${category.category}">${escape(category.label)}</option>`).join('')}</select></div></form><div class="help-search-body"><div data-search-intro><h3>${escape(ui.searchIntro)}</h3><p>${escape(ui.searchHint)}</p></div><section data-search-results aria-label="${escape(ui.searchTitle)}"><p role="status" aria-live="polite" aria-atomic="true"></p><ol></ol></section></div><div class="help-search-footer"><span><kbd>↓</kbd> ${escape(ui.searchKeyboard)}</span><span><kbd>Esc</kbd> ${escape(ui.searchClose)}</span></div></dialog><a data-help-base href="${helpRoot}" hidden></a>`;
 const accountScript=runtime.entryUrl?`<script type="module" data-help-runtime src="${runtime.entryUrl}"></script>`:'';
 const themeLinks=runtime.themeLinks;
-const shell = renderSiteShell({locale,brand,contact:site.contact,helpPath:indexHref,helpLabel:ui.help,accountHeader:!!accountScript,brandAssetBase:assetRoot});
+const shell = renderSiteShell({locale,brand,contact:site.contact,helpPath:indexHref,helpLabel:ui.help,accountHeader:!!accountScript,brandAssetBase:assetRoot,content:site,regional:selected.template === 'regional'});
 const videos = JSON.parse(read('videos.json'));
 const videoLink = id => {
   const video = videos[id]?.[locale];

@@ -6,16 +6,36 @@
     "platformUpdates": true,
     "translations": {
       "sk": "vstupenky-sk"
-    }
+    },
+    "help": {
+      "source": ".",
+      "pages": "pages.json",
+      "apiEndpoint": "regional-api"
+    },
+    "template": "regional"
   },
   "vstupenky-sk": {
     "locale": "sk",
     "content": "content.sk.json",
-    "clips": "clips.sk.json"
+    "clips": "clips.sk.json",
+    "help": {
+      "source": "sk",
+      "pages": "pages.sk.json",
+      "ui": "ui.sk.json",
+      "categories": "categories.sk.json",
+      "apiEndpoint": "regional-api"
+    },
+    "template": "regional"
   },
   "festapp-en": {
     "locale": "en",
     "content": "content.en.json",
-    "clips": "illustrated-home-clips.json"
+    "clips": "illustrated-home-clips.json",
+    "help": {
+      "source": "en",
+      "pages": "pages.en.json",
+      "apiEndpoint": "global-api"
+    },
+    "template": "standard"
   }
 }

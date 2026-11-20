@@ -4,11 +4,11 @@ import {renderPressPage} from './press.mjs';
 import {renderFaqItems, renderPricingFacts, renderTopicPage} from './topic_pages.mjs';
 import {renderTopicLinks} from './site_shell.mjs';
 
-export function renderLandingContent(content, manifest, page = {id: "home"}, pages = []) {
+export function renderLandingContent(content, manifest, page = {id: "home"}, pages = [], {regional: useRegionalLayout = content.publicProjection?.locale === 'cs'} = {}) {
   const projection = content.publicProjection ?? {};
   const ui = projection.ui;
   const regional = projection.regionalHome;
-  const isRegionalHome = ['cs', 'sk'].includes(projection.locale) && page.id === 'home';
+  const isRegionalHome = useRegionalLayout && page.id === 'home';
   const references = projection.references ?? [];
   const clips = new Map((manifest.clips ?? []).map(clip => [clip.id, clip]));
   function player(ids, hero = false, compact = false) {

@@ -3,7 +3,9 @@ import {escape} from './html.mjs';
 
 export const localizedAssets = '/_localized';
 
-export function documentLocales(config, profiles = JSON.parse(fs.readFileSync(new URL('profiles.json', import.meta.url), 'utf8'))) {
+export const readPublicProfiles = () => JSON.parse(fs.readFileSync(new URL('profiles.json', import.meta.url), 'utf8'));
+
+export function documentLocales(config, profiles = readPublicProfiles()) {
   const supported = (config.WEB_SUPPORTED_LANGUAGES ?? '').split(',').map(locale => locale.trim());
   const primary = profiles[config.WEB_ORGANIZER_CONTENT_PROFILE];
   const alternatives = config.WEB_ORGANIZER_LANDING_ENABLED === 'true' ? primary?.translations ?? {} : {};

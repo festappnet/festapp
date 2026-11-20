@@ -95,7 +95,7 @@ const tokens = {
 };
 const template = expandSiteShell(
   fs.readFileSync(path.join(root, 'automation/release/organizers/page.html'), 'utf8'),
-  {showCreateEvent: projection.locale === 'en'},
+  {showCreateEvent: context.template !== 'regional'},
 );
 const css = fs.readFileSync(path.join(root, 'automation/release/organizers/page.css'), 'utf8');
 const pressCss = fs.readFileSync(path.join(root, 'automation/release/organizers/press.css'), 'utf8');
@@ -127,7 +127,7 @@ const updatesRuntime=context.updates?publicRuntime(root,{builtIndex:builtIndexAr
 if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['media/'+asset.slice('/platform-updates-media/'.length)]=bytes;
   for (const page of context.pages) {
   if (page.type) {outputs.push({asset:page.asset,html:renderUpdate(page,context,{css,themeLinks:updatesRuntime.themeLinks,primary,entryScript:updatesRuntime.entryUrl?`<script type="module" src="${updatesRuntime.entryUrl}"></script>`:'',assetRoot:updatesRuntime.assetRoot})});continue;}
-  const richTokens = renderLandingContent(contentData, clipsData, page, context.pages.filter(other=>!other.type));
+  const richTokens = renderLandingContent(contentData, clipsData, page, context.pages.filter(other=>!other.type), {regional: context.template === 'regional'});
   const substitute = text => text.replace(/{{([A-Z_0-9]+)}}/g, (_, key) => {
     if (key === 'PLATFORM_UPDATES_LINK') return context.updates ? `<a href="${updatePaths[context.locale]}">${context.locale==='cs'?'Co je nového':'What&#39;s new'}</a>` : '';
     if (key === 'HELP_LINK') return projection.helpLink ? `<a class="header-help" href="${escape(projection.helpLink.href)}">${escape(projection.helpLink.label)}</a>` : '';
@@ -141,7 +141,7 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
   const illustrated = page.id === 'home' && projection.homeStyle === 'illustrated';
   let body = illustrated ? expandSiteShell(fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.html'), 'utf8')) : template;
   const pageCss = illustrated ? fs.readFileSync(path.join(root, 'automation/release/organizers/illustrated-home.css'), 'utf8') : css;
-  if (projection.locale !== 'en') {
+  if (context.template === 'regional') {
     body = body
       .replace('{{PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN}}<br>{{PAGE_CARD_PAYMENTS_WITH_STRIPE}}', '{{PAGE_YOUR_SEATING_PLAN_YOUR_TICKET_DESIGN}} {{PAGE_CARD_PAYMENTS_WITH_STRIPE}}')
       .replace('<a href="{{DEMO_BOOKING_HREF}}" class="text-link">{{PAGE_BOOK_A_DEMO}}</a>', '')

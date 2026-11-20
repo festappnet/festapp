@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import {verifyBundleEntries} from './lib/verify_bundle_entries.mjs';
-import { verifyMarketingBundle } from './release/organizers/verify.mjs';
+import { verifyMarketingBundle, verifyLocalizedPublicBundle } from './release/organizers/verify.mjs';
+import { readConfig } from './release/organizers/context.mjs';
 
 import assert from 'node:assert/strict';
 import { webProfileContract } from './lib/web_profile_contract.mjs';
@@ -91,8 +92,9 @@ for (const [chunk] of main.toString().matchAll(/main\.dart\.[^"'\s]+\.part\.js/g
 
 
 await verifyMarketingBundle(buildDir, configPath);
-
-await verifyMarketingBundle(buildDir, configPath);
+if (cspManifest.documents.webclient) {
+  await verifyLocalizedPublicBundle(buildDir, readConfig(configPath), cspManifest);
+}
 
 const projectConfig = await readFile(configPath, 'utf8');
 const configValue = (key) => projectConfig.match(new RegExp(`^${key}=(.*)$`, 'm'))?.[1]
