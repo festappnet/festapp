@@ -83,7 +83,8 @@ export function parseRemoteConfig(raw) {
             throw new Error('INVALID_CLIENT_SCOPE_CEILING');
     }
     for (const client of config.clients) for (const uri of client.redirectUris) {
-        if (!validRedirect(uri, client.applicationType, local))
+        // Match normalizeClient's public-registration default in endpoints.mjs.
+        if (!validRedirect(uri, client.applicationType, local, client.tokenEndpointAuthMethod ?? 'none', true))
             throw new Error('INVALID_REMOTE_REDIRECT');
     }
     const normalized = { ...config, profile, contexts, issuer: url.origin, resource: url.origin + '/mcp' };

@@ -31,7 +31,9 @@ exact trusted HTTPS `allowedOrigins`, explicit `dataProfile` and optional
 ceiling must include base access and all dependency scopes. Static registrations
 take precedence. The maintained provider owns fetch safety, metadata identity,
 caching and exact redirect matching. Festapp admits only public native metadata
-clients with literal loopback HTTP callbacks. Remote web CIMD and open dynamic
+clients with literal IP loopback (`127.0.0.1`, `[::1]`) HTTP callbacks; the
+`localhost` callback exception applies only to static registrations, because
+callback form-action CSP is derived from `clients`. Remote web CIMD and open dynamic
 registration are not enabled. Removing trust rejects existing credentials on
 their next use. Supabase-authenticated fetch is never reused for metadata fetch.
 
@@ -134,9 +136,26 @@ must be explicitly registered, never accepted from arbitrary request metadata.
 
 The separately registered public native client `festapp-codex` uses
 `applicationType: native` and `http://127.0.0.1/callback`. Its callback port may
-vary as required for a local listener; the path is exact, and non-loopback hosts
-are rejected. Native callback configuration rejects userinfo, query and fragment.
+vary as required for a local listener; the path is exact, and other hosts are
+rejected. Native callback configuration rejects userinfo, query and fragment.
 This does not widen web-client redirects or enable dynamic registration.
+
+Claude Code uses a separate protected `clients` entry `festapp-claude-code`,
+with `applicationType: native`, `tokenEndpointAuthMethod: none` and
+`http://localhost/callback`. Copy the Codex data profile, scope ceiling and
+consent/resource restrictions; see the [connection guide](../../../tools/festapp/README.md#claude-code-remote-connection).
+Only public native clients statically configured in `clients` (omitted
+`tokenEndpointAuthMethod` means `none`) may register exactly `localhost` over
+HTTP. Trusted metadata clients (CIMD) remain restricted to IP literal loopback
+callbacks, because callback form-action CSP is derived from static registrations.
+Subdomains, trailing-dot hosts and `.local` are not accepted. Registered URIs
+must exactly equal their canonical URL representation and contain no raw `?`,
+`#` or `@`, including empty query, fragment or userinfo. Registered host and
+path must match; the provider ignores only the port during registration matching. Code exchange requires the complete URI
+from authorization, including that chosen port. Existing Codex registrations
+remain restricted to their IP callback. Web, confidential-client and Inspector
+origin policies are unchanged. No client-ID exception or public schema field
+is introduced.
 
 The browser logs into downstream Supabase normally. Explicit consent binds one
 new independent backend refresh session to one actor/client/tenant/profile and

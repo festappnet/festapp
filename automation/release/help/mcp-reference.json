@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "9f440a1cdcc898fdd925d51f920fba67903489ad5d95aef12da6ccd653c6bbfc",
+  "sourceDigest": "ea656d8d3b43f6036e4546a20c527ad60188377965ff8dae4a4166720986c8c9",
   "permissions": [
     {
       "scope": "festapp:information:read",

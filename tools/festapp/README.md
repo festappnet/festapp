@@ -337,9 +337,12 @@ References: [MCP SDK v2 migration](https://ts.sdk.modelcontextprotocol.io/v2/mig
 ### Codex remote connection
 
 Register a separate public client `festapp-codex` with `applicationType: "native"`
-and redirect URI `http://127.0.0.1/callback`. Native clients accept only literal
-IP loopback HTTP callbacks; the maintained provider permits a variable port,
-while the callback path remains exact. Web clients retain their HTTPS policy.
+and redirect URI `http://127.0.0.1/callback`. Native clients accept HTTP
+callbacks on `127.0.0.1` or `[::1]`; public native clients statically configured
+in `clients` may also register exactly `localhost`. Trusted client metadata
+documents (CIMD) stay limited to the IP literals. The registered hostname and
+path govern access; the maintained provider permits a variable port, while the
+callback path remains exact. Web clients retain their HTTPS policy.
 
 ```sh
 codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex
@@ -360,6 +363,50 @@ existing grant.
 
 Complete the fresh browser login and occasion consent for this client. The
 native client uses the same scoped read handlers and separate OAuth grant.
+
+### Claude Code remote connection
+
+Add a separate public native registration `festapp-claude-code` to `clients`
+in the protected server configuration (`remote-config.json`, parsed by
+`src/remote/config.mjs`). Registrations are configuration, not a built-in client
+list; open dynamic registration is disabled. Copy the `festapp-codex` entry,
+including its `dataProfile`, scope ceiling (`allowedScopes`, or its absence),
+resource/transport restrictions and consent duration policy, changing only:
+
+```json
+{
+  "id": "festapp-claude-code",
+  "name": "Claude Code",
+  "applicationType": "native",
+  "tokenEndpointAuthMethod": "none",
+  "redirectUris": ["http://localhost/callback"]
+}
+```
+
+These fields describe the changes to the copied entry, not a replacement for
+its existing restrictions. Load the updated server configuration before connecting.
+Use a separate client ID so Codex keeps its registered IP callback, and each
+client has independent consent and credentials. No client-ID-specific redirect
+bypass is needed: the exact registered hostname/path governs access. This
+localhost exception applies only to static registrations; trusted client metadata
+documents (CIMD) remain restricted to IP loopback callbacks.
+Confidential native clients do not gain `localhost` support.
+
+```sh
+claude mcp add --transport http --scope local --client-id festapp-claude-code --callback-port 51789 festapp https://mcp.vstupenky.online/mcp
+```
+
+In Claude Code, open `/mcp`, select `festapp` and authenticate. Complete the
+browser login and occasion/permission consent as for Codex. Port 51789 must be
+available on your machine; choose another port with `--callback-port` if needed.
+The registered URI omits the port so any local listener port can be used.
+`*.localhost`, trailing-dot `localhost.`, `.local` hosts, HTTPS localhost and
+other callback paths are rejected. Registered URIs must use the canonical URL
+form (lowercase host/scheme, no redundant default port or path normalization),
+without any raw `?`, `#` or `@`. An authorization request may explicitly use
+port 80 even though the canonical registered URI omits it. At code exchange the complete `redirect_uri`
+must equal the URI used for authorization, including the chosen port; changing
+ports between authorization and exchange is rejected. PKCE remains required.
 
 ### First-party consent
 

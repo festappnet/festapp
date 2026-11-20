@@ -87,7 +87,7 @@ async function setup(t, { global = false, native = false, tenant = false, pilot 
     };
     return { ...base, root, key, storage, server, issuer, config, audit, browser, clearBrowserCookies: () => jar.clear(), ...service };
 }
-async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, protocolScopes = ['openid', 'offline_access'], unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource] } = {}) {
+async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', callbackUri = f.issuer + '/callback', scope = READ_SCOPE, protocolScopes = ['openid', 'offline_access'], unitId, occasionIds, create = false, handleFormPost, consentFields = {}, consentStatus = 303, resources = [f.config.resource], exchangeRedirectUri = callbackUri, exchangeStatus = 200 } = {}) {
     const verifier = randomBytes(32).toString('base64url');
     const params = new URLSearchParams({ client_id: clientId, response_type: 'code',
         redirect_uri: callbackUri, scope: [...protocolScopes, scope].join(' '),
@@ -129,10 +129,10 @@ async function connect(f, { badVerifier = false, clientId = 'chatgpt-fixture', c
     assert(callback.searchParams.get('code'), callback.href);
     const exchange = async (codeVerifier = verifier) => fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
         client_id: clientId, grant_type: 'authorization_code', code: callback.searchParams.get('code'),
-        redirect_uri: callbackUri, code_verifier: codeVerifier, resource: f.config.resource,
+        ...(exchangeRedirectUri === null ? {} : { redirect_uri: exchangeRedirectUri }), code_verifier: codeVerifier, resource: f.config.resource,
     }) });
     const response = await exchange(badVerifier ? 'wrong-verifier'.repeat(4) : verifier);
-    assert.equal(response.status, badVerifier ? 400 : 200, await response.clone().text());
+    assert.equal(response.status, badVerifier ? 400 : exchangeStatus, await response.clone().text());
     return { callback, exchange, response, tokens: await response.json() };
 }
 
@@ -193,12 +193,12 @@ test('remote configuration rejects insecure origins, redirects and duplicate ide
     assert.throws(() => parseRemoteConfig({ ...c, clients: [{ ...c.clients[0], redirectUris: ['https://user:password@example.test/callback'] }] }));
 });
 
-test('native OAuth accepts only explicit IP loopback callbacks and honors an ephemeral port', async t => {
+test('native OAuth keeps registered IP loopback callbacks and honors an ephemeral port', async t => {
     const f = await setup(t, { native: true });
     const { tokens, callback } = await connect(f, { clientId: 'codex-fixture', callbackUri: 'http://127.0.0.1:51789/callback' });
     assert.equal(callback.origin, 'http://127.0.0.1:51789');
     assert(tokens.access_token);
-    for (const uri of ['http://localhost/callback', 'http://evil.example/callback', 'https://127.0.0.1/callback', 'http://127.0.0.1/callback?code=other']) {
+    for (const uri of ['http://app.localhost/callback', 'http://evil.example/callback', 'https://127.0.0.1/callback', 'http://127.0.0.1/callback?code=other']) {
         const c = configuration(f.issuer);
         c.clients[0] = { ...c.clients[0], applicationType: 'native', redirectUris: [uri] };
         assert.throws(() => parseRemoteConfig(c));
@@ -207,6 +207,48 @@ test('native OAuth accepts only explicit IP loopback callbacks and honors an eph
         scope: READ_SCOPE, code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) });
     assert.equal((await f.browser('/auth?' + request)).status, 400);
 });
+
+const claudeCodeRegistration = { id: 'festapp-claude-code', name: 'Claude Code', applicationType: 'native',
+    tokenEndpointAuthMethod: 'none', redirectUris: ['http://localhost/callback'], allowedScopes: [READ_SCOPE] };
+
+for (const port of [null, 80, 51789, 65535]) test(`Claude Code localhost callback supports port ${port ?? 'omitted'} with ordinary consent and PKCE`, async t => {
+    const f = await setup(t, { registeredClient: claudeCodeRegistration });
+    const callbackUri = `http://localhost${port === null ? '' : ':' + port}/callback`;
+    const { tokens, callback } = await connect(f, { clientId: claudeCodeRegistration.id, callbackUri });
+    assert.equal(callback.origin, new URL(callbackUri).origin);
+    assert(tokens.access_token);
+    assert(tokens.refresh_token);
+    assert.equal((await f.provider.AccessToken.find(tokens.access_token)).scope, READ_SCOPE);
+    assert.match((await f.browser('/healthz')).headers.get('content-security-policy'), /http:\/\/localhost:\*\/callback/);
+    const grant = f.storage.values('Delegation')[0];
+    assert.equal(grant.clientId, claudeCodeRegistration.id);
+    assert.equal(grant.userId, actor);
+});
+
+test('localhost registration matches the exact host and callback path before consent', async t => {
+    const f = await setup(t, { registeredClient: claudeCodeRegistration });
+    for (const redirectUri of ['http://app.localhost:51789/callback', 'http://localhost.:51789/callback',
+        'http://app.local:51789/callback', 'http://127.0.0.1:51789/callback', 'http://[::1]:51789/callback',
+        'https://localhost:51789/callback', 'http://localhost:51789/other', 'http://localhost:51789/callback/',
+        'http://localhost:51789/callback?other=1', 'http://user@localhost:51789/callback', 'http://localhost:51789/callback#fragment']) {
+        const response = await f.browser('/auth?' + new URLSearchParams({ client_id: claudeCodeRegistration.id,
+            response_type: 'code', redirect_uri: redirectUri, scope: READ_SCOPE,
+            code_challenge_method: 'S256', code_challenge: 'a'.repeat(43) }));
+        assert.equal(response.status, 400, redirectUri);
+    }
+    assert.equal(f.storage.values('Delegation').length, 0);
+    const codex = await setup(t, { native: true });
+    assert.equal((await codex.provider.Client.find('codex-fixture')).redirectUriAllowed('http://localhost:51789/callback'), false);
+});
+
+for (const redirectUri of [null, 'http://localhost/callback', 'http://localhost:51790/callback', 'http://localhost:51789/other', 'http://127.0.0.1:51789/callback'])
+    test(`authorization code is bound to the requested localhost URI at exchange: ${redirectUri}`, async t => {
+        const f = await setup(t, { registeredClient: claudeCodeRegistration });
+        const { tokens } = await connect(f, { clientId: claudeCodeRegistration.id,
+            callbackUri: 'http://localhost:51789/callback', exchangeRedirectUri: redirectUri, exchangeStatus: 400 });
+        assert.equal(tokens.error, 'invalid_grant');
+        assert.equal(tokens.access_token, undefined);
+    });
 
 for (const resourceCount of [0, 1, 2, 3]) test(`native OAuth with ${resourceCount} resource indicators completes MCP reads and refresh`, async t => {
     const f = await setup(t, { native: true });
@@ -1936,6 +1978,7 @@ test('provider rejects forged metadata identities, web callbacks, secrets and fo
         { application_type: 'web', redirect_uris: ['https://desktop.fixture.test/callback'] },
         { redirect_uris: ['http://evil.fixture.test/oauth/callback'] },
         { redirect_uris: ['http://localhost/oauth/callback'] },
+        { redirect_uris: ['http://app.localhost/oauth/callback'] },
         { token_endpoint_auth_method: 'client_secret_post', client_secret: 'never-render-this' },
         { response_types: ['token'] },
         { scope: READ_SCOPE + ' festapp:forms:write' },
