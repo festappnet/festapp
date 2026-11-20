@@ -39,7 +39,10 @@ export async function executeMemberAccess(deps: AccessDependencies, authorizatio
   const url = new URL(token ? "/team-invitation" : preview.destination, base);
   if (token) url.searchParams.set("token", token);
   const labels = roleLabels[preview.organizationData.DEFAULT_LANGUAGE ?? "en"] ?? roleLabels.en;
-  const labelsText = Object.entries(preview.roles).filter(([key, value]) => value === true && labels[key]).map(([key]) => labels[key]).join(", ");
+  const labelsText = Object.entries(preview.roles)
+    .filter(([key, value]) => value === true && labels[key] &&
+      (key !== "is_editor_view" || preview.roles.is_editor !== true))
+    .map(([key]) => labels[key]).join(", ");
   const substitutions: RegisteredEmailValues = password ? {
       code: password, email: escape(preview.email), name: escape(preview.profile?.name),
       surname: escape(preview.profile?.surname),
