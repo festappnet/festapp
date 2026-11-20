@@ -67,9 +67,11 @@ test('canonical truth table preserves server operation rights across 2048 role c
         assert.equal(c.capabilities['blueprints.write'],r.background_occasion);
         const {capabilities,bank_capabilities,...currentEnvelope}=c;
         // Keep the historical reference exact and assert the approved additive
-        // measurement/provider projections separately from authorization facts.
+        // projections separately from authorization facts.
         const {stripe_preview_enabled,payment_providers,providerFields,payment_method_policy,...unitEnvelope}=currentEnvelope.unit;
         const {FORM_MEASUREMENT_ENABLED,...organizationEnvelope}=currentEnvelope.organization;
+        const {favorite_unit_ids,...userInfoEnvelope}=currentEnvelope.user_info;
+        assert.deepEqual(favorite_unit_ids,[],`fixture organization favorites default, roles ${bits}`);
         assert.equal(stripe_preview_enabled,null,`fixture Stripe feature default, roles ${bits}`);
         assert.equal(FORM_MEASUREMENT_ENABLED,false,`fixture measurement default, roles ${bits}`);
         assert.deepEqual(payment_providers,{stripe:false,barion:false});
@@ -77,7 +79,7 @@ test('canonical truth table preserves server operation rights across 2048 role c
         assert.equal(payment_method_policy.organizationId,f.org);
         assert.equal(payment_method_policy.unitId,f.unit);
         assert.deepEqual(Object.fromEntries(Object.entries(payment_method_policy.methods).map(([method,policy])=>[method,policy.policyEnabled])),{bank:false,cash:true,barion:false,stripe:false});
-        assert.deepEqual({...currentEnvelope,unit:unitEnvelope,organization:organizationEnvelope},original,`unchanged context envelope, roles ${bits}`);
+        assert.deepEqual({...currentEnvelope,unit:unitEnvelope,organization:organizationEnvelope,user_info:userInfoEnvelope},original,`unchanged context envelope, roles ${bits}`);
         for(const [key,expected] of Object.entries({
           'orders.read':r.read,'orders.write':r.write,'orders.delete':r.delete,
           'ticket_layouts.read':r.layout,'ticket_layouts.write':r.layout,
