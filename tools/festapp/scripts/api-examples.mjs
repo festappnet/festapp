@@ -80,6 +80,12 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     if (['units.websiteConsent.export','units.websiteConsent.disable'].includes(descriptor.id)) Object.assign(request,{bindingId:UUID,expectedVersion:2});
     if (descriptor.id === 'forms.embedCode') Object.assign(request,{occasionId:7,formId:42,language:'en'});
     if (descriptor.id === 'songs.save') Object.assign(request,{occasionId:7,expectedVersion:null,information:{title:'Opening song',description:'<p>Sing together</p>',type:'song',isHidden:false,order:1,data:null}});
+    if (descriptor.id === 'images.upload') Object.assign(request, {
+        occasionId: 7,
+        filename: 'speaker.png',
+        contentBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6ZsAAAAASUVORK5CYII=',
+        profile: 'portrait',
+    });
     if (descriptor.id === 'webhooks.update') request.state = 'active';
     if (descriptor.id === 'webhooks.create') request.url = 'https://receiver.example.invalid/webhooks/festapp';
     if (descriptor.id === 'orders.update') request.changes = {note:'Updated order note'};
@@ -90,6 +96,7 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     if (outputSchema.properties?.data) response.data = schemaExample(outputSchema.properties.data,outputSchema,'data');
     if (descriptor.id.startsWith('units.appLanding.')) Object.assign(response.data,{organizationId:1,unitId:3,enabled:true,occasionId:7,canManage:true,...(descriptor.id.endsWith('.save')?{status:'applied'}:{})});
     if (measurementSetupExamples[descriptor.id]) response.data = structuredClone(measurementSetupExamples[descriptor.id]);
+    if (descriptor.id === 'images.upload') response.data = { url: 'https://img.festapp.net/images/1700000000000-example.webp' };
     if (descriptor.id === 'ticket_layouts.preview') response.data.image={mimeType:'image/png',data:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6ZsAAAAASUVORK5CYII='};
     if (descriptor.id === 'seats.preview_swap') {
         response.data.sourceSpotIds = [response.data.firstSpotId];

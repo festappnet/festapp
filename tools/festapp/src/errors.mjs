@@ -27,6 +27,8 @@ const operationPermissionMessages = new Map([
 ]);
 // Domain outcomes whose remedy is not obvious from the code alone.
 const outcomeMessages = new Map([
+    ['IMAGE_UPLOAD_REJECTED', () => 'The image service rejected the file. Check its format, size and available storage.'],
+    ['IMAGE_UPLOAD_OUTCOME_UNKNOWN', () => 'The image service may have stored the file. Check the occasion before uploading it again.'],
     ['APPROVAL_REQUEST_LIMITED', error => error.retryable
         ? `Approval request emails are temporarily limited. Nothing was sent; retry after ${error.retryAfter ?? 60} seconds.`
         : 'Approval request emails exceed a limit that waiting does not resolve. Nothing was sent; the platform operator must review the limit.'],

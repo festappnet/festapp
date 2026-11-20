@@ -367,6 +367,16 @@ References: [MCP SDK v2 migration](https://ts.sdk.modelcontextprotocol.io/v2/mig
 [Supabase password authentication](https://supabase.com/docs/reference/javascript/auth-signinwithpassword),
 [Keychain binding](https://github.com/Brooooooklyn/keyring-node).
 
+### Upload occasion images
+
+`festapp_images_upload` and `POST /integrations/v1/operations/images.upload`
+accept an occasion ID, filename and base64-encoded JPEG, PNG or WebP file up to
+1 MiB. Use profile `portrait` for speaker photos or `standard` for images in
+descriptions. The operation requires the program write scope, consent for the
+occasion and live image upload rights. It returns the public Festapp image URL.
+Pass that URL to the speaker or event save operation to place the image.
+Check the occasion before repeating an upload with an uncertain outcome.
+
 ### Codex remote connection
 
 Register a separate public client `festapp-codex` with `applicationType: "native"`

@@ -1,4 +1,5 @@
 import {commandBoundary, outputDiagnostic} from './command-boundary.mjs';
+import { imageUploadOperation, imageUploadDescriptor, imageDataSchemas, uploadOccasionImage } from './images.mjs';
 import {informationDescriptors,informationDataSchemas,invokeInformationOperation} from './information.mjs';
 import {webhookDescriptors,webhookDataSchemas,invokeWebhookOperation} from './webhooks.mjs';
 import { inventoryAssignmentDescriptors, inventoryAssignmentDataSchemas, invokeInventoryAssignmentOperation } from './inventory-assignments.mjs';
@@ -65,6 +66,7 @@ const dataSchemas = {
     ...financeDataSchemas,
     ...reportingDataSchemas,
     ...programDataSchemas,
+    ...imageDataSchemas,
     ...scannerDataSchemas,
     ...blueprintDataSchemas,
     ...peopleDataSchemas,
@@ -167,7 +169,7 @@ const resultSchema = (id, schema = dataSchemas[id]) =>
             .optional(),
         meta: metaSchema,
     });
-const delegatedDescriptors = [...webhookDescriptors, ...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...measurementSetupDescriptors, ...informationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
+const delegatedDescriptors = [...webhookDescriptors, ...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, imageUploadDescriptor, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...measurementSetupDescriptors, ...informationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
 const descriptors = [
     ...delegatedDescriptors.map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.', input: z.strictObject({}), domainReadOnly: true },
@@ -389,6 +391,7 @@ export class Operations {
                 else if (agendaDataSchemas[id]) data = await invokeAgendaOperation(this.owner, client, id, args);
                 else if (financeDataSchemas[id]) data = await invokeFinanceOperation(this.owner, client, id, args);
                 else if (reportingDataSchemas[id]) data = await invokeReportingOperation(this.owner, client, id, args, context, this.artifacts);
+                else if (id === imageUploadOperation) data = await uploadOccasionImage(this.owner, client, args);
                 else if (programDataSchemas[id]) data = await invokeProgramOperation(this.owner, client, id, args);
                 else if (scannerDataSchemas[id]) data = await invokeScannerOperation(this.owner, client, id, args);
                 else if (blueprintDataSchemas[id]) data = await invokeBlueprintOperation(this.owner, client, id, args);

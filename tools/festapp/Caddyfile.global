@@ -10,7 +10,12 @@ mcp.festapp.net {
 	handle @untrusted {
 		respond "Forbidden" 403
 	}
-    request_body {
+    @imageUploadBody path /mcp /integrations/v1/operations/images.upload
+    @ordinaryBody not path /mcp /integrations/v1/operations/images.upload
+    request_body @imageUploadBody {
+        max_size 1408KB
+    }
+    request_body @ordinaryBody {
         max_size 48KB
     }
     header -Server

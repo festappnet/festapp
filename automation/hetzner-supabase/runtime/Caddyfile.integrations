@@ -45,7 +45,12 @@
         path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
     }
     handle @integrations {
-        request_body {
+        @imageUploadBody path /integrations/v1/operations/images.upload
+        @ordinaryBody not path /integrations/v1/operations/images.upload
+        request_body @imageUploadBody {
+            max_size 1408KB
+        }
+        request_body @ordinaryBody {
             max_size 48KB
         }
         reverse_proxy {$FESTAPP_CANONICAL_MCP_LISTENER:127.0.0.1:3400} {
@@ -70,7 +75,12 @@ api.vstupenky.online {
 	}
     @integrations path /integrations/v1 /integrations/v1/* /.well-known/oauth-protected-resource/integrations
     handle @integrations {
-        request_body {
+        @imageUploadBody path /integrations/v1/operations/images.upload
+        @ordinaryBody not path /integrations/v1/operations/images.upload
+        request_body @imageUploadBody {
+            max_size 1408KB
+        }
+        request_body @ordinaryBody {
             max_size 48KB
         }
         reverse_proxy {$FESTAPP_CANONICAL_MCP_LISTENER:127.0.0.1:3400} {
