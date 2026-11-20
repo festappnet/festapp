@@ -146,10 +146,11 @@ test('general Inspector configuration exposes every registered operation without
     assert.equal(clientAllowsScopes(general, 'public-fixture', ['festapp:forms:write']), false);
 });
 
-test('private ChatGPT operator registration covers the delegated MCP catalog independently of the public client', async () => {
+test('ChatGPT operator and reader registrations preserve independent permission boundaries', async () => {
     const path = '../../../integrations/chatgpt/';
     const readPolicy = async name => JSON.parse(await readFile(new URL(path + name, import.meta.url), 'utf8'));
     const operator = await readPolicy('operator/client-registration.json');
+    const reader = await readPolicy('operator/reader-client-registration.json');
     const publicPolicy = await readPolicy('client-policy.json');
     const { binding, ...fixture } = profile();
     const backendOrigin = 'https://backend.fixture.test';
@@ -167,7 +168,7 @@ test('private ChatGPT operator registration covers the delegated MCP catalog ind
                 canonicalOrganizationId: fixture.organizationId,
             }),
         },
-        clients: [operator, {
+        clients: [operator, reader, {
             ...publicPolicy,
             name: 'vstupenky.online',
             transports: ['mcp'],
@@ -188,6 +189,24 @@ test('private ChatGPT operator registration covers the delegated MCP catalog ind
         const scopes = scopesForOperation(id);
         assert(scopes?.length && clientAllowsScopes(config, operator.id, scopes), id);
     }
+
+    const privateReader = clientPolicy(config, reader.id);
+    assert.equal(privateReader.dataProfile, 'operator');
+    assert.deepEqual(privateReader.transports, ['mcp']);
+    assert.deepEqual(privateReader.resources, [config.resource]);
+    assert.deepEqual(privateReader.redirectUris, registered.redirectUris);
+    assert.equal(privateReader.tokenEndpointAuthMethod, 'none');
+    const catalog = new Operations({ root: '/catalog-only', allowedOperations: DELEGATED_OPERATIONS });
+    catalog.setWriteReady(true);
+    const reads = catalog.catalog.filter(tool =>
+        tool.domainReadOnly && scopesForOperation(tool.id).every(scope => scope.endsWith(':read')));
+    assert.deepEqual(privateReader.allowedOperations, reads.map(tool => tool.id).sort());
+    assert.deepEqual(privateReader.allowedScopes, [...new Set(reads.flatMap(tool => scopesForOperation(tool.id)))].sort());
+    assert(privateReader.allowedOperations.includes('orders.report'));
+    assert(!privateReader.allowedOperations.includes('orders.update'));
+    assert(!clientAllowsScopes(config, reader.id, scopesForOperation('orders.update')));
+    for (const id of privateReader.allowedOperations)
+        assert(clientAllowsScopes(config, reader.id, scopesForOperation(id)), id);
 
     const publicClient = clientPolicy(config, publicPolicy.id);
     assert.equal(publicClient.dataProfile, 'order-summary');

@@ -3,16 +3,39 @@
 Neveřejné připojení pro schválené uživatele v ChatGPT workspace. Nastavení
 využívá regionální MCP pro vstupenky.online a samostatnou OAuth registraci.
 
-**Název**  
+**Název**
+
 vstupenky.online pro pořadatele
 
-**Popis v ChatGPT**  
+**Popis v ChatGPT**
+
 Zakládejte a spravujte akce na vstupenky.online. Sledujte prodej, pracujte
 s objednávkami a upravujte formuláře, vstupenky, ceny, kapacity a místa.
 Přístup se řídí vašimi oprávněními a souhlasem. Detaily objednávek mohou
 obsahovat osobní údaje kupujících.
 
-## Připojení
+## Osobní varianta v ChatGPT Pro
+
+**Název**
+
+vstupenky.online - přehled
+
+**Popis v ChatGPT**
+
+Prohlížejte akce, prodej, objednávky, vstupenky, formuláře a místa na
+vstupenky.online podle svých oprávnění. Připojení je pouze pro čtení.
+Detaily objednávek mohou obsahovat osobní údaje kupujících.
+
+Pro tuto variantu použijte
+[reader-client-registration.json](reader-client-registration.json)
+s klientem `festapp-chatgpt-reader`, stejným regionálním endpointem a OAuth
+metodou `none`. V nastavení ChatGPT povolte rozsahy z `allowedScopes` a
+protokolové rozsahy `openid` a `offline_access`. Festapp povolí výhradně
+seznam čtecích operací v registraci. V aktuálním katalogu je to 95 operací
+se 41 doménovými rozsahy. Náhledy a diagnostické operace závislé na
+zápisových rozsazích patří do plné varianty níže.
+
+## Připojení plné varianty
 
 1. Použijte oprávněný ChatGPT Business, Enterprise nebo Edu workspace ve
    webové aplikaci. Správce nebo oprávněný vývojář založí neveřejný návrh
