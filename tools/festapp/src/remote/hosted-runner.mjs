@@ -53,9 +53,10 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
             if (!grant.clientConnectedAt || !grant.lastUsedAt || Date.now() - grant.lastUsedAt >= 60000)
                 storage.putUntil('Delegation', grant.id, { ...grant, clientConnectedAt: grant.clientConnectedAt ?? Date.now(), lastUsedAt: Date.now() }, grant.expiresAt);
             const operations = new Operations(owner, { artifacts });
-            const id = transport === 'mcp' && req.body?.method === 'tools/call'
+            const operationId = transport === 'mcp' && req.body?.method === 'tools/call'
                 ? operations.operationIdForTool(req.body.params?.name) : req.params?.operation;
-            const document = (documentOperations.has(id) && owner.allowedOperations.includes(id)) || req.path === API_PREFIX + '/artifacts/read' ||
+            const denial = operationId ? owner.operationDenial(operationId, grant) : null;
+            const document = (!denial && documentOperations.has(operationId)) || req.path === API_PREFIX + '/artifacts/read' ||
                 (transport === 'mcp' && req.body?.method === 'resources/read');
             if (document) {
                 if (documentCount >= API_COST_BUDGET.concurrentDocuments || documentOrgs.has(documentOrg) || documentClients.has(documentClient))
@@ -64,8 +65,8 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
                 limit(`documentClient:${documentClient}`, API_COST_BUDGET.documentPerClientOrgPerMinute);
                 documentCount++;documentOrgs.add(documentOrg);documentClients.add(documentClient);documentAdmitted = true;
             }
-            if (publicCatalog().find(d => d.id === id)?.requiresLayoutWriteContract ||
-                (id === 'context.inspect' && owner.allowedOperations.some(id => publicCatalog().find(d => d.id === id)?.requiresLayoutWriteContract))) await operations.prepare();
+            if (!denial && (publicCatalog().find(d => d.id === operationId)?.requiresLayoutWriteContract ||
+                (operationId === 'context.inspect' && owner.allowedOperations.some(id => publicCatalog().find(d => d.id === id)?.requiresLayoutWriteContract)))) await operations.prepare();
             const invoke = operations.invoke.bind(operations);
             const readArtifact = operations.readArtifact.bind(operations);
             operations.readArtifact = (...args) => track(readArtifact(...args));
@@ -77,7 +78,7 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
                     operation: id, outcome: result.ok ? 'ok' : result.error.code });
                 return result;
             })());
-            return await action({ operations, owner, client, requestId: randomUUID() });
+            return await action({ operations, owner, client, operationId, denial, requestId: randomUUID() });
         } finally {
             // SDK transport closure does not prove the tool stopped. Keep the
             // same admission slots until all already-started work has settled.

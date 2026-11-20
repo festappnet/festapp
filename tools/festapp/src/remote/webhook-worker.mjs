@@ -20,7 +20,7 @@ export function webhookDispatchOwner(config,storage,grant,{fetchImpl}={}){
         exp:Math.floor(Math.min(connectionDeadline(grant),Date.now()+300000)/1000),
         ...(grant.proofProfile==='dpop'?{jkt:'internal-consent-continuation'}:{}),
     },{fetchImpl,transport:'api',expectedResource:grant.resource});
-    check(owner.permitsOperation('webhooks.create'),'FORBIDDEN');
+    owner.requireOperation('webhooks.create');
     return owner;
 }
 export function createWebhookWorker({config,storage,fetchImpl,audit=()=>{},send=createWebhookSender(),ownerForGrant}){
@@ -50,8 +50,7 @@ export function createWebhookWorker({config,storage,fetchImpl,audit=()=>{},send=
                 if(!job.id)return;
                 const local=()=>storage.get('WebhookSubscription',record.binding+':'+record.id);
                 const valid=()=>{
-                    owner.current();
-                    check(owner.permitsOperation('webhooks.create'),'FORBIDDEN');
+                    owner.requireOperation('webhooks.create');
                     const live=local();
                     check(live&&live.expiresAt>Date.now()&&!live.pendingCommand&&live.state==='active'&&live.version===job.version&&live.url===record.url,'FORBIDDEN');
                     return live;

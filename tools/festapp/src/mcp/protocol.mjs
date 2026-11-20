@@ -1,9 +1,10 @@
 import { READ_SCOPE } from '../../../../packages/festapp_contracts/mcp-permissions.mjs';
 
 // One serializer for HTTP challenges and optional tool-result linking metadata.
-export function authChallenge(config, { error, description, scopes = [READ_SCOPE], scheme = 'Bearer' } = {}) {
+export function authChallenge(config, { error, description, scopes = [READ_SCOPE], scheme = 'Bearer',
+    resourceMetadata = config.issuer + '/.well-known/oauth-protected-resource/mcp' } = {}) {
     const quote = value => String(value).replace(/["\\\r\n]/g, '');
-    return `${scheme === 'DPoP' ? 'DPoP' : 'Bearer'} resource_metadata="${config.issuer}/.well-known/oauth-protected-resource/mcp", scope="${scopes.map(quote).join(' ')}"` +
+    return `${scheme === 'DPoP' ? 'DPoP' : 'Bearer'} resource_metadata="${quote(resourceMetadata)}", scope="${scopes.map(quote).join(' ')}"` +
         (error ? `, error="${quote(error)}", error_description="${quote(description)}"` : '');
 }
 export function toolResult(result, owner, id) {

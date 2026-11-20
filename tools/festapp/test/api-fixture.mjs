@@ -17,7 +17,7 @@ const rawProfile = () => { const { binding, ...p } = profile(); return p; };
 const configuration = (issuer) => ({ schemaVersion: 2, issuer, profile: rawProfile(),
     clients: [{ id: 'chatgpt-fixture', name: 'ChatGPT fixture', redirectUris: [issuer + '/callback'] }],
 });
-export async function setup(t, { api = true, apiPolicy, makeMigration = false, auditObserver, profileValue = profile(), userId, sessionClaims, userFactors, proofProfile = 'bearer', global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
+export async function setup(t, { api = true, apiPolicy, mcpPolicy, makeMigration = false, auditObserver, profileValue = profile(), userId, sessionClaims, userFactors, proofProfile = 'bearer', global = false, native = false, tenant = false, pilot = false, fetchImpl, webCallback, publicClient = false, previewFetch, rateLimiter, canonical = false, genericClients = false, clientMetadataDocuments, metadataFetch } = {}) {
     const base = await fixture(t, { profileValue, sessionClaims, userFactors, ...(userId ? {userId} : {}), fetchImpl: (url, init) => global && url.pathname === '/second-activation.json'
         ? reply({ schemaVersion: 1, tenantId: 'second', generation: 1, backend: 'canonical' }) : url.pathname.startsWith('/functions/v1/preview-ticket-layout')
         ? (previewFetch?.(url,init) ?? reply({ presets: {}, fonts: {} })) : fetchImpl?.(url, init) });
@@ -67,6 +67,10 @@ export async function setup(t, { api = true, apiPolicy, makeMigration = false, a
         raw.endpoints.forEach(endpoint=>endpoint.allowedClients=['festapp-make']);
     }
     if (apiPolicy) raw.clients[0]={...raw.clients[0],...apiPolicy};
+    if (mcpPolicy) {
+        const index = raw.clients.findIndex(client => client.id === 'chatgpt-fixture');
+        raw.clients[index] = { ...raw.clients[index], ...mcpPolicy };
+    }
     const parsedConfig = parseRemoteConfig(raw);
     const config = canonical ? { ...parsedConfig, profile: { ...parsedConfig.profile, kind: 'canonical' } } : parsedConfig;
     const audit = [];

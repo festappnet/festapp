@@ -114,6 +114,16 @@ repository.
   Draft PRs defer these lanes until Ready for review. See `CONTRIBUTING.md`.
 
 
+## HTTP API and MCP parity
+
+- Expose shared operations through one catalog, executor and authorization
+  decision. For equivalent actor, client policy, consent and inputs, HTTP API
+  and MCP must agree on operation outcomes and domain error codes, including
+  requests denied before execution. Adapters serialize the shared result for
+  their protocols. Preserve documented transport-specific proof requirements.
+- Exercise both transports for changed authorization behavior. Cover denied
+  requests as well as requests with every required permission.
+
 ## JavaScript package manager
 
 Use pnpm 11.24.0 for every JavaScript package in this repository. Install with `pnpm install --frozen-lockfile` in its package directory; use `pnpm run`/`pnpm exec` for scripts and local tools. Keep `pnpm-lock.yaml` and `pnpm-workspace.yaml` authoritative. Dependencies share the same user content store as Mendelio; do not create npm lockfiles or copy `node_modules` between worktrees.

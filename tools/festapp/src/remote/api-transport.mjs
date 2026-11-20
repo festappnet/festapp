@@ -12,11 +12,12 @@ export function stepUpChallenge(endpoint) {
     return `DPoP error="insufficient_user_authentication", acr_values="${STRONG_AUTHENTICATION_ACR}", max_age="${STEP_UP_MAX_AGE_SECONDS}", resource_metadata=${JSON.stringify(metadata)}`;
 }
 
-export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer', receipt } = {}) {
+export function sendProblem(res, error, { requestId = randomUUID(), endpoint, outcome = 'unknown', authScheme = 'Bearer', receipt, scopeChallenge } = {}) {
     const safe = error?.code && errorStatuses[error.code] ? error : safeError(error);
     const status = errorStatuses[safe.code] ?? 502;
     if (status === 401 && endpoint) res.set('WWW-Authenticate', `${authScheme === 'DPoP' ? 'DPoP' : 'Bearer'} resource_metadata="${new URL(endpoint.publicBase).origin}/.well-known/oauth-protected-resource/integrations", error="${safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' ? 'insufficient_user_authentication' : 'invalid_token'}"`);
     if (safe.code === 'INSUFFICIENT_USER_AUTHENTICATION' && endpoint) res.set('WWW-Authenticate', stepUpChallenge(endpoint));
+    if (safe.code === 'INSUFFICIENT_SCOPE' && scopeChallenge) res.set('WWW-Authenticate', scopeChallenge);
     if (status === 429 && error?.retryAfter) res.set('Retry-After', String(error.retryAfter));
     if (safe.code === 'COMMITTED_READBACK_FAILED' && receipt) {
         res.set({ 'Festapp-Write-Outcome': 'committed', 'Festapp-Command-Id': receipt.commandId, 'Festapp-Receipt-Id': receipt.receiptId });
@@ -97,8 +98,7 @@ export function installApi(app, { config, run }) {
         let accepted = false;
         try {
             check(endpoint, 'INVALID_INGRESS');
-            return await run(req, endpoint, 'api', async ({ operations, owner }) => {
-                const id = req.params.operation;
+            return await run(req, endpoint, 'api', async ({ operations, owner, operationId: id, denial }) => {
                 if (!id) {
                     check(!owner.orderSummaryOnly, 'FORBIDDEN');
                     const parsed = artifactInput.safeParse(req.body);
@@ -109,10 +109,9 @@ export function installApi(app, { config, run }) {
                     return res.set({ 'X-Request-Id': requestId, 'Cache-Control': 'no-store' }).type(content.mimeType).send(Buffer.from(content.blob, 'base64'));
                 }
                 check(known.has(id), 'UNKNOWN_OPERATION');
-                // Same split as delegated authorization and the MCP scope challenge: an operation the
-                // client may never use is FORBIDDEN; one this connection did not grant is a scope gap.
-                check(owner.clientPermitsOperation(id), 'FORBIDDEN');
-                check(owner.permitsOperation(id), 'INSUFFICIENT_SCOPE');
+                if (denial) return sendProblem(res, { code: denial }, {
+                    requestId, endpoint, outcome: 'rejected', scopeChallenge: owner.challengeFor(denial, id),
+                });
                 let retryAfter, receipt;
                 const result = await operations.invoke(id, req.body, {
                     onAccepted: () => { accepted = true; },
@@ -121,6 +120,7 @@ export function installApi(app, { config, run }) {
                 });
                 if (!result.ok) return sendProblem(res, retryAfter ? { ...result.error, retryAfter } : result.error, {
                     requestId: result.meta.requestId, endpoint, authScheme: req.integrationAuthScheme, receipt,
+                    scopeChallenge: result.error.code === 'INSUFFICIENT_SCOPE' ? owner.challengeFor(result.error.code, id) : undefined,
                     outcome: !accepted || known.get(id).domainReadOnly || definiteRejection(id, result.error) ? 'rejected' : 'unknown',
                 });
                 const descriptor = publicCatalog(owner.orderSummaryOnly ? 'order-summary' : 'operator').find(d => d.id === id);
