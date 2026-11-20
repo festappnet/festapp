@@ -6,9 +6,14 @@ const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<'
 
 export const renderTopicLinks = pages => (pages ?? []).filter(page => page.id !== 'home').map(page => `<a href="${publicUrl(page.path)}">${escape(page.linkLabel ?? page.heading)}</a>`).join('');
 
+const siteHeader = showCreateEvent => read('site-header.html').replace(
+  '{{HEADER_CREATE_EVENT}}',
+  showCreateEvent ? '<a class="header-cta" href="{{CTA_HREF}}"><span class="add-event-full">{{PAGE_CREATE_YOUR_OWN_EVENT}}</span><span class="add-event-short">{{PAGE_CREATE_EVENT}}</span></a>' : '',
+);
+
 // Both public surfaces consume these exact fragments and the organizer CSS.
-export function expandSiteShell(template) {
-  return template.replace('{{SITE_HEADER}}', read('site-header.html'))
+export function expandSiteShell(template, {showCreateEvent = true} = {}) {
+  return template.replace('{{SITE_HEADER}}', siteHeader(showCreateEvent))
     .replace('{{SITE_FOOTER}}', read('site-footer.html'));
 }
 
@@ -28,7 +33,7 @@ export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, ac
     }));
   });
   const brandAssets = html => html.replace(/src="\/(brand-logo(?:-light)?\.svg)"/g, (_, name) => `src="${escape(brandAssetBase + name)}"`);
-  let header = brandAssets(render(read('site-header.html')));
+  let header = brandAssets(render(siteHeader(locale !== 'cs')));
   if (brandAssetBase !== '/') header = header.replace('>', ` data-brand-asset-base="${escape(brandAssetBase)}">`);
   return {header: accountHeader ? header : header.replace(' auth-pending', ''), footer: brandAssets(render(read('site-footer.html')))};
 }

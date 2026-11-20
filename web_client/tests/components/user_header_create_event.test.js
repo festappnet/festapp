@@ -24,8 +24,9 @@ test('create-event invitation respects the tenant and explicit registration perm
     const previousLink = AppConfig.webLink;
     const previousContext = RightsService._context;
     t.after(() => { AppConfig.webLink = previousLink; RightsService._context = previousContext; });
-    document.body.dataset.page = 'organizers';
     const heading = document.createElement('h1');
+    heading.id = 'site-introduction';
+
     heading.textContent = 'Organizers';
     document.body.appendChild(heading);
     const header = new UserHeader();
@@ -68,4 +69,11 @@ test('create-event invitation respects the tenant and explicit registration perm
             assert.equal(button.querySelector('.add-event-short').textContent, 'Založit zdarma');
         }
     }
+
+    AppConfig.webLink = 'https://vstupenky.online';
+    header.setAttribute('data-marketing', '');
+    header.context = RightsService._context = { organization: { IS_REGISTRATION_ENABLED: true } };
+    header.render();
+    assert.equal(header.querySelector('.btn-add-event'), null);
+    assert.ok(header.querySelector('.btn-sign-in'));
 });

@@ -150,6 +150,7 @@ export class UserHeader extends HTMLElement {
         // Logo
         const tenantHost = new URL(AppConfig.webLink).hostname;
         const ticketBrand = ['vstupenky.online', 'tickets.festapp.net'].includes(tenantHost);
+        const isCzechMarketingHeader = tenantHost === 'vstupenky.online' && this.hasAttribute('data-marketing');
         const helpRoot = AppConfig.organizerLandingEnabled ? publicHelpRoot(AppConfig.supportedLanguages[0]) : null;
         const logo = document.createElement('img');
         logo.src = brandAssetBase + 'brand-logo.svg';
@@ -281,7 +282,7 @@ export class UserHeader extends HTMLElement {
              actions.appendChild(userContainer);
              
         } else {
-            if (ticketBrand &&
+            if (ticketBrand && !isCzechMarketingHeader &&
                 RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
                 const addEventBtn = document.createElement('button');
                 addEventBtn.type = 'button';
