@@ -2388,6 +2388,8 @@
     "feedbackExportsRead": "Programmfeedback exportieren",
     "informationRead": "Informationsseiten der Veranstaltungen lesen",
     "informationWrite": "Informationsseiten der Veranstaltungen bearbeiten",
+    "songsRead": "Lieder im Liederbuch von Veranstaltungen lesen",
+    "songsWrite": "Lieder im Liederbuch von Veranstaltungen hinzufügen und bearbeiten",
     "programRead": "Programm und gegenseitig ausschließende Gruppen lesen",
     "programWrite": "Programm und gegenseitig ausschließende Gruppen bearbeiten und löschen",
     "mapRead": "Orte, Ortstypen, Wege und Symbole lesen",

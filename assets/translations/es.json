@@ -4287,6 +4287,8 @@
     "feedbackExportsRead": "Exportar las valoraciones del evento",
     "informationRead": "Leer las páginas de información del evento",
     "informationWrite": "Editar las páginas de información del evento",
+    "songsRead": "Leer las canciones de los cancioneros de eventos",
+    "songsWrite": "Añadir y editar canciones en los cancioneros de eventos",
     "programRead": "Leer los elementos del programa y los grupos exclusivos",
     "programWrite": "Editar y eliminar elementos del programa y grupos exclusivos",
     "mapRead": "Leer lugares, tipos de lugar, rutas e iconos",

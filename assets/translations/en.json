@@ -4293,6 +4293,8 @@
     "feedbackExportsRead": "Export event feedback",
     "informationRead": "Read event information pages",
     "informationWrite": "Edit event information pages",
+    "songsRead": "Read songs in event songbooks",
+    "songsWrite": "Add and edit songs in event songbooks",
     "programRead": "Read program items and exclusive groups",
     "programWrite": "Edit and delete program items and exclusive groups",
     "mapRead": "Read places, place types, paths and icons",

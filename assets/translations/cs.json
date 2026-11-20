@@ -4295,6 +4295,8 @@
     "feedbackExportsRead": "Exportovat zpětnou vazbu",
     "informationRead": "Číst informační stránky akcí",
     "informationWrite": "Upravovat informační stránky akcí",
+    "songsRead": "Číst písně ve zpěvníku akcí",
+    "songsWrite": "Přidávat a upravovat písně ve zpěvníku akcí",
     "programRead": "Číst program a vzájemně výlučné skupiny",
     "programWrite": "Upravovat a odstraňovat program a vzájemně výlučné skupiny",
     "mapRead": "Číst místa, typy míst, cesty a ikony",

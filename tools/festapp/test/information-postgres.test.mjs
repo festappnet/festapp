@@ -13,8 +13,8 @@ async function fixture(t){
   catch(error){await db.query('rollback to savepoint information_rpc');await db.query('release savepoint information_rpc');return{error};}
  }};
  await db.query('set local role authenticated');
- const invoke=(operation,args={})=>invokeInformationOperation(owner,client,'information.'+operation,{occasionId:f.occasion,...args});
- return{db,f,owner,invoke};
+ const invokeOperation=(operation,args={})=>invokeInformationOperation(owner,client,operation,{occasionId:f.occasion,...args});
+ return{db,f,owner,invoke:(operation,args)=>invokeOperation('information.'+operation,args),song:(operation,args)=>invokeOperation('songs.'+operation,args)};
 }
 const page={title:'Fotogalerie z minulých let',description:'<p>2016-2024 galleries</p>',type:null,isHidden:false,order:4,data:{presentation:'expandable'}};
 test('information adapter preserves complete editor content, native receipts, CAS and ordinary-only projections',options,async t=>{
@@ -57,4 +57,32 @@ test('information tenant/unit binding, moved occasions and current role revocati
  await db.query('set local role authenticated');
  await assert.rejects(invoke('inspect',{informationId:created.information.id}),{code:'FORBIDDEN'});
  await assert.rejects(invoke('save',args),{code:'FORBIDDEN'});
+});
+
+test('songbook entries use native receipts and are isolated from ordinary pages and game answers',options,async t=>{
+ const {db,f,invoke,song}=await fixture(t);
+ const ordinary=await invoke('save',{commandId:randomUUID(),expectedVersion:null,information:page});
+ const opening={...page,title:'Opening song',description:'<p>First line<br>Second line</p>',type:'song'};
+ const args={commandId:randomUUID(),expectedVersion:null,information:opening};
+ const created=await song('save',args);
+ const id=created.information.id;
+ assert.deepEqual(created.information,{id,...opening});
+ assert.deepEqual(await song('save',args),created);
+ assert.deepEqual(await song('inspect',{informationId:id}),{aggregateVersion:1,information:created.information});
+ assert.deepEqual((await song('list')).items.map(x=>x.id),[id]);
+ assert.deepEqual((await invoke('list')).items.map(x=>x.id),[ordinary.information.id]);
+ await assert.rejects(invoke('inspect',{informationId:id}),{code:'FORBIDDEN'});
+ await assert.rejects(song('inspect',{informationId:ordinary.information.id}),{code:'FORBIDDEN'});
+ await assert.rejects(song('save',{...args,commandId:randomUUID(),expectedVersion:1,information:{...opening,id:ordinary.information.id}}),{code:'FORBIDDEN'});
+ await assert.rejects(invoke('save',{...args,commandId:randomUUID(),expectedVersion:1,information:{...page,id}}),{code:'FORBIDDEN'});
+ for(const type of [null,'game','quote'])
+  await assert.rejects(song('save',{...args,commandId:randomUUID(),information:{...opening,type}}),{code:'INFORMATION_REJECTED'});
+ const revised={...created.information,isHidden:true};
+ const update={commandId:randomUUID(),expectedVersion:1,information:revised};
+ const saved=await song('save',update);
+ assert.equal(saved.aggregateVersion,2);
+ assert.deepEqual(saved.information,revised);
+ await assert.rejects(song('save',{...update,commandId:randomUUID()}),{code:'INFORMATION_CHANGED_RELOAD_REQUIRED'});
+ await db.query('reset role');
+ assert.deepEqual((await db.query("select type, is_hidden from information where id=$1 and occasion=$2",[id,f.occasion])).rows[0],{type:'song',is_hidden:true});
 });
