@@ -23,10 +23,10 @@ BEGIN
 END $$;
 -- Assigning a blueprint to a form offers its bound seats and capacity areas.
 -- Form fields configure additional questions/products, not a second seat allowlist.
-CREATE OR REPLACE FUNCTION public.blueprint_form_products_internal(p_form bigint)
+CREATE OR REPLACE FUNCTION public.blueprint_form_product_bindings_internal(p_form bigint)
 RETURNS TABLE(product bigint,has_seats boolean,has_capacity boolean)
 LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT offered.product,bool_or(offered.has_seats),bool_or(offered.has_capacity)
+ SELECT offered.product,offered.has_seats,offered.has_capacity
  FROM public.forms f JOIN eshop.blueprints b ON b.id=f.blueprint AND b.occasion=f.occasion
  CROSS JOIN LATERAL (
   SELECT s.product,true AS has_seats,false AS has_capacity
@@ -36,7 +36,13 @@ LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   SELECT ab.product,false,true FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=b.id
  ) offered
  JOIN eshop.products p ON p.id=offered.product AND p.occasion=f.occasion
- WHERE f.id=p_form GROUP BY offered.product
+ WHERE f.id=p_form
+$$;
+CREATE OR REPLACE FUNCTION public.blueprint_form_products_internal(p_form bigint)
+RETURNS TABLE(product bigint,has_seats boolean,has_capacity boolean)
+LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT bound.product,bool_or(bound.has_seats),bool_or(bound.has_capacity)
+ FROM public.blueprint_form_product_bindings_internal(p_form) bound GROUP BY bound.product
 $$;
 CREATE OR REPLACE FUNCTION public.blueprint_form_product_catalog_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
@@ -51,7 +57,7 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  CROSS JOIN LATERAL (SELECT public.blueprint_product_availability_internal(p.id) AS value) availability
  WHERE NOT p.is_hidden
 $$;
-REVOKE ALL ON FUNCTION public.blueprint_form_products_internal(bigint),public.blueprint_form_product_catalog_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.blueprint_form_product_bindings_internal(bigint),public.blueprint_form_products_internal(bigint),public.blueprint_form_product_catalog_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 CREATE OR REPLACE FUNCTION public.blueprint_area_availability_internal(p_blueprint bigint,p_form bigint DEFAULT NULL)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT coalesce(jsonb_agg(jsonb_build_object('nodeId',b.node_id,'productId',b.product,'inventoryContextId',b.inventory_context)||

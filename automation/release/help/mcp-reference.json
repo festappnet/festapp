@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "562a75bb0eee0843802a25f11fdf59edc8c3d8ffb96bfae95ef1c0a251df4112",
+  "sourceDigest": "4d9313e20f67292ee93e8a6e88b4de7ae7c38a9f2f87a0db8b1c1d0acc229fa1",
   "permissions": [
     {
       "scope": "festapp:information:read",
@@ -844,6 +844,21 @@
       ]
     },
     {
+      "scope": "festapp:unit-website-consent:write",
+      "labels": {
+        "cs": "Ukládat, potvrzovat a vypínat vazby souhlasu webu",
+        "en": "Save, confirm and disable website consent bindings"
+      },
+      "operations": [
+        "units.websiteConsent.probeComplianz",
+        "units.websiteConsent.save",
+        "units.websiteConsent.disable"
+      ],
+      "requires": [
+        "festapp:unit-settings:read"
+      ]
+    },
+    {
       "scope": "festapp:unit-approvals:request",
       "labels": {
         "cs": "Žádat o schválení měření a Meta CAPI (pošle e-mail všem správcům organizace)",
@@ -865,7 +880,8 @@
       },
       "operations": [
         "forms.list",
-        "forms.inspect"
+        "forms.inspect",
+        "forms.measurement.inspect"
       ],
       "requires": []
     },
@@ -5716,6 +5732,40 @@
         },
         "required": [
           "occasionId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "forms.measurement.inspect",
+      "name": "festapp_forms_measurement_inspect",
+      "description": "Read effective form measurement status, the browser purchase timing and whether this form has an effective Meta CAPI purchase connector. A null value means the installed database does not report that value. The organization switch and Meta CAPI connector credentials are managed in administration. Returns no credentials, public form keys or customer data.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:forms:read"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "formId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "occasionId",
+          "formId"
         ],
         "additionalProperties": false
       }
@@ -16006,7 +16056,7 @@
     {
       "id": "units.measurementApproval.request",
       "name": "festapp_units_measurement_approval_request",
-      "description": "Ask the platform to approve the form dataLayer and measurement runtime for this organizer and its currently saved websites. When the platform then provisions or changes the measurement runtime, consentRevision changes: every enabled website consent binding becomes confirmation_required and must be reconfirmed in organizer administration (see festapp_units_website_consent_inspect). Mention this when asking for approval. Sends a measurement approval request email to every administrator of the organization who has a deliverable address, with the organizer, organization and saved websites and a link to organization settings; the platform then confirms the approval. Approve the exact change first: name the organizer and that all organization administrators will be emailed. Uses the administration request owner; there is no commandId. While a request is active, after approval or for a demo organizer nothing is sent and the current status is returned. After an uncertain response, inspect with festapp_units_measurement_approval_inspect and wait while requestState is requested. If requestState is retry_available, a new request can send another round of emails. Obtain fresh approval before sending a new request. APPROVAL_REQUEST_LIMITED means nothing was sent; when retryable, its message states the seconds to wait. APPROVAL_REQUEST_NO_RECIPIENT means no administrator has a deliverable email address; nothing was sent and the request stays available. Requires whole-organizer consent and its live manager role.",
+      "description": "Ask the platform to approve the form dataLayer and measurement runtime for this organizer and its currently saved websites. When the platform then provisions or changes the measurement runtime, consentRevision changes: every enabled website consent binding becomes confirmation_required and needs fresh organizer confirmation (see festapp_units_website_consent_inspect). Mention this when asking for approval. Sends a measurement approval request email to every administrator of the organization who has a deliverable address, with the organizer, organization and saved websites and a link to organization settings; the platform then confirms the approval. Approve the exact change first: name the organizer and that all organization administrators will be emailed. Uses the administration request owner; there is no commandId. While a request is active, after approval or for a demo organizer nothing is sent and the current status is returned. After an uncertain response, inspect with festapp_units_measurement_approval_inspect and wait while requestState is requested. If requestState is retry_available, a new request can send another round of emails. Obtain fresh approval before sending a new request. APPROVAL_REQUEST_LIMITED means nothing was sent; when retryable, its message states the seconds to wait. APPROVAL_REQUEST_NO_RECIPIENT means no administrator has a deliverable email address; nothing was sent and the request stays available. Requires whole-organizer consent and its live manager role.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",
@@ -16803,7 +16853,7 @@
     {
       "id": "units.settings.save",
       "name": "festapp_units_settings_save",
-      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned analytics/measurement configuration, including the GTM container ID and custom tracking code, with explicit organizer consent and live manager authorization. measurement_consent_bridge defaults to false; enable it only when the organizer operates the host website as the same controller and its banner explicitly covers the embedded form and measurement services. Explicit adapters remain available independently. measurement_websites contains up to 10 exact HTTPS origins without paths. Saving confirms organizer operation of those websites; after initial organizer platform/runtime approval, all saved websites are admitted automatically without another domain request. Browser-canonical origins are required; this never grants visitor consent. Measurement configuration uses measurement_consent_bridge, measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. Visitor consent does not gate measurement: on an eligible form GTM and Unit scripts load at once, and the choice is passed as Consent Mode state for the organizer's container. Successful browser purchase/generate_lead events can carry bounded buyer email/phone to approved measurement recipients, also under denied choice. measurement_consent_version is a positive nondecreasing integer (historical default 1); increase it to require new consent when remote tags or purposes change. Omission preserves the version; null and decreases are rejected. Festapp cannot detect remote tag or policy content changes at the same ID/URL. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Website consent bindings: consentRevision hashes the stored measurement_gtm_container, measurement_scripts, measurement_privacy_url, measurement_consent_title, measurement_consent_text and measurement_consent_version together with the platform-owned measurement runtime profile and collector origins. Any change to those stored values changes it, including setting or clearing an empty text; resending identical values, null for an unset key, or an explicit measurement_consent_version 1 where none is stored does not. Every enabled website consent binding then becomes confirmation_required and the website is treated as unbound until a manager confirms it again in organizer administration; MCP cannot confirm it. Platform approval that provisions or changes the measurement runtime has the same effect without any save. Meta CAPI website_ready for a connector website other than the tenant address depends on that binding and is false until then. Turning measurement_consent_bridge off or removing a website from measurement_websites does not change the revision but makes the affected bindings unavailable while that lasts. Before saving such a change, check festapp_units_website_consent_inspect and obtain approval for this effect too. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
+      "description": "Change organizer title, default Reply-To, formal/informal tone, timezone and organizer-owned analytics/measurement configuration, including the GTM container ID and custom tracking code, with explicit organizer consent and live manager authorization. measurement_consent_bridge defaults to false; enable it only when the organizer operates the host website as the same controller and its banner explicitly covers the embedded form and measurement services. Explicit adapters remain available independently. measurement_websites contains up to 10 exact HTTPS origins without paths. Saving confirms organizer operation of those websites; after initial organizer platform/runtime approval, all saved websites are admitted automatically without another domain request. Browser-canonical origins are required; this never grants visitor consent. Measurement configuration uses measurement_consent_bridge, measurement_enabled, measurement_consent_layout, measurement_consent_title, measurement_consent_text, measurement_gtm_container, measurement_privacy_url and measurement_scripts; disabling preserves destinations. Visitor consent does not gate measurement: on an eligible form GTM and Unit scripts load at once, and the choice is passed as Consent Mode state for the organizer's container. Successful browser purchase/generate_lead events can carry bounded buyer email/phone to approved measurement recipients, also under denied choice. measurement_consent_version is a positive nondecreasing integer (historical default 1); increase it to require new consent when remote tags or purposes change. Omission preserves the version; null and decreases are rejected. Festapp cannot detect remote tag or policy content changes at the same ID/URL. measurement_consent_layout is bar or modal, and measurement_consent_title (80 characters) and measurement_consent_text (500 characters) replace the translated notice text for all languages as plain text; empty uses the default. A valid organizer HTTPS measurement_privacy_url is required before measurement or its consent notice can run; omission preserves it and null clears it, leaving measurement ineligible. Partial configuration can be saved. Organization and per-form flags remain separate gates. Website consent bindings: consentRevision hashes the stored measurement_gtm_container, measurement_scripts, measurement_privacy_url, measurement_consent_title, measurement_consent_text and measurement_consent_version together with the platform-owned measurement runtime profile and collector origins. Any change to those stored values changes it, including setting or clearing an empty text; resending identical values, null for an unset key, or an explicit measurement_consent_version 1 where none is stored does not. Every enabled website consent binding then becomes confirmation_required and the website is treated as unbound until a manager confirms it again with the organizer’s explicit confirmation in administration or with festapp_units_website_consent_save. Platform approval that provisions or changes the measurement runtime has the same effect without any save. Meta CAPI website_ready for a connector website other than the tenant address depends on that binding and is false until then. Turning measurement_consent_bridge off or removing a website from measurement_websites does not change the revision but makes the affected bindings unavailable while that lasts. Before saving such a change, check festapp_units_website_consent_inspect and obtain approval for this effect too. Uses the same versioned, receipted command as the editor. Obtain approval for the exact changes, supply the original aggregate version and an immutable commandId. Retry uncertainty with identical commandId and payload; conflicts require rereading and a new decision. Null metadata restores inheritance/defaults. Timezone alone preserves stored instants. No draft finalization or provider setup.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",
@@ -16998,6 +17048,47 @@
       }
     },
     {
+      "id": "units.websiteConsent.disable",
+      "name": "festapp_units_website_consent_disable",
+      "description": "Disable a website consent binding so form embeds stop accepting its website cookie choices. The stored configuration is retained. Get the bindingId and version from festapp_units_website_consent_inspect and obtain explicit approval for that website before disabling. Requires whole-organizer consent and its live manager role. After an uncertain result, inspect units.websiteConsent.inspect with the same unitId. Compare the binding version and state before trying again; obtain fresh approval if the version or consentRevision changed.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:unit-settings:read",
+        "festapp:unit-website-consent:write"
+      ],
+      "readOnly": false,
+      "destructive": false,
+      "idempotent": false,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "bindingId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "unitId",
+          "bindingId",
+          "expectedVersion"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
       "id": "units.websiteConsent.export",
       "name": "festapp_units_website_consent_export",
       "description": "Read the consent import text of one ready website consent binding, exactly as the organizer administration copies it. Pass consentExport unchanged to festapp_forms_embed_code for an HTML embed on that website. It contains public identifiers that become part of the website code, no credentials. Use bindingId and version from festapp_units_website_consent_inspect; a changed binding returns WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED and a binding that is not ready returns WEBSITE_CONSENT_NOT_READY. Requires whole-organizer consent and its live manager role.",
@@ -17040,7 +17131,7 @@
     {
       "id": "units.websiteConsent.inspect",
       "name": "festapp_units_website_consent_inspect",
-      "description": "Read the state of website consent bindings (the organizer's cookie banner on its own websites passed to embedded forms) and the current consentRevision. ready means the binding is used; confirmation_required means the consent notice changed after confirmation (see festapp_units_settings_save) and the website is treated as unbound until reconfirmed; unavailable means the consent bridge is off, the website is no longer saved or the organizer is a demo; draft/disabled are not used; unknown is a newer server state and is never ready. Bindings of saved websites are listed first; truncated means more than 100 bindings or saved websites exist and the rest are omitted. Returns platform and banner provider only, no provider configuration. Confirmation of a binding is the organizer's own statement about its website banner and happens only in organizer administration; MCP cannot confirm, change or disable bindings. Requires whole-organizer consent and its live manager role.",
+      "description": "Read the state of website consent bindings (the organizer's cookie banner on its own websites passed to embedded forms) and the current consentRevision. ready means the binding is used; confirmation_required means the consent notice changed after confirmation (see festapp_units_settings_save) and the website is treated as unbound until reconfirmed; unavailable means the consent bridge is off, the website is no longer saved or the organizer is a demo; draft/disabled are not used; unknown is a newer server state and is never ready. Bindings of saved websites are listed first; truncated means more than 100 bindings or saved websites exist and the rest are omitted. Returns platform and banner provider only, no provider configuration. Confirmation is the organizer's own statement about its website banner. A tool cannot determine whether the banner covers the organizer's actual processing. Requires whole-organizer consent and its live manager role.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read"
@@ -17061,6 +17152,185 @@
         },
         "required": [
           "unitId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "units.websiteConsent.probeComplianz",
+      "name": "festapp_units_website_consent_probe_complianz",
+      "description": "Detect the publicly declared Complianz policy ID on the exact saved website using the organizer administration probe. Requires whole-organizer consent and its live manager role. Detection sends a public website request and does not confirm coverage. Use the detected policy ID in the binding only after the organizer verifies it.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:unit-settings:read",
+        "festapp:unit-website-consent:write"
+      ],
+      "readOnly": true,
+      "destructive": false,
+      "idempotent": true,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "websiteOrigin": {
+            "type": "string",
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "unitId",
+          "websiteOrigin"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "units.websiteConsent.save",
+      "name": "festapp_units_website_consent_save",
+      "description": "Create or replace the consent binding for an exact saved website. Use expectedVersion 0 for a missing binding; get the current version and expectedConsentRevision from festapp_units_website_consent_inspect. Get approval for the exact website, platform, provider configuration and whether it will be enabled. Set coverageConfirmed true only when the organizer explicitly confirms that its website banner covers this processing and these analytics and marketing choices. False saves a draft and removes prior confirmation. When using a detected Complianz policy ID, set verifyComplianz true to recheck it before confirming.  Requires whole-organizer consent and its live manager role. After an uncertain result, inspect units.websiteConsent.inspect with the same unitId. Compare the binding version and state before trying again; obtain fresh approval if the version or consentRevision changed.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:unit-settings:read",
+        "festapp:unit-website-consent:write"
+      ],
+      "readOnly": false,
+      "destructive": false,
+      "idempotent": false,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "websiteOrigin": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "wordpress",
+              "joomla",
+              "wix",
+              "html"
+            ]
+          },
+          "providerConfig": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "complianz"
+                  },
+                  "policyId": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,15}$"
+                  }
+                },
+                "required": [
+                  "provider",
+                  "policyId"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "cookiebot"
+                  }
+                },
+                "required": [
+                  "provider"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "wix"
+                  }
+                },
+                "required": [
+                  "provider"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "const": "cookieconsent"
+                  },
+                  "categories": {
+                    "type": "object",
+                    "properties": {
+                      "analytics": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "marketing": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      }
+                    },
+                    "required": [
+                      "analytics",
+                      "marketing"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "provider"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expectedConsentRevision": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$"
+          },
+          "coverageConfirmed": {
+            "type": "boolean"
+          },
+          "verifyComplianz": {
+            "type": "boolean",
+            "const": true
+          }
+        },
+        "required": [
+          "unitId",
+          "websiteOrigin",
+          "platform",
+          "providerConfig",
+          "expectedVersion",
+          "expectedConsentRevision",
+          "coverageConfirmed"
         ],
         "additionalProperties": false
       }

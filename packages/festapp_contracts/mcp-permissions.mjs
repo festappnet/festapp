@@ -62,10 +62,11 @@ export const MCP_PERMISSIONS = Object.freeze({
     'festapp:occasion-settings:write': {label:'occasionSettingsWrite',operations:['occasions.settings.save','occasions.publicLink','occasions.setPublicLink','occasions.game.save'],requires:['festapp:occasion-settings:read']},
     'festapp:unit-settings:read': {label:'unitSettingsRead',operations:['units.settings.inspect','units.appLanding.inspect','units.websiteConsent.inspect','units.websiteConsent.export','units.measurementApproval.inspect','units.metaCapiApproval.inspect'],requires:[]},
     'festapp:unit-settings:write': {label:'unitSettingsWrite',operations:['units.settings.save','units.appLanding.save'],requires:['festapp:unit-settings:read']},
+    'festapp:unit-website-consent:write': {label:'unitWebsiteConsentWrite',operations:['units.websiteConsent.probeComplianz','units.websiteConsent.save','units.websiteConsent.disable'],requires:['festapp:unit-settings:read']},
     // Separate from settings writes: requests email every organization administrator,
     // and the Meta CAPI request is organization-wide. Existing grants do not include it.
     'festapp:unit-approvals:request': {label:'unitApprovalsRequest',operations:['units.measurementApproval.request','units.metaCapiApproval.request'],requires:['festapp:unit-settings:read']},
-    'festapp:forms:read': { label: 'formsRead', operations: ['forms.list','forms.inspect'], requires: [] },
+    'festapp:forms:read': { label: 'formsRead', operations: ['forms.list','forms.inspect','forms.measurement.inspect'], requires: [] },
     'festapp:forms:write': { label: 'formsWrite', operations: ['forms.publicLink','forms.embedCode','forms.setPublicLink','forms.paymentOptions','forms.create','forms.save','forms.duplicate','forms.delete'], requires: ['festapp:forms:read'] },
     'festapp:email-templates:read': { label: 'emailTemplatesRead', operations: ['email_templates.list','email_templates.inspect','email_templates.banner.inspect','email_templates.preview'], requires: [] },
     'festapp:email-templates:write': { label: 'emailTemplatesWrite', operations: ['email_templates.change','email_templates.banner.change'], requires: ['festapp:email-templates:read'] },

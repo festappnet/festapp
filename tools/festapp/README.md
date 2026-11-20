@@ -512,7 +512,7 @@ released baseline is sealed. A generated file is not evidence of publication.
 
 API and MCP use `DELEGATED_OPERATIONS` and the same `Operations` executor,
 input/output validation, SQL authorization, preview/version checks and receipts.
-The operator contract exposes 194 operations for Bearer clients and all 216 for
+The operator contract exposes 198 operations for Bearer clients and all 220 for
 registered DPoP + PAR clients. The 22 sensitive operations additionally require
 GoTrue-verified AAL2 authentication no older than 300 seconds; refreshing tokens
 does not renew that authentication time. The first-party consent upgrades a
