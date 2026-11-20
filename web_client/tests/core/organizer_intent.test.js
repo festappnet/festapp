@@ -15,7 +15,11 @@ test('organizer intent uses current rights, existing registration and signed-in 
     const { AppConfig } = await import('../../src/app_config.js');
     AppConfig.webLink = 'https://vstupenky.online';
     let context = { organization: { IS_REGISTRATION_ENABLED: false } };
-    t.mock.method(RightsService, 'updateAppData', async () => { RightsService._context = context; return true; });
+    let unitContext;
+    t.mock.method(RightsService, 'updateAppData', async ({ unitId } = {}) => {
+        RightsService._context = unitId === undefined ? context : unitContext;
+        return true;
+    });
     const admin = t.mock.method(RouterService, 'navigateToAdmin', async () => {});
     const handoff = t.mock.method(RouterService, 'navigateToFlutterRoute', async () => {});
     assert.equal(await handleOrganizerIntent(), 'catalog');
@@ -40,9 +44,19 @@ test('organizer intent uses current rights, existing registration and signed-in 
     assert.equal(window.location.search, '?utm_source=header');
     assert.equal(locationHash(), '#auth-fragment');
     context = { user_info: { id: 'user', units: [{ id: 27 }] } };
+    unitContext = {
+        ...context, unit: { id: 27 }, capabilities: { 'unit.administration.read': true },
+    };
     window.history.replaceState(null, '', '/events?login=1');
     assert.equal(await handleOrganizerIntent(), 'navigated');
     assert.deepEqual(admin.mock.calls.at(-1).arguments, [27]);
+
+    const previousAdminNavigations = admin.mock.calls.length;
+    context = { user_info: { id: 'occasion-editor', units: [{ id: 27 }] } };
+    unitContext = { ...context, unit: { id: 27 }, capabilities: {} };
+    window.history.replaceState(null, '', '/login');
+    assert.equal(await handleOrganizerIntent(), 'catalog');
+    assert.equal(admin.mock.calls.length, previousAdminNavigations);
     AppConfig.webLink = 'https://another.invalid';
     window.history.replaceState(null, '', '/events?create=1');
     assert.equal(await handleOrganizerIntent(), false);

@@ -125,6 +125,40 @@ zachová data a obnoví jen RPC konceptů a předloh. Novější obecné migrace
 bootstrapu se automaticky nepřidávají. Nepřepisuje neoznačenou existující DB.
 Klíče jsou v lokálním souboru `wizard-defines.json` s oprávněním 0600.
 
+### Uložení šablony plánku s popisky
+
+Otevření galerie a uložení plánku mají odlišné nároky. Při uložení zpracuje
+`preview-ticket-layout` popisky a čísla sedadel nad skutečnými fonty. Pro
+ověření na macOS s Colimou spusťte místní úložiště fontů v samostatném terminálu.
+Používá port 57382 na loopbacku a ověřuje soubory podle jejich SHA-256.
+
+```sh
+mkdir -p ../festapp-wizard-local
+(
+  umask 077
+  printf 'TICKET_FONT_SERVICE_SECRET=%s\n' "$(openssl rand -hex 32)"
+  printf '%s\n' 'TICKET_FONT_SERVICE_URL=http://host.lima.internal:57382/service/ticket-fonts/'
+) > ../festapp-wizard-local/ticket-fonts.env
+python3 automation/landing_capture/english/font_cache.py \
+  --directory ../festapp-wizard-local/ticket-font-cache \
+  --env-file ../festapp-wizard-local/ticket-fonts.env
+```
+
+V dalším terminálu spusťte průvodce se stejným souborem. Pokud už máte lokální
+Edge konfiguraci, přidejte do ní obě proměnné a použijte tento společný soubor.
+Běžící lokální Edge Runtime načte změnu až po restartu projektu.
+
+```sh
+FESTAPP_WIZARD_EDGE_ENV=../festapp-wizard-local/ticket-fonts.env \
+  python3 automation/run_occasion_setup_local.py --enable-wizard
+```
+
+Při prvním použití fontu mimo balík potřebuje Edge přístup k jeho skutečným
+datům z Google Fonts. Po ověření se obsah použije z místního úložiště.
+Pokud rozhraní zobrazí `font_retry_backoff`, počkejte nejméně pět sekund
+a při dalším pokusu zkontrolujte první odpověď `preview-ticket-layout`.
+Kód `font_storage_config` znamená, že worker postrádá platné nastavení úložiště.
+
 Ukončení: `q` zastaví Flutter. Backend zastav bez ztráty dat:
 
 ```sh

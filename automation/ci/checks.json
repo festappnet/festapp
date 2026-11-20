@@ -1334,7 +1334,7 @@
       "requires": []
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/occasion/occasion_setup_payment_choice_test.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -2154,6 +2154,7 @@
         "test/data_services/form_editor_rpc_test.dart",
         "test/components/occasion/occasion_setup_email_templates_test.dart",
         "test/components/occasion/occasion_setup_blueprint_open_test.dart",
+        "test/components/occasion/occasion_setup_payment_choice_test.dart",
         "test/components/occasion/setup_font_catalog_test.dart",
         "test/components/notification_center/notification_email_settings_test.dart",
         "test/components/discount_codes/discount_codes_dialog_test.dart",
@@ -3429,6 +3430,7 @@
     "test/components/occasion/occasion_creation_recovery_test.dart",
     "test/components/occasion/occasion_list_refresh_test.dart",
     "test/components/occasion/occasion_setup_blueprint_open_test.dart",
+    "test/components/occasion/occasion_setup_payment_choice_test.dart",
     "test/components/occasion/occasion_setup_email_templates_test.dart",
     "test/components/occasion/setup_font_catalog_test.dart",
     "test/components/organization/authorization_projection_test.dart",

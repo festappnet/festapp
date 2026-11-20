@@ -31,6 +31,7 @@ test('cash is a builtin summary with safe instructions and no online reservation
   const options=formPaymentOptions({available:['cash'],cash:{available:true,instructions:'U vstupu <script>unsafe</script>'},bank:{available:false},providers:{},deadlinePolicy:{mode:'none'}});
   renderPaymentMethodPicker(host,options,value=>selected.push(value));
   assert.deepEqual(selected,['cash']);assert.equal(host.hidden,false);
-  assert.match(host.textContent,/Pouze hotově/);assert.match(host.textContent,/U vstupu <script>/);
+  assert.equal(host.querySelector('fieldset p')?.textContent, 'Hotovost');
+  assert.match(host.textContent,/U vstupu <script>/);
   assert.equal(host.querySelector('script'),null);assert.doesNotMatch(host.textContent,/31 minut/);
 });

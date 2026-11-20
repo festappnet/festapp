@@ -81,7 +81,10 @@ void main() {
       tester,
       OccasionTeamInvitationPage(
         token: 'capability',
-        loader: (_) async => invitation(existing: true),
+        loader: (_) async => {
+          ...invitation(existing: true),
+          'roles': {'is_editor': true, 'is_editor_view': true},
+        },
         acceptor: (_, {password}) async {
           accepts++;
           return {'accepted': true};
@@ -90,6 +93,11 @@ void main() {
       ),
     );
     expect(accepts, 0);
+    expect(
+      find.text("${key('roleLabel')}: MemberAccess.is_editor"),
+      findsOneWidget,
+    );
+    expect(find.textContaining('MemberAccess.is_editor_view'), findsNothing);
     expect(find.text(key('login')), findsOneWidget);
     expect(find.text(key('accept')), findsNothing);
     expect(find.byType(TextFormField), findsNothing);
