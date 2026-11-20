@@ -2341,6 +2341,7 @@
     "unitPeopleRevoke": "Zugriff auf den Veranstalter entziehen",
     "unitSettingsRead": "Veranstaltereinstellungen lesen",
     "unitSettingsWrite": "Veranstaltereinstellungen ändern",
+    "unitWebsiteConsentWrite": "Website-Einwilligungsbindungen speichern, bestätigen und deaktivieren",
     "unitApprovalsRequest": "Freigabe von Messung und Meta CAPI anfordern (E-Mail an alle Organisationsadministratoren)",
     "emailTemplatesRead": "E-Mail-Vorlagen, Banner und Beispielvorschauen lesen",
     "emailTemplatesWrite": "E-Mail-Vorlagen und Banner bearbeiten; Vererbung wiederherstellen",

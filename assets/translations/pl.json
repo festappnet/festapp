@@ -2343,6 +2343,7 @@
     "unitPeopleRevoke": "Odbierać dostęp do organizatora",
     "unitSettingsRead": "Odczyt ustawień organizatora",
     "unitSettingsWrite": "Zmiana ustawień organizatora",
+    "unitWebsiteConsentWrite": "Zapisywanie, potwierdzanie i wyłączanie powiązań zgody witryny",
     "unitApprovalsRequest": "Prosić o zatwierdzenie pomiaru i Meta CAPI (wysyła e-mail do wszystkich administratorów organizacji)",
     "emailTemplatesRead": "Odczyt szablonów e-mail, banerów i przykładowych podglądów",
     "emailTemplatesWrite": "Edycja szablonów e-mail i banerów; przywracanie dziedziczenia",
