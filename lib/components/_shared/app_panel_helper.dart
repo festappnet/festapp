@@ -16,6 +16,7 @@ import 'package:fstapp/components/navigation/routed_tab_scaffold.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
+import 'package:fstapp/components/unit/unit_picker_favorites.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/forms/views/reservation_page.dart';
 import 'package:fstapp/components/occasion/admin_page.dart';
@@ -52,6 +53,14 @@ class _ActionMenuItem {
 }
 
 class AppPanelHelper {
+  static const _unitFavoritesMinimum = 5;
+
+  static UnitPickerFavorites? _unitPickerFavorites(List<UnitModel> units) {
+    final userId = RightsService.currentUser()?.id;
+    if (userId == null || units.length < _unitFavoritesMinimum) return null;
+    return UnitPickerFavorites(userId);
+  }
+
   /// This method returns a breadcrumb widget for navigating units and occasions.
   /// This is now primarily used for the desktop layout.
   static Widget _buildBreadcrumbs(
@@ -73,6 +82,7 @@ class AppPanelHelper {
         title: currentUnit.title ?? '---',
         isBold: currentOccasion == null,
         items: allUnits,
+        unitFavorites: _unitPickerFavorites(allUnits),
         selectedItem: currentUnit,
         itemTitleBuilder: (item) => item.title ?? '---',
         itemIdBuilder: (item) => item.id,
@@ -326,6 +336,7 @@ class AppPanelHelper {
     required String searchHintText,
     required String createNewText,
     DateTime? Function(T item)? itemDateBuilder,
+    UnitPickerFavorites? unitFavorites,
     bool isBold = false,
   }) {
     final theme = Theme.of(context);
@@ -391,6 +402,7 @@ class AppPanelHelper {
                     selectedItem: selectedItem,
                     itemTitleBuilder: itemTitleBuilder,
                     itemIdBuilder: itemIdBuilder,
+                    unitFavorites: unitFavorites,
                     itemDateBuilder: itemDateBuilder,
                     onItemSelected: onItemSelected,
                     onCreateNew: onCreateNew,
@@ -454,6 +466,7 @@ class AppPanelHelper {
     String? happeningNowText,
     String? upcomingText,
     String? pastText,
+    UnitPickerFavorites? unitFavorites,
   }) {
     final overlay = Overlay.of(context);
     late OverlayEntry overlayEntry;
@@ -520,6 +533,7 @@ class AppPanelHelper {
                         selectedItem: selectedItem,
                         itemTitleBuilder: itemTitleBuilder,
                         itemIdBuilder: itemIdBuilder,
+                        unitFavorites: unitFavorites,
                         itemDateBuilder: itemDateBuilder,
                         onItemSelected: onItemSelected,
                         onCreateNew: onCreateNew,
@@ -694,6 +708,7 @@ class AppPanelHelper {
                             onPressed: () => _showPicker<UnitModel>(
                               context: buttonContext,
                               items: allUnits,
+                              unitFavorites: _unitPickerFavorites(allUnits),
                               selectedItem: currentUnit,
                               itemTitleBuilder: (i) => i.title ?? '---',
                               itemIdBuilder: (i) => i.id,

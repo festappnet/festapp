@@ -1080,6 +1080,8 @@
     "removePlace": "Usuń przypisanie miejsca"
   },
   "Administration": {
+    "addOrganizationFavorite": "Dodaj do ulubionych",
+    "removeOrganizationFavorite": "Usuń z ulubionych",
     "webAnalytics": "Analityka internetowa",
     "analyticsVisits": "Wizyty i źródła ruchu",
     "analyticsPages": "Wyświetlenia stron",

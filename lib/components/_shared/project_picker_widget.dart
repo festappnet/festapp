@@ -4,6 +4,10 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:intl/intl.dart';
+import 'package:fstapp/services/exception_handler.dart';
+import 'package:fstapp/components/unit/unit_picker_favorites.dart';
+
+import 'admin_strings.dart';
 
 /// A custom stateful widget for the picker UI with search functionality.
 class ProjectPicker<T> extends StatefulWidget {
@@ -17,6 +21,7 @@ class ProjectPicker<T> extends StatefulWidget {
   final String hintText;
   final String createNewText;
   final Object? Function(T item) itemIdBuilder;
+  final UnitPickerFavorites? unitFavorites;
 
   // A function to get a date from an item for sorting and display.
   final DateTime? Function(T item)? itemDateBuilder;
@@ -42,6 +47,7 @@ class ProjectPicker<T> extends StatefulWidget {
     required this.hintText,
     required this.createNewText,
     required this.itemIdBuilder,
+    this.unitFavorites,
     this.itemDateBuilder,
     this.happeningNowText,
     this.upcomingText,
@@ -67,11 +73,53 @@ class _PickerGroupHeading {
 class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _displayItems = [];
+  Set<int>? _favoriteIds;
+  final Set<int> _savingFavoriteIds = {};
+
+  int? _favoriteId(T item) {
+    if (widget.unitFavorites == null) return null;
+    final id = widget.itemIdBuilder(item);
+    return id is int ? id : null;
+  }
+
+  Future<void> _loadFavorites(UnitPickerFavorites favorites) async {
+    final stored = await ExceptionHandler.guard(
+      context,
+      futureFunction: favorites.load,
+    );
+    if (!mounted || stored == null) return;
+    _favoriteIds = stored;
+    _filterItems();
+  }
+
+  Future<void> _toggleFavorite(int id) async {
+    final favoriteIds = _favoriteIds;
+    if (favoriteIds == null || _savingFavoriteIds.contains(id)) return;
+
+    final makeFavorite = !favoriteIds.contains(id);
+    setState(() => _savingFavoriteIds.add(id));
+    final saved = await ExceptionHandler.guardVoid(
+      context,
+      futureFunction: () => widget.unitFavorites!.save(id, makeFavorite),
+    );
+    if (!mounted) return;
+    _savingFavoriteIds.remove(id);
+    if (saved) {
+      if (makeFavorite) {
+        favoriteIds.add(id);
+      } else {
+        favoriteIds.remove(id);
+      }
+    }
+    _filterItems();
+  }
 
   @override
   void initState() {
     super.initState();
     _processItems(widget.items);
+    final favorites = widget.unitFavorites;
+    if (favorites != null) _loadFavorites(favorites);
     if (widget.hintText.isNotEmpty) {
       _searchController.addListener(_filterItems);
     }
@@ -90,7 +138,22 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
     final groupTitle = widget.itemGroupTitleBuilder;
     final List<dynamic> display;
     if (groupId == null || groupTitle == null) {
-      display = _datedItems(sourceItems, now);
+      final ordered = _datedItems(sourceItems, now);
+      final favoriteIds = _favoriteIds;
+      if (favoriteIds == null || favoriteIds.isEmpty) {
+        display = ordered;
+      } else {
+        final favorites = <T>[];
+        final otherEntries = <dynamic>[];
+        for (final entry in ordered) {
+          if (entry is T && favoriteIds.contains(_favoriteId(entry))) {
+            favorites.add(entry);
+          } else {
+            otherEntries.add(entry);
+          }
+        }
+        display = [...favorites, ...otherEntries];
+      }
     } else {
       final groups = <Object?, List<T>>{};
       for (final item in sourceItems) {
@@ -269,6 +332,16 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                     shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     itemCount: _displayItems.length,
+                    findChildIndexCallback: widget.unitFavorites == null
+                        ? null
+                        : (key) {
+                            final index = _displayItems.indexWhere(
+                              (entry) =>
+                                  entry is T &&
+                                  key == ValueKey(_favoriteId(entry)),
+                            );
+                            return index < 0 ? null : index;
+                          },
                     itemBuilder: (context, index) {
                       final entry = _displayItems[index];
 
@@ -351,7 +424,21 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                               ),
                             );
 
+                      final favoriteId = _favoriteId(item);
+                      final isFavorite =
+                          _favoriteIds?.contains(favoriteId) ?? false;
+                      final favoriteActionPending =
+                          _favoriteIds == null ||
+                          _savingFavoriteIds.contains(favoriteId);
+                      final check = isSelected
+                          ? Icon(
+                              Icons.check,
+                              color: theme.primaryColor,
+                              size: iconSize,
+                            )
+                          : null;
                       return Semantics(
+                        key: favoriteId == null ? null : ValueKey(favoriteId),
                         selected: isSelected,
                         child: ListTile(
                           dense: true,
@@ -364,13 +451,32 @@ class _ProjectPickerState<T> extends State<ProjectPicker<T>> {
                             style: titleTextStyle,
                           ),
                           subtitle: subtitle,
-                          trailing: isSelected
-                              ? Icon(
-                                  Icons.check,
-                                  color: theme.primaryColor,
-                                  size: iconSize,
-                                )
-                              : null,
+                          trailing: favoriteId == null
+                              ? check
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (check != null) check,
+                                    IconButton(
+                                      iconSize: iconSize,
+                                      color: favoriteActionPending
+                                          ? theme.disabledColor
+                                          : isFavorite
+                                          ? theme.primaryColor
+                                          : iconColor,
+                                      tooltip: isFavorite
+                                          ? AdministrationStrings
+                                                .removeOrganizationFavorite
+                                          : AdministrationStrings
+                                                .addOrganizationFavorite,
+                                      isSelected: isFavorite,
+                                      icon: const Icon(Icons.star_border),
+                                      selectedIcon: const Icon(Icons.star),
+                                      onPressed: () =>
+                                          _toggleFavorite(favoriteId),
+                                    ),
+                                  ],
+                                ),
                           onTap: () {
                             widget.onItemSelected(item);
                             widget.onDismiss();

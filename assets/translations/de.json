@@ -1078,6 +1078,8 @@
     "removePlace": "Ortszuweisung entfernen"
   },
   "Administration": {
+    "addOrganizationFavorite": "Zu Favoriten hinzufügen",
+    "removeOrganizationFavorite": "Aus Favoriten entfernen",
     "webAnalytics": "Webanalyse",
     "analyticsVisits": "Besuche und Besucherquellen",
     "analyticsPages": "Seitenaufrufe",

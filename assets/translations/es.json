@@ -1451,6 +1451,8 @@
     "cardTooltipUnassigned": "Plazas sin asignar: {count}"
   },
   "Administration": {
+    "addOrganizationFavorite": "Añadir a favoritos",
+    "removeOrganizationFavorite": "Quitar de favoritos",
     "webAnalytics": "Analítica web",
     "openCloudflareAnalytics": "Abrir la analítica en Cloudflare",
     "organizationSettings": "Ajustes de la organización",
