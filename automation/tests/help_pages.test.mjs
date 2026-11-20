@@ -276,6 +276,9 @@ test('bilingual help shares every Czech route, gives each language its own canon
   for (const language of ['cs', 'sk']) {
    const html = read(language, slug);
    assert.ok(html.includes(`<html lang="${language}">`));
+   const footer = html.match(/<footer\b[\s\S]*?<\/footer>/)[0];
+   assert.match(footer, /<nav\b[^>]*>[\s\S]*<span class="public-language-switch" role="group"/);
+   assert.doesNotMatch(html.slice(0, html.indexOf(footer)), /class="public-language-switch"/);
    assert.ok(html.includes(`rel="canonical" href="${canonical}${language === 'sk' ? '?lang=sk' : ''}"`));
    assert.ok(html.includes(`hreflang="cs" href="${canonical}"`));
    assert.ok(html.includes(`hreflang="sk" href="${canonical}?lang=sk"`));

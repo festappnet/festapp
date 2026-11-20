@@ -127,9 +127,11 @@ const updatesRuntime=context.updates?publicRuntime(root,{builtIndex:builtIndexAr
 if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['media/'+asset.slice('/platform-updates-media/'.length)]=bytes;
   for (const page of context.pages) {
   if (page.type) {outputs.push({asset:page.asset,html:renderUpdate(page,context,{css,themeLinks:updatesRuntime.themeLinks,primary,entryScript:updatesRuntime.entryUrl?`<script type="module" src="${updatesRuntime.entryUrl}"></script>`:'',assetRoot:updatesRuntime.assetRoot})});continue;}
+  const hasAlternate = localized && page.id === 'home';
   const richTokens = renderLandingContent(contentData, clipsData, page, context.pages.filter(other=>!other.type), {regional: context.template === 'regional'});
   const substitute = text => text.replace(/{{([A-Z_0-9]+)}}/g, (_, key) => {
     if (key === 'PLATFORM_UPDATES_LINK') return context.updates ? `<a href="${updatePaths[context.locale]}">${context.locale==='cs'?'Co je nového':'What&#39;s new'}</a>` : '';
+    if (key === 'LANGUAGE_LINKS') return hasAlternate ? publicLanguageSwitch(page.path, context.locale, locales) : '';
     if (key === 'HELP_LINK') return projection.helpLink ? `<a class="header-help" href="${escape(projection.helpLink.href)}">${escape(projection.helpLink.label)}</a>` : '';
     if (key in richTokens) return richTokens[key];
     if (!(key in tokens) || tokens[key] === '') throw new Error(`Missing marketing text ${key}`);
@@ -167,7 +169,6 @@ if(updatesRuntime)for(const {asset,bytes}of updateAssets)updatesRuntime.assets['
       : '<header class="site-header auth-pending"')
     .replace(/src="\/(brand-logo(?:-light)?\.svg)"/g,
       (_, name) => `src="${escape(marketingRuntime.assetRoot + name)}"`);
-  const hasAlternate = localized && page.id === 'home';
   const canonical = new URL(publicLanguageUrl(page.path, context.locale, locales[0]), context.origin).href;
   const title = page.title, description = page.description;
   const home = context.origin + '/';
@@ -187,7 +188,7 @@ const html = `<!doctype html><html lang="${escape(context.locale)}"><head>
 <meta property="og:image" content="${socialImage}"><meta property="og:image:width" content="${Number(seo.imageWidth ?? 1200)}"><meta property="og:image:height" content="${Number(seo.imageHeight ?? 630)}"><meta property="og:image:alt" content="${escape(seo.imageAlt)}">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(title)}"><meta name="twitter:description" content="${escape(description)}"><meta name="twitter:image" content="${socialImage}"><meta name="twitter:image:alt" content="${escape(seo.imageAlt)}">
 <script type="application/ld+json">${jsonScript(structured)}</script>
-<link rel="icon" href="/favicon.ico">${illustrated ? '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">' : ''}${themeLinks}<style>:root{--primary-color:${primary}}${pageCss}${page.id === 'press' ? pressCss : ''}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}"${illustrated ? ' data-drawing="original" data-story="revised-english" data-cinematic="true"' : ''}>${publicThemeBody}${hasAlternate ? content.replace('</header>', '</header>' + publicLanguageSwitch(page.path, context.locale, locales)) : content}<script type="application/json" id="marketing-ui">${jsonScript(projection.regionalHome ? {...projection.ui, contact:projection.regionalHome.contact, seatDemo:projection.regionalHome.seatDemo} : projection.ui)}</script>${entryScript}</body></html>\n`;
+<link rel="icon" href="/favicon.ico">${illustrated ? '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">' : ''}${themeLinks}<style>:root{--primary-color:${primary}}${pageCss}${page.id === 'press' ? pressCss : ''}</style><noscript><style>.auth-pending :is(.header-signin,.header-cta){visibility:visible;pointer-events:auto}</style></noscript></head><body data-page="organizers" data-topic="${escape(page.id)}"${illustrated ? ' data-drawing="original" data-story="revised-english" data-cinematic="true"' : ''}>${publicThemeBody}${content}<script type="application/json" id="marketing-ui">${jsonScript(projection.regionalHome ? {...projection.ui, contact:projection.regionalHome.contact, seatDemo:projection.regionalHome.seatDemo} : projection.ui)}</script>${entryScript}</body></html>\n`;
 
 outputs.push({asset:page.asset, html:documentLocale ? publicDocumentLinks(html, documentLocale, locales[0], new URL(projection.helpLink?.href ?? '/help/', context.origin).pathname) : html});
 }
