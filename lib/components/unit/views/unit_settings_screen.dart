@@ -570,6 +570,7 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
             key: ValueKey('meta-capi-$unitId'),
             unitId: unitId,
             savedWebsites: _savedMeasurementWebsites,
+            canRequestApproval: _canEdit && !_isSaving,
             sectionBuilder: measurementEnabled
                 ? null
                 : (child) => _measurementSection([child]),

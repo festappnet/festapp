@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:fstapp/components/unit/views/unit_meta_capi_settings.dart';
+import 'package:fstapp/components/unit/meta_capi_approval.dart';
 import 'package:fstapp/components/unit/meta_capi_strings.dart';
 
 import 'dart:async';
@@ -70,6 +71,10 @@ void main() {
                 key: ValueKey(connected),
                 unitId: 1,
                 load: (_) async => {'allowed': false, 'connected': exists},
+                loadApproval: (_) async => throw const PostgrestException(
+                  message: 'unit Meta CAPI approval read denied',
+                  code: '42501',
+                ),
                 mutate: (operation, _) async {
                   expect(operation, 'delete_unit_meta_purchase');
                   disconnected = true;
@@ -109,6 +114,10 @@ void main() {
             unitId: 1,
             load: (_) async => throw const PostgrestException(
               message: 'access denied',
+              code: '42501',
+            ),
+            loadApproval: (_) async => throw const PostgrestException(
+              message: 'unit Meta CAPI approval read denied',
               code: '42501',
             ),
           ),
@@ -382,6 +391,58 @@ void main() {
     expect(find.text(MetaCapiStrings.noWebsites), findsNothing);
   });
 
+  testWidgets('Meta CAPI shows terminal counts and reasons without retry', (
+    tester,
+  ) async {
+    final fixture = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
+    for (final code in [
+      'connector_changed',
+      'consent_invalid',
+      'order_ineligible',
+      'payment_too_old',
+      'attempts_exhausted',
+      'retention_expired',
+    ]) {
+      await fixture.pumpWidget(
+        tester,
+        MaterialApp(
+          key: ValueKey(code),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMetaCapiSettings(
+                unitId: 1,
+                load: (_) async => {
+                  'allowed': true,
+                  'websites': [],
+                  'forms': [],
+                  'queue': {'invalid': 3, 'expired': 2},
+                  'last_error': {
+                    'code': code,
+                    'status': code == 'retention_expired'
+                        ? 'expired'
+                        : 'invalid',
+                  },
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MetaCapiStrings.title));
+      await tester.pumpAndSettle();
+      expect(find.text('${MetaCapiStrings.invalidCount}: 3'), findsOneWidget);
+      expect(find.text('${MetaCapiStrings.expired}: 2'), findsOneWidget);
+      expect(find.text(MetaCapiStrings.outcomeReason(code)), findsOneWidget);
+      expect(find.text(MetaCapiStrings.retry), findsNothing);
+    }
+  });
+
   testWidgets('Meta CAPI pause asks to replace the token', (tester) async {
     await initializeDateFormatting('cs');
     final previousLocale = Intl.defaultLocale;
@@ -439,6 +500,196 @@ void main() {
         .add_jm()
         .format(DateTime.parse('2026-11-19T10:00:00Z').toLocal());
     expect(find.text('${MetaCapiStrings.credentials} · $date'), findsOneWidget);
+  });
+
+  testWidgets('Meta CAPI approval request shows its state to Unit managers', (
+    tester,
+  ) async {
+    await initializeDateFormatting('cs');
+    final fixture = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
+    MetaCapiApproval status(
+      String state, {
+      bool approved = false,
+      bool canRequest = true,
+      String? requestedAt,
+    }) => MetaCapiApproval.fromJson({
+      'approved': approved,
+      'request_state': state,
+      'can_request': canRequest,
+      'requested_at': requestedAt,
+    });
+    const requestedAt = '2026-11-19T10:00:00Z';
+    var current = status('not_requested');
+    var requests = 0;
+    var failStatusLoad = false;
+    var approvedByRequest = false;
+    Future<void> pump({
+      bool canRequestApproval = true,
+      bool organizationAdmin = false,
+    }) async {
+      await fixture.pumpWidget(
+        tester,
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMetaCapiSettings(
+                key: UniqueKey(),
+                unitId: 1,
+                canRequestApproval: canRequestApproval,
+                // A Unit manager without organization administration.
+                load: (_) async {
+                  if (organizationAdmin) return {'allowed': current.approved};
+                  throw const PostgrestException(
+                    message: 'Meta CAPI access denied',
+                    code: '42501',
+                  );
+                },
+                loadApproval: (_) async {
+                  if (failStatusLoad) throw StateError('temporary outage');
+                  return current;
+                },
+                requestApproval: (_) async {
+                  requests++;
+                  return current = status(
+                    'requested',
+                    approved: approvedByRequest,
+                    canRequest: false,
+                    requestedAt: requestedAt,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    final request = find.widgetWithText(
+      OutlinedButton,
+      MetaCapiStrings.requestApproval,
+    );
+    failStatusLoad = true;
+    await pump();
+    expect(find.text(MetaCapiStrings.title), findsOneWidget);
+    expect(find.text(FormStrings.measurementPlatformUnknown), findsOneWidget);
+    expect(request, findsNothing);
+    failStatusLoad = false;
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.retry));
+    await tester.pumpAndSettle();
+    expect(find.text(FormStrings.measurementPlatformUnknown), findsNothing);
+    expect(find.text(MetaCapiStrings.title), findsOneWidget);
+    expect(find.text(FormStrings.measurementApprovalRequired), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.byType(ExpansionTile), findsNothing);
+    await tester.tap(request);
+    await tester.pumpAndSettle();
+    expect(requests, 1);
+    final date = DateFormat.yMd('cs')
+        .format(DateTime.parse(requestedAt).toLocal());
+    expect(
+      find.text(FormStrings.measurementApprovalRequested(date)),
+      findsOneWidget,
+    );
+    expect(request, findsNothing);
+
+    // Refresh keeps the persisted date and never offers a duplicate request.
+    await tester.tap(find.widgetWithText(TextButton, CommonStrings.refresh));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(FormStrings.measurementApprovalRequested(date)),
+      findsOneWidget,
+    );
+    expect(request, findsNothing);
+
+    current = status('retry_available', requestedAt: requestedAt);
+    await pump();
+    expect(find.text(FormStrings.measurementApprovalRetry), findsOneWidget);
+    expect(request, findsOneWidget);
+
+    // Readers without settings write see the state but cannot ask.
+    await pump(canRequestApproval: false);
+    expect(request, findsNothing);
+
+    // Demo Units and other no-op states offer no request.
+    current = status('not_requested', canRequest: false);
+    await pump();
+    expect(find.text(FormStrings.measurementApprovalRequired), findsOneWidget);
+    expect(request, findsNothing);
+
+    current = status(
+      'requested',
+      approved: true,
+      canRequest: false,
+      requestedAt: requestedAt,
+    );
+    await pump();
+    expect(find.text(MetaCapiStrings.approvedByPlatform), findsOneWidget);
+    expect(request, findsNothing);
+    expect(requests, 1);
+
+    current = status('not_requested');
+    approvedByRequest = true;
+    await pump(organizationAdmin: true);
+    await tester.tap(request);
+    await tester.pumpAndSettle();
+    expect(requests, 2);
+    expect(find.byType(ExpansionTile), findsOneWidget);
+    expect(find.text(MetaCapiStrings.approvedByPlatform), findsNothing);
+  });
+
+  testWidgets('Meta CAPI approval request explains a missing recipient', (
+    tester,
+  ) async {
+    final toasts = <MethodCall>[];
+    const toast = MethodChannel('PonnamKarthik/fluttertoast');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(toast, (call) async {
+      toasts.add(call);
+      return true;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(toast, null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: UnitMetaCapiSettings(
+              unitId: 1,
+              canRequestApproval: true,
+              load: (_) async => {'allowed': false, 'connected': false},
+              loadApproval: (_) async => MetaCapiApproval.fromJson({
+                'approved': false,
+                'request_state': 'not_requested',
+                'can_request': true,
+              }),
+              requestApproval: (_) async =>
+                  throw Exception('meta_capi_request_no_recipient'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(OutlinedButton, MetaCapiStrings.requestApproval),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      toasts.single.arguments.toString(),
+      contains(FormStrings.measurementRequestNoRecipient),
+    );
+    expect(
+      find.widgetWithText(OutlinedButton, MetaCapiStrings.requestApproval),
+      findsOneWidget,
+    );
+    // Let the toast's dismissal timer finish before teardown.
+    await tester.pump(const Duration(seconds: 3));
   });
 
   setUpAll(() async {

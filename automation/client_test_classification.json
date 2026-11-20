@@ -571,6 +571,13 @@
         "test/components/occasion/occasion_setup_blueprint_open_test.dart"
       ]
     },
+    "test/components/occasion/occasion_setup_payment_choice_test.dart": {
+      "kind": "environment",
+      "reason": "Checks that the real setup payment card enables and persists bank transfer.",
+      "sources": [
+        "test/components/occasion/occasion_setup_payment_choice_test.dart"
+      ]
+    },
     "test/components/navigation/help_occasion_picker_test.dart": {
       "kind": "environment",
       "reason": "Checks occasion-specific help navigation with the public widget environment.",

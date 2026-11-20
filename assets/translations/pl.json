@@ -2388,8 +2388,8 @@
     "mapExportsRead": "Eksportować miejsca",
     "speakerExportsRead": "Eksportować prelegentów",
     "feedbackExportsRead": "Eksportować opinie o programie",
-    "informationRead": "Odczytywać strony informacyjne wydarzeń",
-    "informationWrite": "Edytować strony informacyjne wydarzeń",
+    "informationRead": "Odczytywać strony informacyjne i śpiewniki wydarzeń",
+    "informationWrite": "Edytować strony informacyjne i śpiewniki wydarzeń",
     "programRead": "Odczytywać program i grupy wzajemnie wykluczające się",
     "programWrite": "Edytować i usuwać program oraz grupy wzajemnie wykluczające się",
     "mapRead": "Odczytywać miejsca, typy miejsc, trasy i ikony",
@@ -3547,6 +3547,14 @@
     }
   },
   "MetaCapi": {
+    "invalidCount": "Nieważne",
+    "expired": "Wygasłe",
+    "connector_changed": "Nie wysłano: zmieniono ustawienia połączenia.",
+    "consent_invalid": "Nie wysłano: zapisana zgoda reklamowa jest już nieważna.",
+    "order_ineligible": "Nie wysłano: zamówienie nie spełnia już warunków.",
+    "payment_too_old": "Nie wysłano: od płatności minęło ponad 7 dni.",
+    "attempts_exhausted": "Nie wysłano: wyczerpano próby wysyłki.",
+    "retention_expired": "Nie wysłano: upłynął okres przechowywania zgody.",
     "loadFailed": "Nie udało się wczytać ustawień Meta CAPI",
     "platformDisabled": "Platforma wyłączyła Meta CAPI",
     "noWebsites": "Najpierw dodaj witrynę w sekcji zdarzeń i zgody.",
@@ -3580,6 +3588,8 @@
     "credentials": "Meta odrzuciła token. Wymień go.",
     "rejected": "Meta odrzuciła zakup. Sprawdź zestaw danych i witrynę.",
     "retry": "Wysyłka tymczasowo się nie powiodła; zaplanowano kolejną próbę.",
-    "invalid": "Wpisz prawidłową wartość."
+    "invalid": "Wpisz prawidłową wartość.",
+    "requestApproval": "Poproś o zgodę na Meta CAPI",
+    "approvedByPlatform": "Platforma zatwierdziła Meta CAPI. Połączenie skonfiguruje administrator organizacji."
   }
 }

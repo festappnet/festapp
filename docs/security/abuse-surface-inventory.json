@@ -291,6 +291,15 @@
       "evidence": "database/tests/eshop_forms/meta_purchase_consent_test.sql",
       "owner": "Festapp backend maintainers",
       "reviewBy": "2026-12-19"
+    },
+    {
+      "operation": "unit.meta-capi.approval-request",
+      "budget": "authenticated unit configuration; organization administrator notification",
+      "source": "database/functions/eshop_forms/unit_meta_capi_approval.sql",
+      "admission": "can_manage_unit_configuration",
+      "evidence": "database/tests/eshop_forms/form_measurement_meta_capi_request_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19"
     }
   ],
   "edgeFunctions": [

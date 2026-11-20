@@ -7,9 +7,12 @@ CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE pl
 DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint; prod bigint; bank bigint; actor uuid; suffix text:=gen_random_uuid()::text;
 BEGIN
  INSERT INTO organizations(title) VALUES('Waitlist regression '||suffix) RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO units(title,organization) VALUES('Waitlist regression',org) RETURNING id INTO un;
  INSERT INTO occasions(title,unit,organization,link,start_time,end_time) VALUES('Waitlist regression',un,org,suffix,now(),now()+interval '1 day') RETURNING id INTO oc;
- INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END) RETURNING id,key INTO f,fk;
+ INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds,data)
+ VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END,'{"payments":{"bankEnabled":true}}')
+ RETURNING id,key INTO f,fk;
  PERFORM public.reserve_public_link_internal('occasion',oc,suffix,true);
  PERFORM public.reserve_public_link_internal('form',f,suffix,true);
  INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Regression bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;
@@ -68,7 +71,7 @@ DECLARE x jsonb:=pg_temp.fixture(1); f bigint:=(x->>'form')::bigint;
  regular bigint; first_order bigint; second_order bigint; proposal jsonb; r jsonb; row jsonb;
 BEGIN
  r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));
- PERFORM assert_eq(r->>'code','200'::text,'fill offer limit fixture');
+ PERFORM assert_eq(r->>'code','200'::text,'fill offer limit fixture: '||coalesce(r->>'message','no error'));
  regular:=(r#>>'{order,id}')::bigint;
  first_order:=(pg_temp.register(x,1)->>'order')::bigint;
  second_order:=(pg_temp.register(x,3)->>'order')::bigint;

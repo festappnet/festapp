@@ -188,6 +188,7 @@
             "database/functions/others/get_ticket_layout_write_contract_v1.sql",
             "supabase/migrations/20261110110000_mcp_inventory_assignments.sql",
             "supabase/migrations/20261116160000_information_authoring.sql",
+            "supabase/migrations/20261120080000_song_authoring.sql",
             "supabase/migrations/20261114120000_integration_webhooks.sql",
             "supabase/migrations/20261114130000_ticket_layout_contract_refresh.sql"
           ]
@@ -1334,7 +1335,7 @@
       "requires": []
     },
     "ticket-client": {
-      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
+      "script": "fvm flutter test --no-pub --concurrency=1 test/sessions/ticket_delivery_request_test_ci_cases.dart test/sessions/blueprint_toolbar_test_ci_cases.dart test/sessions/rights_explicit_occasion_test_ci_cases.dart test/sessions/ticket_default_cases.dart test/components/discount_codes/discount_codes_dialog_test.dart test/sessions/notification_batch_panel_test_ci_cases.dart test/sessions/form_editor_rpc_test_ci_cases.dart test/sessions/ticket_futura_cases.dart test/sessions/occasion_setup_email_templates_test_ci_cases.dart test/sessions/occasion_setup_blueprint_open_test_ci_cases.dart test/sessions/setup_font_catalog_test_ci_cases.dart test/components/occasion/occasion_setup_payment_choice_test.dart test/components/eshop/additional_payment_test.dart test/components/ticket_layout/ticket_wallet_preview_cases.dart test/components/eshop/payment_policy_cases.dart\n",
       "after": [
         "ticket-core"
       ],
@@ -1418,7 +1419,7 @@
       ]
     },
     "seat-measurement": {
-      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-websites-migration.py --check\npython3 automation/assemble-measurement-request-lifecycle-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-consent-scope-migration.py --check\npython3 automation/assemble-website-consent-bindings-migration.py --check\npython3 automation/assemble-self-service-consent-migration.py --check\nnode --test database/tests/eshop_forms/website_consent_concurrency.test.mjs\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
+      "script": "python3 automation/generate_email_variables.py --check\npython3 automation/assemble-email-variable-cutover-migration.py --check\npnpm --dir web_client exec node --test tests/database/email_variable_cutover.test.js tests/database/meta_purchase_order_consent_upgrade.test.js\npython3 automation/generate_communication_tone.py --check\npython3 automation/assemble-email-communication-migration.py --check\npython3 automation/assemble-form-measurement-consent-migration.py --check\npython3 automation/assemble-form-measurement-consent-bridge-migration.py --check\npython3 automation/assemble-measurement-approval-migration.py --check\npython3 automation/assemble-measurement-websites-migration.py --check\npython3 automation/assemble-measurement-request-lifecycle-migration.py --check\npython3 automation/assemble-measurement-unification-migration.py --check\npython3 automation/assemble-consent-scope-migration.py --check\npython3 automation/assemble-website-consent-bindings-migration.py --check\npython3 automation/assemble-self-service-consent-migration.py --check\nnode --test database/tests/eshop_forms/website_consent_concurrency.test.mjs\npython3 automation/assemble-configuration-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-1\npython3 automation/assemble-access-membership-migration.py --check\nnode web_client/scripts/run_db_tests.js --group seat-measurement-access\nnode --test --test-concurrency=1 database/tests/people/access_migration.test.mjs database/tests/people/access_lifecycle_concurrency.test.mjs database/tests/people/unit_membership_concurrency.test.mjs\n",
       "after": [
         "seat-runtime-contract"
       ],
@@ -2154,6 +2155,7 @@
         "test/data_services/form_editor_rpc_test.dart",
         "test/components/occasion/occasion_setup_email_templates_test.dart",
         "test/components/occasion/occasion_setup_blueprint_open_test.dart",
+        "test/components/occasion/occasion_setup_payment_choice_test.dart",
         "test/components/occasion/setup_font_catalog_test.dart",
         "test/components/notification_center/notification_email_settings_test.dart",
         "test/components/discount_codes/discount_codes_dialog_test.dart",
@@ -2396,6 +2398,7 @@
       "database/tests/eshop_forms/form_measurement_approval_request_test.sql",
       "database/tests/eshop_forms/form_measurement_consent_test.sql",
       "database/tests/eshop_forms/form_measurement_conversion_matrix_test.sql",
+      "database/tests/eshop_forms/form_measurement_meta_capi_request_test.sql",
       "database/tests/eshop_forms/form_measurement_purchase_test.sql",
       "database/tests/eshop_forms/meta_purchase_consent_test.sql",
       "database/tests/eshop_forms/form_measurement_runtime_test.sql",
@@ -2978,6 +2981,7 @@
     "database/tests/eshop_forms/form_measurement_approval_request_test.sql",
     "database/tests/eshop_forms/form_measurement_consent_test.sql",
     "database/tests/eshop_forms/form_measurement_conversion_matrix_test.sql",
+    "database/tests/eshop_forms/form_measurement_meta_capi_request_test.sql",
     "database/tests/eshop_forms/form_measurement_purchase_test.sql",
     "database/tests/eshop_forms/meta_purchase_consent_test.sql",
     "database/tests/eshop_forms/form_measurement_runtime_test.sql",
@@ -3427,6 +3431,7 @@
     "test/components/occasion/occasion_creation_recovery_test.dart",
     "test/components/occasion/occasion_list_refresh_test.dart",
     "test/components/occasion/occasion_setup_blueprint_open_test.dart",
+    "test/components/occasion/occasion_setup_payment_choice_test.dart",
     "test/components/occasion/occasion_setup_email_templates_test.dart",
     "test/components/occasion/setup_font_catalog_test.dart",
     "test/components/organization/authorization_projection_test.dart",
@@ -3649,6 +3654,7 @@
     "web_client/tests/database/customer_order_changes_concurrency.test.js",
     "web_client/tests/database/disposable_database.test.js",
     "web_client/tests/database/email_variable_cutover.test.js",
+    "web_client/tests/database/meta_purchase_order_consent_upgrade.test.js",
     "web_client/tests/database/payment_method_policy_upgrade.test.js",
     "web_client/tests/database/payment_policy_release_transition.test.js",
     "web_client/tests/database/payment_provider_upgrade.test.js",

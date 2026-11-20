@@ -3418,6 +3418,14 @@
     "e0cc815f28bfe84a1e9449510749adf97ea1e17dbb50cf6920a3793439ac2367": {
       "signature": "public.delete_unit_meta_purchase(bigint)",
       "source": "database/functions/eshop_forms/meta_purchase_settings.sql"
+    },
+    "8a4af5eabd9978a63d77f018d27190b10c8f63324fbe15f76b750ab0119bb4bc": {
+      "signature": "public.get_unit_meta_capi_approval(bigint)",
+      "source": "database/functions/eshop_forms/unit_meta_capi_approval.sql"
+    },
+    "42b7418664a843c3384619138ae8b9bdb011a433328c1c0fb9225a1d729d9849": {
+      "signature": "public.request_unit_meta_capi_approval(bigint)",
+      "source": "database/functions/eshop_forms/unit_meta_capi_approval.sql"
     }
   }
 }

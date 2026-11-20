@@ -1,5 +1,6 @@
 import { AppConfig } from '../app_config.js';
 import { RightsService } from '../services/rights_service.js';
+import { AuthorizationCapabilities } from '../services/authorization_capabilities.js';
 import { RouterService } from '../services/router_service.js';
 import { LocalizationService } from '../services/localization_service.js';
 import { organizerCreatePath, organizerCreateFlutterPath } from '../services/organizer_entry.js';
@@ -28,14 +29,26 @@ export async function handleOrganizerIntent() {
     }
     url.searchParams.delete('login');
     window.history.replaceState(null, '', url.pathname + url.search + url.hash);
-    if (RightsService.currentUser?.id) {
+    const user = RightsService.currentUser;
+    if (user?.id) {
         if (create) {
             await RouterService.navigateToFlutterRoute(organizerCreateFlutterPath());
             return 'navigated';
         }
-        const unitId = RightsService.currentUnit?.id ?? RightsService.currentUser.units?.[0]?.id;
-        if (unitId) await RouterService.navigateToAdmin(unitId);
-        return unitId ? 'navigated' : 'catalog';
+        const canReadUnitAdministration = AuthorizationCapabilities.unitAdministrationRead;
+        const currentUnitId = RightsService.currentUnit?.id;
+        if (currentUnitId && RightsService.hasCapability(canReadUnitAdministration)) {
+            await RouterService.navigateToAdmin(currentUnitId);
+            return 'navigated';
+        }
+        const unitId = user.units?.[0]?.id ?? currentUnitId;
+        if (unitId && await RightsService.updateAppData({ unitId, force: true }) &&
+            RightsService.currentUser?.id === user.id && RightsService.currentUnit?.id === unitId &&
+            RightsService.hasCapability(canReadUnitAdministration)) {
+            await RouterService.navigateToAdmin(unitId);
+            return 'navigated';
+        }
+        return 'catalog';
     }
     if (login || RightsService.context?.organization?.IS_REGISTRATION_ENABLED === true) {
         await import('../components/users/login_modal.js');

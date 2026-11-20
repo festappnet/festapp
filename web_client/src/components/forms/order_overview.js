@@ -368,7 +368,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
 }
 
 // Only a current saved denial is a candidate. The server matches the captured
-// site, source and decision time before doing any durable withdrawal.
+// site and source; only comparable CMP dates can prove an older refusal.
 export function withdrawOverviewPurchaseConsent(host, choice) {
     const state=host._purchaseWithdrawal;
     if(!state)return;

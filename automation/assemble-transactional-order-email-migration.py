@@ -3,4 +3,4 @@
 from migration_forward_owners import migration_cli
 
 if __name__ == '__main__':
-    migration_cli('20261120020000_transactional_order_email_admission.sql')
+    migration_cli('20261120100000_transactional_order_email_admission.sql')

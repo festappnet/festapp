@@ -3,7 +3,7 @@
 export const consentRevision = 'a'.repeat(32);
 export const complianzConfig = {provider:'complianz', organization:1, unit:2, consentRevision, policyId:'42'};
 export function complianzFixture(win, {prefix = 'cmplz_', choice = null, cookiePath = '/'} = {}) {
-    win.complianz = {consenttype:'optin', current_policy_id:'42', prefix};
+    win.complianz = {consenttype:'optin', current_policy_id:'42', clean_cookies:'', prefix};
     win.cmplz_get_cookie = name => {
         const key = win.complianz.prefix + name + '=';
         return win.document.cookie.split(';').map(s => s.trim()).find(s => s.startsWith(key))?.slice(key.length) ?? '';

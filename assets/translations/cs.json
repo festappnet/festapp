@@ -4293,8 +4293,8 @@
     "mapExportsRead": "Exportovat místa",
     "speakerExportsRead": "Exportovat řečníky",
     "feedbackExportsRead": "Exportovat zpětnou vazbu",
-    "informationRead": "Číst informační stránky akcí",
-    "informationWrite": "Upravovat informační stránky akcí",
+    "informationRead": "Číst informační stránky a zpěvníky akcí",
+    "informationWrite": "Upravovat informační stránky a zpěvníky akcí",
     "programRead": "Číst program a vzájemně výlučné skupiny",
     "programWrite": "Upravovat a odstraňovat program a vzájemně výlučné skupiny",
     "mapRead": "Číst místa, typy míst, cesty a ikony",
@@ -5811,6 +5811,14 @@
     "recoveryUnavailable": "Původní objednávku se nepodařilo ověřit. Otevřete potvrzení z e-mailu nebo kontaktujte pořadatele."
   },
   "MetaCapi": {
+    "invalidCount": "Neplatné",
+    "expired": "Prošlé",
+    "connector_changed": "Neodesláno: nastavení propojení se změnilo.",
+    "consent_invalid": "Neodesláno: uložený reklamní souhlas již neplatí.",
+    "order_ineligible": "Neodesláno: objednávka již nesplňuje podmínky.",
+    "payment_too_old": "Neodesláno: od platby uplynulo více než 7 dní.",
+    "attempts_exhausted": "Neodesláno: počet pokusů byl vyčerpán.",
+    "retention_expired": "Neodesláno: uplynula doba uchování souhlasu.",
     "loadFailed": "Nastavení Meta CAPI se nepodařilo načíst",
     "platformDisabled": "Meta CAPI vypnula platforma",
     "noWebsites": "Nejprve přidejte web v sekci událostí a souhlasu.",
@@ -5844,6 +5852,8 @@
     "credentials": "Meta odmítla token. Vyměňte jej.",
     "rejected": "Meta odmítla nákup. Zkontrolujte dataset a web.",
     "retry": "Odeslání dočasně selhalo; další pokus je naplánován.",
-    "invalid": "Zadejte platnou hodnotu."
+    "invalid": "Zadejte platnou hodnotu.",
+    "requestApproval": "Požádat o povolení Meta CAPI",
+    "approvedByPlatform": "Platforma Meta CAPI povolila. Propojení nastaví správce organizace."
   }
 }

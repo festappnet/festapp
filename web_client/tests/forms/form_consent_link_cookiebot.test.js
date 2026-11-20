@@ -12,11 +12,11 @@ const bundle = await build({stdin:{contents:`
 import {startMeasurementConsent} from './src/components/forms/form_measurement_cmp.js';
 import {FormMeasurementSession} from './src/components/forms/form_measurement_session.js';
 import {LocalizationService} from './src/services/localization_service.js';
-window.startLinkedForm = (translations, policySource, transport) => {
+window.startLinkedForm = (translations, policySource, transport, includePurchaseConsent = true) => {
  LocalizationService.translations = translations;
  const model = {link:'test', data:{}};
  const consentSource = {connect:(policy, notify) => {
-  const cleanup = startMeasurementConsent({model, setConsent:notify, host:document.querySelector('main')});
+  const cleanup = startMeasurementConsent({model, includePurchaseConsent, setConsent:notify, host:document.querySelector('main')});
   return () => cleanup();
  }};
  const session = new FormMeasurementSession({model, transport, consentSource, entryAllowed:true, policySource});
@@ -36,11 +36,13 @@ async function website({input=cookiebotConfig,blocking='auto'}={}) {
  const dom = new JSDOM('<a data-festapp-consent-link target="_blank" href="https://tickets.example/form/test">Koupit</a>', {url:HOST,runScripts:'outside-only',pretendToBeVisual:true});
  const win = dom.window;
  const cmp = await cookiebotFixture(win,{blocking});
+ let leasePulse;const interval=win.setInterval.bind(win);
+ win.setInterval=(fn,ms,...args)=>{if(ms===20000)leasePulse=fn;return interval(fn,ms,...args);};
  const script=win.document.createElement('script');script.src=PRODUCT+'/embed.js';
  script.setAttribute('data-festapp-consent',JSON.stringify(input));
  Object.defineProperty(win.document,'currentScript',{value:script});
  win.eval(readFileSync(new URL('../../public/embed.js',import.meta.url),'utf8'));
- return {win, cmp:cmp.cmp, loader:cmp.script, store:cmp.store, choose:cmp.choose, renew:cmp.renew, requests:[], sent:[], closed:false, close() { win.dispatchEvent(new win.Event('pagehide')); win.close(); }};
+ return {win, renewLease:()=>leasePulse?.(), cmp:cmp.cmp, loader:cmp.script, store:cmp.store, choose:cmp.choose, renew:cmp.renew, requests:[], sent:[], closed:false, close() { win.dispatchEvent(new win.Event('pagehide')); win.close(); }};
 }
 function transportLog() {
  const log = {activations:[], stops:0, updates:[], renews:[]};
@@ -55,7 +57,7 @@ function transportLog() {
  return log;
 }
 // Opens the form from a click on the website, like a real visitor.
-function linkedForm(site, {jar = new CookieJar(), policy = basePolicy(), opener = true} = {}) {
+function linkedForm(site, {jar = new CookieJar(), policy = basePolicy(), opener = true, includePurchaseConsent = true} = {}) {
  const dom = new JSDOM('<html lang="cs"><body style="overflow:auto"><main></main></body></html>',
   {url:PRODUCT + '/form/test', referrer:HOST + '/event', cookieJar:jar, runScripts:'outside-only', pretendToBeVisual:true});
  const win = dom.window, grants = [];
@@ -81,7 +83,7 @@ function linkedForm(site, {jar = new CookieJar(), policy = basePolicy(), opener 
  win.eval(bundle.outputFiles[0].text);
  form.log = transportLog();
  const transport = {...form.log.transport, activate:grant => { form.log.transport.activate(grant); }};
- form.session = win.startLinkedForm(translations, () => form.policy, transport);
+ form.session = win.startLinkedForm(translations, () => form.policy, transport, includePurchaseConsent);
  // The session reports consent to the transport; read it there, like the runtime does.
  form.consent = () => { const s = form.session; return {analytics:s.consent.analytics, marketing:s.consent.marketing}; };
  form.notice = () => !!win.document.querySelector('.cookie-modal-notice');
@@ -342,3 +344,66 @@ for(const kind of ['implied','old-cutoff','invalid-config','TCF','cookie-removed
    assert.equal(form.win.document.cookie,'');
   }finally{form.close();site.close()}
  });
+
+for(const date of ['missing','before-coverage'])test('managed Cookiebot link carries CAPI independently of ordinary '+date,async()=>{
+ const binding={id:'11111111-1111-1111-1111-111111111111',version:1};
+ const input={schemaVersion:1,serviceOrigin:PRODUCT,websiteOrigin:HOST,binding,providerConfig:cookiebotConfig};
+ const site=await website({input});site.choose(both);
+ site.cmp.consentUTC=date==='missing'?undefined:new site.win.Date('2020-01-01');
+ const form=linkedForm(site,{policy:{...basePolicy(),website_consent_bindings:[{...binding,effective:true,websiteOrigin:HOST}]}});
+ try {
+  await ready(form);await settle(100);
+  assert.deepEqual(form.consent(),none);assert.ok(form.notice(),'ordinary notice remains visible');
+  const snapshot=form.session.consent.purchaseConsent;
+  assert.equal(snapshot.source,'cookiebot');assert.equal(snapshot.ad_storage,true);
+  assert.equal(snapshot.binding.id,binding.id);assert.equal(snapshot.websiteOrigin,HOST);
+  assert.equal(form.win.document.cookie,'','remote CAPI never persists a local choice');
+  site.win.dispatchEvent(new site.win.Event('pagehide'));await settle(100);
+  assert.equal(form.session.consent.purchaseConsent,null,'disconnected CAPI lease is retired');
+ }finally{form.close();site.close()}
+});
+
+for(const existing of [false,true])test('non-CAPI link retires ordinary-invalid state, existing import='+existing,async()=>{
+ const site=await website();site.choose(both);
+ if(!existing)site.cmp.consentUTC=new site.win.Date('2020-01-01');
+ const form=linkedForm(site,{includePurchaseConsent:false});
+ try{
+  await ready(form);
+  if(existing){assert.deepEqual(form.consent(),both);site.cmp.consentUTC=new site.win.Date('2020-01-01');site.renewLease();await settle(100);}
+  assert.deepEqual(form.consent(),none);assert.ok(form.notice());
+  assert.equal(site.sent.at(-1).type,'end','non-CAPI visits must not receive CAPI-only state');
+ }finally{form.close();site.close()}
+});
+function managedCapiOnly(){
+ const binding={id:'11111111-1111-1111-1111-111111111111',version:1};
+ return {input:{schemaVersion:1,serviceOrigin:PRODUCT,websiteOrigin:HOST,binding,providerConfig:cookiebotConfig},
+  policy:{...basePolicy(),website_consent_bindings:[{...binding,effective:true,websiteOrigin:HOST}]}};
+}
+test('local Klaro save after a CAPI-only link owns its lifetime and capture observation',async()=>{
+ const config=managedCapiOnly(),site=await website({input:config.input});site.choose(both);site.cmp.consentUTC=new site.win.Date('2020-01-01');
+ const form=linkedForm(site,{policy:config.policy});
+ try{
+  await ready(form);assert.equal(form.session.consent.purchaseConsent.source,'cookiebot');
+  form.win.document.querySelector('.cm-btn-success').click();await settle(100);
+  const saved=form.session.consent;
+  assert.equal(saved.purchaseConsent.source,'klaro');assert.ok(Number.isFinite(Date.parse(saved.purchaseConsent.capturedAt)));
+  assert.equal(saved.leaseId,undefined);assert.equal(saved.expiresAt,undefined);
+  site.win.dispatchEvent(new site.win.Event('pagehide'));await settle(100);
+  form.win.Date.now=()=>Date.now()+61000;form.win.dispatchEvent(new form.win.Event('pageshow'));await settle(100);
+  assert.equal(form.session.consent.purchaseConsent.source,'klaro');
+  assert.equal(form.session.consent.purchaseConsent.capturedAt,saved.purchaseConsent.capturedAt);
+  assert.equal(form.session.consent.expiresAt,undefined);
+ }finally{form.close();site.close()}
+});
+test('CAPI-only lease heartbeat preserves open local settings and focus',async()=>{
+ const config=managedCapiOnly(),site=await website({input:config.input});site.choose(both);site.cmp.consentUTC=new site.win.Date('2020-01-01');
+ const form=linkedForm(site,{policy:config.policy});
+ try{
+  await ready(form);form.win.document.querySelector('.cm-btn-lern-more').click();await settle();
+  const control=form.win.document.querySelector('#service-item-analytics');control.click();control.focus();await settle();
+  assert.ok(form.win.document.querySelector('.cm-modal'));
+  site.renewLease();await settle(100);
+  assert.ok(form.win.document.querySelector('.cm-modal'),'heartbeat must not replace settings with the initial notice');
+  assert.equal(form.win.document.activeElement,control);
+ }finally{form.close();site.close()}
+});

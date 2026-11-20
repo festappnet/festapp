@@ -251,9 +251,9 @@ test('a trimmed dataLayer of unchanged length cannot hide a later revocation', (
 
 test('configured Complianz source also supplies real automatic iframe bindings',async t=>{
  const {context,choice,cmp,manifest}=host(t,false,complianzConfig);
- context();assert.deepEqual(choice(),granted);
+ context();const initial=choice();assert.equal(initial.analytics,true);assert.equal(initial.marketing,true);assert.equal(initial.purchaseConsent.source,'complianz');
  cmp.choose({analytics:true,marketing:false});await new Promise(resolve=>setImmediate(resolve));
- assert.deepEqual(choice(),{analytics:true,marketing:false});
+ const refusal=choice();assert.equal(refusal.analytics,true);assert.equal(refusal.marketing,false);assert.equal(refusal.purchaseConsent.ad_storage,false);
  context({...manifest,consent_revision:'b'.repeat(32),processing_revision:'new-processing'});
  assert.deepEqual(choice(),denied,'old configured coverage cannot supply a new form scope');
 });

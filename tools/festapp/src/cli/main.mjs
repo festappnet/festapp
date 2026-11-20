@@ -87,15 +87,16 @@ try {
         } else if (command === 'mcp serve') {
             await operations.prepare();
             serveStdio(() => createServer(operations));
-        } else if (command === 'auth login') {
+        } else if (command === 'auth login' || command === 'auth login --canonical-email') {
+            const canonicalEmail = command.endsWith(' --canonical-email');
             check(process.stdin.isTTY, 'INTERACTIVE_LOGIN_REQUIRED');
             const terminal = createInterface({
                 input: process.stdin,
                 output: process.stderr,
             });
-            const email = await terminal.question('Email: ');
+            const email = await terminal.question(canonicalEmail ? 'Organization sign-in email: ' : 'Account email: ');
             terminal.close();
-            const result = await owner.login(email, await hiddenPassword());
+            const result = await owner.login(email, await hiddenPassword(), { canonicalEmail });
             process.stdout.write(
                 JSON.stringify({ ok: true, ...result }) + '\n',
             );

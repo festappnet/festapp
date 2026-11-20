@@ -30,6 +30,9 @@ class MetaCapiStrings {
   static String get sent => 'MetaCapi.sent'.tr();
   static String get failed => 'MetaCapi.failed'.tr();
   static String get revoked => 'MetaCapi.revoked'.tr();
+  static String get invalidCount => 'MetaCapi.invalidCount'.tr();
+  static String get expired => 'MetaCapi.expired'.tr();
+  static String outcomeReason(String code) => 'MetaCapi.$code'.tr();
   static String get queue => 'MetaCapi.queue'.tr();
   static String get disconnect => 'MetaCapi.disconnect'.tr();
   static String get confirm => 'MetaCapi.confirm'.tr();
@@ -39,4 +42,6 @@ class MetaCapiStrings {
   static String get rejected => 'MetaCapi.rejected'.tr();
   static String get retry => 'MetaCapi.retry'.tr();
   static String get invalid => 'MetaCapi.invalid'.tr();
+  static String get requestApproval => 'MetaCapi.requestApproval'.tr();
+  static String get approvedByPlatform => 'MetaCapi.approvedByPlatform'.tr();
 }

@@ -55,6 +55,24 @@ class _OccasionTeamInvitationPageState
   String? _error;
 
   String text(String key) => OccasionTeamInvitationStrings.text(key);
+
+  String _rolesLabel(Map<String, dynamic> invitation) {
+    final roles = invitation['roles'];
+    if (roles is! Map) {
+      return text(
+        invitation['role'] == 'read_only' ? 'roleReadOnly' : 'roleEditor',
+      );
+    }
+    return roles.entries
+        .where(
+          (role) =>
+              role.value == true &&
+              (role.key != 'is_editor_view' || roles['is_editor'] != true),
+        )
+        .map((role) => MemberAccessStrings.text(role.key as String))
+        .join(', ');
+  }
+
   bool get _loggedIn => (widget.isLoggedIn ?? AuthService.isLoggedIn)();
 
   @override
@@ -234,7 +252,7 @@ class _OccasionTeamInvitationPageState
                         Text(text('accessDescription')),
                         const SizedBox(height: 12),
                         Text(
-                          "${text('roleLabel')}: ${invitation['roles'] is Map ? (invitation['roles'] as Map).entries.where((e) => e.value == true).map((e) => MemberAccessStrings.text(e.key as String)).join(', ') : text(invitation['role'] == 'read_only' ? 'roleReadOnly' : 'roleEditor')}",
+                          "${text('roleLabel')}: ${_rolesLabel(invitation)}",
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 16),

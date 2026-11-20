@@ -2,7 +2,14 @@ enum MeasurementRequestState {
   unavailable,
   notRequested,
   requested,
-  retryAvailable,
+  retryAvailable;
+
+  static MeasurementRequestState fromJson(Object? value) => switch (value) {
+    'not_requested' => notRequested,
+    'requested' => requested,
+    'retry_available' => retryAvailable,
+    _ => unavailable,
+  };
 }
 
 class UnitMeasurementApproval {
@@ -26,12 +33,7 @@ class UnitMeasurementApproval {
 
   factory UnitMeasurementApproval.fromJson(Map<String, dynamic> json) =>
       UnitMeasurementApproval(
-        requestState: switch (json['request_state']) {
-          'not_requested' => MeasurementRequestState.notRequested,
-          'requested' => MeasurementRequestState.requested,
-          'retry_available' => MeasurementRequestState.retryAvailable,
-          _ => MeasurementRequestState.unavailable,
-        },
+        requestState: MeasurementRequestState.fromJson(json['request_state']),
         canRequest:
             json['can_request'] == true &&
             [

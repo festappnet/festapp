@@ -41,6 +41,18 @@ Deno.test("unit offer binds server context and renders inherited templates witho
  };
  await executeMemberAccess(f.deps, "Bearer fixture", "id", {});
 });
+Deno.test("editor and read-only invitations show distinct effective roles", async () => {
+ for (const isEditor of [true, false]) {
+  const f = fixture();
+  f.preview.roles = { is_editor: isEditor, is_editor_view: true };
+  f.deps.prepare = input => {
+   const substitutions = input.substitutions as Record<string, string>;
+   assertEquals(substitutions.roleLabel, isEditor ? "Editor" : "Read only");
+   return Promise.resolve({ p_sealed: {}, p_content_hash: "c".repeat(64) });
+  };
+  await executeMemberAccess(f.deps, "Bearer fixture", "id", {});
+ }
+});
 Deno.test("preparation failure never commits membership, password or receipt", async () => {
  const f = fixture("participant_credentials");
  f.deps.prepare = () => Promise.reject(new Error("email_preparation_deferred"));

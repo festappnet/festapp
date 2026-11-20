@@ -2386,8 +2386,8 @@
     "mapExportsRead": "Orte exportieren",
     "speakerExportsRead": "Referenten exportieren",
     "feedbackExportsRead": "Programmfeedback exportieren",
-    "informationRead": "Informationsseiten der Veranstaltungen lesen",
-    "informationWrite": "Informationsseiten der Veranstaltungen bearbeiten",
+    "informationRead": "Informationsseiten und Liederbücher von Veranstaltungen lesen",
+    "informationWrite": "Informationsseiten und Liederbücher von Veranstaltungen bearbeiten",
     "programRead": "Programm und gegenseitig ausschließende Gruppen lesen",
     "programWrite": "Programm und gegenseitig ausschließende Gruppen bearbeiten und löschen",
     "mapRead": "Orte, Ortstypen, Wege und Symbole lesen",
@@ -3545,6 +3545,14 @@
     }
   },
   "MetaCapi": {
+    "invalidCount": "Ungültig",
+    "expired": "Abgelaufen",
+    "connector_changed": "Nicht gesendet: Die Verbindungseinstellungen wurden geändert.",
+    "consent_invalid": "Nicht gesendet: Die gespeicherte Werbeeinwilligung ist nicht mehr gültig.",
+    "order_ineligible": "Nicht gesendet: Die Bestellung erfüllt die Voraussetzungen nicht mehr.",
+    "payment_too_old": "Nicht gesendet: Die Zahlung liegt mehr als 7 Tage zurück.",
+    "attempts_exhausted": "Nicht gesendet: Die Zustellversuche sind ausgeschöpft.",
+    "retention_expired": "Nicht gesendet: Die Aufbewahrungsfrist der Einwilligung ist abgelaufen.",
     "loadFailed": "Meta-CAPI-Einstellungen konnten nicht geladen werden",
     "platformDisabled": "Die Plattform hat Meta CAPI deaktiviert",
     "noWebsites": "Fügen Sie zuerst eine Website im Bereich Ereignisse und Einwilligung hinzu.",
@@ -3578,6 +3586,8 @@
     "credentials": "Meta hat das Token abgelehnt. Ersetzen Sie es.",
     "rejected": "Meta hat einen Kauf abgelehnt. Prüfen Sie Dataset und Website.",
     "retry": "Die Übertragung ist vorübergehend fehlgeschlagen; ein weiterer Versuch ist geplant.",
-    "invalid": "Geben Sie einen gültigen Wert ein."
+    "invalid": "Geben Sie einen gültigen Wert ein.",
+    "requestApproval": "Freigabe für Meta CAPI anfragen",
+    "approvedByPlatform": "Die Plattform hat Meta CAPI freigegeben. Die Verbindung richtet ein Organisationsadministrator ein."
   }
 }

@@ -12,7 +12,7 @@ fi
 directory="${RUNNER_TEMP:?}/festapp-deno-${version}"
 temporary="$(mktemp -d)"
 trap 'rm -rf "$temporary"' EXIT
-curl --fail --location --silent --show-error --retry 2 --max-time 120 \
+curl --fail --location --silent --show-error --retry 2 --retry-all-errors --max-time 120 \
   "https://dl.deno.land/release/v${version}/${archive}" -o "$temporary/$archive"
 printf '%s  %s\n' "$sha256" "$temporary/$archive" | sha256sum --check --status
 unzip -q "$temporary/$archive" -d "$temporary"

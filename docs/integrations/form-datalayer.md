@@ -328,7 +328,18 @@ payment processing retryable.
 ### Meta CAPI settings
 
 The platform must first approve the organization. Organization administrators
-then open Unit settings → Events and consent → Meta Conversions API. Before initial approval the section is hidden; there is no request button.
+then open Unit settings → Events and consent → Meta Conversions API. Before
+approval, Unit managers see only the request state there and can request approval
+once with `request_unit_meta_capi_approval`. It uses the measurement request's
+boundary and channel: `can_manage_unit_configuration`, an organization row lock, request
+generations shared by all Units in `analytics.organization_meta_capi_request` and a `META_CAPI_APPROVAL_REQUEST`
+delivery email to every current organization administrator with a delivery
+address. The notice lets the recipient review organization details and forward the request
+to Festapp support for the platform operator’s decision. Accepted, ambiguous or live queued notices block duplicates; terminal or
+expired ones allow a retry. Platform approval fulfils the current generation and retires
+its notices. A later revocation leaves the organization eligible to request again. `get_unit_meta_capi_approval` exposes only the platform
+decision and request state, never settings or delivery details. Demo Units are a
+no-op, and a request grants nothing by itself.
 If approval is removed from an existing connector, only a platform-disabled
 notice and Disconnect remain visible. No settings or delivery details are exposed. The platform uses its protected database administration boundary:
 
@@ -373,25 +384,56 @@ or restores matching data. Unprepared or expired leases are cleared.
 ### Meta CAPI consent
 
 Pilot forms use the existing saved CMP choice; there is no separate Purchase
-checkbox. A capture requires all three advertising purposes (`ad_storage`,
-`ad_user_data`, `ad_personalization`), the original saved decision time, the
-current semantic notice revision and the configured website origin. Managed
-embeds and linked visits also require the exact effective website binding and
-version. Cookiebot, CookieConsent v3 and Wix provide the saved decision metadata.
-Standalone Klaro stores decision metadata on an actual save; older choices need
-to be saved again. Complianz choices without a comparable saved decision time
-do not authorize CAPI. Ordinary browser events retain their existing behavior.
+checkbox. Capture requires all three advertising purposes (`ad_storage`,
+`ad_user_data`, `ad_personalization`), the current semantic notice revision and
+configured website origin. Managed embeds and linked visits also require the
+exact effective website binding and version. Cookiebot, CookieConsent v3, Wix,
+Klaro and Complianz use the same order snapshot model: `capturedAt` is aligned
+to server capture time, independently of missing, invalid or skewed browser clocks; an available CMP date is optional `decidedAt` audit
+metadata and never gates capture. A saved Klaro choice needs no decision record.
+A decision predating website confirmation does not block CAPI. Ordinary browser
+measurement retains its coverage windows and expiry checks.
+
+Why: later server delivery after payment uses the grant saved with the order, so a
+CMP without a decision timestamp can supply the same evidence. The organizer
+must ensure that the banner and privacy policy cover advertising through Meta.
+Supporting references:
+- GTM4WP 2.1.1 stores the consent state with a browser capture time on the order
+  ([AttributionCapture.php](https://github.com/duracelltomi/gtm4wp/blob/2.1.1/src/Modules/GoogleDataManager/AttributionCapture.php#L336-L347),
+  [gtm4wp-attribution.js](https://github.com/duracelltomi/gtm4wp/blob/2.1.1/js/frontend/gtm4wp-attribution.js#L276-L281))
+  and decides later refunds from that stored state
+  ([WooCommerceRefunds.php](https://github.com/duracelltomi/gtm4wp/blob/2.1.1/src/Modules/GoogleDataManager/WooCommerceRefunds.php#L96),
+  [ConsentPolicy.php](https://github.com/duracelltomi/gtm4wp/blob/2.1.1/src/Modules/GoogleDataManager/ConsentPolicy.php#L113-L139)).
+- PixelYourSite Pro saves the buyer's consent on each order for server events
+  ([changelog 12.6.8](https://www.pixelyoursite.com/pixelyoursite-pro-change-log#v12-6-8),
+  [12.6.11](https://www.pixelyoursite.com/pixelyoursite-pro-change-log#v12-6-11)).
+- Complianz category cookies hold only `allow`/`deny` without a decision time
+  ([complianz.js](https://github.com/complianz/complianz-gdpr/blob/v7.5.7/cookiebanner/js/complianz.js#L384-L402)).
+- The Conversions API has no consent-time parameter
+  ([server event parameters](https://developers.facebook.com/docs/marketing-api/conversions-api/parameters/server-event));
+  the Meta Business Tools Terms require the advertiser to obtain the necessary
+  consents ([terms](https://www.facebook.com/legal/technology_terms)).
+- The GDPR does not prescribe how consent is demonstrated
+  ([EDPB Guidelines 05/2020, section 5.1](https://www.edpb.europa.eu/system/files/documents/files/file1/edpb_guidelines_202005_consent_en.pdf)).
 
 The snapshot is stored privately with the order. The short renewable browser
 connection authorizes capture, not the lifetime of the order snapshot. Closing
 the visit normally does not withdraw durable consent. While the checkout stays
-open, a newer saved refusal from the same consent scope withdraws pending
-delivery, including a refusal while submission is in flight. The order overview
+open, a current complete refusal in the same consent scope withdraws pending
+delivery. A refusal observed before dispatch removes the grant from the request.
+A refusal observed after dispatch is applied as soon as the order capability is
+available. Only plausible CMP dates can establish that a refusal is older; a
+date in the future when received, an equal date or a missing date cannot veto a
+current complete refusal. The order overview
 also checks the saved refusal against the scope captured for each order. A buyer
 capability authorizes withdrawal, including the manual action available from the
 confirmation email. Unknown, expired or disconnected choices cannot withdraw
 durable consent. Withdrawal stops deliveries that the server has not yet prepared. A prepared event may still reach Meta after withdrawal. If Meta confirms receipt, it is recorded as `sent_in_flight`.
 The commit of prepare is the irreversible send boundary.
+Complianz can reload its host page immediately on decline, interrupting an
+asynchronous withdrawal. The next order-overview visit can submit the saved
+refusal again; closing or reloading a page alone does not revoke an order.
+The RPC transport has no dedicated keepalive option.
 
 The Edge worker claims only the original CAPI-enabled paid cohort after a full
 payment fact exists. Before sending, it rechecks the saved snapshot, live binding,
@@ -421,34 +463,45 @@ database independently of the Edge worker and still scrubs expired rows if
 delivery is disabled. Delivery also checks IP expiry before returning a payload.
 Snapshot, cookie IDs and contact hashes expire after 30 days. All matching data
 are erased on terminal outcomes or authorized consent withdrawal. Operational
-receipts without those identifiers remain for 90 days, with the decision timestamp
+receipts without those identifiers remain for 90 days, with the server capture timestamp and optional CMP decision date
 and a digest of its consent scope to check later refusals.
 
-For the first test run, deploy the migration, proof-only `process-meta-purchases`
-function and web client on the same canonical release. Install
-`automation/hetzner-supabase/runtime/install-meta-purchase-schedules.sh` on the
-canonical host. It verifies both control-plane jobs, starts the independent
-retention job and provisions new delivery jobs inactive. Verify a successful
-retention sweep before activating delivery or enabling a connector. Capture
-closes when the last successful sweep is older than ten minutes.
+Deploy the forward database migration, the sending `process-meta-purchases`
+Edge Function and the administration/web clients in the same canonical release.
+On the canonical host install
+`automation/hetzner-supabase/runtime/install-meta-purchase-schedules.sh` through
+the backend operator workflow. It starts the independent PostgreSQL retention
+job and provisions a new delivery job inactive; reinstalling preserves an
+existing delivery job's state. Verify a successful retention sweep before
+activating `festapp_meta_purchase_delivery` or enabling a connector. Capture
+closes when the last successful sweep is older than ten minutes. Retention runs
+in PostgreSQL even if the delivery worker or Meta is unavailable.
 
-Use the canonical backend operator workflow to register the token in Vault,
-configure the organizer Unit, test dataset, test event code and HTTPS checkout
-origin in `analytics.meta_purchase_connectors`, and allow one pilot form in
-`analytics.meta_purchase_forms`. Verify that the consent notice and privacy
-policy cover Meta and retire earlier Festapp Purchase tags for the pilot form.
-Activate the `festapp_meta_purchase_delivery` job after its proof endpoint
-validates, then enable the connector. During testing, use a dedicated Meta
-dataset and test the bank balance payment, a card payment, and withdrawal
-before settlement. Compare the stable event ID and value in Meta Test Events
-with the private settlement record.
+The platform operator approves the organization by setting
+`analytics.organization_policy.meta_capi_enabled`. Organization administrators
+then configure Meta Conversions API in organizer settings → Events and consent:
+dataset ID, saved HTTPS website, optional test event code and access token.
+`save_unit_meta_purchase` saves settings and the Vault credential atomically;
+operators do not create connectors or tokens manually. The organizer configures
+website consent, enables form measurement and selects forms for CAPI in the
+administration. Verify the consent notice and privacy policy cover Meta and
+retire earlier Festapp Purchase tags for the selected forms. Use Meta Test Events
+to check a bank balance payment, a card payment and withdrawal before settlement.
+Compare the stable event ID and value with the private settlement record.
 
-On token errors the worker pauses that connector, leaving eligible work
-pending. Replace the token in the same Vault entry, clear `paused_at` and verify
-the result in `analytics.meta_purchase_deliveries`. Inspect status, attempts
-and error code without exporting matching data or the Vault credential. A
-dataset, test-mode or notice change requires fresh checkout consent and never
-backfills earlier orders.
+Token errors pause the connector. The organizer saves a replacement token in
+administration to clear the pause atomically. The overview shows pending, sent,
+failed, revoked, invalid and expired counts over 30 days. Terminal receipts use
+their completion time; pending rows use capture time. The last error includes
+terminal reasons and distinguishes scheduled retries from outcomes without
+further attempts. Invalid reasons are connector revision changes, ineligible
+orders (including changed price or form configuration), invalid consent
+(snapshot, revision or timing), payment older than seven days and exhausted
+attempts. The worker skips forms with delivery disabled. A row that was already
+claimed can be marked ineligible at preparation; unclaimed rows expire after
+30 days from consent.
+Reasons contain no matching data or credentials. A dataset, website or test-code
+change requires fresh checkout consent and never backfills earlier orders.
 
 Items carry `item_id`, `item_name`, `price` and `quantity`. Two optional public catalog labels
 are added when they exist in browser ecommerce events:
@@ -766,7 +819,7 @@ It excludes runtime build revision/origin and approved parent origins. Technical
 changes still invalidate live leases through `processing_revision`. Increase
 `measurement_consent_version` when remote GTM or privacy content changes at an
 unchanged ID/URL; the digest cannot inspect those contents. Update the CMP notice
-and require a new decision, then configure its new accepted policy ID and the new
+and, for ordinary measurement, require a new decision, then configure its new accepted policy ID and the new
 semantic revision together. Never map an old CMP policy to newly added purposes.
 
 Deploy the SQL projection and updated form/helper/runtime artifacts coherently.
@@ -963,7 +1016,7 @@ CookieConsent v3 optionally adds distinct `categories:{analytics,marketing}`
 For each new confirmation of CookieConsent v3, Cookiebot or Wix, the server
 stores `consentValidFrom` at confirmation time and a `maxAgeSeconds` ceiling of
 31536000. Client-supplied cutoff, age and CookieConsent revision are not adopted.
-The persisted choice timestamp must be at or after confirmation, no more than
+For ordinary browser measurement, the persisted choice timestamp must be at or after confirmation, no more than
 60 seconds in the future, and younger than that ceiling; CMP expiry also applies.
 CookieConsent uses the saved `lastConsentTimestamp`, Cookiebot `consentUTC`,
 and Wix `createdDate`. Scope and the Festapp semantic revision remain server owned.

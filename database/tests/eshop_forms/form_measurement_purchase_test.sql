@@ -208,4 +208,11 @@ BEGIN
  PERFORM assert_eq(coalesce(jsonb_typeof(public.get_customer_order_overview_internal(repeat('c',64),second_order_id)#>'{orders,0,metaAnalytics}'),'null'),'null','overview stops recovering a withdrawn Meta companion');
  PERFORM assert_true(public.form_purchase_datalayer_internal(second_order_id) IS NOT NULL,'withdrawal keeps general purchase analytics');
 
+ -- The original timestamp-only checkout above remains a compatibility case.
+ -- The new format needs neither a browser capture time nor a decision date.
+ checkout:=jsonb_set(checkout,'{metaPurchaseConsent}',(checkout->'metaPurchaseConsent')-'timestamp'-'decidedAt'-'capturedAt');
+ receipt:=public.create_ticket_order_client_sync_v1(checkout,gen_random_uuid(),client_id);
+ PERFORM assert_eq(receipt#>>'{data,code}','200','new consent format does not affect checkout');
+ PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=(receipt#>>'{data,order,id}')::bigint
+  AND consent_snapshot ? 'capturedAt' AND consent_decided_at IS NULL),'server captures the new format without client dates');
 END $$;

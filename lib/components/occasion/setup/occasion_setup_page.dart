@@ -2657,7 +2657,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     if (method == FormPaymentMethod.bank) {
       _change((x) {
-        x['payments'] = const FormPaymentConfiguration().toJson();
+        x['payments'] =
+            const FormPaymentConfiguration(bankEnabled: true).toJson();
         x.remove('paymentRepairRequired');
       }, changesConfiguration: true);
       return;

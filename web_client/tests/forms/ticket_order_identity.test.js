@@ -48,7 +48,7 @@ test('discount recovery requires the original pending identity and never allocat
 });
 
 test('a reloaded paid checkout recovers the original command even when Meta matching changes',async()=>{
- const s=storage(),purchase={form:'f',ticket:[],metaPurchaseConsent:{source:'klaro',timestamp:'2026-11-18T00:00:00.000Z'}};
+ const s=storage(),purchase={form:'f',ticket:[],metaPurchaseConsent:{source:'klaro',capturedAt:'2026-11-18T00:00:00.000Z'}};
  const before=await claimTicketOrderIdentity('https://one',purchase,null,s);
  const first=await claimTicketOrderIdentity('https://one',{...purchase,metaPurchaseConsent:{...purchase.metaPurchaseConsent,matching:{fbc:'fb.1.1795000000000.sameClick'}}},null,s);
  const retry=await claimTicketOrderIdentity('https://one',{...purchase,metaPurchaseConsent:{...purchase.metaPurchaseConsent,matching:{fbc:'fb.1.1795000001000.sameClick'}}},null,s,{requirePending:true});
@@ -62,7 +62,7 @@ test('a reloaded paid checkout recovers the original command even when Meta matc
 test('same checkout retains its command after Meta consent disappears, changes, or returns',async()=>{
  const s=storage(),purchase={form:'f',ticket:[]};
  const first=await claimTicketOrderIdentity('https://one',{...purchase,metaPurchaseConsent:{timestamp:'original'}},null,s);
- for(const payload of [purchase,{...purchase,metaPurchaseConsent:{timestamp:'new',transportExpiresAt:2345}},{...purchase,metaPurchaseConsent:null}]) {
+ for(const payload of [purchase,{...purchase,metaPurchaseConsent:{capturedAt:'new',decidedAt:'2026-11-18T00:00:00.000Z',transportExpiresAt:2345}},{...purchase,metaPurchaseConsent:null}]) {
   const retry=await claimTicketOrderIdentity('https://one',payload,null,s);
   assert.equal(retry.commandId,first.commandId);
   assert.equal(retry.clientId,first.clientId);
