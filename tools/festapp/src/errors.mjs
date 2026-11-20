@@ -35,22 +35,33 @@ const outcomeMessages = new Map([
     ['WEBSITE_CONSENT_NOT_READY', () => 'Only a confirmed, ready website consent binding can be exported. Inspect the bindings; confirmation happens in organizer administration.'],
     ['WEBSITE_CONSENT_CHANGED_RELOAD_REQUIRED', () => 'The website consent binding changed. Inspect the bindings again and use the current version.'],
     ['WEBSITE_CONSENT_REJECTED', () => 'The website consent binding cannot be exported because the organization service address is not configured. The platform operator owns that address.'],
-    ['CONSENT_EXPORT_REJECTED', () => 'consentExport is not an unchanged export for this service. Read it again with festapp_units_website_consent_export and pass the text unchanged.'],
+    ['CONSENT_EXPORT_REJECTED', () => 'consentExport must be a valid export for the selected organizer and service. Read the current export with festapp_units_website_consent_export and pass it unchanged.'],
     ['CONSENT_EXPORT_SERVICE_MISMATCH', () => 'consentExport names a different service address than this tenant web address. Reading it again returns the same address; the platform operator must align the organization service address with the tenant web address. The administration rejects the same export.'],
     ['EMBED_LABELS_UNAVAILABLE', () => 'This server build lacks the translated embed texts for the selected language. Choose another language or ask the platform operator to redeploy; other tools are unaffected.'],
     ['FORM_PUBLIC_LINK_REQUIRED', () => 'The form has no saved public link yet. Save the form with a public link before generating embed code.'],
 ]);
+const approvalRequestInspection = new Map([
+    ['units.measurementApproval.request', 'festapp_units_measurement_approval_inspect'],
+    ['units.metaCapiApproval.request', 'festapp_units_meta_capi_approval_inspect'],
+]);
 export function safeError(error, { operation } = {}) {
+    const inspect = approvalRequestInspection.get(operation);
+    const recovery = inspect && `The approval request outcome is uncertain. Check with ${inspect} and obtain fresh approval before sending a new request.`;
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError')
-        return { code: 'TIMEOUT', message: 'TIMEOUT', retryable: true };
+        return { code: 'TIMEOUT', message: recovery || 'TIMEOUT', retryable: !recovery };
     const known = error instanceof OperationError;
     const message = error?.code === 'FORBIDDEN'
         ? operationPermissionMessages.get(operation) ?? permissionMessages.get(error.code)
         : permissionMessages.get(error?.code) ?? (known ? outcomeMessages.get(error.code)?.(error) : undefined) ?? error?.code;
+    const retryable = known ? !permissionMessages.has(error.code) && error.retryable : true;
+    // A lost response may hide a new round of email. Only an explicit queue
+    // rejection establishes that the approval request transaction rolled back.
+    if (retryable && recovery && error?.code !== 'APPROVAL_REQUEST_LIMITED')
+        return { code: known ? error.code : 'UNAVAILABLE', message: recovery, retryable: false };
     return {
         code: known ? error.code : 'UNAVAILABLE',
         message: known ? message : 'Operation unavailable',
-        retryable: known ? !permissionMessages.has(error.code) && error.retryable : true,
+        retryable,
     };
 }
 export function upstream(error) {

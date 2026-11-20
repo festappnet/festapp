@@ -69,7 +69,7 @@ export class EmbedCodeError extends Error {
 }
 
 /** Only call with the independently saved slug, never an editor draft. */
-export function formEmbedCode({ tenantUrl, savedLink, title, fallbackLabel, automatic = true, hostDataLayer = true, consentExport = null }) {
+export function formEmbedCode({ tenantUrl, savedLink, title, fallbackLabel, automatic = true, hostDataLayer = true, consentExport = null, consentScope = null }) {
     if (!savedLink) throw new EmbedCodeError('savedLink');
     const base = tenantUrl.replace(/\/+$/, '');
     const imported = consentExport == null ? null : parseFormConsentExport(consentExport, base);
@@ -78,6 +78,10 @@ export function formEmbedCode({ tenantUrl, savedLink, title, fallbackLabel, auto
         try { service = JSON.parse(consentExport)?.serviceOrigin; } catch { service = null; }
         const mismatch = typeof service === 'string' && service !== base && parseFormConsentExport(consentExport, service) != null;
         throw new EmbedCodeError('consentExport', mismatch ? 'serviceOrigin' : 'consentExport');
+    }
+    if (imported != null && consentScope != null &&
+        (imported.providerConfig.organization !== consentScope.organizationId || imported.providerConfig.unit !== consentScope.unitId)) {
+        throw new EmbedCodeError('consentExport');
     }
     const publicUrl = `${base}/form/${encodeURIComponent(savedLink)}`;
     const marker = ` data-festapp-embed${automatic ? '' : ' data-festapp-height="fixed"'}${hostDataLayer ? ' data-festapp-datalayer' : ''}`;

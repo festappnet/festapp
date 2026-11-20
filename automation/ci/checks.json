@@ -188,6 +188,7 @@
             "database/functions/others/get_ticket_layout_write_contract_v1.sql",
             "supabase/migrations/20261110110000_mcp_inventory_assignments.sql",
             "supabase/migrations/20261116160000_information_authoring.sql",
+            "supabase/migrations/20261120080000_song_authoring.sql",
             "supabase/migrations/20261114120000_integration_webhooks.sql",
             "supabase/migrations/20261114130000_ticket_layout_contract_refresh.sql"
           ]

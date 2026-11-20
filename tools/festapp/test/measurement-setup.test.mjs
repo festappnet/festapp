@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {Client,InMemoryTransport} from '@modelcontextprotocol/client';
 import {Operations} from '../src/operations/catalog.mjs';
+import {createServer} from '../src/mcp/server.mjs';
+import {publicCatalog,readiness} from '../src/remote/api-contract.mjs';
 import {measurementSetupDescriptors,approvalRequestError} from '../src/operations/measurement-setup.mjs';
 import {configurationDescriptors} from '../src/operations/configuration.mjs';
 import {formDescriptors} from '../src/operations/forms.mjs';
@@ -59,10 +62,41 @@ test('new setup operations use organizer settings scopes, delegated access and n
  for(const id of writes){
   const d=measurementSetupDescriptors.find(d=>d.id===id);
   assert.match(d.description,/Approve the exact change first/);assert.match(d.description,/every administrator of the organization/);
-  assert.equal(d.destructive,false);assert.equal(d.idempotent,true);
+  assert.equal(d.destructive,false);assert.equal(d.idempotent,false);
   assert.equal(d.input.safeParse({unitId:UNIT,commandId:BINDING}).success,false);
  }
  assert.match(measurementSetupDescriptors.find(d=>d.id==='units.metaCapiApproval.inspect').description,/whole organization/);
+});
+
+test('MCP and the HTTP contract direct uncertain approval requests to inspection without replay',async t=>{
+ const timeout=()=>{throw new DOMException('Fixture timeout','TimeoutError');};
+ const f=fixture({request_unit_measurement_approval:timeout,request_unit_meta_capi_approval:timeout});
+ const server=createServer(f.ops),sdk=new Client({name:'approval-recovery-fixture',version:'1'});
+ const [serverTransport,clientTransport]=InMemoryTransport.createLinkedPair();
+ await server.connect(serverTransport);
+ await sdk.connect(clientTransport);
+ t.after(async()=>{await sdk.close();await server.close();});
+ const {tools}=await sdk.listTools();
+ for(const kind of ['measurement','meta_capi']){
+  const name=`festapp_units_${kind}_approval_request`;
+  const inspect=`festapp_units_${kind}_approval_inspect`;
+  const tool=tools.find(tool=>tool.name===name);
+  assert.equal(tool.annotations.idempotentHint,false);
+  assert(tool.description.includes(inspect));
+  assert.match(tool.description,/wait while requestState is requested/);
+  assert.match(tool.description,/retry_available.*Obtain fresh approval/);
+  const result=await sdk.callTool({name,arguments:{unitId:UNIT}});
+  assert.equal(result.isError,true);
+  assert.equal(result.structuredContent.error.code,'TIMEOUT');
+  assert.equal(result.structuredContent.error.retryable,false);
+  assert(result.structuredContent.error.message.includes(inspect));
+  const descriptor=publicCatalog().find(d=>d.name===name);
+  const advice=readiness(descriptor).retry;
+  assert(advice.includes(descriptor.id.replace(/\.request$/,'.inspect')));
+  assert.match(advice,/wait while requestState is requested/);
+  assert.match(advice,/retry_available.*Obtain fresh approval/);
+  assert.match(advice,/rejected APPROVAL_REQUEST_LIMITED.*Follow Retry-After/);
+ }
 });
 
 test('units.settings.save names exactly the stored keys and runtime columns that SQL hashes into consentRevision',()=>{
@@ -252,7 +286,11 @@ test('forms.embedCode uses the saved slug, tenant web address and explicit langu
  for(const invalid of [{occasionId:7,formId:42},{...args,language:'fr'},{...args,height:'auto'},{...args,consentExport:''}])assert.equal((await f.ops.invoke('forms.embedCode',invalid)).error.code,'INVALID_INPUT');
  assert.equal(f.calls.length,before);
  const altered=await f.ops.invoke('forms.embedCode',{...args,consentExport:JSON.stringify(exportFor({websiteOrigin:'https://other.example.com'}))});
- assert.equal(altered.error.code,'CONSENT_EXPORT_REJECTED');assert.match(altered.error.message,/unchanged/);
+ assert.equal(altered.error.code,'CONSENT_EXPORT_REJECTED');assert.match(altered.error.message,/selected organizer/);
+ for(const identity of [{unit:UNIT+1},{organization:ORG+1}]){
+  const foreign=JSON.stringify(exportFor({providerConfig:{...exportFor().providerConfig,...identity}}));
+  assert.equal((await f.ops.invoke('forms.embedCode',{...args,consentExport:foreign})).error.code,'CONSENT_EXPORT_REJECTED');
+ }
  for(const slug of ['',null])assert.equal((await fixture(link(slug)).ops.invoke('forms.embedCode',args)).error.code,'FORM_PUBLIC_LINK_REQUIRED');
  // A maximal export of characters that expand when escaped still fits the output contract.
  const base=JSON.stringify(exportFor({filler:''}));
@@ -274,7 +312,7 @@ test('embed labels load lazily, fail only the embed tool and ship in the image',
 });
 
 test('HTTP API requires whole-organizer consent, the approval request scope and exposes Retry-After for limited requests',async t=>{
- let requests=0,limited=false;
+ let requests=0,requestError;
  const scopes=[...READ,'festapp:unit-approvals:request'];
  const f=await setup(t,{apiPolicy:{allowedScopes:[...scopes,'festapp:unit-settings:write'],allowedOperations:measurementSetupDescriptors.map(d=>d.id)},fetchImpl:async url=>{
   const name=url.pathname.split('/').at(-1);
@@ -282,7 +320,8 @@ test('HTTP API requires whole-organizer consent, the approval request scope and 
   if(name==='get_unit_measurement_approval')return reply({approved:false,runtime_supported:true,requested_at:null,approved_origins:[],saved_origins:[SITE],requested_origins:[],request_state:'not_requested',can_request:true});
   if(name!=='request_unit_measurement_approval')return;
   requests++;
-  if(limited)return reply({code:'PT429',message:'abuse_limit_exceeded',details:JSON.stringify({retryAfterSeconds:90,needsPolicyChange:false}),hint:null},429);
+  if(requestError==='limited')return reply({code:'PT429',message:'abuse_limit_exceeded',details:JSON.stringify({retryAfterSeconds:90,needsPolicyChange:false}),hint:null},429);
+  if(requestError==='unavailable')return reply({code:'PGRST000',message:'Fixture unavailable',details:null,hint:null},503);
   return reply({approved:false,runtime_supported:true,requested_at:'2026-11-20T10:11:12+00:00',approved_origins:[],saved_origins:[SITE],requested_origins:[SITE],request_state:'requested',can_request:false});
  }});
  const {tokens}=await connect(f,{unitId:3,scope:scopes.join(' ')});
@@ -290,11 +329,17 @@ test('HTTP API requires whole-organizer consent, the approval request scope and 
  assert.equal(response.status,200,await response.clone().text());assert.equal((await response.json()).data.canRequest,true);
  response=await apiRequest(f,tokens,'units.measurementApproval.request',{unitId:3});
  assert.equal(response.status,200,await response.clone().text());assert.equal((await response.json()).data.requestState,'requested');
- limited=true;response=await apiRequest(f,tokens,'units.measurementApproval.request',{unitId:3});
+ requestError='limited';response=await apiRequest(f,tokens,'units.measurementApproval.request',{unitId:3});
  assert.equal(response.status,429);assert.equal(response.headers.get('retry-after'),'90');
  const problem=await response.json();assert.equal(problem.code,'APPROVAL_REQUEST_LIMITED');assert.equal(problem.retryable,true);
  // The request transaction was rolled back: the outcome is definite, unlike other uncertain writes.
  assert.equal(problem.outcome,'rejected');
+ requestError='unavailable';
+ response=await apiRequest(f,tokens,'units.measurementApproval.request',{unitId:3});
+ assert.equal(response.status,503);
+ assert.equal(response.headers.get('retry-after'),null);
+ const uncertain=await response.json();
+ assert.equal(uncertain.outcome,'unknown');assert.equal(uncertain.retryable,false);
  const read=await connect(f,{unitId:3,scope:READ.join(' ')});
  response=await apiRequest(f,read.tokens,'units.measurementApproval.request',{unitId:3});assert.equal(response.status,403);
  // Organizer settings write alone does not authorize administrator emails.
@@ -305,5 +350,5 @@ test('HTTP API requires whole-organizer consent, the approval request scope and 
  const eventOnly=await connect(f,{occasionIds:[7],scope:scopes.join(' ')});
  response=await apiRequest(f,eventOnly.tokens,'units.measurementApproval.inspect',{unitId:3});
  assert.equal(response.status,403);assert.equal((await response.json()).code,'ORGANIZER_CONSENT_REQUIRED');
- assert.equal(requests,2);
+ assert.equal(requests,3);
 });

@@ -158,7 +158,16 @@
       "API reference",
       "MCP možnosti",
       "prompty",
-      "oprávnění agenta"
+      "oprávnění agenta",
+      "zpěvník",
+      "písně",
+      "informační stránky",
+      "termín hry",
+      "úvodní akce aplikace",
+      "kód pro vložení formuláře",
+      "souhlas webu",
+      "schválení měření",
+      "Meta CAPI"
     ],
     "webhooks": [
       "webhook",
@@ -321,7 +330,16 @@
       "API reference",
       "MCP capabilities",
       "prompts",
-      "agent permissions"
+      "agent permissions",
+      "songbook",
+      "song lyrics",
+      "information pages",
+      "game schedule",
+      "app home event",
+      "form embed code",
+      "website consent",
+      "measurement approval",
+      "Meta CAPI"
     ],
     "webhooks": [
       "webhook",

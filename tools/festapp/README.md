@@ -472,6 +472,10 @@ Measurement and Meta CAPI approval requests use their own `festapp:unit-approval
 scope rather than `festapp:unit-settings:write`: they email every organization administrator
 and the Meta CAPI request is organization-wide. Add it to a client registration ceiling only
 where those requests are intended; existing settings grants do not include it.
+Before offering it on a hosted tenant, deploy the tenant's first-party consent
+and connected-applications UI that recognizes the scope. Then update the client
+ceiling and have the organizer authorize it. If a request response is uncertain,
+read the approval status before deciding whether to request again.
 
 Artwork recovery is shared across API/MCP connections of the same actor and
 canonical tenant. Preserve the full original `saveRequest`: repeating it retains

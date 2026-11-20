@@ -476,5 +476,121 @@
       "title": "Draft and published activities",
       "prompt": "Check the selected event’s activities and distinguish drafts from published versions."
     }
+  },
+  {
+    "id": "information-edit",
+    "operations": [
+      "access.inspect",
+      "information.list",
+      "information.inspect",
+      "information.save"
+    ],
+    "cs": {
+      "title": "Upravit informační stránku",
+      "prompt": "Na akci Letní slavnost najdi stránku Doprava a navrhni doplnění informací o parkování. Po mém schválení změň jen text stránky a přečti uložený výsledek."
+    },
+    "en": {
+      "title": "Edit an information page",
+      "prompt": "Find the Travel page for the Summer Festival and propose adding parking information. After I approve, change only the page text and read back the saved result."
+    }
+  },
+  {
+    "id": "songbook",
+    "operations": [
+      "access.inspect",
+      "occasions.settings.inspect",
+      "songs.list",
+      "songs.inspect",
+      "songs.save"
+    ],
+    "cs": {
+      "title": "Přidat písně do zpěvníku",
+      "prompt": "U akce Letní slavnost ověř, že je zpěvník zapnutý. Porovnej stažené texty s písněmi ve zpěvníku a navrhni doplnění chybějících písní v pořadí ze souboru. Po mém schválení je ulož jako viditelné a ověř názvy, pořadí a texty."
+    },
+    "en": {
+      "title": "Add songs to the songbook",
+      "prompt": "Check that the Summer Festival songbook is enabled. Compare the downloaded lyrics with the existing songs and propose adding the missing ones in file order. After I approve, save them as visible and check the titles, order and lyrics."
+    }
+  },
+  {
+    "id": "game-interval",
+    "operations": [
+      "access.inspect",
+      "occasions.game.inspect",
+      "occasions.game.save"
+    ],
+    "cs": {
+      "title": "Upravit termín hry",
+      "prompt": "Zjisti, kdy běží hra na Letní slavnosti. Navrhni nový čas ukončení v časovém pásmu akce, počkej na moje schválení a po uložení ověř oba časy."
+    },
+    "en": {
+      "title": "Change the game schedule",
+      "prompt": "Check when the Summer Festival game runs. Propose a new end time in the event time zone, wait for my approval and verify both times after saving."
+    }
+  },
+  {
+    "id": "app-landing",
+    "operations": [
+      "access.inspect",
+      "units.appLanding.inspect",
+      "units.appLanding.save"
+    ],
+    "cs": {
+      "title": "Nastavit úvodní akci aplikace",
+      "prompt": "Zkontroluj výchozí akci aplikace. Navrhni, aby se v celé aplikaci jako první otevírala Letní slavnost. Po mém schválení změnu ulož a ověř vybranou akci."
+    },
+    "en": {
+      "title": "Set the app home event",
+      "prompt": "Check the default event for the app. Propose opening the Summer Festival first throughout the app. After I approve, save the change and verify the selected event."
+    }
+  },
+  {
+    "id": "form-embed",
+    "operations": [
+      "access.inspect",
+      "forms.list",
+      "units.websiteConsent.inspect",
+      "units.websiteConsent.export",
+      "forms.embedCode"
+    ],
+    "cs": {
+      "title": "Připravit kód pro vložení formuláře",
+      "prompt": "Pro formulář Přihláška na Letní slavnost připrav český HTML kód pro web pořadatele. Ověř, jestli je pro daný web připravené propojení souhlasu. Pokud ano, použij jeho aktuální export. Ukaž mi kód k vložení."
+    },
+    "en": {
+      "title": "Prepare form embed code",
+      "prompt": "Prepare English HTML embed code for the Summer Festival registration form on the organizer website. Check whether its website consent binding is ready and use the current export if it is. Show me the code to paste."
+    }
+  },
+  {
+    "id": "measurement-approval",
+    "operations": [
+      "access.inspect",
+      "units.measurementApproval.inspect",
+      "units.measurementApproval.request"
+    ],
+    "cs": {
+      "title": "Požádat o schválení měření",
+      "prompt": "Zjisti stav schválení měření u pořadatele Letní slavnost. Pokud je možné požádat o schválení, ukaž mi, co se odešle správcům. Žádost odešli až po mém potvrzení a pak ověř její stav."
+    },
+    "en": {
+      "title": "Request measurement approval",
+      "prompt": "Check the measurement approval status for the Summer Festival organizer. If a request is available, show me what will be sent to administrators. Wait for my confirmation before submitting and then verify the request status."
+    }
+  },
+  {
+    "id": "meta-capi-approval",
+    "operations": [
+      "access.inspect",
+      "units.metaCapiApproval.inspect"
+    ],
+    "cs": {
+      "title": "Zkontrolovat schválení Meta CAPI",
+      "prompt": "Zjisti, jestli je Meta CAPI schválené pro celou organizaci Letní slavnosti a jestli už správci čekají na vyřízení žádosti."
+    },
+    "en": {
+      "title": "Check Meta CAPI approval",
+      "prompt": "Check whether Meta CAPI is approved across the Summer Festival organization and whether an approval request is pending."
+    }
   }
 ]

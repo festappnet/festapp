@@ -26,7 +26,10 @@ export function readiness(descriptor, dataProfile = 'operator', proofProfile) {
     if (descriptor.domainReadOnly && !descriptor.requiresLayoutWriteContract)
         return { supported: true, retry: 'Read may be repeated. Keyset pages are not a snapshot.' };
     if (descriptor.id === 'units.appLanding.save') return {supported:true,retry:'Keep the identical unitId, occasionId and expectedOccasionId after an uncertain response. A retry reads current state and revalidates through the native setter if already at the target; a different changed default requires inspection and a new decision. No commandId or durable receipt exists, and an intervening change back to the same ID cannot be detected.'};
-    if (['units.measurementApproval.request','units.metaCapiApproval.request'].includes(descriptor.id)) return {supported:true,retry:'No commandId exists. Repeat the identical unitId after an uncertain response: while a request is active or after approval, the request owner returns the current status without sending email. retry_available means the earlier emails are no longer active, so a repeat sends a new request. A 429 response sent nothing; follow Retry-After when retryable.'};
+    if (['units.measurementApproval.request','units.metaCapiApproval.request'].includes(descriptor.id)) {
+        const inspect = descriptor.id.replace(/\.request$/, '.inspect');
+        return {supported:true,retry:`After an uncertain response, call ${inspect} with the same unitId and wait while requestState is requested. If requestState is retry_available, a new request can send another round of emails. Obtain fresh approval before sending a new request. A rejected APPROVAL_REQUEST_LIMITED response sent nothing. Follow Retry-After when that response is retryable.`};
+    }
     if (descriptor.id === 'ticket_layouts.preview') return {supported:true,retry:'Synthetic preview consumes document quota. Repeat explicitly with fresh proof; it does not save artwork. The PDF expires after 15 minutes and is bound to this active grant.'};
     return { supported: true, ...(authentication ? {authentication} : {}),
         ...(descriptor.requiresLayoutWriteContract ? { requiresLayoutWriteContract: true } : {}),

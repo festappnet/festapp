@@ -67,6 +67,7 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     if (/^units\.(websiteConsent|measurementApproval|metaCapiApproval)\./.test(descriptor.id)) request.unitId=3;
     if (descriptor.id === 'units.websiteConsent.export') Object.assign(request,{bindingId:UUID,expectedVersion:2});
     if (descriptor.id === 'forms.embedCode') Object.assign(request,{occasionId:7,formId:42,language:'en'});
+    if (descriptor.id === 'songs.save') Object.assign(request,{occasionId:7,expectedVersion:null,information:{title:'Opening song',description:'<p>Sing together</p>',type:'song',isHidden:false,order:1,data:null}});
     if (descriptor.id === 'webhooks.update') request.state = 'active';
     if (descriptor.id === 'webhooks.create') request.url = 'https://receiver.example.invalid/webhooks/festapp';
     if (descriptor.id === 'orders.update') request.changes = {note:'Updated order note'};
