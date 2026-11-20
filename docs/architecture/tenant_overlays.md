@@ -111,6 +111,13 @@ deployment. An HTTP 200 alone is not proof that a legal route exists.
 5. Run the main-owned drift checker and targeted tenant build tests.
 6. Commit/push/deploy only through the separately approved release workflow.
 
+To stage a Cloudflare web release ahead of activation, run
+`bash automation/cloudflare_build.sh` from the prepared tenant checkout. To
+upload the sealed artifact, run `automation/deploy_direct.sh --skip-build`
+with the same checkout, build overrides and protected release input. Both
+entrypoints load the same exported tenant configuration. Receipt verification
+still rejects changed source, compiler inputs or artifact bytes.
+
 Conflicts in shared source always resolve to main's canonical content. A
 conflict in an allowed overlay path is an explicit tenant decision; blanket
 `ours` resolutions are forbidden.

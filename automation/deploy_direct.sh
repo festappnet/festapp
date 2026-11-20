@@ -63,14 +63,15 @@ if [ "$USE_WRANGLER_OAUTH" -eq 1 ]; then
 fi
 export CLOUDFLARE_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-$ACCOUNT_ID_DEFAULT}"
 
-# Read the target Pages project from project.conf.
-# shellcheck disable=SC1091
-PROJECT_NAME="$(grep -E '^CLOUDFLARE_PROJECT_NAME=' automation/project.conf | head -1 | sed 's/^CLOUDFLARE_PROJECT_NAME=//' | tr -d '"'"'"'\r ')"
+# Load the same tenant environment used to compile and seal a standalone build.
+source automation/lib/web_project_environment.sh
+load_web_project_environment automation/project.conf
+PROJECT_NAME="${CLOUDFLARE_PROJECT_NAME:-}"
 if [ -z "$PROJECT_NAME" ]; then
   echo "ERROR: CLOUDFLARE_PROJECT_NAME missing in automation/project.conf." >&2
   exit 1
 fi
-DOMAIN="$(grep -E '^DOMAIN=' automation/project.conf | head -1 | sed 's/^DOMAIN=//' | tr -d '"'"'"'\r ')"
+DOMAIN="${DOMAIN:-}"
 VERSION="$(node automation/release/project_version.mjs --full)"
 if [ -z "$DOMAIN" ] || [ -z "$VERSION" ]; then
   echo "ERROR: DOMAIN and VERSION are required in automation/project.conf." >&2
@@ -94,12 +95,6 @@ if [ "$SKIP_BUILD" -eq 1 ]; then
   node automation/verify_image_service.mjs
 fi
 
-# Export the complete public tenant config for the Pages worker and make the
-# project/domain setup identical to the GitHub Actions path.
-set -a
-# shellcheck disable=SC1091
-source automation/project.conf
-set +a
 export CF_ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID"
 export CF_PROJECT="$PROJECT_NAME"
 export BRANCH

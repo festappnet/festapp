@@ -21,6 +21,8 @@ echo "Cloudflare Pages build starting..."
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
+source automation/lib/web_project_environment.sh
+load_web_project_environment automation/project.conf
 bash "$PROJECT_ROOT/automation/build_web_bundle.sh" cloudflare
 
 # 6. Cloudflare-specific routing via Pages Function (_worker.js).
