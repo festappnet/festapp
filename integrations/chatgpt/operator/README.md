@@ -35,6 +35,17 @@ seznam čtecích operací v registraci. V aktuálním katalogu je to 95 operací
 se 41 doménovými rozsahy. Náhledy a diagnostické operace závislé na
 zápisových rozsazích patří do plné varianty níže.
 
+Registrace byla nasazena 21. listopadu 2026 do regionálního MCP s revizí
+`d6fe2f1354da20520cac8db61670b393a98618f3`. Produkční OAuth přijímá všech
+41 doménových rozsahů pro čtení a odmítá požadavky s rozsahem pro zápis.
+
+Osobní návrh v ChatGPT Pro zůstal 21. listopadu 2026 bez OAuth připojení.
+Rozhraní před vytvořením zobrazilo vybraných 41 čtecích rozsahů, ale
+autorizační požadavek poslal všech 91 rozsahů z discovery a issuer odpověděl
+`invalid_scope`. Nastavení uloženého návrhu umožňuje změnit název a popis.
+Pro aktivaci je třeba ověřit klientský výběr rozsahů nebo zveřejnit
+samostatnou discovery pro čtecí variantu se stejným omezením OAuth klienta.
+
 ## Připojení plné varianty
 
 1. Použijte oprávněný ChatGPT Business, Enterprise nebo Edu workspace ve
