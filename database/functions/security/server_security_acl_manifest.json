@@ -3070,6 +3070,21 @@
       "authenticated": true,
       "service_role": false
     },
+    "public.unit_meta_capi_approval_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_unit_meta_capi_approval(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.request_unit_meta_capi_approval(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
     "public.form_measurement_runtime_supported_internal(text,text,text[])": {
       "anon": false,
       "authenticated": false,
@@ -3650,6 +3665,7 @@
     "database/functions/payment_providers/configuration.sql",
     "database/functions/inventory/delegated_assignments.sql",
     "database/functions/eshop_forms/unit_measurement_approval.sql",
+    "database/functions/eshop_forms/unit_meta_capi_approval.sql",
     "database/functions/eshop_forms/form_measurement_support.sql",
     "database/functions/ticket_wallet/projection.sql",
     "database/functions/ticket_wallet/worker.sql",

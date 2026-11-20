@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Let organization managers request platform approval for Meta CAPI from their organizer settings.
+- Accept the account email at operator login, with an explicit CLI option for an internal sign-in address.
+
 - Store the Meta CAPI consent snapshot with each order, support Complianz and saved Klaro choices without decision dates, and apply scoped withdrawals during checkout.
 - Show invalid and expired Meta CAPI deliveries with their reasons and highlight when the connector needs a replacement token.
 

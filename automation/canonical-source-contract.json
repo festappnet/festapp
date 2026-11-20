@@ -7,7 +7,8 @@
     "eshop_forms/meta_purchase_matching.sql",
     "eshop_forms/meta_purchase_retention.sql",
     "eshop_forms/meta_purchase_settings.sql",
-    "user_permissions/unit_meta_purchase.sql"
+    "user_permissions/unit_meta_purchase.sql",
+    "eshop_forms/unit_meta_capi_approval.sql"
   ],
   "retainedSignatures": [
     "public.uses_ticket_terminology_internal(jsonb)",

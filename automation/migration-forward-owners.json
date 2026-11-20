@@ -665,6 +665,21 @@
           "get_unit_meta_purchase"
         ]
       }
+    },
+    {
+      "migration": "20261120030000_meta_capi_approval_request.sql",
+      "active": true,
+      "header": "-- Let Unit managers request platform approval of Meta CAPI. Approval itself stays a platform decision.",
+      "sources": [
+        "eshop_forms/unit_meta_capi_approval.sql",
+        "emails/email_queue.sql",
+        "units/delete_unit.sql"
+      ],
+      "selectors": {
+        "emails/email_queue.sql": [
+          "email_intent_valid"
+        ]
+      }
     }
   ]
 }

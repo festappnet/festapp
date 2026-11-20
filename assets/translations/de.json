@@ -3586,6 +3586,8 @@
     "credentials": "Meta hat das Token abgelehnt. Ersetzen Sie es.",
     "rejected": "Meta hat einen Kauf abgelehnt. Prüfen Sie Dataset und Website.",
     "retry": "Die Übertragung ist vorübergehend fehlgeschlagen; ein weiterer Versuch ist geplant.",
-    "invalid": "Geben Sie einen gültigen Wert ein."
+    "invalid": "Geben Sie einen gültigen Wert ein.",
+    "requestApproval": "Freigabe für Meta CAPI anfragen",
+    "approvedByPlatform": "Die Plattform hat Meta CAPI freigegeben. Die Verbindung richtet ein Organisationsadministrator ein."
   }
 }

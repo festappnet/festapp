@@ -17,6 +17,15 @@ function authenticationError(error) {
     upstream(error);
 }
 
+// The same string can be a public email or an internal sign-in address.
+function organizationSignInEmail(email, organizationId, canonicalEmail) {
+    const address = email.trim().toLowerCase();
+    const prefix = `${organizationId}+`;
+    if (!canonicalEmail) return prefix + address;
+    check(address.startsWith(prefix) && address.length > prefix.length, 'AUTHENTICATION_REQUIRED');
+    return address;
+}
+
 export class KeychainStore {
     async entry(binding) {
         check(process.platform === 'darwin', 'SECURE_STORAGE_UNAVAILABLE');
@@ -137,12 +146,12 @@ export class SessionOwner {
             return { userId };
         });
     }
-    async login(email, password) {
+    async login(email, password, { canonicalEmail = false } = {}) {
         return this.locked(async () => {
             await verifyActivation(this.profile, this.fetch);
             const client = this.client();
             const { data, error } = await client.auth.signInWithPassword({
-                email,
+                email: organizationSignInEmail(email, this.profile.organizationId, canonicalEmail),
                 password,
             });
             authenticationError(error);

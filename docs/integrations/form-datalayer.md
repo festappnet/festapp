@@ -328,7 +328,18 @@ payment processing retryable.
 ### Meta CAPI settings
 
 The platform must first approve the organization. Organization administrators
-then open Unit settings → Events and consent → Meta Conversions API. Before initial approval the section is hidden; there is no request button.
+then open Unit settings → Events and consent → Meta Conversions API. Before
+approval, Unit managers see only the request state there and can request approval
+once with `request_unit_meta_capi_approval`. It uses the measurement request's
+boundary and channel: `can_manage_unit_configuration`, an organization row lock, request
+generations shared by all Units in `analytics.organization_meta_capi_request` and a `META_CAPI_APPROVAL_REQUEST`
+delivery email to every current organization administrator with a delivery
+address. The notice lets the recipient review organization details and forward the request
+to Festapp support for the platform operator’s decision. Accepted, ambiguous or live queued notices block duplicates; terminal or
+expired ones allow a retry. Platform approval fulfils the current generation and retires
+its notices. A later revocation leaves the organization eligible to request again. `get_unit_meta_capi_approval` exposes only the platform
+decision and request state, never settings or delivery details. Demo Units are a
+no-op, and a request grants nothing by itself.
 If approval is removed from an existing connector, only a platform-disabled
 notice and Disconnect remain visible. No settings or delivery details are exposed. The platform uses its protected database administration boundary:
 

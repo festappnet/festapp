@@ -5852,6 +5852,8 @@
     "credentials": "Meta odmítla token. Vyměňte jej.",
     "rejected": "Meta odmítla nákup. Zkontrolujte dataset a web.",
     "retry": "Odeslání dočasně selhalo; další pokus je naplánován.",
-    "invalid": "Zadejte platnou hodnotu."
+    "invalid": "Zadejte platnou hodnotu.",
+    "requestApproval": "Požádat o povolení Meta CAPI",
+    "approvedByPlatform": "Platforma Meta CAPI povolila. Propojení nastaví správce organizace."
   }
 }

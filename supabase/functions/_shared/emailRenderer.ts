@@ -1,4 +1,7 @@
-import { measurementApprovalEmail } from "./measurementApprovalEmail.ts";
+import {
+  measurementApprovalEmail,
+  metaCapiApprovalEmail,
+} from "./measurementApprovalEmail.ts";
 import { renderAdminNotificationEmail } from "./adminNotificationEmail.ts";
 import { providerPaymentSubstitutions } from "./orderEmailPresentation.ts";
 import { paymentRegistry } from "./payments/runtime.ts";
@@ -84,6 +87,16 @@ export async function renderQueuedEmail(
   if (row.message_kind === "custom" && row.code === "MEASUREMENT_APPROVAL_REQUEST") {
     return {
       prepared: measurementApprovalEmail(
+        row.recipient,
+        row.data,
+        Deno.env.get("DEFAULT_EMAIL") ?? "",
+      ),
+      postAction: { tracking_policy: "disabled" },
+    };
+  }
+  if (row.message_kind === "custom" && row.code === "META_CAPI_APPROVAL_REQUEST") {
+    return {
+      prepared: metaCapiApprovalEmail(
         row.recipient,
         row.data,
         Deno.env.get("DEFAULT_EMAIL") ?? "",
