@@ -88,30 +88,24 @@ void main() {
       url: 'https://fixture.test',
       publishableKey: 'fixture',
       httpClient: MockClient((request) async {
-        expect(request.url.path, '/rest/v1/unit_picker_favorites');
-        final params = request.url.queryParameters;
-        const headers = {'content-type': 'application/json'};
-        if (request.method == 'POST') {
-          final row = jsonDecode(request.body) as Map<String, dynamic>;
-          final account = row['user_id'] as String;
-          remoteFavorites
-              .putIfAbsent(account, () => {})
-              .add(row['unit_id'] as int);
-          return http.Response('', 201, request: request);
-        }
-        final account = params['user_id']!.substring(3);
+        expect(request.method, 'POST');
+        final args = jsonDecode(request.body) as Map<String, dynamic>;
+        final account = args['p_user_id'] as String;
         final favorites = remoteFavorites.putIfAbsent(account, () => {});
-        if (request.method == 'DELETE') {
-          favorites.remove(int.parse(params['unit_id']!.substring(3)));
+        if (request.url.path == '/rest/v1/rpc/set_unit_picker_favorite') {
+          final unitId = args['p_unit_id'] as int;
+          if (args['p_favorite'] as bool) {
+            favorites.add(unitId);
+          } else {
+            favorites.remove(unitId);
+          }
           return http.Response('', 204, request: request);
         }
-        expect(request.method, 'GET');
+        expect(request.url.path, '/rest/v1/rpc/get_unit_picker_favorites');
         return http.Response(
-          jsonEncode([
-            for (final id in favorites) {'unit_id': id},
-          ]),
+          jsonEncode(favorites.toList()),
           200,
-          headers: headers,
+          headers: {'content-type': 'application/json'},
           request: request,
         );
       }),
