@@ -69,6 +69,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
 
   late TextEditingController _ibanController;
   late TextEditingController _nationalAccountController;
+  late TextEditingController _bankCodeController;
 
   late TextEditingController _titleController;
   late TextEditingController _creditorNameController;
@@ -89,6 +90,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         _creditorNameController.text,
         _ibanController.text,
         _nationalAccountController.text,
+        _bankCodeController.text,
         _supportedCurrencies.join(','),
         _useIbanInput,
       ];
@@ -124,9 +126,9 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     _tokenController = TextEditingController();
 
     _ibanController = TextEditingController(text: _account.accountNumber);
-    _nationalAccountController = TextEditingController(
-      text: _nationalFormatFromIban(_ibanController.text),
-    );
+    _nationalAccountController = TextEditingController();
+    _bankCodeController = TextEditingController();
+    _syncNationalFieldsFromIban();
 
     _pairingCode = _account.pairingCode;
     _useIbanInput = _ibanController.text.isNotEmpty &&
@@ -257,6 +259,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     _connectionRefreshBurst?.cancel();
     _ibanController.dispose();
     _nationalAccountController.dispose();
+    _bankCodeController.dispose();
 
     _titleController.dispose();
     _creditorNameController.dispose();
@@ -267,54 +270,69 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   }
 
   static final _nationalPattern = RegExp(
-    r'^(?:(\d{1,6})\s*-\s*)?(\d{1,10})\s*/\s*(\d{4})$',
+    r'^(?:(\d{1,6})\s*-\s*)?(\d{1,10})$',
   );
 
-  RegExpMatch? get _nationalAccountParts =>
-      _nationalPattern.firstMatch(_nationalAccountController.text.trim());
-
   String? _nationalIban() {
-    final parts = _nationalAccountParts;
-    if (parts == null || !czBanks.containsKey(parts[3])) return null;
+    final parts = _nationalPattern.firstMatch(
+      _nationalAccountController.text.trim(),
+    );
+    final bankCode = _bankCodeController.text.trim();
+    if (parts == null || !czBanks.containsKey(bankCode)) return null;
 
     try {
-      return IbanUtils.generateCzIban(parts[3]!, parts[1] ?? '', parts[2]!);
+      return IbanUtils.generateCzIban(bankCode, parts[1] ?? '', parts[2]!);
     } on FormatException {
       return null;
     }
   }
 
-  static String? _nationalFormatFromIban(String iban) {
-    final account = IbanUtils.parseCzIban(iban.trim());
-    if (account == null || !czBanks.containsKey(account.bankCode)) return null;
+  void _syncNationalFieldsFromIban() {
+    final account = IbanUtils.parseCzIban(_ibanController.text.trim());
+    if (account == null || !czBanks.containsKey(account.bankCode)) {
+      _nationalAccountController.clear();
+      _bankCodeController.clear();
+      return;
+    }
 
     final prefix = account.prefix == '0' ? '' : '${account.prefix}-';
-    return '$prefix${account.number}/${account.bankCode}';
+    _nationalAccountController.text = '$prefix${account.number}';
+    _bankCodeController.text = account.bankCode;
   }
 
-  void _onIbanChanged() {
-    setState(() {
-      _nationalAccountController.text =
-          _nationalFormatFromIban(_ibanController.text) ?? '';
-    });
+  String? get _nationalFormat {
+    if (_nationalAccountController.text.isEmpty) return null;
+    final number = _nationalAccountController.text.replaceAll(RegExp(r'\s'), '');
+    return '$number/${_bankCodeController.text.trim()}';
   }
+
+  void _onIbanChanged() => setState(_syncNationalFieldsFromIban);
 
   void _onNationalAccountChanged() {
     setState(() => _ibanController.text = _nationalIban() ?? '');
   }
 
+  String? _validateIban(String? value) {
+    final iban = value?.trim() ?? '';
+    if (iban.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+    return IbanUtils.isValidIban(iban) ? null : CommonStrings.invalidFormat;
+  }
+
   String? _validateAccountNumber(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return CommonStrings.fieldCannotBeEmpty;
+    final number = value?.trim() ?? '';
+    if (number.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+    if (!_nationalPattern.hasMatch(number) ||
+        (czBanks.containsKey(_bankCodeController.text.trim()) &&
+            _nationalIban() == null)) {
+      return BankAccountStrings.invalidNationalAccount;
     }
-    if (_useIbanInput) {
-      return IbanUtils.isValidIban(value.trim())
-          ? null
-          : CommonStrings.invalidFormat;
-    }
-    return _nationalIban() == null
-        ? BankAccountStrings.invalidNationalAccount
-        : null;
+    return null;
+  }
+
+  String? _validateBankCode(String? value) {
+    final code = value?.trim() ?? '';
+    if (code.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+    return czBanks.containsKey(code) ? null : CommonStrings.invalidFormat;
   }
 
   Future<void> _saveGeneralInfo() async {
@@ -339,9 +357,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
             : (isFioBank(iban) ? 'FIO' : 'OTHER'),
         isAdmin: _account.isAdmin,
         supportedCurrencies: _supportedCurrencies,
-        accountNumberHumanReadable: _useIbanInput
-            ? _nationalFormatFromIban(iban)
-            : _nationalAccountController.text.replaceAll(RegExp(r'\s'), ''),
+        accountNumberHumanReadable: _nationalFormat,
         tokenMasked: _account.tokenMasked,
         lastFetchTime: _account.lastFetchTime,
         lastFioFetchTime: _account.lastFioFetchTime,
@@ -615,10 +631,12 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         creditorNameController: _creditorNameController,
         ibanController: _ibanController,
         nationalAccountController: _nationalAccountController,
+        bankCodeController: _bankCodeController,
         useIbanInput: _useIbanInput,
         onUseIbanInputChanged: (v) => setState(() => _useIbanInput = v),
-        selectedBankCode: _nationalAccountParts?[3],
+        validateIban: _validateIban,
         validateAccountNumber: _validateAccountNumber,
+        validateBankCode: _validateBankCode,
         supportedCurrencies: _supportedCurrencies,
         onAddCurrency: _showAddCurrencyDialog,
         onRemoveCurrency: (c) => setState(() => _supportedCurrencies.remove(c)),
