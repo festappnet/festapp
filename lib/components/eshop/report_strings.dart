@@ -54,6 +54,8 @@ class ReportStrings {
       hasTickets ? 'OccasionReport.orders'.tr() : OrdersStrings.applications;
   static String get tickets => 'OccasionReport.tickets'.tr();
   static String get spots => 'OccasionReport.spots'.tr();
+  static String formOccupancy({required bool hasSeats}) =>
+      hasSeats ? 'OccasionReport.formCapacity'.tr() : spots;
   static String get free => 'OccasionReport.free'.tr();
   static String get products => 'OccasionReport.products'.tr();
   static String get noType => 'OccasionReport.noType'.tr();

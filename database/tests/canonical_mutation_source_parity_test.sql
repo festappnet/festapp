@@ -1038,8 +1038,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_settings_from_metadata_internal(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='610e718e36423c4c81067fbec719aa46'),'current SQL source parity: public.form_settings_from_metadata_internal(jsonb)');
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_settings_keys_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='f5edb4cdecece088e95d0c3cdd6c0e58'),'current SQL source parity: public.form_settings_keys_internal()');
--- supabase/migrations/20261110231000_payment_operations.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.format_occasion_report_text(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='d0bfc247fd65feacd203b66dd8ac12e9'),'current SQL source parity: public.format_occasion_report_text(jsonb)');
+-- supabase/migrations/20261120110000_occasion_report_form_capacity.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.format_occasion_report_text(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f9b8205694812bb14e1434c12a8ffdcb'),'current SQL source parity: public.format_occasion_report_text(jsonb)');
 -- supabase/migrations/20261120030000_meta_capi_approval_request.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.fulfil_meta_capi_approval_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='f1af44668c8b05f45e0005793873b861'),'current SQL source parity: public.fulfil_meta_capi_approval_internal()');
 -- supabase/baseline/20261107170000_schema.sql
@@ -1394,8 +1394,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_recoverable_stripe_attempts_internal(boolean,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='068032e3de96952bc807cdfa1727dc99'),'current SQL source parity: public.get_recoverable_stripe_attempts_internal(boolean,integer)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_recoverable_stripe_connections_internal(boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='992f4550db5a4968c2c15da36669d366'),'current SQL source parity: public.get_recoverable_stripe_connections_internal(boolean)');
--- supabase/migrations/20261115120000_discount_codes.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_report_ws(text)') AND md5(btrim(prosrc,E' \n\r\t'))='79fe7b453905ff48bb8939a121913868'),'current SQL source parity: public.get_report_ws(text)');
+-- supabase/migrations/20261120110000_occasion_report_form_capacity.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_report_ws(text)') AND md5(btrim(prosrc,E' \n\r\t'))='b976eee97c5d9d40eb472b31d008f509'),'current SQL source parity: public.get_report_ws(text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_resources_for_inventory_pool_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='60fc38ae9014f6190d45457a5fbeb34d'),'current SQL source parity: public.get_resources_for_inventory_pool_v1(bigint)');
 -- supabase/baseline/20261107170000_schema.sql

@@ -144,7 +144,14 @@ void main() {
             TicketFeature(code: FeatureConstants.ticket, isEnabled: ticketMode),
           ]));
       addTearDown(() => RightsService.occasionLinkModelNotifier.value = null);
-      await tester.pumpWidget(app((_) async => reportFixture()));
+      final response = reportResponse();
+      if (!ticketMode) {
+        final data = response['report'] as Map<String, dynamic>;
+        data['spots'] = {'total': 0, 'occupied': 0, 'free': 0};
+        data['form_capacity'] = {'total': 46, 'occupied': 38};
+      }
+      final report = OccasionReport.fromResponse(response);
+      await tester.pumpWidget(app((_) async => report));
       await tester.pumpAndSettle();
       final chart = tester
           .widgetList<ReportTimelineChart>(find.byType(ReportTimelineChart))
@@ -163,8 +170,13 @@ void main() {
           ticketMode);
       if (!ticketMode) {
         expect(find.text(OrdersStrings.applications), findsWidgets);
-        expect(formatReportText(reportFixture()),
-            contains('${OrdersStrings.applications}: 3'));
+        expect(find.text(ReportStrings.spots), findsOneWidget);
+        expect(find.text('38 / 46'), findsOneWidget);
+        expect(formatReportText(report), contains('${ReportStrings.spots}: 38 / 46'));
+        expect(formatReportText(report), contains('${OrdersStrings.applications}: 3'));
+        await tester.tap(find.byKey(const ValueKey('reportValidityFilter')));
+        await tester.pumpAndSettle();
+        expect(find.text('38 / 46'), findsOneWidget);
       }
     });
   }

@@ -719,6 +719,15 @@
           "queue_payment_reminders_internal"
         ]
       }
+    },
+    {
+      "migration": "20261120110000_occasion_report_form_capacity.sql",
+      "active": true,
+      "header": "-- Report the occupied and configured places of capacity-limited forms.",
+      "sources": [
+        "eshop/format_occasion_report_text.sql",
+        "eshop/get_report_ws.sql"
+      ]
     }
   ]
 }

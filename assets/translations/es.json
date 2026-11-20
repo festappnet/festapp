@@ -3244,6 +3244,7 @@
     "orders": "Pedidos",
     "tickets": "Entradas",
     "spots": "Ocupación de plazas",
+    "formCapacity": "Capacidad de los formularios",
     "free": "Plazas libres",
     "products": "Productos en pedidos confirmados",
     "noType": "Sin tipo",
