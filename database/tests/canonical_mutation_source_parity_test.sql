@@ -1074,8 +1074,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_all_occasions_for_edit_v182(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='718fd93cb15409b131b35228674f0b76'),'current SQL source parity: public.get_all_occasions_for_edit_v182(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_all_users_from_unit(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1c604c8e0796d9d650e2f04a83315adc'),'current SQL source parity: public.get_all_users_from_unit(bigint)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_app_config_v218(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f567fcd5c2c64ff88a410c1330b3f7da'),'current SQL source parity: public.get_app_config_v218(jsonb)');
+-- supabase/migrations/20261120130000_organization_favorites_in_app_config.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_app_config_v218(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='9385b50fcaf07c3f5f0aea7587869ca5'),'current SQL source parity: public.get_app_config_v218(jsonb)');
 -- supabase/migrations/20261113190000_apple_ticket_wallet_updates.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_apple_ticket_wallet(text,text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='ec756090de0e7fb9be28fc97a9179215'),'current SQL source parity: public.get_apple_ticket_wallet(text,text,text)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql

@@ -728,6 +728,14 @@
         "eshop/format_occasion_report_text.sql",
         "eshop/get_report_ws.sql"
       ]
+    },
+    {
+      "migration": "20261120130000_organization_favorites_in_app_config.sql",
+      "active": true,
+      "header": "-- Include organization favorites in the existing app context response.",
+      "sources": [
+        "others/get_app_config.sql"
+      ]
     }
   ]
 }

@@ -56,9 +56,13 @@ class AppPanelHelper {
   static const _unitFavoritesMinimum = 5;
 
   static UnitPickerFavorites? _unitPickerFavorites(List<UnitModel> units) {
-    final userId = RightsService.currentUser()?.id;
-    if (userId == null || units.length < _unitFavoritesMinimum) return null;
-    return UnitPickerFavorites(userId);
+    final user = RightsService.currentUser();
+    final userId = user?.id;
+    final favoriteIds = user?.favoriteUnitIds;
+    if (userId == null ||
+        favoriteIds == null ||
+        units.length < _unitFavoritesMinimum) return null;
+    return UnitPickerFavorites(userId, favoriteIds);
   }
 
   /// This method returns a breadcrumb widget for navigating units and occasions.
@@ -663,6 +667,8 @@ class AppPanelHelper {
           final currentUnit = RightsService.isDemoReadOnly
               ? DemoOccasionNavigation.breadcrumbUnit(context)
               : RightsService.currentUnit();
+          final unitFavorites =
+              currentUnit == null ? null : _unitPickerFavorites(allUnits);
           final occasionsInUnit = RightsService.currentUser()?.occasions ?? [];
           final currentOccasion = RightsService.currentOccasion();
 
@@ -708,7 +714,7 @@ class AppPanelHelper {
                             onPressed: () => _showPicker<UnitModel>(
                               context: buttonContext,
                               items: allUnits,
-                              unitFavorites: _unitPickerFavorites(allUnits),
+                              unitFavorites: unitFavorites,
                               selectedItem: currentUnit,
                               itemTitleBuilder: (i) => i.title ?? '---',
                               itemIdBuilder: (i) => i.id,
