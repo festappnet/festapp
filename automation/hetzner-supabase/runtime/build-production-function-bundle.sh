@@ -31,7 +31,16 @@ FUNCTION_NAMES=()
 mapfile_compat < <(jq -r '(.canonical_function_security.excluded|keys) as $excluded |
   .edge_functions|keys[]|select(. as $name | ($excluded|index($name)|not))' "$POLICY" | sort)
 SELECTION_JSON=null
-if [[ -n "${FESTAPP_FUNCTION_BUNDLE_FUNCTIONS:-}" ]]; then
+EXACT_SHARED_JSON=null
+if [[ -n "${FESTAPP_FUNCTION_BUNDLE_EXACT_SHARED_MODULES:-}" ]]; then
+  [[ -z "${FESTAPP_FUNCTION_BUNDLE_FUNCTIONS:-}${FESTAPP_FUNCTION_BUNDLE_SHARED_MODULES:-}" ]] ||
+    fail "exact shared replacement cannot be combined with Function selection"
+  [[ -f "${FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY:-}" ]] || fail "exact shared replacement requires installed runtime inventory"
+  EXACT_SHARED_JSON="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/function-bundle-selection.py" plan-exact-shared \
+    --root "$SOURCE_ROOT" --base "$FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY" \
+    --shared-modules "$FESTAPP_FUNCTION_BUNDLE_EXACT_SHARED_MODULES")"
+  FUNCTION_NAMES=()
+elif [[ -n "${FESTAPP_FUNCTION_BUNDLE_FUNCTIONS:-}" ]]; then
   [[ -f "${FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY:-}" ]] || fail "selected release requires installed runtime inventory"
   SELECTION_JSON="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/function-bundle-selection.py" select \
     --root "$SOURCE_ROOT" --base "$FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY" --functions "$FESTAPP_FUNCTION_BUNDLE_FUNCTIONS" \
@@ -45,22 +54,27 @@ else
   [[ -z "${FESTAPP_FUNCTION_BUNDLE_SHARED_MODULES:-}" ]] || fail "shared module selection requires selected Functions"
   FUNCTION_NAMES+=("_shared")
 fi
-for name in "${FUNCTION_NAMES[@]}"; do [[ -d "$SOURCE_ROOT/$name" ]] || fail "missing source Function: $name"; done
-
-COPYFILE_DISABLE=1 tar --no-xattrs \
-  --exclude='*/test_*.ts' --exclude='*/*_test.ts' \
-  -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" |
-  tar --no-xattrs -C "$STAGE" -xf -
-PACKAGED_NAMES=("${FUNCTION_NAMES[@]}")
-if [[ "$SELECTION_JSON" != null ]] && jq -e '.shared_modules | length > 0' <<<"$SELECTION_JSON" >/dev/null; then
+if [[ "$EXACT_SHARED_JSON" == null ]]; then
+  for name in "${FUNCTION_NAMES[@]}"; do [[ -d "$SOURCE_ROOT/$name" ]] || fail "missing source Function: $name"; done
+  COPYFILE_DISABLE=1 tar --no-xattrs \
+    --exclude='*/test_*.ts' --exclude='*/*_test.ts' \
+    -C "$SOURCE_ROOT" -cf - "${FUNCTION_NAMES[@]}" |
+    tar --no-xattrs -C "$STAGE" -xf -
+  PACKAGED_NAMES=("${FUNCTION_NAMES[@]}")
+else
+  PACKAGED_NAMES=()
+fi
+SHARED_PLAN="$SELECTION_JSON"
+if [[ "$EXACT_SHARED_JSON" != null ]]; then SHARED_PLAN="$EXACT_SHARED_JSON"; fi
+if jq -e '.shared_modules | length > 0' <<<"$SHARED_PLAN" >/dev/null; then
   install -d -m 0700 "$STAGE/_shared"
   while IFS= read -r module; do
     install -m 0600 "$SOURCE_ROOT/$module" "$STAGE/$module"
-  done < <(jq -r '.shared_modules | keys[]' <<<"$SELECTION_JSON")
+  done < <(jq -r '.shared_modules | keys[]' <<<"$SHARED_PLAN")
   PACKAGED_NAMES+=("_shared")
 fi
 [[ -z "$(find "$STAGE" -type l -print -quit)" ]] || fail "Function bundle must not contain symlinks"
-if [[ "$SELECTION_JSON" == null ]]; then
+if [[ "$SELECTION_JSON" == null && "$EXACT_SHARED_JSON" == null ]]; then
   TICKET_FONT_ASSET_PROOF="$(python3 "$PROJECT_ROOT/automation/hetzner-supabase/runtime/ticket-font-asset-proof.py" "$STAGE/_shared/ticket-assets")"
   install -m 0600 "$SOURCE_ROOT/deno.lock" "$STAGE/deno.lock"
 else
@@ -75,11 +89,12 @@ readonly POLICY_SHA256="$(shasum -a 256 "$POLICY" | awk '{print $1}')"
 jq -n --arg bundle_id "$BUNDLE_ID" --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg source_sha "$SOURCE_SHA" --arg archive_file "$(basename "$ARCHIVE")" \
   --arg archive_sha256 "$ARCHIVE_SHA256" --arg policy_sha256 "$POLICY_SHA256" \
-  --argjson selection "$SELECTION_JSON" --argjson ticket_font_assets "$TICKET_FONT_ASSET_PROOF" \
+  --argjson selection "$SELECTION_JSON" --argjson exact_shared "$EXACT_SHARED_JSON" --argjson ticket_font_assets "$TICKET_FONT_ASSET_PROOF" \
   --argjson functions "$(printf '%s\n' "${PACKAGED_NAMES[@]}" | sort | jq -R . | jq -s .)" \
   '{version:1,bundle_id:$bundle_id,created_at:$created_at,source_sha:$source_sha,
     archive:{file:$archive_file,sha256:$archive_sha256},runtime_writer_policy_sha256:$policy_sha256,
-    ticket_font_assets:$ticket_font_assets,packaged_directories:$functions,host_router_directory:"main",excluded_directories:["hello","instance-install"]} + (if $selection == null then {} else {selection:$selection} end)' \
+    ticket_font_assets:$ticket_font_assets,packaged_directories:$functions,host_router_directory:"main",excluded_directories:["hello","instance-install"]} + (if $selection == null then {} else {selection:$selection} end) +
+    (if $exact_shared == null then {} else {exact_shared_replacement:$exact_shared} end)' \
   >"$RUN_DIR/manifest.json"
 chmod 0600 "$RUN_DIR/manifest.json"
 rm -rf "$STAGE"

@@ -151,7 +151,8 @@ test('selected shared code cannot pull changed unselected dependencies or a chan
  const changedLock=fixture(t);writeFileSync(join(changedLock.source,'deno.lock'),'changed');
  assert.notEqual(changedLock.select(['_shared/common.ts']).status,0);
 });
-test('canonical builder packages only explicit shared code and its archive stages against the pinned base',t=>{
+for (const exact of [false, true]) test(
+    `canonical builder packages ${exact ? 'an exact shared replacement' : 'explicit shared code with a Function'} for the pinned base`, t=>{
  const f=fixture(t),repo=join(f.root,'repo'),output=join(f.root,'bundles');
  mkdirSync(join(repo,'automation/hetzner-supabase/runtime'),{recursive:true});
  mkdirSync(join(repo,'automation/hetzner-supabase/merge'),{recursive:true});
@@ -167,14 +168,54 @@ test('canonical builder packages only explicit shared code and its archive stage
  git('update-ref','refs/remotes/origin/main',git('rev-parse','HEAD'));
  const built=spawnSync('bash',[join(repo,'automation/hetzner-supabase/runtime/build-production-function-bundle.sh')],{
   cwd:repo,encoding:'utf8',env:{...process.env,FESTAPP_FUNCTION_BUNDLE_ACK:'build-reviewed-production-function-bundle',FESTAPP_FUNCTION_BUNDLE_OUTPUT_DIR:output,
-   FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY:join(f.root,'base.json'),FESTAPP_FUNCTION_BUNDLE_FUNCTIONS:'alpha',FESTAPP_FUNCTION_BUNDLE_SHARED_MODULES:'_shared/common.ts'}});
+   FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY:join(f.root,'base.json'),
+   ...(exact ? {FESTAPP_FUNCTION_BUNDLE_EXACT_SHARED_MODULES:'_shared/common.ts'} :
+       {FESTAPP_FUNCTION_BUNDLE_FUNCTIONS:'alpha',FESTAPP_FUNCTION_BUNDLE_SHARED_MODULES:'_shared/common.ts'})}});
  assert.equal(built.status,0,built.stderr);
  const run=join(output,readdirSync(output)[0]),manifest=join(run,'manifest.json');
- assert.deepEqual(JSON.parse(readFileSync(manifest,'utf8')).packaged_directories,['_shared','alpha']);
+ assert.deepEqual(JSON.parse(readFileSync(manifest,'utf8')).packaged_directories,exact ? ['_shared'] : ['_shared','alpha']);
  const extracted=join(f.root,'extracted');mkdirSync(extracted);
  const untar=spawnSync('tar',['-xzf',join(run,'functions.tar.gz'),'-C',extracted],{encoding:'utf8'});assert.equal(untar.status,0,untar.stderr);
  assert.deepEqual(readdirSync(join(extracted,'_shared')),['common.ts']);
- const staged=f.run('stage',['--stage',extracted,'--manifest',manifest]);assert.equal(staged.status,0,staged.stderr);
+ const staged=f.run(exact ? 'stage-exact-shared' : 'stage',['--stage',extracted,'--manifest',manifest]);assert.equal(staged.status,0,staged.stderr);
  for(const name of ['beta/index.ts','main/index.ts','_shared/unrelated.ts','deno.lock'])
   assert.equal(readFileSync(join(extracted,name),'utf8'),readFileSync(join(f.base,name),'utf8'));
+});
+
+test('exact shared update preserves worker-only dependencies and every unselected byte', t => {
+    const f = fixture(t);
+    const module = '_shared/common.ts';
+    const dependency = 'import "./assets.ts"; ';
+    for (const root of [f.base, f.source]) {
+        writeFileSync(join(root, '_shared/assets.ts'), 'Deno.readFile("./ticket-font.ttf");');
+        writeFileSync(join(root, module), dependency + 'export const value = 1;');
+    }
+    const inventory = f.run('inventory', []);
+    writeFileSync(join(f.root, 'base.json'), inventory.stdout);
+    const patch = join(f.root, 'patch');
+    mkdirSync(join(patch, '_shared'), { recursive: true });
+    const writePatch = content => {
+        writeFileSync(join(f.source, module), content);
+        writeFileSync(join(patch, module), content);
+        const plan = spawnSync('python3', [script, 'plan-exact-shared', '--root', f.source,
+            '--base', join(f.root, 'base.json'), '--shared-modules', module], { encoding: 'utf8' });
+        assert.equal(plan.status, 0, plan.stderr);
+        writeFileSync(f.manifest, JSON.stringify({ exact_shared_replacement: JSON.parse(plan.stdout) }));
+    };
+    const stageExact = () => f.run('stage-exact-shared', ['--stage', patch, '--manifest', f.manifest]);
+    writePatch(dependency + 'import "./unrelated.ts"; export const value = 2;');
+    assert.match(stageExact().stderr, /changes dependencies/);
+    writePatch(dependency + 'export const value = 2;');
+    writeFileSync(join(patch, '_shared/unrelated.ts'), 'export const injected = true;');
+    assert.match(stageExact().stderr, /unexpected bytes or paths/);
+    rmSync(join(patch, '_shared/unrelated.ts'));
+    writeFileSync(join(f.base, 'main/index.ts'), 'export const router = "newer";');
+    assert.match(stageExact().stderr, /tree changed/);
+    writeFileSync(join(f.base, 'main/index.ts'), 'export const router = "installed";');
+    const staged = stageExact();
+    assert.equal(staged.status, 0, staged.stderr);
+    for (const [name] of Object.entries(JSON.parse(inventory.stdout).files)) {
+        assert.deepEqual(readFileSync(join(patch, name)),
+            readFileSync(join(name === module ? f.source : f.base, name)), name);
+    }
 });

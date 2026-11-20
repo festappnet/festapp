@@ -126,9 +126,50 @@ def stage(current, stage, manifest):
         shutil.rmtree(candidate, ignore_errors=True)
 
 
+def exact_shared_plan(source, base, modules):
+    require(base.get('version') == 1 and base.get('tree_sha256') ==
+            digest(json.dumps(base['files'], sort_keys=True, separators=(',', ':')).encode()),
+            'Invalid base inventory')
+    require(modules and len(set(modules)) == len(modules), 'Invalid exact shared selection')
+    planned = {}
+    for name in sorted(modules):
+        path = source / name
+        require(re.fullmatch(r'_shared/[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)', name)
+                and name in base['files'] and path.is_file() and not path.is_symlink(),
+                'Exact replacement requires an existing direct shared code module')
+        value = digest(path.read_bytes())
+        require(value != base['files'][name], 'Exact shared replacement must change each selected module')
+        planned[name] = value
+    return {'base_runtime_sha256': base['tree_sha256'], 'shared_modules': planned}
+
+
+def stage_exact_shared(current, stage, manifest):
+    planned = manifest['exact_shared_replacement']
+    base = inventory(current)
+    require(base['tree_sha256'] == planned['base_runtime_sha256'],
+            'Installed Function tree changed since selection')
+    require(inventory(stage)['files'] == planned['shared_modules']
+            and {p.name for p in stage.iterdir()} == {'_shared'}
+            and all(p.is_file() for p in (stage / '_shared').iterdir()),
+            'Exact shared archive contains unexpected bytes or paths')
+    require(exact_shared_plan(stage, base, list(planned['shared_modules'])) == planned,
+            'Exact shared plan does not match the extracted source')
+    for name in planned['shared_modules']:
+        # The entire installed tree stays pinned. Compare direct imports only
+        # for the replacement files and keep the existing dependency graph.
+        require(imports(stage / name) == imports(current / name),
+                'Exact shared replacement changes dependencies')
+    replacements = {name: (stage / name).read_bytes() for name in planned['shared_modules']}
+    shutil.copytree(current, stage, dirs_exist_ok=True)
+    for name, content in replacements.items():
+        (stage / name).write_bytes(content)
+    require(inventory(stage)['files'] == {**base['files'], **planned['shared_modules']},
+            'Exact shared staging changed unselected bytes')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['inventory', 'select', 'stage'])
+    parser.add_argument('command', choices=['inventory', 'select', 'stage', 'plan-exact-shared', 'stage-exact-shared'])
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--base', type=Path)
     parser.add_argument('--functions')
@@ -141,6 +182,11 @@ def main():
     elif args.command == 'select':
         print(json.dumps(selection(args.root, json.loads(args.base.read_text()), args.functions.split(','),
                                    args.shared_modules.split(',') if args.shared_modules else []), sort_keys=True))
+    elif args.command == 'plan-exact-shared':
+        print(json.dumps(exact_shared_plan(args.root, json.loads(args.base.read_text()),
+                                           args.shared_modules.split(',')), sort_keys=True))
+    elif args.command == 'stage-exact-shared':
+        stage_exact_shared(args.root, args.stage, json.loads(args.manifest.read_text()))
     else:
         stage(args.root, args.stage, json.loads(args.manifest.read_text()))
 
