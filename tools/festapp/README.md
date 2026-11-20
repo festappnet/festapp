@@ -526,7 +526,10 @@ Their hosted adapters also share the operation admission decision. An operation
 outside the registered client policy returns `FORBIDDEN`. An allowed operation
 missing from the current grant returns `INSUFFICIENT_SCOPE` with an OAuth
 challenge for the transport's protected resource. Consent and ordinary resource
-permissions are checked by the common executor.
+permissions are checked by the common executor. Both transports also use the
+same ticket-layout write readiness check. MCP discovery omits unavailable
+write tools, and direct calls through either transport return
+`FAMILY_NOT_READY` until the backend enables that family.
 The operator contract exposes 198 operations for Bearer clients and all 220 for
 registered DPoP + PAR clients. The 22 sensitive operations additionally require
 GoTrue-verified AAL2 authentication no older than 300 seconds; refreshing tokens

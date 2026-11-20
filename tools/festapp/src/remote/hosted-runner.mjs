@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { DelegatedOwner } from './delegation.mjs';
 import { clientPolicy } from './client-policy.mjs';
 import { createProofVerifier } from './proof.mjs';
-import { Operations } from '../operations/catalog.mjs';
+import { Operations, requiresLayoutWriteContract } from '../operations/catalog.mjs';
 import { PreviewArtifacts } from '../operations/preview.mjs';
 import { check, OperationError } from '../errors.mjs';
 import { digest } from '../context/profile.mjs';
@@ -55,7 +55,14 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
             const operations = new Operations(owner, { artifacts });
             const operationId = transport === 'mcp' && req.body?.method === 'tools/call'
                 ? operations.operationIdForTool(req.body.params?.name) : req.params?.operation;
-            const denial = operationId ? owner.operationDenial(operationId, grant) : null;
+            let denial = operationId ? owner.operationDenial(operationId, grant) : null;
+            const layoutWrite = requiresLayoutWriteContract(operationId);
+            const discover = operationId === 'context.inspect' ||
+                (transport === 'mcp' && req.body?.method === 'tools/list');
+            if (!denial && (layoutWrite || (discover && owner.allowedOperations.some(requiresLayoutWriteContract)))) {
+                await operations.prepare();
+                if (layoutWrite && !operations.writeReady) denial = 'FAMILY_NOT_READY';
+            }
             const document = (!denial && documentOperations.has(operationId)) || req.path === API_PREFIX + '/artifacts/read' ||
                 (transport === 'mcp' && req.body?.method === 'resources/read');
             if (document) {
@@ -65,8 +72,6 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
                 limit(`documentClient:${documentClient}`, API_COST_BUDGET.documentPerClientOrgPerMinute);
                 documentCount++;documentOrgs.add(documentOrg);documentClients.add(documentClient);documentAdmitted = true;
             }
-            if (!denial && (publicCatalog().find(d => d.id === operationId)?.requiresLayoutWriteContract ||
-                (operationId === 'context.inspect' && owner.allowedOperations.some(id => publicCatalog().find(d => d.id === id)?.requiresLayoutWriteContract)))) await operations.prepare();
             const invoke = operations.invoke.bind(operations);
             const readArtifact = operations.readArtifact.bind(operations);
             operations.readArtifact = (...args) => track(readArtifact(...args));
@@ -78,7 +83,7 @@ export function createHostedRunner({ config, storage, provider, fetchImpl, audit
                     operation: id, outcome: result.ok ? 'ok' : result.error.code });
                 return result;
             })());
-            return await action({ operations, owner, client, operationId, denial, requestId: randomUUID() });
+            return await action({ operations, owner, operationId, denial, requestId: randomUUID() });
         } finally {
             // SDK transport closure does not prove the tool stopped. Keep the
             // same admission slots until all already-started work has settled.

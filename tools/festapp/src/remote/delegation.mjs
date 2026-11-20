@@ -1,6 +1,7 @@
 import { grantEndpoint, clientForResource, resourceEndpoint } from './endpoints.mjs';
 import { contextConfig } from './config.mjs';
 import { clientPolicy } from './client-policy.mjs';
+import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS } from './make-contract.mjs';
 import { authorizeApiAuthentication } from '../auth/operation-policy.mjs';
 import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { rejectLegacyLock } from '../auth/process-lock.mjs';
@@ -42,8 +43,8 @@ export class DelegatedOwner {
     }
     operationDenial(id, grant) {
         const current = grant ?? this.current();
-        const scopes = scopesForOperation(id);
-        if (!this.clientPermitsOperation(id, scopes)) return 'FORBIDDEN';
+        const scopes = this.registeredOperationScopes(id);
+        if (!scopes) return 'FORBIDDEN';
         if (current.operationAllowlist && !current.operationAllowlist.includes(id))
             return 'INSUFFICIENT_SCOPE';
         const tokenScopes = this.token.scope?.split(' ') ?? [];
@@ -65,21 +66,26 @@ export class DelegatedOwner {
     }
     // The client registration decides what any connection may ever obtain. Outside it, reconnecting
     // cannot help, so callers report FORBIDDEN rather than a scope gap or a scope challenge.
-    clientPermitsOperation(id, scopes = scopesForOperation(id)) {
-        const allowedOperations = clientPolicy(this.config, this.token.clientId)?.allowedOperations;
-        return (!allowedOperations || allowedOperations.includes(id)) &&
-            clientAllowsScopes(this.config, this.token.clientId, scopes);
+    registeredOperationScopes(id) {
+        const client = clientPolicy(this.config, this.token.clientId);
+        if (!client) return null;
+        if (this.transport === 'legacy-make' &&
+            (client.id !== MAKE_CLIENT_ID || !this.orderSummaryOnly || !MAKE_READ_OPERATIONS.includes(id))) return null;
+        if (client.allowedOperations && !client.allowedOperations.includes(id)) return null;
+        const scopes = scopesForOperation(id);
+        return clientAllowsScopes(this.config, this.token.clientId, scopes) ? scopes : null;
     }
     challengeFor(code, id) {
         if (['AUTHENTICATION_REQUIRED', 'MFA_REQUIRED'].includes(code))
             return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
-        if (code === 'INSUFFICIENT_SCOPE' && this.clientPermitsOperation(id)) {
+        const scopes = code === 'INSUFFICIENT_SCOPE' ? this.registeredOperationScopes(id) : null;
+        if (scopes) {
             const endpoint = this.transport === 'api' && resourceEndpoint(this.config, this.expectedResource);
             const resourceMetadata = endpoint
                 ? new URL('/.well-known/oauth-protected-resource/integrations', endpoint.publicBase).href
                 : undefined;
             return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'insufficient_scope',
-                description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id), resourceMetadata });
+                description: 'Authorize all required operation scopes.', scopes, resourceMetadata });
         }
     }
     current() {
@@ -102,7 +108,6 @@ export class DelegatedOwner {
     authorizeOperation(id, args) {
         const grant = this.current();
         this.requireOperation(id, grant);
-        check(this.allowedOperations.includes(id), 'FORBIDDEN');
         const access = accessSelection(grant.access);
         this.operationId = id;
         if (['context.inspect', 'access.inspect'].includes(id)) return;
@@ -150,15 +155,16 @@ export class DelegatedOwner {
         const isLayout = this.operationId?.startsWith('ticket_layouts.');
         const execute = () => this.session.authorized(async (client, context) => {
             check(context.userId === grant.userId, 'FORBIDDEN');
-            this.current();
+            const liveGrant = this.current();
+            if (this.operationId) this.requireOperation(this.operationId, liveGrant);
             if (this.transport === 'api' && this.operationId) authorizeApiAuthentication(this.operationId, {
                 token: this.token, client: clientPolicy(this.config, this.token.clientId),
                 userId: context.userId, authentication: context.authentication,
             });
             const result = await action(client, isLayout ? { ...context, profile: this.layoutProfile } : context);
             // Read revocation discards an in-flight private result before return.
-            const liveGrant = this.current();
-            if (this.operationId) this.requireOperation(this.operationId, liveGrant);
+            const finalGrant = this.current();
+            if (this.operationId) this.requireOperation(this.operationId, finalGrant);
             return result;
         });
         try {

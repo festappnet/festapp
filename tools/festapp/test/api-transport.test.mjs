@@ -542,49 +542,87 @@ test('HTTP API and hosted MCP share authorization decisions for denied operation
         { name: 'organizer consent is missing', occasionOnly: true, code: 'ORGANIZER_CONSENT_REQUIRED' },
         { name: 'denied layout write does not negotiate the backend contract', layout: true,
             grantedScopes: [READ_SCOPE], code: 'INSUFFICIENT_SCOPE', challenge: true },
+        { name: 'layout readiness is shared across discovery and direct calls', layout: true,
+            notReady: true, code: 'FAMILY_NOT_READY' },
+        { name: 'grant narrowed during session refresh stops the write', narrowBeforeWrite: true,
+            code: 'INSUFFICIENT_SCOPE', challenge: true },
     ];
 
     for (const scenario of cases) await t.test(scenario.name, async t => {
         const operation = scenario.layout ? 'ticket_layouts.save' : 'units.measurementApproval.request';
         const name = scenario.layout ? 'festapp_ticket_layouts_save' : 'festapp_units_measurement_approval_request';
         const scopes = scopesForOperation(operation);
-        const allowedOperations = scenario.excludesOperation || scenario.excludesScope ? ['context.inspect'] : ['context.inspect', operation];
+        const discovery = ['context.inspect', 'access.inspect'];
+        const allowedOperations = scenario.excludesOperation || scenario.excludesScope ? discovery : [...discovery, operation];
         const policy = { allowedOperations, allowedScopes: scenario.excludesScope ? [READ_SCOPE] : scopes };
-        const f = await setup(t, { apiPolicy: policy, mcpPolicy: policy });
+        let armNarrowing = false, layoutChecks = 0;
+        const f = await setup(t, { apiPolicy: policy, mcpPolicy: policy, fetchImpl: async url => {
+            if (url.pathname === '/auth/v1/user' && armNarrowing) {
+                armNarrowing = false;
+                restrictStoredGrants();
+            }
+            if (url.pathname.endsWith('/get_ticket_layout_write_contract_v1')) {
+                layoutChecks++;
+                return reply({ family: 'ticket_layouts', contractVersion: 1, ready: false });
+            }
+        } });
+        function restrictStoredGrants() {
+            for (const grant of f.storage.values('Delegation')) {
+                assert(grant.operationAllowlist.includes(operation));
+                f.storage.putUntil('Delegation', grant.id, { ...grant, operationAllowlist: discovery }, grant.expiresAt);
+            }
+        }
         const selection = scenario.occasionOnly ? { occasionIds: [7] } : { unitId: 3 };
         const consent = { ...selection, scope: (scenario.grantedScopes ?? scopes).join(' ') };
         const api = await connect(f, consent);
         f.clearBrowserCookies();
         const mcp = await connect(f, { ...consent, clientId: 'chatgpt-fixture', resources: [f.config.resource] });
-        if (scenario.olderGrant) {
-            for (const grant of f.storage.values('Delegation')) {
-                assert(grant.operationAllowlist.includes(operation));
-                f.storage.putUntil('Delegation', grant.id, { ...grant, operationAllowlist: ['context.inspect'] }, grant.expiresAt);
-            }
-        }
+        if (scenario.olderGrant) restrictStoredGrants();
 
-        const payload = scenario.layout ? { occasionId: 7 } : { unitId: 3 };
-        const http = await apiRequest(f, api.tokens, operation, payload);
-        const rpc = await fetch(f.config.resource, {
+        const callMcp = (method, params = {}) => fetch(f.config.resource, {
             method: 'POST',
             headers: { authorization: 'Bearer ' + mcp.tokens.access_token,
                 'content-type': 'application/json', accept: 'application/json, text/event-stream',
                 'mcp-protocol-version': '2025-06-18' },
-            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call',
-                params: { name, arguments: payload } }),
+            body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
         });
-        assert.equal(http.status, 403);
+        if (scenario.notReady) {
+            const ordinary = await callMcp('tools/call', { name: 'festapp_access_inspect', arguments: {} });
+            assert.equal(ordinary.status, 200);
+            assert.match(await ordinary.text(), /"ok":true/);
+            assert.equal(layoutChecks, 0);
+            const listing = await callMcp('tools/list');
+            assert.equal(listing.status, 200);
+            assert.doesNotMatch(await listing.text(), /festapp_ticket_layouts_save/);
+            assert.equal(layoutChecks, 1);
+        }
+        const payload = scenario.layout ? { occasionId: 7 } : { unitId: 3 };
+        const originalGrants = f.storage.values('Delegation');
+        armNarrowing = Boolean(scenario.narrowBeforeWrite);
+        const http = await apiRequest(f, api.tokens, operation, payload);
+        if (scenario.narrowBeforeWrite) {
+            assert.equal(armNarrowing, false);
+            for (const grant of originalGrants) f.storage.putUntil('Delegation', grant.id, grant, grant.expiresAt);
+            armNarrowing = true;
+        }
+        const rpc = await callMcp('tools/call', { name, arguments: payload });
+        const denialStatus = scenario.notReady ? 503 : 403;
+        const inToolResult = scenario.occasionOnly || scenario.narrowBeforeWrite;
+        assert.equal(http.status, denialStatus);
         assert.equal((await http.json()).code, scenario.code);
-        assert.equal(rpc.status, scenario.occasionOnly ? 200 : 403);
+        assert.equal(rpc.status, inToolResult ? 200 : denialStatus);
         const body = await rpc.text();
         const json = JSON.parse(rpc.headers.get('content-type')?.includes('text/event-stream')
             ? body.split('\n').find(line => line.startsWith('data:')).slice(5) : body);
-        assert.equal(scenario.occasionOnly ? json.result.structuredContent.error.code : json.code, scenario.code);
-        assert.equal(f.calls.some(call => ['/request_unit_measurement_approval', '/get_ticket_layout_write_contract_v1']
-            .some(path => call.url.pathname.endsWith(path))), false);
+        assert.equal(inToolResult ? json.result.structuredContent.error.code : json.code, scenario.code);
+        assert.equal(f.calls.some(call => call.url.pathname.endsWith('/request_unit_measurement_approval')), false);
+        assert.equal(layoutChecks, scenario.notReady ? 3 : 0);
+        assert.equal(armNarrowing, false);
         if (scenario.challenge) {
             const apiChallenge = http.headers.get('www-authenticate');
-            const mcpChallenge = rpc.headers.get('www-authenticate');
+            const mcpChallenge = inToolResult
+                ? json.result._meta['mcp/www_authenticate'][0]
+                : rpc.headers.get('www-authenticate');
             assert.match(apiChallenge, /oauth-protected-resource\/integrations"/);
             assert.match(mcpChallenge, /oauth-protected-resource\/mcp"/);
             for (const challenge of [apiChallenge, mcpChallenge]) {

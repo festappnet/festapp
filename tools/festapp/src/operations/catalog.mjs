@@ -238,6 +238,12 @@ const descriptors = [
         requiresLayoutWriteContract: true,
     },
 ];
+
+const layoutWriteOperations = new Set(descriptors.filter(d => d.requiresLayoutWriteContract).map(d => d.id));
+export function requiresLayoutWriteContract(id) {
+    return layoutWriteOperations.has(id);
+}
+
 export class Operations {
     constructor(
         owner,
@@ -342,13 +348,7 @@ export class Operations {
             readAt: new Date().toISOString(),
         };
         try {
-            if (
-                [
-                    'ticket_layouts.save',
-                    'ticket_layouts.pending',
-                    'ticket_layouts.resume',
-                ].includes(id)
-            )
+            if (requiresLayoutWriteContract(id))
                 check(this.writeReady, 'FAMILY_NOT_READY');
             const descriptor = this.catalog.find((d) => d.id === id);
             check(descriptor, 'INVALID_INPUT');
