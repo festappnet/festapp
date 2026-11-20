@@ -134,6 +134,10 @@ BEGIN
  PERFORM assert_false((public.request_unit_meta_capi_approval(un)->>'can_request')::boolean,'demo Unit is a no-op');
  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM analytics.organization_meta_capi_request WHERE unit=un),'demo Unit creates no request');
  PERFORM assert_true(NOT EXISTS(SELECT 1 FROM public.email_messages WHERE organization=org AND code='META_CAPI_APPROVAL_REQUEST'),'failed and demo requests send no mail');
+ PERFORM public.request_unit_meta_capi_approval((x->>'spare')::bigint);
+ PERFORM assert_eq(public.get_unit_meta_capi_approval(un),
+  '{"approved":false,"requested_at":null,"request_state":"not_requested","can_request":false}'::jsonb,
+  'demo readers cannot see the live organization request');
  PERFORM set_config('request.jwt.claim.sub',x->>'outsider',true);
  BEGIN PERFORM public.request_unit_meta_capi_approval(un); RAISE EXCEPTION 'unauthorized demo request'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;

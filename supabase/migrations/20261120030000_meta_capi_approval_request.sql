@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION public.unit_meta_capi_approval_internal(p_unit bigint
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH status AS (
   SELECT u.id,public.meta_purchase_platform_allowed_internal(u.id) AND NOT public.is_demo_unit(u.id) approved,q.requested_at,
-   q.fulfilled_at IS NULL AND EXISTS(SELECT FROM public.email_messages m
+   q.fulfilled_at IS NULL AND NOT public.is_demo_unit(q.unit) AND EXISTS(SELECT FROM public.email_messages m
     JOIN public.organization_users ou ON ou.organization=u.organization
      AND ou."user"=m.recipient_user AND ou.is_admin
     WHERE m.unit=q.unit AND m.organization=q.organization AND m.code='META_CAPI_APPROVAL_REQUEST'
@@ -32,7 +32,8 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
      AND (m.workflow_state IN ('accepted','sending','unknown') OR
       (m.workflow_state IN ('pending','retry_wait','preparing','blocked') AND m.expires_at>now()))) active_request
   FROM public.units u
-  LEFT JOIN analytics.organization_meta_capi_request q ON q.organization=u.organization WHERE u.id=p_unit
+  LEFT JOIN analytics.organization_meta_capi_request q ON q.organization=u.organization AND NOT public.is_demo_unit(u.id)
+  WHERE u.id=p_unit
  ) SELECT jsonb_build_object('approved',approved,'requested_at',requested_at,
   'request_state',CASE WHEN requested_at IS NULL THEN 'not_requested'
     WHEN active_request THEN 'requested' ELSE 'retry_available' END,
@@ -58,7 +59,7 @@ GRANT EXECUTE ON FUNCTION public.get_unit_meta_capi_approval(bigint) TO authenti
 CREATE OR REPLACE FUNCTION public.fulfil_meta_capi_approval_internal()
 RETURNS trigger LANGUAGE plpgsql SET search_path=public,extensions AS $$
 BEGIN
- IF NEW.meta_capi_enabled THEN
+ IF NEW.meta_capi_enabled AND (TG_OP='INSERT' OR NOT OLD.meta_capi_enabled) THEN
   PERFORM 1 FROM public.organizations WHERE id=NEW.organization FOR NO KEY UPDATE;
   UPDATE analytics.organization_meta_capi_request SET fulfilled_at=clock_timestamp()
    WHERE organization=NEW.organization AND fulfilled_at IS NULL;

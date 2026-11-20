@@ -1041,7 +1041,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261110231000_payment_operations.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.format_occasion_report_text(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='d0bfc247fd65feacd203b66dd8ac12e9'),'current SQL source parity: public.format_occasion_report_text(jsonb)');
 -- supabase/migrations/20261120030000_meta_capi_approval_request.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.fulfil_meta_capi_approval_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='c8e2daa488088e15a347258fa9c766bc'),'current SQL source parity: public.fulfil_meta_capi_approval_internal()');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.fulfil_meta_capi_approval_internal()') AND md5(btrim(prosrc,E' \n\r\t'))='f1af44668c8b05f45e0005793873b861'),'current SQL source parity: public.fulfil_meta_capi_approval_internal()');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.game_guess(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='b9ca823b698f6e7fb52044de5cdccb26'),'current SQL source parity: public.game_guess(bigint,text)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -2575,7 +2575,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261118160000_meta_purchase_followup.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.unit_measurement_parent_origins_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e228ab0897bca2beea2ae56c55675102'),'current SQL source parity: public.unit_measurement_parent_origins_internal(bigint)');
 -- supabase/migrations/20261120030000_meta_capi_approval_request.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.unit_meta_capi_approval_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='936bb061ba7cd7fc8ef7ce2da19c21db'),'current SQL source parity: public.unit_meta_capi_approval_internal(bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.unit_meta_capi_approval_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='37d60dae5a2c93d5c24f71dd5c803785'),'current SQL source parity: public.unit_meta_capi_approval_internal(bigint)');
 -- supabase/migrations/20261119210000_meta_purchase_settings.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.unit_meta_purchase_origins_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='bd07fd29f1caaa8bb93f6d2f72ceb9ee'),'current SQL source parity: public.unit_meta_purchase_origins_internal(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
