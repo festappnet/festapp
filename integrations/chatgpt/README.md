@@ -37,6 +37,11 @@ For a trusted private model or native tool, register a separate client with
 ceiling, user consent and current backend permissions. No global MCP restriction
 was added. See [per-client architecture](../../tools/festapp/README.md#per-client-data-profiles).
 
+## Neveřejné připojení pro pořadatele
+
+[Konfigurace a ověření neveřejného připojení](operator/README.md) obsahuje
+samostatného klienta a popis pro správu akcí v ChatGPT workspace.
+
 ## Dedicated reviewer demo
 
 The confirmed demo account has only order-reader memberships on two hidden,

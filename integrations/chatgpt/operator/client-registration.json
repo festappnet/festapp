@@ -1,0 +1,10 @@
+{
+  "id": "festapp-chatgpt-operator",
+  "name": "vstupenky.online pro pořadatele",
+  "applicationType": "web",
+  "dataProfile": "operator",
+  "transports": ["mcp"],
+  "resources": ["https://mcp.vstupenky.online/mcp"],
+  "tokenEndpointAuthMethod": "none",
+  "redirectUris": ["https://chatgpt.com/connector_platform_oauth_redirect"]
+}

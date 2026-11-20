@@ -9,9 +9,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { profile } from './fixture.mjs';
 import { parseRemoteConfig, READ_SCOPE } from '../src/remote/config.mjs';
+import { canonicalBackendProfileSha256 } from '../../../automation/lib/backend_activation_manifest.mjs';
 import { DOMAIN_SCOPES, clientPolicy, clientAllowsScopes, validRedirect, allowsMetadataClient } from '../src/remote/client-policy.mjs';
 import { inspectorConfiguration } from '../src/remote/inspector.mjs';
-import { MCP_PERMISSIONS, MCP_SCOPES, READ_OPERATIONS, scopesForOperation, permissionsForConsent, validPermissions } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
+import { DELEGATED_OPERATIONS, MCP_PERMISSIONS, MCP_SCOPES, READ_OPERATIONS, scopesForOperation, permissionsForConsent, validPermissions } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
 
 function configuration(extra = {}) {
@@ -143,6 +144,59 @@ test('general Inspector configuration exposes every registered operation without
     for (const action of inventory.actions) for (const id of action.mcp)
         assert(catalog.some(d => d.id === id), `Administration action lacks an MCP operation: ${action.id} / ${id}`);
     assert.equal(clientAllowsScopes(general, 'public-fixture', ['festapp:forms:write']), false);
+});
+
+test('private ChatGPT operator registration covers the delegated MCP catalog independently of the public client', async () => {
+    const path = '../../../integrations/chatgpt/';
+    const readPolicy = async name => JSON.parse(await readFile(new URL(path + name, import.meta.url), 'utf8'));
+    const operator = await readPolicy('operator/client-registration.json');
+    const publicPolicy = await readPolicy('client-policy.json');
+    const { binding, ...fixture } = profile();
+    const backendOrigin = 'https://backend.fixture.test';
+    const publicApiKey = 'sb_publishable_fixture';
+    const config = parseRemoteConfig({
+        schemaVersion: 3,
+        issuer: 'https://mcp.vstupenky.online',
+        profile: {
+            ...fixture, kind: 'canonical', backendOrigin, publicApiKey,
+            activationUrl: 'https://tenant.fixture.test/backend-activation.json',
+            canonicalProfileSha256: canonicalBackendProfileSha256({
+                tenantId: fixture.tenantId,
+                canonicalOrigin: backendOrigin,
+                canonicalAnonKey: publicApiKey,
+                canonicalOrganizationId: fixture.organizationId,
+            }),
+        },
+        clients: [operator, {
+            ...publicPolicy,
+            name: 'vstupenky.online',
+            transports: ['mcp'],
+            redirectUris: ['https://chatgpt.com/connector_platform_oauth_redirect'],
+        }],
+    });
+
+    assert.notEqual(operator.id, publicPolicy.id);
+    const registered = clientPolicy(config, operator.id);
+    assert.equal(registered.dataProfile, 'operator');
+    assert.deepEqual(registered.transports, ['mcp']);
+    assert.deepEqual(registered.resources, [config.resource]);
+    assert.deepEqual(registered.redirectUris, ['https://chatgpt.com/connector_platform_oauth_redirect']);
+    assert.equal(registered.tokenEndpointAuthMethod, 'none');
+    assert.equal(registered.allowedScopes, undefined);
+    assert.equal(registered.allowedOperations, undefined);
+    for (const id of DELEGATED_OPERATIONS) {
+        const scopes = scopesForOperation(id);
+        assert(scopes?.length && clientAllowsScopes(config, operator.id, scopes), id);
+    }
+
+    const publicClient = clientPolicy(config, publicPolicy.id);
+    assert.equal(publicClient.dataProfile, 'order-summary');
+    assert.deepEqual(publicClient.allowedScopes, [READ_SCOPE, 'festapp:orders:read']);
+    const publicIds = DELEGATED_OPERATIONS.filter(id => clientAllowsScopes(config, publicPolicy.id, scopesForOperation(id)));
+    assert.deepEqual(publicIds.sort(), [
+        'access.inspect', 'context.inspect', 'orders.inspect', 'orders.list',
+        'orders.report', 'ticket_layouts.inspect',
+    ]);
 });
 
 test('Inspector origin must exactly match a literal loopback HTTP origin', () => {
