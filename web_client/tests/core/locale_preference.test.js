@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import { readFile } from 'node:fs/promises';
+import { SettingsWidget } from '../../src/components/forms/widgets/settings_widget.js';
 import { AppConfig } from '../../src/app_config.js';
 import { LocalizationService } from '../../src/services/localization_service.js';
 
@@ -145,4 +147,62 @@ test('regional portal falls back to Czech for unsupported browsers or an unavail
     await LocalizationService.init();
     assert.equal(document.documentElement.lang, 'cs');
     assert.equal(localStorage.getItem('flutter.locale'), null);
+});
+
+
+test('checkout can pin the active automatic locale without reloading', async t => {
+    slovakPortal(t);
+    const f = fixture(t, {}, {languages: ['sk-SK']});
+    await LocalizationService.init();
+    new SettingsWidget(document.body);
+    const slovak = Array.from(document.querySelectorAll('button')).find(button => button.textContent === 'Slovenčina');
+    assert(slovak?.classList.contains('active'));
+    slovak.click();
+    assert.equal(localStorage.getItem('flutter.locale'), '"sk"');
+    assert.equal(localStorage.getItem('flutter.locale.manuallySelected'), 'true');
+    assert.equal(f.reloads(), 0);
+});
+
+test('a persisted missing catalog falls back without reloading on repeated restore', async t => {
+    slovakPortal(t);
+    const f = fixture(t, {'/assets/translations/sk.json': null});
+    localStorage.setItem('flutter.locale', '"sk"');
+    localStorage.setItem('flutter.locale.manuallySelected', 'true');
+    await LocalizationService.init();
+    assert.equal(document.documentElement.lang, 'cs');
+    for (const event of ['pageshow', 'focus', 'pageshow']) {
+        f.dom.window.dispatchEvent(new f.dom.window.Event(event));
+    }
+    assert.equal(f.reloads(), 0);
+    assert.equal(localStorage.getItem('flutter.locale'), '"sk"');
+    localStorage.setItem('flutter.locale', '"cs"');
+    f.dom.window.dispatchEvent(new f.dom.window.StorageEvent('storage', {key: 'flutter.locale'}));
+    assert.equal(f.reloads(), 0);
+    localStorage.setItem('flutter.locale', '"sk"');
+    f.dom.window.dispatchEvent(new f.dom.window.StorageEvent('storage', {key: 'flutter.locale'}));
+    assert.equal(f.reloads(), 1);
+});
+
+test('generated pre-module shell selects Slovak and labels its recovery interface', async t => {
+    const html = await readFile(new URL('../../index.html', import.meta.url), 'utf8');
+    for (const manual of [false, true]) {
+        const dom = new JSDOM(html, {url: 'https://fixture.invalid', runScripts: 'outside-only'});
+        t.after(() => dom.window.close());
+        const {window} = dom;
+        const {document} = window;
+        Object.defineProperty(window.navigator, 'languages', {value: ['fr-FR', 'sk-SK', 'cs-CZ']});
+        document.querySelector('meta[name="festapp-supported-languages"]').content = 'cs,sk';
+        document.querySelector('meta[name="festapp-legacy-auto-language"]').content = 'cs';
+        window.localStorage.setItem('flutter.locale', '"cs"');
+        if (manual) window.localStorage.setItem('flutter.locale.manuallySelected', 'true');
+        window.applyFestappStartupTheme = () => {};
+        window.eval(document.getElementById('festapp-runtime-startup').textContent);
+        const script = [...document.scripts].find(element => element.textContent.includes('const startupMessages'));
+        window.eval(script.textContent + '\n' + document.getElementById('web-client-startup').nextElementSibling.textContent);
+        const status = document.getElementById('web-client-startup');
+        assert.equal(status.lang, manual ? 'cs' : 'sk');
+        assert.equal(status.querySelector('button').textContent, manual ? 'Zkusit znovu' : 'Skúsiť znova');
+        window.failFestappWebClientStartup('fixture');
+        assert.equal(status.querySelector('p').textContent, manual ? 'Stránku se nepodařilo načíst.' : 'Stránku sa nepodarilo načítať.');
+    }
 });

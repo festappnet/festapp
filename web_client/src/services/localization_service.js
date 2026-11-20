@@ -1,37 +1,21 @@
 import { browserStorage } from './browser_storage.js';
 import { AppConfig } from '../app_config.js';
 
-// EasyLocalization/SharedPreferences encodes its browser value as JSON.
-const sharedLocaleKey = 'flutter.locale';
-const explicitLocaleKey = 'flutter.locale.manuallySelected';
-const languageCode = value => typeof value === 'string' ? value.toLowerCase().split(/[-_]/)[0] : null;
-const supportedLanguage = locale => AppConfig.supportedLanguages.includes(locale);
+import {
+    sharedLocaleKey, explicitLocaleKey, legacyLocaleKey, preferredBrowserLocale, storedLocale,
+} from '../runtime/locale_preference.js';
 
-function browserLocale() {
-    const preferences = globalThis.navigator?.languages;
-    const candidates = preferences?.length ? preferences : [globalThis.navigator?.language];
-    return candidates.map(languageCode).find(supportedLanguage) ?? AppConfig.defaultLanguage;
-}
+const browserLocale = () => preferredBrowserLocale(AppConfig.supportedLanguages, AppConfig.defaultLanguage, globalThis.navigator);
+const savedLocale = () => storedLocale(AppConfig.supportedLanguages, AppConfig.legacyAutoLanguage, browserStorage.getItem);
 
 function saveLocale(locale) {
     browserStorage.setItem(sharedLocaleKey, JSON.stringify(locale));
-    browserStorage.removeItem(AppConfig.Keys.locale);
+    browserStorage.removeItem(legacyLocaleKey);
 }
-// Public documents are published in these languages independently of the
-// tenant's application language selector. They never persist a preference.
+// Public documents are published independently of the application language selector.
 const publicDocumentLocales = ['cs', 'en'];
 const supportsLocale = (locale, persist) => AppConfig.supportedLanguages.includes(locale)
     || (persist === false && publicDocumentLocales.includes(locale));
-function savedLocale() {
-    let shared;
-    try { shared = JSON.parse(browserStorage.getItem(sharedLocaleKey)); } catch { /* Ignore corrupt preferences. */ }
-    const manuallySelected = browserStorage.getItem(explicitLocaleKey) === 'true';
-    for (const candidate of [shared, browserStorage.getItem(AppConfig.Keys.locale)]) {
-        const locale = languageCode(candidate);
-        if (supportedLanguage(locale) && (manuallySelected || locale !== AppConfig.legacyAutoLanguage)) return locale;
-    }
-    return null;
-}
 
 async function loadCatalog(locale) {
     const res = await fetch(`/assets/translations/${locale}.json`);
@@ -69,17 +53,20 @@ export class LocalizationService {
         if (locale !== undefined && !supportsLocale(locale, persist)) throw new Error('Unsupported document locale');
         const selected = locale ?? saved ?? browserLocale();
         await LocalizationService.loadTranslations(selected, {persist, save: persist && locale === undefined && saved !== null});
-        if (persist) LocalizationService._startPreferenceSync();
+        if (persist) LocalizationService._startPreferenceSync(saved);
     }
 
-    static _startPreferenceSync() {
+    static _startPreferenceSync(initialPreference) {
+        LocalizationService._observedPreference = initialPreference;
         if (LocalizationService._stopPreferenceSync || !globalThis.window?.addEventListener) return;
         const sync = () => {
             const locale = savedLocale();
-            if (locale && locale !== LocalizationService.currentLocale) window.location.reload();
+            if (locale === LocalizationService._observedPreference) return;
+            LocalizationService._observedPreference = locale;
+            if ((locale ?? browserLocale()) !== LocalizationService.currentLocale) window.location.reload();
         };
         const storage = event => {
-            if ([sharedLocaleKey, explicitLocaleKey, AppConfig.Keys.locale, null].includes(event.key)) sync();
+            if ([sharedLocaleKey, explicitLocaleKey, legacyLocaleKey, null].includes(event.key)) sync();
         };
         window.addEventListener('storage', storage);
         window.addEventListener('focus', sync);
@@ -133,10 +120,12 @@ export class LocalizationService {
     }
 
     static async setLocale(locale) {
-        if (await LocalizationService.loadTranslations(locale, {save: false})) {
-            browserStorage.setItem(explicitLocaleKey, 'true');
-            saveLocale(locale);
-            window.location.reload();
-        }
+        if (!supportsLocale(locale, true)) throw new Error('Unsupported locale');
+        const needsReload = locale !== LocalizationService.currentLocale;
+        if (needsReload && !await LocalizationService.loadTranslations(locale, {save: false})) return;
+        saveLocale(locale);
+        browserStorage.setItem(explicitLocaleKey, 'true');
+        LocalizationService._observedPreference = locale;
+        if (needsReload) window.location.reload();
     }
 }

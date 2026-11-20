@@ -39,7 +39,6 @@ export class AppConfig {
     // Local Storage Keys
     static Keys = {
         theme: 'theme',
-        locale: 'locale',
         auth: 'sb-kjdpmixlnhntmxjedpxh-auth-token'
     };
 }

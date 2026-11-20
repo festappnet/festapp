@@ -286,13 +286,13 @@ if [ -f "$INDEX_FILE" ]; then
     # crawlers before a forced-occasion tenant hands off to Flutter. Keep its
     # title and descriptions tenant-owned instead of leaking the generic
     # vstupenky.online branding into every production application.
-    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" "$WEB_SUPPORTED_LANGUAGES" "${WEB_PAGE_TITLE:-$APP_NAME}" <<'PY'
+    python3 - "$INDEX_FILE" "$APP_NAME" "$APP_DESCRIPTION" "$DOMAIN" "$WEB_SUPPORTED_LANGUAGES" "${WEB_PAGE_TITLE:-$APP_NAME}" "${WEB_LEGACY_AUTO_LANGUAGE:-}" <<'PY'
 from write_if_changed import write_text
 import html
 import re
 import sys
 
-path, app_name, app_description, domain, languages, page_title = sys.argv[1:]
+path, app_name, app_description, domain, languages, page_title, legacy_auto_language = sys.argv[1:]
 source = open(path, encoding="utf-8").read()
 title = html.escape(page_title, quote=True)
 site_name = html.escape(app_name, quote=True)
@@ -324,6 +324,8 @@ def replace_meta(attribute, key, value):
     if count != 1:
         raise SystemExit(f"missing {attribute}={key} metadata in {path}")
 
+replace_meta("name", "festapp-supported-languages", html.escape(languages, quote=True))
+replace_meta("name", "festapp-legacy-auto-language", html.escape(legacy_auto_language, quote=True))
 replace_meta("name", "description", description)
 for property_name, value in (
     ("og:url", origin + "/"),
