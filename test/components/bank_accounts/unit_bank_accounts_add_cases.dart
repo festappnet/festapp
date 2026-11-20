@@ -109,6 +109,50 @@ void main() {
       expect(previewOpened, isFalse);
       expect(find.text(BankAccountStrings.createNewAccount), findsOneWidget);
       expect(find.text(BankAccountStrings.linkExistingAccount), findsOneWidget);
+
+      await tester.tap(find.text(BankAccountStrings.createNewAccount));
+      await tester.pumpAndSettle();
+      final national = find.byKey(const ValueKey('bank-account-national'));
+      final iban = find.byKey(const ValueKey('bank-account-iban'));
+      await tester.enterText(national, '19-20001457 / 0800');
+      await tester.pump();
+      expect(find.text('Česká spořitelna, a.s.'), findsOneWidget);
+
+      await tester.tap(find.text(BankAccountStrings.inputModeIban));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextFormField>(iban).controller!.text,
+        'CZ6008000000190020001457',
+      );
+
+      await tester.tap(find.text(BankAccountStrings.inputModeSplit));
+      await tester.pumpAndSettle();
+      await tester.enterText(national, '19-20001457 / 9999');
+      final save = find.text(BankAccountStrings.saveChanges);
+      await tester.ensureVisible(save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(BankAccountStrings.invalidNationalAccount),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(BankAccountStrings.inputModeIban));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextFormField>(iban).controller!.text, isEmpty);
+
+      await tester.tap(find.text(BankAccountStrings.inputModeSplit));
+      await tester.pumpAndSettle();
+      final bankPicker = find.byTooltip(BankAccountStrings.bankCodeLabel);
+      await tester.tap(bankPicker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('0800 · Česká spořitelna, a.s.'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextFormField>(national).controller!.text,
+        '19-20001457/0800',
+      );
+
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });
