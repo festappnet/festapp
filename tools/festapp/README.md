@@ -9,6 +9,13 @@ it is prepared separately from the local stdio release. The operator catalog inc
 operations according to delegated permissions. No arbitrary SQL or shell tool is
 exposed. The public ChatGPT summary client remains limited to its read scopes.
 
+Local stdio uses the workstation's ordinary user session and exposes context,
+access discovery and ticket-layout tools. Forms, orders and event administration
+use the hosted OAuth connection, where the user selects the resources and
+permissions and can revoke that connection independently. Sensitive operations
+also require fresh MFA assurance. A local profile has no setting that grants
+hosted permissions.
+
 The E0 surface is:
 
 - `festapp_context_inspect`: verified ordinary-user identity and pinned target.
@@ -363,9 +370,12 @@ References: [MCP SDK v2 migration](https://ts.sdk.modelcontextprotocol.io/v2/mig
 ### Codex remote connection
 
 Register a separate public client `festapp-codex` with `applicationType: "native"`
-and redirect URI `http://127.0.0.1/callback`. Native clients accept only literal
-IP loopback HTTP callbacks; the maintained provider permits a variable port,
-while the callback path remains exact. Web clients retain their HTTPS policy.
+and redirect URI `http://127.0.0.1/callback`. Native clients accept HTTP
+callbacks on `127.0.0.1` or `[::1]`; public native clients statically configured
+in `clients` may also register exactly `localhost`. Trusted client metadata
+documents (CIMD) stay limited to the IP literals. The registered hostname and
+path govern access; the maintained provider permits a variable port, while the
+callback path remains exact. Web clients retain their HTTPS policy.
 
 ```sh
 codex mcp add festapp --url https://mcp.vstupenky.online/mcp --oauth-client-id festapp-codex
@@ -386,6 +396,26 @@ existing grant.
 
 Complete the fresh browser login and occasion consent for this client. The
 native client uses the same scoped read handlers and separate OAuth grant.
+
+### Claude Code remote connection
+
+Once the issuer has enabled the Claude Code client, run the command from the
+project where you use Claude Code. If you previously added `festapp` with the
+Codex client ID in this project, remove that local entry first with `claude mcp remove --scope local festapp`. To keep the existing
+entry, use a different server name in the command and select that name in
+`/mcp`.
+
+```sh
+claude mcp add --transport http --scope local --client-id festapp-claude-code --callback-port 51789 festapp https://mcp.vstupenky.online/mcp
+```
+
+Open `/mcp`, select the server and authenticate. Sign in to vstupenky.online
+in your browser, choose the occasions to share, and approve the connection.
+Return to Claude Code and check the connection and available tools in `/mcp`.
+If port 51789 is busy, choose a free port with `--callback-port`.
+
+Self-hosted operators must [register the Claude Code client](../../docs/architecture/operations/remote-mcp-auth.md#claude-code-client-registration)
+before using this command with their issuer.
 
 ### First-party consent
 

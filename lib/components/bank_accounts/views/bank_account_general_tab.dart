@@ -3,6 +3,16 @@ import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:festapp_core/eshop.dart';
 
+enum BankAccountInputMode {
+  czech(czBanks),
+  slovak(skBanks),
+  iban({});
+
+  const BankAccountInputMode(this.banks);
+
+  final Map<String, String> banks;
+}
+
 class BankAccountGeneralTab extends StatelessWidget {
   final bool isReadOnly;
   final bool isSaving;
@@ -12,12 +22,14 @@ class BankAccountGeneralTab extends StatelessWidget {
   final TextEditingController creditorNameController;
   final TextEditingController ibanController;
   final TextEditingController nationalAccountController;
+  final TextEditingController bankCodeController;
 
-  final bool useIbanInput;
-  final ValueChanged<bool> onUseIbanInputChanged;
+  final BankAccountInputMode inputMode;
+  final ValueChanged<BankAccountInputMode> onInputModeChanged;
 
-  final String? selectedBankCode;
+  final FormFieldValidator<String> validateIban;
   final FormFieldValidator<String> validateAccountNumber;
+  final FormFieldValidator<String> validateBankCode;
 
   final List<String> supportedCurrencies;
   final VoidCallback onAddCurrency;
@@ -36,10 +48,12 @@ class BankAccountGeneralTab extends StatelessWidget {
     required this.creditorNameController,
     required this.ibanController,
     required this.nationalAccountController,
-    required this.useIbanInput,
-    required this.onUseIbanInputChanged,
-    required this.selectedBankCode,
+    required this.bankCodeController,
+    required this.inputMode,
+    required this.onInputModeChanged,
+    required this.validateIban,
     required this.validateAccountNumber,
+    required this.validateBankCode,
     required this.supportedCurrencies,
     required this.onAddCurrency,
     required this.onRemoveCurrency,
@@ -48,14 +62,134 @@ class BankAccountGeneralTab extends StatelessWidget {
     required this.onNationalAccountChanged,
   });
 
-  void _selectBank(String code) {
-    final account = nationalAccountController.text.split('/').first.trim();
-    final text = '$account/$code';
-    nationalAccountController.value = TextEditingValue(
-      text: text,
-      selection: TextSelection.collapsed(offset: account.length),
-    );
+  static final _pastedAccount = RegExp(r'^([^/]+)\s*/\s*(\d{4})$');
+
+  void _onAccountNumberChanged(String value) {
+    final pasted = _pastedAccount.firstMatch(value.trim());
+    if (pasted != null) {
+      final number = pasted[1]!.trim();
+      nationalAccountController.value = TextEditingValue(
+        text: number,
+        selection: TextSelection.collapsed(offset: number.length),
+      );
+      bankCodeController.text = pasted[2]!;
+    }
     onNationalAccountChanged();
+  }
+
+  Widget _nationalAccountFields(BuildContext context) {
+    final theme = Theme.of(context);
+    final bankCode = bankCodeController.text.trim();
+    final bankName = inputMode.banks[bankCode];
+    final isSlovak = inputMode == BankAccountInputMode.slovak;
+
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      key: const ValueKey('bank-account-national'),
+                      controller: nationalAccountController,
+                      decoration: InputDecoration(
+                        labelText: BankAccountStrings.accountNumberLabel,
+                        hintText: isReadOnly
+                            ? null
+                            : (isSlovak ? '289-1987426353' : '20001457'),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        errorMaxLines: 3,
+                      ),
+                      readOnly: isReadOnly,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      textInputAction: TextInputAction.next,
+                      onChanged: _onAccountNumberChanged,
+                      validator: validateAccountNumber,
+                      autovalidateMode:
+                          AutovalidateMode.onUserInteractionIfError,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: ExcludeSemantics(
+                      child: Text(
+                        '/',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: (constraints.maxWidth * .43).clamp(96.0, 136.0),
+                    child: TextFormField(
+                      key: const ValueKey('bank-account-bank-code'),
+                      controller: bankCodeController,
+                      decoration: InputDecoration(
+                        labelText: BankAccountStrings.bankCodeLabel,
+                        hintText: isReadOnly
+                            ? null
+                            : (isSlovak ? '0720' : '0800'),
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        errorMaxLines: 3,
+                        suffixIcon: isReadOnly
+                            ? null
+                            : PopupMenuButton<String>(
+                                tooltip: BankAccountStrings.bankCodeLabel,
+                                icon: const Icon(Icons.arrow_drop_down),
+                                initialValue: bankName == null
+                                    ? null
+                                    : bankCode,
+                                onSelected: (code) {
+                                  bankCodeController.text = code;
+                                  onNationalAccountChanged();
+                                },
+                                itemBuilder: (context) => [
+                                  for (final bank in inputMode.banks.entries)
+                                    PopupMenuItem(
+                                      value: bank.key,
+                                      child: Text(
+                                        '${bank.key} · ${bank.value}',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                      ),
+                      keyboardType: TextInputType.number,
+                      readOnly: isReadOnly,
+                      onChanged: (_) => onNationalAccountChanged(),
+                      validator: validateBankCode,
+                      autovalidateMode:
+                          AutovalidateMode.onUserInteractionIfError,
+                    ),
+                  ),
+                ],
+              ),
+              if (bankName != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    bankName,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -88,74 +222,58 @@ class BankAccountGeneralTab extends StatelessWidget {
                 readOnly: isReadOnly,
                 maxLength: 70,
               ),
-              const SizedBox(height: 16),
               const SizedBox(height: 24),
-              if (!isReadOnly)
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    return ToggleButtons(
-                      isSelected: [!useIbanInput, useIbanInput],
-                      onPressed: (index) => onUseIbanInputChanged(index == 1),
-                      borderRadius: BorderRadius.circular(8),
-                      constraints: BoxConstraints.expand(
-                        width: (constraints.maxWidth - 4) / 2,
-                        height: 40,
-                      ),
+              if (!isReadOnly) ...[
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: BankAccountStrings.accountFormat,
+                    ),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
-                        Text(BankAccountStrings.inputModeSplit),
-                        Text(BankAccountStrings.inputModeIban),
+                        for (final mode in BankAccountInputMode.values)
+                          ChoiceChip(
+                            label: Text(switch (mode) {
+                              BankAccountInputMode.czech =>
+                                BankAccountStrings.inputModeSplit,
+                              BankAccountInputMode.slovak =>
+                                BankAccountStrings.inputModeSlovak,
+                              BankAccountInputMode.iban =>
+                                BankAccountStrings.inputModeIban,
+                            }),
+                            selected: inputMode == mode,
+                            onSelected: isSaving
+                                ? null
+                                : (_) => onInputModeChanged(mode),
+                          ),
                       ],
-                    );
-                  },
+                    ),
+                  ),
                 ),
-              const SizedBox(height: 16),
-              if (useIbanInput)
-                TextFormField(
-                  key: const ValueKey('bank-account-iban'),
-                  controller: ibanController,
-                  decoration: const InputDecoration(labelText: 'IBAN'),
-                  readOnly: isReadOnly,
-                  autocorrect: false,
-                  onChanged: (_) => onIbanChanged(),
-                  validator: validateAccountNumber,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                const SizedBox(height: 16),
+              ],
+              if (inputMode != BankAccountInputMode.iban)
+                KeyedSubtree(
+                  key: ValueKey(inputMode),
+                  child: _nationalAccountFields(context),
                 )
               else
                 TextFormField(
-                  key: const ValueKey('bank-account-national'),
-                  controller: nationalAccountController,
-                  decoration: InputDecoration(
-                    labelText: BankAccountStrings.accountNumberLabel,
-                    hintText: isReadOnly ? null : '20001457/0800',
-                    floatingLabelBehavior: FloatingLabelBehavior.always,
-                    helperText: czBanks[selectedBankCode],
-                    helperMaxLines: 2,
-                    errorMaxLines: 2,
-                    suffixIcon: isReadOnly
-                        ? null
-                        : PopupMenuButton<String>(
-                            tooltip: BankAccountStrings.bankCodeLabel,
-                            icon: const Icon(Icons.arrow_drop_down),
-                            initialValue: selectedBankCode,
-                            onSelected: _selectBank,
-                            itemBuilder: (context) => [
-                              for (final bank in czBanks.entries)
-                                PopupMenuItem(
-                                  value: bank.key,
-                                  child: Text(
-                                    '${bank.key} · ${bank.value}',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                            ],
-                          ),
+                  key: const ValueKey('bank-account-iban'),
+                  controller: ibanController,
+                  decoration: const InputDecoration(
+                    labelText: 'IBAN',
+                    errorMaxLines: 3,
                   ),
                   readOnly: isReadOnly,
                   autocorrect: false,
                   enableSuggestions: false,
-                  onChanged: (_) => onNationalAccountChanged(),
-                  validator: validateAccountNumber,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (_) => onIbanChanged(),
+                  validator: validateIban,
                   autovalidateMode: AutovalidateMode.onUserInteractionIfError,
                 ),
               const SizedBox(height: 16),

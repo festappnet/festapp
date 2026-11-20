@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { Provider } from 'oidc-provider';
 import assert from 'node:assert/strict';
 import { readFile, mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
@@ -8,7 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { profile } from './fixture.mjs';
 import { parseRemoteConfig, READ_SCOPE } from '../src/remote/config.mjs';
-import { DOMAIN_SCOPES, clientPolicy, clientAllowsScopes } from '../src/remote/client-policy.mjs';
+import { DOMAIN_SCOPES, clientPolicy, clientAllowsScopes, validRedirect, allowsMetadataClient } from '../src/remote/client-policy.mjs';
 import { inspectorConfiguration } from '../src/remote/inspector.mjs';
 import { MCP_PERMISSIONS, MCP_SCOPES, READ_OPERATIONS, scopesForOperation, permissionsForConsent, validPermissions } from '../../../packages/festapp_contracts/mcp-permissions.mjs';
 import { Operations } from '../src/operations/catalog.mjs';
@@ -19,6 +20,71 @@ function configuration(extra = {}) {
         clients: [{ id: 'public-fixture', name: 'Public fixture', dataProfile: 'order-summary',
             redirectUris: ['https://public.fixture.test/callback'], allowedScopes: [READ_SCOPE] }], ...extra });
 }
+
+test('only public native registrations may use exact localhost HTTP callbacks', () => {
+    for (const uri of ['http://localhost/callback', 'http://localhost:51789/callback', 'http://localhost:65535/callback']) {
+        assert(!validRedirect(uri, 'native'));
+        for (const local of [false, true]) assert(!validRedirect(uri, 'web', { local, allowLocalhost: true }));
+        const client = { id: 'festapp-claude-code', name: 'Claude Code', applicationType: 'native', redirectUris: [uri] };
+        const explicitPublic = { ...client, tokenEndpointAuthMethod: 'none' };
+        assert.equal(configuration({ clients: [client] }).clients[0].tokenEndpointAuthMethod, 'none');
+        assert.deepEqual(configuration({ clients: [explicitPublic] }).clients[0].redirectUris, [uri]);
+        assert.throws(() => configuration({ clients: [{ ...client, tokenEndpointAuthMethod: 'private_key_jwt' }] }), /INVALID_CLIENT_KEYS/);
+    }
+    for (const uri of ['http://app.localhost/callback', 'http://localhost./callback', 'http://app.local/callback',
+        'https://localhost/callback', 'http://user@localhost/callback', 'http://localhost/callback?q=1',
+        'http://localhost/callback#fragment', 'http://localhost/callback#', 'http://localhost/callback?',
+        'http://@localhost/callback', 'http://:@localhost/callback', 'http://localhost/path@other',
+        'http://LOCALHOST/callback', 'HTTP://localhost/callback', 'http://localhost:80/callback',
+        'http://localhost/a/../callback', 'http://localhost:051789/callback', 'http://localhost', 'http://localhost/call\\back']) {
+        assert(!validRedirect(uri, 'native', { allowLocalhost: true }), uri);
+        assert.throws(() => configuration({ clients: [{ id: 'invalid', name: 'Invalid', applicationType: 'native', redirectUris: [uri] }] }), uri);
+    }
+    // The configuration schema trims surrounding whitespace before the canonical check.
+    assert(!validRedirect('http://localhost/callback\n', 'native', { allowLocalhost: true }));
+    assert.deepEqual(configuration({ clients: [{ id: 'trimmed', name: 'Trimmed', applicationType: 'native',
+        redirectUris: ['http://localhost/callback\n'] }] }).clients[0].redirectUris, ['http://localhost/callback']);
+});
+
+test('static web and IP loopback registrations keep their existing redirect URIs', () => {
+    const clients = [
+        { id: 'web', name: 'Web', redirectUris: ['https://WEB.fixture.test:443/callback@v2'] },
+        { id: 'native', name: 'Native', applicationType: 'native',
+            redirectUris: ['http://127.0.0.1:80/callback@v2', 'http://[::1]:51789/callback'] },
+    ];
+    assert.deepEqual(configuration({ clients }).clients.map(client => client.redirectUris),
+        clients.map(client => client.redirectUris));
+});
+
+test('maintained provider matches registered localhost with any port and exact host/path', async () => {
+    const provider = new Provider('https://issuer.fixture.test', { clients: [{ client_id: 'festapp-claude-code',
+        application_type: 'native', token_endpoint_auth_method: 'none',
+        redirect_uris: ['http://localhost/callback'], response_types: ['code'], grant_types: ['authorization_code'] }],
+        features: { devInteractions: { enabled: false } } });
+    const client = await provider.Client.find('festapp-claude-code');
+    for (const port of ['', ':80', ':51789', ':65535']) assert(client.redirectUriAllowed(`http://localhost${port}/callback`));
+    for (const uri of ['http://localhost:51789/other', 'http://localhost:51789/callback/',
+        'http://app.localhost:51789/callback', 'http://localhost.:51789/callback', 'http://app.local:51789/callback',
+        'http://127.0.0.1:51789/callback', 'https://localhost:51789/callback',
+        'http://localhost:51789/callback?q=1', 'http://localhost:51789/callback#fragment'])
+        assert(!client.redirectUriAllowed(uri), uri);
+});
+
+test('trusted metadata accepts only IP callbacks and keeps public-native scope ceilings', () => {
+    const config = configuration({ clientMetadataDocuments: { allowedOrigins: ['https://desktop.fixture.test'],
+        dataProfile: 'operator', allowedScopes: [READ_SCOPE] } });
+    const client = { clientId: 'https://desktop.fixture.test/client.json', applicationType: 'native',
+        tokenEndpointAuthMethod: 'none', responseTypes: ['code'], grantTypes: ['authorization_code'],
+        redirectUris: ['http://127.0.0.1/callback'], scope: READ_SCOPE };
+    assert(allowsMetadataClient(config, client));
+    assert(allowsMetadataClient(config, { ...client, redirectUris: ['http://127.0.0.1:80/callback@v2'] }));
+    assert(allowsMetadataClient(config, { ...client, redirectUris: ['http://[::1]:51789/callback'] }));
+    for (const uri of ['http://localhost/callback', 'http://localhost:51789/callback'])
+        assert(!allowsMetadataClient(config, { ...client, redirectUris: [uri] }), uri);
+    assert(!allowsMetadataClient(config, { ...client, redirectUris: ['http://127.0.0.1/callback', 'http://localhost/callback'] }));
+    assert(!allowsMetadataClient(config, { ...client, tokenEndpointAuthMethod: 'private_key_jwt' }));
+    assert(!allowsMetadataClient(config, { ...client, scope: READ_SCOPE + ' festapp:forms:read' }));
+});
 
 test('consent presets only narrow requested functions and classify every read as domain read-only', () => {
     assert.deepEqual(permissionsForConsent(MCP_SCOPES), MCP_SCOPES);
