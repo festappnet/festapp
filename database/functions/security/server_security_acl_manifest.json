@@ -3634,6 +3634,16 @@
       "anon": false,
       "authenticated": false,
       "service_role": false
+    },
+    "public.get_unit_picker_favorites(uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.set_unit_picker_favorite(uuid,bigint,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3692,7 +3702,8 @@
     "database/functions/customer_order_changes/commands.sql",
     "database/functions/customer_order_changes/staff.sql",
     "database/functions/eshop_forms/meta_purchase_settings.sql",
-    "database/functions/user_permissions/unit_meta_purchase.sql"
+    "database/functions/user_permissions/unit_meta_purchase.sql",
+    "database/functions/units/unit_picker_favorites.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",
