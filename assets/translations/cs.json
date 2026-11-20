@@ -2416,6 +2416,7 @@
     "fullFormatLabel": "Celý formát:",
     "prefixLabel": "Předčíslí",
     "bankCodeLabel": "Kód banky",
+    "invalidNationalAccount": "Zkontrolujte číslo účtu a kód banky. Například 20001457/0800.",
     "ibanValidationHelp": "Podporuje ověření IBAN",
     "regenerateTokenConfirmation": "Opravdu chcete přegenerovat token? Stará e-mailová adresa přestane fungovat a pro fungování párování budete muset nastavit přeposílání e-mailů na novou adresu.",
     "bankConnectionTab": "Propojení s bankou",

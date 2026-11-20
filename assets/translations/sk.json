@@ -396,6 +396,7 @@
     "validationSummary": "Skontrolujte zvýraznené polia. Zmeny zatiaľ nie sú uložené."
   },
   "BankAccount": {
+    "invalidNationalAccount": "Skontrolujte číslo účtu a kód banky. Napríklad 20001457/0800.",
     "diagnostic": {
       "title": "Posledná zaznamenaná chyba",
       "invalidResponse": "Bankový výpis sa nepodarilo prečítať. Odpoveď má neočakávaný formát.",

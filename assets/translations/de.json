@@ -269,6 +269,7 @@
     "validationSummary": "Prüfen Sie die markierten Felder. Ihre Änderungen wurden noch nicht gespeichert."
   },
   "BankAccount": {
+    "invalidNationalAccount": "Prüfen Sie die Kontonummer und die Bankleitzahl. Beispiel: 20001457/0800.",
     "diagnostic": {
       "title": "Letzter erfasster Fehler",
       "invalidResponse": "Der Kontoauszug konnte nicht gelesen werden. Die Antwort hat ein unerwartetes Format.",
