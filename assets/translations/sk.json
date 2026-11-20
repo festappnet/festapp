@@ -396,6 +396,17 @@
     "validationSummary": "Skontrolujte zvýraznené polia. Zmeny zatiaľ nie sú uložené."
   },
   "BankAccount": {
+    "accountFormat": "Formát účtu",
+    "inputModeSplit": "Český účet",
+    "inputModeSlovak": "Slovenský účet",
+    "invalidSlovakAccount": "Skontrolujte číslo účtu a kód banky. Napríklad 289-1987426353/0720.",
+    "inputModeIban": "IBAN",
+    "accountNumberLabel": "Číslo účtu",
+    "bankCodeLabel": "Kód banky",
+    "creditorNameLabel": "Meno majiteľa účtu",
+    "creditorNameHelp": "Meno uvedené v platobných pokynoch.",
+    "supportedCurrencies": "Podporované meny",
+    "addCurrency": "Pridať menu",
     "invalidNationalAccount": "Skontrolujte číslo účtu a kód banky. Napríklad 20001457/0800.",
     "diagnostic": {
       "title": "Posledná zaznamenaná chyba",

@@ -65,11 +65,17 @@ class BankAccountSettingsScreen extends StatefulWidget {
 
 class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     with SingleTickerProviderStateMixin {
-  bool _useIbanInput = true;
+  late BankAccountInputMode _inputMode;
+  late bool _useSuggestedCurrency;
 
   late TextEditingController _ibanController;
-  late TextEditingController _nationalAccountController;
-  late TextEditingController _bankCodeController;
+  final _nationalDrafts = {
+    for (final mode in [BankAccountInputMode.czech, BankAccountInputMode.slovak])
+      mode: (
+        number: TextEditingController(),
+        bankCode: TextEditingController(),
+      ),
+  };
 
   late TextEditingController _titleController;
   late TextEditingController _creditorNameController;
@@ -86,14 +92,16 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   List<Object?> _savedGeneral = [];
   List<Object?> _savedConnection = [];
   List<Object?> get _generalValues => [
-        _titleController.text,
-        _creditorNameController.text,
-        _ibanController.text,
-        _nationalAccountController.text,
-        _bankCodeController.text,
-        _supportedCurrencies.join(','),
-        _useIbanInput,
-      ];
+    _titleController.text,
+    _creditorNameController.text,
+    _ibanController.text,
+    for (final draft in _nationalDrafts.values) ...[
+      draft.number.text,
+      draft.bankCode.text,
+    ],
+    _supportedCurrencies.join(','),
+    _inputMode,
+  ];
   List<Object?> get _connectionValues => [_tokenController.text, _expiryDate];
   bool get _hasDraft =>
       !const ListEquality<Object?>().equals(_generalValues, _savedGeneral) ||
@@ -125,21 +133,26 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     );
     _tokenController = TextEditingController();
 
-    _ibanController = TextEditingController(text: _account.accountNumber);
-    _nationalAccountController = TextEditingController();
-    _bankCodeController = TextEditingController();
-    _syncNationalFieldsFromIban();
+    final accountNumber = _account.accountNumber ?? '';
+    _ibanController = TextEditingController(text: accountNumber);
+    final domesticMode = _syncNationalFieldsFromIban();
 
     _pairingCode = _account.pairingCode;
-    _useIbanInput = _ibanController.text.isNotEmpty &&
-        (_nationalAccountController.text.isEmpty || _nationalIban() == null);
+    _inputMode = BankAccountInputMode.iban;
+    if (accountNumber.isEmpty) {
+      _inputMode = BankAccountInputMode.czech;
+    } else if (domesticMode != null &&
+        _nationalIban(domesticMode) == IbanUtils.normalizeIban(accountNumber)) {
+      _inputMode = domesticMode;
+    }
     _supportedCurrencies = List.from(_account.supportedCurrencies);
     _expiryDate = _account.tokenExpiryDate;
 
     _initTabController();
 
+    _useSuggestedCurrency = _account.id == 0 && _supportedCurrencies.isEmpty;
     if (_supportedCurrencies.isEmpty) {
-      _supportedCurrencies.add('CZK');
+      _supportedCurrencies.add(_suggestedCurrency);
     }
 
     _savedGeneral = _generalValues;
@@ -252,14 +265,33 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     }
   }
 
-  bool get _isFio => isFioBank(_ibanController.text);
+  String? get _enteredIban => _inputMode == BankAccountInputMode.iban
+      ? _ibanController.text.trim()
+      : _nationalIban(_inputMode);
+
+  bool get _isFio => isFioBank(_enteredIban);
+
+  String get _suggestedCurrency =>
+      _inputMode == BankAccountInputMode.slovak ||
+          (_inputMode == BankAccountInputMode.iban &&
+              _domesticModeForIban() == BankAccountInputMode.slovak)
+      ? 'EUR'
+      : 'CZK';
+
+  void _refreshSuggestedCurrency() {
+    if (_account.id == 0 && _useSuggestedCurrency) {
+      _supportedCurrencies = [_suggestedCurrency];
+    }
+  }
 
   @override
   void dispose() {
     _connectionRefreshBurst?.cancel();
     _ibanController.dispose();
-    _nationalAccountController.dispose();
-    _bankCodeController.dispose();
+    for (final draft in _nationalDrafts.values) {
+      draft.number.dispose();
+      draft.bankCode.dispose();
+    }
 
     _titleController.dispose();
     _creditorNameController.dispose();
@@ -273,47 +305,89 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     r'^(?:(\d{1,6})\s*-\s*)?(\d{1,10})$',
   );
 
-  String? _nationalIban() {
-    final parts = _nationalPattern.firstMatch(
-      _nationalAccountController.text.trim(),
-    );
-    final bankCode = _bankCodeController.text.trim();
-    if (parts == null || !czBanks.containsKey(bankCode)) return null;
+  String? _nationalIban(BankAccountInputMode mode) {
+    final draft = _nationalDrafts[mode]!;
+    final parts = _nationalPattern.firstMatch(draft.number.text.trim());
+    final bankCode = draft.bankCode.text.trim();
+    if (parts == null || !mode.banks.containsKey(bankCode)) return null;
 
+    final generate = mode == BankAccountInputMode.slovak
+        ? IbanUtils.generateSkIban
+        : IbanUtils.generateCzIban;
     try {
-      return IbanUtils.generateCzIban(bankCode, parts[1] ?? '', parts[2]!);
+      return generate(bankCode, parts[1] ?? '', parts[2]!);
     } on FormatException {
       return null;
     }
   }
 
-  void _syncNationalFieldsFromIban() {
-    final account = IbanUtils.parseCzIban(_ibanController.text.trim());
-    if (account == null || !czBanks.containsKey(account.bankCode)) {
-      _nationalAccountController.clear();
-      _bankCodeController.clear();
-      return;
+  BankAccountInputMode? _domesticModeForIban() {
+    final iban = IbanUtils.normalizeIban(_ibanController.text);
+    if (iban.startsWith('CZ')) return BankAccountInputMode.czech;
+    if (iban.startsWith('SK')) return BankAccountInputMode.slovak;
+    return null;
+  }
+
+  BankAccountInputMode? _syncNationalFieldsFromIban() {
+    final iban = _ibanController.text;
+    final mode = _domesticModeForIban();
+    if (mode == null) return null;
+
+    final account = mode == BankAccountInputMode.slovak
+        ? IbanUtils.parseSkIban(iban)
+        : IbanUtils.parseCzIban(iban);
+    if (account == null || !mode.banks.containsKey(account.bankCode)) {
+      return null;
     }
 
+    final draft = _nationalDrafts[mode]!;
     final prefix = account.prefix == '0' ? '' : '${account.prefix}-';
-    _nationalAccountController.text = '$prefix${account.number}';
-    _bankCodeController.text = account.bankCode;
+    draft.number.text = '$prefix${account.number}';
+    draft.bankCode.text = account.bankCode;
+    return mode;
   }
 
-  String? get _nationalFormat {
-    if (_nationalAccountController.text.isEmpty) return null;
-    final number = _nationalAccountController.text.replaceAll(RegExp(r'\s'), '');
-    return '$number/${_bankCodeController.text.trim()}';
+  String? _nationalFormat(String iban) {
+    final parsed = IbanUtils.parseCzIban(iban);
+    if (parsed == null || !czBanks.containsKey(parsed.bankCode)) return null;
+    final draft = _nationalDrafts[BankAccountInputMode.czech]!;
+    final number = draft.number.text.replaceAll(RegExp(r'\s'), '');
+    return '$number/${parsed.bankCode}';
   }
 
-  void _onIbanChanged() => setState(_syncNationalFieldsFromIban);
+  void _changeInputMode(BankAccountInputMode mode) {
+    if (mode == _inputMode) return;
+
+    setState(() {
+      if (mode == BankAccountInputMode.iban) {
+        final iban = _nationalIban(_inputMode);
+        if (iban != null) {
+          _ibanController.text = iban;
+        }
+      }
+      _inputMode = mode;
+      _refreshSuggestedCurrency();
+    });
+  }
+
+  void _onIbanChanged() {
+    setState(() {
+      _syncNationalFieldsFromIban();
+      _refreshSuggestedCurrency();
+    });
+  }
 
   void _onNationalAccountChanged() {
-    setState(() => _ibanController.text = _nationalIban() ?? '');
+    setState(() {
+      if (_domesticModeForIban() == _inputMode &&
+          _nationalIban(_inputMode) == null) {
+        _ibanController.clear();
+      }
+    });
   }
 
   String? _validateIban(String? value) {
-    final iban = value?.trim() ?? '';
+    final iban = IbanUtils.normalizeIban(value ?? '');
     if (iban.isEmpty) return CommonStrings.fieldCannotBeEmpty;
     return IbanUtils.isValidIban(iban) ? null : CommonStrings.invalidFormat;
   }
@@ -321,10 +395,13 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   String? _validateAccountNumber(String? value) {
     final number = value?.trim() ?? '';
     if (number.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+    final bankCode = _nationalDrafts[_inputMode]!.bankCode.text.trim();
     if (!_nationalPattern.hasMatch(number) ||
-        (czBanks.containsKey(_bankCodeController.text.trim()) &&
-            _nationalIban() == null)) {
-      return BankAccountStrings.invalidNationalAccount;
+        (_inputMode.banks.containsKey(bankCode) &&
+            _nationalIban(_inputMode) == null)) {
+      return _inputMode == BankAccountInputMode.slovak
+          ? BankAccountStrings.invalidSlovakAccount
+          : BankAccountStrings.invalidNationalAccount;
     }
     return null;
   }
@@ -332,13 +409,25 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   String? _validateBankCode(String? value) {
     final code = value?.trim() ?? '';
     if (code.isEmpty) return CommonStrings.fieldCannotBeEmpty;
-    return czBanks.containsKey(code) ? null : CommonStrings.invalidFormat;
+    return _inputMode.banks.containsKey(code)
+        ? null
+        : CommonStrings.invalidFormat;
   }
 
   Future<void> _saveGeneralInfo() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final iban = _useIbanInput ? _ibanController.text.trim() : _nationalIban()!;
+    final enteredIban = _enteredIban!;
+    final normalizedIban = IbanUtils.normalizeIban(enteredIban);
+    final existingIban = _account.accountNumber;
+    // Existing connections compare the stored account identity verbatim.
+    final iban =
+        existingIban != null &&
+            IbanUtils.normalizeIban(existingIban) == normalizedIban
+        ? existingIban
+        : normalizedIban.startsWith('SK')
+        ? normalizedIban
+        : enteredIban;
     final generalValues = _generalValues;
     final isCreation = _account.id == 0;
 
@@ -357,7 +446,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
             : (isFioBank(iban) ? 'FIO' : 'OTHER'),
         isAdmin: _account.isAdmin,
         supportedCurrencies: _supportedCurrencies,
-        accountNumberHumanReadable: _nationalFormat,
+        accountNumberHumanReadable: _nationalFormat(iban),
         tokenMasked: _account.tokenMasked,
         lastFetchTime: _account.lastFetchTime,
         lastFioFetchTime: _account.lastFioFetchTime,
@@ -617,33 +706,43 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     ).then((val) {
       if (val != null && val is String && val.length == 3) {
         if (!_supportedCurrencies.contains(val)) {
-          setState(() => _supportedCurrencies.add(val));
+          setState(() {
+            _useSuggestedCurrency = false;
+            _supportedCurrencies.add(val);
+          });
         }
       }
     });
   }
 
-  Widget _general(BuildContext context) => BankAccountGeneralTab(
-        isReadOnly: _isReadOnly,
-        isSaving: _isSaving,
-        formKey: _formKey,
-        titleController: _titleController,
-        creditorNameController: _creditorNameController,
-        ibanController: _ibanController,
-        nationalAccountController: _nationalAccountController,
-        bankCodeController: _bankCodeController,
-        useIbanInput: _useIbanInput,
-        onUseIbanInputChanged: (v) => setState(() => _useIbanInput = v),
-        validateIban: _validateIban,
-        validateAccountNumber: _validateAccountNumber,
-        validateBankCode: _validateBankCode,
-        supportedCurrencies: _supportedCurrencies,
-        onAddCurrency: _showAddCurrencyDialog,
-        onRemoveCurrency: (c) => setState(() => _supportedCurrencies.remove(c)),
-        onSave: _saveGeneralInfo,
-        onIbanChanged: _onIbanChanged,
-        onNationalAccountChanged: _onNationalAccountChanged,
-      );
+  Widget _general(BuildContext context) {
+    final draft = _nationalDrafts[_inputMode] ??
+        _nationalDrafts[BankAccountInputMode.czech]!;
+    return BankAccountGeneralTab(
+      isReadOnly: _isReadOnly,
+      isSaving: _isSaving,
+      formKey: _formKey,
+      titleController: _titleController,
+      creditorNameController: _creditorNameController,
+      ibanController: _ibanController,
+      nationalAccountController: draft.number,
+      bankCodeController: draft.bankCode,
+      inputMode: _inputMode,
+      onInputModeChanged: _changeInputMode,
+      validateIban: _validateIban,
+      validateAccountNumber: _validateAccountNumber,
+      validateBankCode: _validateBankCode,
+      supportedCurrencies: _supportedCurrencies,
+      onAddCurrency: _showAddCurrencyDialog,
+      onRemoveCurrency: (currency) => setState(() {
+        _useSuggestedCurrency = false;
+        _supportedCurrencies.remove(currency);
+      }),
+      onSave: _saveGeneralInfo,
+      onIbanChanged: _onIbanChanged,
+      onNationalAccountChanged: _onNationalAccountChanged,
+    );
+  }
   Widget _connection(BuildContext context) => BankAccountConnectionTab(
         account: _account,
         isReadOnly: _isReadOnly,
