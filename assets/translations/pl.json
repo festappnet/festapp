@@ -271,6 +271,7 @@
     "validationSummary": "Sprawdź wyróżnione pola. Zmiany nie zostały jeszcze zapisane."
   },
   "BankAccount": {
+    "invalidNationalAccount": "Sprawdź numer rachunku i kod banku. Na przykład 20001457/0800.",
     "diagnostic": {
       "title": "Ostatni zarejestrowany błąd",
       "invalidResponse": "Nie udało się odczytać wyciągu bankowego. Odpowiedź ma nieoczekiwany format.",
