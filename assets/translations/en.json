@@ -4238,6 +4238,7 @@
     "unitPeopleRevoke": "Revoke organizer access",
     "unitSettingsRead": "Read organizer settings",
     "unitSettingsWrite": "Change organizer settings",
+    "unitWebsiteConsentWrite": "Save, confirm and disable website consent bindings",
     "unitApprovalsRequest": "Request measurement and Meta CAPI approval (emails all organization administrators)",
     "emailTemplatesRead": "Read email templates, banners and synthetic previews",
     "emailTemplatesWrite": "Edit email templates and banners; restore inheritance",
