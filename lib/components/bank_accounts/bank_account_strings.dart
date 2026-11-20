@@ -73,10 +73,9 @@ class BankAccountStrings {
 
   static String get inputModeSplit => 'BankAccount.inputModeSplit'.tr();
   static String get inputModeIban => 'BankAccount.inputModeIban'.tr();
-  static String get fullFormatLabel => 'BankAccount.fullFormatLabel'.tr();
-  static String get prefixLabel => 'BankAccount.prefixLabel'.tr();
+  static String get invalidNationalAccount =>
+      'BankAccount.invalidNationalAccount'.tr();
   static String get bankCodeLabel => 'BankAccount.bankCodeLabel'.tr();
-  static String get ibanValidationHelp => 'BankAccount.ibanValidationHelp'.tr();
 
   static String get saveChanges => CommonStrings.save;
 
