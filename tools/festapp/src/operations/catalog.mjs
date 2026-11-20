@@ -10,6 +10,7 @@ import {scannerDescriptors,scannerDataSchemas,invokeScannerOperation} from './sc
 import {blueprintDescriptors,blueprintDataSchemas,invokeBlueprintOperation} from './blueprints.mjs';
 import {peopleDescriptors,peopleDataSchemas,invokePeopleOperation} from './people.mjs';
 import {configurationDescriptors,configurationDataSchemas,invokeConfigurationOperation} from './configuration.mjs';
+import {measurementSetupDescriptors,measurementSetupDataSchemas,invokeMeasurementSetupOperation} from './measurement-setup.mjs';
 import {formSalesDescriptors,formSalesDataSchemas,invokeFormSalesOperation} from './form-sales.mjs';
 import { formDescriptors, formDataSchemas, invokeFormOperation } from './forms.mjs';
 import { emailTemplateDescriptors, emailTemplateDataSchemas, invokeEmailTemplateOperation } from './email-templates.mjs';
@@ -67,6 +68,7 @@ const dataSchemas = {
     ...blueprintDataSchemas,
     ...peopleDataSchemas,
     ...configurationDataSchemas,
+    ...measurementSetupDataSchemas,
     ...informationDataSchemas,
     ...formDataSchemas,
     ...formSalesDataSchemas,
@@ -164,7 +166,7 @@ const resultSchema = (id, schema = dataSchemas[id]) =>
             .optional(),
         meta: metaSchema,
     });
-const delegatedDescriptors = [...webhookDescriptors, ...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...informationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
+const delegatedDescriptors = [...webhookDescriptors, ...lifecycleDescriptors, ...agendaDescriptors, ...financeDescriptors, ...reportingDescriptors, ...programDescriptors, ...scannerDescriptors, ...blueprintDescriptors, ...peopleDescriptors, ...configurationDescriptors, ...measurementSetupDescriptors, ...informationDescriptors, ...formDescriptors, ...formSalesDescriptors, ...emailTemplateDescriptors, ...orderDescriptors, ...productDescriptors, ...productScheduleDescriptors, ...inventoryDescriptors, ...inventoryAuthoringDescriptors, ...inventoryAssignmentDescriptors, ...seatDescriptors, ...seatHoldDescriptors, ...seatSwapDescriptors, ...seatOrderDescriptors, ...seatCancellationDescriptors];
 const descriptors = [
     ...delegatedDescriptors.map(d => ({ ...d, requiresDelegatedAccess: true })),
     { id: 'access.inspect', title: 'Discover accessible occasions', name: 'festapp_access_inspect', description: 'List currently accessible organizers and occasions within this connection. Permissions are checked live; organizer access includes future occasions. If an event name matches more than one occasion, ask the user to choose before reading any report or orders; do not choose or aggregate without an explicit request.', input: z.strictObject({}), domainReadOnly: true },
@@ -327,7 +329,7 @@ export class Operations {
         check(data && !data.error);
         return data;
     }
-    async invoke(id, raw, { onAccepted } = {}) {
+    async invoke(id, raw, { onAccepted, onRetryAfter } = {}) {
         const meta = {
             contractVersion: 1,
             requestId: randomUUID(),
@@ -390,6 +392,7 @@ export class Operations {
                 else if (blueprintDataSchemas[id]) data = await invokeBlueprintOperation(this.owner, client, id, args);
                 else if (peopleDataSchemas[id]) data = await invokePeopleOperation(this.owner, client, id, args);
                 else if (informationDataSchemas[id]) data = await invokeInformationOperation(this.owner, client, id, args);
+                else if (measurementSetupDataSchemas[id]) data = await invokeMeasurementSetupOperation(this.owner, client, id, args);
                 else if (configurationDataSchemas[id]) data = await invokeConfigurationOperation(this.owner, client, id, args);
                 else if (formSalesDataSchemas[id]) data = await invokeFormSalesOperation(this.owner, client, id, args, context);
                 else if (formDataSchemas[id]) data = await invokeFormOperation(this.owner, client, id, args);
@@ -546,6 +549,8 @@ export class Operations {
                 return { ok: true, operation: id, data, meta };
             });
         } catch (error) {
+            // The released error envelope stays unchanged; HTTP adapters may expose Retry-After.
+            if (Number.isSafeInteger(error?.retryAfter) && error.retryAfter > 0) onRetryAfter?.(error.retryAfter);
             return { ok: false, operation: id, error: safeError(error, { operation: id }), meta };
         }
     }

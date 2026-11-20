@@ -11,7 +11,7 @@ COPY web_client/src/assets/fonts ./web_client/src/assets/fonts
 COPY tools/festapp/scripts ./tools/festapp/scripts
 COPY tools/festapp/api-contract-archive.json tools/festapp/api-release-baseline.json tools/festapp/redocly.yaml ./tools/festapp/
 COPY packages/festapp_contracts ./packages/festapp_contracts
-COPY assets/translations/cs.json ./assets/translations/cs.json
+COPY assets/translations ./assets/translations
 COPY supabase/functions/_shared/ticket-assets/font-catalog.json ./supabase/functions/_shared/ticket-assets/font-catalog.json
 COPY automation/lib/backend_activation_manifest.mjs ./automation/lib/backend_activation_manifest.mjs
 COPY automation/lib/supabase_client_config.mjs ./automation/lib/supabase_client_config.mjs
@@ -35,7 +35,7 @@ COPY web_client/src/components/users/connection_page_styles.js ./web_client/src/
 COPY web_client/src/assets/fonts ./web_client/src/assets/fonts
 COPY --from=api-build /app/tools/festapp/contracts/api-v1 ./tools/festapp/contracts/api-v1
 COPY packages/festapp_contracts ./packages/festapp_contracts
-COPY assets/translations/cs.json ./assets/translations/cs.json
+COPY assets/translations ./assets/translations
 COPY supabase/functions/_shared/ticket-assets/font-catalog.json ./supabase/functions/_shared/ticket-assets/font-catalog.json
 COPY automation/lib/backend_activation_manifest.mjs ./automation/lib/backend_activation_manifest.mjs
 USER node
