@@ -10,6 +10,7 @@ BEGIN
     OR length(p_link)>80 OR length(COALESCE(p_title,''))>500
     OR NOT public.can_author_forms(v_occasion) THEN
     RAISE insufficient_privilege USING MESSAGE='occasion editor required'; END IF;
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_occasion]);
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'occasion',v_occasion,'link',p_link,'title',p_title)::text,'UTF8'),
     'sha256'),'hex');
