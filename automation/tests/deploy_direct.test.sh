@@ -38,7 +38,9 @@ require_executable "$BUILD_SH"
 # project/branch selection, direct upload, and repeated custom-domain verification.
 require_text "$DEPLOY_SH" 'release.build bash automation/cloudflare_build.sh' 'deploy invokes the canonical web build'
 require_text "$DEPLOY_SH" 'node automation/cloudflare/ensure-pages-project.mjs' 'deploy ensures project, runtime variables, and custom domain'
-require_text "$DEPLOY_SH" "^CLOUDFLARE_PROJECT_NAME=" 'deploy reads the Pages project from project.conf'
+for entrypoint in "$DEPLOY_SH" "$BUILD_SH"; do
+    require_text "$entrypoint" 'load_web_project_environment automation/project.conf' 'release entrypoint exports the canonical tenant configuration'
+done
 require_text "$DEPLOY_SH" 'release.upload pnpm dlx wrangler@latest pages deploy build/web' 'deploy uploads build/web with Wrangler'
 require_text "$DEPLOY_SH" '--project-name "${PROJECT_NAME}"' 'Wrangler project name is configuration-driven'
 require_text "$DEPLOY_SH" '--branch "${BRANCH}"' 'deploy tags the current production branch'

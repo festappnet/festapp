@@ -363,17 +363,34 @@ test('functional probe verifies backend response, manifest, parent, CSP and exac
 test('web deployment verifies selected receivers before build and again before upload', async () => {
   const directory = await mkdtemp(join(tmpdir(),'measurement-web-release-'));
   try {
-    await mkdir(join(directory,'automation'),{recursive:true});
+    await mkdir(join(directory,'automation/lib'),{recursive:true});
     await mkdir(join(directory,'bin'));
     await mkdir(join(directory,'build/web'),{recursive:true});
-    await copyFile(join(root,'automation/deploy_direct.sh'),join(directory,'automation/deploy_direct.sh'));
+    for (const name of ['deploy_direct.sh', 'cloudflare_build.sh', 'lib/web_project_environment.sh']) {
+      await copyFile(join(root, 'automation', name), join(directory, 'automation', name));
+    }
     await writeFile(join(directory,'automation/project.conf'),
-      'CLOUDFLARE_PROJECT_NAME=test-project\nDOMAIN=tickets.example\nVERSION=1.2.3+4\nBACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=3\n');
+      'CLOUDFLARE_PROJECT_NAME=test-project\nDOMAIN=tickets.example\nVERSION=1.2.3+4\nBACKEND_ACTIVATION_CANONICAL_ORGANIZATION_ID=3\nFLUTTER_APP_URL="https://tickets.example/flutter"\n');
     await writeFile(join(directory,'build/web/_worker.js'),'worker');
+    // Capture the environment at the real standalone entrypoint without running a compiler.
+    await writeFile(join(directory, 'automation/build_web_bundle.sh'), `printf '%s\n' "$FLUTTER_APP_URL" "${'${VITE_TEST_INPUT-}'}" > build/inputs
+exit 73
+`);
+    const prepared = spawnSync('bash', ['automation/cloudflare_build.sh'], {
+      cwd: directory, encoding: 'utf8', env: { ...process.env, FLUTTER_APP_URL: '', VITE_TEST_INPUT: 'original' },
+    });
+    assert.equal(prepared.status, 73, prepared.stderr);
+    assert.equal(await readFile(join(directory, 'build/inputs'), 'utf8'), 'https://tickets.example/flutter\noriginal\n');
     const executable = async (name,body) => writeFile(join(directory,'bin',name),'#!/bin/bash\nset -eu\n'+body,{mode:0o755});
     await executable('python3',`if [ "$1" = automation/ci/telemetry.py ]; then
       shift 2
       exec "$@"
+    fi
+    if [ "$1" = automation/release/build_receipt.py ]; then
+      cmp -s build/inputs <(printf '%s\n' "$FLUTTER_APP_URL" "${'${VITE_TEST_INPUT-}'}") || {
+        echo 'fixture build inputs changed' >&2
+        exit 1
+      }
     fi
     echo gate >> calls\n`);
     await executable('pnpm','echo upload >> calls\n');
@@ -385,16 +402,19 @@ test('web deployment verifies selected receivers before build and again before u
       count=$(grep -c '^receiver$' calls)
       [ "$count" != "\${FAIL_RECEIVER-0}" ] || exit 1
     else echo "node $1" >> calls; fi\n`);
-    for (const failAt of ['1','2','0']) {
+    for (const [failAt, input] of [['1','original'],['2','original'],['0','changed'],['0','original']]) {
       await writeFile(join(directory,'calls'),'');
       const result = spawnSync('bash',['automation/deploy_direct.sh','--skip-build','--branch','prod/festapptickets'],{
         cwd:directory,encoding:'utf8',env:{...process.env,PATH:`${directory}/bin:${process.env.PATH}`,
-          CLOUDFLARE_API_TOKEN:'test-only-not-a-credential',FAIL_RECEIVER:failAt},
+          CLOUDFLARE_API_TOKEN:'test-only-not-a-credential',FAIL_RECEIVER:failAt,
+          FLUTTER_APP_URL:'',VITE_TEST_INPUT:input},
       });
       const calls = (await readFile(join(directory,'calls'),'utf8')).trim().split('\n');
-      assert.equal(result.status,failAt === '0' ? 0 : 1,result.stderr);
-      assert.equal(calls.includes('upload'),failAt === '0');
-      if (failAt === '0') {
+      const expectUpload = failAt === '0' && input === 'original';
+      assert.equal(result.status,expectUpload ? 0 : 1,result.stderr);
+      assert.equal(calls.includes('upload'),expectUpload);
+      if (input === 'changed') assert.match(result.stderr, /fixture build inputs changed/);
+      if (expectUpload) {
         assert.equal(calls.filter(line => line === 'receiver').length,2);
         assert.ok(calls.lastIndexOf('receiver') < calls.indexOf('upload'));
       }
