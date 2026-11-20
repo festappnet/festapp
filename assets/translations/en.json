@@ -2415,6 +2415,7 @@
     "fullFormatLabel": "Full format:",
     "prefixLabel": "Prefix",
     "bankCodeLabel": "Bank Code",
+    "invalidNationalAccount": "Check the account number and bank code. For example, 20001457/0800.",
     "ibanValidationHelp": "Supports IBAN validation",
     "regenerateTokenConfirmation": "Are you sure you want to regenerate the token? The old email address will stop working. For pairing to work, you will have to set email forwarding to the new email.",
     "bankConnectionTab": "Bank Connection",

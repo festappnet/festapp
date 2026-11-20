@@ -68,11 +68,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
   bool _useIbanInput = true;
 
   late TextEditingController _ibanController;
-  late TextEditingController _prefixController;
-  late TextEditingController _accountBodyController;
+  late TextEditingController _nationalAccountController;
   late TextEditingController _bankCodeController;
-
-  String? _selectedBankCode;
 
   late TextEditingController _titleController;
   late TextEditingController _creditorNameController;
@@ -92,9 +89,8 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         _titleController.text,
         _creditorNameController.text,
         _ibanController.text,
-        _prefixController.text,
-        _accountBodyController.text,
-        _selectedBankCode,
+        _nationalAccountController.text,
+        _bankCodeController.text,
         _supportedCurrencies.join(','),
         _useIbanInput,
       ];
@@ -105,9 +101,6 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         _connectionValues,
         _savedConnection,
       );
-
-  // Validation State
-  String? _ibanError;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -133,26 +126,15 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     _tokenController = TextEditingController();
 
     _ibanController = TextEditingController(text: _account.accountNumber);
-    _prefixController = TextEditingController();
-    _accountBodyController = TextEditingController();
+    _nationalAccountController = TextEditingController();
     _bankCodeController = TextEditingController();
+    _syncNationalFieldsFromIban();
 
     _pairingCode = _account.pairingCode;
-
-    _parseInitialIban();
-
-    bool hasData = _ibanController.text.isNotEmpty;
-    bool isCzParsed = _prefixController.text.isNotEmpty ||
-        _accountBodyController.text.isNotEmpty ||
-        (_selectedBankCode != null);
-
-    _useIbanInput = hasData && !isCzParsed;
+    _useIbanInput = _ibanController.text.isNotEmpty &&
+        (_nationalAccountController.text.isEmpty || _nationalIban() == null);
     _supportedCurrencies = List.from(_account.supportedCurrencies);
     _expiryDate = _account.tokenExpiryDate;
-
-    _ibanController.addListener(_onIbanChanged);
-    _prefixController.addListener(_onHumanChanged);
-    _accountBodyController.addListener(_onHumanChanged);
 
     _initTabController();
 
@@ -270,19 +252,13 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     }
   }
 
-  bool get _isFio {
-    if (_ibanController.text.isNotEmpty && isFioBank(_ibanController.text))
-      return true;
-    if (_selectedBankCode != null && isFioBank(_selectedBankCode)) return true;
-    return false;
-  }
+  bool get _isFio => isFioBank(_ibanController.text);
 
   @override
   void dispose() {
     _connectionRefreshBurst?.cancel();
     _ibanController.dispose();
-    _prefixController.dispose();
-    _accountBodyController.dispose();
+    _nationalAccountController.dispose();
     _bankCodeController.dispose();
 
     _titleController.dispose();
@@ -293,89 +269,77 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     super.dispose();
   }
 
-  void _parseInitialIban() {
-    final iban = _ibanController.text.trim();
-    if (iban.isNotEmpty) {
-      final parsed = IbanUtils.parseCzIban(iban);
-      if (parsed != null) {
-        _prefixController.text = parsed.prefix == '0' ? '' : parsed.prefix;
-        _accountBodyController.text = parsed.number;
-        if (czBanks.containsKey(parsed.bankCode)) {
-          _selectedBankCode = parsed.bankCode;
-        }
-      }
-    }
-  }
+  static final _nationalPattern = RegExp(
+    r'^(?:(\d{1,6})\s*-\s*)?(\d{1,10})$',
+  );
 
-  bool _isUpdating = false;
-
-  void _onIbanChanged() {
-    if (_isUpdating) return;
-    final iban = _ibanController.text.trim();
-
-    bool isValid = IbanUtils.isValidIban(iban);
-    if (iban.isNotEmpty && !isValid) {
-      setState(() => _ibanError = "Invalid IBAN");
-      return;
-    } else {
-      if (mounted && _ibanError != null) setState(() => _ibanError = null);
-    }
-
-    if (isValid && iban.toUpperCase().startsWith('CZ')) {
-      final parsed = IbanUtils.parseCzIban(iban);
-      if (parsed != null) {
-        _isUpdating = true;
-        _prefixController.text = parsed.prefix == '0' ? '' : parsed.prefix;
-        _accountBodyController.text = parsed.number;
-        if (czBanks.containsKey(parsed.bankCode)) {
-          setState(() {
-            _selectedBankCode = parsed.bankCode;
-          });
-        }
-        _isUpdating = false;
-      }
-    }
-  }
-
-  void _onHumanChanged() {
-    if (_isUpdating) return;
-
-    String prefix = _prefixController.text.trim();
-    String body = _accountBodyController.text.trim();
-    String? bank = _selectedBankCode;
-
-    if (body.isEmpty || bank == null) {
-      return;
-    }
+  String? _nationalIban() {
+    final parts = _nationalPattern.firstMatch(
+      _nationalAccountController.text.trim(),
+    );
+    final bankCode = _bankCodeController.text.trim();
+    if (parts == null || !czBanks.containsKey(bankCode)) return null;
 
     try {
-      if (prefix.isEmpty) prefix = "0";
-
-      String generated = IbanUtils.generateCzIban(bank, prefix, body);
-
-      _isUpdating = true;
-      if (_ibanController.text != generated) {
-        _ibanController.text = generated;
-        setState(() => _ibanError = null);
-      }
-      _isUpdating = false;
-    } catch (e) {
-      // Don't generate IBAN on error
+      return IbanUtils.generateCzIban(bankCode, parts[1] ?? '', parts[2]!);
+    } on FormatException {
+      return null;
     }
+  }
+
+  void _syncNationalFieldsFromIban() {
+    final account = IbanUtils.parseCzIban(_ibanController.text.trim());
+    if (account == null || !czBanks.containsKey(account.bankCode)) {
+      _nationalAccountController.clear();
+      _bankCodeController.clear();
+      return;
+    }
+
+    final prefix = account.prefix == '0' ? '' : '${account.prefix}-';
+    _nationalAccountController.text = '$prefix${account.number}';
+    _bankCodeController.text = account.bankCode;
+  }
+
+  String? get _nationalFormat {
+    if (_nationalAccountController.text.isEmpty) return null;
+    final number = _nationalAccountController.text.replaceAll(RegExp(r'\s'), '');
+    return '$number/${_bankCodeController.text.trim()}';
+  }
+
+  void _onIbanChanged() => setState(_syncNationalFieldsFromIban);
+
+  void _onNationalAccountChanged() {
+    setState(() => _ibanController.text = _nationalIban() ?? '');
+  }
+
+  String? _validateIban(String? value) {
+    final iban = value?.trim() ?? '';
+    if (iban.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+    return IbanUtils.isValidIban(iban) ? null : CommonStrings.invalidFormat;
+  }
+
+  String? _validateAccountNumber(String? value) {
+    final number = value?.trim() ?? '';
+    if (number.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+    if (!_nationalPattern.hasMatch(number) ||
+        (czBanks.containsKey(_bankCodeController.text.trim()) &&
+            _nationalIban() == null)) {
+      return BankAccountStrings.invalidNationalAccount;
+    }
+    return null;
+  }
+
+  String? _validateBankCode(String? value) {
+    final code = value?.trim() ?? '';
+    if (code.isEmpty) return CommonStrings.fieldCannotBeEmpty;
+    return czBanks.containsKey(code) ? null : CommonStrings.invalidFormat;
   }
 
   Future<void> _saveGeneralInfo() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_ibanError != null) {
-      _showError("Please fix validaton errors: $_ibanError");
-      return;
-    }
-    if (!IbanUtils.isValidIban(_ibanController.text)) {
-      _showError("Invalid IBAN format");
-      return;
-    }
-
+    final iban = _useIbanInput ? _ibanController.text.trim() : _nationalIban()!;
+    final generalValues = _generalValues;
     final isCreation = _account.id == 0;
 
     setState(() => _isSaving = true);
@@ -386,14 +350,14 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         creditorName: _creditorNameController.text.trim().isEmpty
             ? null
             : _creditorNameController.text.trim(),
-        accountNumber: _ibanController.text.trim(),
+        accountNumber: iban,
         priority: int.tryParse(_priorityController.text) ?? _account.priority,
         type: _account.bankSync != null
             ? _account.type
-            : (_isFio ? 'FIO' : 'OTHER'),
+            : (isFioBank(iban) ? 'FIO' : 'OTHER'),
         isAdmin: _account.isAdmin,
         supportedCurrencies: _supportedCurrencies,
-        accountNumberHumanReadable: _buildLegacyHumanReadable(),
+        accountNumberHumanReadable: _nationalFormat,
         tokenMasked: _account.tokenMasked,
         lastFetchTime: _account.lastFetchTime,
         lastFioFetchTime: _account.lastFioFetchTime,
@@ -413,7 +377,7 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
 
       setState(() {
         _account = savedAccount;
-        _savedGeneral = _generalValues;
+        _savedGeneral = generalValues;
       });
       widget.onUpdated?.call(savedAccount);
 
@@ -464,17 +428,6 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
-  }
-
-  String? _buildLegacyHumanReadable() {
-    if (_accountBodyController.text.isEmpty || _selectedBankCode == null)
-      return null;
-    String prefix = _prefixController.text.trim();
-    String body = _accountBodyController.text.trim();
-    if (prefix.isNotEmpty && prefix != '0') {
-      return "$prefix-$body/$_selectedBankCode";
-    }
-    return "$body/$_selectedBankCode";
   }
 
   void _initTabController() {
@@ -677,20 +630,19 @@ class _BankAccountSettingsScreenState extends State<BankAccountSettingsScreen>
         titleController: _titleController,
         creditorNameController: _creditorNameController,
         ibanController: _ibanController,
-        prefixController: _prefixController,
-        accountBodyController: _accountBodyController,
+        nationalAccountController: _nationalAccountController,
+        bankCodeController: _bankCodeController,
         useIbanInput: _useIbanInput,
         onUseIbanInputChanged: (v) => setState(() => _useIbanInput = v),
-        selectedBankCode: _selectedBankCode,
-        onSelectedBankCodeChanged: (v) => setState(() => _selectedBankCode = v),
-        ibanError: _ibanError,
+        validateIban: _validateIban,
+        validateAccountNumber: _validateAccountNumber,
+        validateBankCode: _validateBankCode,
         supportedCurrencies: _supportedCurrencies,
         onAddCurrency: _showAddCurrencyDialog,
         onRemoveCurrency: (c) => setState(() => _supportedCurrencies.remove(c)),
-        buildLegacyHumanReadable: _buildLegacyHumanReadable,
         onSave: _saveGeneralInfo,
         onIbanChanged: _onIbanChanged,
-        onHumanChanged: _onHumanChanged,
+        onNationalAccountChanged: _onNationalAccountChanged,
       );
   Widget _connection(BuildContext context) => BankAccountConnectionTab(
         account: _account,
