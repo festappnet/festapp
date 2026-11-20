@@ -240,7 +240,7 @@ test('Flutter projects the help language published by the tenant', t => {
    /static const bool organizerLandingEnabled = (true|false);/,
    `static const bool organizerLandingEnabled = ${enabled};`,
   ));
-  const run = spawnSync('python3', ['-', flutterPath, languages, enabled, rendered.stdout], {
+  const run = spawnSync('python3', ['-', flutterPath, languages, enabled, rendered.stdout, ''], {
    input: projection,
    encoding: 'utf8',
    env: {
