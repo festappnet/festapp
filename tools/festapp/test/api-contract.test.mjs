@@ -54,6 +54,15 @@ test('schema 3 requires explicit API policy and preserves Make identity, regiona
     return import('../src/remote/config.mjs').then(({parseRemoteConfig})=>{
         const longer=structuredClone(example);longer.clients[0].maxConsentDays=365;assert.equal(parseRemoteConfig(longer).clients[0].maxConsentDays,365);
         const parsed=parseRemoteConfig(example);assert.equal(parsed.clients.find(c=>c.id==='festapp-make').maxConsentDays,7);
+        const operators=parsed.clients.find(c=>c.id==='operator-secure-example');
+        const contentAndSetupOperations=[
+            'information.list','information.inspect','information.save','songs.list','songs.inspect','songs.save',
+            'units.appLanding.inspect','units.appLanding.save','units.websiteConsent.inspect','units.websiteConsent.export',
+            'units.measurementApproval.inspect','units.measurementApproval.request','units.metaCapiApproval.inspect',
+            'units.metaCapiApproval.request','forms.embedCode',
+        ];
+        for(const operation of contentAndSetupOperations)
+            assert(operators.allowedOperations.includes(operation),operation);
         for(const mutate of [
             c=>delete c.clients[0].allowedOperations,
             c=>c.clients[0].allowedOperations.push('unknown.operation'),

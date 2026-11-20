@@ -120,6 +120,12 @@ Use pnpm 11.24.0 for every JavaScript package in this repository. Install with `
 
 ## Help and screenshot language
 
+
+Update the relevant user-facing help in the same change as any organizer-facing
+feature or behavior change. Regenerate catalog references and update localized
+guides or examples where the workflow changes. Correct stale instructions from
+earlier changes when they cover the same workflow.
+
 For every guide, localize both the interface and all visible example data to
 the guide's language. This includes event and form titles, organizers, venues,
 products and field labels. Use natural examples rather than technical fixture

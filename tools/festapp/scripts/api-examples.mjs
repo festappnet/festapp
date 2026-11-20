@@ -1,6 +1,23 @@
 // Deterministic synthetic examples. Runtime Zod schemas validate every example;
 // this helper never invents an executor, actor credential or real customer data.
+import { formEmbedCode, embedLabels } from '../src/operations/form-embed.mjs';
 const UUID = '11111111-1111-4111-8111-111111111111';
+// Synthetic measurement setup examples; example.com addresses only.
+const SITE = 'https://www.example.com', SERVICE = 'https://tickets.example.com', REVISION = '0123456789abcdef0123456789abcdef';
+const CONSENT_EXPORT = JSON.stringify({schemaVersion:1,serviceOrigin:SERVICE,websiteOrigin:SITE,binding:{id:UUID,version:2},
+    providerConfig:{provider:'cookiebot',consentValidFrom:'2026-11-13T12:00:00.000Z',maxAgeSeconds:31536000,organization:1,unit:3,consentRevision:REVISION,origin:SITE}},null,2);
+const measurementSetupExamples = {
+    'units.websiteConsent.inspect': {unitId:3,organizationId:1,consentRevision:REVISION,savedOrigins:[SITE],
+        bindings:[{id:UUID,websiteOrigin:SITE,platform:'wordpress',provider:'complianz',version:2,state:'confirmation_required'}],truncated:false},
+    'units.websiteConsent.export': {unitId:3,bindingId:UUID,bindingVersion:2,websiteOrigin:SITE,provider:'cookiebot',consentExport:CONSENT_EXPORT},
+    'units.measurementApproval.inspect': {unitId:3,approved:false,runtimeSupported:true,requestState:'requested',canRequest:false,
+        requestedAt:'2026-11-13T12:00:00Z',approvedOrigins:[],savedOrigins:[SITE],requestedOrigins:[SITE],truncated:false},
+    'units.metaCapiApproval.inspect': {unitId:3,organizationId:1,approved:false,requestState:'not_requested',canRequest:true,requestedAt:null},
+    'forms.embedCode': {occasionId:7,formId:42,slug:'summer-festival',publicUrl:SERVICE+'/form/summer-festival',
+        embedCode:formEmbedCode({tenantUrl:SERVICE,savedLink:'summer-festival',...embedLabels('en')})},
+};
+measurementSetupExamples['units.measurementApproval.request'] = measurementSetupExamples['units.measurementApproval.inspect'];
+measurementSetupExamples['units.metaCapiApproval.request'] = {...measurementSetupExamples['units.metaCapiApproval.inspect'],requestState:'requested',canRequest:false,requestedAt:'2026-11-13T12:00:00Z'};
 export function schemaExample(schema, root = schema, key = '', depth = 0) {
     if (depth > 24) throw new Error('Example schema recursion: ' + key);
     if (schema.$ref) {
@@ -47,6 +64,9 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     if (descriptor.id === 'units.appLanding.save') Object.assign(request,{unitId:3,occasionId:7,expectedOccasionId:null});
     if (descriptor.id === 'units.appLanding.inspect') request.unitId=3;
     if (descriptor.id === 'information.save') Object.assign(request,{occasionId:7,expectedVersion:0,information:{id:1,title:'Photo galleries',description:'<p><a href="https://example.invalid/gallery">Previous event gallery</a></p>',type:null,isHidden:false,order:1,data:null}});
+    if (/^units\.(websiteConsent|measurementApproval|metaCapiApproval)\./.test(descriptor.id)) request.unitId=3;
+    if (descriptor.id === 'units.websiteConsent.export') Object.assign(request,{bindingId:UUID,expectedVersion:2});
+    if (descriptor.id === 'forms.embedCode') Object.assign(request,{occasionId:7,formId:42,language:'en'});
     if (descriptor.id === 'songs.save') Object.assign(request,{occasionId:7,expectedVersion:null,information:{title:'Opening song',description:'<p>Sing together</p>',type:'song',isHidden:false,order:1,data:null}});
     if (descriptor.id === 'webhooks.update') request.state = 'active';
     if (descriptor.id === 'webhooks.create') request.url = 'https://receiver.example.invalid/webhooks/festapp';
@@ -57,6 +77,7 @@ export function operationExamples(descriptor, inputSchema, outputSchema) {
     delete response.error;
     if (outputSchema.properties?.data) response.data = schemaExample(outputSchema.properties.data,outputSchema,'data');
     if (descriptor.id.startsWith('units.appLanding.')) Object.assign(response.data,{organizationId:1,unitId:3,enabled:true,occasionId:7,canManage:true,...(descriptor.id.endsWith('.save')?{status:'applied'}:{})});
+    if (measurementSetupExamples[descriptor.id]) response.data = structuredClone(measurementSetupExamples[descriptor.id]);
     if (descriptor.id === 'ticket_layouts.preview') response.data.image={mimeType:'image/png',data:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6ZsAAAAASUVORK5CYII='};
     if (descriptor.id === 'seats.preview_swap') {
         response.data.sourceSpotIds = [response.data.firstSpotId];

@@ -1435,7 +1435,7 @@
       ]
     },
     "mcp-auth-contract": {
-      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/app-landing.test.mjs test/information.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/webhook-protocol.test.mjs test/webhook-delivery.test.mjs test/webhook-events.test.mjs test/webhook-receiver.test.mjs\n",
+      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/app-landing.test.mjs test/measurement-setup.test.mjs test/information.test.mjs test/client-policy.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/webhook-protocol.test.mjs test/webhook-delivery.test.mjs test/webhook-events.test.mjs test/webhook-receiver.test.mjs\n",
       "after": [
         "mcp-api-prepare"
       ],
@@ -3530,6 +3530,7 @@
     "tools/festapp/test/make-connector.test.mjs",
     "tools/festapp/test/make-orders-postgres.test.mjs",
     "tools/festapp/test/make-transport.test.mjs",
+    "tools/festapp/test/measurement-setup.test.mjs",
     "tools/festapp/test/mcp-tree-postgres.test.mjs",
     "tools/festapp/test/member-visibility-postgres.test.mjs",
     "tools/festapp/test/operations.test.mjs",

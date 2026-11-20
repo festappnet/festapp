@@ -82,6 +82,43 @@ void main() {
     },
   );
 
+  test('embed code matches the shared server generator cases', () {
+    final shared = jsonDecode(
+      File('packages/festapp_contracts/form-embed-code-cases.json')
+          .readAsStringSync(),
+    ) as Map<String, dynamic>;
+    final cases = shared['cases'] as List;
+    expect(cases, isNotEmpty);
+    for (final raw in cases) {
+      final item = raw as Map<String, dynamic>;
+      final input = item['input'] as Map<String, dynamic>;
+      String generate() => formEmbedCode(
+        tenantUrl: input['tenantUrl'] as String,
+        savedLink: input['savedLink'] as String,
+        title: input['title'] as String,
+        fallbackLabel: input['fallbackLabel'] as String,
+        automatic: input['automatic'] as bool? ?? true,
+        hostDataLayer: input['hostDataLayer'] as bool? ?? true,
+        consentExport: input['consentExport'] as String?,
+      );
+      if (item.containsKey('expected')) {
+        expect(generate(), item['expected'], reason: item['name'] as String);
+      } else {
+        expect(
+          generate,
+          throwsA(
+            isA<ArgumentError>().having(
+              (error) => error.name,
+              'name',
+              item['error'],
+            ),
+          ),
+          reason: item['name'] as String,
+        );
+      }
+    }
+  });
+
   test(
     'embed measurement option explicitly opts into the website dataLayer',
     () {

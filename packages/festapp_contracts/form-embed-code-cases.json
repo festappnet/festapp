@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "description": "Shared cases for formEmbedCode in lib/components/forms/views/form_embed_code.dart and tools/festapp/src/operations/form-embed.mjs. Regenerate expected values only together with both implementations.",
+  "cases": [
+    {
+      "name": "automatic height with the website dataLayer, trailing tenant slashes and escaped text",
+      "input": {
+        "tenantUrl": "https://tickets.example.com//",
+        "savedLink": "Legacy &/č 2026",
+        "title": "Order \"tickets\" <now>",
+        "fallbackLabel": "Open <order> & don't wait/now",
+        "automatic": true,
+        "hostDataLayer": true
+      },
+      "expected": "<div data-festapp-embed-host>\n<iframe data-festapp-embed data-festapp-datalayer src=\"https://tickets.example.com/form/Legacy%20%26%2F%C4%8D%202026?embed=1\" title=\"Order &quot;tickets&quot; &lt;now&gt;\" allow=\"clipboard-write\" height=\"800\" style=\"display:block;width:100%;max-width:100%;border:0;color-scheme:light dark\" loading=\"lazy\"></iframe>\n<a href=\"https://tickets.example.com/form/Legacy%20%26%2F%C4%8D%202026\" target=\"_blank\" rel=\"noopener noreferrer\">Open &lt;order&gt; &amp; don&#39;t wait&#47;now</a>\n</div>\n<script src=\"https://tickets.example.com/embed.js\" defer></script>"
+    },
+    {
+      "name": "fixed height without the website dataLayer",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "automatic": false,
+        "hostDataLayer": false
+      },
+      "expected": "<div data-festapp-embed-host>\n<iframe data-festapp-embed data-festapp-height=\"fixed\" src=\"https://tickets.example.com/form/summer-festival?embed=1\" title=\"Order form\" allow=\"clipboard-write\" height=\"800\" style=\"display:block;width:100%;max-width:100%;border:0;color-scheme:light dark\" loading=\"lazy\"></iframe>\n<a href=\"https://tickets.example.com/form/summer-festival\" target=\"_blank\" rel=\"noopener noreferrer\">Open order in a new tab</a>\n</div>\n<script src=\"https://tickets.example.com/embed.js\" defer></script>"
+    },
+    {
+      "name": "Czech labels keep non-ASCII text unescaped",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Objednávkový formulář",
+        "fallbackLabel": "Otevřít objednávku v nové záložce",
+        "automatic": true,
+        "hostDataLayer": true
+      },
+      "expected": "<div data-festapp-embed-host>\n<iframe data-festapp-embed data-festapp-datalayer src=\"https://tickets.example.com/form/summer-festival?embed=1\" title=\"Objednávkový formulář\" allow=\"clipboard-write\" height=\"800\" style=\"display:block;width:100%;max-width:100%;border:0;color-scheme:light dark\" loading=\"lazy\"></iframe>\n<a href=\"https://tickets.example.com/form/summer-festival\" target=\"_blank\" rel=\"noopener noreferrer\">Otevřít objednávku v nové záložce</a>\n</div>\n<script src=\"https://tickets.example.com/embed.js\" defer></script>"
+    },
+    {
+      "name": "Cookiebot export is escaped into the script and ignored by the banner",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "automatic": true,
+        "hostDataLayer": true,
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"cookiebot\",\n    \"consentValidFrom\": \"2026-11-13T12:00:00.000Z\",\n    \"maxAgeSeconds\": 31536000,\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://www.example.com\"\n  }\n}"
+      },
+      "expected": "<div data-festapp-embed-host>\n<iframe data-festapp-embed data-festapp-datalayer src=\"https://tickets.example.com/form/summer-festival?embed=1\" title=\"Order form\" allow=\"clipboard-write\" height=\"800\" style=\"display:block;width:100%;max-width:100%;border:0;color-scheme:light dark\" loading=\"lazy\"></iframe>\n<a href=\"https://tickets.example.com/form/summer-festival\" target=\"_blank\" data-festapp-consent-link>Open order in a new tab</a>\n</div>\n<script src=\"https://tickets.example.com/embed.js\" data-festapp-consent=\"{&quot;schemaVersion&quot;:1,&quot;serviceOrigin&quot;:&quot;https://tickets.example.com&quot;,&quot;websiteOrigin&quot;:&quot;https://www.example.com&quot;,&quot;binding&quot;:{&quot;id&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;version&quot;:3},&quot;providerConfig&quot;:{&quot;provider&quot;:&quot;cookiebot&quot;,&quot;consentValidFrom&quot;:&quot;2026-11-13T12:00:00.000Z&quot;,&quot;maxAgeSeconds&quot;:31536000,&quot;organization&quot;:1,&quot;unit&quot;:2,&quot;consentRevision&quot;:&quot;0123456789abcdef0123456789abcdef&quot;,&quot;origin&quot;:&quot;https://www.example.com&quot;}}\" data-cookieconsent=\"ignore\" defer></script>"
+    },
+    {
+      "name": "Complianz export marks the script functional",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "automatic": false,
+        "hostDataLayer": true,
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"complianz\",\n    \"policyId\": \"42\",\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://www.example.com\"\n  }\n}"
+      },
+      "expected": "<div data-festapp-embed-host>\n<iframe data-festapp-embed data-festapp-height=\"fixed\" data-festapp-datalayer src=\"https://tickets.example.com/form/summer-festival?embed=1\" title=\"Order form\" allow=\"clipboard-write\" height=\"800\" style=\"display:block;width:100%;max-width:100%;border:0;color-scheme:light dark\" loading=\"lazy\"></iframe>\n<a href=\"https://tickets.example.com/form/summer-festival\" target=\"_blank\" data-festapp-consent-link>Open order in a new tab</a>\n</div>\n<script src=\"https://tickets.example.com/embed.js\" data-festapp-consent=\"{&quot;schemaVersion&quot;:1,&quot;serviceOrigin&quot;:&quot;https://tickets.example.com&quot;,&quot;websiteOrigin&quot;:&quot;https://www.example.com&quot;,&quot;binding&quot;:{&quot;id&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;version&quot;:3},&quot;providerConfig&quot;:{&quot;provider&quot;:&quot;complianz&quot;,&quot;policyId&quot;:&quot;42&quot;,&quot;organization&quot;:1,&quot;unit&quot;:2,&quot;consentRevision&quot;:&quot;0123456789abcdef0123456789abcdef&quot;,&quot;origin&quot;:&quot;https://www.example.com&quot;}}\" data-category=\"functional\" defer></script>"
+    },
+    {
+      "name": "CookieConsent export preserves unknown fields and escapes script text",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "automatic": true,
+        "hostDataLayer": false,
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"cookieconsent\",\n    \"categories\": {\n      \"analytics\": \"</script><script>alert(\\\"x\\\")</script>\",\n      \"marketing\": \"marketing & ads\"\n    },\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://www.example.com\"\n  },\n  \"futureField\": {\n    \"nested\": [\n      \"a\",\n      2,\n      null,\n      true\n    ]\n  }\n}"
+      },
+      "expected": "<div data-festapp-embed-host>\n<iframe data-festapp-embed src=\"https://tickets.example.com/form/summer-festival?embed=1\" title=\"Order form\" allow=\"clipboard-write\" height=\"800\" style=\"display:block;width:100%;max-width:100%;border:0;color-scheme:light dark\" loading=\"lazy\"></iframe>\n<a href=\"https://tickets.example.com/form/summer-festival\" target=\"_blank\" data-festapp-consent-link>Open order in a new tab</a>\n</div>\n<script src=\"https://tickets.example.com/embed.js\" data-festapp-consent=\"{&quot;schemaVersion&quot;:1,&quot;serviceOrigin&quot;:&quot;https://tickets.example.com&quot;,&quot;websiteOrigin&quot;:&quot;https://www.example.com&quot;,&quot;binding&quot;:{&quot;id&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;version&quot;:3},&quot;providerConfig&quot;:{&quot;provider&quot;:&quot;cookieconsent&quot;,&quot;categories&quot;:{&quot;analytics&quot;:&quot;&lt;/script&gt;&lt;script&gt;alert(\\&quot;x\\&quot;)&lt;/script&gt;&quot;,&quot;marketing&quot;:&quot;marketing &amp; ads&quot;},&quot;organization&quot;:1,&quot;unit&quot;:2,&quot;consentRevision&quot;:&quot;0123456789abcdef0123456789abcdef&quot;,&quot;origin&quot;:&quot;https://www.example.com&quot;},&quot;futureField&quot;:{&quot;nested&quot;:[&quot;a&quot;,2,null,true]}}\" defer></script>"
+    },
+    {
+      "name": "Wix export",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "automatic": true,
+        "hostDataLayer": true,
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"wix\",\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://www.example.com\"\n  }\n}"
+      },
+      "expected": "<div data-festapp-embed-host>\n<iframe data-festapp-embed data-festapp-datalayer src=\"https://tickets.example.com/form/summer-festival?embed=1\" title=\"Order form\" allow=\"clipboard-write\" height=\"800\" style=\"display:block;width:100%;max-width:100%;border:0;color-scheme:light dark\" loading=\"lazy\"></iframe>\n<a href=\"https://tickets.example.com/form/summer-festival\" target=\"_blank\" data-festapp-consent-link>Open order in a new tab</a>\n</div>\n<script src=\"https://tickets.example.com/embed.js\" data-festapp-consent=\"{&quot;schemaVersion&quot;:1,&quot;serviceOrigin&quot;:&quot;https://tickets.example.com&quot;,&quot;websiteOrigin&quot;:&quot;https://www.example.com&quot;,&quot;binding&quot;:{&quot;id&quot;:&quot;11111111-1111-4111-8111-111111111111&quot;,&quot;version&quot;:3},&quot;providerConfig&quot;:{&quot;provider&quot;:&quot;wix&quot;,&quot;organization&quot;:1,&quot;unit&quot;:2,&quot;consentRevision&quot;:&quot;0123456789abcdef0123456789abcdef&quot;,&quot;origin&quot;:&quot;https://www.example.com&quot;}}\" defer></script>"
+    },
+    {
+      "name": "empty saved link is rejected",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab"
+      },
+      "error": "savedLink"
+    },
+    {
+      "name": "export for another service is rejected",
+      "input": {
+        "tenantUrl": "https://other.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"wix\",\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://www.example.com\"\n  }\n}"
+      },
+      "error": "consentExport"
+    },
+    {
+      "name": "unsupported provider is rejected",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"unknown-banner\",\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://www.example.com\"\n  }\n}"
+      },
+      "error": "consentExport"
+    },
+    {
+      "name": "export with a foreign provider origin is rejected",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"wix\",\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://evil.example.com\"\n  }\n}"
+      },
+      "error": "consentExport"
+    },
+    {
+      "name": "malformed export text is rejected",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "consentExport": "{\"schemaVersion\":1"
+      },
+      "error": "consentExport"
+    },
+    {
+      "name": "website origin with a path is rejected",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com/shop\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"wix\",\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789abcdef0123456789abcdef\",\n    \"origin\": \"https://www.example.com/shop\"\n  }\n}"
+      },
+      "error": "consentExport"
+    },
+    {
+      "name": "uppercase consent revision is rejected",
+      "input": {
+        "tenantUrl": "https://tickets.example.com",
+        "savedLink": "summer-festival",
+        "title": "Order form",
+        "fallbackLabel": "Open order in a new tab",
+        "consentExport": "{\n  \"schemaVersion\": 1,\n  \"serviceOrigin\": \"https://tickets.example.com\",\n  \"websiteOrigin\": \"https://www.example.com\",\n  \"binding\": {\n    \"id\": \"11111111-1111-4111-8111-111111111111\",\n    \"version\": 3\n  },\n  \"providerConfig\": {\n    \"provider\": \"wix\",\n    \"organization\": 1,\n    \"unit\": 2,\n    \"consentRevision\": \"0123456789ABCDEF0123456789ABCDEF\",\n    \"origin\": \"https://www.example.com\"\n  }\n}"
+      },
+      "error": "consentExport"
+    }
+  ]
+}
