@@ -1,3 +1,4 @@
+import { imageUploadBodyLimit, imageUploadOperation } from '../operations/images.mjs';
 import express from 'express';
 import { STRONG_AUTHENTICATION_ACR, STEP_UP_MAX_AGE_SECONDS } from '../auth/assurance.mjs';
 import { randomUUID, createHash } from 'node:crypto';
@@ -31,7 +32,9 @@ export function sendProblem(res, error, { requestId = randomUUID(), endpoint, ou
 // before any email is queued, so the write is known not to have happened.
 const APPROVAL_REQUESTS = new Set(['units.measurementApproval.request', 'units.metaCapiApproval.request']);
 const APPROVAL_REJECTIONS = new Set(['APPROVAL_REQUEST_LIMITED', 'APPROVAL_REQUEST_NO_RECIPIENT', 'APPROVAL_REQUEST_REJECTED']);
-export const definiteRejection = (id, error) => APPROVAL_REQUESTS.has(id) && APPROVAL_REJECTIONS.has(error?.code);
+export const definiteRejection = (id, error) =>
+    (APPROVAL_REQUESTS.has(id) && APPROVAL_REJECTIONS.has(error?.code)) ||
+    (id === imageUploadOperation && ['IMAGE_UPLOAD_REJECTED', 'FORBIDDEN', 'AUTHENTICATION_REQUIRED'].includes(error?.code));
 export function installApi(app, { config, run }) {
     // Immutable build artifacts are loaded once, never generated per request.
     const docs = new Map();
@@ -71,10 +74,12 @@ export function installApi(app, { config, run }) {
         res.type('json').send(bytes);
     });
     const parser = express.json({ limit: '48kb', strict: true });
+    const imageParser = express.json({ limit: imageUploadBodyLimit, strict: true });
     const route = [API_PREFIX + '/operations/:operation', API_PREFIX + '/artifacts/read'];
     app.post(route, (req, res, next) => {
         if (!req.is('application/json')) return sendProblem(res, { code: 'UNSUPPORTED_MEDIA_TYPE' }, { outcome: 'rejected' });
-        parser(req, res, error => {
+        const parse = req.params.operation === imageUploadOperation ? imageParser : parser;
+        parse(req, res, error => {
             if (error) return sendProblem(res, { code: error.type === 'entity.too.large' ? 'BODY_TOO_LARGE' : 'MALFORMED_JSON' }, { outcome: 'rejected' });
             const stack = [[req.body, 0]];
             let nodes = 0;

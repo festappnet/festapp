@@ -472,3 +472,63 @@ test('all delegated operations use one catalog, validation and executor through 
     }
     assert.equal(publicCatalog().length,operationIds.length);
 });
+
+test('occasion image uploads use the actor session and preserve the ordinary API body cap', async t => {
+    const scopes = [READ_SCOPE, 'festapp:program:read', 'festapp:program:write'];
+    const uploadUrl = 'https://a.img.festapp.net/images/123-portrait.webp';
+    const content = Buffer.alloc(64 * 1024, 28);
+    let mode = 'success';
+    let uploads = 0;
+    const f = await setup(t, {
+        apiPolicy: { allowedScopes: scopes, allowedOperations: ['context.inspect', 'images.upload'] },
+        fetchImpl: async (url, init) => {
+            if (url.pathname.endsWith('/rpc/get_image_project_access_v1')) {
+                const binding = JSON.parse(init.body);
+                assert.equal(binding.p_occasion, 7);
+                assert.equal(binding.p_unit, null);
+                return reply(binding.p_project === 'a' && mode !== 'denied');
+            }
+            if (url.href !== 'https://image-api.festapp.net/upload') return;
+            uploads++;
+            assert.match(init.headers.Authorization, /^Bearer ey/);
+            assert.equal(init.redirect, 'error');
+            assert.equal(init.body.get('projectId'), 'a');
+            assert.equal(init.body.get('occasionId'), '7');
+            assert.equal(init.body.get('profile'), 'portrait');
+            const file = init.body.get('file');
+            assert.equal(file.name, 'portrait.jpg');
+            assert.equal(file.type, 'image/jpeg');
+            assert.deepEqual(Buffer.from(await file.arrayBuffer()), content);
+            if (mode === 'bad-file') return reply({}, 415);
+            if (mode === 'lost-response') return reply({}, 502);
+            return reply({ url: uploadUrl, projectId: 'a' });
+        },
+    });
+    const { tokens } = await connect(f, { occasionIds: [7], scope: scopes.join(' ') });
+    const payload = { occasionId: 7, filename: 'portrait.jpg', profile: 'portrait', contentBase64: content.toString('base64') };
+    let response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 200, await response.clone().text());
+    assert.deepEqual((await response.json()).data, { url: uploadUrl });
+    assert.equal(uploads, 1);
+
+    response = await apiRequest(f, tokens, 'context.inspect', { query: payload.contentBase64 });
+    assert.equal(response.status, 413);
+    response = await apiRequest(f, tokens, 'images.upload', { ...payload, occasionId: 8 });
+    assert.equal(response.status, 403);
+    mode = 'denied';
+    response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 403);
+    assert.equal(uploads, 1);
+
+    mode = 'bad-file';
+    response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 422);
+    assert.equal((await response.json()).outcome, 'rejected');
+    mode = 'lost-response';
+    response = await apiRequest(f, tokens, 'images.upload', payload);
+    assert.equal(response.status, 502);
+    const problem = await response.json();
+    assert.equal(problem.outcome, 'unknown');
+    assert.equal(problem.retryable, false);
+    assert.equal(uploads, 3);
+});

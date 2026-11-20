@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "b85f83b39eb5bad3c65f8904383f6ac03ab3ceba11ee6ec69de87cb3079c283e",
+  "sourceDigest": "9feb7a80b1af5f1f104ce3e5300434931fdec64e2cadfa5556e6cf88752038fb",
   "permissions": [
     {
       "scope": "festapp:information:read",
@@ -476,7 +476,8 @@
         "events.save",
         "events.delete",
         "exclusiveGroups.save",
-        "exclusiveGroups.delete"
+        "exclusiveGroups.delete",
+        "images.upload"
       ],
       "requires": [
         "festapp:program:read"
@@ -7935,6 +7936,57 @@
         "required": [
           "occasionId",
           "orderId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "images.upload",
+      "name": "festapp_images_upload",
+      "description": "Upload one approved public JPEG, PNG or WebP image for an occasion. Supply the file bytes as base64, up to 1 MiB. Use the returned Festapp URL in the event description or speaker image field. This operation does not edit a record. A lost response can leave an uploaded asset, so do not retry automatically.",
+      "scopes": [
+        "festapp:ticket-layouts:read",
+        "festapp:program:read",
+        "festapp:program:write"
+      ],
+      "readOnly": false,
+      "destructive": false,
+      "idempotent": false,
+      "requiresLayoutWriteContract": false,
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "occasionId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "filename": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:jpe?g|png|webp)$"
+          },
+          "contentBase64": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 1398104,
+            "pattern": "^[A-Za-z0-9+/]+={0,2}$"
+          },
+          "profile": {
+            "default": "standard",
+            "type": "string",
+            "enum": [
+              "standard",
+              "portrait"
+            ]
+          }
+        },
+        "required": [
+          "occasionId",
+          "filename",
+          "contentBase64"
         ],
         "additionalProperties": false
       }

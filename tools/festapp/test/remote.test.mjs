@@ -2193,3 +2193,42 @@ test('public health reports only a validated source commit', async t => {
         assert.deepEqual(await response.json(), { ok: true, sourceCommit: expected }, String(value));
     }
 });
+
+test('hosted MCP exposes and accepts larger image payloads only for the scoped upload tool', async t => {
+    const scopes = [READ_SCOPE, 'festapp:program:read', 'festapp:program:write'];
+    const url = 'https://img.festapp.net/images/123-example.webp';
+    let uploads = 0;
+    const f = await setup(t, {
+        fetchImpl: async (target, init) => {
+            if (target.pathname.endsWith('/rpc/get_image_project_access_v1'))
+                return reply(JSON.parse(init.body).p_project === 'default');
+            if (target.origin === 'https://image-api.festapp.net') {
+                uploads++;
+                assert.equal(init.body.get('occasionId'), '7');
+                return reply({ url, projectId: 'default' });
+            }
+        },
+    });
+    const { tokens } = await connect(f, { scope: scopes.join(' ') });
+    const accessToken = tokens.access_token;
+    const image = { occasionId: 7, filename: 'example.jpg', contentBase64: Buffer.alloc(64 * 1024).toString('base64') };
+
+    const catalog = await jsonRpc(f, accessToken, 'tools/list');
+    assert.equal(catalog.status, 200);
+    assert.match(await catalog.text(), /festapp_images_upload/);
+    const uploaded = await jsonRpc(f, accessToken, 'tools/call', { name: 'festapp_images_upload', arguments: image });
+    assert.equal(uploaded.status, 200, await uploaded.clone().text());
+    assert.match(await uploaded.text(), /123-example\.webp/);
+    assert.equal(uploads, 1);
+
+    const ordinary = await jsonRpc(f, accessToken, 'tools/call', {
+        name: 'festapp_context_inspect', arguments: { query: image.contentBase64 },
+    });
+    assert.equal(ordinary.status, 413);
+    const readOnly = await connect(f);
+    const refused = await jsonRpc(f, readOnly.tokens.access_token, 'tools/call', {
+        name: 'festapp_images_upload', arguments: image,
+    });
+    assert.equal(refused.status, 403);
+    assert.equal(uploads, 1);
+});

@@ -33,6 +33,7 @@ export class DelegatedOwner {
         const grant = this.current();
         this.config = contextConfig(config, grant.profileBinding);
         this.session = boundOwner(this.config, storage, grant.binding, options);
+        this.imageUploadFetch = options.fetchImpl;
         this.profile = this.session.profile;
         this.layoutProfile = this.config.profile;
         this.root = storage.root;

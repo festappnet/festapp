@@ -33,7 +33,7 @@ export const MCP_PERMISSIONS = Object.freeze({
     'festapp:export-speakers:read': {label:'speakerExportsRead',operations:['exports.speakers'],requires:['festapp:speakers:read']},
     'festapp:export-feedback:read': {label:'feedbackExportsRead',operations:['exports.feedback'],requires:['festapp:feedback:read']},
     'festapp:program:read': {label:'programRead',operations:["events.list","events.inspect","events.roles","exclusiveGroups.list","exclusiveGroups.inspect"],requires:[]},
-    'festapp:program:write': {label:'programWrite',operations:["events.save","events.delete","exclusiveGroups.save","exclusiveGroups.delete"],requires:['festapp:program:read']},
+    'festapp:program:write': {label:'programWrite',operations:["events.save","events.delete","exclusiveGroups.save","exclusiveGroups.delete","images.upload"],requires:['festapp:program:read']},
     'festapp:map:read': {label:'mapRead',operations:["places.list","places.inspect","places.icons","placeTypes.list","placeTypes.inspect","paths.list","paths.inspect"],requires:[]},
     'festapp:map:write': {label:'mapWrite',operations:["places.save","places.delete","places.move","placeTypes.save","placeTypes.delete","paths.save","paths.delete"],requires:['festapp:map:read']},
     'festapp:speakers:read': {label:'speakersRead',operations:["speakers.list","speakers.inspect","topics.list","topics.inspect","eventSpeakers.inspect","counseling.list"],requires:[]},
