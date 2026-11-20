@@ -36,6 +36,8 @@ for (const lang of ["cs", "en"]) {
     assert.equal(email.to, "owner@example.invalid");
     assert.equal(email.subject, lang === "en" ? "Request to enable Meta CAPI" : "Žádost o povolení Meta CAPI");
     assert.ok(email.html.includes("https://example.invalid/organizationEdit/3"));
+    assert.match(email.html, /mailto:info@festapp\.net\?subject=[^"]+&amp;body=/);
+    assert.ok(email.html.includes(encodeURIComponent("https://example.invalid/organizationEdit/3")));
     assert.ok(email.html.includes("&lt;img"));
     assert.equal(email.html.includes("<img"), false);
     assert.ok(email.html.includes("ID: 7"));

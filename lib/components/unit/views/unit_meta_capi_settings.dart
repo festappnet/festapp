@@ -9,6 +9,7 @@ import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import '../db_units.dart';
+import '../meta_capi_approval.dart';
 import '../meta_capi_strings.dart';
 import '../unit_measurement_approval.dart';
 
@@ -22,8 +23,8 @@ class UnitMetaCapiSettings extends StatefulWidget {
   /// Unit managers may ask the platform for approval; settings stay
   /// organization-administrator only.
   final bool canRequestApproval;
-  final Future<UnitMeasurementApproval> Function(int)? loadApproval;
-  final Future<UnitMeasurementApproval> Function(int)? requestApproval;
+  final Future<MetaCapiApproval> Function(int)? loadApproval;
+  final Future<MetaCapiApproval> Function(int)? requestApproval;
   const UnitMetaCapiSettings({
     super.key,
     required this.unitId,
@@ -41,7 +42,8 @@ class UnitMetaCapiSettings extends StatefulWidget {
 
 class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
   Map<String, dynamic>? _data;
-  UnitMeasurementApproval? _approval;
+  MetaCapiApproval? _approval;
+  bool _approvalLoadFailed = false;
   final _dataset = TextEditingController();
   final _testCode = TextEditingController();
   final _token = TextEditingController();
@@ -119,16 +121,22 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
   }
 
   Future<void> _loadApproval() async {
-    UnitMeasurementApproval? approval;
+    MetaCapiApproval? approval;
+    var failed = false;
     try {
       approval = await (widget.loadApproval ?? DbUnits.getMetaCapiApproval)(
         widget.unitId,
       );
+    } on PostgrestException catch (error) {
+      failed = error.code != '42501';
     } catch (_) {
-      // Readers without Unit administration access keep the hidden section.
-      approval = null;
+      failed = true;
     }
-    if (mounted) setState(() => _approval = approval);
+    if (!mounted) return;
+    setState(() {
+      _approval = approval;
+      _approvalLoadFailed = failed;
+    });
   }
 
   Future<void> _requestApproval() async {
@@ -159,13 +167,15 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
           }
         },
       );
-      if (mounted && approval != null) setState(() => _approval = approval);
+      if (!mounted || approval == null) return;
+      setState(() => _approval = approval);
+      if (approval.approved) await _load();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Widget _approvalStatus(BuildContext context, UnitMeasurementApproval a) {
+  Widget _approvalStatus(BuildContext context, MetaCapiApproval a) {
     final requested = a.requestState == MeasurementRequestState.requested;
     final status = a.approved
         ? MetaCapiStrings.approvedByPlatform
@@ -340,7 +350,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     if (_data?['allowed'] == false) {
       final connected = _data?['connected'] == true;
       final approval = _approval;
-      if (!connected && approval == null) return null;
+      if (!connected && approval == null && !_approvalLoadFailed) return null;
       return Padding(
         padding: const EdgeInsets.only(top: 32),
         child: Column(
@@ -364,6 +374,23 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
             if (approval != null) ...[
               const SizedBox(height: 8),
               _approvalStatus(context, approval),
+              if (approval.requestState == MeasurementRequestState.requested ||
+                  approval.approved)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: _busy || _loading ? null : () => _load(),
+                    child: Text(CommonStrings.refresh),
+                  ),
+                ),
+            ],
+            if (_approvalLoadFailed) ...[
+              const SizedBox(height: 8),
+              Semantics(
+                liveRegion: true,
+                child: Text(FormStrings.measurementPlatformUnknown),
+              ),
+              Align(alignment: Alignment.centerLeft, child: _retryLoad()),
             ],
           ],
         ),

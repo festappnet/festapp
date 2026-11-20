@@ -667,7 +667,7 @@
       }
     },
     {
-      "migration": "20261120020000_meta_capi_approval_request.sql",
+      "migration": "20261120030000_meta_capi_approval_request.sql",
       "active": true,
       "header": "-- Let Unit managers request platform approval of Meta CAPI. Approval itself stays a platform decision.",
       "sources": [
