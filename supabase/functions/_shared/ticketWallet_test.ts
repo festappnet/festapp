@@ -74,3 +74,35 @@ Deno.test('HTTP collection planning validates part/revision/action and duplicate
  assertEquals((await handler(new Request('https://api.invalid',{method:'POST',headers:{origin:'https://tenant.invalid','Content-Type':'application/x-www-form-urlencoded'},body:duplicate}))).status,400);assertEquals(calls,0);
  const response=await handler(new Request('https://api.invalid',{method:'POST',headers:{origin:'https://tenant.invalid'},body:JSON.stringify({token:'a'.repeat(64),action:'plan'})}));assertEquals(response.status,200);assertEquals((await response.json()).parts,[2]);assertEquals(calls,1);
 });
+
+Deno.test('Google Wallet Save waits for background class work without registering the ticket again', async () => {
+ const origin = 'https://tenant.invalid';
+ const context = {
+  issuer: '1234', environment: 'test', organization: 1, occasion: 2,
+  ticketId: 3, webOrigin: origin, projection: {state: 'ACTIVE'},
+ };
+ const claims: unknown[] = [];
+ let synchronized = 0;
+ const rpc = async (name: string, params?: Record<string, unknown>) => {
+  if (name === 'resolve_ticket_wallet') return context;
+  if (name === 'claim_ticket_wallet') {
+   claims.push(params);
+   if (claims.length === 1) return null;
+   return {...context, kind: 'object', objectId: '1234.o', lease: 'lease'};
+  }
+  if (name === 'finish_ticket_wallet') return true;
+  throw new Error('unexpected RPC');
+ };
+ const google = {
+  synchronize: async () => { synchronized++; },
+  saveUrl: async () => 'https://pay.google.com/gp/v/save/a.b.c',
+ } as unknown as GoogleWallet;
+ const registry = new WalletRegistry([['google', () => googleWalletConnector(rpc, async () => google)]], 'google');
+ const response = await walletHandler(registry, [origin])(new Request('https://api.invalid', {
+  method: 'POST', headers: {origin}, body: JSON.stringify({token: 'a'.repeat(64)}),
+ }));
+ assertEquals(response.status, 200);
+ assertEquals(claims.length, 2);
+ assertEquals(claims[1], {p_ticket: 3});
+ assertEquals(synchronized, 1);
+});

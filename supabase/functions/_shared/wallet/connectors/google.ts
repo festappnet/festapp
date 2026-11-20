@@ -31,17 +31,28 @@ async function partition(scope:any,google:GoogleWallet):Promise<any[][]> {
  }
  if(part.length)parts.push(part);return parts;
 }
+async function claimWalletForSave(rpc:WalletRpc, ticketId:number, registration?:{p_object:string;p_class:string}) {
+ const pending = {p_ticket:ticketId};
+ let claim = await rpc('claim_ticket_wallet', {...pending, ...registration});
+ // A background worker can hold the class or object lease while Save queues the ticket.
+ for (const delay of [200, 500, 1200]) {
+  if (claim) return claim;
+  await new Promise(resolve => setTimeout(resolve, delay));
+  claim = await rpc('claim_ticket_wallet', pending);
+ }
+ if (!claim) throw new Error('wallet_busy');
+ return claim;
+}
+
 async function issueGoogle(input:WalletIssueInput,rpc:WalletRpc,google:GoogleWallet) {
  const selection=await walletSelection(input,rpc,'google',scope=>partition(scope,google));if(!selection)return null;
  const objectIds:string[]=[];
  for(const resolved of selection.items){
   const ids=await walletIds(resolved);
-  let claim=await rpc('claim_ticket_wallet',{p_ticket:resolved.ticketId,p_object:ids.objectId,p_class:ids.classId});
-  if(!claim)throw new Error('wallet_busy');
+  let claim=await claimWalletForSave(rpc,resolved.ticketId,{p_object:ids.objectId,p_class:ids.classId});
   if(claim.kind==='class') {
    await synchronizeWallet(claim,rpc,google);
-   claim=await rpc('claim_ticket_wallet',{p_ticket:resolved.ticketId});
-   if(!claim)throw new Error('wallet_busy');
+   claim=await claimWalletForSave(rpc,resolved.ticketId);
   }
   if(!['ACTIVE','COMPLETED'].includes(claim.projection?.state)) {await synchronizeWallet(claim,rpc,google);return null;}
   await synchronizeWallet(claim,rpc,google);objectIds.push(claim.objectId);
