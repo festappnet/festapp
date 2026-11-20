@@ -12,6 +12,8 @@ RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extension
 DECLARE v_order eshop.orders; v_pi eshop.payment_info; v_kind text; v_version bigint; v_key text; v_recipient text; v_existing public.email_messages; v_base_key text;
 BEGIN
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
+ -- Only private domain producers running as the canonical SQL owner can assign provenance.
+ IF current_user<>'postgres' THEN p_data:=p_data-'systemOrderDelivery'; END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=coalesce((p_data->>'order_id')::bigint,(p_data#>>'{ticket_order,order,id}')::bigint) FOR UPDATE;
  SELECT * INTO v_pi FROM eshop.payment_info WHERE id=v_order.payment_info;
  IF v_order.id IS NULL OR v_order.occasion<>p_occ THEN RAISE EXCEPTION 'invalid_order_email'; END IF;
