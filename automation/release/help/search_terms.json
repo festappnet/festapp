@@ -158,7 +158,12 @@
       "API reference",
       "MCP možnosti",
       "prompty",
-      "oprávnění agenta"
+      "oprávnění agenta",
+      "zpěvník",
+      "písně",
+      "informační stránky",
+      "termín hry",
+      "úvodní akce aplikace"
     ],
     "webhooks": [
       "webhook",
@@ -321,7 +326,12 @@
       "API reference",
       "MCP capabilities",
       "prompts",
-      "agent permissions"
+      "agent permissions",
+      "songbook",
+      "song lyrics",
+      "information pages",
+      "game schedule",
+      "app home event"
     ],
     "webhooks": [
       "webhook",
