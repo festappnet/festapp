@@ -18,6 +18,7 @@ if (target) {
     initMotion();
     initReferenceCarousels();
     initTopicTools();
-    initOrganizerContact();
-    initSeatDemo();
+    const ui = JSON.parse(document.getElementById('marketing-ui')?.textContent || '{}');
+    initOrganizerContact(document, ui.contact);
+    initSeatDemo(ui.seatDemo);
 }

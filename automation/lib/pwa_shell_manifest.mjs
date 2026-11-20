@@ -1,4 +1,5 @@
 import {publicHelpRootFromPath} from '../../web_client/src/services/help_action_routes.js';
+import {localizedAssets} from '../release/organizers/public_languages.mjs';
 import {publicBrandFiles} from '../release/organizers/public_runtime.mjs';
 import { access, readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
@@ -23,7 +24,7 @@ export function shouldPrecache(relativePath) {
   // Keep it available online without spending users' offline cache budget.
   if (relativePath === 'assets/packages/venue_seat_picker/assets/layout_fonts/fixtures.json') return false;
   // Marketing demonstrations are streamed, not part of the offline app.
-  if (relativePath.startsWith('organizers-assets/') || publicHelpRootFromPath('/'+relativePath) || relativePath.startsWith('co-je-nove/_assets/')) return false;
+  if (relativePath.startsWith(localizedAssets.slice(1) + '/') || relativePath.startsWith('organizers-assets/') || publicHelpRootFromPath('/'+relativePath) || relativePath.startsWith('co-je-nove/_assets/')) return false;
   if (relativePath.startsWith('organizers/') || relativePath.startsWith('organizers-media/') || /^web-assets\/landing-[^/]+\.js$/.test(relativePath)) return false;
   const name = path.posix.basename(relativePath);
   if (excludedNames.has(name)) return false;

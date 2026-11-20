@@ -12,6 +12,10 @@
     "en": {
       "title": "Sales summary",
       "prompt": "Show Linden Hall Ball sales: valid tickets, waiting list, order value and payments received."
+    },
+    "sk": {
+      "title": "Súhrn predaja",
+      "prompt": "Ukáž predaj Slávnostného plesu Pod lipou: platné vstupenky, čakaciu listinu, hodnotu objednávok a prijaté platby."
     }
   },
   {
@@ -27,6 +31,10 @@
     "en": {
       "title": "Unpaid orders",
       "prompt": "List all unpaid Linden Hall Ball orders with their symbols and outstanding amounts."
+    },
+    "sk": {
+      "title": "Neuhradené objednávky",
+      "prompt": "Vypíš všetky neuhradené objednávky Slávnostného plesu Pod lipou so symbolmi a dlžnými sumami."
     }
   },
   {
@@ -43,6 +51,10 @@
     "en": {
       "title": "Check an order",
       "prompt": "Show the state, tickets and payments for a Linden Hall Ball order. I’ll send its symbol."
+    },
+    "sk": {
+      "title": "Kontrola konkrétnej objednávky",
+      "prompt": "Podľa symbolu objednávky Slávnostného plesu Pod lipou ukáž jej stav, vstupenky a platby. Symbol pošlem."
     }
   },
   {
@@ -60,6 +72,10 @@
     "en": {
       "title": "Check the sales form",
       "prompt": "Check the Linden Hall Ball form: required fields, tickets, capacity and sales schedule. What’s missing?"
+    },
+    "sk": {
+      "title": "Kontrola predajného formulára",
+      "prompt": "Skontroluj formulár Slávnostného plesu Pod lipou: povinné údaje, vstupenky, kapacitu a časový plán predaja. Čo chýba?"
     }
   },
   {
@@ -77,6 +93,10 @@
     "en": {
       "title": "Edit a form after approval",
       "prompt": "Propose a shorter introduction and optional phone field for the Linden Hall Ball form. Show me for approval."
+    },
+    "sk": {
+      "title": "Úprava formulára po schválení",
+      "prompt": "Pre formulár Slávnostného plesu Pod lipou navrhni kratší úvod a nepovinný telefón. Ukáž návrh na schválenie."
     }
   },
   {
@@ -95,6 +115,10 @@
     "en": {
       "title": "Schedule ticket sales",
       "prompt": "Prepare sales for Linden Hall Ball from January 15, 2027 at 18:00 to February 20, 2027 at 12:00 for approval."
+    },
+    "sk": {
+      "title": "Nastavenie časového plánu predaja",
+      "prompt": "Priprav na schválenie predaj na Slávnostný ples Pod lipou od 15. 1. 2027 o 18:00 do 20. 2. 2027 o 12:00."
     }
   },
   {
@@ -110,6 +134,10 @@
     "en": {
       "title": "Products, prices and limits",
       "prompt": "Show Linden Hall Ball tickets, prices and limits."
+    },
+    "sk": {
+      "title": "Ponuka, ceny a kapacity",
+      "prompt": "Ukáž vstupenky, ceny a limity Slávnostného plesu Pod lipou."
     }
   },
   {
@@ -126,6 +154,10 @@
     "en": {
       "title": "Change a ticket price",
       "prompt": "Propose a price of CZK 350 for the Linden Hall Ball “Reserved-seat ticket”. Show the change for approval."
+    },
+    "sk": {
+      "title": "Zmena ceny vstupenky",
+      "prompt": "Navrhni cenu 15 € pre Vstupenku s miestenkou na Slávnostný ples Pod lipou. Ukáž zmenu na schválenie."
     }
   },
   {
@@ -143,6 +175,10 @@
     "en": {
       "title": "Inspect seating",
       "prompt": "Show seat states in the Linden Hall Ball seating plan."
+    },
+    "sk": {
+      "title": "Prehľad plánu sály a miest",
+      "prompt": "Ukáž stav miest v pláne sály Slávnostného plesu Pod lipou."
     }
   },
   {
@@ -160,6 +196,10 @@
     "en": {
       "title": "Block seats for equipment",
       "prompt": "Help me choose two equipment seats at Linden Hall Ball. Prepare the block for approval."
+    },
+    "sk": {
+      "title": "Príprava blokácie miest",
+      "prompt": "Pomôž mi vybrať dve miesta pre techniku na Slávnostnom plese Pod lipou. Blokáciu priprav na schválenie."
     }
   },
   {
@@ -178,6 +218,11 @@
       "title": "Preview ticket artwork",
       "prompt": "Preview the Linden Hall Ball ticket with sample data.",
       "note": "Rendering a preview consumes preview quota."
+    },
+    "sk": {
+      "title": "Náhľad vzhľadu vstupenky",
+      "prompt": "Ukáž náhľad vstupenky Slávnostného plesu Pod lipou s ukážkovými údajmi.",
+      "note": "Vygenerovanie náhľadu čerpá kvótu náhľadov."
     }
   },
   {
@@ -195,6 +240,10 @@
     "en": {
       "title": "Cancel an order",
       "prompt": "Prepare a Linden Hall Ball order cancellation for approval, including its impact. I’ll send the order symbol."
+    },
+    "sk": {
+      "title": "Storno objednávky",
+      "prompt": "Priprav storno objednávky Slávnostného plesu Pod lipou na schválenie, vrátane dôsledkov. Symbol objednávky pošlem."
     }
   },
   {
@@ -212,6 +261,10 @@
     "en": {
       "title": "Record cash received",
       "prompt": "Prepare a Linden Hall Ball cash payment record for approval. I’ll send the order symbol and amount received."
+    },
+    "sk": {
+      "title": "Evidencia platby v hotovosti",
+      "prompt": "Priprav zápis platby v hotovosti k objednávke Slávnostného plesu Pod lipou na schválenie. Pošlem symbol a prijatú sumu."
     }
   },
   {
@@ -229,6 +282,10 @@
     "en": {
       "title": "Resend tickets",
       "prompt": "Prepare to resend Linden Hall Ball tickets to the saved email for approval. I’ll send the order symbol."
+    },
+    "sk": {
+      "title": "Opätovné odoslanie vstupeniek",
+      "prompt": "Priprav na schválenie opätovné odoslanie vstupeniek Slávnostného plesu Pod lipou na uložený e-mail. Symbol objednávky pošlem."
     }
   },
   {
@@ -249,6 +306,11 @@
       "title": "Prepare a waitlist proposal",
       "prompt": "Help me choose a waiting Linden Hall Ball order and prepare an offer of places. Don’t send it yet.",
       "note": "Preparing the proposal can also refresh expired offer states. It does not send an email."
+    },
+    "sk": {
+      "title": "Návrh pre čakaciu listinu",
+      "prompt": "Pomôž mi vybrať čakajúcu objednávku Slávnostného plesu Pod lipou a priprav ponuku miest. Zatiaľ ju neodosielaj.",
+      "note": "Príprava návrhu môže obnoviť stav ponúk po uplynutí platnosti. Sama neodošle e-mail."
     }
   },
   {
@@ -266,6 +328,10 @@
     "en": {
       "title": "Check a ticket without admission",
       "prompt": "Check a selected Linden Hall Ball ticket’s validity and usage without admitting it. I’ll send the order symbol."
+    },
+    "sk": {
+      "title": "Overenie vstupenky bez potvrdenia vstupu",
+      "prompt": "Pri objednávke Slávnostného plesu Pod lipou skontroluj platnosť a použitie vybranej vstupenky bez potvrdenia vstupu. Symbol objednávky pošlem."
     }
   },
   {
@@ -281,6 +347,10 @@
     "en": {
       "title": "Event settings and visibility",
       "prompt": "Show the Linden Hall Ball name, dates, venue and visibility."
+    },
+    "sk": {
+      "title": "Nastavenia a viditeľnosť podujatia",
+      "prompt": "Ukáž názov, termín, miesto a viditeľnosť Slávnostného plesu Pod lipou."
     }
   },
   {
@@ -296,6 +366,10 @@
     "en": {
       "title": "Create a hidden event",
       "prompt": "Prepare a new hidden Linden Hall Ball event with sales closed. Let me approve the organizer and proposal."
+    },
+    "sk": {
+      "title": "Vytvorenie skrytého podujatia",
+      "prompt": "Priprav nové podujatie Slávnostný ples Pod lipou ako skryté s uzavretým predajom. Organizátora a návrh mi ukáž na schválenie."
     }
   },
   {
@@ -313,6 +387,10 @@
     "en": {
       "title": "Preview an email template",
       "prompt": "Show Linden Hall Ball email templates and preview the one I choose."
+    },
+    "sk": {
+      "title": "Náhľad e-mailovej šablóny",
+      "prompt": "Ukáž e-mailové šablóny Slávnostného plesu Pod lipou a náhľad vybranej šablóny."
     }
   },
   {
@@ -329,6 +407,10 @@
     "en": {
       "title": "Bank connection health",
       "prompt": "Check the selected organizer’s bank accounts and synchronization status."
+    },
+    "sk": {
+      "title": "Stav bankového prepojenia",
+      "prompt": "Skontroluj bankové účty vybraného organizátora a stav synchronizácie."
     }
   },
   {
@@ -344,6 +426,10 @@
     "en": {
       "title": "Card payment status",
       "prompt": "Are card payments active for the selected organizer? Is the connection healthy?"
+    },
+    "sk": {
+      "title": "Stav platieb kartou",
+      "prompt": "Má vybraný organizátor aktívne platby kartou? Je prepojenie v poriadku?"
     }
   },
   {
@@ -360,6 +446,10 @@
     "en": {
       "title": "Event change history",
       "prompt": "Show recent Linden Hall Ball changes and who made them."
+    },
+    "sk": {
+      "title": "História zmien podujatia",
+      "prompt": "Ukáž posledné zmeny Slávnostného plesu Pod lipou a kto ich urobil."
     }
   },
   {
@@ -375,6 +465,10 @@
     "en": {
       "title": "Export orders",
       "prompt": "Export all Linden Hall Ball orders."
+    },
+    "sk": {
+      "title": "Export objednávok",
+      "prompt": "Exportuj všetky objednávky Slávnostného plesu Pod lipou."
     }
   },
   {
@@ -393,6 +487,10 @@
     "en": {
       "title": "Program overview",
       "prompt": "Show the Linden Hall Ball program with times, venues and any overlaps."
+    },
+    "sk": {
+      "title": "Prehľad programu",
+      "prompt": "Ukáž program Slávnostného plesu Pod lipou s časmi, miestami a prípadnými prekrytiami."
     }
   },
   {
@@ -409,6 +507,10 @@
     "en": {
       "title": "Places and routes",
       "prompt": "Show saved Linden Hall Ball places and routes."
+    },
+    "sk": {
+      "title": "Miesta a trasy",
+      "prompt": "Ukáž uložené miesta a trasy Slávnostného plesu Pod lipou."
     }
   },
   {
@@ -424,6 +526,10 @@
     "en": {
       "title": "Participant overview",
       "prompt": "Show an overview of Linden Hall Ball participants."
+    },
+    "sk": {
+      "title": "Prehľad účastníkov",
+      "prompt": "Ukáž prehľad účastníkov Slávnostného plesu Pod lipou."
     }
   },
   {
@@ -440,6 +546,10 @@
     "en": {
       "title": "Groups and assignments",
       "prompt": "Show Linden Hall Ball groups and the selected group’s assignments."
+    },
+    "sk": {
+      "title": "Skupiny a priradenia",
+      "prompt": "Ukáž skupiny Slávnostného plesu Pod lipou a priradenia vo vybranej skupine."
     }
   },
   {
@@ -460,6 +570,11 @@
       "title": "Speakers, topics and counseling",
       "prompt": "Show the selected event’s speakers and topics, then a chosen speaker’s counseling schedule.",
       "note": "The counseling list does not report occupancy or remaining places."
+    },
+    "sk": {
+      "title": "Rečníci, témy a konzultácie",
+      "prompt": "Ukáž rečníkov a témy vybraného podujatia. Pri vybranom rečníkovi vypíš termíny konzultácií.",
+      "note": "Zoznam konzultácií neuvádza obsadenosť ani počet voľných miest."
     }
   },
   {
@@ -475,6 +590,10 @@
     "en": {
       "title": "Draft and published activities",
       "prompt": "Check the selected event’s activities and distinguish drafts from published versions."
+    },
+    "sk": {
+      "title": "Koncept a zverejnené aktivity",
+      "prompt": "Skontroluj aktivity vybraného podujatia a rozlíš koncept od zverejnenej verzie."
     }
   },
   {
@@ -492,6 +611,10 @@
     "en": {
       "title": "Edit an information page",
       "prompt": "Find the Travel page for the Summer Festival and propose adding parking information. After I approve, change only the page text and read back the saved result."
+    },
+    "sk": {
+      "title": "Úprava informačnej stránky",
+      "prompt": "Na podujatí Letná slávnosť nájdi stránku Doprava a navrhni doplnenie informácií o parkovaní. Po mojom schválení zmeň iba text stránky a prečítaj uložený výsledok."
     }
   },
   {
@@ -510,6 +633,10 @@
     "en": {
       "title": "Add songs to the songbook",
       "prompt": "Check that the Summer Festival songbook is enabled. Compare the downloaded lyrics with the existing songs and propose adding the missing ones in file order. After I approve, save them as visible and check the titles, order and lyrics."
+    },
+    "sk": {
+      "title": "Pridanie piesní do spevníka",
+      "prompt": "Pri podujatí Letná slávnosť over, že je zapnutý spevník. Porovnaj stiahnuté texty s piesňami v spevníku a navrhni doplnenie chýbajúcich piesní v poradí zo súboru. Po mojom schválení ich ulož ako viditeľné a over názvy, poradie a texty."
     }
   },
   {
@@ -526,6 +653,10 @@
     "en": {
       "title": "Change the game schedule",
       "prompt": "Check when the Summer Festival game runs. Propose a new end time in the event time zone, wait for my approval and verify both times after saving."
+    },
+    "sk": {
+      "title": "Úprava termínu hry",
+      "prompt": "Zisti, kedy prebieha hra na Letnej slávnosti. Navrhni nový čas ukončenia v časovom pásme podujatia, počkaj na moje schválenie a po uložení over oba časy."
     }
   },
   {
@@ -542,6 +673,10 @@
     "en": {
       "title": "Set the app home event",
       "prompt": "Check the default event for the app. Propose opening the Summer Festival first throughout the app. After I approve, save the change and verify the selected event."
+    },
+    "sk": {
+      "title": "Nastavenie úvodného podujatia aplikácie",
+      "prompt": "Skontroluj predvolené podujatie aplikácie. Navrhni, aby sa v celej aplikácii najskôr otvárala Letná slávnosť. Po mojom schválení zmenu ulož a over vybrané podujatie."
     }
   },
   {
@@ -560,6 +695,10 @@
     "en": {
       "title": "Prepare form embed code",
       "prompt": "Prepare English HTML embed code for the Summer Festival registration form on the organizer website. Check whether its website consent binding is ready and use the current export if it is. Show me the code to paste."
+    },
+    "sk": {
+      "title": "Príprava kódu na vloženie formulára",
+      "prompt": "Priprav slovenský kód HTML na vloženie formulára Prihláška na Letnú slávnosť na web organizátora. Over, či je pre web pripravené prepojenie súhlasu. Ak áno, použi jeho aktuálny export. Ukáž mi kód na vloženie."
     }
   },
   {
@@ -576,6 +715,10 @@
     "en": {
       "title": "Request measurement approval",
       "prompt": "Check the measurement approval status for the Summer Festival organizer. If a request is available, show me what will be sent to administrators. Wait for my confirmation before submitting and then verify the request status."
+    },
+    "sk": {
+      "title": "Žiadosť o schválenie merania",
+      "prompt": "Zisti stav schválenia merania u organizátora Letnej slávnosti. Ak možno požiadať o schválenie, ukáž mi, čo sa odošle správcom. Žiadosť odošli až po mojom potvrdení a potom over jej stav."
     }
   },
   {
@@ -591,6 +734,10 @@
     "en": {
       "title": "Check Meta CAPI approval",
       "prompt": "Check whether Meta CAPI is approved across the Summer Festival organization and whether an approval request is pending."
+    },
+    "sk": {
+      "title": "Kontrola schválenia Meta CAPI",
+      "prompt": "Zisti, či je Meta CAPI schválené pre celú organizáciu Letnej slávnosti a či správcovia už evidujú žiadosť na vybavenie."
     }
   }
 ]

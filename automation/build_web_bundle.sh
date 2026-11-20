@@ -106,11 +106,17 @@ python3 automation/ci/telemetry.py release.web-client-build node automation/lib/
 cp -R web_client/dist/. build/web/
 cp web_client/public/sitemap.xml build/web/sitemap.xml
 node automation/minify_web_translations.mjs build/web
+# The Cloudflare Worker maps query-language URLs to alternate HTML assets.
+LOCALIZED_DOCUMENTS=()
+rm -rf build/web/_localized
+if [ "$TARGET" = cloudflare ]; then
+    LOCALIZED_DOCUMENTS=(--localized)
+fi
 # The standalone organizer document shares the compiled tenant theme and fonts.
-node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page
+node automation/release/render_organizer_page.mjs --config automation/project.conf --built-index web_client/dist/index.html --output build/web/organizers-page ${LOCALIZED_DOCUMENTS[@]+"${LOCALIZED_DOCUMENTS[@]}"}
 
 # Render compiled help directly into the bundle, replacing the local Vite copy.
-node automation/release/render_help_pages.mjs --config automation/project.conf --built-index web_client/dist/index.html --output-root build/web
+node automation/release/render_help_pages.mjs --config automation/project.conf --built-index web_client/dist/index.html --output-root build/web ${LOCALIZED_DOCUMENTS[@]+"${LOCALIZED_DOCUMENTS[@]}"}
 
 # Ship marketing media only when the shared organizer page is enabled.
 LANDING_ENABLED="$(node automation/release/organizers/context.mjs --config automation/project.conf | node -e 'let input="";process.stdin.on("data",part=>input+=part);process.stdin.on("end",()=>process.stdout.write(String(JSON.parse(input).enabled)))')"

@@ -151,6 +151,10 @@ export class UserHeader extends HTMLElement {
         const tenantHost = new URL(AppConfig.webLink).hostname;
         const ticketBrand = ['vstupenky.online', 'tickets.festapp.net'].includes(tenantHost);
         const isCzechMarketingHeader = tenantHost === 'vstupenky.online' && this.hasAttribute('data-marketing');
+        const publicLanguages = document.querySelector('meta[name="festapp-public-languages"]')?.content.split(',') ?? [];
+        const currentLanguage = document.documentElement.lang;
+        const publicLanguageQuery = publicLanguages.indexOf(currentLanguage) > 0
+            ? '?lang=' + encodeURIComponent(currentLanguage) : '';
         const helpRoot = AppConfig.organizerLandingEnabled ? publicHelpRoot(AppConfig.supportedLanguages[0]) : null;
         const logo = document.createElement('img');
         logo.src = brandAssetBase + 'brand-logo.svg';
@@ -160,7 +164,7 @@ export class UserHeader extends HTMLElement {
         logo.height = 52;
         logo.style.cursor = 'pointer';
         const homeLink = document.createElement('a');
-        homeLink.href = '/';
+        homeLink.href = '/' + publicLanguageQuery;
         homeLink.className = 'header-home-link';
         if (ticketBrand) {
             homeLink.classList.add('header-ticket-brand');
@@ -219,7 +223,7 @@ export class UserHeader extends HTMLElement {
             const primaryLink = onHome ? ['/events', CommonStrings.findEvent] : ['/', CommonStrings.forOrganizers];
             for (const [href, label] of [primaryLink, [helpRoot, CommonStrings.help]]) {
                 const link = document.createElement('a');
-                link.href = href;
+                link.href = href + publicLanguageQuery;
                 link.textContent = label;
                 if (href === helpRoot && window.location.pathname.startsWith(helpRoot)) {
                     link.setAttribute('aria-current', 'location');

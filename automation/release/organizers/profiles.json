@@ -3,7 +3,15 @@
     "locale": "cs",
     "content": "content.json",
     "clips": "clips.json",
-    "platformUpdates": true
+    "platformUpdates": true,
+    "translations": {
+      "sk": "vstupenky-sk"
+    }
+  },
+  "vstupenky-sk": {
+    "locale": "sk",
+    "content": "content.sk.json",
+    "clips": "clips.sk.json"
   },
   "festapp-en": {
     "locale": "en",

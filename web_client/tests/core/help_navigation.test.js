@@ -45,13 +45,13 @@ test('modified clicks, new tabs, downloads, anchors and external links retain no
 });
 
 test('generator binds on a newly inserted guide without a page reload or duplicate handlers',async t=>{
- const content=readFileSync(new URL('../../../automation/release/help/embed-generator.html',import.meta.url),'utf8');
+ const content=readFileSync(new URL('../../../automation/release/help/embed-generator.html',import.meta.url),'utf8').replaceAll('{{FORM_ORIGIN}}', 'https://vstupenky.online');
  const generator=readFileSync(new URL('../../../automation/release/help/help.js',import.meta.url),'utf8');
  const win=fixture(t,async()=>response(html('Embed',content)));
  win.eval(generator);const changed=done(win);click(win,'/napoveda/vlozeni-na-web/');await changed;
  const form=win.document.querySelector('[data-embed-generator]');form.querySelector('input[type=url]').value='https://vstupenky.online/form/example';
  form.dispatchEvent(new win.Event('submit',{bubbles:true,cancelable:true}));
- assert.equal(form.querySelector('[data-embed-output]').hidden,false);assert.match(form.querySelector('textarea').value,/iframe/);
+ assert.equal(form.querySelector('[data-embed-output]').hidden,false);assert.match(form.querySelector('[data-embed-output] textarea').value,/iframe/);
 });
 
 test('back and forward restore the reading position of each guide',async t=>{
@@ -80,7 +80,7 @@ test('clicking the current guide scrolls to its top without document navigation'
 
 
 test('English help navigation retains the account header and never falls into a Czech path',async t=>{
- const english=text=>html(text).replaceAll('lang="cs"','lang="en"').replaceAll('https://vstupenky.online','https://tickets.festapp.net').replaceAll('/napoveda/','/help/');
+ const english=text=>html(text).replaceAll('lang="cs"','lang="en"').replaceAll('https://vstupenky.online','https://tickets.festapp.net').replaceAll('/napoveda/','/help/').replaceAll('/objednavky/','/orders/');
  const dom=new JSDOM(english('Home'),{url:'https://tickets.festapp.net/help/',runScripts:'outside-only',virtualConsole:new VirtualConsole()});
  t.after(()=>dom.window.close());const win=dom.window;win.scrollTo=()=>{};
  win.fetch=async pathname=>{assert.equal(pathname,'/help/orders/');return response(english('Orders'));};
@@ -88,4 +88,23 @@ test('English help navigation retains the account header and never falls into a 
  assert.equal(click(win,'/help/orders/'),false);await changed;
  assert.equal(win.location.pathname,'/help/orders/');assert.equal(win.document.querySelector('user-header'),header);
  assert.equal(win.document.documentElement.lang,'en');
+});
+
+test('soft article navigation updates the language links and hreflang, while switching language reloads the document', async t => {
+ const page = slug => html(slug || 'Home')
+  .replace('</head>', `<link rel="alternate" hreflang="sk" href="https://vstupenky.online/napoveda/${slug ? slug + '/' : ''}?lang=sk"></head>`)
+  .replace('<user-header>', `<nav class="public-language-switch"><a data-public-language="sk" href="/napoveda/${slug ? slug + '/' : ''}?lang=sk">Slovenčina</a></nav><user-header>`);
+ const dom = new JSDOM(page(''), {url:'https://vstupenky.online/napoveda/',virtualConsole:new VirtualConsole()});
+ t.after(() => dom.window.close());
+ const win = dom.window;
+ win.scrollTo = () => {};
+ let requests = 0;
+ win.fetch = async () => {requests++;return response(page('objednavky'));};
+ initHelpNavigation(win);
+ const changed = done(win);
+ assert.equal(click(win, '/napoveda/objednavky/'), false);
+ await changed;
+ assert.equal(win.document.querySelector('link[hreflang=sk]').href, 'https://vstupenky.online/napoveda/objednavky/?lang=sk');
+ assert.equal(click(win, '/napoveda/objednavky/?lang=sk'), true);
+ assert.equal(requests, 1);
 });

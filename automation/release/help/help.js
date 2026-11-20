@@ -1,17 +1,43 @@
 (() => {
  const initialized = new WeakSet();
+ const copyMessages = {
+  cs: {copied: 'Kód byl zkopírován.', manual: 'Kód je označený. Zkopírujte ho pomocí Ctrl+C nebo ⌘C.'},
+  en: {copied: 'Code copied.', manual: 'Code selected. Copy it with Ctrl+C or ⌘C.'},
+  sk: {copied: 'Kód bol skopírovaný.', manual: 'Kód je označený. Skopírujte ho klávesmi Ctrl+C alebo ⌘C.'},
+ };
+ const generatorMessages = {
+  cs: origin => ({
+    invalid: `Vložte veřejný odkaz uloženého formuláře ve tvaru ${origin}/form/vas-formular, bez parametrů a bez části za #.`,
+    title: 'Objednávkový formulář', link: 'Otevřít formulář v nové kartě',
+    ready: 'Kód je připravený. Zkopírujte ho do HTML bloku svého webu.',
+    invalidExport: 'Vložte platný export z Festappu pro tuto službu. Formulář ověří aktuální propojení webu a pokrytí souhlasu.',
+  }),
+  en: origin => ({
+    invalid: `Paste a saved public form link such as ${origin}/form/your-form, without query parameters or a # fragment.`,
+    title: 'Order form', link: 'Open the form in a new tab',
+    ready: 'Your code is ready. Copy it into a custom HTML block on your website.',
+    invalidExport: 'Paste a valid Festapp export for this service. The form checks the current website binding and consent coverage.',
+  }),
+  sk: origin => ({
+    invalid: `Vložte verejný odkaz na uložený formulár v tvare ${origin}/form/vas-formular, bez parametrov a časti za #.`,
+    title: 'Objednávkový formulár', link: 'Otvoriť formulár na novej karte',
+    ready: 'Kód je pripravený. Skopírujte ho do bloku HTML na svojom webe.',
+    invalidExport: 'Vložte platný export z Festappu pre túto službu. Formulár overí aktuálne prepojenie webu a pokrytie súhlasu.',
+  }),
+ };
+ const locale = () => Object.hasOwn(copyMessages, document.documentElement.lang) ? document.documentElement.lang : 'cs';
  function initCodeExamples() {
   document.querySelectorAll('[data-code-example]').forEach(example => {
     if (initialized.has(example)) return;
     initialized.add(example);
     const code = example.querySelector('code');
     const status = example.querySelector('[role="status"]');
-    const english = document.documentElement.lang === 'en';
+    const messages = copyMessages[locale()];
     example.querySelector('[data-copy-code]').addEventListener('click', async () => {
       try {
         if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
         await navigator.clipboard.writeText(code.textContent);
-        status.textContent = english ? 'Code copied.' : 'Kód byl zkopírován.';
+        status.textContent = messages.copied;
       } catch {
         code.focus({preventScroll: true});
         const range = document.createRange();
@@ -19,7 +45,7 @@
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
-        status.textContent = english ? 'Code selected. Copy it with Ctrl+C or ⌘C.' : 'Kód je označený. Zkopírujte ho pomocí Ctrl+C nebo ⌘C.';
+        status.textContent = messages.manual;
       }
     });
   });
@@ -30,20 +56,9 @@
   if (!form || initialized.has(form)) return;
   initialized.add(form);
   const origin = form.dataset.formOrigin || window.location.origin;
-  const english = document.documentElement.lang === 'en';
-  const text = english ? {
-    invalid: `Paste a saved public form link such as ${origin}/form/your-form, without query parameters or a # fragment.`,
-    title: 'Order form', link: 'Open the form in a new tab',
-    ready: 'Your code is ready. Copy it into a custom HTML block on your website.',
-    invalidExport: 'Paste a valid Festapp export for this service. The form checks the current website binding and consent coverage.',
-    copied: 'Code copied.', manual: 'Code selected. Copy it with Ctrl+C or ⌘C.'
-  } : {
-    invalid: `Vložte veřejný odkaz uloženého formuláře ve tvaru ${origin}/form/vas-formular, bez parametrů a bez části za #.`,
-    title: 'Objednávkový formulář', link: 'Otevřít formulář v nové kartě',
-    ready: 'Kód je připravený. Zkopírujte ho do HTML bloku svého webu.',
-    invalidExport: 'Vložte platný export z Festappu pro tuto službu. Formulář ověří aktuální propojení webu a pokrytí souhlasu.',
-    copied: 'Kód byl zkopírován.', manual: 'Kód je označený. Zkopírujte ho pomocí Ctrl+C nebo ⌘C.'
-  };
+  const language = locale();
+  const text = generatorMessages[language](origin);
+  const messages = copyMessages[language];
   const urlInput = form.querySelector('[name="form-url"]');
   const mode = form.querySelector('[name="height-mode"]');
   const hostDataLayer = form.querySelector('[name="host-datalayer"]');
@@ -103,9 +118,9 @@
   form.querySelector('[data-copy-embed]').addEventListener('click', async () => {
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-      await navigator.clipboard.writeText(code.value); status.textContent = text.copied;
+      await navigator.clipboard.writeText(code.value); status.textContent = messages.copied;
     } catch {
-      code.focus({preventScroll: true}); code.select(); status.textContent = text.manual;
+      code.focus({preventScroll: true}); code.select(); status.textContent = messages.manual;
     }
   });
  }

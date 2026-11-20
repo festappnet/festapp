@@ -9,7 +9,7 @@ register('../css_loader.mjs', import.meta.url);
 const catalog = locale => JSON.parse(readFileSync(new URL(`../../../assets/translations/${locale}.json`, import.meta.url)));
 
 test('ticketing account navigation does not require administration privileges', async t => {
-    const dom = new JSDOM('<body></body>', { url: 'https://vstupenky.online/' });
+    const dom = new JSDOM('<meta name="festapp-public-languages" content="cs,sk"><body></body>', { url: 'https://vstupenky.online/' });
     Object.assign(globalThis, {
         window: dom.window, document: dom.window.document,
         HTMLElement: dom.window.HTMLElement, customElements: dom.window.customElements,
@@ -82,7 +82,7 @@ test('ticketing account navigation does not require administration privileges', 
     const slovakNavigation = slovakHeader.querySelector('.header-public-navigation');
     assert.equal(slovakNavigation.getAttribute('aria-label'), 'Hlavná navigácia');
     assert.deepEqual([...slovakNavigation.querySelectorAll('a')].map(a => [a.textContent, a.getAttribute('href')]),
-        [['Pre organizátorov', '/'], ['Pomoc', '/napoveda/']]);
+        [['Pre organizátorov', '/?lang=sk'], ['Pomoc', '/napoveda/?lang=sk']]);
     assert.equal(slovakHeader.querySelector('.btn-add-event').getAttribute('aria-label'), 'Vytvoriť podujatie zdarma');
     assert.equal(slovakHeader.querySelector('.add-event-short').textContent, 'Vytvoriť zdarma');
     slovakHeader.remove();

@@ -3,6 +3,7 @@ import {publicHelpRootFromPath} from '../services/help_action_routes.js';
 export function initHelpNavigation(win = window) {
     const doc = win.document;
     if (!win.fetch || !doc.querySelector('.help-layout')) return;
+    const styleSelector = 'link[href*="/assets/"][href*="/help."]';
     const runtime = doc.querySelector('script[data-help-runtime]')?.getAttribute('src');
     if (!runtime) return;
     let generation = 0;
@@ -12,7 +13,7 @@ export function initHelpNavigation(win = window) {
     const isHelp = url => url.origin === win.location.origin && publicHelpRootFromPath(url.pathname) === publicHelpRootFromPath(win.location.pathname) && /^\/(?:napoveda|help)\/(?:[a-z-]+\/)?$/.test(url.pathname);
     const destination = event => {
         const link = event.target.closest?.('a[href]');
-        if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+        if (!link || link.hasAttribute('data-public-language') || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
         const url = new win.URL(link.href);
         return isHelp(url) ? url : undefined;
     };
@@ -23,9 +24,8 @@ export function initHelpNavigation(win = window) {
                 if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) throw Error('Help unavailable');
                 const next = new win.DOMParser().parseFromString(await response.text(), 'text/html');
                 // A release changes the executable/style graph atomically via normal navigation.
-                if (!next.querySelector('.help-layout') || next.querySelector('script[data-help-runtime]')?.getAttribute('src') !== runtime ||
-                    next.querySelector('link[href*="/assets/help."]')?.getAttribute('href') !==
-                    doc.querySelector('link[href*="/assets/help."]')?.getAttribute('href')) throw Error('Help release changed');
+                if (next.documentElement.lang !== doc.documentElement.lang || !next.querySelector('.help-layout') || next.querySelector('script[data-help-runtime]')?.getAttribute('src') !== runtime ||
+                    next.querySelector(styleSelector)?.getAttribute('href') !== doc.querySelector(styleSelector)?.getAttribute('href')) throw Error('Help release changed');
                 return next;
             }).catch(error => {pages.delete(key); throw error;});
             pages.set(key, pending);
@@ -56,8 +56,10 @@ export function initHelpNavigation(win = window) {
             if (current !== generation) return;
             const layout = doc.importNode(next.querySelector('.help-layout'), true);
             doc.querySelector('.help-layout').replaceWith(layout);
+            const languages = next.querySelector('.public-language-switch');
+            if (languages) doc.querySelector('.public-language-switch')?.replaceWith(doc.importNode(languages, true));
             doc.title = next.title;
-            for (const selector of ['meta[name="description"]', 'link[rel="canonical"]',
+            for (const selector of ['meta[name="description"]', 'link[rel="canonical"]', 'link[rel="alternate"][hreflang]',
                 'meta[property^="og:"]', 'script[type="application/ld+json"]']) {
                 doc.head.querySelectorAll(selector).forEach(node => node.remove());
                 next.head.querySelectorAll(selector).forEach(node => doc.head.append(doc.importNode(node, true)));

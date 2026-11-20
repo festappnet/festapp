@@ -136,3 +136,32 @@ test('help routes use their bound HTML profile, canonical paths and sitemap entr
   const sitemap = await (await helpWorker.fetch(new Request(origin + '/sitemap.xml'),env)).text();
   assert.match(sitemap,/<loc>https:\/\/tenant\.invalid\/napoveda\/webnode\/<\/loc>/);
 });
+
+test('public language variants select a separate CSP document and preserve Czech canonical routes', async () => {
+  const site = {enabled:true,pages:[{id:'home',path:'/',asset:'/organizers-page'}],sitemapPaths:['/','/events']};
+  const documents = Object.fromEntries([
+    'organizers-page', '_localized/sk/organizers-page', '_localized/de/organizers-page',
+    'napoveda/zaciname/index.html', '_localized/sk/napoveda/zaciname/index.html',
+  ].map((file, index) => [file, {profile:'fixture-' + index}]));
+  const localizedSource = source
+    .replace('const MARKETING = {enabled:false,pages:[],sitemapPaths:["/"]};', 'const MARKETING = ' + JSON.stringify(site) + ';')
+    .replace('const CSP_MANIFEST = { profiles: {}, documents: {} };', 'const CSP_MANIFEST = ' + JSON.stringify({documents, profiles:{}}) + ';');
+  const {default: localizedWorker} = await import('data:text/javascript;base64,' + Buffer.from(localizedSource).toString('base64'));
+  for (const [publicPath, asset] of [
+    ['/', '/organizers-page'],
+    ['/?lang=sk', '/_localized/sk/organizers-page'],
+    ['/?lang=de', '/_localized/de/organizers-page'],
+    ['/?lang=cs', '/organizers-page'],
+    ['/?lang=sk&lang=cs', '/organizers-page'],
+    ['/napoveda/zaciname/?lang=sk', '/_localized/sk/napoveda/zaciname/'],
+    ['/napoveda/zaciname/?lang=cs', '/napoveda/zaciname/'],
+  ]) {
+    const response = await localizedWorker.fetch(new Request(origin + publicPath), env);
+    assert.equal(response.status, 200, publicPath);
+    assert.equal(await response.text(), asset, publicPath);
+  }
+  const internal = await localizedWorker.fetch(new Request(origin + '/_localized/sk/napoveda/zaciname/'), env);
+  assert.equal(internal.status, 404);
+  const redirect = await localizedWorker.fetch(new Request(origin + '/napoveda/zaciname?lang=sk'), env);
+  assert.equal(redirect.headers.get('location'), origin + '/napoveda/zaciname/?lang=sk');
+});

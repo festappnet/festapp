@@ -13,7 +13,7 @@ function saveLocale(locale) {
     browserStorage.removeItem(legacyLocaleKey);
 }
 // Public documents are published independently of the application language selector.
-const publicDocumentLocales = ['cs', 'en'];
+const publicDocumentLocales = ['cs', 'en', 'sk'];
 const supportsLocale = (locale, persist) => AppConfig.supportedLanguages.includes(locale)
     || (persist === false && publicDocumentLocales.includes(locale));
 
@@ -51,8 +51,11 @@ export class LocalizationService {
     static async _initialize({locale, persist = true} = {}) {
         const saved = savedLocale();
         if (locale !== undefined && !supportsLocale(locale, persist)) throw new Error('Unsupported document locale');
-        const selected = locale ?? saved ?? browserLocale();
-        await LocalizationService.loadTranslations(selected, {persist, save: persist && locale === undefined && saved !== null});
+        const requested = new URLSearchParams(globalThis.window?.location?.search).getAll('lang');
+        const linkedLocale = requested.length === 1 && AppConfig.supportedLanguages.includes(requested[0])
+            ? requested[0] : null;
+        const selected = locale ?? linkedLocale ?? saved ?? browserLocale();
+        await LocalizationService.loadTranslations(selected, {persist, save: persist && locale === undefined && linkedLocale === null && saved !== null});
         if (persist) LocalizationService._startPreferenceSync(saved);
     }
 
@@ -126,6 +129,14 @@ export class LocalizationService {
         saveLocale(locale);
         browserStorage.setItem(explicitLocaleKey, 'true');
         LocalizationService._observedPreference = locale;
+        const browser = globalThis.window;
+        if (browser?.location?.href && browser.history?.replaceState) {
+            const url = new URL(browser.location.href);
+            if (url.searchParams.has('lang')) {
+                url.searchParams.delete('lang');
+                browser.history.replaceState(browser.history.state, '', url);
+            }
+        }
         if (needsReload) window.location.reload();
     }
 }

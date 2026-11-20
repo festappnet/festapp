@@ -1,0 +1,16 @@
+<p class="lead">Zistite, čo sa dá cez MCP načítať alebo zmeniť a ako o to požiadať. Katalóg nástrojov, vstupy a závislosti oprávnení vychádzajú priamo z implementácie.</p>
+<p>Pri prvom pripojení použite <a href="/napoveda/ai-agenti/">návod k pripojeniu AI asistenta</a>.</p>
+<h2 id="jak-pouzit">Ako zistiť, čo pripojenie umožňuje</h2>
+<p>Nechajte agenta načítať dostupné podujatia a nástroje. Úloha vyžaduje podporovanú operáciu, oprávnenia registrovaného klienta, udelený súhlas a aktuálne práva účtu. Rozšírenie oprávnení vyžaduje nové prihlásenie a súhlas.</p>
+<p>Verejné pripojenie ChatGPT používa profil súhrnov objednávok, ktorý neposkytuje kontakty, poznámky a odpovede z prihlášok ani úpravy. Operátorské pripojenie môže s príslušnými oprávneniami ponúkať ďalšie nástroje. Program či rečníci sú relevantní pri podujatiach, ktoré tieto funkcie používajú.</p>
+<p>Ukážkové názvy nahraďte vlastnými. Pri rovnakých názvoch najprv vyberte konkrétne podujatie. Pri zoznamoch sledujte stránkovanie. Zmeny, platby, storná a odoslanie správ schvaľujte podľa konkrétneho návrhu a potom overte uložený výsledok.</p>
+<h2 id="prompty">Príklady zadaní podľa úlohy</h2>
+<p>Zadania pokrývajú bežné úlohy. Nástroje, potrebné oprávnenia a dostupnosť vo verejnom pripojení ChatGPT sa odvodzujú z katalógu.</p>
+{{MCP_PROMPTS}}
+<h2 id="katalog">Katalóg podporovaných nástrojov</h2>
+<p>Rozbaľte oblasť a nástroj. Nájdete technický názov, popis v angličtine, oprávnenia, povinné vstupy aj úplnú schému JSON Schema. Základné oprávnenie sa pripočítava automaticky. Pri nástrojoch označených ako čítanie alebo kontrola môžu niektoré náhľady čerpať kvótu. Podrobnosti sú pri konkrétnom nástroji.</p>
+{{MCP_REFERENCE}}
+<h2 id="zdroj">Ako sa dokumentácia aktualizuje</h2>
+<p>Katalóg vychádza z registra MCP, schém vstupov, kontraktu oprávnení a pravidiel verejného klienta ChatGPT. Názvy oprávnení používajú preklady obrazovky súhlasu. Pri zmene zdrojov zostavenie pred publikovaním vyžaduje aktualizovaný katalóg.</p>
+<p>Príklady zadaní odkazujú na existujúce operácie. Väzby sa overujú pri zostavení.</p>
+<p>Na automatické spracovanie použite <a href="{{HELP_ASSETS}}mcp-reference.json">katalóg MCP v JSON so schémami vstupov</a>. Aktuálny rozsah konkrétneho pripojenia overte po prihlásení.</p>

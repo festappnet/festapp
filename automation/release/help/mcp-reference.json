@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "562a75bb0eee0843802a25f11fdf59edc8c3d8ffb96bfae95ef1c0a251df4112",
+  "sourceDigest": "d1638814ec20828043248a38bab2a7819282dedb211560582638d9418e1fc90e",
   "permissions": [
     {
       "scope": "festapp:information:read",
       "labels": {
         "cs": "Číst informační stránky a zpěvníky akcí",
-        "en": "Read event information pages and songbooks"
+        "en": "Read event information pages and songbooks",
+        "sk": "Čítať informačné stránky a spevníky podujatí"
       },
       "operations": [
         "information.list",
@@ -20,7 +21,8 @@
       "scope": "festapp:information:write",
       "labels": {
         "cs": "Upravovat informační stránky a zpěvníky akcí",
-        "en": "Edit event information pages and songbooks"
+        "en": "Edit event information pages and songbooks",
+        "sk": "Upravovať informačné stránky a spevníky podujatí"
       },
       "operations": [
         "information.save",
@@ -34,7 +36,8 @@
       "scope": "festapp:webhooks:read",
       "labels": {
         "cs": "Číst webhooky a historii doručení",
-        "en": "Read webhooks and delivery history"
+        "en": "Read webhooks and delivery history",
+        "sk": "Čítať webhooky a históriu doručenia"
       },
       "operations": [
         "webhooks.list",
@@ -48,7 +51,8 @@
       "scope": "festapp:webhooks:write",
       "labels": {
         "cs": "Spravovat webhooky a jejich doručování",
-        "en": "Manage webhooks and their delivery"
+        "en": "Manage webhooks and their delivery",
+        "sk": "Spravovať webhooky a ich doručovanie"
       },
       "operations": [
         "webhooks.create",
@@ -66,7 +70,8 @@
       "scope": "festapp:history:delete",
       "labels": {
         "cs": "Odstraňovat záznamy historie objednávek",
-        "en": "Delete persisted order history"
+        "en": "Delete persisted order history",
+        "sk": "Odstraňovať záznamy histórie objednávok"
       },
       "operations": [
         "history.delete"
@@ -79,7 +84,8 @@
       "scope": "festapp:orders:delete",
       "labels": {
         "cs": "Odstraňovat objednávky a volitelně externí faktury",
-        "en": "Delete orders and optionally external invoices"
+        "en": "Delete orders and optionally external invoices",
+        "sk": "Odstraňovať objednávky a voliteľne externé faktúry"
       },
       "operations": [
         "orders.deletion.inspect",
@@ -93,7 +99,8 @@
       "scope": "festapp:lifecycle:read",
       "labels": {
         "cs": "Číst stav kopírování a uložené návrhy akcí",
-        "en": "Read copy recovery and saved setup drafts"
+        "en": "Read copy recovery and saved setup drafts",
+        "sk": "Čítať stav kopírovania a uložené návrhy akcií"
       },
       "operations": [
         "lifecycle.inspect",
@@ -106,7 +113,8 @@
       "scope": "festapp:lifecycle:write",
       "labels": {
         "cs": "Kopírovat a odstraňovat akce; obnovovat kopírování médií",
-        "en": "Copy and delete occasions; resume media copies"
+        "en": "Copy and delete occasions; resume media copies",
+        "sk": "Kopírovať a odstraňovať akcie; obnovovať kopírovanie médií"
       },
       "operations": [
         "occasions.copy",
@@ -121,7 +129,8 @@
       "scope": "festapp:setup:finalize",
       "labels": {
         "cs": "Dokončovat uložené návrhy akcí včetně nastavení prodeje",
-        "en": "Finalize saved occasion drafts and their sales settings"
+        "en": "Finalize saved occasion drafts and their sales settings",
+        "sk": "Dokončovať uložené návrhy akcií vrátane nastavenia predaja"
       },
       "operations": [
         "occasions.setup.finalize"
@@ -134,7 +143,8 @@
       "scope": "festapp:units:delete",
       "labels": {
         "cs": "Odstraňovat pořadatele",
-        "en": "Delete organizers"
+        "en": "Delete organizers",
+        "sk": "Odstraňovať organizátorov"
       },
       "operations": [
         "units.delete"
@@ -145,7 +155,8 @@
       "scope": "festapp:quotes:read",
       "labels": {
         "cs": "Číst citáty pořadatele",
-        "en": "Read organizer quotes"
+        "en": "Read organizer quotes",
+        "sk": "Čítať citáty organizátora"
       },
       "operations": [
         "units.quotes.list"
@@ -156,7 +167,8 @@
       "scope": "festapp:quotes:write",
       "labels": {
         "cs": "Upravovat a odstraňovat citáty pořadatele",
-        "en": "Edit and delete organizer quotes"
+        "en": "Edit and delete organizer quotes",
+        "sk": "Upravovať a odstraňovať citáty organizátora"
       },
       "operations": [
         "units.quotes.save",
@@ -170,7 +182,8 @@
       "scope": "festapp:legal:read",
       "labels": {
         "cs": "Číst právní údaje pořadatele a stav ověření",
-        "en": "Read organizer legal identity and verification status"
+        "en": "Read organizer legal identity and verification status",
+        "sk": "Čítať právne údaje organizátora a stav overenia"
       },
       "operations": [
         "units.legal.inspect"
@@ -181,7 +194,8 @@
       "scope": "festapp:legal:write",
       "labels": {
         "cs": "Upravovat právní údaje a odesílat je k ověření",
-        "en": "Edit legal identity and submit it for verification"
+        "en": "Edit legal identity and submit it for verification",
+        "sk": "Upravovať právne údaje a odosielať ich na overenie"
       },
       "operations": [
         "units.legal.save",
@@ -195,7 +209,8 @@
       "scope": "festapp:banks:read",
       "labels": {
         "cs": "Číst propojené bankovní účty a stav synchronizace",
-        "en": "Read linked banks and synchronization state"
+        "en": "Read linked banks and synchronization state",
+        "sk": "Čítať prepojené bankové účty a stav synchronizácie"
       },
       "operations": [
         "banks.list",
@@ -210,7 +225,8 @@
       "scope": "festapp:bank-users:read",
       "labels": {
         "cs": "Číst přístupy k bankovnímu účtu včetně e-mailů",
-        "en": "Read bank account members and their emails"
+        "en": "Read bank account members and their emails",
+        "sk": "Čítať prístupy k bankovému účtu vrátane e-mailov"
       },
       "operations": [
         "banks.users"
@@ -223,7 +239,8 @@
       "scope": "festapp:banks:write",
       "labels": {
         "cs": "Spravovat bankovní účty, vazby, role a synchronizaci",
-        "en": "Manage bank accounts, links, roles and synchronization"
+        "en": "Manage bank accounts, links, roles and synchronization",
+        "sk": "Spravovať bankové účty, väzby, roly a synchronizáciu"
       },
       "operations": [
         "banks.save",
@@ -241,7 +258,8 @@
       "scope": "festapp:cards:read",
       "labels": {
         "cs": "Číst stav kartového providera a dopad odpojení",
-        "en": "Read card-provider state and disconnection impact"
+        "en": "Read card-provider state and disconnection impact",
+        "sk": "Čítať stav kartového providera a dopad odpojenia"
       },
       "operations": [
         "cards.status",
@@ -253,7 +271,8 @@
       "scope": "festapp:cards:write",
       "labels": {
         "cs": "Pozastavit, obnovit nebo odpojit platby kartou",
-        "en": "Pause, resume or disconnect card payments"
+        "en": "Pause, resume or disconnect card payments",
+        "sk": "Pozastaviť, obnoviť alebo odpojiť platby kartou"
       },
       "operations": [
         "cards.pause",
@@ -267,7 +286,8 @@
       "scope": "festapp:refund-decisions:read",
       "labels": {
         "cs": "Číst zaznamenané částečné refundace a rozhodnutí o vstupenkách",
-        "en": "Read observed partial refunds and ticket decisions"
+        "en": "Read observed partial refunds and ticket decisions",
+        "sk": "Čítať zaznamenané čiastočné refundácie a rozhodnutia o vstupenkách"
       },
       "operations": [
         "cards.refund.inspect"
@@ -280,7 +300,8 @@
       "scope": "festapp:refund-decisions:write",
       "labels": {
         "cs": "Rozhodovat o platnosti vstupenek po zaznamenané částečné refundaci",
-        "en": "Decide ticket validity after an observed partial refund"
+        "en": "Decide ticket validity after an observed partial refund",
+        "sk": "Rozhodovať o platnosti vstupeniek po zaznamenanej čiastočnej refundácii"
       },
       "operations": [
         "cards.refund.decide"
@@ -293,7 +314,8 @@
       "scope": "festapp:history:read",
       "labels": {
         "cs": "Číst historii změn a aktivity akce",
-        "en": "Read occasion audit and activity history"
+        "en": "Read occasion audit and activity history",
+        "sk": "Čítať históriu zmien a aktivity akcie"
       },
       "operations": [
         "history.commits",
@@ -306,7 +328,8 @@
       "scope": "festapp:order-history:read",
       "labels": {
         "cs": "Číst historii objednávek a doručování e-mailů",
-        "en": "Read order and email delivery history"
+        "en": "Read order and email delivery history",
+        "sk": "Čítať históriu objednávok a doručovania e-mailov"
       },
       "operations": [
         "history.orders",
@@ -320,7 +343,8 @@
       "scope": "festapp:feedback:read",
       "labels": {
         "cs": "Číst zpětnou vazbu k programu",
-        "en": "Read event feedback"
+        "en": "Read event feedback",
+        "sk": "Čítať spätnú väzbu k programu"
       },
       "operations": [
         "feedback.list"
@@ -331,7 +355,8 @@
       "scope": "festapp:report-exports:read",
       "labels": {
         "cs": "Exportovat prodejní reporty",
-        "en": "Export canonical sales reports"
+        "en": "Export canonical sales reports",
+        "sk": "Exportovať predajné reporty"
       },
       "operations": [
         "reports.export"
@@ -344,7 +369,8 @@
       "scope": "festapp:export-people:read",
       "labels": {
         "cs": "Exportovat vybrané údaje účastníků",
-        "en": "Export selected participant fields"
+        "en": "Export selected participant fields",
+        "sk": "Exportovať vybrané údaje účastníkov"
       },
       "operations": [
         "exports.people"
@@ -357,7 +383,8 @@
       "scope": "festapp:export-orders:read",
       "labels": {
         "cs": "Exportovat souhrny objednávek",
-        "en": "Export order summaries"
+        "en": "Export order summaries",
+        "sk": "Exportovať súhrny objednávok"
       },
       "operations": [
         "exports.orders"
@@ -370,7 +397,8 @@
       "scope": "festapp:export-events:read",
       "labels": {
         "cs": "Exportovat položky programu",
-        "en": "Export program items"
+        "en": "Export program items",
+        "sk": "Exportovať položky programu"
       },
       "operations": [
         "exports.events"
@@ -383,7 +411,8 @@
       "scope": "festapp:export-places:read",
       "labels": {
         "cs": "Exportovat místa",
-        "en": "Export places"
+        "en": "Export places",
+        "sk": "Exportovať miesta"
       },
       "operations": [
         "exports.places"
@@ -396,7 +425,8 @@
       "scope": "festapp:export-speakers:read",
       "labels": {
         "cs": "Exportovat řečníky",
-        "en": "Export speakers"
+        "en": "Export speakers",
+        "sk": "Exportovať rečníkov"
       },
       "operations": [
         "exports.speakers"
@@ -409,7 +439,8 @@
       "scope": "festapp:export-feedback:read",
       "labels": {
         "cs": "Exportovat zpětnou vazbu",
-        "en": "Export event feedback"
+        "en": "Export event feedback",
+        "sk": "Exportovať spätnú väzbu"
       },
       "operations": [
         "exports.feedback"
@@ -422,7 +453,8 @@
       "scope": "festapp:program:read",
       "labels": {
         "cs": "Číst program a vzájemně výlučné skupiny",
-        "en": "Read program items and exclusive groups"
+        "en": "Read program items and exclusive groups",
+        "sk": "Čítať program a vzájomne sa vylučujúce skupiny"
       },
       "operations": [
         "events.list",
@@ -437,7 +469,8 @@
       "scope": "festapp:program:write",
       "labels": {
         "cs": "Upravovat a odstraňovat program a vzájemně výlučné skupiny",
-        "en": "Edit and delete program items and exclusive groups"
+        "en": "Edit and delete program items and exclusive groups",
+        "sk": "Upravovať a odstraňovať program a vzájomne sa vylučujúce skupiny"
       },
       "operations": [
         "events.save",
@@ -453,7 +486,8 @@
       "scope": "festapp:map:read",
       "labels": {
         "cs": "Číst místa, typy míst, cesty a ikony",
-        "en": "Read places, place types, paths and icons"
+        "en": "Read places, place types, paths and icons",
+        "sk": "Čítať miesta, typy miest, cesty a ikony"
       },
       "operations": [
         "places.list",
@@ -470,7 +504,8 @@
       "scope": "festapp:map:write",
       "labels": {
         "cs": "Upravovat, přesouvat a odstraňovat místa a cesty",
-        "en": "Edit, move and delete places and paths"
+        "en": "Edit, move and delete places and paths",
+        "sk": "Upravovať, presúvať a odstraňovať miesta a cesty"
       },
       "operations": [
         "places.save",
@@ -489,7 +524,8 @@
       "scope": "festapp:speakers:read",
       "labels": {
         "cs": "Číst řečníky, témata a konzultační termíny",
-        "en": "Read speakers, topics and counseling slots"
+        "en": "Read speakers, topics and counseling slots",
+        "sk": "Čítať rečníkov, témy a konzultačné termíny"
       },
       "operations": [
         "speakers.list",
@@ -505,7 +541,8 @@
       "scope": "festapp:speakers:write",
       "labels": {
         "cs": "Spravovat řečníky, jejich přiřazení a konzultační termíny",
-        "en": "Manage speakers, assignments and counseling slots"
+        "en": "Manage speakers, assignments and counseling slots",
+        "sk": "Spravovať rečníkov, ich priradenia a konzultačné termíny"
       },
       "operations": [
         "speakers.save",
@@ -525,7 +562,8 @@
       "scope": "festapp:activities:read",
       "labels": {
         "cs": "Číst publikované aktivity a vlastní návrh",
-        "en": "Read published activities and your own draft"
+        "en": "Read published activities and your own draft",
+        "sk": "Čítať publikované aktivity a vlastný návrh"
       },
       "operations": [
         "activities.inspect"
@@ -536,7 +574,8 @@
       "scope": "festapp:activities:write",
       "labels": {
         "cs": "Ukládat, zahazovat a publikovat plány aktivit",
-        "en": "Save, discard and publish activity plans"
+        "en": "Save, discard and publish activity plans",
+        "sk": "Ukladať, zahadzovať a publikovať plány aktivít"
       },
       "operations": [
         "activities.saveDraft",
@@ -551,7 +590,8 @@
       "scope": "festapp:services:read",
       "labels": {
         "cs": "Číst stravovací a ubytovací služby",
-        "en": "Read food and accommodation services"
+        "en": "Read food and accommodation services",
+        "sk": "Čítať stravovacie a ubytovacie služby"
       },
       "operations": [
         "services.list"
@@ -562,7 +602,8 @@
       "scope": "festapp:services:write",
       "labels": {
         "cs": "Vytvářet, upravovat a odstraňovat definice služeb",
-        "en": "Create, edit and delete service definitions"
+        "en": "Create, edit and delete service definitions",
+        "sk": "Vytvárať, upravovať a odstraňovať definície služieb"
       },
       "operations": [
         "services.create",
@@ -577,7 +618,8 @@
       "scope": "festapp:attendance:write",
       "labels": {
         "cs": "Měnit účast osob na událostech programu",
-        "en": "Change participant attendance at program events"
+        "en": "Change participant attendance at program events",
+        "sk": "Meniť účasť osôb na udalostiach programu"
       },
       "operations": [
         "attendance.set"
@@ -590,7 +632,8 @@
       "scope": "festapp:scanner:read",
       "labels": {
         "cs": "Číst způsobilost vstupenky ke kontrole",
-        "en": "Read ticket check-in eligibility"
+        "en": "Read ticket check-in eligibility",
+        "sk": "Čítať spôsobilosť vstupenky na kontrolu"
       },
       "operations": [
         "scanner.inspect"
@@ -601,7 +644,8 @@
       "scope": "festapp:scanner:admit",
       "labels": {
         "cs": "Provádět kontrolu vstupenek přes skener",
-        "en": "Record ticket check-in through the scanner"
+        "en": "Record ticket check-in through the scanner",
+        "sk": "Vykonávať kontrolu vstupeniek cez skener"
       },
       "operations": [
         "scanner.admit"
@@ -614,7 +658,8 @@
       "scope": "festapp:blueprints:read",
       "labels": {
         "cs": "Číst plánky, obchodní vazby a fonty",
-        "en": "Read blueprint drafts, bindings and fonts"
+        "en": "Read blueprint drafts, bindings and fonts",
+        "sk": "Čítať plániky, obchodné väzby a písma"
       },
       "operations": [
         "blueprints.list",
@@ -628,7 +673,8 @@
       "scope": "festapp:blueprints:write",
       "labels": {
         "cs": "Ukládat celé návrhy plánků a připravovat texty",
-        "en": "Save complete blueprint drafts and prepare text"
+        "en": "Save complete blueprint drafts and prepare text",
+        "sk": "Ukladať celé návrhy plánikov a pripravovať texty"
       },
       "operations": [
         "blueprints.save",
@@ -642,7 +688,8 @@
       "scope": "festapp:ticket-artwork:preview",
       "labels": {
         "cs": "Zobrazovat náhled vzhledu vzorové vstupenky",
-        "en": "Preview synthetic ticket artwork"
+        "en": "Preview synthetic ticket artwork",
+        "sk": "Zobrazovať náhľad vzhľadu vzorovej vstupenky"
       },
       "operations": [
         "ticket_layouts.preview"
@@ -653,7 +700,8 @@
       "scope": "festapp:ticket-artwork:write",
       "labels": {
         "cs": "Ukládat vzhled vstupenek a obnovovat nedokončené ukládání",
-        "en": "Save ticket artwork and resume pending saves"
+        "en": "Save ticket artwork and resume pending saves",
+        "sk": "Ukladať vzhľad vstupeniek a obnovovať nedokončené ukladanie"
       },
       "operations": [
         "ticket_layouts.save",
@@ -668,7 +716,8 @@
       "scope": "festapp:people:read",
       "labels": {
         "cs": "Číst účastníky a jejich profil v akci",
-        "en": "Read occasion participants and profiles"
+        "en": "Read occasion participants and profiles",
+        "sk": "Čítať účastníkov a profily akcie"
       },
       "operations": [
         "profiles.list",
@@ -680,7 +729,8 @@
       "scope": "festapp:people:write",
       "labels": {
         "cs": "Vytvářet, upravovat, importovat a odebírat účastníky",
-        "en": "Create, edit, import and remove participants"
+        "en": "Create, edit, import and remove participants",
+        "sk": "Vytvárať, upravovať, importovať a odoberať účastníkov"
       },
       "operations": [
         "profiles.create",
@@ -697,7 +747,8 @@
       "scope": "festapp:people:roles",
       "labels": {
         "cs": "Měnit role, schvalování a dobrovolnictví účastníků",
-        "en": "Change participant roles, approval and volunteer status"
+        "en": "Change participant roles, approval and volunteer status",
+        "sk": "Meniť roly, schvaľovanie a dobrovoľníctvo účastníkov"
       },
       "operations": [
         "profiles.roles"
@@ -710,7 +761,8 @@
       "scope": "festapp:groups:read",
       "labels": {
         "cs": "Číst skupiny a jejich členství",
-        "en": "Read groups and memberships"
+        "en": "Read groups and memberships",
+        "sk": "Čítať skupiny a členstvo"
       },
       "operations": [
         "groups.list",
@@ -722,7 +774,8 @@
       "scope": "festapp:groups:write",
       "labels": {
         "cs": "Spravovat skupiny a jejich členství",
-        "en": "Manage groups and memberships"
+        "en": "Manage groups and memberships",
+        "sk": "Spravovať skupiny a členstvo"
       },
       "operations": [
         "groups.save",
@@ -738,7 +791,8 @@
       "scope": "festapp:unit-people:read",
       "labels": {
         "cs": "Číst lidi a role u pořadatele",
-        "en": "Read organizer people and roles"
+        "en": "Read organizer people and roles",
+        "sk": "Čítať ľudí a roly organizátora"
       },
       "operations": [
         "units.people.list"
@@ -749,7 +803,8 @@
       "scope": "festapp:unit-people:write",
       "labels": {
         "cs": "Upravovat profilové údaje lidí u pořadatele",
-        "en": "Edit organizer member profile fields"
+        "en": "Edit organizer member profile fields",
+        "sk": "Upravovať profily členov organizátora"
       },
       "operations": [
         "units.people.create",
@@ -763,7 +818,8 @@
       "scope": "festapp:unit-people:roles",
       "labels": {
         "cs": "Měnit role lidí u pořadatele",
-        "en": "Change organizer member roles"
+        "en": "Change organizer member roles",
+        "sk": "Meniť roly členov organizátora"
       },
       "operations": [
         "units.people.roles"
@@ -776,7 +832,8 @@
       "scope": "festapp:unit-people:revoke",
       "labels": {
         "cs": "Odebírat přístup lidí k pořadateli",
-        "en": "Revoke organizer access"
+        "en": "Revoke organizer access",
+        "sk": "Odoberať prístup k organizátorovi"
       },
       "operations": [
         "units.people.revoke"
@@ -789,7 +846,8 @@
       "scope": "festapp:occasion-settings:read",
       "labels": {
         "cs": "Číst nastavení akce a hry",
-        "en": "Read occasion and game settings"
+        "en": "Read occasion and game settings",
+        "sk": "Čítať nastavenia akcie a hry"
       },
       "operations": [
         "occasions.settings.inspect",
@@ -801,7 +859,8 @@
       "scope": "festapp:occasion-settings:write",
       "labels": {
         "cs": "Měnit nastavení akce, hry a veřejný odkaz",
-        "en": "Change occasion settings, game and public link"
+        "en": "Change occasion settings, game and public link",
+        "sk": "Meniť nastavenia akcie, hry a verejný odkaz"
       },
       "operations": [
         "occasions.settings.save",
@@ -817,7 +876,8 @@
       "scope": "festapp:unit-settings:read",
       "labels": {
         "cs": "Číst nastavení pořadatele",
-        "en": "Read organizer settings"
+        "en": "Read organizer settings",
+        "sk": "Čítať nastavenia organizátora"
       },
       "operations": [
         "units.settings.inspect",
@@ -833,7 +893,8 @@
       "scope": "festapp:unit-settings:write",
       "labels": {
         "cs": "Měnit nastavení pořadatele",
-        "en": "Change organizer settings"
+        "en": "Change organizer settings",
+        "sk": "Meniť nastavenia organizátora"
       },
       "operations": [
         "units.settings.save",
@@ -847,7 +908,8 @@
       "scope": "festapp:unit-approvals:request",
       "labels": {
         "cs": "Žádat o schválení měření a Meta CAPI (pošle e-mail všem správcům organizace)",
-        "en": "Request measurement and Meta CAPI approval (emails all organization administrators)"
+        "en": "Request measurement and Meta CAPI approval (emails all organization administrators)",
+        "sk": "Žiadať o schválenie merania a Meta CAPI (pošle e-mail všetkým správcom organizácie)"
       },
       "operations": [
         "units.measurementApproval.request",
@@ -861,7 +923,8 @@
       "scope": "festapp:forms:read",
       "labels": {
         "cs": "Číst formuláře, pole a prodejní kapacitu",
-        "en": "Read forms, fields and sales capacity"
+        "en": "Read forms, fields and sales capacity",
+        "sk": "Čítať formuláre, polia a predajnú kapacitu"
       },
       "operations": [
         "forms.list",
@@ -873,7 +936,8 @@
       "scope": "festapp:forms:write",
       "labels": {
         "cs": "Vytvářet, upravovat, kopírovat a mazat formuláře",
-        "en": "Create, edit, copy and delete forms"
+        "en": "Create, edit, copy and delete forms",
+        "sk": "Vytvárať, upravovať, kopírovať a mazať formuláre"
       },
       "operations": [
         "forms.publicLink",
@@ -893,7 +957,8 @@
       "scope": "festapp:email-templates:read",
       "labels": {
         "cs": "Číst e-mailové šablony, bannery a ukázkové náhledy",
-        "en": "Read email templates, banners and synthetic previews"
+        "en": "Read email templates, banners and synthetic previews",
+        "sk": "Čítať e-mailové šablóny, bannery a ukážkové náhľady"
       },
       "operations": [
         "email_templates.list",
@@ -907,7 +972,8 @@
       "scope": "festapp:email-templates:write",
       "labels": {
         "cs": "Upravovat e-mailové šablony a bannery, obnovovat dědičnost",
-        "en": "Edit email templates and banners; restore inheritance"
+        "en": "Edit email templates and banners; restore inheritance",
+        "sk": "Upravovať e-mailové šablóny a bannery, obnovovať dedičnosť"
       },
       "operations": [
         "email_templates.change",
@@ -921,7 +987,8 @@
       "scope": "festapp:orders:create",
       "labels": {
         "cs": "Vytvářet administrátorské objednávky",
-        "en": "Create administrator orders"
+        "en": "Create administrator orders",
+        "sk": "Vytvárať administrátorské objednávky"
       },
       "operations": [
         "forms.previewOrder",
@@ -936,7 +1003,8 @@
       "scope": "festapp:waitlist:accept",
       "labels": {
         "cs": "Přijímat nabídky a vytvářet objednávky za účastníky",
-        "en": "Accept offers and create orders for participants"
+        "en": "Accept offers and create orders for participants",
+        "sk": "Prijímať ponuky a vytvárať objednávky za účastníkov"
       },
       "operations": [
         "waitlist.previewAccept",
@@ -951,7 +1019,8 @@
       "scope": "festapp:waitlist:read",
       "labels": {
         "cs": "Číst čekací listinu a nabídky",
-        "en": "Read waitlist tickets and offers"
+        "en": "Read waitlist tickets and offers",
+        "sk": "Čítať čakaciu listinu a ponuky"
       },
       "operations": [
         "waitlist.detail"
@@ -964,7 +1033,8 @@
       "scope": "festapp:waitlist:write",
       "labels": {
         "cs": "Spravovat a odesílat nabídky čekací listiny",
-        "en": "Manage and send waitlist offers"
+        "en": "Manage and send waitlist offers",
+        "sk": "Spravovať a odosielať ponuky čakacej listiny"
       },
       "operations": [
         "waitlist.proposal",
@@ -982,7 +1052,8 @@
       "scope": "festapp:orders:read",
       "labels": {
         "cs": "Číst objednávky, kontaktní údaje a počty vstupenek",
-        "en": "Read orders, contact details and ticket counts"
+        "en": "Read orders, contact details and ticket counts",
+        "sk": "Čítať objednávky, kontaktné údaje a počty vstupeniek"
       },
       "operations": [
         "orders.report",
@@ -995,7 +1066,8 @@
       "scope": "festapp:orders:write",
       "labels": {
         "cs": "Měnit údaje a položky objednávek a rušit objednávky",
-        "en": "Edit order details and products, and cancel orders"
+        "en": "Edit order details and products, and cancel orders",
+        "sk": "Meniť údaje a položky objednávok a stornovať ich"
       },
       "operations": [
         "orders.update",
@@ -1009,7 +1081,8 @@
       "scope": "festapp:payments:write",
       "labels": {
         "cs": "Zapisovat ruční platby a označovat objednávky jako zaplacené",
-        "en": "Record manual payments and mark orders paid"
+        "en": "Record manual payments and mark orders paid",
+        "sk": "Zapisovať ručné platby a označovať objednávky ako zaplatené"
       },
       "operations": [
         "orders.mark_paid",
@@ -1023,7 +1096,8 @@
       "scope": "festapp:tickets:send",
       "labels": {
         "cs": "Odesílat zákazníkům vstupenky e-mailem",
-        "en": "Email tickets to customers"
+        "en": "Email tickets to customers",
+        "sk": "Odosielať zákazníkom vstupenky e-mailom"
       },
       "operations": [
         "orders.send_tickets"
@@ -1036,7 +1110,8 @@
       "scope": "festapp:seats:read",
       "labels": {
         "cs": "Číst místa a jejich provozní stav",
-        "en": "Read seats and their operational state"
+        "en": "Read seats and their operational state",
+        "sk": "Čítať miesta a ich prevádzkový stav"
       },
       "operations": [
         "seats.list"
@@ -1047,7 +1122,8 @@
       "scope": "festapp:seats:release-holds",
       "labels": {
         "cs": "Uvolňovat dočasné rezervace vybraných míst",
-        "en": "Release temporary holds on selected seats"
+        "en": "Release temporary holds on selected seats",
+        "sk": "Uvoľňovať dočasné rezervácie vybraných miest"
       },
       "operations": [
         "seats.preview_release",
@@ -1061,7 +1137,8 @@
       "scope": "festapp:seats:create-orders",
       "labels": {
         "cs": "Vytvářet objednávky z míst a nahrazovat původní vstupenky",
-        "en": "Create orders from seats and replace original tickets"
+        "en": "Create orders from seats and replace original tickets",
+        "sk": "Vytvárať objednávky z miest a nahrádzať pôvodné vstupenky"
       },
       "operations": [
         "seats.preview_order",
@@ -1076,7 +1153,8 @@
       "scope": "festapp:seats:cancel-tickets",
       "labels": {
         "cs": "Rušit vstupenky vybrané v plánku",
-        "en": "Cancel tickets selected on a map"
+        "en": "Cancel tickets selected on a map",
+        "sk": "Rušiť vstupenky vybrané v plániku"
       },
       "operations": [
         "seats.preview_cancel",
@@ -1091,7 +1169,8 @@
       "scope": "festapp:seats:swap",
       "labels": {
         "cs": "Prohazovat místa vstupenek a upravovat cenu objednávky",
-        "en": "Swap ticket seats and update order totals"
+        "en": "Swap ticket seats and update order totals",
+        "sk": "Vymieňať miesta vstupeniek a upravovať cenu objednávky"
       },
       "operations": [
         "seats.preview_swap",
@@ -1106,7 +1185,8 @@
       "scope": "festapp:seats:block",
       "labels": {
         "cs": "Blokovat a odblokovat vybraná místa",
-        "en": "Block and unblock selected seats"
+        "en": "Block and unblock selected seats",
+        "sk": "Blokovať a odblokovať vybrané miesta"
       },
       "operations": [
         "seats.preview_block",
@@ -1120,7 +1200,8 @@
       "scope": "festapp:inventory:read",
       "labels": {
         "cs": "Číst sklady, kapacity, nastavení a obsazení kontextů",
-        "en": "Read stock pools, capacity, settings and context occupancy"
+        "en": "Read stock pools, capacity, settings and context occupancy",
+        "sk": "Čítať sklady, kapacity, nastavenia a obsadenie kontextov"
       },
       "operations": [
         "inventory.pools.list",
@@ -1136,7 +1217,8 @@
       "scope": "festapp:inventory:write",
       "labels": {
         "cs": "Upravovat sklady, jejich kontexty a zdroje",
-        "en": "Edit stock pools, contexts and resources"
+        "en": "Edit stock pools, contexts and resources",
+        "sk": "Upravovať sklady, ich kontexty a zdroje"
       },
       "operations": [
         "inventory.change",
@@ -1150,7 +1232,8 @@
       "scope": "festapp:standing-inventory:write",
       "labels": {
         "cs": "Připravit zásoby pro vstupenky na stání",
-        "en": "Prepare standing admission inventory"
+        "en": "Prepare standing admission inventory",
+        "sk": "Pripraviť zásoby pre vstupenky na státie"
       },
       "operations": [
         "inventory.prepare_standing"
@@ -1163,7 +1246,8 @@
       "scope": "festapp:product-schedules:read",
       "labels": {
         "cs": "Číst cenové vlny a plánované změny produktů",
-        "en": "Read product price waves and scheduled changes"
+        "en": "Read product price waves and scheduled changes",
+        "sk": "Čítať cenové vlny a plánované zmeny produktov"
       },
       "operations": [
         "product_schedules.list"
@@ -1176,7 +1260,8 @@
       "scope": "festapp:product-schedules:write",
       "labels": {
         "cs": "Plánovat, přesouvat a rušit ceny a viditelnost produktů",
-        "en": "Schedule, move and cancel product prices and visibility"
+        "en": "Schedule, move and cancel product prices and visibility",
+        "sk": "Plánovať, presúvať a rušiť ceny a viditeľnosť produktov"
       },
       "operations": [
         "product_schedules.change"
@@ -1190,7 +1275,8 @@
       "scope": "festapp:product-options:read",
       "labels": {
         "cs": "Číst dostupné typy produktů a skladové volby",
-        "en": "Read available product types and stock choices"
+        "en": "Read available product types and stock choices",
+        "sk": "Čítať dostupné typy produktov a skladové možnosti"
       },
       "operations": [
         "products.options"
@@ -1203,7 +1289,8 @@
       "scope": "festapp:products:read",
       "labels": {
         "cs": "Číst produkty, ceny a skladová přiřazení",
-        "en": "Read products, prices and inventory assignments"
+        "en": "Read products, prices and inventory assignments",
+        "sk": "Čítať produkty, ceny a skladové priradenia"
       },
       "operations": [
         "products.list"
@@ -1214,7 +1301,8 @@
       "scope": "festapp:products:write",
       "labels": {
         "cs": "Vytvářet, upravovat a odstraňovat produkty",
-        "en": "Create, edit and delete products"
+        "en": "Create, edit and delete products",
+        "sk": "Vytvárať, upravovať a odstraňovať produkty"
       },
       "operations": [
         "products.save",

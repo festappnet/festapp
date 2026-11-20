@@ -33,7 +33,7 @@ export function renderSiteShell({locale, brand, contact, helpPath, helpLabel, ac
     }));
   });
   const brandAssets = html => html.replace(/src="\/(brand-logo(?:-light)?\.svg)"/g, (_, name) => `src="${escape(brandAssetBase + name)}"`);
-  let header = brandAssets(render(siteHeader(locale !== 'cs')));
+  let header = brandAssets(render(siteHeader(locale === 'en')));
   if (brandAssetBase !== '/') header = header.replace('>', ` data-brand-asset-base="${escape(brandAssetBase)}">`);
   return {header: accountHeader ? header : header.replace(' auth-pending', ''), footer: brandAssets(render(read('site-footer.html')))};
 }
