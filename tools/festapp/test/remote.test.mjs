@@ -389,11 +389,17 @@ test('OAuth rejects foreign resource indicators before login or consent, includi
     assert.equal(f.calls.filter(call => call.url.pathname === '/auth/v1/token').length, 0);
 });
 
-for (const repeatResource of [false, true]) test(`tenant consent uses app access proof, an independent session and the original OAuth browser (repeated resource: ${repeatResource})`, async t => {
-    const f = await setup(t, { tenant: true });
+for (const { name, repeatResource, registration } of [
+    { name: 'web callback' },
+    { name: 'web callback with repeated resource', repeatResource: true },
+    { name: 'Claude Code loopback callback', registration: { ...claudeCodeRegistration, allowedScopes: undefined } },
+]) test(`tenant consent uses app access proof, an independent session and the original OAuth browser (${name})`, async t => {
+    const f = await setup(t, { tenant: true, registeredClient: registration });
+    const clientId = registration?.id ?? 'chatgpt-fixture';
+    const callbackUri = registration ? 'http://localhost:51789/callback' : f.issuer + '/callback';
     const verifier = 'v'.repeat(43);
-    const query = new URLSearchParams({ client_id: 'chatgpt-fixture', response_type: 'code',
-        redirect_uri: f.issuer + '/callback', resource: f.config.resource, scope: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES].join(' '),
+    const query = new URLSearchParams({ client_id: clientId, response_type: 'code',
+        redirect_uri: callbackUri, resource: f.config.resource, scope: [READ_SCOPE, CREATE_SCOPE, ...MCP_SCOPES].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
     if (repeatResource) query.append('resource', f.config.resource);
     let r = await f.browser('/auth?' + query);
@@ -434,15 +440,16 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     r = await f.browser(resumeUrl);
     assert.equal(r.status, 303);
     let target = r.headers.get('location');
-    for (let i = 0; i < 8 && !new URL(target, f.issuer).pathname.startsWith('/callback'); i++) {
+    for (let i = 0; i < 8 && !new URL(target, f.issuer).href.startsWith(callbackUri + '?'); i++) {
         r = await f.browser(target); target = r.headers.get('location');
     }
     const callback = new URL(target, f.issuer);
+    assert.equal(callback.origin + callback.pathname, callbackUri);
     assert(callback.searchParams.get('code'));
     assert.deepEqual(await (await broker('status', { accessToken: supabaseToken })).json(), { status: 'pending' });
     r = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
-        grant_type: 'authorization_code', code: callback.searchParams.get('code'), client_id: 'chatgpt-fixture',
-        redirect_uri: f.issuer + '/callback', code_verifier: verifier, resource: f.config.resource,
+        grant_type: 'authorization_code', code: callback.searchParams.get('code'), client_id: clientId,
+        redirect_uri: callbackUri, code_verifier: verifier, resource: f.config.resource,
     }) });
     assert.equal(r.status, 200, await r.clone().text());
     const tokens = await r.json();
@@ -450,7 +457,7 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     assert(tokens.scope.split(' ').includes(CREATE_SCOPE));
     assert(MCP_SCOPES.every(scope => tokens.scope.split(' ').includes(scope)));
     const refreshed = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
-        grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: 'chatgpt-fixture',
+        grant_type: 'refresh_token', refresh_token: tokens.refresh_token, client_id: clientId,
         resource: f.config.resource, scope: `${tokens.scope} offline_access`,
     }) });
     assert.equal(refreshed.status, 400);
@@ -494,7 +501,7 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     assert.equal((await manage('list', { userId: 'other-user' })).status, 403);
     const listed = await (await manage('list')).json();
     assert.deepEqual(listed.connections.map(c => c.id), [own.id]);
-    assert.equal(listed.connections[0].client, 'ChatGPT fixture');
+    assert.equal(listed.connections[0].client, registration?.name ?? 'ChatGPT fixture');
     assert.deepEqual(listed.connections[0].permissions, MCP_SCOPES);
     assert.doesNotMatch(JSON.stringify(listed), /refresh_token|accessToken|profileBinding|binding|userId/);
     assert.equal((await manage('revoke', { connectionId: 'foreign-grant' })).status, 403);
@@ -507,7 +514,7 @@ for (const repeatResource of [false, true]) test(`tenant consent uses app access
     assert.equal(f.calls.filter(c => c.url.pathname === '/auth/v1/token').length, mintedBefore, 'management never creates a backend session');
     assert.equal(f.storage.get('Backend', own.binding), undefined);
     assert.equal((await fetch(f.config.resource, { method: 'POST', headers: { authorization: `Bearer ${tokens.access_token}`, 'content-type': 'application/json' }, body: '{}' })).status, 401);
-    assert.equal((await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({ client_id: 'chatgpt-fixture', grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource }) })).status, 400);
+    assert.equal((await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({ client_id: clientId, grant_type: 'refresh_token', refresh_token: tokens.refresh_token, resource: f.config.resource }) })).status, 400);
     assert.equal((await broker('status', { accessToken: supabaseToken })).status, 403);
 });
 

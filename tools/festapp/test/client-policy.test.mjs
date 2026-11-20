@@ -24,39 +24,36 @@ function configuration(extra = {}) {
 test('only public native registrations may use exact localhost HTTP callbacks', () => {
     for (const uri of ['http://localhost/callback', 'http://localhost:51789/callback', 'http://localhost:65535/callback']) {
         assert(!validRedirect(uri, 'native'));
-        assert(!validRedirect(uri, 'native', false, undefined, true));
-        assert(!validRedirect(uri, 'native', false, 'none'));
-        assert(validRedirect(uri, 'native', false, 'none', true));
-        assert(!validRedirect(uri, 'native', false, 'private_key_jwt', true));
-        for (const local of [false, true]) assert(!validRedirect(uri, 'web', local));
+        for (const local of [false, true]) assert(!validRedirect(uri, 'web', { local, allowLocalhost: true }));
         const client = { id: 'festapp-claude-code', name: 'Claude Code', applicationType: 'native', redirectUris: [uri] };
+        const explicitPublic = { ...client, tokenEndpointAuthMethod: 'none' };
         assert.equal(configuration({ clients: [client] }).clients[0].tokenEndpointAuthMethod, 'none');
-        assert.throws(() => configuration({ clients: [{ ...client, tokenEndpointAuthMethod: 'private_key_jwt' }] }), /INVALID_REMOTE_REDIRECT/);
+        assert.deepEqual(configuration({ clients: [explicitPublic] }).clients[0].redirectUris, [uri]);
+        assert.throws(() => configuration({ clients: [{ ...client, tokenEndpointAuthMethod: 'private_key_jwt' }] }), /INVALID_CLIENT_KEYS/);
     }
     for (const uri of ['http://app.localhost/callback', 'http://localhost./callback', 'http://app.local/callback',
         'https://localhost/callback', 'http://user@localhost/callback', 'http://localhost/callback?q=1',
         'http://localhost/callback#fragment', 'http://localhost/callback#', 'http://localhost/callback?',
         'http://@localhost/callback', 'http://:@localhost/callback', 'http://localhost/path@other',
         'http://LOCALHOST/callback', 'HTTP://localhost/callback', 'http://localhost:80/callback',
-        'http://localhost/a/../callback', 'http://localhost:051789/callback', 'http://localhost', 'http://localhost/call\\back'])
-        {
-        assert(!validRedirect(uri, 'native', false, 'none', true), uri);
+        'http://localhost/a/../callback', 'http://localhost:051789/callback', 'http://localhost', 'http://localhost/call\\back']) {
+        assert(!validRedirect(uri, 'native', { allowLocalhost: true }), uri);
         assert.throws(() => configuration({ clients: [{ id: 'invalid', name: 'Invalid', applicationType: 'native', redirectUris: [uri] }] }), uri);
     }
     // The configuration schema trims surrounding whitespace before the canonical check.
-    assert(!validRedirect('http://localhost/callback\n', 'native', false, 'none', true));
+    assert(!validRedirect('http://localhost/callback\n', 'native', { allowLocalhost: true }));
     assert.deepEqual(configuration({ clients: [{ id: 'trimmed', name: 'Trimmed', applicationType: 'native',
         redirectUris: ['http://localhost/callback\n'] }] }).clients[0].redirectUris, ['http://localhost/callback']);
-    for (const host of ['127.0.0.1', '[::1]']) {
-        assert(validRedirect(`http://${host}:51789/callback`, 'native'));
-        for (const uri of [`http://${host}/callback?`, `http://${host}/callback#`, `http://@${host}/callback`,
-            `http://${host}:80/callback`, `HTTP://${host}/callback`]) assert(!validRedirect(uri, 'native', false, 'none', true), uri);
-    }
-    assert(!validRedirect('http://[0:0:0:0:0:0:0:1]/callback', 'native'));
-    assert(validRedirect('https://web.fixture.test/callback', 'web'));
-    for (const uri of ['https://web.fixture.test/callback?', 'https://web.fixture.test/callback#',
-        'https://@web.fixture.test/callback', 'https://WEB.fixture.test/callback', 'https://web.fixture.test:443/callback'])
-        assert(!validRedirect(uri, 'web'), uri);
+});
+
+test('static web and IP loopback registrations keep their existing redirect URIs', () => {
+    const clients = [
+        { id: 'web', name: 'Web', redirectUris: ['https://WEB.fixture.test:443/callback@v2'] },
+        { id: 'native', name: 'Native', applicationType: 'native',
+            redirectUris: ['http://127.0.0.1:80/callback@v2', 'http://[::1]:51789/callback'] },
+    ];
+    assert.deepEqual(configuration({ clients }).clients.map(client => client.redirectUris),
+        clients.map(client => client.redirectUris));
 });
 
 test('maintained provider matches registered localhost with any port and exact host/path', async () => {
@@ -80,6 +77,7 @@ test('trusted metadata accepts only IP callbacks and keeps public-native scope c
         tokenEndpointAuthMethod: 'none', responseTypes: ['code'], grantTypes: ['authorization_code'],
         redirectUris: ['http://127.0.0.1/callback'], scope: READ_SCOPE };
     assert(allowsMetadataClient(config, client));
+    assert(allowsMetadataClient(config, { ...client, redirectUris: ['http://127.0.0.1:80/callback@v2'] }));
     assert(allowsMetadataClient(config, { ...client, redirectUris: ['http://[::1]:51789/callback'] }));
     for (const uri of ['http://localhost/callback', 'http://localhost:51789/callback'])
         assert(!allowsMetadataClient(config, { ...client, redirectUris: [uri] }), uri);

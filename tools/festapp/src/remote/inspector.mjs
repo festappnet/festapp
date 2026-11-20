@@ -5,7 +5,7 @@ import { DOMAIN_SCOPES, validRedirect } from './client-policy.mjs';
 export function inspectorConfiguration(config, origin) {
     let url;
     try { url = new URL(origin); } catch { check(false, 'INVALID_INSPECTOR_ORIGIN'); }
-    check(url.origin === origin && validRedirect(origin + '/oauth/callback', 'native', false, 'none'), 'INVALID_INSPECTOR_ORIGIN');
+    check(url.origin === origin && validRedirect(origin + '/oauth/callback', 'native'), 'INVALID_INSPECTOR_ORIGIN');
     const registration = { id: 'festapp-inspector', name: 'MCP Inspector', applicationType: 'native',
         dataProfile: 'operator', redirectUris: [origin + '/oauth/callback'] };
     return { registration, inspector: { mcpServers: { festapp: {

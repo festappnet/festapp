@@ -51,6 +51,34 @@ Codex's `/callback`. OAuth error pages classify client, metadata, scope and
 callback failures without echoing request parameters, credentials or details.
 See the [setup workflow](../../../tools/festapp/README.md#official-inspector-web-ui).
 
+### Claude Code client registration
+
+In the protected `remote-config.json`, add a `clients` entry by copying
+`festapp-codex`. Keep its data profile, scope ceiling, resource and transport
+restrictions, and consent settings. Set the following fields on the copy.
+
+```json
+{
+  "id": "festapp-claude-code",
+  "name": "Claude Code",
+  "applicationType": "native",
+  "tokenEndpointAuthMethod": "none",
+  "redirectUris": ["http://localhost/callback"]
+}
+```
+
+Only protected static public native registrations can use this HTTP
+`localhost` exception. The registered URI must be in canonical URL form,
+with no raw `?`, `#` or `@`. Trusted metadata clients and Inspector use
+loopback IP literals. The provider requires the registered host and path
+and allows the local listener port to vary. The code exchange requires the
+complete redirect URI used at authorization.
+
+Before rollout, validate the protected configuration against the candidate
+image. Once the issuer loads it, follow the [Claude Code connection guide](../../../tools/festapp/README.md#claude-code-remote-connection)
+and verify that first-party consent returns to the local listener and
+Claude Code lists the tools for the approved grant.
+
 ## Delegation scope and creation
 
 Web consent groups occasions under organizer checkboxes. Selecting an organizer
@@ -139,23 +167,6 @@ The separately registered public native client `festapp-codex` uses
 vary as required for a local listener; the path is exact, and other hosts are
 rejected. Native callback configuration rejects userinfo, query and fragment.
 This does not widen web-client redirects or enable dynamic registration.
-
-Claude Code uses a separate protected `clients` entry `festapp-claude-code`,
-with `applicationType: native`, `tokenEndpointAuthMethod: none` and
-`http://localhost/callback`. Copy the Codex data profile, scope ceiling and
-consent/resource restrictions; see the [connection guide](../../../tools/festapp/README.md#claude-code-remote-connection).
-Only public native clients statically configured in `clients` (omitted
-`tokenEndpointAuthMethod` means `none`) may register exactly `localhost` over
-HTTP. Trusted metadata clients (CIMD) remain restricted to IP literal loopback
-callbacks, because callback form-action CSP is derived from static registrations.
-Subdomains, trailing-dot hosts and `.local` are not accepted. Registered URIs
-must exactly equal their canonical URL representation and contain no raw `?`,
-`#` or `@`, including empty query, fragment or userinfo. Registered host and
-path must match; the provider ignores only the port during registration matching. Code exchange requires the complete URI
-from authorization, including that chosen port. Existing Codex registrations
-remain restricted to their IP callback. Web, confidential-client and Inspector
-origin policies are unchanged. No client-ID exception or public schema field
-is introduced.
 
 The browser logs into downstream Supabase normally. Explicit consent binds one
 new independent backend refresh session to one actor/client/tenant/profile and

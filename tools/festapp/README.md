@@ -366,47 +366,23 @@ native client uses the same scoped read handlers and separate OAuth grant.
 
 ### Claude Code remote connection
 
-Add a separate public native registration `festapp-claude-code` to `clients`
-in the protected server configuration (`remote-config.json`, parsed by
-`src/remote/config.mjs`). Registrations are configuration, not a built-in client
-list; open dynamic registration is disabled. Copy the `festapp-codex` entry,
-including its `dataProfile`, scope ceiling (`allowedScopes`, or its absence),
-resource/transport restrictions and consent duration policy, changing only:
-
-```json
-{
-  "id": "festapp-claude-code",
-  "name": "Claude Code",
-  "applicationType": "native",
-  "tokenEndpointAuthMethod": "none",
-  "redirectUris": ["http://localhost/callback"]
-}
-```
-
-These fields describe the changes to the copied entry, not a replacement for
-its existing restrictions. Load the updated server configuration before connecting.
-Use a separate client ID so Codex keeps its registered IP callback, and each
-client has independent consent and credentials. No client-ID-specific redirect
-bypass is needed: the exact registered hostname/path governs access. This
-localhost exception applies only to static registrations; trusted client metadata
-documents (CIMD) remain restricted to IP loopback callbacks.
-Confidential native clients do not gain `localhost` support.
+Once the issuer has enabled the Claude Code client, run the command from the
+project where you use Claude Code. If you previously added `festapp` with the
+Codex client ID in this project, remove that local entry first with `claude mcp remove --scope local festapp`. To keep the existing
+entry, use a different server name in the command and select that name in
+`/mcp`.
 
 ```sh
 claude mcp add --transport http --scope local --client-id festapp-claude-code --callback-port 51789 festapp https://mcp.vstupenky.online/mcp
 ```
 
-In Claude Code, open `/mcp`, select `festapp` and authenticate. Complete the
-browser login and occasion/permission consent as for Codex. Port 51789 must be
-available on your machine; choose another port with `--callback-port` if needed.
-The registered URI omits the port so any local listener port can be used.
-`*.localhost`, trailing-dot `localhost.`, `.local` hosts, HTTPS localhost and
-other callback paths are rejected. Registered URIs must use the canonical URL
-form (lowercase host/scheme, no redundant default port or path normalization),
-without any raw `?`, `#` or `@`. An authorization request may explicitly use
-port 80 even though the canonical registered URI omits it. At code exchange the complete `redirect_uri`
-must equal the URI used for authorization, including the chosen port; changing
-ports between authorization and exchange is rejected. PKCE remains required.
+Open `/mcp`, select the server and authenticate. Sign in to vstupenky.online
+in your browser, choose the occasions to share, and approve the connection.
+Return to Claude Code and check the connection and available tools in `/mcp`.
+If port 51789 is busy, choose a free port with `--callback-port`.
+
+Self-hosted operators must [register the Claude Code client](../../docs/architecture/operations/remote-mcp-auth.md#claude-code-client-registration)
+before using this command with their issuer.
 
 ### First-party consent
 

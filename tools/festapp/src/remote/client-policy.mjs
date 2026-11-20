@@ -10,16 +10,16 @@ export function validScopeCeiling(scopes) {
         scopes.every(s => DOMAIN_SCOPES.includes(s)) && validPermissions(scopes.filter(s => MCP_SCOPES.includes(s)));
 }
 
-export function validRedirect(uri, applicationType, local = false, tokenEndpointAuthMethod, staticRegistration = false) {
+export function validRedirect(uri, applicationType, { local = false, allowLocalhost = false } = {}) {
     let u;
     try { u = new URL(uri); } catch { return false; }
-    if (uri !== u.href || /[\s\\?#@]/u.test(uri)) return false;
+    if (u.username || u.password || u.search || u.hash || /[\s\\]/u.test(uri)) return false;
+    if (applicationType === 'native' && u.hostname === 'localhost') {
+        // Only protected static registrations opt in and contribute to form-action CSP.
+        return allowLocalhost && u.protocol === 'http:' && uri === u.href && !/[?#@]/u.test(uri);
+    }
     const loopback = u.protocol === 'http:' && ['127.0.0.1', '[::1]'].includes(u.hostname);
-    // Host and path still have to match this client's explicit registration.
-    // Only static registrations contribute callback destinations to form-action CSP.
-    const publicLocalhost = staticRegistration && tokenEndpointAuthMethod === 'none' &&
-        u.protocol === 'http:' && u.hostname === 'localhost';
-    return applicationType === 'native' ? loopback || publicLocalhost : u.protocol === 'https:' || (local && loopback);
+    return applicationType === 'native' ? loopback : u.protocol === 'https:' || (local && loopback);
 }
 
 export function validMetadataOrigin(origin) {
@@ -60,6 +60,6 @@ export function allowsMetadataClient(config, client) {
         client.tokenEndpointAuthMethod === 'none' && client.responseTypes?.length === 1 && client.responseTypes[0] === 'code' &&
         client.grantTypes?.includes('authorization_code') && client.grantTypes.every(t => ['authorization_code', 'refresh_token'].includes(t)) &&
         client.redirectUris?.length > 0 && client.redirectUris.length <= 4 &&
-        client.redirectUris.every(uri => validRedirect(uri, 'native', false, client.tokenEndpointAuthMethod)) &&
+        client.redirectUris.every(uri => validRedirect(uri, 'native')) &&
         (!client.scope || clientAllowsScopes(config, client.clientId, client.scope.split(' ')));
 }
