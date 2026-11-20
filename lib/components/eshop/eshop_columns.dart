@@ -464,6 +464,8 @@ class EshopColumns {
                   return AsyncDownloadButton(
                     key: ValueKey(('ticket-pdf', ticket?.id)),
                     iconOnly: true,
+                    iconColor:
+                        rendererContext.stateManager.style.cellTextStyle.color,
                     label: OrdersStrings.downloadTicket,
                     loadingLabel: OrdersStrings.generatingPdf,
                     onDownload: ticket?.ticketSymbol?.trim().isNotEmpty !=
