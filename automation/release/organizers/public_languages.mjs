@@ -31,13 +31,13 @@ export function publicAlternates(origin, href, locales) {
 
 export function publicLanguageSwitch(href, current, locales) {
   const label = current === 'en' ? 'Page language' : 'Jazyk stránky';
-  return `<nav class="public-language-switch wrap" aria-label="${label}">${locales.map(locale => {
+  return `<span class="public-language-switch" role="group" aria-label="${label}">${locales.map(locale => {
     const nativeName = new Intl.DisplayNames([locale], {type:'language'}).of(locale);
     const name = nativeName.charAt(0).toLocaleUpperCase(locale) + nativeName.slice(1);
     const url = new URL(href, 'https://public.invalid');
     url.searchParams.set('lang', locale);
     return `<a href="${escape(url.pathname + url.search)}" lang="${locale}" hreflang="${locale}" data-public-language="${locale}"${locale === current ? ' aria-current="page"' : ''}>${escape(name)}</a>`;
-  }).join(' ')}</nav>`;
+  }).join(' ')}</span>`;
 }
 
 export function publicDocumentLinks(html, locale, defaultLocale, helpRoot) {
