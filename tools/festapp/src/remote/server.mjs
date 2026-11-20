@@ -221,7 +221,7 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         const source = readFileSync(new URL(`../../../../automation/release/legal/mcp-${kind}.${language}.md`, import.meta.url), 'utf8');
         app.get(language === 'en' ? `/${kind}` : `/cs/${kind}`, (_req, res) => res.type('html').send(publicDocument(source, language)));
     }
-    app.get('/healthz', (_req, res) => res.json({ ok: true }));
+    app.get('/healthz', (_req, res) => res.json({ ok: true, sourceCommit: /^[a-f0-9]{40}$/i.test(process.env.FESTAPP_SOURCE_SHA ?? '') ? process.env.FESTAPP_SOURCE_SHA : null }));
     const run = createHostedRunner({ config, storage, provider, fetchImpl, audit, limit });
     installApi(app, { config, run });
     const legacyMake = config.clients.some(c => c.transports?.includes('legacy-make'));

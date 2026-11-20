@@ -1,3 +1,4 @@
+import {commandBoundary, outputDiagnostic} from './command-boundary.mjs';
 import {informationDescriptors,informationDataSchemas,invokeInformationOperation} from './information.mjs';
 import {webhookDescriptors,webhookDataSchemas,invokeWebhookOperation} from './webhooks.mjs';
 import { inventoryAssignmentDescriptors, inventoryAssignmentDataSchemas, invokeInventoryAssignmentOperation } from './inventory-assignments.mjs';
@@ -329,7 +330,7 @@ export class Operations {
         check(data && !data.error);
         return data;
     }
-    async invoke(id, raw, { onAccepted, onRetryAfter } = {}) {
+    async invoke(id, raw, { onAccepted, onRetryAfter, onCommittedReadbackFailure } = {}) {
         const meta = {
             contractVersion: 1,
             requestId: randomUUID(),
@@ -352,8 +353,9 @@ export class Operations {
             const parsed = descriptor.input.safeParse(raw);
             check(parsed.success, 'INVALID_INPUT');
             const args = parsed.data;
+            if (typeof args.commandId === 'string') args.commandId = args.commandId.toLowerCase();
             await this.owner.authorizeOperation?.(id, args);
-            return await this.owner.authorized(async (client, context) => {
+            return await this.owner.authorized(async (client, context) => commandBoundary(client, descriptor, args, async (client, onFormReceipt) => {
                 if (descriptor.requiresLayoutWriteContract)
                     await this.verifyWriteContract(client);
                 onAccepted?.();
@@ -395,7 +397,7 @@ export class Operations {
                 else if (measurementSetupDataSchemas[id]) data = await invokeMeasurementSetupOperation(this.owner, client, id, args);
                 else if (configurationDataSchemas[id]) data = await invokeConfigurationOperation(this.owner, client, id, args);
                 else if (formSalesDataSchemas[id]) data = await invokeFormSalesOperation(this.owner, client, id, args, context);
-                else if (formDataSchemas[id]) data = await invokeFormOperation(this.owner, client, id, args);
+                else if (formDataSchemas[id]) data = await invokeFormOperation(this.owner, client, id, args, onFormReceipt);
                 else if (emailTemplateDataSchemas[id]) data = await invokeEmailTemplateOperation(this.owner, client, id, args);
                 else if (seatCancellationDataSchemas[id]) data = await invokeSeatCancellationOperation(this.owner, client, id, args);
                 else if (seatOrderDataSchemas[id]) data = await invokeSeatOrderOperation(this.owner, client, id, args, context);
@@ -541,16 +543,19 @@ export class Operations {
                     };
                 }
                 const schema = this.owner.orderSummaryOnly && ['orders.list', 'orders.inspect'].includes(id) ? publicOrderPage : dataSchemas[id];
-                check(schema.safeParse(data).success);
+                const output = schema.safeParse(data);
+                if (!output.success) outputDiagnostic(id, output.error);
+                check(output.success);
                 if (this.owner.orderSummaryOnly && id === 'context.inspect') {
                     const { userId, ...publicContext } = data;
                     data = publicContext;
                 }
                 return { ok: true, operation: id, data, meta };
-            });
+            }));
         } catch (error) {
             // The released error envelope stays unchanged; HTTP adapters may expose Retry-After.
             if (Number.isSafeInteger(error?.retryAfter) && error.retryAfter > 0) onRetryAfter?.(error.retryAfter);
+            if (error?.code === 'COMMITTED_READBACK_FAILED' && error.receipt) onCommittedReadbackFailure?.(error.receipt);
             return { ok: false, operation: id, error: safeError(error, { operation: id }), meta };
         }
     }

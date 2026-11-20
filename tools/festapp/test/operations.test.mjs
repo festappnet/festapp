@@ -160,3 +160,75 @@ test('summary executor dispatches only the dedicated RPC and rejects full DTO/er
     }
     assert.equal(calls.length,5); assert(calls.every(c=>c.name==='get_operator_order_summaries_v1'));
 });
+
+const boundaryCommand='00000000-0000-4000-8000-000000000099';
+const boundaryWrite={id:'products.save',domainReadOnly:false};
+// Runs one tracked call, then fails the "readback"; returns the sanitized outward error.
+async function boundaryOutcome({edge=false,response,params,args={commandId:boundaryCommand},descriptor=boundaryWrite}){
+ const {commandBoundary}=await import('../src/operations/command-boundary.mjs');
+ const {safeError}=await import('../src/errors.mjs');
+ const client={rpc:async()=>response,functions:{invoke:async()=>response}};
+ const sent=params??(edge?{body:{commandId:boundaryCommand}}:{p_command_id:boundaryCommand});
+ try{
+  await commandBoundary(client,descriptor,args,async tracked=>{
+   await(edge?tracked.functions.invoke('write',sent):tracked.rpc('write',sent));
+   throw new Error('secret response content');
+  });
+ }catch(error){return safeError(error);}
+ assert.fail('boundary must rethrow');
+}
+const canonical=(over={})=>({code:200,status:'applied',mutation:{commandId:boundaryCommand,receiptId:boundaryCommand},...over});
+
+test('shared command boundary covers RPC and Edge writes without inferring unconfirmed commits',async()=>{
+ for(const edge of [false,true])for(const confirmed of [false,true]){
+  const result=await boundaryOutcome({edge,response:{data:canonical(confirmed?{}:{mutation:{commandId:boundaryCommand,receiptId:'other'}})}});
+  assert.equal(result.code,confirmed?'COMMITTED_READBACK_FAILED':'UNAVAILABLE');
+  assert.equal(result.retryable,!confirmed);assert(!JSON.stringify(result).includes('secret'));
+  if(confirmed)assert.match(result.message,new RegExp(boundaryCommand));
+ }
+});
+
+test('Edge 503 counts as committed only with its own committed receipt, as commandEdgeResponse does',async()=>{
+ assert.equal((await boundaryOutcome({edge:true,response:{data:{code:503,committed:canonical()}}})).code,'COMMITTED_READBACK_FAILED');
+ for(const data of [{code:503},{code:503,committed:canonical({mutation:{commandId:boundaryCommand,receiptId:'other'}})},
+  {code:503,errorCode:'40001',committed:canonical()},{code:503,errorCode:'40P01',committed:canonical()},{code:503,errorCode:'42501',committed:canonical()}])
+  assert.notEqual((await boundaryOutcome({edge:true,response:{data}})).code,'COMMITTED_READBACK_FAILED',JSON.stringify(data));
+ // An RPC never unwraps the Edge 503 committed envelope.
+ assert.notEqual((await boundaryOutcome({response:{data:{code:503,committed:canonical()}}})).code,'COMMITTED_READBACK_FAILED');
+ // Transport failures accompanying a committed body are not commits either.
+ assert.notEqual((await boundaryOutcome({edge:true,response:{data:canonical(),error:{name:'FunctionsFetchError'}}})).code,'COMMITTED_READBACK_FAILED');
+});
+
+test('pre-commit failures and calls without this command ID never become committed readback failures',async()=>{
+ for(const edge of [false,true]){
+  for(const response of [{data:canonical(),error:{code:'XX000',message:'boom'}},{data:canonical({code:409,status:'conflict'})},
+   {data:canonical({code:410,status:'expired'})},{data:canonical({code:422,status:'rejected'})},{data:canonical({status:'rejected'})}])
+   assert.notEqual((await boundaryOutcome({edge,response})).code,'COMMITTED_READBACK_FAILED',JSON.stringify(response));
+  // A read call that did not send the command ID, or sent a different one.
+  for(const params of [edge?{body:{}}:{p_occasion:7},edge?{body:{commandId:'00000000-0000-4000-8000-000000000098'}}:{p_command_id:'00000000-0000-4000-8000-000000000098'},undefined]){
+   const sent=params===undefined?(edge?{body:{commandId:boundaryCommand}}:{p_command_id:boundaryCommand}):params;
+   const args=params===undefined?{commandId:'00000000-0000-4000-8000-000000000098'}:{commandId:boundaryCommand};
+   assert.notEqual((await boundaryOutcome({edge,response:{data:canonical()},params:sent,args})).code,'COMMITTED_READBACK_FAILED',JSON.stringify(sent));
+  }
+ }
+ // Read-only descriptors and ticket layout saves are outside the guard.
+ for(const descriptor of [{id:'forms.inspect',domainReadOnly:true},{id:'ticket_layouts.save',domainReadOnly:false},{id:'ticket_layouts.resume',domainReadOnly:false}])
+  assert.notEqual((await boundaryOutcome({response:{data:canonical()},descriptor})).code,'COMMITTED_READBACK_FAILED',descriptor.id);
+});
+
+test('a failing diagnostic logger cannot downgrade a committed readback failure',async()=>{
+ const original=console.error;console.error=()=>{throw new Error('EPIPE');};
+ try{
+  const {outputDiagnostic}=await import('../src/operations/command-boundary.mjs');
+  outputDiagnostic('forms.create',{name:'ZodError'});
+  outputDiagnostic('forms.create',{name:'ZodError',issues:[null,{code:'x'}]});
+  const result=await boundaryOutcome({response:{data:canonical()}});
+  assert.equal(result.code,'COMMITTED_READBACK_FAILED');assert.equal(result.retryable,false);
+ }finally{console.error=original;}
+ const lines=[];console.error=line=>lines.push(line);
+ try{
+  const {outputDiagnostic}=await import('../src/operations/command-boundary.mjs');
+  outputDiagnostic('forms.create',{name:'ZodError',issues:[null,{code:'x',path:'not-array'}]});
+ }finally{console.error=original;}
+ assert.deepEqual(JSON.parse(lines[0]).issues,[{depth:0},{code:'x',depth:0}]);
+});
