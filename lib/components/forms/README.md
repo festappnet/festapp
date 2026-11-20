@@ -122,7 +122,8 @@ occasion's seating plan instead uses the `spot` group with the most
 visible seat and capacity assignments from that plan. The lowest group ID
 breaks ties. A plan without a visible bound admission product gets a fresh
 group. Changing the seat selector keeps the form's existing product groups.
-An editor can add another group explicitly.
+An editor can add an existing group explicitly to share its product IDs, stock
+and limits across forms.
 Copies canonicalize hidden primary child selectors to visible and omit empty
 hidden primary selectors. Seat-selection mode already suppresses these selectors
 in both clients; persisted visibility must not encode that presentation choice.

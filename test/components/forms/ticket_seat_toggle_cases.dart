@@ -190,6 +190,19 @@ void main() {
         expect(seatProduct, findsNothing);
         expect(mealProduct, findsOneWidget);
       }
+      if (!hasExistingSpotField) {
+        await tester.tap(seatToggle);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(FormStrings.addProductTypeTitle));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(ListTile, 'Seats'));
+        await tester.pumpAndSettle();
+        expect(seatProduct, findsOneWidget);
+        expect(
+            form.relatedFields.where(
+                (field) => field.definition.productType?.id == seats.id),
+            hasLength(1));
+      }
       expect(tester.takeException(), isNull);
     });
   }

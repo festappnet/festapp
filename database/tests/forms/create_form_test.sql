@@ -145,6 +145,29 @@ BEGIN
     PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.order_product_ticket
         WHERE product = v_first_product), 'The original live stock stays untouched');
 
+    -- Explicitly attaching an existing group preserves its product identity.
+    -- Free checkout isolates group ownership from payment setup.
+    UPDATE eshop.products SET price = 0 WHERE id = v_first_product;
+    PERFORM set_config('request.jwt.claim.sub', v_actor::text, true);
+    PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
+    v_result := public.update_form_client_sync_v1(jsonb_build_object(
+        'id', v_second_form_id, 'occasion', v_occasion_id,
+        'form_fields', jsonb_build_array(jsonb_build_object(
+            'title', 'Shared admission', 'type', 'product_type',
+            'product_type_id', v_first_type, 'is_ticket_field', true))), gen_random_uuid());
+    PERFORM assert_eq(v_result->>'status', 'applied',
+        'Explicitly attaching another form group is supported: '||v_result::text);
+    v_checkout_order := public.allocate_ticket_order_identity_internal(v_second_form_id);
+    v_checkout := v_checkout || jsonb_build_object('secret', gen_random_uuid(), 'email', 'shared-form@example.invalid');
+    v_checkout := jsonb_set(v_checkout, '{ticket,0,fields,0,product_type}', to_jsonb(v_first_product));
+    PERFORM set_config('request.jwt.claim.sub', '', true);
+    PERFORM set_config('request.jwt.claim.role', 'anon', true);
+    v_result := public.finalize_ticket_order_internal_v1(v_checkout_order, v_checkout);
+    PERFORM assert_eq(v_result->>'code', '200', 'Explicitly shared stock is available: '||v_result::text);
+    PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.order_product_ticket
+        WHERE "order" = v_checkout_order AND product = v_first_product),
+        'Purchase uses the original shared product, with its common stock');
+
     -- ROLLBACK handles cleanup, but using isolated IDs prevents leak if commit happens accidentally
 END;
 $$ LANGUAGE plpgsql;
