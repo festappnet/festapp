@@ -16,6 +16,7 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
 readonly ARTIFACT="$(dirname "$MANIFEST")/$(jq -r .archive.file "$MANIFEST")"
 jq -e '
   .version == 1 and
+  ((has("selection") and has("exact_shared_replacement")) | not) and
   (.source_sha | test("^[0-9a-f]{40}$")) and
   .host_router_directory == "main" and
   (.excluded_directories | sort) == ["hello", "instance-install"]
@@ -42,13 +43,16 @@ readonly PREVIOUS="volumes/functions.pre-production-$INSTALL_ID"
 [[ ! -e "$STAGE" && ! -e "$PREVIOUS" ]] || fail "Function staging path already exists"
 install -d -o root -g root -m 0755 "$STAGE"
 tar --no-xattrs --no-same-owner --no-same-permissions -C "$STAGE" -xzf "$ARTIFACT"
-if jq -e 'has("selection")' "$MANIFEST" >/dev/null; then
+if jq -e 'has("exact_shared_replacement")' "$MANIFEST" >/dev/null; then
+  python3 "$(dirname "${BASH_SOURCE[0]}")/function-bundle-selection.py" stage-exact-shared \
+    --root volumes/functions --stage "$STAGE" --manifest "$MANIFEST"
+elif jq -e 'has("selection")' "$MANIFEST" >/dev/null; then
   python3 "$(dirname "${BASH_SOURCE[0]}")/function-bundle-selection.py" stage \
     --root volumes/functions --stage "$STAGE" --manifest "$MANIFEST"
 else
   cp -a volumes/functions/main "$STAGE/main"
 fi
-if ! jq -e 'has("selection")' "$MANIFEST" >/dev/null; then
+if ! jq -e 'has("selection") or has("exact_shared_replacement")' "$MANIFEST" >/dev/null; then
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-proof-routes.py" "$STAGE/main/index.ts"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-static-assets.py" "$STAGE/main/index.ts"
 python3 "$(dirname "${BASH_SOURCE[0]}")/patch-function-email-cpu-budget.py" "$STAGE/main/index.ts"
