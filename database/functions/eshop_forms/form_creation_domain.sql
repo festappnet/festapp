@@ -59,7 +59,7 @@ BEGIN
     VALUES ('', 'email', true, new_form_id, 0),
            ('', 'ticket', true, new_form_id, 1);
 
-    -- Seated occasions bind the occasion plan first: all its forms sell the same seats.
+    -- Bind the plan first so the form uses the catalog of its own plan.
     IF EXISTS(SELECT 1 FROM public.occasions WHERE id=p_occasion_id AND
       jsonb_path_exists(features,'$[*] ? (@.code == "blueprint" && @.is_enabled == true)')) THEN
       INSERT INTO public.form_fields(form,type,is_ticket_field,is_required,is_hidden,"order")
@@ -70,18 +70,12 @@ BEGIN
     END IF;
 
     IF seat_blueprint IS NOT NULL THEN
-      -- Reuse the plan's admission group deterministically: the 'spot' group of
-      -- most products bound to its seats/areas (as blueprint_form_products_internal
-      -- offers them), lowest ID on ties. No unseated starter beside the plan.
+      -- Rank groups by visible assignments on the bound plan. Each seat or
+      -- capacity binding counts once; group ID is the stable tie breaker.
       SELECT p.product_type INTO new_product_type_id
-      FROM (SELECT s.product FROM eshop.blueprint_seat_bindings sb JOIN eshop.spots s ON s.id=sb.spot
-            WHERE sb.blueprint=seat_blueprint AND s.blueprint=seat_blueprint AND s.occasion=p_occasion_id
-            UNION ALL
-            SELECT ab.product FROM eshop.blueprint_area_bindings ab WHERE ab.blueprint=seat_blueprint) bound
-      JOIN eshop.products p ON p.id=bound.product AND p.occasion=p_occasion_id
+      FROM public.blueprint_form_product_bindings_internal(new_form_id) bound
+      JOIN eshop.products p ON p.id=bound.product AND NOT p.is_hidden
       JOIN eshop.product_types pt ON pt.id=p.product_type AND pt.type='spot' AND pt.occasion=p_occasion_id
-      -- The primary-product guard below requires a visible variant.
-      WHERE EXISTS(SELECT 1 FROM eshop.products v WHERE v.product_type=pt.id AND NOT v.is_hidden)
       GROUP BY p.product_type ORDER BY count(*) DESC, p.product_type LIMIT 1;
     END IF;
 
@@ -117,6 +111,7 @@ CREATE OR REPLACE FUNCTION public.create_initial_occasion_form_internal_v1(p_occ
 RETURNS jsonb LANGUAGE plpgsql SET search_path=public,extensions AS $$
 DECLARE v_unit bigint;
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[p_occasion_id]);
   SELECT unit INTO v_unit FROM public.occasions WHERE id=p_occasion_id FOR UPDATE;
   IF NOT FOUND OR auth.uid() IS NULL OR NOT public.can_create_occasion(v_unit)
     OR EXISTS(SELECT 1 FROM public.forms WHERE occasion=p_occasion_id) THEN

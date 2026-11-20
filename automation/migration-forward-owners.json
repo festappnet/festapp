@@ -311,6 +311,7 @@
     {
       "migration": "20261114160000_canonical_seated_form_writers.sql",
       "active": false,
+      "checkSources": true,
       "header": "-- Canonical primary selectors and validation at every form construction boundary.",
       "sources": [
         "eshop_forms/duplicate_form_to_occasion.sql",
@@ -731,11 +732,24 @@
       ]
     },
     {
+      "migration": "20261119050000_scope_form_blueprints_on_copy.sql",
+      "active": false,
+      "checkSources": true,
+      "sources": [
+        "eshop_forms/duplicate_form_to_occasion.sql",
+        "others/duplicate_occasion.sql"
+      ],
+      "sha256": "e6b2d4932eaba894def702bdafdea3cac24ed3de5d1d320d813518d2bd53e6f5"
+    },
+    {
       "migration": "20261120130000_form_creation_own_primary_group.sql",
       "active": true,
-      "header": "-- A new form owns a fresh primary admission group; a form bound to the seating plan shares the plan's group.",
+      "header": "-- Form and product commands use a single locking order and shared plan bindings.",
       "sources": [
-        "eshop_forms/form_creation_domain.sql"
+        "blueprint/availability.sql",
+        "eshop_forms/form_creation_domain.sql",
+        "eshop_forms/create_form_client_sync_v1.sql",
+        "eshop/delete_product_client_sync_v1.sql"
       ]
     }
   ]

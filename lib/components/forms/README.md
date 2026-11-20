@@ -118,9 +118,11 @@ locally, and SQL rechecks the invariant atomically for form and catalog saves.
 Form creation and both copy commands validate this invariant before returning.
 Creation adds a new `spot` group with one starter variant for the new form, so
 a draft never shares another form's stock or orders. A form that binds the
-occasion's seating plan instead shares the plan's group: the `spot` group of
-most products bound to plan seats/areas (lowest ID on ties). It gets no
-unseated starter. A plan without bound products gets the fresh group as well.
+occasion's seating plan instead uses the `spot` group with the most
+visible seat and capacity assignments from that plan. The lowest group ID
+breaks ties. A plan without a visible bound admission product gets a fresh
+group. Changing the seat selector keeps the form's existing product groups.
+An editor can add another group explicitly.
 Copies canonicalize hidden primary child selectors to visible and omit empty
 hidden primary selectors. Seat-selection mode already suppresses these selectors
 in both clients; persisted visibility must not encode that presentation choice.

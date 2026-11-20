@@ -116,7 +116,7 @@ void main() {
 
   for (final hasExistingSpotField in [false, true]) {
     testWidgetsWithEnvironment(() => _environment,
-        'disabling blueprint shows seats alongside meals; existing field: $hasExistingSpotField',
+        'disabling blueprint only shows already linked groups; existing field: $hasExistingSpotField',
         (tester) async {
       tester.view.physicalSize = const Size(1600, 1400);
       tester.view.devicePixelRatio = 1;
@@ -175,12 +175,12 @@ void main() {
       for (var i = 0; i < 2; i++) {
         await tester.tap(seatToggle);
         await tester.pumpAndSettle();
-        expect(seatProduct, findsOneWidget);
+        expect(seatProduct, hasExistingSpotField ? findsOneWidget : findsNothing);
         expect(mealProduct, findsOneWidget);
         final groups = form.relatedFields
             .where((field) => field.definition.productType?.id == seats.id)
             .toList();
-        expect(groups, hasLength(1));
+        expect(groups, hasLength(hasExistingSpotField ? 1 : 0));
         if (hasExistingSpotField) {
           expect(groups.single, same(seatGroup));
           expect(groups.single.definition.isRequired, isTrue);

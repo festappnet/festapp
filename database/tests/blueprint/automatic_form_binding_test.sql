@@ -83,7 +83,49 @@ BEGIN
  r:=public.insert_form_for_occasion_internal_v1(occ,NULL,'Tie');
  PERFORM public.assert_eq((SELECT product_type FROM public.form_fields WHERE form=(r->>'id')::bigint AND type='product_type' AND is_ticket_field),
    seats_type,'a tie picks the lowest group ID');
+ -- A visible sibling outside the plan cannot make the hidden assignments eligible.
+ UPDATE eshop.products SET is_hidden=true WHERE id=other_product;
+ INSERT INTO eshop.products(occasion,product_type,title,price,currency_code)
+ VALUES(occ,other_type,'Unbound visible sibling',300,'CZK');
+ UPDATE eshop.spots SET product=other_product WHERE id IN(
+   SELECT spot FROM eshop.blueprint_seat_bindings WHERE blueprint=bp ORDER BY spot LIMIT 3);
+ r:=public.insert_form_for_occasion_internal_v1(occ,NULL,'Visible group');
+ PERFORM public.assert_eq((SELECT product_type FROM public.form_fields WHERE form=(r->>'id')::bigint AND type='product_type' AND is_ticket_field),
+   seats_type,'hidden assignments do not vote even with a visible sibling outside the plan');
  PERFORM public.assert_false(EXISTS(SELECT 1 FROM eshop.products WHERE occasion=occ AND title='Variant 1'),'no unseated starter on a bound plan');
+END $$;
+
+DO $$
+DECLARE f jsonb; req jsonb; r jsonb; occ bigint; bp bigint; product_id bigint; group_id bigint;
+ pool_id bigint; context_id bigint; area_id uuid:=gen_random_uuid();
+BEGIN
+ f:=public.blueprint_test_fixture_internal();req:=f->'request';occ:=(f->>'occasion')::bigint;
+ bp:=(f->>'blueprint')::bigint;product_id:=(f->>'product')::bigint;
+ PERFORM set_config('request.jwt.claim.sub',f->>'actor',true);
+ UPDATE public.occasions SET features='[{"code":"blueprint","is_enabled":true}]' WHERE id=occ;
+ SELECT product_type INTO group_id FROM eshop.products WHERE id=product_id;
+ INSERT INTO public.inventory_pools(occasion,title,type,sellable_capacity)
+ VALUES(occ,'Standing','generic',5) RETURNING id INTO pool_id;
+ INSERT INTO public.inventory_contexts(inventory_pool,title) VALUES(pool_id,'Standing') RETURNING id INTO context_id;
+ INSERT INTO public.resources(inventory_pool,occasion,title,capacity) VALUES(pool_id,occ,'Standing supply',5);
+ INSERT INTO eshop.product_inventory_contexts(product,inventory_context,quantity) VALUES(product_id,context_id,1);
+ PERFORM public.adjust_spot_capacity_for_pool(pool_id);
+ req:=jsonb_set(req,'{layout,nodes}',jsonb_build_array(jsonb_build_object('id',area_id,'kind','capacityArea',
+   'width',200,'height',100,'transform',jsonb_build_object('x',0,'y',0,'rotation',0))));
+ req:=jsonb_set(req,'{seatChanges}','[]');
+ req:=jsonb_set(req,'{areaBindingChanges}',jsonb_build_array(jsonb_build_object('nodeId',area_id,'productId',product_id,
+   'inventoryContextId',context_id,'operation','upsert')));
+ req:=req||jsonb_build_object('textResourceIds',to_jsonb(public.blueprint_text_resource_ids_internal(req->'layout',occ)));
+ r:=public.update_blueprint_client_sync_v1(req,gen_random_uuid());
+ PERFORM public.assert_eq(r->>'status','applied','standing-only plan saved: '||coalesce(r::text,''));
+ r:=public.insert_form_for_occasion_internal_v1(occ,NULL,'Standing');
+ PERFORM public.assert_eq((SELECT product_type FROM public.form_fields WHERE form=(r->>'id')::bigint AND type='product_type' AND is_ticket_field),
+   group_id,'standing-only plan uses its visible admission group');
+ DELETE FROM eshop.blueprint_area_bindings WHERE blueprint=bp;
+ r:=public.insert_form_for_occasion_internal_v1(occ,NULL,'Empty plan');
+ PERFORM public.assert_eq((r->>'blueprint')::bigint,bp,'empty plan is still bound');
+ PERFORM public.assert_true((SELECT product_type<>group_id FROM public.form_fields WHERE form=(r->>'id')::bigint AND type='product_type' AND is_ticket_field),
+   'empty plan creates a fresh admission group');
 END $$;
 
 DO $$
