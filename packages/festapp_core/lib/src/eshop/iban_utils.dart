@@ -1,26 +1,27 @@
 import 'cz_banks.dart';
+import 'sk_banks.dart';
 
 class IbanUtils {
-  /// Generates a CZ IBAN from parsed components.
-  ///
-  /// [countryCode] usually "CZ"
-  /// [bankCode] 4 digits
-  /// [prefix] up to 6 digits (optional, defaults to empty)
-  /// [number] up to 10 digits
-  ///
-  /// Returns validated IBAN or throws exception.
-  static String generateCzIban(String bankCode, String prefix, String number) {
+  static String generateCzIban(String bankCode, String prefix, String number) =>
+      _generateDomesticIban('CZ', '1235', bankCode, prefix, number);
+
+  static String generateSkIban(String bankCode, String prefix, String number) =>
+      _generateDomesticIban('SK', '2820', bankCode, prefix, number);
+
+  // Czech and Slovak domestic accounts use the same layout and mod 11 weights.
+  static String _generateDomesticIban(
+    String countryCode,
+    String countryDigits,
+    String bankCode,
+    String prefix,
+    String number,
+  ) {
     if (bankCode.length != 4 || !RegExp(r'^\d+$').hasMatch(bankCode)) {
       throw FormatException('Invalid bank code length');
     }
 
     String p = prefix.replaceAll(RegExp(r'\D'), '');
     String n = number.replaceAll(RegExp(r'\D'), '');
-
-    // CZ Account Structure:
-    // Prefix: max 6 digits
-    // Number: max 10 digits
-    // Bank: 4 digits
 
     if (p.length > 6) throw FormatException('Prefix too long');
     if (n.length > 10) throw FormatException('Account number too long');
@@ -38,19 +39,11 @@ class IbanUtils {
     String paddedPrefix = p.padLeft(6, '0');
     String paddedNumber = n.padLeft(10, '0');
 
-    // Calculate Checksum digits
-    // Format for calculation: BankCode + Prefix + Number + CountryCodeNum + "00"
-    // CZ = 1235 (C=12, Z=35)
+    final bban = '$bankCode$paddedPrefix$paddedNumber';
+    final checkDigits = 98 - _calcMod97('$bban${countryDigits}00');
+    final checkString = checkDigits.toString().padLeft(2, '0');
 
-    String countryCodeNum = "1235"; // C=12, Z=35
-    String bban = "$bankCode$paddedPrefix$paddedNumber";
-    String numericString = "$bban${countryCodeNum}00";
-
-    int mod97 = _calcMod97(numericString);
-    int checkDigits = 98 - mod97;
-    String checkString = checkDigits.toString().padLeft(2, '0');
-
-    return "CZ$checkString$bankCode$paddedPrefix$paddedNumber";
+    return '$countryCode$checkString$bban';
   }
 
   static bool _checkMod11(String numberStr) {
@@ -93,15 +86,16 @@ class IbanUtils {
     return int.parse(remainder);
   }
 
+  static String normalizeIban(String iban) =>
+      iban.replaceAll(RegExp(r'\s'), '').toUpperCase();
+
   static bool isValidIban(String iban) {
-    // Basic formatting
-    String clean = iban.replaceAll(' ', '').toUpperCase();
+    final clean = normalizeIban(iban);
     if (!RegExp(r'^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$').hasMatch(clean)) return false;
 
-    // Country specific Check
-    // For now assuming CZ
-    if (clean.startsWith('CZ')) {
-      if (clean.length != 24) return false;
+    if (clean.startsWith('CZ') && clean.length != 24) return false;
+    if (clean.startsWith('SK') && !RegExp(r'^SK[0-9]{22}$').hasMatch(clean)) {
+      return false;
     }
 
     // Move first 4 chars to end
@@ -125,12 +119,25 @@ class IbanUtils {
     return _calcMod97(numeric.toString()) == 1;
   }
 
-  static ParsedAccount? parseCzIban(String iban) {
-    String clean = iban.replaceAll(' ', '').toUpperCase();
-    if (!clean.startsWith('CZ') || clean.length != 24) return null;
-    if (!isValidIban(clean)) return null;
+  static ParsedAccount? parseCzIban(String iban) =>
+      _parseDomesticIban(iban, 'CZ', czBanks);
 
-    // CZkk bbbb pppp ppaa aaaa aaaa
+  static ParsedAccount? parseSkIban(String iban) =>
+      _parseDomesticIban(iban, 'SK', skBanks);
+
+  static ParsedAccount? _parseDomesticIban(
+    String iban,
+    String countryCode,
+    Map<String, String> banks,
+  ) {
+    final clean = normalizeIban(iban);
+    if (!clean.startsWith(countryCode) ||
+        !RegExp(r'^[A-Z]{2}[0-9]{22}$').hasMatch(clean) ||
+        !isValidIban(clean)) {
+      return null;
+    }
+
+    // XXkk bbbb pppp ppaa aaaa aaaa
     String bankCode = clean.substring(4, 8);
     String prefixStr = clean.substring(8, 14);
     String numberStr = clean.substring(14, 24);
@@ -140,7 +147,7 @@ class IbanUtils {
 
     return ParsedAccount(
       bankCode: bankCode,
-      bankName: czBanks[bankCode] ?? '',
+      bankName: banks[bankCode] ?? '',
       prefix: prefix.toString(),
       number: number.toString(),
     );
