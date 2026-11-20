@@ -1,6 +1,7 @@
-import { grantEndpoint, clientForResource } from './endpoints.mjs';
+import { grantEndpoint, clientForResource, resourceEndpoint } from './endpoints.mjs';
 import { contextConfig } from './config.mjs';
 import { clientPolicy } from './client-policy.mjs';
+import { MAKE_CLIENT_ID, MAKE_READ_OPERATIONS } from './make-contract.mjs';
 import { authorizeApiAuthentication } from '../auth/operation-policy.mjs';
 import { connectionActive } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { rejectLegacyLock } from '../auth/process-lock.mjs';
@@ -40,25 +41,52 @@ export class DelegatedOwner {
         this.allowedOperations = DELEGATED_OPERATIONS.filter(id => this.permitsOperation(id, grant));
         this.securitySchemes = [{ type: 'oauth2', scopes: [READ_SCOPE] }];
     }
-    permitsOperation(id, grant = this.current()) {
-        const scopes = scopesForOperation(id);
-        const client = clientPolicy(this.config, this.token.clientId);
-        if (grant.operationAllowlist && !grant.operationAllowlist.includes(id)) return false;
-        if (client?.allowedOperations && !client.allowedOperations.includes(id)) return false;
-        return clientAllowsScopes(this.config, this.token.clientId, scopes) && scopes.every(s =>
-            this.token.scope?.split(' ').includes(s) && (s === READ_SCOPE ||
-                (s === CREATE_SCOPE ? canCreateWithAccess(grant.access) : grant.permissions?.includes(s))));
+    operationDenial(id, grant) {
+        const current = grant ?? this.current();
+        const scopes = this.registeredOperationScopes(id);
+        if (!scopes) return 'FORBIDDEN';
+        if (current.operationAllowlist && !current.operationAllowlist.includes(id))
+            return 'INSUFFICIENT_SCOPE';
+        const tokenScopes = this.token.scope?.split(' ') ?? [];
+        return scopes.every(scope => tokenScopes.includes(scope) && (scope === READ_SCOPE ||
+            (scope === CREATE_SCOPE ? canCreateWithAccess(current.access) : current.permissions?.includes(scope))))
+            ? null : 'INSUFFICIENT_SCOPE';
+    }
+    permitsOperation(id, grant) {
+        return this.operationDenial(id, grant) === null;
+    }
+    requireOperation(id, grant) {
+        const denial = this.operationDenial(id, grant);
+        if (denial) throw new OperationError(denial);
     }
     securitySchemesFor(id) {
         const scopes = scopesForOperation(id);
         check(scopes, 'FORBIDDEN');
         return [{ type: 'oauth2', scopes }];
     }
+    // The client registration decides what any connection may ever obtain. Outside it, reconnecting
+    // cannot help, so callers report FORBIDDEN rather than a scope gap or a scope challenge.
+    registeredOperationScopes(id) {
+        const client = clientPolicy(this.config, this.token.clientId);
+        if (!client) return null;
+        if (this.transport === 'legacy-make' &&
+            (client.id !== MAKE_CLIENT_ID || !this.orderSummaryOnly || !MAKE_READ_OPERATIONS.includes(id))) return null;
+        if (client.allowedOperations && !client.allowedOperations.includes(id)) return null;
+        const scopes = scopesForOperation(id);
+        return clientAllowsScopes(this.config, this.token.clientId, scopes) ? scopes : null;
+    }
     challengeFor(code, id) {
         if (['AUTHENTICATION_REQUIRED', 'MFA_REQUIRED'].includes(code))
             return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'invalid_token', description: 'Reconnect your Festapp account to continue.' });
-        if (code === 'INSUFFICIENT_SCOPE' && clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)))
-            return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'insufficient_scope', description: 'Authorize all required operation scopes.', scopes: scopesForOperation(id) });
+        const scopes = code === 'INSUFFICIENT_SCOPE' ? this.registeredOperationScopes(id) : null;
+        if (scopes) {
+            const endpoint = this.transport === 'api' && resourceEndpoint(this.config, this.expectedResource);
+            const resourceMetadata = endpoint
+                ? new URL('/.well-known/oauth-protected-resource/integrations', endpoint.publicBase).href
+                : undefined;
+            return authChallenge(this.config, { scheme: this.token.jkt ? 'DPoP' : 'Bearer', error: 'insufficient_scope',
+                description: 'Authorize all required operation scopes.', scopes, resourceMetadata });
+        }
     }
     current() {
         const t = this.token;
@@ -78,9 +106,9 @@ export class DelegatedOwner {
         return grant;
     }
     authorizeOperation(id, args) {
-        const access = accessSelection(this.current().access);
-        check(clientAllowsScopes(this.config, this.token.clientId, scopesForOperation(id)), 'FORBIDDEN');
-        check(this.allowedOperations.includes(id) && this.permitsOperation(id), 'INSUFFICIENT_SCOPE');
+        const grant = this.current();
+        this.requireOperation(id, grant);
+        const access = accessSelection(grant.access);
         this.operationId = id;
         if (['context.inspect', 'access.inspect'].includes(id)) return;
         if (['occasions.create','occasions.copy','occasions.setup.finalize'].includes(id)) {
@@ -127,15 +155,16 @@ export class DelegatedOwner {
         const isLayout = this.operationId?.startsWith('ticket_layouts.');
         const execute = () => this.session.authorized(async (client, context) => {
             check(context.userId === grant.userId, 'FORBIDDEN');
-            this.current();
+            const liveGrant = this.current();
+            if (this.operationId) this.requireOperation(this.operationId, liveGrant);
             if (this.transport === 'api' && this.operationId) authorizeApiAuthentication(this.operationId, {
                 token: this.token, client: clientPolicy(this.config, this.token.clientId),
                 userId: context.userId, authentication: context.authentication,
             });
             const result = await action(client, isLayout ? { ...context, profile: this.layoutProfile } : context);
             // Read revocation discards an in-flight private result before return.
-            this.current();
-            if (this.operationId) check(this.permitsOperation(this.operationId), 'INSUFFICIENT_SCOPE');
+            const finalGrant = this.current();
+            if (this.operationId) this.requireOperation(this.operationId, finalGrant);
             return result;
         });
         try {

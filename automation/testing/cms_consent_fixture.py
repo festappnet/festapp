@@ -203,11 +203,11 @@ try {
     if result.returncode:
      raise RuntimeError(f'{label}: {apt_failure_summary(result.stdout+result.stderr,result.returncode)}')
 
-   def simulate_packages(engine, apt_config):
+   def simulate_packages(engine, apt_config, timeout):
     with timed_phase(f'cms.browsers.simulate-deps.{engine}'):
      result=subprocess.run([*map(str,playwright),'install-deps','--dry-run',engine],cwd=ROOT,
                            env={**env,**({'APT_CONFIG':str(apt_config)} if apt_config else {})},
-                           capture_output=True,text=True,timeout=25)
+                           capture_output=True,text=True,timeout=timeout)
     with log.open('a') as output:
      output.write(result.stdout+result.stderr)
     packages=simulated_missing_packages(result.stdout)
@@ -224,7 +224,7 @@ try {
      packages=set()
      for engine, diagnostic in missing.items():
       # A launch diagnostic can identify only the small set of libraries the engine actually needs.
-      found=missing_playwright_packages(diagnostic) or simulate_packages(engine,apt_config)
+      found=missing_playwright_packages(diagnostic) or simulate_packages(engine,apt_config,60 if refresh else 25)
       packages.update(found)
      if not packages:
       raise RuntimeError('Playwright found no missing system package for the failed browser launch')
@@ -234,7 +234,7 @@ try {
 
     try:
      install()
-    except RuntimeError as native_error:
+    except (RuntimeError, subprocess.TimeoutExpired) as native_error:
      phase(f'Host package repair failed: {native_error}')
      # Hosted Ubuntu mirror and package indices can move independently of a runner build.
      # Use one signed, fresh official index for both resolution and installation on retry.

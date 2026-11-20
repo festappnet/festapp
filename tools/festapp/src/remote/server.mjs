@@ -3,6 +3,7 @@ import {createWebhookWorker} from './webhook-worker.mjs';
 import { createHostedRunner } from './hosted-runner.mjs';
 import { resourceEndpoint, clientForResource, grantEndpoint, ingressEndpoint, API_PREFIX } from './endpoints.mjs';
 import { installApi, sendProblem } from './api-transport.mjs';
+import { errorStatuses } from './api-contract.mjs';
 import { readFileSync } from 'node:fs';
 import { connectionActive, connectionIssuable, connectionRefreshSeconds, connectionDeadline, consentDeadline } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
 import { CONNECTION_DURATION_DAYS, MAX_CONNECTION_DURATION_DAYS, DAY_SECONDS } from '../../../../packages/festapp_contracts/mcp-connection.mjs';
@@ -485,20 +486,17 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         });
     }, async (req, res) => {
         const make = req.path !== '/mcp';
-        try { return await run(req, resourceEndpoint(config, config.resource), make ? 'legacy-make' : 'mcp', async ({ operations, owner, client, requestId }) => {
-            if (make) {
-                check(client.id === MAKE_CLIENT_ID && owner.orderSummaryOnly && MAKE_READ_OPERATIONS.includes(req.params.operation), 'FORBIDDEN');
-                owner.allowedOperations = owner.allowedOperations.filter(id => MAKE_READ_OPERATIONS.includes(id));
+        try { return await run(req, resourceEndpoint(config, config.resource), make ? 'legacy-make' : 'mcp', async ({ operations, owner, operationId: id, denial, requestId }) => {
+            if (denial) {
+                const challenge = owner.challengeFor(denial, id);
+                if (challenge) res.set('WWW-Authenticate', challenge);
+                return res.status(errorStatuses[denial]).json({
+                    error: denial === 'FORBIDDEN' ? 'access_denied' : denial.toLowerCase(),
+                    code: denial,
+                });
             }
-            const id = make ? req.params.operation : req.body?.method === 'tools/call' ? operations.operationIdForTool(req.body.params?.name) : undefined;
-            if (id && !owner.permitsOperation(id)) {
-                const challenge = owner.challengeFor('INSUFFICIENT_SCOPE', id);
-                if (challenge) return res.status(403).set('WWW-Authenticate', challenge).json({ error: 'insufficient_scope' });
-                return res.status(403).json({ error: 'access_denied' });
-            }
-            if (owner.allowedOperations.some(id => ['ticket_layouts.save','ticket_layouts.pending','ticket_layouts.resume'].includes(id))) await operations.prepare();
             if (make) {
-                const result = await operations.invoke(req.params.operation, req.body);
+                const result = await operations.invoke(id, req.body);
                 try { validateMakePage(req.params.operation, req.body, result, req.headers); }
                 catch (error) {
                     const safe = safeError(error);

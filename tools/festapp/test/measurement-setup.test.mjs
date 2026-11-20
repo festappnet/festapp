@@ -14,6 +14,7 @@ import {operationAuthentication} from '../src/auth/operation-policy.mjs';
 import {safeError} from '../src/errors.mjs';
 import {setup,connect,apiRequest} from './api-fixture.mjs';
 import {reply} from './fixture.mjs';
+import {DelegatedOwner} from '../src/remote/delegation.mjs';
 
 const root=new URL('../../../',import.meta.url);
 const UNIT=3,ORG=1,BINDING='11111111-1111-4111-8111-111111111111',OTHER='22222222-2222-4222-8222-222222222222';
@@ -414,13 +415,41 @@ test('HTTP API requires whole-organizer consent, the approval request scope and 
  assert.equal(uncertain.outcome,'unknown');assert.equal(uncertain.retryable,false);
  const read=await connect(f,{unitId:3,scope:READ.join(' ')});
  response=await apiRequest(f,read.tokens,'units.measurementApproval.request',{unitId:3});assert.equal(response.status,403);
+ // The client may obtain the scope, so a connection without it gets a repairable scope gap.
+ assert.equal((await response.json()).code,'INSUFFICIENT_SCOPE');
  // Organizer settings write alone does not authorize administrator emails.
  const settings=await connect(f,{unitId:3,scope:[...READ,'festapp:unit-settings:write'].join(' ')});
  response=await apiRequest(f,settings.tokens,'units.measurementApproval.request',{unitId:3});assert.equal(response.status,403);
+ assert.equal((await response.json()).code,'INSUFFICIENT_SCOPE');
  response=await apiRequest(f,settings.tokens,'units.measurementApproval.inspect',{unitId:3});
  assert.equal(response.status,200);assert.equal((await response.json()).data.canRequest,false);
  const eventOnly=await connect(f,{occasionIds:[7],scope:scopes.join(' ')});
  response=await apiRequest(f,eventOnly.tokens,'units.measurementApproval.inspect',{unitId:3});
  assert.equal(response.status,403);assert.equal((await response.json()).code,'ORGANIZER_CONSENT_REQUIRED');
  assert.equal(requests,3);
+});
+
+test('HTTP keeps operations outside the client policy FORBIDDEN even when the connection has every scope',async t=>{
+ const scopes=[...READ,'festapp:unit-approvals:request'];
+ const f=await setup(t,{apiPolicy:{allowedScopes:scopes,allowedOperations:['units.measurementApproval.inspect']},fetchImpl:async url=>{
+  if(url.pathname.split('/').at(-1)==='can_manage_unit_configuration')return reply(true);
+ }});
+ const {tokens}=await connect(f,{unitId:3,scope:scopes.join(' ')});
+ // Reconnecting cannot help: the client registration itself excludes this operation.
+ const response=await apiRequest(f,tokens,'units.measurementApproval.request',{unitId:3});
+ assert.equal(response.status,403);assert.equal((await response.json()).code,'FORBIDDEN');
+});
+
+test('MCP and delegated authorization never offer a scope challenge for an operation the client excludes',()=>{
+ const op='units.measurementApproval.request',scopes=[...READ,'festapp:unit-approvals:request'];
+ const grant={access:{type:'unit',unitId:3},permissions:scopes};
+ // A non-API client may restrict operations without restricting scopes.
+ const owner=client=>Object.assign(Object.create(DelegatedOwner.prototype),{config:{clients:[{id:'fixture',...client}]},
+  token:{clientId:'fixture',scope:READ.join(' ')},current:()=>grant,allowedOperations:[]});
+ const excluded=owner({allowedOperations:['units.measurementApproval.inspect']});
+ assert.equal(excluded.challengeFor('INSUFFICIENT_SCOPE',op),undefined);
+ assert.throws(()=>excluded.authorizeOperation(op,{unitId:3}),{code:'FORBIDDEN'});
+ const obtainable=owner({allowedScopes:scopes});
+ assert.match(obtainable.challengeFor('INSUFFICIENT_SCOPE',op),/insufficient_scope/);
+ assert.throws(()=>obtainable.authorizeOperation(op,{unitId:3}),{code:'INSUFFICIENT_SCOPE'});
 });
