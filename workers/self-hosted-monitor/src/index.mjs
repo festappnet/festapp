@@ -6,6 +6,13 @@ const CHECKS = [
   { path: "/auth/v1/health", expectedStatus: 401 },
   { path: "/rest/v1/", expectedStatus: 401 },
 ];
+// Only public health codes may leave the protected RPC response.
+const HEALTH_ALERT_CODES = [
+  "email_paused", "quota_stale", "email_backlog", "email_provider_failed",
+  "email_delivery_failed", "email_feedback_overdue", "first_login_poll_stale",
+  "abuse_auth_backlog", "abuse_commitment_backlog", "abuse_ordinary_backlog",
+  "abuse_cleanup_stale", "abuse_growth_stale",
+];
 
 async function probe(fetchImpl, host, check) {
   const started = Date.now();
@@ -47,7 +54,9 @@ export async function probeEmailHealth(env, fetchImpl = fetch) {
     if (!response.ok) return { pass: false, reason: 'health_rpc_unavailable', http_status: response.status };
     const data = await response.json();
     if (typeof data.ok !== 'boolean' || !Array.isArray(data.alerts)) return { pass: false, reason: 'health_rpc_invalid' };
-    return { pass: data.ok, reason: data.ok ? 'ok' : 'email_health_failed', count: data.alerts.length, stalled: data.alerts.includes('email_backlog') };
+    const alerts = HEALTH_ALERT_CODES.filter(code => data.alerts.includes(code));
+    if (data.alerts.some(code => !alerts.includes(code))) alerts.push('unknown_health_alert');
+    return { pass: data.ok, reason: data.ok ? 'ok' : 'email_health_failed', count: data.alerts.length, alerts, stalled: alerts.includes('email_backlog') };
   } catch { return { pass: false, reason: 'health_rpc_unavailable' }; }
 }
 
@@ -87,7 +96,10 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
     }
     monitor.heartbeat('email-delivery', {
       status: email.pass ? 'ok' : 'failed', code: 'email_health',
-      context: { reason: email.reason, count: email.count ?? 0 },
+      context: {
+        reason: email.alerts?.[0] ?? email.reason,
+        count: email.count ?? 0,
+      },
     });
     if (email.stalled) {
       // Report an error incident without the heartbeat warning delay. The
@@ -103,7 +115,7 @@ export async function runProbes(env, fetchImpl = fetch, now = new Date()) {
     throw new Error('Festapp shared Monitoring collection failed');
   }
   if (failed) {
-    console.error(JSON.stringify({ event: "festapp_self_hosted_probe_failed", observed_at: observedAt, results }));
+    console.error(JSON.stringify({ event: "festapp_self_hosted_probe_failed", observed_at: observedAt, results, email }));
     throw new Error("Festapp external health probe failed");
   }
   console.log(JSON.stringify({ event: "festapp_self_hosted_probe_passed", observed_at: observedAt }));
