@@ -145,8 +145,8 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
     final stateCellFormat = trinaRow.cells[EshopColumnIds.HISTORY_STATE]!.value;
 
     final previousRecord = item.previousHistoryRecord;
-    final priceHasChanged =
-        previousRecord != null && item.price != previousRecord.price;
+    final price = item.price;
+    final previousPrice = previousRecord?.price;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -233,7 +233,7 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
                   ),
                 ),
             ],
-            if (item.price != null) ...[
+            if (price != null) ...[
               const Divider(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -243,14 +243,14 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
                     "${OrdersStrings.totalPrice}: ",
                     style: theme.textTheme.labelLarge,
                   ),
-                  if (priceHasChanged)
+                  if (previousPrice != null && price != previousPrice)
                     Row(
                       children: [
                         Text(
                           Utilities.formatPrice(
                             context,
-                            previousRecord.price!,
-                            currencyCode: previousRecord.currencyCode,
+                            previousPrice,
+                            currencyCode: previousRecord?.currencyCode,
                           ),
                           style: TextStyle(
                             decoration: TextDecoration.lineThrough,
@@ -264,7 +264,7 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
                         Text(
                           Utilities.formatPrice(
                             context,
-                            item.price!,
+                            price,
                             currencyCode: item.currencyCode,
                           ),
                           style: TextStyle(fontWeight: FontWeight.bold),
@@ -275,7 +275,7 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
                     Text(
                       Utilities.formatPrice(
                         context,
-                        item.price!,
+                        price,
                         currencyCode: item.currencyCode,
                       ),
                       style: const TextStyle(fontWeight: FontWeight.bold),
