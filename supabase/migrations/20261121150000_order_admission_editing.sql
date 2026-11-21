@@ -2087,9 +2087,6 @@ BEGIN
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
     PERFORM public.assert_order_discount_unchanged_internal(ord.id);
-    IF EXISTS(SELECT 1 FROM eshop.tickets WHERE id=opt.ticket AND state='used') THEN
-        RAISE EXCEPTION 'USED_TICKET_PROTECTED';
-    END IF;
     IF public.ticket_admission_integrity_internal(ord.id,opt.ticket)->>'reason' IS NOT NULL
        OR NOT EXISTS(SELECT 1 FROM eshop.products p JOIN eshop.product_types pt ON pt.id=p.product_type
          WHERE p.id=p_new_product_id AND p.occasion=ord.occasion AND pt.occasion=ord.occasion AND pt.type='spot')

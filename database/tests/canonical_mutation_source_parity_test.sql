@@ -5,7 +5,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261121150000_order_admission_editing.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public._swap_spots_generate_product_json(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='2224b669b9f8b78ece72b91d03c6c07e'),'current SQL source parity: public._swap_spots_generate_product_json(bigint,bigint)');
 -- supabase/migrations/20261121150000_order_admission_editing.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public._swap_spots_update_ticket(bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f1237d36b6cb771bd83e8ef4befe868b'),'current SQL source parity: public._swap_spots_update_ticket(bigint,bigint,bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public._swap_spots_update_ticket(bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='84bb046808895a1ca248e3808c82aa54'),'current SQL source parity: public._swap_spots_update_ticket(bigint,bigint,bigint)');
 -- supabase/migrations/20261116140000_restore_fakturoid_czk_reference.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abort_fakturoid_ticket_order_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='c559a6f056e618b1b0ba21570c47280b'),'current SQL source parity: public.abort_fakturoid_ticket_order_v1(bigint,uuid)');
 -- supabase/migrations/20261120100000_transactional_order_email_admission.sql
