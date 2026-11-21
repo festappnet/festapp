@@ -24,10 +24,11 @@ async function connect(){
   return c;
  }catch(error){await c.end();throw error;}
 }
-async function fixture(c,deposit=null){
+async function fixture(c,deposit=null,{withSeat=true}={}){
  await c.query('BEGIN');
  if(!fixtureClients.has(c)){await c.query(assertions);await c.query(fixtureSQL);}
- const x=(await c.query('SELECT pg_temp.payment_attach_spot(pg_temp.payment_fixture($1)) x',[deposit])).rows[0].x;
+ const query=withSeat?'SELECT pg_temp.payment_attach_spot(pg_temp.payment_fixture($1)) x':'SELECT pg_temp.payment_fixture($1) x';
+ const x=(await c.query(query,[deposit])).rows[0].x;
  await c.query('COMMIT');fixtureClients.add(c);return x;
 }
 async function begin(c,x,role='authenticated'){
@@ -265,7 +266,7 @@ test('moving pairing locks stored old/new form scopes in order before either pay
 test('two cash checkouts serialize the final available place without bank or provider attempts',async()=>{
  const setup=await connect(),first=await connect(),second=await connect();
  try {
-  const x=await fixture(setup);
+  const x=await fixture(setup,null,{withSeat:false});
   await setup.query(`update forms set participant_capacity=2,bank_account=null,
     data='{"payments":{"bankEnabled":false,"cashEnabled":true,"providerConnections":{}},"payment_deadline":{"mode":"none"}}' where id=$1`,[x.form]);
   const key=(await setup.query('select key from forms where id=$1',[x.form])).rows[0].key;
