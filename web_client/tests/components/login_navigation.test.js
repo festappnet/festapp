@@ -5,8 +5,9 @@ import { JSDOM } from 'jsdom';
 // Exercise both sign-in completions without authentication or navigation side effects.
 test('sign-in restores administration only from the generic home entry', async t => {
     const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://example.test/' });
-    const originalGlobals = Object.fromEntries(['window', 'document', 'HTMLElement', 'customElements'].map(k => [k, globalThis[k]]));
-    Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, customElements: dom.window.customElements });
+    const browserGlobals = ['window', 'document', 'HTMLElement', 'customElements', 'sessionStorage'];
+    const originalGlobals = Object.fromEntries(browserGlobals.map(key => [key, globalThis[key]]));
+    Object.assign(globalThis, Object.fromEntries(browserGlobals.map(key => [key, dom.window[key]])));
     const { LoginModal } = await import('../../src/components/users/login_modal.js');
     const { RightsService } = await import('../../src/services/rights_service.js');
     const { RouterService } = await import('../../src/services/router_service.js');
