@@ -17,6 +17,9 @@ export async function postgresApi(t,{strong=false,seed,sqlSetup=programSetup}={}
     const rpcCalls=[],rpcFailures=[];
     const types=new Map();
     const backend=async(url,init)=>{
+        // This fixture simulates GoTrue. The pinned GoTrue/PostgREST lane
+        // covers live assurance using actual signed tokens and sessions.
+        if(url.pathname==='/rest/v1/rpc/get_account_assurance_v1')return;
         if(!url.pathname.startsWith('/rest/v1/rpc/'))return;
         const name=url.pathname.split('/').at(-1),args=JSON.parse(init.body??'{}');
         assert.match(name,/^[a-z_0-9]+$/);

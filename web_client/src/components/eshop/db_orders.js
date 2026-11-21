@@ -9,7 +9,11 @@ export class DbOrders {
         if (!client) throw new Error('Supabase client not initialized');
         const session = await client.auth.getSession();
         if (session.error) throw session.error;
-        const intent = await claimTicketOrderIdentity(SupabaseService.endpoint, orderData, session.data?.session?.user?.id, undefined, {requirePending:reusePendingOnly});
+        const account = session.data?.session;
+        const guestCheckout = await SupabaseService.requiresGuestCheckout(client, account);
+        const intent = await claimTicketOrderIdentity(SupabaseService.endpoint, orderData, account?.user?.id, undefined, {
+            requirePending: reusePendingOnly, guestCheckout,
+        });
         // A lost response cannot prove that the server rejected the order.
         // Preserve the pending identity so an in-page retry replays this intent.
         if (intent.orderDetails.metaPurchaseConsent && canSendMetaPurchaseConsent && !canSendMetaPurchaseConsent()) {
@@ -17,7 +21,10 @@ export class DbOrders {
         }
         let response;
         try {
-            response = await client.functions.invoke('send-ticket-order', {
+            const useGuest = intent.guestCheckout || (!account && SupabaseService.isCanonicalBackend);
+            const transport = useGuest ? SupabaseService.getGuestClient() : client;
+            response = await transport.functions.invoke('send-ticket-order', {
+                ...(!useGuest && account?.access_token && {headers: {Authorization: `Bearer ${account.access_token}`}}),
                 body: { orderDetails: intent.orderDetails, commandId: intent.commandId, clientId: intent.clientId },
             });
         } catch {

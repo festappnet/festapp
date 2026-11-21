@@ -5,6 +5,7 @@ import { handleHelpAction } from './startup/help_action.js';
 import { handleOrganizerIntent } from './startup/organizer_intent.js';
 import { GoogleAuthService } from './services/google_auth_service.js';
 import { LoginModal } from './components/users/login_modal.js';
+import { AuthService } from './services/auth_service.js';
 applyEmbedContext();
 const googleCallback = isEmbed() ? null : GoogleAuthService.takeCallback();
 import './theme_config.css';
@@ -20,7 +21,7 @@ import { FeedbackFab } from './components/feedback/feedback_fab.js';
 import { ImageLoader } from './utils/image_loader.js';
 import { initializeCoreServices } from './startup/initialize_core_services.js';
 import { resolveScannerRoute } from './services/scanner_routes.js';
-import { publicFormLocation } from './utils/public_form_location.js';
+import { publicCheckoutLocation } from './utils/public_form_location.js';
 import { earlyFormLoad } from './startup/early_form_load.js';
 import { DbForms } from './components/forms/db_forms.js';
 
@@ -48,6 +49,7 @@ class Main {
                 window.markFestappAppReady?.();
                 return;
             }
+            const publicCheckout = publicCheckoutLocation(window.location);
             // 1. Init Core Services
             await initializeCoreServices({
                 localizationService: LocalizationService,
@@ -56,17 +58,26 @@ class Main {
                 // Content pages need account context without a later router fetch.
                 isAppSupported: AppConfig.isAppSupported && document.body.dataset.page !== 'organizers',
                 // FormPage owns its scoped rights; public forms do not need catalogue context.
-                deferAppContext: isEmbed() || publicFormLocation(window.location, {entry: true}),
+                deferAppContext: isEmbed() || publicCheckout,
                 onBackendReady: () => earlyFormLoad.start({win: window, service: SupabaseService, load: link => DbForms.getFormByLink(link)}),
             });
             ImageLoader.init(); // Initialize Image Loader
 
+            let resumedVerification = false;
             if (googleCallback) {
                 const modal = new LoginModal();
                 document.body.appendChild(modal);
                 modal._setView('google_completing');
                 try { modal.showGoogleResult(await GoogleAuthService.complete(googleCallback)); }
                 catch (error) { modal.googleError = error.message; modal._setView('login'); }
+            } else if (!isEmbed() && !publicCheckout) {
+                const pending = await AuthService.resumeVerification().catch(() => null);
+                if (pending) {
+                    const modal = new LoginModal();
+                    document.body.appendChild(modal);
+                    modal._showVerification(pending);
+                    resumedVerification = true;
+                }
             }
 
             // Static public content owns this document; only shared account services run.
@@ -77,7 +88,7 @@ class Main {
 
             // The callback owns the current dialog, including recoverable errors.
             // Do not mount a second organizer dialog after restoring its URL.
-            const entryIntent = isEmbed() || googleCallback ? null :
+            const entryIntent = isEmbed() || googleCallback || resumedVerification ? null :
                 await handleHelpAction() || await handleOrganizerIntent();
             if (entryIntent === 'navigated') {
                 window.markFestappAppReady?.();
@@ -85,7 +96,7 @@ class Main {
             }
 
             // 2. Check Routing (SPA Support)
-            if (!entryIntent && await RouterService.handleInitialLoad()) {
+            if (!entryIntent && !resumedVerification && await RouterService.handleInitialLoad()) {
                  RouterService.initPopStateListener();
                  window.markFestappAppReady?.();
                  return;

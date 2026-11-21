@@ -30,6 +30,8 @@ BEGIN
   SELECT * INTO v_auth FROM auth.users WHERE id=p_user;
   IF v_profile.id IS NULL OR v_auth.id IS NULL OR v_auth.deleted_at IS NOT NULL
     OR v_auth.banned_until > clock_timestamp()
+    OR EXISTS (SELECT FROM public.account_mfa_recovery_holds h WHERE h.user_id = p_user)
+    OR EXISTS (SELECT FROM public.account_mfa_factor_removals WHERE user_id = p_user)
     OR v_auth.email IS DISTINCT FROM public.format_auth_email(v_profile.organization,v_profile.email_readonly) THEN
     RETURN NULL;
   END IF;

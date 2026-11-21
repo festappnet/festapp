@@ -20,18 +20,7 @@ import { presentPayment } from '../../../../supabase/functions/_shared/paymentPr
 import { resolveCommunicationTone } from '../../../../supabase/functions/_shared/communicationTone.ts';
 import { LocalizationService } from '../../services/localization_service.js';
 export const overviewText = (key, tone) => PublicOrderStrings.text(`OrderOverview.${key}`, tone);
-export function parseOrderLocation(location) {
-    if (location.pathname !== '/order' || location.hash) return null;
-    const params = new URLSearchParams(location.search || '');
-    if (params.get('waitlist') === '1') return null;
-    if (!params.has('order_id') && !params.has('token')) return null;
-    const token = params.get('token');
-    const id = params.get('order_id');
-    if (params.getAll('token').length !== 1 || params.getAll('order_id').length !== 1 ||
-        !/^[a-f0-9]{64}$/.test(token || '') || !/^[1-9][0-9]*$/.test(id || '') || !Number.isSafeInteger(Number(id))) throw new Error('INVALID_CAPABILITY');
-    return { token, orderId: Number(id) };
-}
-export const orderOverviewSearch = scope => `?${new URLSearchParams({ order_id: String(scope.orderId), token: scope.token })}`;
+export {parseOrderLocation, orderOverviewSearch} from './customer_order_location.js';
 const line = (parent, tag, text) => {
     const node = document.createElement(tag); node.textContent = text; parent.appendChild(node); return node;
 };
@@ -295,8 +284,9 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
     try {
         const data = await commands.overview(scope);
         if (host._overviewGeneration !== generation) return;
+        const orderClient = commands.clientFor?.(scope) ?? commands.client;
         onIdentity(data.organizationIdentity);
-        updateOverviewPurchases(host, data, scope, commands.client);
+        updateOverviewPurchases(host, data, scope, orderClient);
         const snapshot = JSON.stringify({ ...data, serverTime: null });
         // Keep expanded details and keyboard focus stable when nothing changed.
         // A focused control may be in use: defer replacing it until the next poll.
@@ -313,7 +303,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
                     document.body.appendChild(link); link.click(); link.remove();
                     setTimeout(() => URL.revokeObjectURL(url), 1000);
                 }, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
-            renderCustomerOrderChanges(host, data, scope, commands.client, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
+            renderCustomerOrderChanges(host, data, scope, orderClient, () => loadOrderOverview(host, commands, scope, onContinue, offerInPage, false, onIdentity));
             if (data.metaPurchaseConsent) {
                 const button = host.ownerDocument.createElement('button');
                 button.type = 'button';
@@ -324,7 +314,7 @@ export async function loadOrderOverview(host, commands, scope, onContinue, offer
                     button.disabled = true;
                     if (host._purchaseWithdrawal) host._purchaseWithdrawal.confirmed=true;
                     try {
-                        const { data: withdrawn, error } = await commands.client.rpc('revoke_meta_purchase_consent', {
+                        const { data: withdrawn, error } = await orderClient.rpc('revoke_meta_purchase_consent', {
                             p_token: scope.token, p_order_id: scope.orderId,
                         });
                         if (error || withdrawn !== true) throw new Error('WITHDRAWAL_FAILED');

@@ -3,8 +3,10 @@ import { handleMcpManagement } from "./management.ts";
 import type { Session, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import type { McpTenant } from "./config.ts";
 import { issueExistingUserSession } from "../_shared/issueExistingUserSession.ts";
+import { accountAssuranceFailureStatus, type AccountAssuranceDecision } from "../_shared/accountAssurance.ts";
 
 type Dependencies = { config: McpTenant; admin: SupabaseClient; makeAnon: () => SupabaseClient; fetch?: typeof fetch;
+  assurance: (accessToken: string) => Promise<AccountAssuranceDecision>;
   issue?: typeof issueExistingUserSession };
 
 export async function handleMcpExchange(req: Request, deps: Dependencies): Promise<Response> {
@@ -37,7 +39,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     for (const c of chunks) { bytes.set(c, offset); offset += c.length; }
     const body = JSON.parse(new TextDecoder().decode(bytes));
     if (["connections.list", "connections.revoke"].includes(body?.operation)) {
-      return await handleMcpManagement(req, body, { config, admin, fetch: deps.fetch }, json);
+      return await handleMcpManagement(req, body, { config, admin, assurance: deps.assurance, fetch: deps.fetch }, json);
     }
     if (!/^[A-Za-z0-9_-]{43}$/.test(body.request) || !["details", "approve", "cancel", "status"].includes(body.operation)) throw new Error();
     const broker = async (payload: Record<string, unknown>) => {
@@ -56,6 +58,10 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
     if (!accessToken || accessToken.length > 8192) return json({ error: "authentication_required" }, 401);
     const { data, error } = await admin.auth.getUser(accessToken);
     if (error || !data.user) return json({ error: "authentication_required" }, 401);
+    const assurance = await deps.assurance(accessToken);
+    if (assurance !== "allowed") {
+      return json({ error: assurance }, accountAssuranceFailureStatus(assurance));
+    }
     if (["details", "status"].includes(body.operation)) return json(await broker({ operation: body.operation, accessToken }));
     const factors = data.user.factors?.filter(f => f.status === "verified" && f.factor_type === "totp") ?? [];
     const requiresMfa = data.user.factors?.some(f => f.status === "verified") ?? false;
@@ -81,6 +87,7 @@ export async function handleMcpExchange(req: Request, deps: Dependencies): Promi
         validateContext: async () => {
           const current = await admin.auth.getUser(accessToken);
           if (current.error || current.data.user?.id !== data.user.id) return false;
+          if (await deps.assurance(accessToken) !== "allowed") return false;
           const live = await broker({ operation: "check", lease: prepared.lease });
           return live.valid === true && live.userId === data.user.id;
         },

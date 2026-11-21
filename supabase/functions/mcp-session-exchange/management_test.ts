@@ -1,12 +1,14 @@
 import { assertEquals, assert } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import { handleMcpExchange } from "./handler.ts";
+import type { AccountAssuranceDecision } from "../_shared/accountAssurance.ts";
 const config = { tenantId: "fixture", tenantOrigin: "https://tenant.invalid", issuer: "https://mcp.invalid", organizationId: 3, brokerSecret: "s".repeat(43) };
-function fixture({ invalid = false, organization = 3, upstream = 200 } = {}) {
+function fixture({ invalid = false, organization = 3, upstream = 200, assurance = "allowed" as AccountAssuranceDecision } = {}) {
   const calls: unknown[] = [];
   const admin = { auth: { getUser: () => Promise.resolve({ data: { user: invalid ? null : { id: "verified-user" } }, error: null }) },
     rpc: (name: string, args: unknown) => { calls.push([name, args]); return Promise.resolve({ data: { organization }, error: null }); } } as unknown as SupabaseClient;
   const deps = { config, admin, makeAnon: () => { throw new Error("must not mint"); },
+    assurance: () => Promise.resolve(assurance),
     issue: () => { throw new Error("must not issue"); },
     fetch: (async (url: string | URL | Request, init?: RequestInit) => {
       assertEquals(url, config.issuer + "/tenant-connections");
@@ -36,6 +38,7 @@ Deno.test("management rejects foreign origin, missing/invalid identity, tenant a
     [{}, { operation: "connections.list" }, "https://evil.invalid", true, 403],
     [{}, { operation: "connections.list" }, config.tenantOrigin, false, 401],
     [{ invalid: true }, { operation: "connections.list" }, config.tenantOrigin, true, 401],
+    [{ assurance: "mfa_required" }, { operation: "connections.list" }, config.tenantOrigin, true, 403],
     [{ organization: 4 }, { operation: "connections.list" }, config.tenantOrigin, true, 403],
     [{}, { operation: "connections.list", userId: "other" }, config.tenantOrigin, true, 400],
     [{}, { operation: "connections.revoke", connectionId: "../x" }, config.tenantOrigin, true, 400],

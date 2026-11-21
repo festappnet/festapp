@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
+import { accountAssurance, accountAssuranceFailureStatus } from "./accountAssurance.ts";
+import { AuthError } from "./authError.ts";
 
 // Export the Admin client (Service Role)
 export const supabaseAdmin = createClient(
@@ -38,8 +40,12 @@ export async function getSupabaseUser(authorizationHeader: string) {
   const supabaseUser = createUserClient(authorizationHeader);
 
   const { data: user, error: userError } = await supabaseUser.auth.getUser();
-  if (userError || !user) {
+  if (userError || !user.user) {
     throw new Error("Unauthorized");
+  }
+  const assurance = await accountAssurance(supabaseUser);
+  if (assurance !== "allowed") {
+    throw new AuthError(assurance, accountAssuranceFailureStatus(assurance));
   }
   return user;
 }

@@ -443,7 +443,7 @@ test('all delegated operations use one catalog, validation and executor through 
         sessionClaims:{iss:'http://127.0.0.1:54321',aud:'authenticated',aal:'aal2',session_id:randomUUID(),amr:[{method:'totp',timestamp:Math.floor(Date.now()/1000)}]},
         userFactors:[{id:randomUUID(),factor_type:'totp',status:'verified'}],
         fetchImpl:async(url)=>{
-            if(url.pathname.endsWith('/get_operator_access_v1'))return;
+            if(url.pathname.endsWith('/get_operator_access_v1')||url.pathname.endsWith('/get_account_assurance_v1'))return;
             if(url.pathname.endsWith('/get_ticket_layout_write_contract_v1'))return reply({family:'ticket_layouts',contractVersion:1,ready:true});
             // This test proves adapter parity, not business success. Consequential
             // effects and replay are covered by the real-SQL HTTP family suite.

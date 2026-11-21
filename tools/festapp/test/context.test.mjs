@@ -90,7 +90,8 @@ test('foreign organization is denied and never reaches domain commands', async (
         code: 'TARGET_MISMATCH',
     });
     assert.equal(f.store.value(), null);
-    assert(!f.calls.some((c) => c.url.pathname.includes('/rpc/')));
+    assert.deepEqual(f.calls.filter(c => c.url.pathname.includes('/rpc/')).map(c => c.url.pathname),
+        ['/rest/v1/rpc/get_account_assurance_v1']);
 });
 test('missing session, strict arguments and logout fail closed without leaked details', async (t) => {
     const f = await fixture(t);
@@ -139,29 +140,24 @@ test('bounded upstream responses still reject bodies over 20 MiB', async () => {
     const fetcher = boundedFetch(async () => new Response(new Uint8Array(20 * 1024 * 1024 + 1)));
     await assert.rejects(() => fetcher('https://example.test'), { code: 'UPSTREAM_CONTRACT_FAILURE' });
 });
-test('MFA challenge is explicit and does not persist a downgraded session', async (t) => {
-    const f = await fixture(t, {
-        fetchImpl: async (url) =>
-            url.pathname === '/auth/v1/user'
-                ? reply({
-                      id: actor,
-                      app_metadata: {},
-                      user_metadata: {},
-                      factors: [
-                          {
-                              id: actor,
-                              status: 'verified',
-                              factor_type: 'totp',
-                          },
-                      ],
-                  })
-                : undefined,
+for (const [decision, code] of [
+    ['mfa_required', 'MFA_REQUIRED'],
+    ['invalid_session', 'AUTHENTICATION_REQUIRED'],
+    ['account_recovery', 'FORBIDDEN'],
+    ['unknown', 'UPSTREAM_CONTRACT_FAILURE'],
+]) {
+    test(`server assurance ${decision} stops sign-in before profile access or local persistence`, async (t) => {
+        const f = await fixture(t, {
+            fetchImpl: async (url) =>
+                url.pathname === '/rest/v1/rpc/get_account_assurance_v1'
+                    ? reply(decision)
+                    : undefined,
+        });
+        await assert.rejects(f.owner.login('fixture@example.invalid', 'test'), { code });
+        assert.equal(f.store.value(), null);
+        assert(!f.calls.some(call => call.url.pathname === '/rest/v1/user_info'));
     });
-    await assert.rejects(f.owner.login('fixture@example.invalid', 'test'), {
-        code: 'MFA_REQUIRED',
-    });
-    assert.equal(f.store.value(), null);
-});
+}
 test('expired/revoked refresh never reaches identity or domain reads', async (t) => {
     let revoked = false;
     const f = await fixture(t, {

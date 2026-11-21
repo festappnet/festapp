@@ -20,7 +20,6 @@ function env(): Env {
     SUPABASE_URL_A: 'https://api.festapp.net', SUPABASE_ANON_KEY_A: 'server-a',
     SUPABASE_URL_AKHWEB: 'https://akh.supabase.co', SUPABASE_ANON_KEY_AKHWEB: 'server-akh',
     SUPABASE_URL_SLUNOVRAT: 'https://api.festapp.net', SUPABASE_ANON_KEY_SLUNOVRAT: 'server-canonical',
-    R2_ACCESS_KEY_ID: 'id', R2_SECRET_ACCESS_KEY: 'secret', CF_ACCOUNT_ID: 'account',
     CF_ZONE_ID: 'zone', CF_CACHE_PURGE_TOKEN: 'purge-token',
     CONTROL_ALLOWED_ORIGINS: 'https://app.example',
   };
@@ -82,19 +81,40 @@ describe('control plane', () => {
     expect(configured.IMAGES_BUCKET.get).not.toHaveBeenCalled();
   });
 
-  it('preserves project-local time-limited presigning without caching credentials', async () => {
+  it('rechecks shared private downloads before reading the project bucket', async () => {
     const configured = env();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('true')));
+    const code = 'a'.repeat(43);
+    let revoked = false;
+    const fetchMock = vi.fn(async (input: string) => {
+      if (input.endsWith('/issue_account_private_image_grant_v1')) {
+        return Response.json({ code, expiresIn: 60 });
+      }
+      expect(input).toMatch(/redeem_account_private_image_grant_v1$/);
+      return Response.json(!revoked);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(configured.IMAGES_PRIVATE_BUCKET.get).mockResolvedValue({
+      body: 'private export', writeHttpMetadata: (headers: Headers) => headers.set('Content-Type', 'text/plain'),
+    } as unknown as R2ObjectBody);
     const response = await worker.fetch(new Request('https://image-api.festapp.net/presign/private/export.txt?projectId=a&expiresIn=60', {
       method: 'POST', headers: { Authorization: 'Bearer jwt' },
     }), configured);
     expect(response.status).toBe(200);
-    const body = await response.json() as { url: string };
+    const body = await response.json() as { url: string; expiresIn: number };
     const signed = new URL(body.url);
-    expect(signed.pathname).toBe('/festapp-images-private/imports/a/private/export.txt');
-    expect(signed.searchParams.get('X-Amz-Expires')).toBe('60');
-    expect(signed.searchParams.has('X-Amz-Signature')).toBe(true);
+    expect(signed.origin).toBe('https://image-api.festapp.net');
+    expect(signed.pathname).toBe('/private/export.txt');
+    expect(signed.searchParams.get('projectId')).toBe('a');
+    expect(signed.searchParams.get('grant')).toBe(code);
+    expect(body.expiresIn).toBe(60);
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    const downloaded = await worker.fetch(new Request(signed), configured);
+    expect(await downloaded.text()).toBe('private export');
+    expect(configured.IMAGES_PRIVATE_BUCKET.get).toHaveBeenCalledWith('imports/a/private/export.txt');
+    expect(downloaded.headers.get('Referrer-Policy')).toBe('no-referrer');
+    revoked = true;
+    expect((await worker.fetch(new Request(signed), configured)).status).toBe(403);
+    expect(configured.IMAGES_PRIVATE_BUCKET.get).toHaveBeenCalledTimes(1);
   });
 
   it('allows live uploads through the actual configured origin list', async () => {

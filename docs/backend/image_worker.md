@@ -18,12 +18,16 @@ domains are absent. P3/P4 remain blocked by adoption/legacy-traffic gates.
 This is checked-in routing plus dated evidence, not a fresh live readback.
 
 The control request selects `projectId=default|a|akhweb|slunovrat`. The Worker registry owns the
-Supabase origins, anon keys, public/private bucket bindings, bucket names and
+Supabase origins, anon keys, public/private bucket bindings and
 public hostnames. Client-supplied credentials never select authority. During the
 measured P1-P4 adoption window only, an exact registered `supabaseUrl` can alias
 the project ID; its supplied `anonKey` is ignored.
 
 Control routes are `/upload`, `/delete`, `/private/{key}` and `/presign/{key}`.
+The presign endpoint issues a Worker download URL for the selected private key.
+The requested lifetime is capped at the issuing access token's expiry.
+Redemption checks the live issuing session, MFA assurance and current project
+rights before opening the private bucket.
 Public delete accepts stored `images.link` URLs, authorizes the complete batch
 through `public.authorize_image_deletion`, deletes the public object, purges the
 source URL (which Cloudflare applies to varied images), then removes the record.
@@ -51,8 +55,6 @@ operations are disabled. Both `slunovrat.festapp.net` and
   `SUPABASE_ANON_KEY_A`, `SUPABASE_URL_AKHWEB`, `SUPABASE_ANON_KEY_AKHWEB`.
 - Slunovrat public canonical configuration: `SUPABASE_URL_SLUNOVRAT`,
   `SUPABASE_ANON_KEY_SLUNOVRAT` (the public anon key, not a service-role key).
-- Signing: `CF_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` scoped to
-  the two private buckets.
 - Purge: `CF_ZONE_ID` and `CF_CACHE_PURGE_TOKEN`, with Cache Purge permission
   only for the `festapp.net` zone.
 - Browser control CORS: `CONTROL_ALLOWED_ORIGINS`, an exact comma-separated list.

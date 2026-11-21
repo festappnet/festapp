@@ -82,7 +82,7 @@ test('SDK client sees only fixed schemas, shares CLI result, renders canonical P
 test('foreign occasion is denied before renderer invocation and backend errors are sanitized', async (t) => {
     const f = await fixture(t, {
         fetchImpl: async (url) =>
-            url.pathname.includes('/rpc/')
+            url.pathname.includes('/rpc/') && !url.pathname.endsWith('/get_account_assurance_v1')
                 ? reply(
                       {
                           code: '42501',

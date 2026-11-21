@@ -160,6 +160,82 @@ test('capacity rejection releases the intent while opaque throttling retains it'
     }
 });
 
+test('a restricted buyer retries the same guest intent after MFA and preserves an earlier account intent', async t => {
+    const actor = {id: 'buyer-account'};
+    let decision = 'account_recovery';
+    let authToken = 'held-token';
+    let loseResponse = true;
+    const requests = [];
+    const invoke = mode => async (_, options) => {
+        requests.push({mode, ...options});
+        return loseResponse ? {error: new Error('response lost')} : {data: {code: 200}};
+    };
+    t.mock.getter(SupabaseService, 'isCanonicalBackend', () => true);
+    t.mock.method(SupabaseService, 'getGuestClient', () => ({functions: {invoke: invoke('guest')}}));
+    t.mock.method(SupabaseService, 'getClient', () => ({
+        auth: {getSession: async () => ({data: {session: {user: actor, access_token: authToken}}})},
+        rpc: name => ({setHeader: async (key, value) => {
+            assert.equal(name, 'get_account_assurance_v1');
+            assert.equal(key, 'Authorization');
+            assert.equal(value, `Bearer ${authToken}`);
+            return {data: decision};
+        }}),
+        functions: {invoke: invoke('account')},
+    }));
+    const purchase = {form: 'mfa-guest-intent', tickets: []};
+    assert.equal((await DbOrders.sendOrder(purchase)).errorCode, 'ORDER_OUTCOME_UNKNOWN');
+    decision = 'allowed';
+    authToken = 'upgraded-token';
+    loseResponse = false;
+    assert.equal((await DbOrders.sendOrder(purchase, {reusePendingOnly: true})).success, true);
+    assert.deepEqual(requests[1], requests[0]);
+    assert.equal(requests[0].mode, 'guest');
+    assert.equal(requests[0].headers, undefined);
+
+    loseResponse = true;
+    assert.equal((await DbOrders.sendOrder(purchase)).errorCode, 'ORDER_OUTCOME_UNKNOWN');
+    decision = 'mfa_required';
+    authToken = 'expired-proof-token';
+    await assert.rejects(DbOrders.sendOrder(purchase), /PAYMENT_RECOVERY_REQUIRED/);
+    assert.equal(requests.length, 3);
+    decision = 'allowed';
+    authToken = 'new-proof-token';
+    loseResponse = false;
+    assert.equal((await DbOrders.sendOrder(purchase, {reusePendingOnly: true})).success, true);
+    assert.deepEqual(requests[3].body, requests[2].body);
+    assert.equal(requests[3].mode, 'account');
+    assert.equal(requests[3].headers.Authorization, 'Bearer new-proof-token');
+});
+
+test('public Form RPCs retry only a structured account assurance refusal', async t => {
+    const {DbForms} = await import('../../src/components/forms/db_forms.js');
+    let error = {code: '42501', message: 'account_recovery'};
+    const guest = t.mock.fn(async () => ({data: {code: 200, spotIds: [6]}}));
+    const account = t.mock.fn(async () => ({error}));
+    t.mock.method(SupabaseService, 'getClient', () => ({rpc: account}));
+    t.mock.method(SupabaseService, 'getGuestClient', () => ({rpc: guest}));
+    t.mock.method(console, 'error', () => {});
+    await DbForms.selectSpot('fixture-form', 'fixture-reservation', 6, true);
+    assert.deepEqual(guest.mock.calls[0].arguments, account.mock.calls[0].arguments);
+    error = {code: '42501', message: 'unrelated prohibition'};
+    await assert.rejects(DbForms.selectSpot('fixture-form', 'fixture-reservation', 6, true), /unrelated prohibition/);
+    error = {code: '503', message: 'account_recovery'};
+    await assert.rejects(DbForms.selectSpot('fixture-form', 'fixture-reservation', 6, true), /account_recovery/);
+    assert.equal(guest.mock.calls.length, 1);
+});
+
+test('canonical checkout pins the guest transport selected before concurrent sign-in', async t => {
+    t.mock.getter(SupabaseService, 'isCanonicalBackend', () => true);
+    t.mock.method(SupabaseService, 'getClient', () => ({
+        auth: {getSession: async () => ({data: {session: null}})},
+        functions: {invoke: () => assert.fail('shared SDK session was used for a guest intent')},
+    }));
+    const guest = t.mock.fn(async () => ({data: {code: 200}}));
+    t.mock.method(SupabaseService, 'getGuestClient', () => ({functions: {invoke: guest}}));
+    assert.equal((await DbOrders.sendOrder({form: 'mfa-guest-before-auth-change', tickets: []})).success, true);
+    assert.equal(guest.mock.calls.length, 1);
+});
+
 
 test('withdrawal while checkout waits for the session strips consent before the order request', async t => {
     const { FormNetwork } = await import('../../src/components/forms/form_network.js');

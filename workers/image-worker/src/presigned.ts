@@ -1,20 +1,13 @@
-import { AwsClient } from 'aws4fetch';
 import type { Env } from './types';
-import { extractBearerToken, checkImageProjectAccess } from './auth';
+import { extractBearerToken, issuePrivateImageGrant } from './auth';
 import { assertControlHost, resolveControlProject, ProjectResolutionError } from './project-registry';
 import { errorResponse, jsonResponse } from './responses';
 import { isPrivateKey } from './private-key';
-import { assetKey } from './asset-key';
 
 const DEFAULT_EXPIRES_IN = 3600; // 1 hour
 const MAX_EXPIRES_IN = 604800; // 7 days
 
-/**
- * Generate presigned S3-compatible URLs for private R2 files.
- *
- * Uses aws4fetch AwsClient with signQuery: true (Pitfall 4) to produce
- * time-limited signed URLs that can be shared for direct file access.
- */
+/** Share a bounded private download that rechecks the issuing session. */
 export async function handlePresign(
   request: Request,
   env: Env
@@ -51,12 +44,6 @@ export async function handlePresign(
   }
   const auth = { supabaseUrl: project.supabaseUrl, anonKey: project.anonKey };
 
-  // Check editor-on-any-occasion permission via RPC
-  const isEditor = await checkImageProjectAccess(userJwt, auth, project.id);
-  if (!isEditor) {
-    return errorResponse(403, 'FORBIDDEN', 'Forbidden');
-  }
-
   if (!key) {
     return errorResponse(400, 'MISSING_KEY', 'Missing key');
   }
@@ -75,25 +62,13 @@ export async function handlePresign(
     expiresIn = parsed;
   }
 
-  // Create AWS client for R2 S3-compatible API
-  const client = new AwsClient({
-    accessKeyId: env.R2_ACCESS_KEY_ID,
-    secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-  });
+  const grant = await issuePrivateImageGrant(userJwt, auth, project.id, key, expiresIn);
+  if (!grant) return errorResponse(403, 'FORBIDDEN', 'Forbidden');
 
-  // Construct R2 S3-compatible URL
-  const r2Url = new URL(
-    `https://${env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com/${project.privateBucketName}/${assetKey(project, key)}`
-  );
-  r2Url.searchParams.set('X-Amz-Expires', String(expiresIn));
-
-  // Sign with signQuery to avoid Content-Type mismatch (Pitfall 4)
-  const signed = await client.sign(r2Url.toString(), {
-    method: 'GET',
-    aws: { signQuery: true },
-  });
-
-  const response = jsonResponse({ url: signed.url, expiresIn, projectId: project.id });
+  const download = new URL(`/${key}`, url.origin);
+  download.searchParams.set('projectId', project.id);
+  download.searchParams.set('grant', grant.code);
+  const response = jsonResponse({ url: download.href, expiresIn: grant.expiresIn, projectId: project.id });
   response.headers.set('Cache-Control', 'private, no-store');
   return response;
 }

@@ -574,6 +574,7 @@ def provisioning_flags(execute, contract):
             'sql':any(unit in contract.get('databaseUnits',[]) or
                       contract['steps'][unit].get('resources',{}).get('dbCluster') for unit in execute),
             'browser':any(row.get('resources',{}).get('browser') for row in rows),
+            'go':any(row.get('requiresGo',False) for row in rows),
             'deno':any(re.search(r'\bdeno (?:test|check|run)\b', row['script']) for row in rows),
             'python_yaml':bool({'image-storage','deploy-contract'}.intersection(execute))}
 

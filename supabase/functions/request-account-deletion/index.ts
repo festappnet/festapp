@@ -11,6 +11,7 @@ import {
   sha256,
 } from "../_shared/accountDeletion.ts";
 import { createUserClient, supabaseAdmin } from "../_shared/supabaseUtil.ts";
+import { accountAssurance, accountAssuranceFailureStatus } from "../_shared/accountAssurance.ts";
 import { parseOrganizationBranding } from "../_shared/organizationBranding.ts";
 
 Deno.serve(async (request) => {
@@ -40,12 +41,15 @@ Deno.serve(async (request) => {
     );
   }
 
-  const { data: authData, error: authError } = await createUserClient(
-    authorization,
-  ).auth.getUser();
+  const client = createUserClient(authorization);
+  const { data: authData, error: authError } = await client.auth.getUser();
   const user = authData.user;
   if (authError || !user?.id || !user.email) {
     return jsonResponse({ error: "unauthenticated" }, 401);
+  }
+  const assurance = await accountAssurance(client);
+  if (assurance !== "allowed") {
+    return jsonResponse({ error: assurance }, accountAssuranceFailureStatus(assurance));
   }
 
   const { data: profile } = await supabaseAdmin.from("user_info")

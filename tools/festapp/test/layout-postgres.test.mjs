@@ -72,6 +72,7 @@ test(
             fetchImpl: async (url, init) => {
                 if (url.pathname === '/functions/v1/preview-ticket-layout')
                     return reply(rendered[JSON.parse(init.body).mode]);
+                if (url.pathname === '/rest/v1/rpc/get_account_assurance_v1') return;
                 if (!url.pathname.startsWith('/rest/v1/rpc/')) return;
                 const body = JSON.parse(init.body);
                 await db.query('SAVEPOINT mcp_rpc');

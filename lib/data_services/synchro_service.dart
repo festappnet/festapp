@@ -1,3 +1,4 @@
+import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/cleaning/db_cleaning.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -120,13 +121,15 @@ class SynchroService {
       return;
     }
     final occasionId = _getCurrentOccasionId();
-    if (_isLoggedIn() && occasionId != null) {
+    final owner = AuthService.privateCacheOwner;
+    if (_isLoggedIn() && occasionId != null && owner != null) {
       var userInfo = await _getFullUserInfo();
+      if (AuthService.privateCacheOwner != owner) return;
       await OfflineDataService.saveUserInfo(userInfo);
       var bundle = await DbEvents.getMyEventsAndActivities(occasionId, true);
-      await OfflineDataService.saveAllActivities(bundle!.activities);
+      await OfflineDataService.saveAllActivities(bundle!.activities, owner: owner);
       var userInventoryBundle = await DbInventoryPools.getUserInventory();
-      await OfflineDataService.saveUserInventoryBundle(userInventoryBundle);
+      await OfflineDataService.saveUserInventoryBundle(userInventoryBundle, owner: owner);
     } else {
       await OfflineDataService.deleteUserInfo();
     }

@@ -205,6 +205,7 @@
         "image-client-install",
         "image-client-adapter",
         "image-client-widgets",
+        "client-authentication",
         "ticketing-catalog-contract"
       ],
       "inputs": [
@@ -437,7 +438,10 @@
         "tools/festapp/**",
         "workers/image-worker/**",
         "integrations/make/**",
-        "automation/hetzner-supabase/runtime/Caddyfile.integrations"
+        "automation/hetzner-supabase/auth-ingress/**",
+        "automation/hetzner-supabase/runtime/Caddyfile",
+        "automation/hetzner-supabase/runtime/Caddyfile.integrations",
+        "automation/hetzner-supabase/runtime/docker-compose.festapp.yml"
       ],
       "inputProjections": {
         "web_client/package.json": "package-version",
@@ -831,6 +835,19 @@
         "image-client-install"
       ]
     },
+    "client-authentication": {
+      "script": "fvm flutter test --no-pub --concurrency=1 test/components/users/google_login_panel_cases.dart test/data_services/external_login_context_test.dart test/data_services/sign_in_code_login_test.dart test/components/users/login_startup_session_test.dart\n",
+      "after": [
+        "image-client-install"
+      ],
+      "resources": {
+        "ramMiB": 2600,
+        "flutter": 1
+      },
+      "requires": [
+        "image-client-install"
+      ]
+    },
     "image-client-browser": {
       "script": "fvm flutter test --no-pub --concurrency=1 --platform chrome test/browser/client_browser_ci_cases.dart\n",
       "after": [
@@ -982,14 +999,16 @@
       }
     },
     "seat-mcp-contracts-2": {
-      "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\nFESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts-2\n",
+      "script": "psql \"$FESTAPP_TEST_ADMIN_DATABASE_URL\" -X -v ON_ERROR_STOP=1 -v owned_project=\"$FESTAPP_LOCAL_DB_PROJECT_ID\" -f tools/festapp/test/pause-owned-delivery.sql\npython3 automation/hetzner-supabase/auth-ingress/check-caddy.py\nFESTAPP_MFA_BROWSER_PROOF=1 FESTAPP_AUTHORIZATION_DATABASE_URL=\"$DATABASE_URL\" FESTAPP_MCP_TEST_DATABASE_URL=\"$DATABASE_URL\" pnpm --dir tools/festapp exec node scripts/test-postgres.mjs contracts-2\n",
+      "requiresGo": true,
       "after": [
         "database-services-mcp-prepare",
         "seat-database"
       ],
       "resources": {
         "ramMiB": 1024,
-        "dbCluster": 1
+        "dbCluster": 1,
+        "browser": 1
       },
       "inputs": [
         "database/**",
@@ -997,16 +1016,16 @@
         "automation/**",
         "tools/festapp/**",
         "web_client/package.json",
+        "web_client/src/**",
         "web_client/pnpm*",
         "web_client/tests/database/**",
         "packages/festapp_contracts/**",
         "assets/**",
-        "test/fixtures/**",
-        "web_client/src/components/users/connection_page_styles.js",
-        "web_client/src/theme_config.css"
+        "test/fixtures/**"
       ],
       "inputProjections": {
-        "web_client/package.json": "package-version"
+        "web_client/package.json": "package-version",
+        "web_client/src/version.js": "generated-web-version"
       },
       "requires": [
         "database-services-mcp-prepare"
@@ -1436,7 +1455,7 @@
       ]
     },
     "mcp-auth-contract": {
-      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/app-landing.test.mjs test/measurement-setup.test.mjs test/information.test.mjs test/client-policy.test.mjs test/operations.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/webhook-protocol.test.mjs test/webhook-delivery.test.mjs test/webhook-events.test.mjs test/webhook-receiver.test.mjs\n",
+      "script": "pnpm --dir tools/festapp exec node --test --test-concurrency=1 test/connection-choice.test.mjs test/context.test.mjs test/app-landing.test.mjs test/measurement-setup.test.mjs test/information.test.mjs test/client-policy.test.mjs test/operations.test.mjs test/remote.test.mjs test/api-transport.test.mjs test/assurance.test.mjs test/layout-save.test.mjs test/api-storage.test.mjs test/api-contract.test.mjs test/api-docs.test.mjs test/forms.test.mjs\npnpm --dir tools/festapp exec node --test --test-concurrency=1 test/webhook-protocol.test.mjs test/webhook-delivery.test.mjs test/webhook-events.test.mjs test/webhook-receiver.test.mjs\n",
       "after": [
         "mcp-api-prepare"
       ],

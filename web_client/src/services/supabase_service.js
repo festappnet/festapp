@@ -4,8 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 import { BackendActivationService } from './backend_activation_service.js';
 import { APP_VERSION } from '../version.js';
 
+const restrictedAccountDecisions = new Set([
+    'account_recovery', 'factor_change_pending', 'invalid_session', 'mfa_required', 'proof_required',
+]);
+
 export class SupabaseService {
     static _client = null;
+    static _guest = null;
     static _initialization = null;
     static _backend = null;
     static tokenKey = AppConfig.Keys.auth;
@@ -54,6 +59,43 @@ export class SupabaseService {
             );
         }
         return SupabaseService._client;
+    }
+
+    static getGuestClient() {
+        const backend = this._backend;
+        if (!backend) throw new Error('SupabaseService.initialize() must resolve the backend first');
+        if (this._guest?.backend !== backend) {
+            this._guest = {backend, client: createClient(backend.supabaseUrl, backend.anonKey, {
+                global: this.clientOptions.global, accessToken: async () => null,
+            })};
+        }
+        return this._guest.client;
+    }
+
+    static async publicCheckoutRpc(name, args, signal) {
+        const request = client => {
+            const rpc = client.rpc(name, args);
+            return signal ? rpc.abortSignal(signal) : rpc;
+        };
+        const result = await request(this.getClient());
+        // The common pre-request hook rejects before the RPC can run.
+        if (result.error?.code === '42501' && restrictedAccountDecisions.has(result.error.message)) {
+            return request(this.getGuestClient());
+        }
+        return result;
+    }
+
+    static async requiresGuestCheckout(client, session) {
+        if (!session || !this.isCanonicalBackend) return false;
+        const {data, error} = await client.rpc('get_account_assurance_v1', {
+            p_organization: AppConfig.organization,
+        }).setHeader('Authorization', `Bearer ${session.access_token}`);
+        // A canonical backend can still be preparing its MFA migration.
+        if (error?.code === 'PGRST202') return false;
+        if (error) throw error;
+        if (data === 'allowed') return false;
+        if (restrictedAccountDecisions.has(data)) return true;
+        throw new Error('PAYMENT_RECOVERY_REQUIRED');
     }
 
     // Bind the anonymous check to the exact client that owns the request.

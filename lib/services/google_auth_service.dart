@@ -14,6 +14,8 @@ import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/data_services/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'account_webauthn_browser_stub.dart'
+    if (dart.library.js_interop) 'account_webauthn_browser_web.dart';
 import 'google_auth_browser_stub.dart'
     if (dart.library.js_interop) 'google_auth_browser_web.dart';
 
@@ -251,6 +253,24 @@ class GoogleAuthService {
     await _flight;
   }
 
+  static Future<void> verifyWebAuthn() async {
+    final pending = state.value;
+    final options = pending.result['webAuthnOptions'];
+    if (!supportsWebAuthn ||
+        pending.result['mfaMethod'] != 'webauthn' ||
+        options is! Map<String, dynamic>) {
+      return;
+    }
+    try {
+      final assertion = await takeWebAuthnAssertion(options);
+      if (identical(state.value, pending)) {
+        await advance('mfa_verify', {'mfaAssertion': assertion});
+      }
+    } catch (error) {
+      if (identical(state.value, pending)) _error(error);
+    }
+  }
+
   static Future<void> _advance(
       String operation, Map<String, dynamic> data) async {
     if (_pending == null ||
@@ -260,8 +280,12 @@ class GoogleAuthService {
     final previous = state.value;
     state.value =
         GoogleLoginState(GoogleLoginStatus.completing, result: previous.result);
-    await _accept(await _request(
-        'complete', {..._pending!, 'operation': operation, ...data}));
+    await _accept(await _request('complete', {
+      ..._pending!,
+      'operation': operation,
+      ...data,
+      if (operation == 'prove_existing') 'supportsWebAuthn': supportsWebAuthn,
+    }));
   }
 
   static Future<void> _accept(Map<String, dynamic> result) async {

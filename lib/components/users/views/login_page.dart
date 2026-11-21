@@ -3,6 +3,7 @@ import 'package:fstapp/services/organizer_destination.dart';
 import 'package:fstapp/services/launch_url_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/users/widgets/google_login_panel.dart';
+import 'package:fstapp/components/users/widgets/account_verification_dialog.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/google_auth_service.dart';
@@ -30,6 +31,7 @@ import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/reception/reception_strings.dart';
 import 'package:fstapp/components/reception/login_qr_transition.dart';
 import 'package:fstapp/components/reception/login_qr_scanner_page.dart';
+import 'package:fstapp/services/account_mfa_settings_service.dart';
 import 'package:fstapp/app_router.gr.dart';
 
 @RoutePage()
@@ -46,6 +48,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _resolvingInitialSession = false;
   bool _initialNavigationFailed = false;
+  bool _passkeyAvailable = false;
   LoginQrTransitionState? _qrTransition;
 
   final _emailController = TextEditingController();
@@ -56,6 +59,7 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     GoogleAuthService.state.addListener(_googleStateChanged);
+    _loadPasskeyAvailability();
     _resolvingInitialSession =
         (AppConfig.isWebclientSupported || !AppConfig.isAppSupported) &&
             !GoogleAuthService.hasCallback &&
@@ -67,6 +71,28 @@ class _LoginPageState extends State<LoginPage> {
 
   void _googleStateChanged() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _loadPasskeyAvailability() async {
+    final available = await AccountMfaSettingsService.passkeySignInAvailable();
+    if (mounted && available) setState(() => _passkeyAvailable = true);
+  }
+
+  Future<void> _signIn(Future<void> Function() authenticate) async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      if (!await signInWithAccountVerification(context, authenticate)) return;
+      await finishSuccessfulSignIn(
+        navigate: () => _refreshSignedInStatus(null),
+        recoverNavigation: _recoverAuthenticatedNavigation,
+        showFeedback: _showSignInSuccess,
+      );
+    } catch (error) {
+      if (mounted) _onError(error);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _checkAutoRedirect() async {
@@ -90,6 +116,14 @@ class _LoginPageState extends State<LoginPage> {
           GoogleAuthService.isContinuation) {
         return;
       }
+      final verification = await AuthService.pendingAccountVerification()
+          .timeout(const Duration(seconds: 10));
+      if (!mounted) return;
+      if (verification != null &&
+          !await showAccountVerification(context, verification)) {
+        return;
+      }
+      if (!mounted) return;
       // Help onboarding includes human-paced event selection and setup. A
       // navigation timeout would mark that still-running wizard as failed.
       if (HelpDestination.parse(widget.redirect) != null ||
@@ -203,6 +237,16 @@ class _LoginPageState extends State<LoginPage> {
                                           .result['returnPath'] as String?,
                                   useReplacement: true)),
                       if (!GoogleAuthService.isContinuation) ...[
+                        if (_passkeyAvailable && !AuthService.isLoggedIn())
+                          OutlinedButton.icon(
+                            onPressed: _isLoading
+                                ? null
+                                : () => _signIn(() => AuthService.loginWithPasskey(
+                                      isActive: () => mounted && !GoogleAuthService.isContinuation,
+                                    )),
+                            icon: const Icon(Icons.key),
+                            label: Text(UserStrings.passkeySignIn),
+                          ),
                         if (RightsService.occasionLinkModel?.organization
                                 ?.isRegistrationEnabled ??
                             false)
@@ -247,28 +291,10 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               TextInput.finishAutofillContext();
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              try {
-                                await AuthService.login(
-                                  AppConfig.getUserPrefix(
-                                      _emailController.text),
-                                  _passwordController.text,
-                                );
-                                await finishSuccessfulSignIn(
-                                  navigate: () => _refreshSignedInStatus(null),
-                                  recoverNavigation:
-                                      _recoverAuthenticatedNavigation,
-                                  showFeedback: _showSignInSuccess,
-                                );
-                              } catch (error) {
-                                _onError(error);
-                              }
-                              if (!mounted) return;
-                              setState(() {
-                                _isLoading = false;
-                              });
+                              await _signIn(() => AuthService.login(
+                                AppConfig.getUserPrefix(_emailController.text),
+                                _passwordController.text,
+                              ));
                             }
                           },
                           color: ThemeConfig.seed1,
@@ -331,7 +357,8 @@ class _LoginPageState extends State<LoginPage> {
       _qrTransition = LoginQrTransitionState.signingIn;
     });
     try {
-      await authenticate();
+      final signedIn = await signInWithAccountVerification(context, authenticate);
+      if (!signedIn) return;
       if (!mounted) return;
       setState(() => _qrTransition = LoginQrTransitionState.success);
       await Future<void>.delayed(const Duration(milliseconds: 900));

@@ -41,6 +41,47 @@ export type EmailRow = {
   attempt_id: string;
   prepared: Record<string, string> | null;
 };
+const recoveryNoticeCopy: Record<string, [string, string]> = {
+  cs: [
+    "Zahájili jsme obnovu zabezpečení účtu",
+    "Pokud jste o obnovu nepožádali, obraťte se na podporu Festappu.",
+  ],
+  sk: [
+    "Začali sme obnovu zabezpečenia účtu",
+    "Ak ste o obnovu nepožiadali, kontaktujte podporu Festappu.",
+  ],
+  en: [
+    "Account security recovery has started",
+    "If you did not request recovery, contact Festapp support.",
+  ],
+  de: [
+    "Die Wiederherstellung der Kontosicherheit wurde gestartet",
+    "Wenn Sie die Wiederherstellung nicht angefordert haben, wenden Sie sich an den Festapp-Support.",
+  ],
+  es: [
+    "Se ha iniciado la recuperación de la seguridad de la cuenta",
+    "Si no solicitaste la recuperación, contacta con el equipo de soporte de Festapp.",
+  ],
+  pl: [
+    "Rozpoczęto odzyskiwanie zabezpieczeń konta",
+    "Jeśli nie proszono o odzyskiwanie, skontaktuj się z pomocą Festapp.",
+  ],
+  uk: [
+    "Розпочато відновлення безпеки облікового запису",
+    "Якщо ви не запитували відновлення, зверніться до підтримки Festapp.",
+  ],
+};
+
+const factorChangeNoticeCopy: Record<string, [added: string, removed: string, message: string]> = {
+  cs: ["Byl přidán způsob ověření", "Ověřovací faktor byl odebrán", "Pokud jste změnu neprovedli, obraťte se na podporu Festappu."],
+  sk: ["Bol pridaný spôsob overenia", "Overovací faktor bol odstránený", "Ak ste zmenu nevykonali, kontaktujte podporu Festappu."],
+  en: ["A verification method was added", "A verification factor was removed", "If you did not make this change, contact Festapp support."],
+  de: ["Eine Bestätigungsmethode wurde hinzugefügt", "Ein Anmeldefaktor wurde entfernt", "Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich an den Festapp-Support."],
+  es: ["Se añadió un método de verificación", "Se eliminó un factor de verificación", "Si no hiciste este cambio, contacta con el equipo de soporte de Festapp."],
+  pl: ["Dodano metodę weryfikacji", "Usunięto metodę weryfikacji", "Jeśli to nie Twoja zmiana, skontaktuj się z pomocą Festapp."],
+  uk: ["Додано спосіб підтвердження", "Фактор перевірки видалено", "Якщо ви не вносили цю зміну, зверніться до підтримки Festapp."],
+};
+
 export async function renderQueuedEmail(
   input: EmailRow,
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
@@ -62,6 +103,23 @@ export async function renderQueuedEmail(
   }
   if (["waitlist_confirmation", "waitlist_offer"].includes(row.message_kind)) {
     return await renderWaitlistEmail(row);
+  }
+  if (row.message_kind === "custom" && [
+    "ACCOUNT_MFA_RECOVERY_STARTED", "ACCOUNT_MFA_FACTOR_REMOVED", "ACCOUNT_PASSKEY_REMOVED", "ACCOUNT_MFA_METHOD_ADDED",
+  ].includes(row.code)) {
+    const lang = String(row.data?.lang ?? "cs");
+    const recovery = Object.hasOwn(recoveryNoticeCopy, lang) ? recoveryNoticeCopy[lang] : recoveryNoticeCopy.cs;
+    const [added, removed, changeMessage] = Object.hasOwn(factorChangeNoticeCopy, lang) ? factorChangeNoticeCopy[lang] : factorChangeNoticeCopy.cs;
+    const [subject, message] = row.code === "ACCOUNT_MFA_RECOVERY_STARTED" ? recovery
+      : [row.code === "ACCOUNT_MFA_METHOD_ADDED" ? added : removed, changeMessage];
+    const sender = Deno.env.get("DEFAULT_EMAIL") ?? "";
+    return {
+      prepared: {
+        from: `Festapp <${sender}>`, to: row.recipient, replyTo: sender,
+        subject, html: `<h2>${subject}</h2><p>${message}</p>`, attachments: [],
+      },
+      postAction: { tracking_policy: "disabled" },
+    };
   }
   if (row.message_kind === "custom" && row.code === "NEW_USER_FIRST_LOGIN") {
     return {

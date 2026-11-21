@@ -47,6 +47,7 @@ import 'package:fstapp/services/time_helper.dart';
 import 'package:fstapp/services/web_styles_helper.dart';
 import 'package:fstapp/services/web_bootstrap_bridge.dart';
 import 'package:fstapp/services/app_logger.dart';
+import 'package:fstapp/services/account_mfa_settings_service.dart';
 import 'package:fstapp/services/backend_activation_service.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/widgets/time_travel_widget.dart';
@@ -370,6 +371,7 @@ Future<void> initializeEverything() async {
       // network interface is down.
       httpClient: HealthTrackingHttpClient(),
     ).timeout(const Duration(seconds: 2));
+    AccountMfaSettingsService.configure(resolvedBackend);
     supabaseInitialized = true;
     AppLogger.debug('Supabase initialized');
   } catch (e) {
@@ -396,12 +398,13 @@ Future<void> initializeEverything() async {
         await AuthService.tryAuthUser().timeout(const Duration(seconds: 2));
         AppLogger.debug('Stored session recovery completed');
       }
-      if (AuthService.isLoggedIn()) {
+      if (await AuthService.authorizePrivateCache().timeout(const Duration(seconds: 2))) {
         await AuthService.validateCurrentOrganization().timeout(
           const Duration(seconds: 2),
         );
       }
     } else {
+      await AuthService.restoreOfflineAssurance().timeout(const Duration(seconds: 2));
       AppLogger.debug('Offline start: skipped remote session validation');
     }
   } catch (e) {
@@ -411,6 +414,8 @@ Future<void> initializeEverything() async {
     );
     AppLogger.error('Client sync initialization failed: $e');
   }
+
+  if (supabaseInitialized) AuthService.monitorPrivateCacheAssurance();
 
   try {
     await TimeHelper.initializeTimeZone().timeout(const Duration(seconds: 2));
@@ -433,9 +438,7 @@ Future<void> initializeEverything() async {
     if (settings != null) {
       hasCachedOccasionSettings = true;
       SynchroService.globalSettingsModel = settings;
-      final cachedUser = AuthService.isLoggedIn()
-          ? await OfflineDataService.getUserInfo()
-          : null;
+      final cachedUser = await OfflineDataService.getUserInfo();
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
         code: 200,
         clientSyncV1: cachedSyncModel != null,

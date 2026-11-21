@@ -868,6 +868,24 @@
         "blueprint/apply_seat_swap_internal.sql",
         "emails/email_domain.sql"
       ]
+    },
+    {
+      "migration": "20261121151000_account_session_assurance.sql",
+      "active": true,
+      "header": "-- Add account-level assurance based on live GoTrue state and a durable recovery hold.",
+      "sources": [
+        "user_permissions/session_assurance.sql",
+        "user_permissions/account_mfa_channel_policy.sql",
+        "user_permissions/account_mfa_registration_handoff.sql",
+        "user_permissions/account_mfa_factor_registration.sql",
+        "user_permissions/account_mfa_factor_removal.sql",
+        "user_permissions/account_passkey_registration.sql",
+        "user_permissions/account_passkey_sign_in.sql",
+        "user_permissions/account_mfa_recovery.sql",
+        "user_permissions/account_private_image_grants.sql",
+        "user_permissions/public_auth_operation_policy.sql",
+        "users/existing_user_session.sql"
+      ]
     }
   ]
 }
