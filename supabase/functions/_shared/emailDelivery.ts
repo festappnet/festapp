@@ -201,6 +201,10 @@ export async function renderEmail(
     const alt = cs
       ? "QR kód pro platbu bankovním převodem"
       : "Bank transfer QR code";
+    const title = cs ? "Zaplaťte pomocí QR kódu" : "Pay with the QR code";
+    const scanInstructions = cs
+      ? "Naskenujte ho v aplikaci mobilního bankovnictví."
+      : "Scan it in your mobile banking app.";
     const hint = cs
       ? "QR kód si můžete stáhnout z přílohy."
       : "You can download the QR code from the attachment.";
@@ -208,7 +212,7 @@ export async function renderEmail(
       ...prepared,
       html: composeHtml({
         html:
-          `<div style="margin:16px 0"><img src="cid:${contentId}" alt="${alt}" width="240" height="240" style="display:block;width:240px;max-width:100%;height:auto;background:#ffffff"><p>${hint}</p></div>`,
+          `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="cid:${contentId}" alt="${alt}" width="240" height="240" style="display:block;width:240px;max-width:100%;height:auto;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`,
         paymentDetails: ["paymentDetails", "balanceReasoning"].map((key) =>
           String(paymentValues[key] ?? "")
         ),
