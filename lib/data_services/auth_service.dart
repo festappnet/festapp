@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fstapp/app_config.dart';
@@ -19,6 +22,7 @@ import 'package:fstapp/data_services/auth_refresh_recovery.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/services/notification_helper.dart';
+import 'package:fstapp/services/account_mfa_settings_service.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -28,9 +32,39 @@ import '../components/users/logout_flow.dart';
 
 enum InvitationDeliveryStatus { sent, queued }
 
+class PendingAccountVerification {
+  const PendingAccountVerification._(
+    this._session,
+    this._organization,
+    this.factors, {
+    this.recovery = false,
+    this.canReplaceFactor = false,
+    this.securityKeys = const [],
+  });
+
+  final Session _session;
+  final int _organization;
+  final List<Factor> factors;
+  final bool recovery;
+  final bool canReplaceFactor;
+  final List<Factor> securityKeys;
+}
+
+class AccountVerificationRequired implements Exception {
+  const AccountVerificationRequired(this.verification);
+
+  final PendingAccountVerification verification;
+}
+
 class AuthService {
   static final _supabase = Supabase.instance.client;
   static const _secureStorage = FlutterSecureStorage();
+  static const _offlineAssuranceKey = 'offline_account_assurance_v1';
+  static int _assuranceEpoch = 0;
+  static Session? _authorizedSession;
+  static int? _authorizedOrganization;
+  static Future<void> _assuranceStorageTail = Future<void>.value();
+
   static const REFRESH_TOKEN_KEY = 'refresh';
   static const metaLang = 'lang';
 
@@ -49,25 +83,14 @@ class AuthService {
       if (auth.session?.user.id != result['userId']) {
         throw const AuthException('account_identity_inconsistent');
       }
-      final profile = await _supabase
-          .from(Tb.user_info.table)
-          .select(Tb.user_info.id)
-          .eq(Tb.user_info.id, result['userId'])
-          .eq(Tb.user_info.organization, AppConfig.organization)
-          .maybeSingle();
-      if (profile == null) {
-        throw const AuthException('account_identity_inconsistent');
-      }
-      // Bootstrap can still hold anonymous data after the OAuth round trip.
-      // Load the installed identity's full context before publishing success.
-      await _finalizeLogin(auth.session!);
+      await _finalizeLogin(auth.session!, requireOrganizationProfile: true);
       if (RightsService.currentUser()?.id != result['userId']) {
         throw const AuthException('account_identity_inconsistent');
       }
+    } on AccountVerificationRequired {
+      rethrow;
     } catch (_) {
-      await _supabase.auth.signOut(scope: SignOutScope.local);
-      await _secureStorage.delete(key: REFRESH_TOKEN_KEY);
-      await OfflineDataService.clearUserData();
+      await logout();
       rethrow;
     }
   }
@@ -88,7 +111,9 @@ class AuthService {
           : null;
       if (refreshToken is String && refreshToken.isNotEmpty) {
         final data = await _supabase.auth.setSession(refreshToken);
-        if (data.session == null) { throw const AuthException('Invalid code session'); }
+        if (data.session == null) {
+          throw const AuthException('Invalid code session');
+        }
         await _finalizeLogin(data.session!);
         return;
       }
@@ -98,6 +123,17 @@ class AuthService {
       password: password,
     );
     await _finalizeLogin(data.session!);
+  }
+
+  static Future<void> loginWithPasskey({required bool Function() isActive}) async {
+    DbEvents.invalidateSavedProgramMutationScope();
+    final service = AccountMfaSettingsService.open();
+    try {
+      final session = await service.signInWithPasskey(isActive: isActive);
+      await _finalizeLogin(session);
+    } finally {
+      service.dispose();
+    }
   }
 
   static Future<void> loginWithQr(String payload) async {
@@ -129,9 +165,14 @@ class AuthService {
     await _finalizeLogin(auth.session!);
   }
 
-  static Future<void> _finalizeLogin(Session session) async {
+  static Future<void> _finalizeLogin(
+    Session session, {
+    bool requireOrganizationProfile = false,
+  }) async {
     RightsService.invalidateCapabilities(clearIdentity: true);
-    if (!await validateCurrentOrganization()) {
+    final verification = await _verificationFor(session);
+    if (verification != null) throw AccountVerificationRequired(verification);
+    if (!await validateCurrentOrganization(requireProfile: requireOrganizationProfile)) {
       throw Exception('Account is not available for this organization.');
     }
     await _secureStorage.write(
@@ -163,13 +204,241 @@ class AuthService {
     }
   }
 
+  static Future<PendingAccountVerification?>
+  pendingAccountVerification() async {
+    final session = _supabase.auth.currentSession;
+    if (session == null) return null;
+    return _verificationFor(session);
+  }
+
+  static void _requireCurrentSession(Session session, int organization) {
+    if (_supabase.auth.currentSession?.accessToken != session.accessToken ||
+        AppConfig.organization != organization) {
+      throw const AuthException('invalid_session');
+    }
+  }
+
+  static void requireCurrentVerification(PendingAccountVerification verification) {
+    _requireCurrentSession(verification._session, verification._organization);
+  }
+
+  static String? get privateCacheOwner {
+    final session = _supabase.auth.currentSession;
+    if (session == null ||
+        _authorizedOrganization != AppConfig.organization ||
+        session.accessToken != _authorizedSession?.accessToken ||
+        session.expiresAt == null ||
+        session.isExpired) {
+      return null;
+    }
+    return '${AppConfig.organization}/${session.user.id}';
+  }
+
+  static String _tokenDigest(Session session, int organization) => sha256
+      .convert(utf8.encode('$organization|${session.accessToken}'))
+      .toString();
+
+  static void _setAssurance(Session? session, int? organization) {
+    _assuranceEpoch++;
+    _authorizedSession = session;
+    _authorizedOrganization = organization;
+  }
+
+  static Future<void> _persistAssurance() {
+    final session = _authorizedSession;
+    final organization = _authorizedOrganization;
+    final digest = session != null && organization != null
+        ? _tokenDigest(session, organization)
+        : null;
+    _assuranceStorageTail = _assuranceStorageTail.then((_) async {
+      try {
+        if (digest == null) {
+          await _secureStorage.delete(key: _offlineAssuranceKey);
+        } else {
+          await _secureStorage.write(key: _offlineAssuranceKey, value: digest);
+        }
+      } catch (error) {
+        AppLogger.error(
+          'Offline account assurance storage failed: ${error.runtimeType}',
+        );
+      }
+    });
+    return _assuranceStorageTail;
+  }
+
+  static Future<void> restoreOfflineAssurance() async {
+    final session = _supabase.auth.currentSession;
+    final organization = AppConfig.organization;
+    if (session == null || session.expiresAt == null || session.isExpired)
+      return;
+    final epoch = _assuranceEpoch;
+    try {
+      final digest = await _secureStorage.read(key: _offlineAssuranceKey);
+      _requireCurrentSession(session, organization);
+      if (epoch == _assuranceEpoch &&
+          digest == _tokenDigest(session, organization)) {
+        _setAssurance(session, organization);
+      }
+    } catch (error) {
+      AppLogger.error(
+        'Offline account assurance restore failed: ${error.runtimeType}',
+      );
+    }
+  }
+
+  static void monitorPrivateCacheAssurance() {
+    _supabase.auth.onAuthStateChange.listen((state) async {
+      if (state.event != AuthChangeEvent.tokenRefreshed) return;
+      try {
+        await authorizePrivateCache();
+      } catch (error) {
+        AppLogger.error(
+          'Private cache assurance refresh failed: ${error.runtimeType}',
+        );
+      }
+    });
+  }
+
+  /// A pending verification retains its Auth session until the login UI opens.
+  static Future<bool> authorizePrivateCache() async {
+    final session = _supabase.auth.currentSession;
+    if (session == null) return false;
+    return await _accountDecision(session, AppConfig.organization) == 'allowed';
+  }
+
+  static Future<Object?> _accountDecision(
+    Session session,
+    int organization,
+  ) async {
+    _requireCurrentSession(session, organization);
+    final decision = await _supabase.rpc(
+      'get_account_assurance_v1',
+      params: {'p_organization': organization},
+    );
+    _requireCurrentSession(session, organization);
+    if (decision == 'allowed' &&
+        session.expiresAt != null &&
+        !session.isExpired) {
+      _setAssurance(session, organization);
+    } else {
+      _setAssurance(null, null);
+      RightsService.invalidateCapabilities(clearIdentity: true);
+    }
+    await _persistAssurance();
+    _requireCurrentSession(session, organization);
+    return decision;
+  }
+
+  static Future<PendingAccountVerification?> _verificationFor(
+    Session session,
+  ) async {
+    final organization = AppConfig.organization;
+    final decision = await _accountDecision(session, organization);
+    if (decision == 'allowed') return null;
+    if (decision == 'account_recovery') {
+      final actor = await _supabase.rpc(
+        'get_mfa_recovery_registration_actor_v1',
+        params: {'p_organization': organization},
+      );
+      _requireCurrentSession(session, organization);
+      return PendingAccountVerification._(
+        session,
+        organization,
+        const [],
+        recovery: true,
+        canReplaceFactor: actor is Map && actor['decision'] == 'allowed',
+      );
+    }
+    if (decision != 'mfa_required' && decision != 'proof_required') {
+      throw const AuthException('invalid_session');
+    }
+    // GoTrue's Dart listFactors refreshes the session. Read the factor
+    // inventory with this exact token so the pending proof stays bound.
+    final verifiedUser = await _supabase.auth.getUser(session.accessToken);
+    _requireCurrentSession(session, organization);
+    final verified = (verifiedUser.user?.factors ?? const <Factor>[])
+        .where((factor) => factor.status == FactorStatus.verified);
+    final totp = verified.where((factor) => factor.factorType == FactorType.totp).toList();
+    final securityKeys = AccountMfaSettingsService.supportsWebAuthnVerification
+        ? verified.where((factor) => factor.factorType == FactorType.webauthn).toList()
+        : const <Factor>[];
+    if (totp.isEmpty && securityKeys.isEmpty) {
+      throw const AuthException('mfa_factor_unavailable');
+    }
+    return PendingAccountVerification._(
+      session,
+      organization,
+      List.unmodifiable(totp),
+      securityKeys: List.unmodifiable(securityKeys),
+    );
+  }
+
+  static Future<void> verifyAccountWebAuthn(
+    PendingAccountVerification verification,
+    String factorId,
+  ) async {
+    requireCurrentVerification(verification);
+    final factor = verification.securityKeys.firstWhereOrNull((factor) => factor.id == factorId);
+    if (factor == null) throw const AuthException('invalid_webauthn_challenge');
+    final service = AccountMfaSettingsService.open();
+    try {
+      final session = await service.verifyWebAuthnFactor(factor, verification._session);
+      _requireCurrentSession(session, verification._organization);
+      await _finalizeLogin(session);
+    } finally {
+      service.dispose();
+    }
+  }
+
+  static Future<void> verifyAccountLogin(
+    PendingAccountVerification verification,
+    String factorId,
+    String code,
+  ) async {
+    _requireCurrentSession(verification._session, verification._organization);
+    if (!RegExp(r'^\d{6}$').hasMatch(code) ||
+        !verification.factors.any((factor) => factor.id == factorId)) {
+      throw const AuthException('invalid_mfa_code');
+    }
+    final result = await _supabase.auth.mfa.challengeAndVerify(
+      factorId: factorId,
+      code: code,
+    );
+    final installed = _supabase.auth.currentSession;
+    if (installed == null ||
+        installed.accessToken != result.accessToken ||
+        installed.user.id != verification._session.user.id ||
+        AppConfig.organization != verification._organization) {
+      throw const AuthException('invalid_session');
+    }
+    await _finalizeLogin(installed);
+  }
+
+  static Future<void> cancelAccountVerification(
+    PendingAccountVerification verification,
+  ) async {
+    if (verification.recovery ||
+        _supabase.auth.currentSession?.accessToken !=
+            verification._session.accessToken ||
+        AppConfig.organization != verification._organization) {
+      return;
+    }
+    await logout();
+  }
+
   static Future<void> logout() async {
+    final owner = '${AppConfig.organization}/${_supabase.auth.currentUser?.id}';
+    _setAssurance(null, null);
+    final clearAssurance = _persistAssurance();
     RightsService.invalidateCapabilities(clearIdentity: true);
     DbEvents.invalidateSavedProgramMutationScope();
     await runLogoutFlow(
       signOutLocal: () => _supabase.auth.signOut(scope: SignOutScope.local),
-      clearRefreshToken: () => _secureStorage.delete(key: REFRESH_TOKEN_KEY),
-      clearPrivateData: OfflineDataService.clearUserData,
+      clearRefreshToken: () async {
+        await clearAssurance;
+        await _secureStorage.delete(key: REFRESH_TOKEN_KEY);
+      },
+      clearPrivateData: () => OfflineDataService.clearUserData(owner: owner),
       resetIdentity: ClientSyncRuntime.identityChanged,
       clearRights: () {
         RightsService.invalidateCapabilities(clearIdentity: true);
@@ -322,7 +591,7 @@ class AuthService {
   /// Rejects a recovered identity that belongs to a different Festapp tenant.
   /// A network failure is not treated as proof of mismatch: the cutover has
   /// already removed private cache, so the session can be revalidated online.
-  static Future<bool> validateCurrentOrganization() async {
+  static Future<bool> validateCurrentOrganization({bool requireProfile = false}) async {
     final user = _supabase.auth.currentUser;
     if (user == null) return true;
     Map<String, dynamic>? profile;
@@ -334,6 +603,7 @@ class AuthService {
           .eq(Tb.user_info.organization, AppConfig.organization)
           .maybeSingle();
     } catch (_) {
+      if (requireProfile) rethrow;
       return true;
     }
     if (profile != null) return true;

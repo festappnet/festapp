@@ -84,13 +84,20 @@ export class GoogleAuthService {
         if (!pending || pending.expires <= Date.now() || pending.attempt !== callback.attempt) throw new Error('attempt_expired');
         this._pending = pending; // continuation exists only in memory
         const result = await this.request('complete', { ...pending, operation: 'claim', code: callback.code });
+        if (this._pending !== pending) throw new Error('attempt_expired');
         return await this._accept(result);
     }
-    static async advance(operation, payload = {}) {
+    static async advance(operation, payload = {}, signal) {
         if (!this._pending || this._pending.expires <= Date.now()) throw new Error('attempt_expired');
         if (this._completing) return this._completing;
-        this._completing = this.request('complete', { ...this._pending, operation, ...payload })
-            .then(result => this._accept(result)).finally(() => { this._completing = null; });
+        const pending = this._pending;
+        signal?.throwIfAborted();
+        this._completing = this.request('complete', { ...pending, operation, ...payload })
+            .then(result => {
+                signal?.throwIfAborted();
+                if (this._pending !== pending) throw new Error('attempt_expired');
+                return this._accept(result);
+            }).finally(() => { this._completing = null; });
         return this._completing;
     }
     static async _accept(result) {

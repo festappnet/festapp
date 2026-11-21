@@ -1,10 +1,12 @@
 import { assertEquals, assert } from "jsr:@std/assert@1";
 import type { Session, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import { handleMcpExchange } from "./handler.ts";
+import type { AccountAssuranceDecision } from "../_shared/accountAssurance.ts";
 
 const actor = "00000000-0000-4000-8000-000000000001";
 const config = { tenantId: "fixture", tenantOrigin: "https://tenant.invalid", issuer: "https://mcp.invalid", organizationId: 3, brokerSecret: "s".repeat(43) };
-function fixture({ invalidProof = false, wrongActor = false, failTransfer = false, limited = "", organization = 3, access = { type: "occasions", occasionIds: [7] } as Record<string, unknown> } = {}) {
+function fixture({ invalidProof = false, wrongActor = false, failTransfer = false, limited = "", organization = 3, access = { type: "occasions", occasionIds: [7] } as Record<string, unknown>,
+  assurance = "allowed" as AccountAssuranceDecision } = {}) {
   const calls: string[] = [];
   const admin = {
     auth: { getUser: (token: string) => { calls.push(`proof:${token}`); return Promise.resolve({ error: invalidProof ? {} : null, data: { user: { id: actor } } }); },
@@ -12,6 +14,7 @@ function fixture({ invalidProof = false, wrongActor = false, failTransfer = fals
     rpc: () => Promise.resolve({ data: { organization, authEmail: "verified@tenant.invalid" }, error: null }),
   } as unknown as SupabaseClient;
   const deps = { config, admin, makeAnon: () => admin,
+    assurance: () => Promise.resolve(assurance),
     fetch: (async (url: string | URL | Request, init?: RequestInit) => {
       assertEquals(url, "https://mcp.invalid/tenant-connection");
       assertEquals((init!.headers as Record<string, string>)["X-Festapp-Mcp-Broker"], config.brokerSecret);
@@ -44,6 +47,13 @@ Deno.test("tenant proof and explicit consent mint only the verified actor and ne
   const f = fixture(); const response = await f.request(); assertEquals(response.status, 200);
   const body = await response.text(); assertEquals(JSON.parse(body).issuer, config.issuer); assert(!body.includes("independent-refresh")); assert(!body.includes("independent-access"));
   assertEquals(f.calls, ["proof:app-access", "prepare", "mint", "proof:app-access", "check", "complete"]);
+});
+Deno.test("denied account assurance stops delegated issuance before the issuer is contacted", async () => {
+  const f = fixture({ assurance: "account_recovery" });
+  const result = await f.request();
+  assertEquals(result.status, 403);
+  assertEquals(await result.json(), { error: "account_recovery" });
+  assertEquals(f.calls, ["proof:app-access"]);
 });
 Deno.test("foreign origin and invalid identity cannot reach privileged mint", async () => {
   const f = fixture(); assertEquals((await f.request("approve", "https://evil.invalid")).status, 403); assertEquals(f.calls, []);

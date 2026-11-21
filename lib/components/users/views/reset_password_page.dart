@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/components/users/password_change_flow.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
+import 'package:fstapp/components/users/widgets/account_verification_dialog.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/app_router.dart';
 import 'package:fstapp/app_config.dart';
@@ -47,10 +48,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       token: widget.token,
       password: password,
       change: AuthService.changePassword,
-      signIn: (email, newPassword) => AuthService.login(
-        AppConfig.getUserPrefix(email),
-        newPassword,
-      ),
+      signIn: (email, newPassword) async {
+        if (!mounted ||
+            !await signInWithAccountVerification(
+              context,
+              () => AuthService.login(AppConfig.getUserPrefix(email), newPassword),
+            )) {
+          throw StateError('verification_not_completed');
+        }
+      },
     );
     if (!mounted) return;
     setState(() => _isChangingPassword = false);

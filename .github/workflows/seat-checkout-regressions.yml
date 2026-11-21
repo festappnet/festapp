@@ -48,6 +48,11 @@ jobs:
         run: bash automation/ci/supabase.sh
       - run: command -v psql >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y postgresql-client; }
         if: steps.selection.outputs.sql == 'true'
+      - uses: actions/setup-go@v7
+        if: steps.selection.outputs.go == 'true'
+        with:
+          go-version-file: automation/hetzner-supabase/auth-ingress/go.mod
+          cache-dependency-path: automation/hetzner-supabase/auth-ingress/go.sum
       - name: Restore pinned Chromium test runner
         if: steps.selection.outputs.browser == 'true'
         uses: ./.github/actions/restore-playwright-cache

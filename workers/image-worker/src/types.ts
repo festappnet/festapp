@@ -18,9 +18,6 @@ export interface Env {
   SUPABASE_ANON_KEY_AKHWEB: string;
   SUPABASE_URL_SLUNOVRAT?: string;
   SUPABASE_ANON_KEY_SLUNOVRAT?: string;
-  R2_ACCESS_KEY_ID: string;
-  R2_SECRET_ACCESS_KEY: string;
-  CF_ACCOUNT_ID: string;
   CF_ZONE_ID: string;
   CF_CACHE_PURGE_TOKEN: string;
   CONTROL_ALLOWED_ORIGINS: string;

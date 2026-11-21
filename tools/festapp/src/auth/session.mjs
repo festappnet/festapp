@@ -102,16 +102,12 @@ export class SessionOwner {
         check(data.user, 'AUTHENTICATION_REQUIRED');
         if (expectedUser)
             check(data.user.id === expectedUser, 'AUTHENTICATION_REQUIRED');
-        const assurance =
-            await client.auth.mfa.getAuthenticatorAssuranceLevel(accessToken);
+        const assurance = await client.rpc('get_account_assurance_v1');
         upstream(assurance.error);
-        const requiresMfa =
-            assurance.data?.nextLevel === 'aal2' ||
-            data.user.factors?.some((factor) => factor.status === 'verified');
-        check(
-            !requiresMfa || assurance.data?.currentLevel === 'aal2',
-            'MFA_REQUIRED',
-        );
+        check(!['mfa_required', 'proof_required'].includes(assurance.data), 'MFA_REQUIRED');
+        check(assurance.data !== 'invalid_session', 'AUTHENTICATION_REQUIRED');
+        check(assurance.data !== 'account_recovery', 'FORBIDDEN');
+        check(assurance.data === 'allowed', 'UPSTREAM_CONTRACT_FAILURE');
         const user = await client
             .from('user_info')
             .select('id,organization')

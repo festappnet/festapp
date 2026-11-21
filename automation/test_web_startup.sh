@@ -35,9 +35,13 @@ node --test \
   tests/components/db_orders_command_identity.test.js \
   tests/components/user_header_create_event.test.js \
   tests/components/user_header_admin_navigation.test.js \
+  tests/components/login_modal.test.js \
+  tests/components/login_navigation.test.js \
   tests/components/blueprint_selector_v2.test.js \
   tests/components/blueprint_escape.test.js \
   tests/forms/form_loading.test.js \
+  tests/forms/order_overview.test.js \
+  tests/forms/public_link_loading.test.js \
   tests/forms/order_editor_button_lifecycle.test.js \
   tests/core/google_auth_service.test.js
 

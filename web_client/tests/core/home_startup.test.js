@@ -1,4 +1,4 @@
-import {publicFormLocation} from '../../src/utils/public_form_location.js';
+import {publicCheckoutLocation} from '../../src/utils/public_form_location.js';
 import { register } from 'node:module';
 register('../css_loader.mjs', import.meta.url);
 import test from 'node:test';
@@ -23,7 +23,7 @@ for (const failed of [false, true]) test(`Google continuation owns one dialog af
     dom.window.failFestappWebClientStartup = reason => assert.fail(reason);
     await runInNewContext(source, {
         window:dom.window, document:dom.window.document, console,
-        publicFormLocation, isEmbed:()=>false, applyEmbedContext() {}, resolveScannerRoute:()=>null,
+        publicCheckoutLocation, isEmbed:()=>false, applyEmbedContext() {}, resolveScannerRoute:()=>null,
         GoogleAuthService:{takeCallback:()=>({attempt:'fixture'}),complete:async()=>{
             if (failed) throw Error('provider_cancelled');
             return {status:'needs_profile'};
@@ -72,9 +72,9 @@ test('catalogue stays hidden while cards load, then startup reveals cards', asyn
     const noop = { init() {} };
     const startup = runInNewContext(source, {
         window, document, console, UnitPage,
-        publicFormLocation, isEmbed: () => false, applyEmbedContext() {},
+        publicCheckoutLocation, isEmbed: () => false, applyEmbedContext() {},
         resolveScannerRoute: () => null,
-        GoogleAuthService: { takeCallback: () => null },
+        GoogleAuthService: { takeCallback: () => null }, AuthService: { resumeVerification: async () => null },
         initializeCoreServices: async () => {},
         handleHelpAction: async () => false, handleOrganizerIntent: async () => false,
         LocalizationService: {}, SupabaseService: {}, RightsService: {},
@@ -119,9 +119,9 @@ for (const fails of [false, true]) test(`organizer startup preserves static cont
     dom.window.markFestappAppReady = () => ready++;
     await runInNewContext(source, {
         window: dom.window, document: dom.window.document, console: { error() {} },
-        publicFormLocation, isEmbed: () => false, applyEmbedContext() {},
+        publicCheckoutLocation, isEmbed: () => false, applyEmbedContext() {},
         resolveScannerRoute: () => null,
-        GoogleAuthService: { takeCallback: () => null },
+        GoogleAuthService: { takeCallback: () => null }, AuthService: { resumeVerification: async () => null },
         initializeCoreServices: async options => { assert.equal(options.isAppSupported, false); initializations++; if (fails) throw Error('offline'); },
         LocalizationService: {}, SupabaseService: {}, RightsService: {}, AppConfig: { isAppSupported: true },
         ThemeService: { init() { themes++; } }, ImageLoader: { init() {} },
@@ -149,9 +149,9 @@ test('startup runs when the module arrives after DOMContentLoaded', async t => {
     runInNewContext(source, {
         window: { ...dom.window, markFestappAppReady() { ready++; }, failFestappWebClientStartup: assert.fail },
         document: dom.window.document, console,
-        publicFormLocation, isEmbed: () => false, applyEmbedContext() {},
+        publicCheckoutLocation, isEmbed: () => false, applyEmbedContext() {},
         resolveScannerRoute: () => null,
-        GoogleAuthService: { takeCallback: () => null },
+        GoogleAuthService: { takeCallback: () => null }, AuthService: { resumeVerification: async () => null },
         initializeCoreServices: async () => { initialized++; },
         handleHelpAction: async () => false, handleOrganizerIntent: async () => null,
         AppConfig: {}, ThemeService: { init() {} }, ImageLoader: { init() {} },
@@ -163,11 +163,53 @@ test('startup runs when the module arrives after DOMContentLoaded', async t => {
     assert.equal(ready, 1);
 });
 
+test('a restored first factor resumes verification at the current path before navigation', async t => {
+    const dom = new JSDOM('<div id="app"></div>', { url: 'https://tickets.invalid/unit/14/edit' });
+    t.after(() => dom.window.close());
+    const pending = { factors: [{ id: 'registered-factor' }] };
+    let shown = false;
+    class VerificationModal extends dom.window.HTMLElement {
+        _showVerification(challenge) {
+            assert.equal(challenge, pending);
+            shown = true;
+        }
+    }
+    dom.window.customElements.define('fixture-verification', VerificationModal);
+    const source = readFileSync(new URL('../../src/main.js', import.meta.url), 'utf8')
+        .replace(/^import .*;\r?\n/gm, '').replace(/\/\/ Start[\s\S]*$/, 'Main.init();');
+    const noop = { init() {} };
+    dom.window.failFestappWebClientStartup = reason => assert.fail(reason);
+    await runInNewContext(source, {
+        window: dom.window, document: dom.window.document, console,
+        publicCheckoutLocation, isEmbed: () => false, applyEmbedContext() {}, resolveScannerRoute: () => null,
+        GoogleAuthService: { takeCallback: () => null },
+        AuthService: { resumeVerification: async () => pending },
+        LoginModal: VerificationModal, initializeCoreServices: async () => {},
+        handleHelpAction: () => assert.fail('the pending session owns the sign-in flow'),
+        handleOrganizerIntent: () => assert.fail('the pending session owns the sign-in flow'),
+        RouterService: {
+            normalizeUrl: url => new URL(url).pathname,
+            handleInitialLoad: () => assert.fail('do not navigate before verifying the factor'),
+            initPopStateListener() {},
+        },
+        AppConfig: {}, LocalizationService: {}, SupabaseService: {}, RightsService: {},
+        ThemeService: noop, ImageLoader: noop, FeedbackFab: noop,
+        UnitPage: class { init() {} async loadOccasions() {} },
+    });
+    assert.equal(shown, true);
+    assert.equal(dom.window.location.pathname, '/unit/14/edit');
+});
+
 for (const [path, deferred] of [
     ['/form/example', true], ['/form/example?utm_source=organizer', true],
     ['/form/example?embed=1', true], ['/', false], ['/events', false],
+    ['/form/example#order-preview', true], [`/form/example?checkout_origin=cHJvb2Y.${'a'.repeat(64)}`, true],
+    ['/form/example?checkout_origin=invalid', false],
     ['/form/example?preview=true', false], ['/form/example?admin=1', false],
     ['/form/example?order_id=1&token=private', false],
+    [`/order?order_id=1&token=${'a'.repeat(64)}`, true],
+    [`/order?order_id=1&token=${'a'.repeat(64)}&token=${'b'.repeat(64)}`, false],
+    ['/order?waitlist=1&offer_id=00000000-0000-4000-8000-000000000001&admin=1', false],
 ]) test(`document startup ${path} defers catalogue context=${deferred}`, async t => {
     const {initializeCoreServices} = await import('../../src/startup/initialize_core_services.js');
     const dom = new JSDOM('<div id="app"></div>', {url: 'https://tickets.invalid' + path});
@@ -178,9 +220,12 @@ for (const [path, deferred] of [
     const noop = {init() {}};
     await runInNewContext(source, {
         window: dom.window, document: dom.window.document, console,
-        publicFormLocation, isEmbed: () => new URLSearchParams(dom.window.location.search).get('embed') === '1',
+        publicCheckoutLocation, isEmbed: () => new URLSearchParams(dom.window.location.search).get('embed') === '1',
         applyEmbedContext() {}, resolveScannerRoute: () => null,
-        GoogleAuthService: {takeCallback: () => null},
+        GoogleAuthService: {takeCallback: () => null}, AuthService: {resumeVerification: async () => {
+            assert.ok(!deferred, 'public checkout must route without prompting for account verification');
+            return null;
+        }},
         initializeCoreServices,
         LocalizationService: {init: async () => calls.push('translations')},
         SupabaseService: {initialize: async () => calls.push('backend')},

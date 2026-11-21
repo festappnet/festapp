@@ -1,4 +1,7 @@
 import 'package:fstapp/services/time_helper.dart';
+import 'package:fstapp/data_services/auth_service.dart';
+import 'package:fstapp/app_config.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:core';
@@ -62,6 +65,36 @@ class OfflineDataService {
   static const String eventFeedbackOfflineStorage = "eventFeedback";
   static Future<void> _myScheduleWriteTail = Future<void>.value();
 
+  static String _privateKey(String owner, String key) => 'account/$owner/$key';
+
+  static String get _anonymousScheduleKey =>
+      _privateKey('${AppConfig.organization}/anonymous', myScheduleOffline);
+
+  static String? get _scheduleKey {
+    if (!AuthService.isLoggedIn()) return _anonymousScheduleKey;
+    final owner = AuthService.privateCacheOwner;
+    return owner == null ? null : _privateKey(owner, myScheduleOffline);
+  }
+
+  static Future<T?> _readPrivate<T>(
+    Future<T?> Function(String owner) read,
+  ) async {
+    final owner = AuthService.privateCacheOwner;
+    if (owner == null) return null;
+    final value = await read(owner);
+    return AuthService.privateCacheOwner == owner ? value : null;
+  }
+
+  static Future<void> _writePrivate(
+    Future<void> Function(String owner) write, {
+    String? expectedOwner,
+  }) async {
+    final owner = AuthService.privateCacheOwner;
+    if (owner != null && (expectedOwner == null || expectedOwner == owner)) {
+      await write(owner);
+    }
+  }
+
   static Future<void> saveMyScheduleData(List<int> offlineData) =>
       saveMyScheduleDataIfCurrent(offlineData, () => true);
 
@@ -69,20 +102,23 @@ class OfflineDataService {
     List<int> offlineData,
     bool Function() isCurrent,
   ) {
+    final key = _scheduleKey;
     return _enqueueMyScheduleWrite(() async {
-      if (isCurrent()) {
-        await StorageHelper.set(myScheduleOffline, jsonEncode(offlineData));
+      if (key != null && key == _scheduleKey && isCurrent()) {
+        await StorageHelper.set(key, jsonEncode(offlineData));
       }
     });
   }
 
-  static Future<void> clearMyScheduleData() => _enqueueMyScheduleWrite(
-        () => StorageHelper.remove(myScheduleOffline),
-      );
+  static Future<void> clearMyScheduleData({String? owner}) =>
+      _enqueueMyScheduleWrite(() async {
+        await StorageHelper.remove(myScheduleOffline);
+        if (owner != null) {
+          await StorageHelper.remove(_privateKey(owner, myScheduleOffline));
+        }
+      });
 
-  static Future<void> _enqueueMyScheduleWrite(
-    Future<void> Function() write,
-  ) {
+  static Future<void> _enqueueMyScheduleWrite(Future<void> Function() write) {
     final completer = Completer<void>();
     _myScheduleWriteTail = _myScheduleWriteTail.then((_) async {
       try {
@@ -96,11 +132,25 @@ class OfflineDataService {
   }
 
   static Future<List<int>> getMyScheduleData() async {
-    return savedProgramPendingState.apply(await _getConfirmedMyScheduleData());
+    final key = _scheduleKey;
+    final confirmed = await _getConfirmedMyScheduleData();
+    return key != null && key == _scheduleKey
+        ? savedProgramPendingState.apply(confirmed)
+        : const [];
   }
 
   static Future<List<int>> getLocalMyScheduleData() async {
-    final eventData = await StorageHelper.get(myScheduleOffline);
+    final key = _scheduleKey;
+    if (key == null) return const [];
+    final ids = await _readSchedule(key);
+    return key == _scheduleKey ? ids : const [];
+  }
+
+  static Future<List<int>> getAnonymousScheduleForLogin() =>
+      _readSchedule(_anonymousScheduleKey);
+
+  static Future<List<int>> _readSchedule(String key) async {
+    final eventData = await StorageHelper.get(key);
     if (eventData == null) return const [];
     return (json.decode(eventData) as List<dynamic>)
         .whereType<num>()
@@ -253,18 +303,24 @@ class OfflineDataService {
   static Future<InformationModel?> getInfoDescription(String id) =>
       getOffline(id, InformationModel.fromJson, informationOfflineStorage);
 
-  static Future<void> saveUserInfo(UserInfoModel toSave) =>
-      saveOffline(UserInfoModel.userInfoOffline, toSave);
+  static Future<void> saveUserInfo(UserInfoModel toSave) => _writePrivate(
+    (owner) =>
+        saveOffline(_privateKey(owner, UserInfoModel.userInfoOffline), toSave),
+    expectedOwner: '${AppConfig.organization}/${toSave.id}',
+  );
 
   static Future<void> deleteUserInfo() =>
       deleteOffline(UserInfoModel.userInfoOffline);
 
   static Future<UserInfoModel?> getUserInfo() async {
-    // Retire cached full peer profiles without touching catalogs or receipts.
     await deleteOffline('user_info');
-    return ClientSyncRuntime.isV1Selected
-        ? ClientSyncProjection.userInfo()
-        : getOffline(UserInfoModel.userInfoOffline, UserInfoModel.fromJson);
+    if (ClientSyncRuntime.isV1Selected) return ClientSyncProjection.userInfo();
+    return _readPrivate(
+      (owner) => getOffline(
+        _privateKey(owner, UserInfoModel.userInfoOffline),
+        UserInfoModel.fromJson,
+      ),
+    );
   }
 
   static Future<void> saveGlobalSettings(OccasionSettingsModel toSave) =>
@@ -331,69 +387,103 @@ class OfflineDataService {
 
   static Future<List<InformationModel>> getAllInfo() =>
       ClientSyncRuntime.isV1Selected
-          ? ClientSyncProjection.information()
-          : getAllOffline(
-              InformationModel.informationOffline, InformationModel.fromJson);
+      ? ClientSyncProjection.information()
+      : getAllOffline(
+          InformationModel.informationOffline,
+          InformationModel.fromJson,
+        );
 
-  static Future<void> saveAllActivities(List<ActivityModel> toSave) =>
-      saveAllOffline(activitiesOfflineStorage, toSave);
+  static Future<void> saveAllActivities(
+    List<ActivityModel> toSave, {
+    required String owner,
+  }) => _writePrivate(
+    (current) =>
+        saveAllOffline(_privateKey(current, activitiesOfflineStorage), toSave),
+    expectedOwner: owner,
+  );
 
-  static Future<List<ActivityModel>> getAllActivities() =>
-      ClientSyncRuntime.isV1Selected
-          ? ClientSyncProjection.activities()
-          : getAllOffline(activitiesOfflineStorage, ActivityModel.fromJson);
+  static Future<List<ActivityModel>> getAllActivities() async {
+    if (ClientSyncRuntime.isV1Selected)
+      return ClientSyncProjection.activities();
+    return await _readPrivate(
+          (owner) => getAllOffline(
+            _privateKey(owner, activitiesOfflineStorage),
+            ActivityModel.fromJson,
+          ),
+        ) ??
+        const [];
+  }
 
-  /// Caches "my feedback" for one event (one `{eventId: feedbackJson}` object
-  /// for all events) so the widget can show the submitted state offline.
-  /// Per-user data — cleared by [clearUserData]. A null [json] removes the
-  /// event's entry (feedback deleted).
   static Future<void> saveMyEventFeedback(
-      int eventId, Map<String, dynamic>? json) async {
-    final all = await getOffline<Map<String, dynamic>>(
-            eventFeedbackOfflineStorage, (j) => j) ??
+    int eventId,
+    Map<String, dynamic>? json, {
+    required String owner,
+  }) => _writePrivate((current) async {
+    final key = _privateKey(current, eventFeedbackOfflineStorage);
+    final all =
+        await getOffline<Map<String, dynamic>>(key, (j) => j) ??
         <String, dynamic>{};
     if (json == null) {
       all.remove(eventId.toString());
     } else {
       all[eventId.toString()] = json;
     }
-    await saveOffline(eventFeedbackOfflineStorage, all);
-  }
+    if (AuthService.privateCacheOwner == current) await saveOffline(key, all);
+  }, expectedOwner: owner);
 
-  /// The cached "my feedback" json for an event, or null when none is cached.
-  static Future<Map<String, dynamic>?> getMyEventFeedback(int eventId) async {
-    final all = await getOffline<Map<String, dynamic>>(
-        eventFeedbackOfflineStorage, (j) => j);
-    final entry = all?[eventId.toString()];
-    return entry is Map ? entry.cast<String, dynamic>() : null;
-  }
+  static Future<Map<String, dynamic>?> getMyEventFeedback(int eventId) =>
+      _readPrivate((owner) async {
+        final all = await getOffline<Map<String, dynamic>>(
+          _privateKey(owner, eventFeedbackOfflineStorage),
+          (j) => j,
+        );
+        final entry = all?[eventId.toString()];
+        return entry is Map ? entry.cast<String, dynamic>() : null;
+      });
 
-  /// **Saves the entire `UserInventoryBundle` to offline storage.**
-  static Future<void> saveUserInventoryBundle(UserInventoryBundle toSave) =>
-      saveOffline(userInventoryBundleOffline, toSave);
+  static Future<void> saveUserInventoryBundle(
+    UserInventoryBundle toSave, {
+    required String owner,
+  }) => _writePrivate(
+    (current) =>
+        saveOffline(_privateKey(current, userInventoryBundleOffline), toSave),
+    expectedOwner: owner,
+  );
 
-  /// **Retrieves the `UserInventoryBundle` from offline storage.**
   static Future<UserInventoryBundle?> getUserInventoryBundle() =>
       ClientSyncRuntime.isV1Selected
-          ? ClientSyncProjection.userInventory()
-          : getOffline(
-              userInventoryBundleOffline, UserInventoryBundle.fromJson);
+      ? ClientSyncProjection.userInventory()
+      : _readPrivate(
+          (owner) => getOffline(
+            _privateKey(owner, userInventoryBundleOffline),
+            UserInventoryBundle.fromJson,
+          ),
+        );
 
-  /// **Clears all user-specific data from offline storage.**
-  static Future<void> clearUserData() async {
-    await deleteOffline('user_info');
-    await deleteOffline(UserInfoModel.userInfoOffline);
-    await clearMyScheduleData();
-    await deleteOffline(activitiesOfflineStorage);
-    await deleteOffline(userInventoryBundleOffline);
-    await deleteOffline(eventFeedbackOfflineStorage);
+  static Future<void> clearUserData({String? owner}) async {
+    await clearMyScheduleData(owner: owner);
+    final keys = [
+      'user_info',
+      UserInfoModel.userInfoOffline,
+      activitiesOfflineStorage,
+      userInventoryBundleOffline,
+      eventFeedbackOfflineStorage,
+    ];
+    await StorageHelper.setAllAtomic({
+      for (final key in keys) key: null,
+      if (owner != null)
+        for (final key in keys) _privateKey(owner, key): null,
+    });
     savedProgramPendingState.clearAll();
   }
 
   static Future<void> saveAllOffline<T>(
-      String offlineTable, List<T> toSave) async {
-    var encoded =
-        jsonEncode(toSave.map((item) => (item as dynamic).toJson()).toList());
+    String offlineTable,
+    List<T> toSave,
+  ) async {
+    var encoded = jsonEncode(
+      toSave.map((item) => (item as dynamic).toJson()).toList(),
+    );
     await StorageHelper.set(offlineTable, encoded);
   }
 

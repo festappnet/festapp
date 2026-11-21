@@ -35,6 +35,16 @@ export class CommonStrings {
     static get googleVerifyCode() { return LocalizationService.tr("FeatureUser.googleVerifyCode"); }
     static get googleCode() { return LocalizationService.tr("FeatureUser.googleCode"); }
     static get googleUnlink() { return LocalizationService.tr("FeatureUser.googleUnlink"); }
+    static get mfaEnterAuthenticatorCode() { return LocalizationService.tr("FeatureUser.mfaEnterAuthenticatorCode"); }
+    static get passkeySignIn() { return LocalizationService.tr("FeatureUser.passkeySignIn"); }
+    static get passkeyCancelled() { return LocalizationService.tr("FeatureUser.passkeyCancelled"); }
+    static get passkeyFailed() { return LocalizationService.tr("FeatureUser.passkeyFailed"); }
+    static get mfaSecurityKey() { return LocalizationService.tr("FeatureUser.mfaSecurityKey"); }
+    static get mfaVerifySecurityKey() { return LocalizationService.tr("FeatureUser.mfaVerifySecurityKey"); }
+    static get mfaAuthenticator() { return LocalizationService.tr("FeatureUser.mfaAuthenticator"); }
+    static mfaFactorName(name, fallback) {
+        return /^Festapp #[A-Z2-7]{26}$/.test(name) ? `${fallback} · ${name.slice(-6)}` : name || fallback;
+    }
     static get googleMfa() { return LocalizationService.tr("FeatureUser.googleMfa"); }
 
     static get googleTerms() { return LocalizationService.tr("FeatureUser.googleTerms"); }

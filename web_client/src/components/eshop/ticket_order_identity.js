@@ -25,7 +25,8 @@ function readPendingOrder(storage, key) {
     catch { throw new Error('PAYMENT_RECOVERY_REQUIRED'); }
 }
 
-export async function claimTicketOrderIdentity(endpoint, payload, principal, storage = browserStorage, {requirePending = false} = {}) {
+export async function claimTicketOrderIdentity(endpoint, payload, principal, storage = browserStorage,
+    {requirePending = false, guestCheckout = false} = {}) {
     // Preserve the original proof; consent and optional matching can change on reload.
     const { checkoutOrigin, metaPurchaseConsent, ...purchase } = payload;
     const canonicalKey = await orderKey(endpoint, purchase);
@@ -53,6 +54,7 @@ export async function claimTicketOrderIdentity(endpoint, payload, principal, sto
     }
 
     if (saved && saved.principal !== actor) throw new Error('PAYMENT_RECOVERY_PRINCIPAL_CHANGED');
+    if (saved && guestCheckout && saved.guestCheckout !== true) throw new Error('PAYMENT_RECOVERY_REQUIRED');
     if (!saved) {
         if (requirePending || storage.getItem('client_command_pending:ticket_order')) throw new Error('PAYMENT_RECOVERY_REQUIRED');
         // Old hashed keys cannot be tied back to a cart once the old consent is
@@ -64,6 +66,7 @@ export async function claimTicketOrderIdentity(endpoint, payload, principal, sto
         });
         if (unknownLegacy) throw new Error('PAYMENT_RECOVERY_REQUIRED');
         saved = { commandId: crypto.randomUUID(), clientId: crypto.randomUUID(), principal: actor, consentIndependent: true };
+        if (guestCheckout) saved.guestCheckout = true;
         if (checkoutOrigin !== undefined) saved.checkoutOrigin = checkoutOrigin;
         storage.setItem(key, JSON.stringify(saved));
     }

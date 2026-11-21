@@ -519,7 +519,7 @@ class DbEvents {
     final scope = _currentSavedProgramScope();
     if (join) {
       final mergeVersion = savedProgramPendingState.mutationVersion;
-      final localEventIds = await OfflineDataService.getLocalMyScheduleData();
+      final localEventIds = await OfflineDataService.getAnonymousScheduleForLogin();
       if (_currentSavedProgramScope() != scope ||
           savedProgramPendingState.mutationVersion != mergeVersion) {
         return;

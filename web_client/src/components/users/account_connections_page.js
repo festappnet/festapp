@@ -4,6 +4,7 @@ import { GoogleAuthService } from '../../services/google_auth_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
+import { AccountSecurityPanel } from './account_security_panel.js';
 import { connectionPageStyles } from './connection_page_styles.js';
 
 
@@ -16,14 +17,16 @@ export class AccountConnectionsPage {
         this.generation = 0; this.state = 'loading'; this.appsState = 'loading'; this.googleState = 'loading';
     }
     text(key, args = {}) { return LocalizationService.tr(`AccountConnections.${key}`, args); }
-    dispose() { this.generation++; this.subscription?.unsubscribe(); this.subscription = null; }
+    dispose() { this.generation++; this.security?.dispose(); this.subscription?.unsubscribe(); this.subscription = null; }
     async init() {
         const generation = ++this.generation;
+        this.security?.dispose(); this.security = null;
         this.state = 'loading'; this.appsState = 'loading'; this.googleState = 'loading';
         this.connections = []; this.googleStatus = null; this.pendingRevoke = null;
         this.revoking = false; this.googleBusy = false; this.actionError = null; this.notice = null; this.googleActionFailed = false; this.render();
         if (!this.subscription) this.subscription = this.client.auth.onAuthStateChange?.((event, session) => {
             if (event === 'SIGNED_OUT') {
+                this.security?.dispose(); this.security = null;
                 this.generation++; this.user = null; this.connections = []; this.state = 'login'; this.render();
             } else if (event === 'SIGNED_IN' && this.user?.id !== session?.user?.id) {
                 queueMicrotask(() => { if (this.subscription) void this.init(); });
@@ -37,7 +40,13 @@ export class AccountConnectionsPage {
             this.state = this.user ? 'ready' : 'login';
         } catch { if (generation !== this.generation) return; this.state = 'error'; }
         this.render();
-        if (this.state === 'ready') await Promise.all([this.loadApps(generation), this.loadGoogle(generation)]);
+        if (this.state === 'ready') {
+            if (this.client.auth.getUser) {
+                this.security = new AccountSecurityPanel(this.client, this.user.id);
+                void this.security.load().catch(() => {});
+            }
+            await Promise.all([this.loadApps(generation), this.loadGoogle(generation)]);
+        }
     }
     async call(operation, connectionId) {
         const { data, error } = await this.client.functions.invoke('mcp-session-exchange', {
@@ -137,6 +146,7 @@ export class AccountConnectionsPage {
                 action.dataset.googleAction = '';
                 if (!this.googleStatus.linked) action.dataset.primary = '';
             }
+            if (this.security) root.append(this.security.root);
             const apps = add('section'); apps.id = 'apps'; apps.setAttribute('aria-labelledby', 'account-apps-heading');
             const heading = add('h2', this.text('apps'), apps); heading.id = 'account-apps-heading'; heading.tabIndex = -1; heading.dataset.appsHeading = '';
             if (this.appsState !== 'unavailable') {
@@ -178,6 +188,9 @@ export class AccountConnectionsPage {
         const style = document.createElement('style');
         style.textContent = connectionPageStyles + `
 .account-connections section{margin-block:32px;padding-block-start:28px;border-block-start:1px solid var(--connection-line)}
+.account-security img{display:block;max-inline-size:100%;block-size:auto}
+.account-security label{display:block}
+.account-security input{display:block;max-inline-size:100%;min-block-size:44px;margin-block:6px;padding:6px 10px;font:inherit;color:inherit;background:transparent;border:1px solid var(--connection-control-line);border-radius:6px}
 .account-connections ul{padding-inline-start:22px;line-height:1.6}
 .account-connection{margin-block:20px;padding:20px 0;border-block-start:1px solid var(--connection-line)}
 .account-connection h3{margin:0 0 8px}

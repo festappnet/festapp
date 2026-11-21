@@ -131,3 +131,34 @@ export async function removeImageRecords(
   });
   return response.ok;
 }
+
+type PrivateImageGrant = { code: string; expiresIn: number };
+const privateGrantCode = /^[A-Za-z0-9_-]{43}$/;
+
+export async function issuePrivateImageGrant(
+  userJwt: string, auth: SupabaseAuth, project: string, key: string, expiresIn: number,
+): Promise<PrivateImageGrant | null> {
+  const response = await fetch(`${auth.supabaseUrl}/rest/v1/rpc/issue_account_private_image_grant_v1`, {
+    method: 'POST',
+    headers: { apikey: auth.anonKey, Authorization: `Bearer ${userJwt}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_project: project, p_object_key: key, p_expires_in: expiresIn }),
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) return null;
+  const grant = await response.json() as PrivateImageGrant | null;
+  return grant && privateGrantCode.test(grant.code) &&
+    Number.isSafeInteger(grant.expiresIn) && grant.expiresIn > 0 ? grant : null;
+}
+
+export async function redeemPrivateImageGrant(
+  code: string, auth: SupabaseAuth, project: string, key: string,
+): Promise<boolean> {
+  if (!privateGrantCode.test(code)) return false;
+  const response = await fetch(`${auth.supabaseUrl}/rest/v1/rpc/redeem_account_private_image_grant_v1`, {
+    method: 'POST',
+    headers: { apikey: auth.anonKey, Authorization: `Bearer ${auth.anonKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_project: project, p_object_key: key, p_code: code }),
+    signal: AbortSignal.timeout(8000),
+  });
+  return response.ok && await response.json() === true;
+}

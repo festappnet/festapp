@@ -703,9 +703,11 @@ test('organizer consent needs requested create scope; read consent never exposes
     const start=f.calls.length;
     assert.equal((await new Operations(owner).invoke('ticket_layouts.inspect',{occasionId:7})).ok,true);
     const sqlRequests=f.calls.slice(start).filter(c=>c.url.pathname.startsWith('/rest/v1/rpc/'));
-    assert.equal(sqlRequests.length,1,'delegated inspection has no separate permission RPC');
-    assert.equal(sqlRequests[0].url.pathname,'/rest/v1/rpc/get_delegated_ticket_layout_for_authoring_v1');
-    const requestBody=JSON.parse(sqlRequests[0].init.body);
+    assert.deepEqual(sqlRequests.map(c=>c.url.pathname), [
+        '/rest/v1/rpc/get_account_assurance_v1',
+        '/rest/v1/rpc/get_delegated_ticket_layout_for_authoring_v1',
+    ], 'delegated inspection checks live assurance before the canonical operation');
+    const requestBody=JSON.parse(sqlRequests[1].init.body);
     assert.equal(requestBody.p_unit,3);assert.equal(requestBody.p_organization,1);
     const withScope = await setup(t);
     const connected = await connect(withScope, { unitId: 3, create: true, scope: `${READ_SCOPE} ${CREATE_SCOPE}` });
@@ -1345,7 +1347,7 @@ test(`during-call ${failure} uses the shared safe serializer without escalation 
     let failing = false;
     const f = await setup(t, { tenant: true, pilot: true, fetchImpl: (url, init) => {
         if (failing && url.pathname === '/auth/v1/token' && failure === 'AUTHENTICATION_REQUIRED') return reply({ code: 'refresh_token_not_found' }, 400);
-        if (failing && url.pathname === '/auth/v1/user' && failure === 'MFA_REQUIRED') return reply({ id: actor, factors: [{ id: actor, status: 'verified', factor_type: 'totp' }] });
+        if (failing && url.pathname === '/rest/v1/rpc/get_account_assurance_v1' && failure === 'MFA_REQUIRED') return reply('mfa_required');
         if (failing && url.pathname.endsWith('/get_operator_orders_v1')) {
             if (failure === 'TIMEOUT') throw new DOMException('synthetic timeout', 'TimeoutError');
             return reply({ code: failure === 'FORBIDDEN' ? '42501' : 'limited' }, failure === 'FORBIDDEN' ? 403 : 429);

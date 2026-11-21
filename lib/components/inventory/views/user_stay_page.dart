@@ -8,6 +8,7 @@ import 'package:fstapp/components/inventory/models/user_inventory_bundle.dart';
 import 'package:fstapp/components/inventory/views/inventory_strings.dart';
 import 'package:fstapp/components/inventory/db_inventory_pools.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
+import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/components/offline/offline_banner.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/services/connectivity_service.dart';
@@ -67,9 +68,15 @@ class _UserStayPageState extends State<UserStayPage> {
 
     // 2. Fetch fresh data from the network.
     try {
+      final owner = AuthService.privateCacheOwner;
       final onlineBundle = await DbInventoryPools.getUserInventory();
-      // Save the latest data for future offline use.
-      await OfflineDataService.saveUserInventoryBundle(onlineBundle);
+      if (owner != null) {
+        await OfflineDataService.saveUserInventoryBundle(
+          onlineBundle,
+          owner: owner,
+        );
+      }
+      if (AuthService.privateCacheOwner != owner) return;
 
       if (mounted) {
         // Process and display the fresh data, replacing the offline view.

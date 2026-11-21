@@ -105,6 +105,8 @@ class MirrorContractTest(unittest.TestCase):
                     elif name == 'server-policy' and step.get('name') in ('Install Python YAML parser', 'Install pinned Deno'):
                         outputs = {'Install Python YAML parser': 'python_yaml', 'Install pinned Deno': 'deno'}
                         self.assertEqual(step['if'], f"steps.selection.outputs.{outputs[step['name']]} == 'true'")
+                    elif step.get('uses','').startswith('actions/setup-go@'):
+                        self.assertEqual(step['if'], "steps.selection.outputs.go == 'true'")
                     elif step.get('name') == 'Restore pinned WordPress core archive':
                         self.assertEqual(step['if'], "github.job == 'wordpress-checkout-compatibility' && steps.selection.outputs.cms == 'true'")
                     else:
@@ -318,11 +320,12 @@ class MirrorContractTest(unittest.TestCase):
         self.assertIn('--concurrency=1', command[0])
         inventory = json.loads((ROOT/'automation/client_test_inventory.json').read_text())
         self.assertEqual({row['source'] for row in inventory['ci_moves']['image-client-browser'].values()}, {
+            'test/browser/account_webauthn_browser_cases.dart',
             'test/browser/browser_preference_store_test.dart',
             'test/components/html/html_image_preview_cases.dart',
             'test/components/navigation/platform_route_parser_cases.dart',
         })
-        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']), 10)
+        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']), 12)
         self.assertIn('automation/testing/navigation_ci.dart',
                       steps['navigation-contract']['script'])
         self.assertIn('automation/testing/navigation_default.dart',

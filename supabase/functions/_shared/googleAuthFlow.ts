@@ -4,6 +4,7 @@ import {
   prepareAccountEmail,
 } from "./emailQueueClient.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
+import { decodeJwt } from "npm:jose@6.1.3";
 import {
   base64url,
   encryptedProof,
@@ -57,6 +58,42 @@ const makeAnon = () =>
     Deno.env.get("SUPABASE_ANON_KEY")!,
     options,
   );
+
+function webAuthnIngress(): string | null {
+  const value = Deno.env.get("GOOGLE_AUTH_WEBAUTHN_INGRESS");
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol === "https:" && url.origin === value) return url.origin;
+  } catch {
+    throw new Error("provider_unavailable");
+  }
+  throw new Error("provider_unavailable");
+}
+
+async function webAuthnProof(
+  ingress: string,
+  origin: string,
+  token: string,
+  factor: string,
+  operation: "challenge" | "verify",
+  body: object,
+) {
+  if (!/^[0-9a-f-]{36}$/.test(factor)) throw new Error("account_proof_failed");
+  const response = await boundedFetch(`${ingress}/auth/v1/factors/${factor}/${operation}`, {
+    method: "POST",
+    redirect: "error",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: Deno.env.get("SUPABASE_ANON_KEY")!,
+      "Content-Type": "application/json",
+      Origin: origin,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error("account_proof_failed");
+  return await response.json();
+}
 type Attempt = {
   id: string;
   organization: number;
@@ -443,31 +480,46 @@ export async function handleGoogleAuth(
           throw new Error("mfa_required");
         }
         if (factors.length) {
-          const factor = factors.find((f) => f.factor_type === "totp") ??
-            factors.find((f) => f.factor_type === "phone");
-          if (!factor) {
-            await proofClient.auth.signOut({ scope: "local" });
-            throw new Error("mfa_required");
-          }
-          const challengeResult = await proofClient.auth.mfa.challenge(
-            factor.factor_type === "phone"
-              ? { factorId: factor.id, channel: "sms" }
-              : { factorId: factor.id },
-          );
-          if (challengeResult.error || !proof.data.session) {
-            await proofClient.auth.signOut({ scope: "local" });
-            throw new Error("account_proof_failed");
-          }
+          const securityKey = body.supportsWebAuthn === true
+            ? factors.find((f) => f.factor_type === "webauthn")
+            : undefined;
+          const session = proof.data.session;
+          let requestOptions: unknown;
           try {
+            if (!session) throw new Error("account_proof_failed");
+            const totp = factors.find((f) => f.factor_type === "totp");
+            const ingress = !totp && securityKey ? webAuthnIngress() : null;
+            const factor = totp ?? (ingress ? securityKey : undefined) ??
+              factors.find((f) => f.factor_type === "phone");
+            if (!factor) throw new Error("mfa_required");
+            const securityKeySelected = factor.factor_type === "webauthn";
+            let challengeId: string;
+            if (securityKeySelected && ingress) {
+              const result = await webAuthnProof(ingress, client.origin, session.access_token, factor.id, "challenge", {});
+              if (result.webauthn?.type !== "request" || !result.webauthn.credential_options?.publicKey) {
+                throw new Error("account_proof_failed");
+              }
+              challengeId = result.id;
+              requestOptions = result.webauthn.credential_options.publicKey;
+            } else {
+              const result = await proofClient.auth.mfa.challenge(factor.factor_type === "phone"
+                ? { factorId: factor.id, channel: "sms" } : { factorId: factor.id });
+              if (result.error) throw new Error("account_proof_failed");
+              challengeId = result.data.id;
+            }
+            if (!/^[0-9a-f-]{36}$/.test(challengeId)) throw new Error("account_proof_failed");
             a = await transition(admin, "mfa_begin", stored.id, secret, {
               ...payload,
               provenUser: target.userId,
               sessionEncrypted: await encryptedProof(
                 JSON.stringify({
-                  access_token: proof.data.session.access_token,
-                  refresh_token: proof.data.session.refresh_token,
+                  access_token: session.access_token,
+                  refresh_token: session.refresh_token,
                   factorId: factor.id,
-                  challengeId: challengeResult.data.id,
+                  challengeId,
+                  ...(securityKeySelected
+                    ? { method: "webauthn", ingress, origin: client.origin }
+                    : { method: "code" }),
                 }),
                 cfg.encryption,
               ),
@@ -477,7 +529,8 @@ export async function handleGoogleAuth(
             throw error;
           }
           return json(
-            { status: "needs_mfa", continuation, intent: a.intent },
+            { status: "needs_mfa", continuation, intent: a.intent,
+              ...(requestOptions ? { mfaMethod: "webauthn", webAuthnOptions: requestOptions } : {}) },
             allowedOrigin,
           );
         }
@@ -490,10 +543,7 @@ export async function handleGoogleAuth(
           { ...payload, provenUser: target.userId },
         );
       } else if (body.operation === "mfa_verify") {
-        if (
-          stored.status !== "awaiting_mfa" ||
-          typeof body.mfaCode !== "string" || !/^\d{6}$/.test(body.mfaCode)
-        ) throw new Error("account_proof_failed");
+        if (stored.status !== "awaiting_mfa") throw new Error("account_proof_failed");
         await rate(admin, `mfa:${stored.id}`, "proof");
         const proof = JSON.parse(
           await encryptedProof(
@@ -507,25 +557,52 @@ export async function handleGoogleAuth(
           access_token: proof.access_token,
           refresh_token: proof.refresh_token,
         });
-        if (installed.error || installed.data.user?.id !== stored.mfa_user) {
+        if (installed.error || installed.data.user?.id !== stored.mfa_user || !installed.data.session) {
           throw new Error("account_proof_failed");
         }
-        const verified = await proofClient.auth.mfa.verify({
-          factorId: proof.factorId,
-          challengeId: proof.challengeId,
-          code: body.mfaCode,
-        });
-        if (verified.error) throw new Error("account_proof_failed");
+        let verifiedSession: { access_token: string; refresh_token: string };
+        if (proof.method === "webauthn") {
+          const ingress = webAuthnIngress();
+          if (!ingress || ingress !== proof.ingress || client.origin !== proof.origin ||
+            !body.mfaAssertion || typeof body.mfaAssertion !== "object" || Array.isArray(body.mfaAssertion)) {
+            throw new Error("account_proof_failed");
+          }
+          const result = await webAuthnProof(ingress, client.origin, installed.data.session.access_token, proof.factorId, "verify", {
+            challenge_id: proof.challengeId,
+            webauthn: { type: "request", credential_response: body.mfaAssertion },
+          });
+          const upgraded = await proofClient.auth.setSession(result);
+          const sessionId = decodeJwt(installed.data.session.access_token).session_id;
+          if (upgraded.error || upgraded.data.user?.id !== stored.mfa_user || !upgraded.data.session ||
+            typeof sessionId !== "string" || decodeJwt(upgraded.data.session.access_token).session_id !== sessionId) {
+            await proofClient.auth.signOut({ scope: "local" });
+            throw new Error("account_proof_failed");
+          }
+          verifiedSession = upgraded.data.session;
+        } else {
+          if (typeof body.mfaCode !== "string" || !/^\d{6}$/.test(body.mfaCode)) {
+            throw new Error("account_proof_failed");
+          }
+          const verified = await proofClient.auth.mfa.verify({
+            factorId: proof.factorId, challengeId: proof.challengeId, code: body.mfaCode,
+          });
+          if (verified.error || verified.data.user.id !== stored.mfa_user) throw new Error("account_proof_failed");
+          verifiedSession = verified.data;
+        }
         const assurance = await proofClient.auth.mfa
           .getAuthenticatorAssuranceLevel();
         if (
-          assurance.error || assurance.data.currentLevel !== "aal2" ||
-          verified.data.user.id !== stored.mfa_user
+          assurance.error || assurance.data.currentLevel !== "aal2"
         ) {
           await proofClient.auth.signOut({ scope: "local" });
           throw new Error("account_proof_failed");
         }
         try {
+          const policy = await proofClient.rpc("get_account_assurance_v1", { p_organization: stored.organization });
+          const legacyWithoutAssurance = proof.method !== "webauthn" && policy.error?.code === "PGRST202";
+          if (!legacyWithoutAssurance && (policy.error || policy.data !== "allowed")) {
+            throw new Error("account_proof_failed");
+          }
           await transition(admin, "mfa_proven", stored.id, secret, {
             challenge,
             provenUser: stored.mfa_user,
@@ -558,8 +635,8 @@ export async function handleGoogleAuth(
           return json({
             status: "authenticated",
             session: {
-              access_token: verified.data.access_token,
-              refresh_token: verified.data.refresh_token,
+              access_token: verifiedSession.access_token,
+              refresh_token: verifiedSession.refresh_token,
             },
             userId: stored.mfa_user,
             organization: stored.organization,

@@ -5,7 +5,7 @@ const text = key => LocalizationService.tr(`DiscountCodes.${key}`);
 
 // Transport and presentation only. SQL owns prices, scope, allocation and use.
 export class DiscountCode {
-    constructor(session, rpc = (input) => SupabaseService.getClient().rpc('quote_order_discount', {p_input: input})) {
+    constructor(session, rpc = (input) => SupabaseService.publicCheckoutRpc('quote_order_discount', {p_input: input})) {
         this.session = session; session.discountCode = this; this.rpc = rpc; this.code = ''; this.quote = null; this.generation = 0;
     }
     clear() { this.generation++; this.code = ''; this.quote = null; delete this.session.payload.discount; this.session._emitStateChanged?.(); }

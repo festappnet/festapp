@@ -3666,6 +3666,101 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.get_account_assurance_v1(bigint,boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.resolve_mfa_channel_policy_v1(text,bigint,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.issue_mfa_registration_handoff_v1(uuid,uuid,text,bigint,text,text,text,text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.claim_mfa_registration_handoff_v1(uuid,uuid,bigint,text,text,text,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.advance_mfa_factor_registration_v1(uuid,uuid,uuid,text,text,text,uuid,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.begin_account_mfa_factor_removal_v1(uuid,uuid,uuid,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.begin_account_passkey_removal_v1(uuid,uuid,uuid,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.finish_account_mfa_factor_removal_v1(uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.cancel_account_mfa_factor_removal_v1(uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.advance_passkey_registration_v1(uuid,uuid,uuid,text,text,uuid,uuid)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.issue_passkey_sign_in_v1(uuid,text,bigint,text,text,bigint,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.reserve_passkey_sign_in_v1(uuid,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.complete_passkey_sign_in_v1(uuid,text,uuid,uuid,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.exchange_passkey_sign_in_v1(text,bigint,text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.get_mfa_recovery_registration_actor_v1(bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.issue_account_private_image_grant_v1(text,text,integer)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.redeem_account_private_image_grant_v1(text,text,text)": {
+      "anon": true,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.can_use_existing_mfa_factor_v1(uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.can_update_public_auth_account_v1()": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3725,7 +3820,17 @@
     "database/functions/customer_order_changes/staff.sql",
     "database/functions/eshop_forms/meta_purchase_settings.sql",
     "database/functions/user_permissions/unit_meta_purchase.sql",
-    "database/functions/units/unit_picker_favorites.sql"
+    "database/functions/units/unit_picker_favorites.sql",
+    "database/functions/user_permissions/session_assurance.sql",
+    "database/functions/user_permissions/account_mfa_channel_policy.sql",
+    "database/functions/user_permissions/account_mfa_registration_handoff.sql",
+    "database/functions/user_permissions/account_mfa_factor_registration.sql",
+    "database/functions/user_permissions/account_mfa_factor_removal.sql",
+    "database/functions/user_permissions/account_passkey_registration.sql",
+    "database/functions/user_permissions/account_passkey_sign_in.sql",
+    "database/functions/user_permissions/account_mfa_recovery.sql",
+    "database/functions/user_permissions/account_private_image_grants.sql",
+    "database/functions/user_permissions/public_auth_operation_policy.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

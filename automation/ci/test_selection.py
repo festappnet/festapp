@@ -107,17 +107,23 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
         for backend in ['seat-google-auth','seat-notifications','occasion-lifecycle']:
             self.assertIn(backend, selection.unit_owners(sql,'database-regressions',CONTRACT))
 
-    def test_mcp_database_groups_follow_backend_inputs_without_checkout_ui(self):
+    def test_mcp_database_groups_follow_their_backend_and_browser_inputs(self):
         for lane, groups in (
             ('mcp-database-contracts', {'seat-mcp-authorization','seat-mcp-contracts-1'}),
             ('database-service-regressions', {'seat-mcp-contracts-2'}),
         ):
-            self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
             for path in ['database/functions/eshop/finalize_ticket_order.sql',
                          'tools/festapp/src/operations.mjs',
                          'tools/festapp/scripts/test-postgres.mjs',
                          'database/tests/helpers/authorization_context_reference.sql']:
                 self.assertTrue(groups.issubset(selection.unit_owners(path,lane,CONTRACT)),path)
+        # The registered Auth browser fixture loads AuthService, RouterService
+        # and the public form route. The MCP-only lane has no browser fixture.
+        order_result = 'web_client/src/components/forms/order_result.js'
+        self.assertIn('seat-mcp-contracts-2',
+                      selection.unit_owners(order_result, 'database-service-regressions', CONTRACT))
+        self.assertTrue({'seat-mcp-authorization', 'seat-mcp-contracts-1'}.isdisjoint(
+            selection.unit_owners(order_result, 'mcp-database-contracts', CONTRACT)))
 
 
 class VersionProjectionTest(unittest.TestCase):
@@ -236,14 +242,15 @@ class ScopedPolicyTest(unittest.TestCase):
 class InventoryPreflightTest(unittest.TestCase):
     def test_provisioning_follows_selected_executors(self):
         flags=selection.provisioning_flags
-        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=False,python_yaml=False))
-        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=True,python_yaml=False))
+        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False,go=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False,go=False,deno=True,python_yaml=False))
         self.assertTrue(flags(['ticket-core'],CONTRACT)['flutter'])
         self.assertTrue(flags(['image-storage'],CONTRACT)['python_yaml'])
         self.assertTrue(flags(['mcp-edge-policy'],CONTRACT)['deno'])
         self.assertFalse(flags(['web-startup'],CONTRACT)['deno'])
-        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False,deno=False,python_yaml=False))
-        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True,deno=False,python_yaml=False))
+        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False,go=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True,go=False,deno=False,python_yaml=False))
+        self.assertTrue(flags(['seat-mcp-contracts-2'],CONTRACT)['go'])
         with self.assertRaises(KeyError):flags(['unregistered-executor'],CONTRACT)
 
     def test_registration_failure_prevents_selection_and_reuse(self):
