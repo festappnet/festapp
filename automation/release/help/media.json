@@ -415,6 +415,20 @@
     "openLabel": "Zvětšit snímek (nová karta)"
   },
   {
+    "id": "cs/payments/payment-qr-email",
+    "file": "cs/payments/payment-qr-email.png",
+    "locale": "cs",
+    "capturedAt": "2026-11-21",
+    "source": "Default Festapp order confirmation rendered with sample data in an isolated light-mode Chromium session.",
+    "width": 390,
+    "height": 1726,
+    "sha256": "cfdd5408d9124adb46212ab93b9739cb9fcbf05098f1c1f2134d4568f7b75169",
+    "device": "mobile",
+    "alt": "Mobilní potvrzení objednávky na Zimní ples v Zahradě. Pod platebními údaji je QR kód, za ním přehled objednávky a dole příloha qr-platba.png.",
+    "caption": "Ukázkové potvrzení objednávky se zapnutým QR v těle e-mailu. QR kód je záměrně neplatný.",
+    "openLabel": "Zvětšit ukázku potvrzení objednávky (nová karta)"
+  },
+  {
     "id": "cs/payments/manual",
     "file": "cs/orders/manual.png",
     "locale": "cs",
