@@ -1,5 +1,6 @@
 import {AppConfig} from '../../../web_client/src/app_config.js';
 import {AuthService} from '../../../web_client/src/services/auth_service.js';
+import {PasskeyService} from '../../../web_client/src/services/passkey_service.js';
 import {SupabaseService} from '../../../web_client/src/services/supabase_service.js';
 import {DbForms} from '../../../web_client/src/components/forms/db_forms.js';
 import {WaitlistCommands} from '../../../web_client/src/components/forms/waitlist_commands.js';
@@ -17,6 +18,7 @@ function configure({organization, anonKey}) {
 window.qualifyFestappPasskey = async input => {
     const {organization} = input;
     configure(input);
+    if (!await PasskeyService.capability()) throw new Error('The optional passkey sign-in action is unavailable');
     const result = await AuthService.loginWithPasskey();
     const pending = result?.verification;
     if (!pending?.webauthn?.length || pending.recovery) {

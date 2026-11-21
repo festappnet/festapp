@@ -1055,7 +1055,18 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
             client_id: webClientId, organization, platform: 'web', origin, redirect_uri: redirectUri, provisioned: true,
         }, {onConflict: 'client_id'});
         ensure(!webChannel.error, 'Normal web-client channel must be registered');
-        await sql(`SELECT public.set_mfa_channel_method_v1('${webClientId}', 'passkey', true, true, true);`);
+        await sql(`SELECT public.set_passkey_pilot_user_v1('${webClientId}', '${userId}');
+            SELECT public.set_mfa_channel_method_v1('${webClientId}', 'passkey', true, true, true);`);
+        const beforeOutsidePilot = await activeSessions();
+        const outsideOptions = await requireJson(await signIn('options', {
+            ...startFields, clientId: webClientId,
+        }), 'Scoped discoverable passkey options');
+        const outsideAssertion = await ceremony('get', outsideOptions.options);
+        ensure(outsideAssertion.id === passkey.id, 'Use a valid passkey from outside the pilot');
+        const outsideResult = await signIn('verify', { challengeId: outsideOptions.challenge_id, credential: outsideAssertion });
+        ensure(outsideResult.status === 403 && !(await outsideResult.json()).callback &&
+            await activeSessions() === beforeOutsidePilot, 'Outside-pilot passkeys must issue no handoff or retained session');
+        await sql(`SELECT public.set_passkey_pilot_user_v1('${webClientId}', '${user.data.user.id}');`);
         const webProof = await ceremony('client_sign_in', {auth: new URL(strict).origin, rest: base, organization, anonKey});
         ensure(webProof.passkeyFirstFactor && webProof.independentWebAuthnSecondFactor,
             'The normal web auth service must complete independent MFA through the pinned Auth stack');
@@ -1069,6 +1080,7 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
         await sql(`INSERT INTO public.user_info(id, organization, email_readonly)
             VALUES ('${settingsUser}', ${organization}, '${settingsEmail.split('+')[1]}');
             SELECT public.set_totp_pilot_user_v1('${webClientId}', '${settingsUser}');
+            SELECT public.set_passkey_pilot_user_v1('${webClientId}', '${settingsUser}');
             SELECT public.set_mfa_channel_method_v1('${webClientId}', 'totp', true, true, false);
             SELECT public.set_mfa_channel_method_v1('${webClientId}', 'webauthn', true, true, false);`);
         const channelUrl = new URL(strict + 'festapp/mfa/channel');
