@@ -6,6 +6,7 @@ import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/users/user_strings.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:fstapp/services/launch_url_service.dart';
+import 'account_verification_dialog.dart';
 
 class GoogleLoginPanel extends StatefulWidget {
   final Future<void> Function() onAuthenticated;
@@ -24,11 +25,12 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
   bool _enabled = false;
   bool _consent = false;
   bool _showPassword = false;
+  bool _securityKeyPending = false;
   final _email = TextEditingController(),
       _password = TextEditingController(),
       _name = TextEditingController(),
       _surname = TextEditingController(),
-      _code = TextEditingController();
+      _mailboxCode = TextEditingController();
   bool _suggested = false;
   String? _suggestedEmail;
   @override
@@ -93,7 +95,7 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
   @override
   void dispose() {
     GoogleAuthService.state.removeListener(_changed);
-    for (final c in [_email, _password, _name, _surname, _code]) {
+    for (final c in [_email, _password, _name, _surname, _mailboxCode]) {
       c.dispose();
     }
     super.dispose();
@@ -137,6 +139,10 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
     final busy = state.status == GoogleLoginStatus.openingGoogle ||
         state.status == GoogleLoginStatus.completing ||
         state.status == GoogleLoginStatus.authenticated;
+    final mfa = state.status == GoogleLoginStatus.needsMfa ||
+        (state.result['status'] == 'needs_mfa' &&
+            (state.status == GoogleLoginStatus.retryableError ||
+                state.status == GoogleLoginStatus.completing));
     final profile = state.status == GoogleLoginStatus.needsProfile ||
         (state.status == GoogleLoginStatus.retryableError &&
             state.result['status'] == 'needs_profile');
@@ -172,6 +178,28 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
                           _navigateAuthenticated();
                         },
                         child: Text(UserStrings.googleRetry))
+                  else if (mfa && state.result['mfaMethod'] == 'webauthn')
+                    OutlinedButton(
+                      onPressed: busy || _securityKeyPending
+                          ? null
+                          : () async {
+                              setState(() => _securityKeyPending = true);
+                              try {
+                                await GoogleAuthService.verifyWebAuthn();
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _securityKeyPending = false);
+                                }
+                              }
+                            },
+                      child: Text(UserStrings.mfaVerifySecurityKey),
+                    )
+                  else if (mfa)
+                    AuthenticatorCodeForm(
+                      verify: (_, code) => GoogleAuthService.advance(
+                        'mfa_verify', {'mfaCode': code},
+                      ),
+                    )
                   else if (busy)
                     Padding(
                         padding: const EdgeInsets.all(16),
@@ -192,18 +220,7 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
                                           ? UserStrings.googleOpening
                                           : UserStrings.googleCompleting))
                                 ])))
-                  else if (state.status == GoogleLoginStatus.needsMfa ||
-                      (state.status == GoogleLoginStatus.retryableError &&
-                          state.result['status'] == 'needs_mfa')) ...[
-                    Text(UserStrings.googleMfa, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    _field(_code, UserStrings.googleCode,
-                        keyboard: TextInputType.number),
-                    FilledButton(
-                        onPressed: () => GoogleAuthService.advance(
-                            'mfa_verify', {'mfaCode': _code.text}),
-                        child: Text(UserStrings.googleVerifyCode)),
-                  ] else if (proof) ...[
+                  else if (proof) ...[
                     Text(
                         state.result['intent'] == 'unlink'
                             ? UserStrings.googleUnlinkProof
@@ -242,11 +259,11 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
                           onPressed: () =>
                               GoogleAuthService.advance('mailbox_send', {}),
                           child: Text(UserStrings.googleSendCode)),
-                      _field(_code, UserStrings.googleCode,
+                      _field(_mailboxCode, UserStrings.googleCode,
                           keyboard: TextInputType.number),
                       TextButton(
                           onPressed: () => GoogleAuthService.advance(
-                              'mailbox_verify', {'mailboxCode': _code.text}),
+                              'mailbox_verify', {'mailboxCode': _mailboxCode.text}),
                           child: Text(UserStrings.googleVerifyCode)),
                     ],
                     CheckboxListTile(
@@ -317,7 +334,7 @@ class _GoogleLoginPanelState extends State<GoogleLoginPanel> {
                       const Expanded(child: Divider())
                     ]),
                   ],
-                  if (proof || profile)
+                  if (proof || profile || (mfa && !busy))
                     TextButton(
                         onPressed: () => GoogleAuthService.start(
                             returnPath: widget.returnPath),

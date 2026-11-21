@@ -1,8 +1,10 @@
 import { boundedRetryAfter } from "./retry-after.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 import type { McpTenant } from "./config.ts";
+import { accountAssuranceFailureStatus, type AccountAssuranceDecision } from "../_shared/accountAssurance.ts";
 
-type Dependencies = { config: McpTenant; admin: SupabaseClient; fetch?: typeof fetch };
+type Dependencies = { config: McpTenant; admin: SupabaseClient; fetch?: typeof fetch;
+  assurance: (accessToken: string) => Promise<AccountAssuranceDecision> };
 
 /** A distinct non-minting management interface on the existing first-party
  * transport. Caller-supplied identities, destinations and consent IDs are rejected. */
@@ -18,6 +20,10 @@ export async function handleMcpManagement(req: Request, body: Record<string, unk
   if (!accessToken || accessToken.length >= 8192) return json({ error: "authentication_required" }, 401);
   const { data, error } = await deps.admin.auth.getUser(accessToken);
   if (error || !data.user) return json({ error: "authentication_required" }, 401);
+  const assurance = await deps.assurance(accessToken);
+  if (assurance !== "allowed") {
+    return json({ error: assurance }, accountAssuranceFailureStatus(assurance));
+  }
   const target = await deps.admin.rpc("resolve_existing_user_session_v1", { p_user: data.user.id });
   if (target.error || target.data?.organization !== deps.config.organizationId) return json({ error: "forbidden" }, 403);
   const result = await (deps.fetch ?? fetch)(`${deps.config.issuer}/tenant-connections`, {

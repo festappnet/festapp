@@ -1,3 +1,5 @@
+import 'package:fstapp/services/connectivity_service.dart';
+import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -34,10 +36,19 @@ class RightsService {
       occasionLinkModelNotifier.value;
 
   // All getters now read from the notifier's current value.
+  static bool get _privateContextAvailable {
+    if (!useOfflineVersion && !ConnectivityService.isOfflineNotifier.value) {
+      return true;
+    }
+    final user = occasionLinkModel?.userInfo?.id;
+    return user != null &&
+        AuthService.privateCacheOwner == '${AppConfig.organization}/$user';
+  }
+
   static UserInfoModel? currentUser() =>
-      occasionLinkModelNotifier.value?.userInfo;
+      _privateContextAvailable ? occasionLinkModel?.userInfo : null;
   static OccasionUserModel? currentOccasionUser() =>
-      occasionLinkModelNotifier.value?.occasionUser;
+      _privateContextAvailable ? occasionLinkModel?.occasionUser : null;
   static int? currentOccasionId() =>
       occasionLinkModelNotifier.value?.occasion?.id;
   static OccasionModel? currentOccasion() =>
@@ -48,12 +59,13 @@ class RightsService {
   static bool useOfflineVersion = false;
 
   static bool hasBankCapability(int? accountId, String id) =>
+      _privateContextAvailable &&
       accountId != null &&
       occasionLinkModel?.capabilities.isNotEmpty == true &&
       occasionLinkModel?.bankCapabilities[accountId]?[id] == true;
 
   static List<int> banksWithCapability(String id) =>
-      occasionLinkModel?.capabilities.isNotEmpty != true
+      !_privateContextAvailable || occasionLinkModel?.capabilities.isNotEmpty != true
           ? const []
           : occasionLinkModel!.bankCapabilities.entries
               .where((entry) => entry.value[id] == true)
@@ -272,6 +284,7 @@ class RightsService {
   }
 
   static bool hasCapability(String id) {
+    if (!_privateContextAvailable) return false;
     if (id == AuthorizationCapabilities.bankAccountsUnitManage &&
         (currentUnit()?.paymentMethodPolicy?['methods'] as Map?)?['bank']?['policyEnabled'] != true) return false;
     return occasionLinkModel?.capabilities[id] == true;

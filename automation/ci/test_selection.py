@@ -236,14 +236,15 @@ class ScopedPolicyTest(unittest.TestCase):
 class InventoryPreflightTest(unittest.TestCase):
     def test_provisioning_follows_selected_executors(self):
         flags=selection.provisioning_flags
-        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=False,python_yaml=False))
-        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False,deno=True,python_yaml=False))
+        self.assertEqual(flags([],CONTRACT),dict(flutter=False,sql=False,browser=False,go=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['ticket-edge'],CONTRACT),dict(flutter=False,sql=False,browser=False,go=False,deno=True,python_yaml=False))
         self.assertTrue(flags(['ticket-core'],CONTRACT)['flutter'])
         self.assertTrue(flags(['image-storage'],CONTRACT)['python_yaml'])
         self.assertTrue(flags(['mcp-edge-policy'],CONTRACT)['deno'])
         self.assertFalse(flags(['web-startup'],CONTRACT)['deno'])
-        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False,deno=False,python_yaml=False))
-        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True,deno=False,python_yaml=False))
+        self.assertEqual(flags(['seat-mcp-contracts-1'],CONTRACT),dict(flutter=False,sql=True,browser=False,go=False,deno=False,python_yaml=False))
+        self.assertEqual(flags(['seat-browser'],CONTRACT),dict(flutter=False,sql=True,browser=True,go=False,deno=False,python_yaml=False))
+        self.assertTrue(flags(['seat-mcp-contracts-2'],CONTRACT)['go'])
         with self.assertRaises(KeyError):flags(['unregistered-executor'],CONTRACT)
 
     def test_registration_failure_prevents_selection_and_reuse(self):

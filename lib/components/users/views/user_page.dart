@@ -1,4 +1,6 @@
 import 'package:fstapp/components/users/widgets/account_connections_link.dart';
+import 'package:fstapp/components/users/widgets/account_mfa_settings.dart';
+import 'package:fstapp/services/account_mfa_settings_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:async';
 
@@ -564,6 +566,18 @@ class _UserPageState extends State<UserPage> {
                             : () => _requestPasswordReset(userData?.email),
                       ),
                       const Divider(height: 1, indent: 56),
+                      if (AccountMfaSettingsService.supportsChannel) ...[
+                        ListTile(
+                          leading: const Icon(Icons.security_outlined),
+                          title: Text(UserStrings.accountSecurity('title')),
+                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          onTap: () async {
+                            final signedOut = await showAccountMfaSettings(context);
+                            if (mounted && signedOut) await _logout();
+                          },
+                        ),
+                        const Divider(height: 1, indent: 56),
+                      ],
                       const AccountConnectionsLink(),
                       const Divider(height: 1, indent: 56),
                       ListTile(

@@ -10,6 +10,7 @@ import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/occasion_media_cache.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/data_services/auth_service.dart';
 
 /// Process-wide owner of the selected legacy/v1 context mode.
 ///
@@ -32,7 +33,11 @@ class ClientSyncRuntime {
   static final OccasionMediaCache _mediaCache = OccasionMediaCache();
 
   static bool get isV1Selected => _v1Selected;
-  static bool get hasPrivateIdentity => _context?.privateScope != null;
+  static bool get hasPrivateIdentity {
+    final context = _context;
+    return context != null && context.userId != null &&
+        AuthService.privateCacheOwner == '${context.organizationId}/${context.userId}';
+  }
   static String get mutationContextToken =>
       '$_identityEpoch|$_v1Selected|${_context?.publicScope}|${_context?.privateScope}';
 
@@ -147,11 +152,13 @@ class ClientSyncRuntime {
       if (networkAvailable) await _store.clearLastContext();
       return;
     }
+    final organization = occasion?.organization ?? AppConfig.organization;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
     final context = SyncContext(
-      organizationId: occasion?.organization ?? AppConfig.organization,
+      organizationId: organization,
       occasionId: occasion!.id!,
       occasionLink: occasion.link!,
-      userId: Supabase.instance.client.auth.currentUser?.id,
+      userId: AuthService.privateCacheOwner == '$organization/$userId' ? userId : null,
       identityEpoch: _identityEpoch,
     );
     _context = context;
@@ -212,10 +219,17 @@ class ClientSyncRuntime {
   static Future<void> refresh(SyncReason reason,
       {bool privateConsumer = false}) async {
     if (!_v1Selected) return;
-    await _service?.refresh(reason: reason, privateConsumer: privateConsumer);
+    await _service?.refresh(reason: reason, privateConsumer: privateConsumer && hasPrivateIdentity);
   }
 
   static Future<void> connectivityRestored() async {
+    if (_service == null) return;
+    try {
+      await AuthService.authorizePrivateCache();
+    } catch (error) {
+      // Offline receipts are only valid until the exact token expires.
+      debugPrint('Private cache revalidation failed: ${error.runtimeType}');
+    }
     if (!_v1Selected) return;
     await _service?.reconnect();
   }
@@ -231,9 +245,11 @@ class ClientSyncRuntime {
             : SyncFreshnessClass.catalog;
     final scope =
         component.isPrivate ? context.privateScope : context.publicScope;
-    if (scope == null) return null;
+    if (scope == null || (component.isPrivate && !hasPrivateIdentity)) return null;
     final generation = await _store.activeGeneration(scope, type);
-    return _context == context ? generation?.revisions[component] : null;
+    return _context == context && (!component.isPrivate || hasPrivateIdentity)
+        ? generation?.revisions[component]
+        : null;
   }
 
   static Future<Map<String, dynamic>?> readPublic(
@@ -254,10 +270,10 @@ class ClientSyncRuntime {
   static Future<Object?> readPrivate(ClientSyncComponent component) async {
     final context = _context;
     final scope = context?.privateScope;
-    if (!_v1Selected || scope == null) return null;
+    if (!_v1Selected || scope == null || !hasPrivateIdentity) return null;
     final payload = await _store.readComponent(
         scope, SyncFreshnessClass.privateIdentity, component);
-    return _v1Selected && _context == context ? payload : null;
+    return _v1Selected && _context == context && hasPrivateIdentity ? payload : null;
   }
 
   static Future<void> applyPrivateReplacement({
@@ -273,7 +289,7 @@ class ClientSyncRuntime {
     }
     final context = _context;
     final scope = context?.privateScope;
-    if (!_v1Selected || context == null || scope == null) return;
+    if (!_v1Selected || context == null || scope == null || !hasPrivateIdentity) return;
     final current = await _store.activeGeneration(
         scope, SyncFreshnessClass.privateIdentity);
     if (current != null && (current.revisions[component] ?? -1) > revision) {
@@ -287,7 +303,7 @@ class ClientSyncRuntime {
           : await _store.readComponent(
               scope, SyncFreshnessClass.privateIdentity, item);
     }
-    if (_context != context ||
+    if (_context != context || !hasPrivateIdentity ||
         (expectedContextToken != null &&
             !isCurrentMutationContext(expectedContextToken))) {
       return;
@@ -302,11 +318,11 @@ class ClientSyncRuntime {
       revisions: revisions,
       payloads: payloads,
       precondition: () =>
-          _context == context &&
+          _context == context && hasPrivateIdentity &&
           (expectedContextToken == null ||
               isCurrentMutationContext(expectedContextToken)),
     );
-    if (_context != context ||
+    if (_context != context || !hasPrivateIdentity ||
         (expectedContextToken != null &&
             !isCurrentMutationContext(expectedContextToken))) {
       return;

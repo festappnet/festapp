@@ -7,6 +7,7 @@ import 'package:fstapp/components/event_feedback/event_feedback_results.dart';
 import 'package:fstapp/components/event_feedback/event_feedback_strings.dart';
 import 'package:fstapp/components/offline/offline_strings.dart';
 import 'package:fstapp/data_services/offline_data_service.dart';
+import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/services/connectivity_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/toast_helper.dart';
@@ -115,14 +116,19 @@ class _EventFeedbackWidgetState extends State<EventFeedbackWidget> {
     }
     try {
       final load = widget.loadFeedbackOverride ?? DbEventFeedback.getMyFeedback;
+      final owner = widget.loadFeedbackOverride == null
+          ? AuthService.privateCacheOwner
+          : null;
       final fb = await load(widget.eventId).timeout(widget.loadTimeout);
-      // Keep the offline "already sent" cache in sync with the live answer
-      // (null clears a stale entry after a deletion elsewhere). Fire-and-
-      // forget: a cache write must never block or break the UI.
-      unawaited((widget.saveCachedFeedbackOverride ??
-                  OfflineDataService.saveMyEventFeedback)(
-              widget.eventId, fb?.toJson())
-          .catchError((_) {}));
+      final saveOverride = widget.saveCachedFeedbackOverride;
+      if (saveOverride != null) {
+        unawaited(
+          saveOverride(widget.eventId, fb?.toJson()).catchError((_) {}),
+        );
+      } else if (owner != null) {
+        _cacheFeedback(fb, owner);
+      }
+      if (owner != null && AuthService.privateCacheOwner != owner) return;
       if (!mounted) return;
       setState(() {
         _existing = fb;
@@ -179,6 +185,16 @@ class _EventFeedbackWidgetState extends State<EventFeedbackWidget> {
     });
   }
 
+  void _cacheFeedback(EventFeedbackModel? feedback, String owner) {
+    unawaited(
+      OfflineDataService.saveMyEventFeedback(
+        widget.eventId,
+        feedback?.toJson(),
+        owner: owner,
+      ).catchError((_) {}),
+    );
+  }
+
   Future<void> _submit() async {
     if (_rating == null) {
       ToastHelper.Show(context, EventFeedbackStrings.chooseRatingFirst);
@@ -186,15 +202,14 @@ class _EventFeedbackWidgetState extends State<EventFeedbackWidget> {
     }
     setState(() => _saving = true);
     try {
+      final owner = AuthService.privateCacheOwner;
       final fb = await DbEventFeedback.submit(
         eventId: widget.eventId,
         rating: _rating!,
         note: _note.text.trim().isEmpty ? null : _note.text.trim(),
       );
-      // Fire-and-forget cache write — never fail a successful submit.
-      unawaited(
-          OfflineDataService.saveMyEventFeedback(widget.eventId, fb.toJson())
-              .catchError((_) {}));
+      if (owner != null) _cacheFeedback(fb, owner);
+      if (AuthService.privateCacheOwner != owner) return;
       if (!mounted) return;
       setState(() {
         _existing = fb;
@@ -235,10 +250,10 @@ class _EventFeedbackWidgetState extends State<EventFeedbackWidget> {
   Future<void> _remove() async {
     setState(() => _saving = true);
     try {
+      final owner = AuthService.privateCacheOwner;
       await DbEventFeedback.delete(widget.eventId);
-      // Fire-and-forget cache removal — never fail a successful delete.
-      unawaited(OfflineDataService.saveMyEventFeedback(widget.eventId, null)
-          .catchError((_) {}));
+      if (owner != null) _cacheFeedback(null, owner);
+      if (AuthService.privateCacheOwner != owner) return;
       if (!mounted) return;
       setState(() {
         _existing = null;

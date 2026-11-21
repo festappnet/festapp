@@ -7,7 +7,6 @@ export interface ProjectConfig {
   publicBucket: R2Bucket;
   privateBucket: R2Bucket;
   publicBucketName: string;
-  privateBucketName: string;
   publicHostname: string;
   authContract: 'festapp' | 'akhweb';
   publicKeyPrefixes: readonly string[];
@@ -23,17 +22,17 @@ export function projectRegistry(env: Env): readonly ProjectConfig[] {
   return [
     { id: 'default', supabaseUrl: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY,
       publicBucket: env.IMAGES_BUCKET, privateBucket: env.IMAGES_PRIVATE_BUCKET,
-      publicBucketName: 'festapp-images', privateBucketName: 'festapp-images-private',
+      publicBucketName: 'festapp-images',
       publicHostname: 'img.festapp.net', authContract: 'festapp',
       publicKeyPrefixes: ['images/', 'assets/'], supportsPrivate: true, persistsImageRecords: true },
     { id: 'a', supabaseUrl: env.SUPABASE_URL_A, anonKey: env.SUPABASE_ANON_KEY_A,
       publicBucket: env.IMAGES_BUCKET, privateBucket: env.IMAGES_PRIVATE_BUCKET,
-      publicBucketName: 'festapp-images', privateBucketName: 'festapp-images-private',
+      publicBucketName: 'festapp-images',
       publicHostname: 'a.img.festapp.net', authContract: 'festapp',
       publicKeyPrefixes: ['images/'], supportsPrivate: true, persistsImageRecords: true },
     { id: 'akhweb', supabaseUrl: env.SUPABASE_URL_AKHWEB, anonKey: env.SUPABASE_ANON_KEY_AKHWEB,
       publicBucket: env.IMAGES_BUCKET_AKHWEB, privateBucket: env.IMAGES_BUCKET_AKHWEB,
-      publicBucketName: 'festapp-images-akhweb', privateBucketName: 'festapp-images-akhweb',
+      publicBucketName: 'festapp-images-akhweb',
       publicHostname: 'akh.img.festapp.net', authContract: 'akhweb',
       publicKeyPrefixes: ['images/', 'blog/', 'content/'], supportsPrivate: false,
       persistsImageRecords: false },
@@ -43,7 +42,7 @@ export function projectRegistry(env: Env): readonly ProjectConfig[] {
     { id: 'slunovrat', supabaseUrl: env.SUPABASE_URL_SLUNOVRAT || '',
       anonKey: env.SUPABASE_ANON_KEY_SLUNOVRAT || '',
       publicBucket: env.IMAGES_BUCKET, privateBucket: env.IMAGES_PRIVATE_BUCKET,
-      publicBucketName: 'festapp-images', privateBucketName: 'festapp-images-private',
+      publicBucketName: 'festapp-images',
       publicHostname: 'img.festapp.net', authContract: 'festapp',
       publicKeyPrefixes: ['images/'], supportsPrivate: false, persistsImageRecords: true },
   ];

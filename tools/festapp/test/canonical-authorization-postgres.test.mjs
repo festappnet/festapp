@@ -685,6 +685,13 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
       .map(name=>['eshop',name]));
     forwardPrivateTables.push(['public','access_invitations']);
     const reviewedPrivateSources={
+      "user_permissions/session_assurance.sql":["public.account_mfa_recovery_holds","public.account_passkey_primary_proofs"],
+      "user_permissions/account_mfa_channel_policy.sql":["public.account_mfa_channel_methods"],
+      "user_permissions/account_mfa_registration_handoff.sql":["public.account_mfa_registration_handoffs"],
+      "user_permissions/account_mfa_factor_removal.sql":["public.account_mfa_factor_removals"],
+      "user_permissions/account_passkey_sign_in.sql":["public.account_passkey_sign_in_attempts"],
+      "user_permissions/account_mfa_recovery.sql":["public.account_mfa_recovery_approvals","public.account_mfa_recovery_completions"],
+      "user_permissions/account_private_image_grants.sql":["public.account_private_image_grants"],
       "units/unit_picker_favorites.sql":["public.unit_picker_favorites"],
       "integration_webhooks/webhooks.sql":["public.integration_webhook_subscriptions", "public.integration_webhook_events", "public.integration_webhook_deliveries", "public.integration_webhook_commands"],
       "people/access_schema.sql":["public.access_email_preparations", "public.access_preparation_key"],

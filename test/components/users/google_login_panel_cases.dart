@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/components/users/widgets/google_login_panel.dart';
+import 'package:fstapp/components/users/widgets/account_verification_dialog.dart';
 import 'package:fstapp/services/google_auth_service.dart';
 import 'package:fstapp/theme_config.dart';
 
@@ -89,6 +90,8 @@ void main() {
       }),
       'mfa': const GoogleLoginState(GoogleLoginStatus.needsMfa,
           result: {'status': 'needs_mfa'}),
+      'mfa-key': const GoogleLoginState(GoogleLoginStatus.needsMfa,
+          result: {'status': 'needs_mfa', 'mfaMethod': 'webauthn'}),
       'loading': const GoogleLoginState(GoogleLoginStatus.completing),
       'authenticated': const GoogleLoginState(GoogleLoginStatus.authenticated),
       'error': const GoogleLoginState(GoogleLoginStatus.retryableError,
@@ -167,6 +170,27 @@ void main() {
               expect(find.byType(OutlinedButton), findsOneWidget,
                   reason:
                       '$width $language $dark state=${GoogleAuthService.state.value.status}');
+            }
+            if (entry.key == 'mfa') {
+              final form = find.byType(AuthenticatorCodeForm);
+              expect(form, findsOneWidget);
+              final field = find.descendant(
+                of: form, matching: find.byType(TextField),
+              );
+              final submit = find.descendant(
+                of: form, matching: find.byType(FilledButton),
+              );
+              await tester.enterText(field, '12345');
+              await tester.pump();
+              expect(tester.widget<FilledButton>(submit).onPressed, isNull);
+              await tester.enterText(field, '012345');
+              await tester.pump();
+              expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
+              expect(tester.widget<TextField>(field).controller!.text, '012345');
+            }
+            if (entry.key == 'mfa-key') {
+              expect(find.byType(AuthenticatorCodeForm), findsNothing);
+              expect(find.byType(OutlinedButton), findsOneWidget);
             }
             if (entry.key == 'proof') {
               final fields =

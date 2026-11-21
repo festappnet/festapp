@@ -2,7 +2,9 @@ import { isValidEmail } from '../../logic/email_address.js';
 import { EmailSuffixConfirmation } from '../forms/email_suffix_confirmation.js';
 
 import { GoogleAuthService } from '../../services/google_auth_service.js';
+import { AccountRecoveryPanel } from './account_recovery_panel.js';
 import { GOOGLE_AUTH_STYLES, GOOGLE_G } from './google_auth_styles.js';
+import { PasskeyService } from '../../services/passkey_service.js';
 import { AuthService } from '../../services/auth_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { ToastHelper } from '../ui/toast.js';
@@ -25,6 +27,7 @@ export class LoginModal extends HTMLElement {
         this.emailSuffixConfirmations = new Map();
         this.isLoading = false;
         this.googleEnabled = false;
+        this.passkeyEnabled = false;
         this.googleResult = null;
         this.googleError = '';
         
@@ -62,11 +65,17 @@ export class LoginModal extends HTMLElement {
         GoogleAuthService.capability().then(enabled => {
             if (!this.isConnected) return;
             this.googleEnabled = enabled;
-            this._updateContent(true);
+            if (['login', 'register'].includes(this.currentView)) this._updateContent(true);
+        });
+        PasskeyService.capability().then(enabled => {
+            if (!this.isConnected || !enabled) return;
+            this.passkeyEnabled = true;
+            if (this.currentView === 'login') this._updateContent(true);
         });
     }
     
     disconnectedCallback() {
+        this._passkeyPrompt?.abort();
         this._disposeEmailSuffix?.();
         this.emailSuffixConfirmations.clear();
         window.removeEventListener('keydown', this._handleKeyDown);
@@ -74,7 +83,7 @@ export class LoginModal extends HTMLElement {
     
     _handleKeyDown(e) {
         if (e.key === 'Tab' && this.authContainer) {
-            const items = [...this.authContainer.querySelectorAll('button:not(:disabled),input:not(:disabled),a[href]')];
+            const items = [...this.authContainer.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')];
             const first = items[0], last = items.at(-1);
             if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
             else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
@@ -105,7 +114,7 @@ export class LoginModal extends HTMLElement {
         const originalClose = this.modal.close.bind(this.modal);
         this.modal.close = () => {
             // Prevent closing if we are in the middle of a forced reset
-            if (this._resetToken || this.currentView === 'reset_password') {
+            if (this._resetToken || this.currentView === 'reset_password' || ((this._verification || this._passkeyPrompt) && this.isLoading)) {
                 return;
             }
             
@@ -116,6 +125,10 @@ export class LoginModal extends HTMLElement {
             }
 
             GoogleAuthService.cancel();
+            const verification = this._verification;
+            this._verification = null;
+            this.authContainer.querySelector('account-recovery-panel')?.remove();
+            if (verification && !verification.recovery) void AuthService.cancelVerification(verification).catch(() => {});
             originalClose();
             this._previousFocus?.focus?.();
             setTimeout(() => {
@@ -209,15 +222,33 @@ export class LoginModal extends HTMLElement {
         )}</p>`;
 
         const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '';
+        const passkeyAction = this.passkeyEnabled ? `<button type="button" class="btn-secondary" id="passkey-start" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.passkeySignIn}</button>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
-        if (this.currentView === 'google_mfa') return `<h2>${CommonStrings.signIn}</h2><p>${CommonStrings.googleMfa}</p>${feedback}<form id="google-mfa-form" novalidate>${validatedField('mfa-code', CommonStrings.googleCode, 'text', true)}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.googleVerifyCode}</button></form>`;
+        if (this.currentView === 'account_recovery') return `<h2>${LocalizationService.tr('AccountSecurity.recoveryTitle')}</h2>`;
+        if (this.currentView === 'mfa') {
+            const googleKey = this.googleResult?.mfaMethod === 'webauthn';
+            const showCode = this._verification ? this._verification.factors.length > 0 : !googleKey;
+            const keys = this._verification?.webauthn ?? [];
+            const codeForm = showCode ? `<p id="mfa-hint">${this._verification ? CommonStrings.mfaEnterAuthenticatorCode : CommonStrings.googleMfa}</p>
+                <form id="mfa-form" method="post">
+                    ${this._verification?.factors.length > 1 ? `<label for="mfa-factor">${CommonStrings.mfaAuthenticator}</label><select id="mfa-factor"></select>` : ''}
+                    <label for="mfa-code">${CommonStrings.googleCode}</label>
+                    <input type="text" id="mfa-code" name="otp" autocomplete="one-time-code" inputmode="numeric"
+                        pattern="[0-9]{6}" maxlength="6" aria-describedby="mfa-hint" required>
+                    <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.googleVerifyCode}</button>
+                </form>` : '';
+            const keyAction = keys.length || googleKey ? `
+                ${keys.length > 1 ? `<label for="webauthn-factor">${CommonStrings.mfaSecurityKey}</label><select id="webauthn-factor"></select>` : ''}
+                <button type="button" class="btn-secondary" id="webauthn-verify" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.mfaVerifySecurityKey}</button>` : '';
+            return `<h2>${CommonStrings.signIn}</h2>${feedback}${codeForm}${keyAction}`;
+        }
         if (this.currentView === 'google_proof') return `<h2>${this.googleResult?.intent === 'unlink' ? CommonStrings.googleUnlink : CommonStrings.googleLink}</h2><p class="auth-subtitle">${this.googleResult?.intent === "unlink" ? CommonStrings.googleUnlinkProof : CommonStrings.googleProof}</p>${feedback}<form id="google-proof-form" novalidate>${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'username')}${validatedField('password', CommonStrings.password, 'password', true, 0, '', 'current-password')}<button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>${this.isLoading ? CommonStrings.loading : this.googleResult?.intent === 'unlink' ? CommonStrings.googleUnlink : CommonStrings.googleLink}</button><div class="auth-links"><button type="button" class="btn-link" id="link-forgot">${CommonStrings.forgotPassword}</button><button type="button" class="btn-link" id="google-restart">${CommonStrings.googleRetry}</button></div></form>`;
         if (this.currentView === 'google_profile') return `<h2>${CommonStrings.googleProfile}</h2>${feedback}<form id="google-profile-form" novalidate><div class="form-row">${validatedField('firstName', CommonStrings.firstName, 'text', true, 0, '', 'given-name')}${validatedField('lastName', CommonStrings.lastName, 'text', true, 0, '', 'family-name')}</div><p id="google-profile-email"></p>${this.googleResult?.mailboxRequired ? `<p>${CommonStrings.googleMailbox}</p><button type="button" class="btn-secondary" id="google-send-code">${CommonStrings.googleSendCode}</button>${validatedField('mailbox-code',CommonStrings.googleCode,'text',false)}<button type="button" class="btn-secondary" id="google-verify-code">${CommonStrings.googleVerifyCode}</button>` : ''}<label class="auth-consent"><input type="checkbox" id="google-consent" required><span>${CommonStrings.googleConsent} <a href="${AppConfig.termsUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.googleTerms}</a> <a href="${AppConfig.privacyUrl}" target="_blank" rel="noopener noreferrer">${CommonStrings.googlePrivacy}</a></span></label><div class="google-profile-actions"><button type="submit" class="btn-primary" ${this.isLoading || this.googleResult?.mailboxRequired ? 'disabled' : ''}>${this.isLoading ? CommonStrings.loading : CommonStrings.googleCreate}</button><button type="button" class="btn-link" id="google-link">${CommonStrings.googleLink}</button></div></form>`;
         if (this.currentView === 'login') {
             return `
                 <h2>${CommonStrings.signIn}</h2>
-                ${feedback}${googleAction}
+                ${feedback}${passkeyAction}${googleAction}
                 <form id="login-form" novalidate>
                     ${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'username')}
                     ${validatedField('password', CommonStrings.password, 'password', true, 0, '', 'current-password')}
@@ -296,8 +327,22 @@ export class LoginModal extends HTMLElement {
 
         this.authContainer.querySelector('#google-start')?.addEventListener('click', () => this._startGoogle());
         this.authContainer.querySelector('#google-restart')?.addEventListener('click', () => this._startGoogle());
-        if (this.currentView === 'google_mfa') {
-            attach('#google-mfa-form', e => this._advanceGoogle(e, 'mfa_verify'), 'submit');
+        this.authContainer.querySelector('#passkey-start')?.addEventListener('click', () => this._startPasskey());
+        if (this.currentView === 'mfa') {
+            const addOptions = (selector, factors, name) => {
+                const selection = this.authContainer.querySelector(selector);
+                if (!selection) return;
+                factors.forEach((factor, index) => {
+                    const option = document.createElement('option');
+                    option.value = factor.id;
+                    option.textContent = CommonStrings.mfaFactorName(factor.friendly_name, `${name} ${index + 1}`);
+                    selection.append(option);
+                });
+            };
+            addOptions('#mfa-factor', this._verification?.factors, CommonStrings.mfaAuthenticator);
+            addOptions('#webauthn-factor', this._verification?.webauthn, CommonStrings.mfaSecurityKey);
+            this.authContainer.querySelector('#mfa-form')?.addEventListener('submit', event => this._advanceMfa(event));
+            this.authContainer.querySelector('#webauthn-verify')?.addEventListener('click', () => this._advanceWebAuthn());
         } else if (this.currentView === 'google_proof') {
             const email = this.authContainer.querySelector('#email');
             email.value = this._proofEmail ?? this.googleResult?.email ?? '';
@@ -383,13 +428,14 @@ export class LoginModal extends HTMLElement {
             submitBtn.textContent = loading ? CommonStrings.loading : this._getSubmitButtonLabel();
         }
 
-        const inputs = this.authContainer.querySelectorAll('input');
+        const inputs = this.authContainer.querySelectorAll('input, select, #passkey-start, #webauthn-verify, #google-start');
         inputs.forEach(input => input.disabled = loading);
     }
 
     _getSubmitButtonLabel() {
         switch (this.currentView) {
             case 'login': return CommonStrings.signIn;
+            case 'mfa': return CommonStrings.googleVerifyCode;
             case 'register': return CommonStrings.createAccount;
             case 'forgot': return CommonStrings.send;
             case 'reset_password': return CommonStrings.changePassword;
@@ -463,6 +509,7 @@ export class LoginModal extends HTMLElement {
 
     async _handleLogin(e) {
         e.preventDefault();
+        if (this.isLoading) return;
         
         if (!this._validateForm('login-form')) return;
         
@@ -484,15 +531,9 @@ export class LoginModal extends HTMLElement {
 
         this._setLoading(true);
         try {
-            await AuthService.login(finalEmail, password);
-            ToastHelper.showSuccess(CommonStrings.success);
-            this.modal.close();
-            // Generic organizer sign-in resumes administration; checkout stays in place.
-            if (window.location.pathname === '/' && RightsService.canSeeAdmin()) {
-                await RouterService.navigateToAdmin();
-            } else {
-                window.location.reload();
-            }
+            const result = await AuthService.login(finalEmail, password);
+            if (result?.verification) this._showVerification(result.verification);
+            else await this._finishPasswordLogin();
         } catch (err) {
             console.error("Login Error:", err);
             let msg = err.message || CommonStrings.error;
@@ -502,6 +543,111 @@ export class LoginModal extends HTMLElement {
             }
             
             ToastHelper.showError(msg);
+        } finally {
+            this._setLoading(false);
+        }
+    }
+
+    _showVerification(verification) {
+        this._verification = verification;
+        this.googleError = '';
+        if (verification.recovery) {
+            this._setView('account_recovery');
+            const panel = new AccountRecoveryPanel();
+            this.authContainer.append(panel);
+            panel.open(verification);
+            this.authContainer.focus();
+            return;
+        }
+        this._setView('mfa');
+        this.authContainer.querySelector('#mfa-code, #webauthn-verify')?.focus();
+    }
+
+    async _finishPasswordLogin() {
+        ToastHelper.showSuccess(CommonStrings.success);
+        this._passkeyPrompt = null;
+        this.modal.close();
+        // Generic organizer sign-in resumes administration; checkout stays in place.
+        if (window.location.pathname === '/' && RightsService.canSeeAdmin()) {
+            await RouterService.navigateToAdmin();
+        } else {
+            window.location.reload();
+        }
+    }
+
+    async _startPasskey() {
+        if (this.isLoading) return;
+        await this._runCredentialPrompt(async signal => {
+            const result = await AuthService.loginWithPasskey(signal);
+            if (result?.verification) this._showVerification(result.verification);
+            else await this._finishPasswordLogin();
+        });
+    }
+
+    async _advanceWebAuthn() {
+        if (this.isLoading) return;
+        const google = this.googleResult;
+        if (!this._verification && google?.mfaMethod === 'webauthn') {
+            await this._runCredentialPrompt(async signal => {
+                const assertion = await PasskeyService.assertion(google.webAuthnOptions, signal);
+                signal.throwIfAborted();
+                if (this.googleResult !== google) return;
+                this.showGoogleResult(await GoogleAuthService.advance('mfa_verify', { mfaAssertion: assertion }, signal));
+            });
+            return;
+        }
+        if (!this._verification?.webauthn?.length) return;
+        const verification = this._verification;
+        const factor = this.authContainer.querySelector('#webauthn-factor')?.value || verification.webauthn[0].id;
+        await this._runCredentialPrompt(async signal => {
+            await AuthService.verifyWebAuthn(verification, factor, signal);
+            this._verification = null;
+            await this._finishPasswordLogin();
+        });
+    }
+
+    async _runCredentialPrompt(run) {
+        const controller = new AbortController();
+        this._passkeyPrompt = controller;
+        this._setLoading(true);
+        try {
+            await run(controller.signal);
+        } catch (error) {
+            if (controller.signal.aborted || !this.isConnected) return;
+            if (error.message === 'invalid_session') {
+                this._verification = null;
+                this._setView('login');
+            }
+            ToastHelper.showError(error.name === 'NotAllowedError'
+                ? CommonStrings.passkeyCancelled : CommonStrings.passkeyFailed);
+        } finally {
+            this._passkeyPrompt = null;
+            this._setLoading(false);
+            if (this.isConnected && this.currentView === 'mfa') {
+                this.authContainer.querySelector('#mfa-code, #webauthn-verify')?.focus();
+            }
+        }
+    }
+
+    async _advanceMfa(event) {
+        if (!this._verification) return this._advanceGoogle(event, 'mfa_verify');
+        event.preventDefault();
+        if (this.isLoading) return;
+        const verification = this._verification;
+        const input = this.authContainer.querySelector('#mfa-code');
+        if (!input?.reportValidity()) return;
+        const factorId = this.authContainer.querySelector('#mfa-factor')?.value || verification.factors[0].id;
+        this._setLoading(true);
+        try {
+            await AuthService.verifyLogin(verification, factorId, input.value);
+            this._verification = null;
+            await this._finishPasswordLogin();
+        } catch (error) {
+            if (error.message === 'invalid_session') {
+                this._verification = null;
+                this._setView('login');
+            }
+            ToastHelper.showError(CommonStrings.googleError);
         } finally {
             this._setLoading(false);
         }
@@ -538,7 +684,7 @@ export class LoginModal extends HTMLElement {
             }
             return;
         }
-        this._setView(result.status === 'needs_mfa' ? 'google_mfa' : result.status === 'needs_profile' ? 'google_profile' : 'google_proof');
+        this._setView(result.status === 'needs_mfa' ? 'mfa' : result.status === 'needs_profile' ? 'google_profile' : 'google_proof');
         this.authContainer.querySelector('input,button')?.focus();
     }
 
@@ -546,7 +692,7 @@ export class LoginModal extends HTMLElement {
         event.preventDefault();
         if (this.isLoading) return;
         const value = id => this.authContainer.querySelector(`#${id}`)?.value || '';
-        const payload = operation === 'prove_existing' ? { email: value('email'), password: value('password') }
+        const payload = operation === 'prove_existing' ? { email: value('email'), password: value('password'), supportsWebAuthn: PasskeyService.credentialSupport() }
             : operation === 'register' ? { profile: { name: value('firstName'), surname: value('lastName') }, consent: this.authContainer.querySelector('#google-consent').checked }
             : operation === 'mfa_verify' ? { mfaCode: value('mfa-code') } : { mailboxCode: value('mailbox-code') };
         if (this.currentView === 'google_profile') this._profileDraft = { name: value('firstName'), surname: value('lastName'), consent: this.authContainer.querySelector('#google-consent').checked };
@@ -638,6 +784,7 @@ export class LoginModal extends HTMLElement {
             const result = await AuthService.changePassword(this._resetToken, password);
 
             if (result.code === 200) {
+                 this._resetToken = null;
                  // Success -> Auto Login
                  // Prefix logic from AppConfig
                  // Flutter: AuthService.login(AppConfig.getUserPrefix(value["email"]), _passwordController.text);
@@ -649,7 +796,11 @@ export class LoginModal extends HTMLElement {
                  
                  if (email) {
                     const finalEmail = `${AppConfig.organization}+${email}`;
-                    await AuthService.login(finalEmail, password);
+                    const login = await AuthService.login(finalEmail, password);
+                    if (login?.verification) {
+                        this._showVerification(login.verification);
+                        return;
+                    }
                  } else {
                     console.warn("Change password success but no email returned for auto-login.");
                  }

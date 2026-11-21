@@ -45,6 +45,10 @@ void main() {
           if (request.url.path == '/auth/v1/logout') {
             return Future.value(http.Response('{}', 200));
           }
+          if (request.url.path == '/rest/v1/rpc/get_account_assurance_v1') {
+            return Future.value(http.Response('"allowed"', 200,
+                headers: {'content-type': 'application/json'}));
+          }
           return contextLoad.future;
         }));
   });

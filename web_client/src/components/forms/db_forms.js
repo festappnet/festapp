@@ -7,9 +7,6 @@ export class DbForms {
     static get metaForm() { return 'form'; }
 
     static async getFormByLink(link) {
-        const client = SupabaseService.getClient();
-        if (!client) throw new Error("Supabase client not initialized");
-
         // Embedded browsers can leave a fetch pending indefinitely. Bound the
         // public read even when the transport does not settle after aborting.
         const controller = new AbortController();
@@ -17,7 +14,9 @@ export class DbForms {
         let result;
         try {
             result = await Promise.race([
-                client.rpc('get_form_by_link', { input_data: {form_link: link, client_capabilities:['cash_reservations','no_payment_deadline']} }).abortSignal(controller.signal),
+                SupabaseService.publicCheckoutRpc('get_form_by_link', {
+                    input_data: {form_link: link, client_capabilities: ['cash_reservations', 'no_payment_deadline']},
+                }, controller.signal),
                 new Promise((_, reject) => {
                     timeout = setTimeout(() => {
                         reject(new Error('Form loading timed out'));
@@ -45,23 +44,18 @@ export class DbForms {
     }
 
     static async getMetaPurchaseConsent(link) {
-        const { data } = await SupabaseService.getClient().rpc('get_meta_purchase_consent', {p_form_link:link})
-            .abortSignal(AbortSignal.timeout(1500));
+        const { data } = await SupabaseService.publicCheckoutRpc('get_meta_purchase_consent', {p_form_link:link}, AbortSignal.timeout(1500));
         return data;
     }
 
     static async getMeasurementPolicy(link) {
-        const {data, error} = await SupabaseService.getClient().rpc('get_form_measurement_policy', {p_form_link:link})
-            .abortSignal(AbortSignal.timeout(8000));
+        const {data, error} = await SupabaseService.publicCheckoutRpc('get_form_measurement_policy', {p_form_link:link}, AbortSignal.timeout(8000));
         if (error) throw new Error('Measurement policy unavailable');
         return data;
     }
 
     static async getBlueprint(secret, formKey, blueprintId) {
-        const client = SupabaseService.getClient();
-        if (!client) throw new Error("Supabase client not initialized");
-
-        const { data, error } = await client.rpc('get_blueprint', {
+        const { data, error } = await SupabaseService.publicCheckoutRpc('get_blueprint', {
             my_secret: secret,
             form_key: formKey,
             blueprint_id: blueprintId
@@ -80,10 +74,7 @@ export class DbForms {
     }
 
     static async selectSpot(formKey, secret, spotId, selecting) {
-        const client = SupabaseService.getClient();
-        if (!client) throw new Error("Supabase client not initialized");
-
-        const { data, error } = await client.rpc('select_spot', {
+        const { data, error } = await SupabaseService.publicCheckoutRpc('select_spot', {
             form_key: formKey,
             secret_id: secret,
             spot_id: spotId,

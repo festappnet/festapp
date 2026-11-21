@@ -2,6 +2,15 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../app_config.dart';
 
 class UserStrings {
+  static String accountSecurity(String key) => 'AccountSecurity.$key'.tr();
+  static final _generatedFactorName = RegExp(r'^Festapp #[A-Z2-7]{26}$');
+  static String mfaFactorName(String? name, String fallback) {
+    if (name == null || name.isEmpty) return fallback;
+    if (!_generatedFactorName.hasMatch(name)) return name;
+    return '$fallback · ${name.substring(name.length - 6)}';
+  }
+  static String get passkeySignIn => 'FeatureUser.passkeySignIn'.tr();
+  static String get mfaVerifySecurityKey => 'FeatureUser.mfaVerifySecurityKey'.tr();
   static String get invitationQueued => 'FeatureUser.invitationQueued'.tr();
   static String get invitationSent => 'FeatureUser.invitationSent'.tr();
   static String get invitationFailed => 'FeatureUser.invitationFailed'.tr();
@@ -39,6 +48,9 @@ class UserStrings {
   static String get googleVerifyCode => 'FeatureUser.googleVerifyCode'.tr();
   static String get googleCode => 'FeatureUser.googleCode'.tr();
   static String get googleUnlink => 'FeatureUser.googleUnlink'.tr();
+  static String get mfaEnterAuthenticatorCode =>
+      'FeatureUser.mfaEnterAuthenticatorCode'.tr();
+  static String get mfaAuthenticator => 'FeatureUser.mfaAuthenticator'.tr();
   static String get googleMfa => 'FeatureUser.googleMfa'.tr();
 
   static String get receptionist => 'UserColumns.receptionist'.tr();

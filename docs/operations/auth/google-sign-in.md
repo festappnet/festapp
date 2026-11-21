@@ -126,6 +126,16 @@ Leave GOOGLE_AUTH_TRUSTED_IP_HEADER unset unless the gateway removes incoming
 values and supplies that header itself. Global/client/attempt/target rate limits
 remain active without it. Tokens, codes and passwords must not enter logs.
 
+Google second-factor verification with a WebAuthn key uses the same public Auth
+ingress as direct sign-in. During an authorized MFA pilot, configure
+`GOOGLE_AUTH_WEBAUTHN_INGRESS` with the exact canonical HTTPS API origin and
+verify access to it from Edge runtime, including the public `/auth/v1` route.
+Existing Google TOTP continues to use its current provider path. The Google broker
+holds the password session on the server until the second factor produces AAL2
+for the same account and session. A browser must support WebAuthn to receive this
+challenge. If the ingress setting is absent, Google can still use an existing
+TOTP or phone factor.
+
 Disable external_login_clients.enabled for the affected client to stop new and
 pending attempts and hide its CTA. Preserve identity rows and users. Existing
 password login/session/refresh continues; revoke already issued sessions only

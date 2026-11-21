@@ -51,6 +51,25 @@ test('view transport calls only read RPC; resolver remains a separate POST', asy
     assert.equal(commands.pending.size, 0);
 });
 
+test('customer operations send the scoped token on the guest transport and admin stays signed in', async t => {
+    const guestRpc = t.mock.fn(async () => ({data: fixture()}));
+    const guestInvoke = t.mock.fn(async () => ({data: {code: 200, file: 'JVBERg=='}}));
+    const accountInvoke = t.mock.fn(async () => ({data: {code: 200, url: 'https://tickets.invalid/order'}}));
+    t.mock.method(SupabaseService, 'getGuestClient', () => ({rpc: guestRpc, functions: {invoke: guestInvoke}}));
+    t.mock.method(SupabaseService, 'getClient', () => ({functions: {invoke: accountInvoke}}));
+    const scope = {orderId: 1, token: 'a'.repeat(64)};
+    const commands = new WaitlistCommands();
+    await commands.overview(scope);
+    await commands.downloadTicket(scope, 3);
+    await commands.accept(scope, [3], {tickets: []});
+    await commands.command('withdraw', {...scope, ticketIds: [3]});
+    await commands.overviewAccess({admin: true, orderId: 1});
+    assert.equal(guestRpc.mock.calls[0].arguments[1].input_data.token, scope.token);
+    assert.deepEqual(guestInvoke.mock.calls.map(call => call.arguments[0]), ['download-ticket', 'send-ticket-order', 'waitlist-commands']);
+    assert.equal(accountInvoke.mock.calls.length, 1);
+    assert.equal(accountInvoke.mock.calls[0].arguments[1].body.admin, true);
+});
+
 test('canonical query keeps the root token and rejects ambiguous scope', () => {
     const scope = { orderId: 12, token: 'a'.repeat(64) };
     assert.deepEqual(parseOrderLocation(new URL(`https://example.invalid/order?order_id=12&token=${scope.token}`)), scope);

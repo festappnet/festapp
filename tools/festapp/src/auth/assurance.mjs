@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { check } from '../errors.mjs';
 
 export const STRONG_AUTHENTICATION_ACR = 'urn:festapp:aal2';
