@@ -36,6 +36,7 @@ class FixtureRouter extends RootStackRouter {
   WidgetBuilder? formsListBuilder;
   WidgetBuilder? ordersCurrentBuilder;
   WidgetBuilder? ordersHistoryBuilder;
+  WidgetBuilder? settingsBuilder;
   WidgetBuilder? loadingBuilder;
   bool showHeader = false;
   bool extra = true;
@@ -116,6 +117,12 @@ class FixtureRouter extends RootStackRouter {
                                       label: 'Report',
                                       icon: Icons.bar_chart),
                                 ],
+                                if (settingsBuilder != null)
+                                  const RoutedTabDefinition(
+                                      slug: 'settings',
+                                      route: SettingsSectionRoute(),
+                                      label: 'Settings',
+                                      icon: Icons.settings),
                                 if (extra &&
                                     (!tabsRequireAccess || access.allowed))
                                   const RoutedTabDefinition(
@@ -158,6 +165,9 @@ class FixtureRouter extends RootStackRouter {
                         ]),
                     page(ReportSectionRoute.name, 'report',
                         (context) => const Text('REPORT CONTENT')),
+                    if (settingsBuilder != null)
+                      page(SettingsSectionRoute.name, 'settings',
+                          settingsBuilder!),
                     page(FormsNavigationRoute.name, 'forms',
                         (context) => const AutoRouter(),
                         children: [

@@ -58,12 +58,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(AppDialog), findsOneWidget);
       expect(find.byType(TicketSettings), findsOneWidget);
-      expect(router.urlState.uri.queryParameters['feature'], isNull);
+      expect(router.urlState.uri.toString(), target);
       final edit = find.widgetWithText(FilledButton, TicketLayoutStrings.edit);
       expect(tester.widget<FilledButton>(edit).onPressed, isNotNull);
       tester.widget<AppDialog>(find.byType(AppDialog)).onClose!();
       await tester.pumpAndSettle();
       expect(find.byType(AppDialog), findsNothing);
+      expect(router.urlState.uri.toString(), '/ples-u-lipy/settings');
       await router.navigate(rootRouteForPath(router, target));
       await tester.pumpAndSettle();
       expect(find.byType(AppDialog), findsOneWidget);
@@ -92,10 +93,17 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(AppDialog), findsOneWidget, reason: 'Open attempt $attempt');
         expect(find.byType(TicketSettings), findsOneWidget);
+        expect(
+          router.urlState.uri.toString(),
+          '/ples-u-lipy/reservations/settings?feature=ticket',
+        );
         tester.widget<AppDialog>(find.byType(AppDialog)).onClose!();
         await tester.pumpAndSettle();
+        expect(find.byType(AppDialog), findsNothing);
+        expect(router.urlState.uri.toString(), '/ples-u-lipy/reservations/settings');
         await tester.tap(find.text('Vstupenky'));
         await tester.pumpAndSettle();
+        expect(router.urlState.uri.toString(), '/ples-u-lipy/reservations/tickets');
       }
     },
   );

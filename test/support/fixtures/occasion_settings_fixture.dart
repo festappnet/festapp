@@ -12,6 +12,7 @@ import 'package:fstapp/components/html/html_media_service.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
+import 'package:fstapp/components/occasion_settings/occasion_feature_navigation.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_io.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_layout.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_tab.dart';
@@ -127,7 +128,9 @@ class OccasionSettingsFixtureRouter extends RootStackRouter {
       children: [
         AutoRoute(path: 'tickets', page: PageInfo(TicketsSectionRoute.name,
           builder: (_) => Builder(builder: (context) => TextButton(
-            onPressed: () => context.tabsRouter.navigate(const SettingsSectionRoute().copyWith(queryParams: {'feature': FeatureConstants.ticket})),
+            onPressed: () => openOccasionFeatureSettings(
+              context, FeatureConstants.ticket,
+            ),
             child: const Text('Nastavení vstupenek'),
           )),
         )),

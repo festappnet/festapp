@@ -30,6 +30,11 @@ Declare the leaf page with `@RoutePage`, register its stable path in `app_router
 
 ## Presentation exceptions
 
+Occasion settings use `?feature=<code>` to present the existing feature dialog.
+Opening it adds a history entry, and dismissing it removes the parameter from
+the current entry. Incoming links resolve against the supported feature catalog
+after the settings page has loaded.
+
 Calendar views keep presentation controllers bound by `RoutedDayBinding`; URL state drives their selection and session values only supply a fallback when no valid date exists. Unit side-menu selection reads the library tab controller. New unsaved bank accounts and ticket-layout dialogs remain transient. The mobile ticket panel has query state; desktop does not reopen it. Form-field and canvas-element selection are editor state, not navigation. Existing public home navigation remains on its established routes.
 
 Behavioral coverage lives in `test/components/navigation`, startup/post-login tests and `web_client/tests/core/router_service.test.js`. The isolated browser fixture `test/browser/navigation_smoke_app.dart` runs real AutoRoute/platform history without backend access. Flutter's Chrome widget test runner does not propagate platform navigation into browser history, so browser Back/Forward/reload use this running fixture in a named headless agent-browser session with an explicit empty `--config` (the workstation default uses Panerelay).
