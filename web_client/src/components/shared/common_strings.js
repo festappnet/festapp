@@ -113,6 +113,7 @@ export class CommonStrings {
     static get edit() { return LocalizationService.tr("Common.edit"); }
     static get delete() { return LocalizationService.tr("Common.delete"); }
     static get save() { return LocalizationService.tr("Common.save"); }
+    static get cancel() { return LocalizationService.tr("Common.cancel"); }
     static get reset() { return LocalizationService.tr("Common.reset"); }
     static get processing() { return LocalizationService.tr("Common.processing"); }
 }

@@ -2796,6 +2796,8 @@
     "addKey": "Dodaj klucz bezpieczeństwa",
     "addPasskey": "Dodaj klucz dostępu",
     "freshProof": "Potwierdź tożsamość przed zmianą zabezpieczeń konta.",
+    "passwordProofHint": "Wpisz hasło do konta w {appName}, aby potwierdzić, że to Ty chcesz wprowadzić tę zmianę.",
+    "verifyIdentity": "Potwierdź tożsamość",
     "verified": "Potwierdzono tożsamość. Wybierz zmianę ponownie.",
     "qr": "Kod QR do konfiguracji aplikacji uwierzytelniającej",
     "manual": "Klucz do wpisania ręcznie",
