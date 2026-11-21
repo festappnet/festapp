@@ -238,10 +238,20 @@ export function createRemoteApp(config, storage, { cookieKeys, jwks, brokerSecre
         // This issuer always requires explicit consent. Tell the provider before
         // scope validation, otherwise it discards requested offline_access.
         const url = new URL(req.url, config.issuer);
-        if (!url.searchParams.has('prompt') && !url.searchParams.has('request_uri')) {
-            url.searchParams.set('prompt', 'consent');
-            req.url = url.pathname + url.search;
+        const originalQuery = url.search;
+        const params = url.searchParams;
+        if (!params.has('prompt') && !params.has('request_uri')) params.set('prompt', 'consent');
+        const client = config.clients.find(candidate => candidate.id === params.get('client_id'));
+        // Some clients request every domain scope in discovery. Only an
+        // explicitly registered reader may silently request fewer scopes.
+        // The provider still validates the request, PKCE and redirect URI.
+        if (client?.narrowDiscoveryScopes && !params.has('request') && !params.has('request_uri') &&
+            params.getAll('client_id').length === 1 && params.getAll('scope').length === 1) {
+            const scopes = params.get('scope').split(' ');
+            params.set('scope', scopes.filter(scope =>
+                !DOMAIN_SCOPES.includes(scope) || client.allowedScopes.includes(scope)).join(' '));
         }
+        if (url.search !== originalQuery) req.url = url.pathname + url.search;
         next();
     });
     // OAuth metadata can be discovered without assuming OIDC URL conventions.

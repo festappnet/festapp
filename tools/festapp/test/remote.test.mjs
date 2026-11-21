@@ -971,11 +971,11 @@ test('configuration scopes and whole-unit selection stay separate from occasion-
  token.scope=READ_SCOPE+' festapp:unit-settings:read';assert(!owner().allowedOperations.includes('units.settings.save'));
 });
 
-async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, connection, legacy = false, pending = false, prepareStatus = 200, contextIndex = 0, proofToken = supabaseToken, sessionRefresh = 'independent-fixture-refresh' } = {}) {
+async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_SCOPE, 'festapp:orders:read'], selection = { type: 'occasions', occasionIds: [7] }, requestScopes = scopes, connection, legacy = false, pending = false, prepareStatus = 200, contextIndex = 0, proofToken = supabaseToken, sessionRefresh = 'independent-fixture-refresh' } = {}) {
     const callbackUri = f.config.clients.find(c => c.id === clientId).redirectUris[0];
     const verifier = randomBytes(32).toString('base64url');
     let r = await f.browser('/auth?' + new URLSearchParams({ client_id: clientId, response_type: 'code',
-        redirect_uri: callbackUri, resource: f.config.resource, scope: ['openid', 'offline_access', ...scopes].join(' '),
+        redirect_uri: callbackUri, resource: f.config.resource, scope: ['openid', 'offline_access', ...requestScopes].join(' '),
         code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' }));
     assert.equal(r.status, 303);
     const interaction = r.headers.get('location');
@@ -1015,6 +1015,48 @@ async function connectTenant(f, { clientId = 'chatgpt-fixture', scopes = [READ_S
     assert.equal(r.status, 200);
     return r.json();
 }
+
+test('opt-in reader narrows discovery scopes before consent and never grants a write', async t => {
+    const reader = {
+        id: 'chatgpt-fixture', name: 'Read-only fixture', dataProfile: 'operator',
+        redirectUris: ['https://client.fixture.test/callback'], transports: ['mcp'],
+        allowedScopes: [READ_SCOPE, 'festapp:orders:read'],
+        allowedOperations: ['orders.list'], narrowDiscoveryScopes: true,
+    };
+    const f = await setup(t, { tenant: true, registeredClient: reader, fetchImpl: pilotBackend });
+    const scopes = reader.allowedScopes;
+    const tokens = await connectTenant(f, { scopes, requestScopes: DOMAIN_SCOPES });
+    assert.deepEqual(tokens.scope.split(' ').sort(), scopes.toSorted());
+    const reply = await jsonRpc(f, tokens.access_token, 'tools/list', {});
+    assert.equal(reply.status, 200);
+    const wire = await reply.text();
+    const json = wire.startsWith('event:') || wire.startsWith('data:')
+        ? wire.split('\n').find(line => line.startsWith('data:')).slice(5) : wire;
+    assert.deepEqual(JSON.parse(json).result.tools.map(tool => tool.name), ['festapp_orders_list']);
+
+    const write = await jsonRpc(f, tokens.access_token, 'tools/call', {
+        name: 'festapp_orders_update', arguments: {},
+    });
+    assert.equal(write.status, 403);
+    assert.equal((await write.json()).error, 'access_denied');
+
+
+    const refresh = await fetch(f.issuer + '/token', { method: 'POST', body: new URLSearchParams({
+        client_id: reader.id, grant_type: 'refresh_token', refresh_token: tokens.refresh_token,
+        resource: f.config.resource,
+    }) });
+    assert.equal(refresh.status, 200);
+    assert.deepEqual((await refresh.json()).scope.split(' ').sort(), scopes.toSorted());
+
+
+    const strict = await setup(t, { tenant: true, registeredClient: { ...reader, narrowDiscoveryScopes: undefined } });
+    const denial = await strict.browser('/auth?' + new URLSearchParams({
+        client_id: reader.id, response_type: 'code', redirect_uri: reader.redirectUris[0],
+        resource: strict.config.resource, scope: [...scopes, 'festapp:orders:write'].join(' '),
+        code_challenge: createHash('sha256').update(randomBytes(32)).digest('base64url'), code_challenge_method: 'S256',
+    }));
+    assert.equal(new URL(denial.headers.get('location')).searchParams.get('error'), 'invalid_scope');
+});
 
 for (const modern of [true, false]) test(`form save denial explains account rights over ${modern ? 'modern' : 'legacy'} MCP`, async t => {
     let saves = 0;

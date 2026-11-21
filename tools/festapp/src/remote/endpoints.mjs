@@ -55,6 +55,13 @@ export function normalizeClient(client, config, endpoints) {
         tokenEndpointAuthMethod: client.tokenEndpointAuthMethod ?? 'none',
     };
     const api = policy.transports.includes('api');
+    if (client.narrowDiscoveryScopes) check(client.applicationType === 'web' && !client.requirePar &&
+        policy.proofProfile === 'bearer' && policy.tokenEndpointAuthMethod === 'none' &&
+        policy.transports.length === 1 && policy.transports[0] === 'mcp' &&
+        client.allowedScopes?.every(scope => scope.endsWith(':read')) &&
+        client.allowedOperations?.length &&
+        client.allowedOperations.every(id => scopesForOperation(id)?.every(scope => client.allowedScopes.includes(scope))),
+    'INVALID_DISCOVERY_SCOPE_NARROWING');
     check(new Set(policy.transports).size === policy.transports.length && new Set(policy.resources).size === policy.resources.length, 'DUPLICATE_CLIENT_POLICY');
     if (client.allowedOperations) {
         const known = new Set(DELEGATED_OPERATIONS);

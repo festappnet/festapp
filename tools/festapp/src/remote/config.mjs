@@ -39,6 +39,7 @@ const schema = z.strictObject({
         allowedOperations: z.array(identifier).min(1).max(300).optional(),
         proofProfile: z.enum(['bearer', 'dpop']).optional(),
         requirePar: z.boolean().optional(),
+        narrowDiscoveryScopes: z.literal(true).optional(),
         maxConsentDays: z.union([z.literal(7), z.literal(30), z.literal(90), z.literal(365)]).optional(),
         tokenEndpointAuthMethod: z.enum(['none', 'private_key_jwt']).optional(),
         jwks: z.strictObject({ keys: z.array(z.record(z.string(), z.unknown())).min(1).max(4) }).optional(),
