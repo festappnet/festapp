@@ -501,6 +501,8 @@ class TicketDetailsBundle {
   final OrderHistoryInfo orderHistory;
   final OrderModel? referenceOrder;
   final OrderChangeSummary changes;
+  final Map<String, dynamic> admission;
+  final bool canEditProducts;
 
   TicketDetailsBundle({
     required this.ticket,
@@ -509,10 +511,14 @@ class TicketDetailsBundle {
     required this.orderHistory,
     this.referenceOrder,
     required this.changes,
+    this.admission = const {},
+    this.canEditProducts = true,
   });
 
   factory TicketDetailsBundle.fromJson(Map<String, dynamic> json) {
     var bundle = TicketDetailsBundle(
+      admission: (json['admission'] as Map?)?.cast<String, dynamic>() ?? const {},
+      canEditProducts: json['canEdit'] == true,
       changes: OrderChangeSummary.fromJson(
         Map<String, dynamic>.from(json['order_changes']),
       ),

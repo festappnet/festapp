@@ -3434,6 +3434,18 @@
     "59028d381334d2dd8dea1e7514e410eca1fef97dd802fd51b13cb1fa97cc4d3b": {
       "signature": "public.request_unit_meta_capi_approval(bigint)",
       "source": "database/functions/eshop_forms/unit_meta_capi_approval.sql"
+    },
+    "e2f0c0be57bf6549eee7fa29a34c3932bcb50f2728734ec226d3e024d6a7fd95": {
+      "signature": "public.get_order_admission_options_v1(bigint,bigint)",
+      "source": "database/functions/eshop_orders/order_admission_options.sql"
+    },
+    "3bd6dbb6d9da10c147ae3462fffc872ff099e4ef4a95cd029c22a7d25572726d": {
+      "signature": "public.preview_order_admission_change_v1(bigint,bigint,jsonb,jsonb)",
+      "source": "database/functions/eshop_orders/order_admission_change.sql"
+    },
+    "b9a1bec17fab6f0c535c10e3f7da6b43c4a39ff3abf73c8b9975e44d9ee71c03": {
+      "signature": "public.confirm_order_admission_change_v1(bigint,bigint,jsonb,jsonb,text,uuid)",
+      "source": "database/functions/eshop_orders/order_admission_change.sql"
     }
   }
 }

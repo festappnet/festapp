@@ -39,6 +39,8 @@ import 'order_email_repair_dialog.dart';
 import 'order_history_dialog.dart';
 import 'transactions_dialog.dart';
 import 'products_dialog.dart';
+import 'order_admission_dialog.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show Supabase;
 import 'waitlist_order_detail.dart';
 import 'order_places_view.dart';
 import 'inline_order_field.dart';
@@ -375,6 +377,35 @@ class _OrderDetailViewState extends State<OrderDetailView>
     ),
   );
 
+  bool _canChangeAdmission(Map<String, dynamic>? ticket) =>
+      !c.stale && !c.busy && !c.dirty && c.validContext && d.canWrite &&
+      (ticket == null ? d.order['canAddAdmission'] == true : ticket['canMoveAdmission'] == true);
+
+  Widget _admissionButton([Map<String, dynamic>? ticket]) {
+    final key = ticket == null
+        ? (_usesTicketTerminology ? 'add_ticket' : 'add_application')
+        : (d.plans.isNotEmpty || d.places.any((p) => p['blueprintId'] != null) || d.json['form']?['blueprint'] != null
+            ? 'move_admission' : 'change_admission_type');
+    final title = OrderDetailStrings.text(key);
+    return TextButton.icon(
+      icon: Icon(ticket == null ? Icons.add : Icons.swap_horiz_outlined),
+      label: Text(title),
+      onPressed: () => ExceptionHandler.guardVoid(context, futureFunction: () async {
+        final changed = await showDialog<bool>(
+          context: context, barrierDismissible: false,
+          builder: (_) => OrderAdmissionDialog(
+            orderId: c.orderId, ticketId: ticket?['id'] as int?,
+            ticketTerminology: _usesTicketTerminology, title: title,
+            currency: d.order['currency_code'] ?? 'CZK',
+            money: money, canWrite: () => mounted && _canChangeAdmission(ticket),
+            rpc: (name, params) => Supabase.instance.client.rpc(name, params: params),
+          ),
+        );
+        if (changed == true && mounted) await _refresh();
+      }),
+    );
+  }
+
   String get _contentsCount {
     final entries = OrderDetailStrings.count(
       _usesTicketTerminology ? 'tickets_count' : 'applications_count',
@@ -393,9 +424,22 @@ class _OrderDetailViewState extends State<OrderDetailView>
     return '$entries · ${OrderDetailStrings.count('places_count', seats)}';
   }
 
+  String? _admissionMessage(Map<String, dynamic> ticket) {
+    final admission = ticket['admission'];
+    final multiple = (admission?['spotCount'] as int? ?? 0) > 1;
+    final reason = admission?['reason'] as String?;
+    return reason == null && !multiple ? null :
+        OrderDetailStrings.admissionReason(reason ?? 'ADMISSION_DATA_AMBIGUOUS', multiple: multiple);
+  }
+
   Widget _orderedProducts(Map<String, dynamic> ticket) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
+      if (_admissionMessage(ticket) case final message?) Text(message),
+      for (final place in d.places.where((p) => p['ticketId'] == ticket['id'] &&
+          p['problem'] == 'ADMISSION_DATA_AMBIGUOUS'))
+        Text(OrderDetailStrings.recordedPlace(
+            [place['groupTitle'],place['title']].whereType<String>().join(' · '))),
       if (detailRows(ticket['snapshot']?['products']).isEmpty)
         Text(OrderDetailStrings.text('products_missing')),
       for (final product in detailRows(ticket['snapshot']?['products']))
@@ -406,6 +450,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
           trailing: Text(money(product['price'])),
         ),
       if (_canEditProducts(ticket)) _editProductsButton(ticket),
+      if (_canChangeAdmission(ticket)) _admissionButton(ticket),
     ],
   );
 
@@ -424,6 +469,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text(_contentsCount, style: Theme.of(context).textTheme.bodySmall),
+            if (_canChangeAdmission(null)) _admissionButton(),
           ],
         ),
         const SizedBox(height: 10),
@@ -807,7 +853,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                         ),
                   if (ticket['batch'] != null)
                     OrderDetailStrings.text('tistena_davka'),
-                  ticket['admission']?['reason'],
+                  _admissionMessage(ticket),
                 ].whereType<String>().join(' · '),
               ),
               children: [
@@ -827,7 +873,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                         !d.places.any(
                           (p) =>
                               p['ticketId'] == ticket['id'] &&
-                              p['active'] == true,
+                              (p['active'] == true || p['problem'] != null),
                         ))
                       Text(
                         ticket['state'] == 'waitlisted'
@@ -936,6 +982,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                           ),
                         if (_canEditProducts(ticket))
                           _editProductsButton(ticket),
+                        if (_canChangeAdmission(ticket)) _admissionButton(ticket),
                       ],
                     ),
                   ],

@@ -6,13 +6,22 @@ import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
+// Custom categories can have a null type. Their scoped catalog ID distinguishes
+// them from legacy picker responses that omitted classification entirely.
+bool isTicketAddon(ProductModel product) =>
+    product.id != null &&
+    (product.productTypeId != null || product.productTypeString != null) &&
+    product.productTypeString != ProductModel.spotType;
+
 class SearchProductsScreen extends StatefulWidget {
   final int ticketId;
   final List<ProductModel> alreadySelected;
+  final Future<List<ProductModel>?> Function(int)? loadProducts;
   const SearchProductsScreen({
     super.key,
     required this.ticketId,
     required this.alreadySelected,
+    this.loadProducts,
   });
 
   @override
@@ -21,14 +30,13 @@ class SearchProductsScreen extends StatefulWidget {
 
 class _SearchProductsScreenState extends State<SearchProductsScreen> {
   List<ProductModel> _all = [], _filt = [];
-  Set<int> _sel = {};
+  final Set<int> _sel = {};
   bool _loading = true;
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _sel = widget.alreadySelected.map((p) => p.id!).toSet();
     _load();
   }
 
@@ -41,9 +49,11 @@ class _SearchProductsScreenState extends State<SearchProductsScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final list =
-        await DbEshop.getProductsForTicketAllAvailable(widget.ticketId) ?? [];
-    _all = list;
-    _filt = list;
+        await (widget.loadProducts ?? DbEshop.getProductsForTicketAllAvailable)(widget.ticketId) ?? [];
+    if (!mounted) return;
+    _all = list.where((p) => isTicketAddon(p) &&
+        !widget.alreadySelected.any((item) => item.id == p.id)).toList();
+    _filt = _all;
     setState(() => _loading = false);
   }
 

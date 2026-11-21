@@ -3,6 +3,7 @@ import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:fstapp/components/forms/card_payment_strings.dart';
 import 'package:fstapp/components/stripe_payments/card_refund_decision_api.dart';
 import 'package:collection/collection.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/eshop/db_eshop.dart';
@@ -17,6 +18,7 @@ import 'package:fstapp/components/eshop/views/product_info_panel.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 import '../orders_strings.dart';
+import '../order_detail_strings.dart';
 import '../models/order_model.dart';
 import 'edit_price_dialog.dart';
 import 'package:fstapp/components/stripe_payments/card_refund_decision_panel.dart';
@@ -35,7 +37,14 @@ class ProductsDialog extends StatefulWidget {
 class _ProductsDialogState extends State<ProductsDialog> {
   bool _loading = true;
   bool get _isProviderPayment => _bundle?.order.isProviderPayment == true;
-  bool get _canEditProducts => _canManageOrder && !_isProviderPayment;
+  bool get _multipleAdmissions =>
+      (_bundle?.admission['spotCount'] as int? ?? 0) > 1 ||
+      _orig.where((p) => p.productTypeString == ProductModel.spotType).length > 1;
+  bool get _ambiguous => _multipleAdmissions ||
+      _bundle?.admission['reason'] == 'ADMISSION_DATA_AMBIGUOUS';
+  bool get _canEditProducts => _canManageOrder && !_isProviderPayment &&
+      _bundle!.canEditProducts && !_ambiguous && _bundle!.ticket.batch == null &&
+      !{'used', 'waitlisted'}.contains(_bundle!.ticket.state);
   bool get _canManageOrder =>
       !_loading &&
       _bundle != null &&
@@ -56,6 +65,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
     setState(() => _loading = true);
     _bundle = await (widget.loadTicket ??
         DbEshop.getProductsForTicket)(widget.ticketId);
+    if (!mounted) return;
     if (_bundle != null) {
       _orig =
           _bundle!.ticket.relatedProducts?.map((p) => p.copyWith()).toList() ??
@@ -65,9 +75,11 @@ class _ProductsDialogState extends State<ProductsDialog> {
               [];
       _recalc();
     }
-    if (!mounted) return;
     setState(() => _loading = false);
   }
+
+  String _money(double amount) => Utilities.formatPrice(context, amount,
+      decimalDigits: 2, currencyCode: _bundle?.order.currencyCode);
 
   void _recalc() {
     _sumOrig = _orig.fold(0, (s, p) => s + (p.price ?? 0));
@@ -86,14 +98,14 @@ class _ProductsDialogState extends State<ProductsDialog> {
     );
     if (added != null && added.isNotEmpty) {
       setState(() {
-        _current.addAll(added);
+        _current.addAll(added.where(isTicketAddon));
         _recalc();
       });
     }
   }
 
   void _remove(ProductModel p) {
-    if (!_canEditProducts) return;
+    if (!_canEditProducts || p.productTypeString == ProductModel.spotType) return;
     setState(() {
       _current.removeWhere((c) => c.id == p.id);
       _recalc();
@@ -101,7 +113,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
   }
 
   void _addBack(ProductModel p) {
-    if (!_canEditProducts) return;
+    if (!_canEditProducts || p.productTypeString == ProductModel.spotType) return;
     setState(() {
       _current.add(p.copyWith());
       _recalc();
@@ -147,7 +159,14 @@ class _ProductsDialogState extends State<ProductsDialog> {
       // If the call fails, a PostgrestException will be caught here.
       if (mounted) {
         setState(() => _loading = false);
-        // Show friendly toast — backend error message is extracted by ExceptionHandler.
+        final reason = e is PostgrestException ? e.message :
+            e is StateError ? e.message : null;
+        if (reason == 'ADMISSION_CHANGE_REQUIRES_COMMAND' || reason == 'ADMISSION_DATA_AMBIGUOUS') {
+          ToastHelper.Show(context, OrderDetailStrings.admissionReason(reason!),
+              severity: ToastSeverity.NotOk);
+          await _fetch();
+          return;
+        }
         ExceptionHandler.handle(
           context,
           error: e,
@@ -255,10 +274,20 @@ class _ProductsDialogState extends State<ProductsDialog> {
                           child: Text(
                               CardPaymentStrings.text('productsImmutable')),
                         ),
+                      if (_ambiguous)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(OrderDetailStrings.admissionReason(
+                            'ADMISSION_DATA_AMBIGUOUS', multiple: _multipleAdmissions)),
+                        ),
+                      if (_ambiguous)
+                        for (final place in (_bundle!.admission['recordedPlaces'] as List? ?? []).whereType<String>())
+                          Text(OrderDetailStrings.recordedPlace(place)),
                       const Divider(height: 32),
                     ],
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 12, runSpacing: 8,
                       children: [
                         _buildTotalColumn(
                             OrdersStrings.originalPrice, _sumOrig),
@@ -294,14 +323,12 @@ class _ProductsDialogState extends State<ProductsDialog> {
                               pCurrent.price != pOrig.price;
 
                           final priceText = isAdded
-                              ? "+${Utilities.formatPrice(context, p.price ?? 0, decimalDigits: 2)}"
+                              ? "+${_money(p.price ?? 0)}"
                               : isRemoved
-                                  ? "-${Utilities.formatPrice(context, p.price ?? 0, decimalDigits: 2)}"
+                                  ? "-${_money(p.price ?? 0)}"
                                   : isPriceChanged
-                                      ? "${Utilities.formatPrice(context, pCurrent.price ?? 0, decimalDigits: 2)} (${Utilities.formatPrice(context, pOrig.price ?? 0, decimalDigits: 2)})"
-                                      : Utilities.formatPrice(
-                                          context, p.price ?? 0,
-                                          decimalDigits: 2);
+                                      ? "${_money(pCurrent.price ?? 0)} (${_money(pOrig.price ?? 0)})"
+                                      : _money(p.price ?? 0);
 
                           final priceColor = isAdded
                               ? Colors.green
@@ -339,7 +366,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                                         color: priceColor),
                                   ),
                                   const SizedBox(width: 8),
-                                  if (!isRemoved && !_isProviderPayment)
+                                  if (!isRemoved && !_isProviderPayment && !_ambiguous)
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined),
                                       tooltip: OrdersStrings.editPriceTooltip,
@@ -348,7 +375,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                                               ? null
                                               : () => _editPrice(pCurrent),
                                     ),
-                                  if (!_isProviderPayment)
+                                  if (!_isProviderPayment && !_ambiguous && p.productTypeString != ProductModel.spotType)
                                     IconButton(
                                       icon: Icon(isRemoved
                                           ? Icons.add
@@ -369,7 +396,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
                         },
                       ),
                     const SizedBox(height: 12),
-                    if (!_isProviderPayment)
+                    if (!_isProviderPayment && !_ambiguous)
                       Align(
                         alignment: Alignment.centerRight,
                         child: ElevatedButton.icon(
@@ -387,7 +414,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
           onPressed: () => Navigator.of(context).pop(false),
           child: Text(CommonStrings.storno),
         ),
-        if (!_isProviderPayment)
+        if (!_isProviderPayment && !_ambiguous)
           ElevatedButton(
             onPressed: _canEditProducts && _hasUnsavedChanges ? _save : null,
             child: Text(CommonStrings.save),
@@ -402,7 +429,7 @@ class _ProductsDialogState extends State<ProductsDialog> {
         SelectableText(label,
             style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
-        SelectableText(Utilities.formatPrice(context, sum, decimalDigits: 2)),
+        SelectableText(_money(sum)),
       ],
     );
   }
@@ -413,12 +440,12 @@ class _ProductsDialogState extends State<ProductsDialog> {
     String text;
     if (diff > 0) {
       color = Colors.green;
-      text = "+${Utilities.formatPrice(context, diff, decimalDigits: 2)}";
+      text = "+${_money(diff)}";
     } else if (diff < 0) {
       color = Colors.red;
-      text = Utilities.formatPrice(context, diff, decimalDigits: 2);
+      text = _money(diff);
     } else {
-      text = Utilities.formatPrice(context, diff, decimalDigits: 2);
+      text = _money(diff);
     }
 
     return Column(

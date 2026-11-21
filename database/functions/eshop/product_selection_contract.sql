@@ -1,3 +1,15 @@
+-- Physical seats contribute their server-owned product before this check.
+CREATE OR REPLACE FUNCTION public.assert_single_ticket_admission_internal(p_products bigint[])
+RETURNS void LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+BEGIN
+ IF (SELECT count(*) FROM unnest(p_products) selected(id)
+   JOIN eshop.products p ON p.id=selected.id
+   JOIN eshop.product_types pt ON pt.id=p.product_type AND pt.type='spot')>1 THEN
+  RAISE EXCEPTION 'ADMISSION_MULTIPLE_PRODUCTS';
+ END IF;
+END $$;
+REVOKE ALL ON FUNCTION public.assert_single_ticket_admission_internal(bigint[]) FROM PUBLIC,anon,authenticated,service_role;
+
 -- Shared admission/required-product validation for checkout and term moves.
 CREATE OR REPLACE FUNCTION public.assert_ticket_required_products_internal(p_form bigint,p_products bigint[])
 RETURNS void LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$

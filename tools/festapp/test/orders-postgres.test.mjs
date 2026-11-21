@@ -48,7 +48,7 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
    const data=(await db.query(sql,values)).rows[0].value;await db.query('RELEASE SAVEPOINT rpc');
    if(loseNextResponse && name==='manage_operator_order_v1'){loseNextResponse=false;return {data:null,error:{code:'ECONNRESET',status:503}};}
    return {data,error:null};
-  }catch(e){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return {data:null,error:{code:e.code,status:e.code==='42501'?403:400}};}
+  }catch(e){await db.query('ROLLBACK TO SAVEPOINT rpc');await db.query('RELEASE SAVEPOINT rpc');return {data:null,error:{code:e.code,message:e.message,status:e.code==='42501'?403:400}};}
  }};
  const owner={root:'/tmp/festapp-orders-test',profile:{organizationId:f.org,tenantId:'fixture',name:'orders-fixture',backendOrigin:'http://127.0.0.1:61022'},allowedOperations:orderDescriptors.map(d=>d.id),
   authorized:action=>action(client,{userId:f.actor}),delegatedContext:async()=>({organizationId:f.org,unitId:f.unit})};
@@ -69,6 +69,18 @@ test('order MCP executor uses real SQL owners for scoped reads, edits, products,
  row=await inspect(a.id);
  r=await invoke('orders.update',{orderId:a.id,commandId:randomUUID(),expectedRevision:row.revision,changes:{tickets:[{ticketId:a.tickets[0],products:[{productId:product,price:'100'},{productId:product2,price:'50'}]}]}});assert.equal(r.ok,true,JSON.stringify(r));
  assert.equal((await inspect(a.id)).price,'250.00');
+ await db.query('RESET ROLE');
+ const admissionType=(await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Standing','spot') returning id",[f.occasion])).rows[0].id;
+ const admissionProduct=Number((await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code) values($1,$2,'Standing',80,'CZK') returning id",[f.occasion,admissionType])).rows[0].id);
+ await db.query('SET LOCAL ROLE authenticated');
+ row=await inspect(a.id);
+ const rejected=await invoke('orders.update',{orderId:a.id,commandId:randomUUID(),expectedRevision:row.revision,
+  changes:{note:'Must roll back',tickets:[{ticketId:a.tickets[0],products:[
+   {productId:product,price:'100'},{productId:product2,price:'50'},{productId:admissionProduct,price:'80'}
+  ]}]}});
+ assert.equal(rejected.error.code,'ADMISSION_CHANGE_REQUIRES_COMMAND');
+ assert.deepEqual(await inspect(a.id),row,'failed admission edit keeps order data and revision');
+
  row=await inspect(a.id);const payment={orderId:a.id,commandId:randomUUID(),expectedRevision:row.revision,amount:'250.00',currency:'CZK',receivedAt:'2026-10-22T18:00:00Z'};
  loseNextResponse=true;r=await invoke('payments.record',payment);assert.equal(r.ok,false);assert.equal(r.error.retryable,true);
  r=await invoke('payments.record',payment);assert.equal(r.ok,true,JSON.stringify(r));assert.equal(r.data.replayed,true);

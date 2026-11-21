@@ -15,13 +15,22 @@ BEGIN
     RAISE insufficient_privilege USING MESSAGE='order editor required'; END IF;
   v_hash:=encode(extensions.digest(convert_to(jsonb_build_object(
     'ticket',p_ticket,'products',p_products)::text,'UTF8'),'sha256'),'hex');
+  PERFORM public.lock_blueprint_scope_internal(ARRAY[v_occasion]);
   v_begin:=public.begin_client_mutation_v1(p_command_id,
     'inventory.ticket.products',v_occasion,v_actor,v_hash);
+  IF public.can_write_orders(v_occasion) IS NOT TRUE THEN
+    RAISE insufficient_privilege USING MESSAGE='order editor required';
+  END IF;
   IF v_begin->>'disposition'='replay' THEN RETURN v_begin->'response'; END IF;
   SELECT COALESCE(array_agg(ou."user"),'{}'::uuid[]) INTO v_users
     FROM public.occasion_users ou
     WHERE ou.occasion=v_occasion AND ou.ticket=p_ticket;
-  v_result:=public.update_ticket_products_internal_v1(p_ticket,p_products);
+  BEGIN
+    v_result:=public.update_ticket_products_internal_v1(p_ticket,p_products);
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM NOT IN ('ADMISSION_CHANGE_REQUIRES_COMMAND','ADMISSION_DATA_AMBIGUOUS') THEN RAISE; END IF;
+    RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,jsonb_build_object('reason',SQLERRM));
+  END;
   RETURN public.complete_private_inventory_mutation_v1(p_command_id,v_occasion,
     'inventory.ticket.products',jsonb_build_array(jsonb_build_object(
       'entityType','ticket_products','entityId',p_ticket,'operation','update',

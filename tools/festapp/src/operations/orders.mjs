@@ -56,6 +56,10 @@ export async function invokeOrderOperation(owner, client, operation, args) {
             p_changes: args.changes ?? (operation === 'payments.record' ? { amount: args.amount, currency: args.currency, receivedAt: args.receivedAt, note: args.note ?? null } : {}) };
     }
     let { data, error, status } = await client.rpc(rpc, parameters);
+    if (operation === 'orders.update' && error?.code === 'P0001'
+        && ['ADMISSION_CHANGE_REQUIRES_COMMAND', 'ADMISSION_DATA_AMBIGUOUS'].includes(error.message)) {
+        throw new OperationError(error.message);
+    }
     if (['22023', '23514', '55000', 'P0001'].includes(error?.code)) throw new OperationError('ORDER_CHANGE_REJECTED');
     upstream(error && { ...error, status: error.status ?? status });
     if (rpc !== 'manage_operator_order_v1') {

@@ -27,7 +27,10 @@ DECLARE
   v_occasion_features jsonb;
   v_form_settings     jsonb;
   v_current_products_for_compare jsonb;
+  v_admission jsonb;
+  v_requested_admission jsonb;
 BEGIN
+  PERFORM public.lock_blueprint_scope_internal(ARRAY(SELECT occasion FROM eshop.tickets WHERE id=p_ticket_id));
   PERFORM public.lock_order_capacity_scope_internal(ARRAY(SELECT DISTINCT "order" FROM eshop.order_product_ticket WHERE ticket=p_ticket_id));
   /* 0) Lookup & permission */
   SELECT opt."order", o.occasion, o.payment_info, o.currency_code, o.data, o.state, occ.features
@@ -47,10 +50,44 @@ BEGIN
   END IF;
 
   PERFORM public.check_ticket_is_mutable(p_ticket_id);
+  IF EXISTS(SELECT 1 FROM eshop.tickets WHERE id=p_ticket_id AND state='used') THEN
+    RAISE EXCEPTION 'USED_TICKET_PROTECTED';
+  END IF;
   PERFORM public.assert_order_discount_unchanged_internal(v_order_id);
   PERFORM public.check_batch_ticket_print_immutable_internal(ARRAY[p_ticket_id]);
   IF EXISTS(SELECT 1 FROM eshop.payment_info WHERE id=v_payment_info_id AND public.payment_method_is_online_internal(payment_method)) THEN
     RAISE EXCEPTION 'STRIPE_ORDER_PRICE_IMMUTABLE'; END IF;
+
+  IF jsonb_typeof(p_products) IS DISTINCT FROM 'array' THEN
+    RAISE EXCEPTION 'PRODUCT_SCOPE_MISMATCH';
+  END IF;
+  PERFORM public.lock_ticket_order_products_internal(v_order_id,
+    jsonb_build_object('ticket',jsonb_build_array(jsonb_build_object('fields',(
+      SELECT coalesce(jsonb_agg(jsonb_build_object('product_type',p.id)),'[]')
+      FROM jsonb_array_elements(p_products) x
+      JOIN eshop.products p ON p.id=(x->>'id')::bigint AND p.occasion=v_occasion_id
+    )))));
+
+  v_admission := public.ticket_admission_integrity_internal(v_order_id,p_ticket_id);
+  IF v_admission->>'reason' IS NOT NULL THEN
+    RAISE EXCEPTION 'ADMISSION_DATA_AMBIGUOUS';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM jsonb_array_elements(p_products) x
+    LEFT JOIN eshop.products p ON p.id=(x->>'id')::bigint AND p.occasion=v_occasion_id
+    LEFT JOIN eshop.product_types pt ON pt.id=p.product_type AND pt.occasion=v_occasion_id
+    WHERE p.id IS NULL OR pt.id IS NULL OR x->>'price' IS NULL
+  ) THEN
+    RAISE EXCEPTION 'PRODUCT_SCOPE_MISMATCH';
+  END IF;
+  SELECT coalesce(jsonb_agg(p.id ORDER BY p.id),'[]') INTO v_requested_admission
+  FROM jsonb_array_elements(p_products) x
+  JOIN eshop.products p ON p.id=(x->>'id')::bigint AND p.occasion=v_occasion_id
+  JOIN eshop.product_types pt ON pt.id=p.product_type AND pt.occasion=v_occasion_id
+  WHERE pt.type='spot';
+  IF v_requested_admission IS DISTINCT FROM v_admission->'productIds' THEN
+    RAISE EXCEPTION 'ADMISSION_CHANGE_REQUIRES_COMMAND';
+  END IF;
 
   /* Check for negative prices in the input */
   IF EXISTS (
@@ -61,15 +98,13 @@ BEGIN
     RAISE EXCEPTION '%', jsonb_build_object('code', 400, 'message', 'Product prices cannot be negative.')::text;
   END IF;
 
-  PERFORM public.lock_ticket_order_products_internal(v_order_id,jsonb_build_object('ticket',jsonb_build_array(jsonb_build_object('fields',
-    (SELECT coalesce(jsonb_agg(jsonb_build_object('product_type',x->'id')),'[]') FROM jsonb_array_elements(p_products) x)))));
   IF EXISTS(SELECT 1 FROM jsonb_array_elements(p_products) x JOIN eshop.products p ON p.id=(x->>'id')::bigint
     WHERE p.maximum>0 AND (SELECT count(*) FROM eshop.order_product_ticket WHERE product=p.id)+
       CASE WHEN EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE ticket=p_ticket_id AND product=p.id) THEN 0 ELSE 1 END>p.maximum) THEN
     RAISE EXCEPTION 'PRODUCT_CAPACITY_EXCEEDED'; END IF;
   /* get old products for the ticket */
-  SELECT jsonb_path_query_first(v_old_data, '$.tickets[*] ? (@.id == $tid).products', jsonb_build_object('tid', p_ticket_id))
-  INTO v_old_products;
+  SELECT t->'products' INTO v_old_products FROM jsonb_array_elements(v_old_data->'tickets') t
+  WHERE t->>'id'=p_ticket_id::text;
   v_old_products := COALESCE(v_old_products, '[]'::jsonb);
 
   /* compute old/new ID arrays and check for changes */

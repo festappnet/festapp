@@ -17,6 +17,7 @@ BEGIN
         p.price,
         p.title,
         p.description,
+        p.data,
         p.currency_code,
         pt.title AS type_title,
         pt.type AS type,
@@ -47,6 +48,7 @@ BEGIN
         'spot_title', product_data.spot_title,
         'type_title', product_data.type_title,
         'description', product_data.description,
+        'data', product_data.data,
         'currency_code', product_data.currency_code
     )) || coalesce(public.order_spot_metadata_internal(p_spot_id), '{}'::jsonb);
 END;
@@ -86,6 +88,28 @@ BEGIN
     IF NOT FOUND THEN RAISE EXCEPTION 'Order % not found', opt."order"; END IF;
 
     PERFORM public.assert_order_discount_unchanged_internal(ord.id);
+    IF EXISTS(SELECT 1 FROM eshop.tickets WHERE id=opt.ticket AND state='used') THEN
+        RAISE EXCEPTION 'USED_TICKET_PROTECTED';
+    END IF;
+    IF public.ticket_admission_integrity_internal(ord.id,opt.ticket)->>'reason' IS NOT NULL
+       OR NOT EXISTS(SELECT 1 FROM eshop.products p JOIN eshop.product_types pt ON pt.id=p.product_type
+         WHERE p.id=p_new_product_id AND p.occasion=ord.occasion AND pt.occasion=ord.occasion AND pt.type='spot')
+       OR NOT EXISTS(SELECT 1 FROM eshop.products p JOIN eshop.product_types pt ON pt.id=p.product_type
+         WHERE p.id=opt.product AND pt.type='spot') THEN
+        RAISE EXCEPTION 'ADMISSION_DATA_AMBIGUOUS';
+    END IF;
+    IF ord.form IS NOT NULL THEN
+        IF p_new_spot_id IS NULL OR EXISTS(SELECT 1 FROM eshop.blueprint_seat_bindings WHERE spot=p_new_spot_id) THEN
+            PERFORM public.assert_admission_seating_internal(ord.form,p_new_product_id,p_new_spot_id);
+        ELSIF EXISTS(SELECT 1 FROM eshop.spots target
+          JOIN eshop.spots source ON source.order_product_ticket=opt.id AND source.blueprint IS NOT NULL
+          WHERE target.id=p_new_spot_id AND target.blueprint IS DISTINCT FROM source.blueprint) THEN
+            RAISE EXCEPTION 'ADMISSION_SOURCE_REQUIRES_SEATING';
+        END IF;
+        PERFORM public.assert_ticket_required_products_internal(ord.form, ARRAY(
+          SELECT product FROM eshop.order_product_ticket WHERE "order"=ord.id AND ticket=opt.ticket AND id<>opt.id AND product IS NOT NULL
+          UNION ALL SELECT p_new_product_id));
+    END IF;
     original_product_id := opt.product;
 
     -- 2. Find the *original* product JSON and price from the order_ids.data
@@ -101,7 +125,9 @@ BEGIN
     END IF;
 
     -- 3. Generate the *new* product JSON
-    new_product_json := public._swap_spots_generate_product_json(p_new_product_id, p_new_spot_id);
+    new_product_json := public._swap_spots_generate_product_json(p_new_product_id, p_new_spot_id)
+      || jsonb_build_object('order_product_ticket_id',opt.id,'base_price',
+        (SELECT price FROM eshop.products WHERE id=p_new_product_id),'discount_amount',0);
     new_price := (new_product_json->>'price')::numeric;
     IF new_product_json->>'currency_code' IS DISTINCT FROM ord.currency_code THEN
       RAISE EXCEPTION 'BLUEPRINT_CURRENCY_MISMATCH'; END IF;
@@ -160,7 +186,7 @@ BEGIN
     -- Update the link table
     UPDATE eshop.order_product_ticket
     SET
-        product = p_new_product_id
+        product = p_new_product_id, base_price=new_price, net_price=new_price
     WHERE id = p_opt_id;
 
     -- The aggregate swap reconciles each affected order once, after all seat

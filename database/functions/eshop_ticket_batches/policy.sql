@@ -72,6 +72,10 @@ BEGIN
  IF (SELECT count(*) FROM jsonb_array_elements(p_selection) t WHERE t->>'spot' IS NOT NULL)<>
   (SELECT count(DISTINCT t->>'spot') FROM jsonb_array_elements(p_selection) t WHERE t->>'spot' IS NOT NULL) THEN
   RAISE EXCEPTION 'BATCH_DUPLICATE_SPOT'; END IF;
+ PERFORM public.assert_single_ticket_admission_internal(ARRAY(
+   SELECT (field->>'product_type')::bigint FROM jsonb_array_elements(t->'fields') field
+   UNION ALL SELECT s.product FROM eshop.spots s WHERE s.id=(t->>'spot')::bigint))
+ FROM jsonb_array_elements(p_selection) t;
  FOR item IN
   WITH choices AS (
    SELECT n,(a->>'product_type')::bigint product,false seated FROM jsonb_array_elements(p_selection) WITH ORDINALITY t(v,n)

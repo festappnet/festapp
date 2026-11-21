@@ -22,7 +22,7 @@ BEGIN
     );
   END IF;
 
-  IF NOT can_read_orders(v_occasion_id) THEN
+  IF public.can_read_orders(v_occasion_id) IS NOT TRUE THEN
     RETURN jsonb_build_object(
       'code',    403,
       'message', 'Not authorized'
@@ -36,14 +36,16 @@ BEGIN
              'title',         p.title,
              'price',         p.price,
              'currency_code', p.currency_code,
-             'type_title',    pt.title
+             'type_title',    pt.title,
+             'type',          pt.type,
+             'product_type',  pt.id
            )
          )
   INTO   v_available
   FROM   eshop.products p
-  LEFT JOIN eshop.product_types pt
+  JOIN eshop.product_types pt
     ON pt.id = p.product_type
-  WHERE  p.occasion = v_occasion_id;
+  WHERE p.occasion=v_occasion_id AND pt.occasion=v_occasion_id AND pt.type IS DISTINCT FROM 'spot';
 
   RETURN jsonb_build_object(
     'code', 200,

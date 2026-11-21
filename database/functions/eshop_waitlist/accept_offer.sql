@@ -28,7 +28,13 @@ BEGIN
    FOR person IN SELECT * FROM jsonb_array_elements(p_people) LOOP
     -- Selected seats use the ticket's top-level spot transport. The finalizer
     -- checks occasion ownership, availability and reservation secret afterward.
-    IF f.type='spot' AND (p_waitlist OR nullif(person->>'spot','') IS NOT NULL) THEN
+    IF f.type='spot' AND (p_waitlist OR nullif(person->>'spot','') IS NOT NULL OR EXISTS(
+     SELECT 1 FROM jsonb_array_elements(coalesce(person->'fields','[]')) a
+     JOIN public.forms form ON form.id=p_form
+     JOIN eshop.blueprint_area_bindings area ON area.blueprint=form.blueprint AND area.product::text=a->>'product_type'
+     JOIN eshop.product_inventory_contexts pic ON pic.product=area.product AND pic.inventory_context=area.inventory_context
+     WHERE pic.quantity>0
+    )) THEN
      CONTINUE;
     END IF;
     IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(coalesce(person->'fields','[]')) answer WHERE answer ? k AND nullif(answer->>k,'') IS NOT NULL) THEN
