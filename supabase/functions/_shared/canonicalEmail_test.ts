@@ -1,4 +1,4 @@
-import { assert, assertEquals, assertRejects } from "jsr:@std/assert@1";
+import { assert, assertEquals, assertMatch, assertRejects } from "jsr:@std/assert@1";
 import {
   sendSes,
   sesBody,
@@ -507,13 +507,13 @@ Deno.test("legacy PDF and CID PNG snapshots roundtrip with backward compatible S
 
 Deno.test("payment QR remains downloadable and only appears inline when enabled", async () => {
   const template = { id: 1, subject: "Order", html: "<p>Order instructions</p>" };
-  const render = (inline: boolean) => renderEmail({
+  const render = (inline: boolean, lang = "en") => renderEmail({
     to: prepared.to,
     from: prepared.from,
     context: { organization: 1 },
     template,
     substitutions: {},
-    paymentQr: { png: new Uint8Array(2048), lang: "en", inline },
+    paymentQr: { png: new Uint8Array(2048), lang, inline },
   }, async () => ({ template }));
 
   const full = await render(true);
@@ -522,6 +522,9 @@ Deno.test("payment QR remains downloadable and only appears inline when enabled"
   assertEquals(parts[0].RawContent, parts[1].RawContent);
   assert(parts[1].ContentId && full.html.includes(`src="cid:${parts[1].ContentId}"`));
   assert(full.html.includes('alt="Bank transfer QR code"'));
+  assertMatch(full.html, /Pay with the QR code.*Scan it in your mobile banking app\..*<img/);
+  const czech = await render(true, "cs");
+  assertMatch(czech.html, /Zaplaťte pomocí QR kódu.*Naskenujte ho v aplikaci mobilního bankovnictví\..*<img/);
 
   const downloadOnly = await render(false);
   assertEquals(downloadOnly.attachments, [full.attachments[0]]);
