@@ -4733,6 +4733,8 @@
     "addKey": "Añadir llave de seguridad",
     "addPasskey": "Añadir llave de acceso",
     "freshProof": "Verifica tu identidad antes de cambiar la seguridad de tu cuenta.",
+    "passwordProofHint": "Introduce la contraseña de tu cuenta en {appName} para confirmar que tú solicitaste el cambio.",
+    "verifyIdentity": "Verificar identidad",
     "verified": "Identidad verificada. Selecciona de nuevo el cambio.",
     "qr": "Código QR para configurar la aplicación de autenticación",
     "manual": "Clave para introducir manualmente",

@@ -1467,7 +1467,7 @@
       ]
     },
     "mcp-web-contract": {
-      "script": "pnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js\n",
+      "script": "pnpm --dir web_client exec node --test --test-concurrency=1 tests/components/mcp_connection_page.test.js tests/components/account_connections_page.test.js tests/components/account_security_panel.test.js\n",
       "after": [
         "mcp-auth-install"
       ],
@@ -3591,6 +3591,7 @@
     "tools/festapp/test/webhook-receiver.test.mjs",
     "tools/festapp/test/webhooks-postgres.test.mjs",
     "web_client/tests/components/account_connections_page.test.js",
+    "web_client/tests/components/account_security_panel.test.js",
     "web_client/tests/components/blueprint_area_ticket_ui.test.js",
     "web_client/tests/components/blueprint_background_security.test.js",
     "web_client/tests/components/blueprint_capacity_controls.test.js",

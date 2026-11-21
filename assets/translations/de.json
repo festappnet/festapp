@@ -2794,6 +2794,8 @@
     "addKey": "Sicherheitsschlüssel hinzufügen",
     "addPasskey": "Passkey hinzufügen",
     "freshProof": "Bestätigen Sie Ihre Identität, bevor Sie die Kontosicherheit ändern.",
+    "passwordProofHint": "Geben Sie das Passwort für Ihr Konto bei {appName} ein, um die Änderung zu bestätigen.",
+    "verifyIdentity": "Identität bestätigen",
     "verified": "Identität bestätigt. Wählen Sie die Änderung erneut aus.",
     "qr": "QR-Code zur Einrichtung der Authenticator-App",
     "manual": "Schlüssel zur manuellen Eingabe",

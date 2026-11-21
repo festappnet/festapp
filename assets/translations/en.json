@@ -4749,6 +4749,8 @@
     "addKey": "Add security key",
     "addPasskey": "Add passkey",
     "freshProof": "Verify your identity before changing account security.",
+    "passwordProofHint": "Enter your {appName} account password to confirm that you requested this change.",
+    "verifyIdentity": "Verify identity",
     "verified": "Identity verified. Select the change again.",
     "qr": "Authenticator setup QR code",
     "manual": "Setup key for manual entry",

@@ -5,9 +5,10 @@ import { LocalizationService } from '../../services/localization_service.js';
 import { PasskeyService } from '../../services/passkey_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 
-const text = key => LocalizationService.tr(`AccountSecurity.${key}`);
+const text = (key, args) => LocalizationService.tr(`AccountSecurity.${key}`, args);
 const typeOf = factor => factor.factor_type;
 const otp = /^[0-9]{6}$/;
+const enrollmentLabels = { totp: 'addTotp', webauthn: 'addKey', passkey: 'addPasskey' };
 
 export class AccountSecurityPanel {
     constructor(client, userId) {
@@ -83,6 +84,7 @@ export class AccountSecurityPanel {
             await AuthService.verifyLogin({ session, factors: [kind] }, kind.id, input);
         }
         this.proof = null;
+        this.proofEnrollmentMethod = null;
         this.notice = text('verified');
         await this.load();
     }
@@ -98,7 +100,10 @@ export class AccountSecurityPanel {
 
     async enroll(method, signal) {
         const session = await this.requireFresh();
-        if (!session) return;
+        if (!session) {
+            this.proofEnrollmentMethod = method;
+            return;
+        }
         const settings = { token: session.access_token, signal };
         const receipt = await PasskeyService.registrationReceipt(method, settings);
         await this.session(session);
@@ -251,7 +256,7 @@ export class AccountSecurityPanel {
                 input.maxLength = 120;
             }
             const submit = button(type === 'text' ? CommonStrings.googleVerifyCode
-                : type === 'name' ? CommonStrings.save : CommonStrings.signIn, null, wrapper);
+                : type === 'name' ? CommonStrings.save : text('verifyIdentity'), null, wrapper);
             submit.type = 'submit';
             wrapper.onsubmit = event => {
                 event.preventDefault();
@@ -277,8 +282,12 @@ export class AccountSecurityPanel {
             return;
         }
         if (this.proof) {
+            if (this.proofEnrollmentMethod) {
+                add('h3', text(enrollmentLabels[this.proofEnrollmentMethod]));
+            }
             add('p', text('freshProof'));
             if (this.passwordProof || this.factors.length === 0) {
+                add('p', text('passwordProofHint', { appName: AppConfig.appName }));
                 form(CommonStrings.password, 'password', (value, signal) => this.verifyProof('password', value, signal));
                 const passkey = this.methods.passkey;
                 if (!this.passwordProof && this.passkeys?.length && passkey?.offer && passkey.signIn && PasskeyService.credentialSupport()) {
@@ -295,7 +304,12 @@ export class AccountSecurityPanel {
                     }
                 }
             }
-            button(CommonStrings.cancel, () => { this.proof = null; this.passwordProof = false; this.render(); });
+            button(CommonStrings.cancel, () => {
+                this.proof = null;
+                this.proofEnrollmentMethod = null;
+                this.passwordProof = false;
+                this.render();
+            });
             return;
         }
         for (const factor of this.factors) {
@@ -341,7 +355,7 @@ export class AccountSecurityPanel {
                 }
             }
         }
-        for (const [method, label] of [['totp', 'addTotp'], ['webauthn', 'addKey'], ['passkey', 'addPasskey']]) {
+        for (const [method, label] of Object.entries(enrollmentLabels)) {
             if (eligible(method) && (method === 'totp' || PasskeyService.supportsRegistration())) {
                 button(text(label), () => this.run(signal => this.enroll(method, signal)));
             }
