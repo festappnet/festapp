@@ -19,7 +19,7 @@ export class PasskeyService {
         };
     }
 
-    static async methods() {
+    static async methods(token) {
         if (!SupabaseService.endpoint) return {};
         const channel = this.channel();
         const query = new URLSearchParams({
@@ -28,7 +28,7 @@ export class PasskeyService {
             redirect_uri: channel.redirectUri,
         });
         try {
-            const { methods } = await this.request(`festapp/mfa/channel?${query}`);
+            const { methods } = await this.request(`festapp/mfa/channel?${query}`, undefined, { token });
             return methods ?? {};
         } catch {
             return {};

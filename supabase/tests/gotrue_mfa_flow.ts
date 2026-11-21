@@ -1068,8 +1068,28 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
         const settingsUser = settingsActor.data.user!.id;
         await sql(`INSERT INTO public.user_info(id, organization, email_readonly)
             VALUES ('${settingsUser}', ${organization}, '${settingsEmail.split('+')[1]}');
+            SELECT public.set_totp_pilot_user_v1('${webClientId}', '${settingsUser}');
             SELECT public.set_mfa_channel_method_v1('${webClientId}', 'totp', true, true, false);
             SELECT public.set_mfa_channel_method_v1('${webClientId}', 'webauthn', true, true, false);`);
+        const channelUrl = new URL(strict + 'festapp/mfa/channel');
+        channelUrl.search = new URLSearchParams({
+            client_id: webClientId, organization: String(organization), redirect_uri: redirectUri,
+        }).toString();
+        const pilotOptions = await fetch(channelUrl, {
+            method: 'OPTIONS', headers: {Origin: origin, 'Access-Control-Request-Headers': 'apikey,authorization'},
+        });
+        ensure(pilotOptions.status === 204 && pilotOptions.headers.get('access-control-allow-headers')?.includes('authorization'),
+            'Pilot settings must support a cross-origin signed channel lookup');
+        for (const headers of [new Headers({Origin: origin}), new Headers({
+            Origin: origin, Authorization: `Bearer ${upgraded.access_token}`,
+        })]) {
+            const policy = await requireJson(await fetch(channelUrl, {headers}), 'TOTP pilot visibility');
+            ensure(!policy.methods.totp.offer && !policy.methods.totp.registration &&
+                !('registrationPilotUser' in policy.methods.totp), 'Only the pilot subject may discover the TOTP offer');
+        }
+        const outsidePilot = await request('start', { ...startInfo, clientId: webClientId, method: 'totp' }, upgraded.access_token);
+        ensure(outsidePilot.status === 403 && (await outsidePilot.json()).code === 'registration_unavailable',
+            'The pilot must also reject a strong authenticated non-pilot account at the direct endpoint');
         const settings = await ceremony('client_sign_in', {
             auth: new URL(strict).origin, rest: base, organization, anonKey, settingsCredentials,
         });

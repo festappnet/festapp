@@ -138,9 +138,10 @@ class AccountMfaSettingsService {
     return Map<String, dynamic>.from(result);
   }
 
-  Future<Map<String, dynamic>> _channel({bool anonymous = false}) => _request(
+  Future<Map<String, dynamic>> _channel({bool anonymous = false, Session? session}) => _request(
     'channel',
     anonymous: anonymous,
+    session: session,
     query: {
       'client_id': _clientId,
       'organization': '$_organization',
@@ -159,7 +160,7 @@ class AccountMfaSettingsService {
         .toList();
     final registrationMethods = <String>{};
     try {
-      final channel = await _channel();
+      final channel = await _channel(session: session);
       for (final method in [
         'totp',
         if (supportsWebAuthnCreation) ...['webauthn', 'passkey'],

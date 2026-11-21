@@ -198,8 +198,10 @@ CREATE TABLE IF NOT EXISTS public.account_mfa_channel_methods (
   sign_in_enabled boolean NOT NULL DEFAULT false,
   registration_revision bigint NOT NULL DEFAULT 1,
   sign_in_revision bigint NOT NULL DEFAULT 1,
+  registration_pilot_user uuid,
   PRIMARY KEY (client_id, method),
-  CHECK (method = 'passkey' OR NOT sign_in_enabled)
+  CHECK (method = 'passkey' OR NOT sign_in_enabled),
+  CHECK (method = 'totp' OR registration_pilot_user IS NULL)
 );
 ALTER TABLE public.account_mfa_channel_methods ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.account_mfa_channel_methods FROM PUBLIC, anon, authenticated, service_role;
@@ -227,6 +229,7 @@ BEGIN
       SELECT jsonb_object_agg(method.key, jsonb_build_object(
         'offer', coalesce(policy.offer_enabled, false),
         'registration', coalesce(policy.registration_enabled, false),
+        'registrationPilotUser', policy.registration_pilot_user,
         'signIn', coalesce(policy.sign_in_enabled, false),
         'registrationRevision', coalesce(policy.registration_revision, 0),
         'signInRevision', coalesce(policy.sign_in_revision, 0)))
@@ -268,6 +271,37 @@ SET search_path = public, extensions AS $$
 $$;
 
 REVOKE ALL ON FUNCTION public.set_mfa_channel_method_v1(text,text,boolean,boolean,boolean)
+  FROM PUBLIC, anon, authenticated, service_role;
+
+-- A deleted pilot account stays restricted until the owner changes policy.
+CREATE OR REPLACE FUNCTION public.set_totp_pilot_user_v1(p_client_id text, p_user uuid)
+RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path = public, extensions AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT FROM public.external_login_clients c
+    WHERE c.client_id = p_client_id AND c.provisioned AND (
+      p_user IS NULL OR EXISTS (SELECT FROM public.user_info u
+        WHERE u.id = p_user AND u.organization = c.organization))
+  ) THEN RAISE EXCEPTION 'invalid_totp_pilot_account'; END IF;
+
+  INSERT INTO public.account_mfa_channel_methods (client_id, method, registration_pilot_user)
+  VALUES (p_client_id, 'totp', p_user)
+  ON CONFLICT (client_id, method) DO UPDATE SET
+    registration_pilot_user = excluded.registration_pilot_user,
+    registration_revision = account_mfa_channel_methods.registration_revision
+      + (account_mfa_channel_methods.registration_pilot_user IS DISTINCT FROM excluded.registration_pilot_user)::int;
+END $$;
+
+REVOKE ALL ON FUNCTION public.set_totp_pilot_user_v1(text,uuid)
+  FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.mfa_registration_actor_matches_v1(p_method jsonb, p_user uuid)
+RETURNS boolean LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path = public, extensions AS $$
+  SELECT p_method->>'registrationPilotUser' IS NULL
+    OR p_method->>'registrationPilotUser' = p_user::text;
+$$;
+
+REVOKE ALL ON FUNCTION public.mfa_registration_actor_matches_v1(jsonb,uuid)
   FROM PUBLIC, anon, authenticated, service_role;
 
 -- SOURCE: user_permissions/account_mfa_registration_handoff.sql
@@ -336,6 +370,7 @@ BEGIN
   END IF;
   v_policy := public.resolve_mfa_channel_policy_v1(p_client_id, p_organization, p_origin, p_redirect_uri);
   IF v_policy->'methods'->p_method->'registration' IS DISTINCT FROM 'true'::jsonb
+    OR (v_recovery IS NULL AND NOT public.mfa_registration_actor_matches_v1(v_policy->'methods'->p_method, p_user))
     OR NOT EXISTS (
       SELECT FROM auth.sessions session
       JOIN public.user_info profile ON profile.id = session.user_id
@@ -449,7 +484,7 @@ CREATE OR REPLACE FUNCTION public.advance_mfa_factor_registration_v1(
 )
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, extensions AS $$
-DECLARE handoff public.account_mfa_registration_handoffs%rowtype;
+DECLARE handoff public.account_mfa_registration_handoffs%rowtype; method_policy jsonb;
 BEGIN
   PERFORM public.require_service_role();
   IF p_method IS NULL OR p_method NOT IN ('totp', 'webauthn') THEN
@@ -471,11 +506,14 @@ BEGIN
     SELECT FROM public.account_mfa_recovery_holds WHERE user_id = p_user
   ) THEN RETURN false;
   END IF;
-  IF p_operation IN ('enroll', 'challenge', 'verify')
-    AND public.resolve_mfa_channel_policy_v1(handoff.client_id, handoff.organization, handoff.origin, handoff.redirect_uri)
-          ->'methods'->p_method @> jsonb_build_object(
-            'registration', true, 'registrationRevision', handoff.registration_revision) IS DISTINCT FROM true THEN
-    RETURN false;
+  IF p_operation IN ('enroll', 'challenge', 'verify') THEN
+    method_policy := public.resolve_mfa_channel_policy_v1(handoff.client_id, handoff.organization, handoff.origin, handoff.redirect_uri)
+      ->'methods'->p_method;
+    IF method_policy @> jsonb_build_object(
+        'registration', true, 'registrationRevision', handoff.registration_revision) IS DISTINCT FROM true
+      OR (NOT p_recovery AND NOT public.mfa_registration_actor_matches_v1(method_policy, p_user)) THEN
+      RETURN false;
+    END IF;
   END IF;
 
   CASE p_operation

@@ -12,10 +12,11 @@ import (
 const mfaChannelRoute = publicAuthPrefix + "/festapp/mfa/channel"
 
 type channelMethod struct {
-	Offer          bool  `json:"offer"`
-	Registration   bool  `json:"registration"`
-	SignIn         bool  `json:"signIn"`
-	SignInRevision int64 `json:"signInRevision,omitempty"`
+	Offer                 bool   `json:"offer"`
+	Registration          bool   `json:"registration"`
+	SignIn                bool   `json:"signIn"`
+	SignInRevision        int64  `json:"signInRevision,omitempty"`
+	RegistrationPilotUser string `json:"registrationPilotUser,omitempty"`
 }
 
 type channelPolicy struct {
@@ -45,8 +46,8 @@ func newChannelStore(origin *url.URL, token string) *channelStore {
 }
 
 func (store *channelStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", http.MethodGet)
+	if r.Method != http.MethodGet && r.Method != http.MethodOptions {
+		w.Header().Set("Allow", "GET, OPTIONS")
 		authError(w, http.StatusMethodNotAllowed, "method_not_allowed")
 		return
 	}
@@ -72,15 +73,42 @@ func (store *channelStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		authError(w, http.StatusNotFound, "mfa_channel_not_found")
 		return
 	}
+	setRegistrationHeaders(w, origin)
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Methods", http.MethodGet)
+		w.Header().Set("Access-Control-Allow-Headers", "apikey, authorization")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	for name, method := range policy.Methods {
+		if method.RegistrationPilotUser != "" {
+			var actor struct {
+				ID string `json:"id"`
+			}
+			recovery := false
+			if bearer, ok := bearerToken(r.Header.Get("Authorization")); ok {
+				status, body := store.providerRequest(r, http.MethodGet, "/user", nil)
+				if status == http.StatusOK {
+					_ = json.Unmarshal(body, &actor)
+				}
+				if actor.ID != "" && actor.ID != method.RegistrationPilotUser {
+					var proof registrationActor
+					recovery = store.rpc(r.Context(), "get_mfa_recovery_registration_actor_v1", bearer,
+						map[string]any{"p_organization": organization}, &proof) == nil &&
+						proof.Decision == "allowed" && proof.UserID == actor.ID
+				}
+			}
+			if actor.ID != method.RegistrationPilotUser && !recovery {
+				method.Offer = false
+				method.Registration = false
+			}
+			method.RegistrationPilotUser = ""
+		}
 		method.SignIn = method.SignIn && store.passkeySeal != nil
 		method.SignInRevision = 0
 		policy.Methods[name] = method
 	}
-	w.Header().Set("Vary", "Origin")
-	w.Header().Set("Access-Control-Allow-Origin", origin)
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
 	_ = json.NewEncoder(w).Encode(policy)
 }
 

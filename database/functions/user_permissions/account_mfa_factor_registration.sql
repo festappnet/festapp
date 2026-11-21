@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION public.advance_mfa_factor_registration_v1(
 )
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, extensions AS $$
-DECLARE handoff public.account_mfa_registration_handoffs%rowtype;
+DECLARE handoff public.account_mfa_registration_handoffs%rowtype; method_policy jsonb;
 BEGIN
   PERFORM public.require_service_role();
   IF p_method IS NULL OR p_method NOT IN ('totp', 'webauthn') THEN
@@ -48,11 +48,14 @@ BEGIN
     SELECT FROM public.account_mfa_recovery_holds WHERE user_id = p_user
   ) THEN RETURN false;
   END IF;
-  IF p_operation IN ('enroll', 'challenge', 'verify')
-    AND public.resolve_mfa_channel_policy_v1(handoff.client_id, handoff.organization, handoff.origin, handoff.redirect_uri)
-          ->'methods'->p_method @> jsonb_build_object(
-            'registration', true, 'registrationRevision', handoff.registration_revision) IS DISTINCT FROM true THEN
-    RETURN false;
+  IF p_operation IN ('enroll', 'challenge', 'verify') THEN
+    method_policy := public.resolve_mfa_channel_policy_v1(handoff.client_id, handoff.organization, handoff.origin, handoff.redirect_uri)
+      ->'methods'->p_method;
+    IF method_policy @> jsonb_build_object(
+        'registration', true, 'registrationRevision', handoff.registration_revision) IS DISTINCT FROM true
+      OR (NOT p_recovery AND NOT public.mfa_registration_actor_matches_v1(method_policy, p_user)) THEN
+      RETURN false;
+    END IF;
   END IF;
 
   CASE p_operation

@@ -63,6 +63,7 @@ BEGIN
   END IF;
   v_policy := public.resolve_mfa_channel_policy_v1(p_client_id, p_organization, p_origin, p_redirect_uri);
   IF v_policy->'methods'->p_method->'registration' IS DISTINCT FROM 'true'::jsonb
+    OR (v_recovery IS NULL AND NOT public.mfa_registration_actor_matches_v1(v_policy->'methods'->p_method, p_user))
     OR NOT EXISTS (
       SELECT FROM auth.sessions session
       JOIN public.user_info profile ON profile.id = session.user_id

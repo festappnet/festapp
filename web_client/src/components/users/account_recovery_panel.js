@@ -12,7 +12,7 @@ export class AccountRecoveryPanel extends HTMLElement {
         this.prompt = new AbortController();
         this.render();
         if (!verification.canReplace) return;
-        void PasskeyService.methods().then(methods => {
+        void PasskeyService.methods(verification.session.access_token).then(methods => {
             if (this.prompt.signal.aborted) return;
             this.methods = [
                 methods.totp?.offer && methods.totp.registration && ['totp', text('totp')],

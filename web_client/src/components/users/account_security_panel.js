@@ -42,7 +42,7 @@ export class AccountSecurityPanel {
         const session = await this.session(expected);
         const [result, methods, passkeys] = await Promise.all([
             this.client.auth.getUser(session.access_token),
-            PasskeyService.methods(),
+            PasskeyService.methods(session.access_token),
             PasskeyService.storedPasskeys({ token: session.access_token }),
         ]);
         await this.session(session);
