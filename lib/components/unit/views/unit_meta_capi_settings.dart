@@ -283,6 +283,18 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     String withStatusDate(String message, DateTime? at) => at == null
         ? message
         : '$message · ${DateFormat.yMd(context.locale.toString()).add_jm().format(at.toLocal())}';
+    final tokenHint = data['token_hint']?.toString() ?? '';
+    final tokenChangedAt = DateTime.tryParse(
+      data['token_changed_at']?.toString() ?? '',
+    );
+    // Connectors saved before hints existed keep the generic saved text.
+    final savedTokenText = tokenHint.isEmpty || tokenChangedAt == null
+        ? MetaCapiStrings.saved
+        : MetaCapiStrings.savedHint(
+            tokenHint,
+            DateFormat.yMd(context.locale.toString())
+                .format(tokenChangedAt.toLocal()),
+          );
     final enabled = data['enabled'] == true;
     final websiteReady = data['website_ready'] == true;
     final hasReadyForm = forms.any(
@@ -401,9 +413,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
               decoration: InputDecoration(
                 labelText: MetaCapiStrings.token,
                 counterText: '',
-                helperText: data['token_saved'] == true
-                    ? MetaCapiStrings.saved
-                    : null,
+                helperText: data['token_saved'] == true ? savedTokenText : null,
                 helperMaxLines: 4,
               ),
               validator: (v) {

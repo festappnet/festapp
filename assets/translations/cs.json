@@ -5916,6 +5916,7 @@
     "enabled": "Odesílat zaplacené nákupy do Mety",
     "token": "Přístupový token",
     "saved": "Token je uložen. Nový vložte jen při výměně.",
+    "savedHint": "Uložený token …{hint} · uložen {date}. Nový vložte jen při výměně.",
     "enableFormMeasurement": "Zapněte Meta CAPI a měření alespoň u jednoho formuláře.",
     "configureWebsiteConsent": "Nastavte souhlas pro vybraný web v sekci událostí a souhlasu.",
     "formMeasurementRequired": "Dokončete nastavení měření tohoto formuláře.",

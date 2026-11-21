@@ -363,7 +363,10 @@ website consent and enable measurement and Meta CAPI on each form you want to
 track. In Meta
 Events Manager, select the dataset → Settings → Conversions API → manual setup
 → Generate access token; paste it into the write-only token field and save.
-The saved token is never displayed. To replace it, enter and save a new token.
+The full saved token is never displayed. To replace it, enter and save a new token.
+The field shows only the token's last ten characters and save date, stored when
+it was saved; Meta tokens share their prefix and often their final characters.
+Tokens saved before this hint existed show no suffix until replaced.
 Under the dataset's Test events tab, copy the server test event code. While the
 code is present, purchases go only to Test events. Remove it after testing.
 See [Meta's setup instructions](https://developers.facebook.com/docs/marketing-api/conversions-api/get-started/).

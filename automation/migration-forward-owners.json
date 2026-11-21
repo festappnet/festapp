@@ -894,6 +894,14 @@
       "sources": [
         "user_permissions/account_passkey_pilot.sql"
       ]
+    },
+    {
+      "migration": "20261121160000_meta_capi_token_hint.sql",
+      "active": true,
+      "header": "-- Show organizers a masked suffix of the saved Meta CAPI token; existing connectors keep no hint.\nALTER TABLE analytics.meta_purchase_connectors ADD COLUMN IF NOT EXISTS token_hint text CHECK(token_hint ~ '^[^[:cntrl:]]{1,10}$');",
+      "sources": [
+        "eshop_forms/meta_purchase_settings.sql"
+      ]
     }
   ]
 }

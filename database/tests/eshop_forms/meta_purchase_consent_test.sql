@@ -481,7 +481,7 @@ END $$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(NULL); other jsonb:=pg_temp.fixture(NULL);
  un bigint:=(x->>'unit')::bigint; org bigint:=(x->>'organization')::bigint;
- fid bigint:=(x->>'form')::bigint; result jsonb; old_revision uuid; secret_id uuid;
+ fid bigint:=(x->>'form')::bigint; result jsonb; old_revision uuid; secret_id uuid; changed_time timestamptz;
 BEGIN
  PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
  BEGIN PERFORM public.get_unit_meta_purchase(un); RAISE EXCEPTION 'non-admin read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
@@ -506,6 +506,7 @@ BEGIN
  old_revision:=(result->>'revision')::uuid;
  PERFORM assert_true(result->'websites' ? 'https://tickets.example','saved website is selectable without a runtime deployment');
  PERFORM assert_false((result->>'token_saved')::boolean,'new connector has no token');
+ PERFORM assert_true(result->>'token_hint' IS NULL AND result->>'token_changed_at' IS NULL,'settings without a token store no hint');
  BEGIN PERFORM public.save_unit_meta_purchase(un,'123456','https://attacker.example',NULL,true); RAISE EXCEPTION 'foreign origin accepted'; EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  BEGIN PERFORM public.save_unit_meta_purchase(un,'654321','https://tickets.example','TEST42',true,E'secret\ntoo-short'); RAISE EXCEPTION 'invalid token accepted';
  EXCEPTION WHEN invalid_parameter_value THEN PERFORM assert_true(SQLERRM='Invalid Meta CAPI token','token validation does not echo input'); END;
@@ -518,9 +519,27 @@ BEGIN
  result:=public.get_unit_meta_purchase(un);
  PERFORM assert_true(result->'paused_at'='null'::jsonb AND result->'token_saved'='true'::jsonb,'saving token clears pause');
  PERFORM assert_false(result ? 'vault_secret' OR result ? 'token' OR result::text LIKE '%secret-value-%','projection contains no credential');
+ PERFORM assert_eq(result->>'token_hint',right(repeat('secret-value-',3),10),'saved token exposes only its last ten characters');
+ PERFORM assert_true(result->>'token_changed_at' IS NOT NULL,'saved token records its change time');
+ changed_time:=(result->>'token_changed_at')::timestamptz;
+ BEGIN
+  UPDATE analytics.meta_purchase_connectors SET token_hint=repeat('x',11) WHERE unit=un;
+  RAISE EXCEPTION 'overlong token hint accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ BEGIN
+  UPDATE analytics.meta_purchase_connectors SET token_hint=E'abc\ndef' WHERE unit=un;
+  RAISE EXCEPTION 'control character in token hint accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
  result:=public.save_unit_meta_purchase(un,'654321','https://tickets.example',NULL,true,repeat('replacement-',3));
  PERFORM assert_true((SELECT vault_secret=secret_id FROM analytics.meta_purchase_connectors WHERE unit=un),'token replacement reuses secret');
  PERFORM assert_true((result->>'revision')::uuid<>old_revision,'dataset change advances revision');
+ PERFORM assert_eq(result->>'token_hint','placement-','token replacement updates the hint');
+ PERFORM assert_true((result->>'token_changed_at')::timestamptz>changed_time,'token replacement advances its change time');
+ PERFORM assert_false(result::text LIKE '%'||repeat('replacement-',3)||'%','projection never contains the full token');
+ changed_time:=(result->>'token_changed_at')::timestamptz;
+ result:=public.save_unit_meta_purchase(un,'654321','https://tickets.example',NULL,true);
+ PERFORM assert_true(result->>'token_hint'='placement-' AND (result->>'token_changed_at')::timestamptz=changed_time,
+  'saving settings without a token keeps the saved hint and change time');
  PERFORM public.set_form_meta_purchase(un,fid,true);
  BEGIN PERFORM public.set_form_meta_purchase(un,(other->>'form')::bigint,true); RAISE EXCEPTION 'foreign form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  PERFORM assert_eq((SELECT capi_unit FROM public.form_measurement_decision_internal(fid)),un,'configured organizer selected');
@@ -537,6 +556,8 @@ BEGIN
  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_connectors WHERE unit=un),'disconnect removes connector');
  PERFORM assert_false(EXISTS(SELECT FROM vault.secrets WHERE id=secret_id),'disconnect erases Vault secret');
  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_forms WHERE unit=un),'disconnect removes form switches');
+ result:=public.get_unit_meta_purchase(un);
+ PERFORM assert_false(result ? 'token_hint' OR result ? 'token_changed_at','disconnect clears the token hint');
 END $$;
 -- Disconnect after disabling the connector follows the same prepared receipt fence as consent withdrawal.
 DO $$

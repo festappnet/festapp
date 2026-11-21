@@ -17,6 +17,8 @@ BEGIN
   RAISE insufficient_privilege USING MESSAGE='Meta CAPI access denied'; END IF;
  SELECT jsonb_build_object('dataset',c.dataset,'website_origin',c.website_origin,'test_event_code',c.test_event_code,
   'enabled',c.enabled,'paused_at',c.paused_at,'token_saved',c.vault_secret IS NOT NULL,'revision',c.revision,
+  -- Only the stored masked suffix is projected; reads never decrypt the Vault secret.
+  'token_hint',c.token_hint,'token_changed_at',c.token_changed_at,
   'website_ready',coalesce(c.website_origin=ANY(public.unit_meta_purchase_origins_internal(p_unit)) AND (
    c.website_origin=(SELECT rtrim(org.data->>'DEFAULT_URL','/') FROM public.units u
     JOIN public.organizations org ON org.id=u.organization WHERE u.id=p_unit)
@@ -85,13 +87,17 @@ BEGIN
   UPDATE analytics.meta_purchase_connectors SET vault_secret=secret_id WHERE unit=p_unit AND vault_secret IS NULL;
  END IF;
  INSERT INTO analytics.meta_purchase_connectors AS c
-  (unit,dataset,website_origin,test_event_code,enabled,vault_secret,token_changed_at)
+  (unit,dataset,website_origin,test_event_code,enabled,vault_secret,token_changed_at,token_hint)
  VALUES(p_unit,p_dataset,p_website_origin,nullif(p_test_event_code,''),p_enabled,secret_id,
-  CASE WHEN p_token IS NOT NULL THEN clock_timestamp() END)
+  CASE WHEN p_token IS NOT NULL THEN clock_timestamp() END,
+  -- Meta tokens share their prefix and often their last characters; ten
+  -- trailing characters let organizers tell saved tokens apart.
+  CASE WHEN p_token IS NOT NULL THEN right(p_token,10) END)
  ON CONFLICT(unit) DO UPDATE SET dataset=EXCLUDED.dataset,website_origin=EXCLUDED.website_origin,
   test_event_code=EXCLUDED.test_event_code,enabled=EXCLUDED.enabled,
   paused_at=CASE WHEN p_token IS NULL THEN c.paused_at END,
   token_changed_at=coalesce(EXCLUDED.token_changed_at,c.token_changed_at),
+  token_hint=CASE WHEN p_token IS NOT NULL THEN EXCLUDED.token_hint ELSE c.token_hint END,
   revision=CASE WHEN (c.dataset,c.website_origin,c.test_event_code)
    IS DISTINCT FROM (EXCLUDED.dataset,EXCLUDED.website_origin,EXCLUDED.test_event_code) THEN gen_random_uuid() ELSE c.revision END;
  RETURN public.get_unit_meta_purchase(p_unit);
