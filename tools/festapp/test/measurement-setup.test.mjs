@@ -56,7 +56,9 @@ test('new setup operations use organizer settings scopes, delegated access and n
  const label=MCP_PERMISSIONS['festapp:unit-approvals:request'].label;
  for(const language of EMBED_LANGUAGES){
   const text=JSON.parse(readFileSync(new URL(`assets/translations/${language}.json`,root),'utf8')).McpConnection[label];
-  assert(typeof text==='string'&&/Meta CAPI/.test(text),language);
+  assert.equal(typeof text,'string',language);
+  assert(text.trim().length>0,language);
+  assert.doesNotMatch(text,/Meta CAPI/i,language);
  }
  assert.deepEqual(scopesForOperation('forms.embedCode'),['festapp:ticket-layouts:read','festapp:forms:read','festapp:forms:write']);
  for(const id of [...reads,...writes,'forms.embedCode']){
