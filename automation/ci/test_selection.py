@@ -107,17 +107,23 @@ class CmsDependencyOwnershipTest(unittest.TestCase):
         for backend in ['seat-google-auth','seat-notifications','occasion-lifecycle']:
             self.assertIn(backend, selection.unit_owners(sql,'database-regressions',CONTRACT))
 
-    def test_mcp_database_groups_follow_backend_inputs_without_checkout_ui(self):
+    def test_mcp_database_groups_follow_their_backend_and_browser_inputs(self):
         for lane, groups in (
             ('mcp-database-contracts', {'seat-mcp-authorization','seat-mcp-contracts-1'}),
             ('database-service-regressions', {'seat-mcp-contracts-2'}),
         ):
-            self.assertTrue(groups.isdisjoint(selection.unit_owners('web_client/src/components/forms/order_result.js',lane,CONTRACT)))
             for path in ['database/functions/eshop/finalize_ticket_order.sql',
                          'tools/festapp/src/operations.mjs',
                          'tools/festapp/scripts/test-postgres.mjs',
                          'database/tests/helpers/authorization_context_reference.sql']:
                 self.assertTrue(groups.issubset(selection.unit_owners(path,lane,CONTRACT)),path)
+        # The registered Auth browser fixture loads AuthService, RouterService
+        # and the public form route. The MCP-only lane has no browser fixture.
+        order_result = 'web_client/src/components/forms/order_result.js'
+        self.assertIn('seat-mcp-contracts-2',
+                      selection.unit_owners(order_result, 'database-service-regressions', CONTRACT))
+        self.assertTrue({'seat-mcp-authorization', 'seat-mcp-contracts-1'}.isdisjoint(
+            selection.unit_owners(order_result, 'mcp-database-contracts', CONTRACT)))
 
 
 class VersionProjectionTest(unittest.TestCase):

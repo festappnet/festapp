@@ -3446,6 +3446,82 @@
     "b9a1bec17fab6f0c535c10e3f7da6b43c4a39ff3abf73c8b9975e44d9ee71c03": {
       "signature": "public.confirm_order_admission_change_v1(bigint,bigint,jsonb,jsonb,text,uuid)",
       "source": "database/functions/eshop_orders/order_admission_change.sql"
+    },
+    "b6c05570ec7262eb6ab6f0441eb7f79dec375f10e793d5250b3062bc737a5959": {
+      "signature": "public.get_account_assurance_v1(bigint,boolean)",
+      "source": "database/functions/user_permissions/session_assurance.sql"
+    },
+    "78730b7e250589180b2857b37d7f630d5d776284d010e37e84818687c37a61f6": {
+      "signature": "public.resolve_mfa_channel_policy_v1(text,bigint,text,text)",
+      "source": "database/functions/user_permissions/account_mfa_channel_policy.sql"
+    },
+    "d2e4f36439cd050daa73bf7448993876605ebad9653a08c150407a26633e55c7": {
+      "signature": "public.issue_mfa_registration_handoff_v1(uuid,uuid,text,bigint,text,text,text,text,text,text)",
+      "source": "database/functions/user_permissions/account_mfa_registration_handoff.sql"
+    },
+    "e793bd1986ba7a7bfa876be9ca8bc58525975e51db85ccea335c3a0a7c7b99d8": {
+      "signature": "public.claim_mfa_registration_handoff_v1(uuid,uuid,bigint,text,text,text,boolean)",
+      "source": "database/functions/user_permissions/account_mfa_registration_handoff.sql"
+    },
+    "3d5f1089964d9b61d86d330bb350da8011246bbfb0305854c073892511bf1806": {
+      "signature": "public.advance_mfa_factor_registration_v1(uuid,uuid,uuid,text,text,text,uuid,boolean)",
+      "source": "database/functions/user_permissions/account_mfa_factor_registration.sql"
+    },
+    "f636e543826857b9408febdb59b2bd4ede4bb5af1354037e6790b2b3a2165e6a": {
+      "signature": "public.begin_account_mfa_factor_removal_v1(uuid,uuid,uuid,boolean)",
+      "source": "database/functions/user_permissions/account_mfa_factor_removal.sql"
+    },
+    "2d4eae5a30f0600f33568b2c91d4610ac8212d91fa64a224987bb572c841f6b5": {
+      "signature": "public.begin_account_passkey_removal_v1(uuid,uuid,uuid,boolean)",
+      "source": "database/functions/user_permissions/account_mfa_factor_removal.sql"
+    },
+    "21827d565440870720dd6d0cfb29aa193faab66c87a7089518a51fdf7d28f744": {
+      "signature": "public.finish_account_mfa_factor_removal_v1(uuid)",
+      "source": "database/functions/user_permissions/account_mfa_factor_removal.sql"
+    },
+    "0da7c73786c68980d444c63e13632d6ee8b9fe9508a2b44ba0f47954db06856b": {
+      "signature": "public.cancel_account_mfa_factor_removal_v1(uuid)",
+      "source": "database/functions/user_permissions/account_mfa_factor_removal.sql"
+    },
+    "de6ebf1c4ac6ee070c08fb3f919276976edac2cc61a80fd79cad971af478d6f7": {
+      "signature": "public.advance_passkey_registration_v1(uuid,uuid,uuid,text,text,uuid,uuid)",
+      "source": "database/functions/user_permissions/account_passkey_registration.sql"
+    },
+    "024a9168378208242ffb3515ed1931a080f3993adba7f609152b09ada472c961": {
+      "signature": "public.issue_passkey_sign_in_v1(uuid,text,bigint,text,text,bigint,text)",
+      "source": "database/functions/user_permissions/account_passkey_sign_in.sql"
+    },
+    "2ce7e4c927ff140175260e3be0e2ce1897d748ddc9d28118183166c0acdfa4a0": {
+      "signature": "public.reserve_passkey_sign_in_v1(uuid,text)",
+      "source": "database/functions/user_permissions/account_passkey_sign_in.sql"
+    },
+    "f525545530e5ac4631debd9539abed0414a0e7a59fad5a096b47142e314ff18e": {
+      "signature": "public.complete_passkey_sign_in_v1(uuid,text,uuid,uuid,text,text)",
+      "source": "database/functions/user_permissions/account_passkey_sign_in.sql"
+    },
+    "c8910759abfd4310a49493850320310f513ac0c242e11e8f33d049506296f172": {
+      "signature": "public.exchange_passkey_sign_in_v1(text,bigint,text,text,text)",
+      "source": "database/functions/user_permissions/account_passkey_sign_in.sql"
+    },
+    "e4adddb42d685513ffe9150a470aa6650e7fae62312ae0eee0dd92d92289c771": {
+      "signature": "public.get_mfa_recovery_registration_actor_v1(bigint)",
+      "source": "database/functions/user_permissions/account_mfa_recovery.sql"
+    },
+    "43353bd8ac4f45febba2304c005b3577c7eae3505e748104308b5ec3dba1262f": {
+      "signature": "public.issue_account_private_image_grant_v1(text,text,integer)",
+      "source": "database/functions/user_permissions/account_private_image_grants.sql"
+    },
+    "52d8711b49af7b44a3c27f8d4c6860b84d50601938fae994ff6557f5d1bf03ed": {
+      "signature": "public.redeem_account_private_image_grant_v1(text,text,text)",
+      "source": "database/functions/user_permissions/account_private_image_grants.sql"
+    },
+    "48bcdb739905a42eca02a253d95644d7142887e2542bbac6d86bdf9434be199f": {
+      "signature": "public.can_use_existing_mfa_factor_v1(uuid)",
+      "source": "database/functions/user_permissions/public_auth_operation_policy.sql"
+    },
+    "10f791ffe7d7f37568ab215473d0baf7244f4f4ff183f426070686ecbb9f3dc6": {
+      "signature": "public.can_update_public_auth_account_v1()",
+      "source": "database/functions/user_permissions/public_auth_operation_policy.sql"
     }
   }
 }
