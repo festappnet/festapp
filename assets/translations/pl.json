@@ -524,6 +524,8 @@
     "capacityRetryLater": "Spróbuj ponownie później."
   },
   "FeatureFormSettings": {
+    "labelPaymentQrInEmail": "Wyświetlaj kod QR do płatności w e-mailach",
+    "helperPaymentQrInEmail": "Po wyłączeniu kod QR nadal można pobrać z załącznika.",
     "purchaseTiming": "Zdarzenie zakupu",
     "purchaseTimingOrder": "Przy złożeniu zamówienia",
     "purchaseTimingPaid": "Po pełnej zapłacie",

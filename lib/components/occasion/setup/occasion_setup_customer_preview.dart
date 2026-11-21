@@ -167,18 +167,32 @@ class _CustomerPreviewState extends State<OccasionSetupCustomerPreview> {
         : Map<String, dynamic>.from((await Supabase.instance.client.functions
                 .invoke('send-custom-email', body: input))
             .data as Map);
-    return [
-      for (final message in result['messages'] as List)
-        Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: EmailReceivedMessage(
-                recipientLabel: fields['email']?.isNotEmpty == true
-                    ? fields['email']
-                    : 'preview@example.invalid',
-                senderAddress: message['senderAddress'],
-                subject: message['subject'],
-                html: message['html']))
-    ];
+    return (result['messages'] as List).map((message) {
+      final inlineImages =
+          emailPreviewInlinePngs(message['inlineImages'] as List? ?? const []);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          children: [
+            EmailReceivedMessage(
+              recipientLabel: fields['email']?.isNotEmpty == true
+                  ? fields['email']
+                  : 'preview@example.invalid',
+              senderAddress: message['senderAddress'],
+              subject: message['subject'],
+              html: message['html'],
+              imageBytesResolver: (source) => inlineImages[source],
+            ),
+            for (final attachment
+                in (message['attachments'] as List? ?? const []).whereType<Map>())
+              ListTile(
+                leading: const Icon(Icons.attach_file),
+                title: Text(attachment['filename'] as String),
+              ),
+          ],
+        ),
+      );
+    }).toList();
   }
 
   @override

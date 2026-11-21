@@ -1,7 +1,6 @@
 import { bankCollectionAllowed, unavailableCollectionText } from "../_shared/orderEmailPresentation.ts";
 import { requireHostedPayment } from "../_shared/payments/contracts.ts";
 import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
-import { isBankPaymentInfo } from "../_shared/paymentPresentation.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
@@ -12,17 +11,12 @@ import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
 import { paymentRegistry } from "../_shared/payments/runtime.ts";
 import { paymentConfirmationBalance } from "../_shared/payments/email.ts";
 
-type Attachment = {
-  filename: string;
-  content: Uint8Array;
-  contentType: string;
-  encoding: "binary";
-};
+import type { EmailAttachment } from "../_shared/emailDelivery.ts";
 
 async function addExternalAttachment(
   service: any,
   ticketOrder: any,
-  attachments: Attachment[],
+  attachments: EmailAttachment[],
 ) {
   const url = service?.data?.url;
   if (!url) return;
@@ -77,7 +71,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   const {data: currentDetails, error: detailsError} = await supabaseAdmin.rpc('get_order_details_for_email', {p_order_id: order.id});
   if (detailsError || currentDetails?.code !== 200) throw new Error('payment_email_policy_unavailable');
   paymentInfo.collectionAction = currentDetails.data.payment_info.collectionAction;
-  const attachments: Attachment[] = [];
+  const attachments: EmailAttachment[] = [];
+  let paymentQrPng: Uint8Array | undefined;
   if (paymentRegistry.hasHosted(paymentInfo.payment_method)) {
     const binding=requireHostedPayment(paymentRegistry.resolve(paymentInfo.payment_method));
     if (!binding.order) throw new Error("payment_email_not_configured");
@@ -159,12 +154,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
         paymentInfo.deposit_amount < paymentInfo.amount
       ? { ...paymentInfo, amount: Number(paymentInfo.deposit_amount) }
       : paymentInfo;
-    attachments.push({
-      filename: `qr-payment.${occasion.title}.png`,
-      content: await generateQrCode(qrPaymentInfo, order, occasion.title),
-      contentType: "image/png",
-      encoding: "binary",
-    });
+    paymentQrPng = await generateQrCode(qrPaymentInfo, order, occasion.title);
   }
   await addExternalAttachment(
     externalServices?.find((service: any) =>
@@ -184,6 +174,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       occasion: occasion.id,
     },
     attachments,
+    paymentQrPng,
+    formData: currentDetails.data.form_data,
     reply_to: order.reply_to,
   };
 }

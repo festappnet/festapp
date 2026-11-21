@@ -1,4 +1,7 @@
 import 'package:festapp_core/communication_tone.dart';
+import 'package:festapp_core/forms.dart';
+import 'package:festapp_core/payments.dart';
+import '../../forms/views/payment_qr_email_setting.dart';
 
 import 'occasion_setup_review_row.dart';
 
@@ -41,6 +44,7 @@ void initializeCommunicationDraft(
     'communicationTone':
         CommunicationTone.parse(form['communication_tone']) ??
         CommunicationTone.inherit,
+    'paymentQrInEmail': FormMetadata.showPaymentQrInEmail(form),
     'replyToMode': 'inherit',
     'replyToEmail': '',
     'remindersMode': form['is_reminder_enabled'] is bool
@@ -106,6 +110,12 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
     meta['reminder_interval_seconds'] = (days * 86400).round();
   } else {
     meta.remove('reminder_interval_seconds');
+  }
+  if (data['paymentQrInEmail'] == true ||
+      (data.containsKey('paymentQrInEmail') &&
+          meta.containsKey(FormMetadata.metaShowPaymentQrInEmail))) {
+    meta[FormMetadata.metaShowPaymentQrInEmail] =
+        data['paymentQrInEmail'] == true;
   }
   form['data'] = meta;
 }
@@ -310,6 +320,16 @@ class _OccasionSetupCommunicationState
                 ),
             ],
           ),
+          if (paid &&
+              FormPaymentConfiguration.fromJson(widget.data['payments'] as Map?)
+                  .bankEnabled) ...[
+            const SizedBox(height: 16),
+            PaymentQrEmailSetting(
+              value: widget.data['paymentQrInEmail'] == true,
+              onChanged: (value) =>
+                  widget.onChanged({'paymentQrInEmail': value}),
+            ),
+          ],
           if (OccasionSetupStory.hasTickets(widget.data)) ...[
             const SizedBox(height: 24),
             TicketDeliverySelector(

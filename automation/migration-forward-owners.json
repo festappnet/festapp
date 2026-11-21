@@ -835,6 +835,15 @@
       "sources": [
         "blueprint/admission_seating.sql"
       ]
+    },
+    {
+      "migration": "20261121143000_payment_qr_email_setting.sql",
+      "active": true,
+      "header": "-- Allow organizers to display the bank payment QR in the body of order emails.",
+      "sources": [
+        "eshop_forms/form_settings.sql",
+        "occasion_setup/email_preview.sql"
+      ]
     }
   ]
 }

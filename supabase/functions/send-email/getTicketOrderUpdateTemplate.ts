@@ -20,7 +20,7 @@ export async function getTicketOrderUpdateTemplate(
     reqData.data;
   const lang = resolveEmailLanguage(requestedLanguage);
 
-  const attachments: any[] = [];
+  let paymentQrPng: Uint8Array | undefined;
 
   // 1. Fetch and authorize base order data using the shared function
   const {
@@ -60,17 +60,11 @@ export async function getTicketOrderUpdateTemplate(
         creditor_reference: payment_info.creditor_reference,
         creditor_name: bank_account.creditor_name,
       };
-      const qrCodeBytes = await generateQrCode(
+      paymentQrPng = await generateQrCode(
         qrPaymentData,
         order.data,
         occasion.title,
       );
-      attachments.push({
-        filename: `qr-payment-${occasion.title}.png`,
-        content: qrCodeBytes,
-        contentType: "image/png",
-        encoding: "binary",
-      });
     } catch (error) {
       console.error(
         `Could not generate QR code for order ${occasion.title}:`,
@@ -107,5 +101,5 @@ export async function getTicketOrderUpdateTemplate(
     orderHistoryId: latest_history_id,
   };
 
-  return { subs, sender, receiver, context, attachments, reply_to };
+  return { subs, sender, receiver, context, paymentQrPng, reply_to };
 }

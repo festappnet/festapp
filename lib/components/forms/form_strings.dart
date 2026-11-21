@@ -475,6 +475,10 @@ class FormStrings {
       'FeatureFormSettings.communicationToneTitle'.tr(); // "Communication Tone"
   static String get helperCommunicationTone =>
       'FeatureFormSettings.helperCommunicationTone'.tr(); // "Select the tone for automated communications, like payment confirmation emails or reminders. This will affect the wording in the email templates."
+  static String get labelPaymentQrInEmail =>
+      'FeatureFormSettings.labelPaymentQrInEmail'.tr();
+  static String get helperPaymentQrInEmail =>
+      'FeatureFormSettings.helperPaymentQrInEmail'.tr();
   static String get labelCommunicationTone =>
       'FeatureFormSettings.labelCommunicationTone'.tr(); // "Tone"
   static String get toneFormal =>

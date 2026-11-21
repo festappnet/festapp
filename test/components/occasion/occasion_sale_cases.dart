@@ -12,6 +12,7 @@ import 'package:fstapp/widgets/time_data_range_picker.dart';
 import 'dart:convert';
 import 'package:fstapp/components/occasion/setup/occasion_form_draft.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_customer_preview.dart';
+import 'package:fstapp/components/email_templates/email_preview_html.dart';
 import 'dart:io';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:festapp_core/eshop.dart';
@@ -123,6 +124,8 @@ void main() {
         ]
       }
     };
+    const cid = 'payment@preview.invalid';
+    const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7QAAAABJRU5ErkJggg==';
     final requests = <Map<String, dynamic>>[];
     await environment.pumpWidget(
         tester,
@@ -139,7 +142,13 @@ void main() {
               'messages': [
                 {
                   'subject': 'Exact selection',
-                  'html': '<p>Preview only</p>',
+                  'html': '<p>Preview only</p><img src="cid:$cid" alt="Payment QR">',
+                  'attachments': [
+                    {'filename': 'qr-platba.png'},
+                  ],
+                  'inlineImages': [
+                    {'contentId': cid, 'content': png},
+                  ],
                   'senderAddress': 'sender@example.invalid'
                 }
               ]
@@ -154,6 +163,12 @@ void main() {
     await tester.tap(find.text('Zkusit znovu'));
     await tester.pumpAndSettle();
     expect(find.text('Exact selection'), findsOneWidget);
+    expect(find.text('qr-platba.png'), findsOneWidget);
+    final message = tester.widget<EmailReceivedMessage>(
+      find.byType(EmailReceivedMessage),
+    );
+    expect(message.imageBytesResolver?.call('cid:$cid'), base64Decode(png));
+    expect(message.imageBytesResolver?.call('cid:unpackaged'), isNull);
     await tester.enterText(
         find.byType(TextField).first, 'second@example.invalid');
     await tester.pumpAndSettle();

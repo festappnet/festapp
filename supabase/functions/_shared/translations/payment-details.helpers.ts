@@ -1,3 +1,7 @@
+import { escapeEmailHtml } from "../emailActionLink.ts";
+import { isValidIban } from "../paymentPresentation.ts";
+import { formatIBAN } from "../utilities.ts";
+
 // Helper function to wrap text in HTML strong tags for bolding, preventing line breaks.
 export const bold = (text: string | number) => `<strong style="white-space: nowrap;">${text}</strong>`;
 
@@ -34,12 +38,18 @@ export const generatePaymentDetails = (options: PaymentDetailsOptions) => {
   const { accountNumber, variableSymbol, amount, iban, note, lang = 'cs' } = options;
   const title = lang === 'cs' ? 'Platební údaje:' : 'Payment Details:';
 
-  const details = [
-    { label: lang === 'cs' ? "Číslo účtu:" : "Account Number:", value: renderAccountNumber(accountNumber) },
-  ];
+  const accountIsIban = isValidIban(accountNumber);
+  const details = [];
+  if (!accountIsIban) {
+    details.push({
+      label: lang === 'cs' ? "Číslo účtu:" : "Account Number:",
+      value: renderAccountNumber(accountNumber),
+    });
+  }
 
-  if (iban) {
-    details.push({ label: "IBAN:", value: iban });
+  const internationalAccount = iban || (accountIsIban ? accountNumber : null);
+  if (internationalAccount) {
+    details.push({ label: "IBAN:", value: escapeEmailHtml(formatIBAN(internationalAccount)) });
   }
 
   const isRf = variableSymbol.replace(/\s/g, '').toUpperCase().startsWith('RF');

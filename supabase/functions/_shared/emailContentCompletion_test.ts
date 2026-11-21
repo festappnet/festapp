@@ -43,3 +43,21 @@ Deno.test('payment action occupies one body or wrapper slot and legacy aliases c
   }
   assert.equal(completeEmailContent('{{paymentAction}}',[],null,''),'');
 });
+
+Deno.test("payment QR follows rendered bank details or stays inside the wrapped body", () => {
+  const paymentAction = "<p>Pay the deposit</p>";
+  const legacyDetails = "<p>Bank details</p>";
+  const qr = { html: '<img src="cid:payment@example.invalid" alt="Payment QR">', paymentDetails: [legacyDetails] };
+  assert.equal(
+    completeEmailContent('{{paymentAction}}{{paymentAction}}', [], "<main>{{content}}</main>", paymentAction, qr),
+    `<main>${paymentAction}${qr.html}</main>`,
+  );
+  assert.equal(
+    completeEmailContent(`${legacyDetails}<p>Order contents</p>`, [], "<main>{{content}}</main>", paymentAction, qr),
+    `<main>${legacyDetails}${qr.html}<p>Order contents</p></main>`,
+  );
+  assert.equal(
+    completeEmailContent("<p>Custom content</p>", [], "<main>{{content}}</main>", paymentAction, qr),
+    `<main><p>Custom content</p>${qr.html}</main>`,
+  );
+});

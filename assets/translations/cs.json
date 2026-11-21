@@ -433,6 +433,8 @@
     "updatingUsers": "Aktualizace uživatelů"
   },
   "FeatureFormSettings": {
+    "labelPaymentQrInEmail": "Zobrazit platební QR v e-mailu",
+    "helperPaymentQrInEmail": "Při vypnutí zůstane QR kód ke stažení v příloze.",
     "purchaseTiming": "Událost purchase",
     "purchaseTimingOrder": "Při vytvoření objednávky",
     "purchaseTimingPaid": "Po úplném zaplacení",

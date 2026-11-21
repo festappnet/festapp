@@ -4,6 +4,9 @@ import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { confirmedNetPayment, paidPaymentSubstitutions } from "../_shared/orderEmailPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import { generateQrCode } from "../_shared/qrCodePayment.ts";
+import { paymentReferenceValue } from "../_shared/paymentPresentation.ts";
+import { generatePaymentDetails } from "../_shared/translations/payment-details.helpers.ts";
+import { formatCurrency, formatIBAN } from "../_shared/utilities.ts";
 import { getBaseOrderData } from "./shared.ts";
 
 
@@ -21,9 +24,8 @@ export async function getTicketOrderPaidTemplate(
 ) {
   const { orderId, requestSecret, lang: requestedLanguage } = reqData.data;
   const lang = resolveEmailLanguage(requestedLanguage);
-  const code = reqData.code;
 
-  const attachments: any[] = [];
+  let paymentQrPng: Uint8Array | undefined;
 
   // 1. Fetch and authorize base order data
   const {
@@ -47,8 +49,19 @@ export async function getTicketOrderPaidTemplate(
     totalAmount, amountPaid, currency, occasion.features || [], lang, tone, payment_info,
   );
 
+  let paymentDetails = "";
   if (bankCollectionAllowed(payment_info) && ['CZK','EUR'].includes(payment_info.currency_code) && amountPaid < totalAmount) {
     const remainingAmount = totalAmount - amountPaid;
+    if (bank_account?.account_number) {
+      paymentDetails = generatePaymentDetails({
+        accountNumber: bank_account.account_number_human_readable ||
+          bank_account.account_number,
+        iban: formatIBAN(bank_account.account_number),
+        variableSymbol: paymentReferenceValue(payment_info, { required: false }),
+        amount: formatCurrency(remainingAmount, currency),
+        lang,
+      });
+    }
     // QR code for remaining amount
     try {
       const qrPaymentData = {
@@ -62,17 +75,11 @@ export async function getTicketOrderPaidTemplate(
         creditor_reference: payment_info.creditor_reference,
         creditor_name: bank_account.creditor_name,
       };
-      const qrCodeBytes = await generateQrCode(
+      paymentQrPng = await generateQrCode(
         qrPaymentData,
         order.data,
         occasion.title,
       );
-      attachments.push({
-        filename: `qr-payment-${occasion.title}.png`,
-        content: qrCodeBytes,
-        contentType: "image/png",
-        encoding: "binary",
-      });
     } catch (error: any) {
       console.error(
         `Could not generate QR code for order ${orderId}:`,
@@ -90,7 +97,7 @@ export async function getTicketOrderPaidTemplate(
       lang,
         order.order_symbol,
     ),
-    balanceReasoning: paymentPresentation.balanceReasoning,
+    balanceReasoning: paymentPresentation.balanceReasoning + paymentDetails,
     amount: paymentPresentation.amount,
   };
   const sender = occasion.title;
@@ -103,5 +110,5 @@ export async function getTicketOrderPaidTemplate(
     paymentInfoId: payment_info.id,
   };
 
-  return { subs, sender, receiver, context, attachments, reply_to };
+  return { subs, sender, receiver, context, paymentQrPng, reply_to };
 }

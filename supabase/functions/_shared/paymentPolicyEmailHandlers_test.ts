@@ -4,6 +4,8 @@ Deno.env.set("SUPABASE_SERVICE_ROLE_KEY","local-test-only");
 const {supabaseAdmin} = await import("./supabaseUtil.ts");
 const {paymentRegistry} = await import("./payments/runtime.ts");
 const {renderQueuedEmail} = await import("./emailRenderer.ts");
+const {generateQrCode} = await import("./qrCodePayment.ts");
+const {encodeAttachment} = await import("./emailDelivery.ts");
 const {getTicketOrderConfirmationTemplate} = await import("../send-email/getTicketOrderConfirmationTemplate.ts");
 import type {PaymentMethodBinding, HostedPaymentDependencies} from "./payments/contracts.ts";
 
@@ -12,14 +14,15 @@ import type {PaymentMethodBinding, HostedPaymentDependencies} from "./payments/c
 Deno.test("production payment emails honor method, current collection and inherited wrappers", async () => {
  const originalRpc=supabaseAdmin.rpc, originalResolve=paymentRegistry.resolve, originalHas=paymentRegistry.has;
  const originalFetch=globalThis.fetch; let sourceOpens=0, attachmentHooks=0;
- let method="bank", status="open", allowed=false, currency="CZK", price=100, paid=0;
+ let method="bank", status="open", allowed=false, currency="CZK", price=100, paid=0, deposit=0;
+ let showQrInEmail: boolean | undefined;
  const occasion={id:3,organization:1,unit:2,title:"Podzimní ples",features:[]};
  const bank={account_number:"2000145399/0800",account_number_human_readable:"2000145399/0800",iban:"CZ6508000000192000145399",creditor_name:"Pořadatel plesu"};
  const details=()=>{
-  const payment_info={payment_method:method,amount:price,paid,returned:0,currency_code:currency,variable_symbol:12345,creditor_reference:'RF18539007547034',deadline:"2026-12-01T18:00:00Z",...bank,account_number:currency==='EUR'?bank.iban:bank.account_number,
+  const payment_info={payment_method:method,amount:price,deposit_amount:deposit,paid,returned:0,currency_code:currency,variable_symbol:12345,creditor_reference:'RF18539007547034',deadline:"2026-12-01T18:00:00Z",...bank,account_number:currency==='EUR'?bank.iban:bank.account_number,
    collectionAction:{method,purpose:"collect_payment",allowed},providerPayment:{method,status}};
   return {order:{id:4,order_symbol:"1A2C3E4F5G",price,currency_code:currency,data:{email:"current@example.invalid",tickets:[]},occasion,payment_info},
-   occasion,payment_info,bank_account:{...bank,account_number:currency==='EUR'?bank.iban:bank.account_number},latest_history_id:9,order_changes:{version:1,hasChanges:false},form_data:{},reference_history:[],reply_to:"poradatel@example.invalid"};
+   occasion,payment_info,bank_account:{...bank,account_number:currency==='EUR'?bank.iban:bank.account_number},latest_history_id:9,order_changes:{version:1,hasChanges:false},form_data:{show_payment_qr_in_email:showQrInEmail},reference_history:[],reply_to:"poradatel@example.invalid"};
  };
  const rpc=async(name:string)=>{
   let data:unknown;
@@ -69,10 +72,47 @@ Deno.test("production payment emails honor method, current collection and inheri
    assertEquals(result.prepared.attachments.length,0);
   }
   method="bank";status="open";allowed=true;price=100;paid=20;
+  deposit=30;
+  const legacy = await renderQueuedEmail({message_id:"legacy",message_kind:"order_confirmation",code:"TICKET_ORDER_CONFIRMATION",
+    data:{lang:"cs",ticket_order:{order:details().order}},recipient:"snapshot@example.invalid",organization:1,unit:2,occasion:3,order_id:4,lease_token:"lease",attempt_id:"attempt",prepared:null});
+  assertEquals(legacy.prepared.attachments.map(part=>part.disposition),["ATTACHMENT"]);
+  assert(!legacy.prepared.html.includes("cid:festapp-payment-"));
+  showQrInEmail=true;
   for(currency of ["CZK","EUR","USD"]) {
-   for(const [kind,code] of [["order_confirmation","TICKET_ORDER_CONFIRMATION"],["order_update","TICKET_ORDER_UPDATE"],["order_payment_notice","TICKET_ORDER_PAYMENT_DONE"],["order_reminder","TICKET_ORDER_REMINDER"]]) {
-    const result=await renderQueuedEmail({message_id:"message",message_kind:kind,code,data:{lang:"cs",ticket_order:{order:details().order}},recipient:"snapshot@example.invalid",organization:1,unit:2,occasion:3,order_id:4,lease_token:"lease",attempt_id:"attempt",prepared:null});
-    assertEquals(result.prepared.attachments.length,currency==="USD"?0:1,kind+"/"+currency);
+   const cases = [
+     ["order_confirmation", "TICKET_ORDER_CONFIRMATION", deposit, false],
+     ["order_update", "TICKET_ORDER_UPDATE", price - paid, false],
+     ["order_payment_notice", "TICKET_ORDER_PAYMENT_DONE", price - paid, false],
+     ["order_reminder", "TICKET_ORDER_REMINDER", price - paid, false],
+     ["order_reminder", "TICKET_ORDER_REMINDER", price - paid, true],
+   ] as const;
+   for(const [kind,code,expectedAmount,isDepositReminder] of cases) {
+    const result=await renderQueuedEmail({message_id:"message",message_kind:kind,code,data:{lang:"cs",is_deposit_reminder:isDepositReminder,ticket_order:{order:details().order}},recipient:"snapshot@example.invalid",organization:1,unit:2,occasion:3,order_id:4,lease_token:"lease",attempt_id:"attempt",prepared:null});
+    const {html,attachments}=result.prepared;
+    assertEquals(attachments.length,currency==="USD"?0:2,kind+"/"+currency);
+    if (currency!=="USD") {
+      const [download,inline]=attachments;
+      assertEquals(download.disposition,"ATTACHMENT");
+      assertEquals(inline.disposition,"INLINE");
+      assertEquals(download.contentType,"image/png");
+      const request = details();
+      const expected = await generateQrCode(
+        { ...request.payment_info, amount: expectedAmount },
+        request.order,
+        occasion.title,
+      );
+      assertEquals(download.content, encodeAttachment(expected, "binary"));
+      assertEquals(inline.content,download.content);
+      assert(inline.contentId);
+      if (kind === "order_payment_notice") {
+        assertStringIncludes(html, currency === "EUR" ? "RF18539007547034" : "12345");
+        assertStringIncludes(html, "IBAN");
+      }
+      assertEquals(html.split(`src="cid:${inline.contentId}"`).length,2);
+      assert(html.indexOf(`cid:${inline.contentId}`)<html.indexOf("</main>"));
+    } else {
+      assert(!html.includes('src="cid:festapp-payment-'));
+    }
     assert(!result.prepared.html.includes("#pay="));
    }
   }

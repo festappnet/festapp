@@ -7,12 +7,13 @@ import {
 } from "../_shared/ticketDelivery.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
+import { previewPaymentQr } from "../_shared/qrCodePayment.ts";
 import { walletEmailTicket, walletEmailSection, walletTicketLabel, walletCollectionLabel, walletEmailIndividual } from '../_shared/ticketWalletEmail.ts';
 import defaults from "../_shared/emailPreviewDefaults.json" with {
   type: "json",
 };
 
-/** Synthetic sample only: no identity lookup, capability link, QR or invoice. */
+/** Sample order without identity lookup, capability links or invoice creation. */
 export function previewOrder(
   title: string,
   tone: string,
@@ -63,6 +64,7 @@ export function previewOrder(
       currency_code: currency,
       payment_method: configuration?.paymentInfo?.payment_method ?? null,
       collectionAction: configuration?.paymentInfo?.collectionAction,
+      show_payment_qr_in_email: configuration?.paymentInfo?.show_payment_qr_in_email,
       data: configuration?.paymentInfo?.data,
       deadline: configuration?.paymentInfo && Object.hasOwn(configuration.paymentInfo, 'deadline') ? configuration.paymentInfo.deadline : deadline,
       account_number: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number || defaults.iban : null,
@@ -167,6 +169,9 @@ export async function renderDraftPreview(context: any) {
       ? "TICKET_ORDER_PAYMENT_DONE"
       : "TICKET_ORDER_CONFIRMATION",
     attachments: delivery?.attachments,
+    paymentQr: isTickets
+      ? undefined
+      : await previewPaymentQr(order.payment_info, context.lang),
     ticketBlock: isTickets ? delivery?.html ?? "" : undefined,
     subjectSubstitutions: isTickets ? ticketSubs : undefined,
     substitutions: isTickets

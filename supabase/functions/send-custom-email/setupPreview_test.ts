@@ -48,7 +48,15 @@ function fixture() {
     sourceTemplates: async () => null,
     paymentInfo: async () => {
       calls.push("bank");
-      return {payment_method:'bank', account_number:'',account_number_human_readable:'123/0100',deadline:'2030-01-01T00:00:00Z',data:{payment_policy:{mode:'custom'}}};
+      return {
+        payment_method: "bank",
+        collectionAction: { method: "bank", purpose: "collect_payment", allowed: true },
+        show_payment_qr_in_email: true,
+        account_number: "CZ6508000000192000145399",
+        account_number_human_readable: "19-2000145399/0800",
+        deadline: "2030-01-01T00:00:00Z",
+        data: { payment_policy: { mode: "custom" } },
+      };
     },
     resolve: async (code) => {
       calls.push(code);
@@ -113,6 +121,11 @@ Deno.test("preview uses all selected products and canonical production email ren
   const result = await response.json();
   assertEquals(result.total, 800);
   assertEquals(result.messages.length, 2);
+  const [confirmation, paid] = result.messages;
+  assertEquals(confirmation.inlineImages.length, 1);
+  assert(confirmation.html.includes(`src="cid:${confirmation.inlineImages[0].contentId}"`));
+  assertEquals(paid.inlineImages.length, 0);
+  assertEquals(confirmation.attachments, [{ filename: "qr-platba.png" }]);
   assert(result.messages[0].html.includes("Dospělý"));
   assert(result.messages[0].html.includes("Student"));
   assert(result.messages[0].html.includes("preview@example.invalid"));
@@ -152,6 +165,7 @@ Deno.test("zero price preview does not invent a paid confirmation and escapes cu
   const result = await response.json();
   assertEquals(result.messages.length, 1);
   assertEquals(result.total, 0);
+  assertEquals(result.messages[0].inlineImages.length, 0);
   assert(!result.messages[0].html.includes("<img src=x>"));
 });
 

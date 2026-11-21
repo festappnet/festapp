@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import '../html/html_embedded_block.dart';
 import 'package:material_ui/material_ui.dart';
@@ -10,6 +11,29 @@ import '../images/recovering_image.dart';
 /// Typography of the canonical email wrapper, independent of the app font.
 const emailContentTextStyle =
     TextStyle(inherit: false, fontFamily: 'sans-serif', fontSize: 16);
+
+/// Resolve only PNG content packaged with the preview. No network lookup.
+Map<String, Uint8List> emailPreviewInlinePngs(List<dynamic> images) {
+  const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+  final result = <String, Uint8List>{};
+  for (final image in images.whereType<Map>()) {
+    final cid = image['contentId'];
+    final content = image['content'];
+    if (cid is! String || content is! String || content.length > 1000000) {
+      continue;
+    }
+    try {
+      final bytes = base64Decode(content);
+      if (bytes.length >= pngSignature.length &&
+          pngSignature.indexed.every((entry) => bytes[entry.$1] == entry.$2)) {
+        result['cid:$cid'] = bytes;
+      }
+    } on FormatException {
+      continue;
+    }
+  }
+  return result;
+}
 
 /// Email fragments own their edge margins. The default factory trims these for
 /// app text; doing so joins independently rendered email components together.

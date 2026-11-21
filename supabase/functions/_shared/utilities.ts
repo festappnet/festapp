@@ -32,16 +32,6 @@ export function formatIBAN(iban: string | undefined | null): string {
     // Return original value or empty string if it's not a valid string or too short
     return iban || "";
   }
-  // Takes the first 4 characters (e.g., "CZ59")
-  const firstPart = iban.substring(0, 4);
-  // Takes the rest of the IBAN string
-  const rest = iban.substring(4);
-
-  const chunks = [firstPart]; // Start with the first part
-  // Loop through the rest of the IBAN string and split it into 4-character chunks
-  for (let i = 0; i < rest.length; i += 4) {
-    chunks.push(rest.substring(i, i + 4));
-  }
-  // Join all chunks with a space
-  return chunks.join(" ");
+  const compact = iban.replace(/\s/g, "");
+  return compact.match(/.{1,4}/g)?.join(" ") ?? "";
 }

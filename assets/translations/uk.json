@@ -108,6 +108,8 @@
     "validationSummary": "Перевірте виділені поля. Зміни ще не збережено."
   },
   "FeatureFormSettings": {
+    "labelPaymentQrInEmail": "Показувати платіжний QR-код у листах",
+    "helperPaymentQrInEmail": "Якщо вимкнути цю опцію, QR-код залишиться доступним у вкладенні.",
     "purchaseTiming": "Подія покупки",
     "purchaseTimingOrder": "Під час оформлення замовлення",
     "purchaseTimingPaid": "Після повної оплати",

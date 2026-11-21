@@ -433,6 +433,8 @@
     "updatingUsers": "Updating users"
   },
   "FeatureFormSettings": {
+    "labelPaymentQrInEmail": "Show payment QR in emails",
+    "helperPaymentQrInEmail": "When turned off, the QR code is still available as an attachment.",
     "purchaseTiming": "Purchase event",
     "purchaseTimingOrder": "When the order is placed",
     "purchaseTimingPaid": "After full payment",

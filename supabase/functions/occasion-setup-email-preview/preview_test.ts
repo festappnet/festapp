@@ -19,7 +19,7 @@ const resolved = {
 };
 const bankAction = {method:'bank',purpose:'collect_payment',allowed:true};
 const context = {
-  paymentInfo:{payment_method:'bank',collectionAction:bankAction},
+  paymentInfo:{payment_method:'bank',collectionAction:bankAction,show_payment_qr_in_email:true},
   sampleProducts: [{title:"Sample",price:1000,currency_code:"CZK"}],
   revision: 3,
   title: "Ukázková událost",
@@ -54,8 +54,16 @@ Deno.test("preview and sending use identical substitutions and inherited wrapper
       previewOrder(context.title, context.tone, context),
     )},
     replyTo: context.replyTo,
+    paymentQr: { png: await qrPng("festapp-preview:payment"), lang: "cs", inline: true },
   }, () => Promise.resolve(resolved));
-  assert(preview.html === sent.html && preview.subject === sent.subject);
+  const [inline] = preview.inlineImages;
+  assert(inline && sent.attachments[1].contentId);
+  assert(
+    preview.html.replace(inline.contentId!, sent.attachments[1].contentId!) ===
+      sent.html && preview.subject === sent.subject,
+  );
+  assert(inline.content === encodeAttachment(await qrPng("festapp-preview:payment"), "binary"));
+  assert(preview.attachments.length === 1 && preview.attachments[0].filename === "qr-platba.png");
   assert(preview.replyTo === sent.replyTo);
   assert(preview.html.includes("<main><p>Vlastní text</p>"));
   assert(!preview.html.includes("recipient@example.invalid"));
@@ -63,7 +71,7 @@ Deno.test("preview and sending use identical substitutions and inherited wrapper
     !preview.html.includes("href="),
     "Synthetic bank sample must have no capability links",
   );
-  assert(sent.attachments.length === 0);
+  assert(sent.attachments.length === 2);
 });
 
 Deno.test("formal/informal only changes generated content, preserving custom static text", async () => {

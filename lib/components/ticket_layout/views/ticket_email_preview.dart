@@ -243,22 +243,7 @@ class TicketEmailPreview extends StatelessWidget {
   }
 
   static String safeHtml(String source, List<dynamic> images) {
-    final allowed = <String, String>{};
-    for (final image in images.whereType<Map>()) {
-      final cid = image['contentId'];
-      final content = image['content'];
-      if (cid is! String || content is! String || content.length > 1000000)
-        continue;
-      try {
-        final bytes = base64Decode(content);
-        if (bytes.length >= 8 &&
-            bytes.take(8).join(',') == '137,80,78,71,13,10,26,10') {
-          allowed['cid:$cid'] = 'data:image/png;base64,$content';
-        }
-      } on FormatException {
-        continue;
-      }
-    }
+    final allowed = emailPreviewInlinePngs(images);
     final document = html.parse(source);
     for (final node in document.querySelectorAll(
       'script,style,iframe,object,embed,form,input,button,video,audio,source,svg,link,meta,base',
@@ -277,7 +262,7 @@ class TicketEmailPreview extends StatelessWidget {
       node.attributes.clear();
       if (image != null) {
         node.attributes.addAll({
-          'src': image,
+          'src': 'data:image/png;base64,${base64Encode(image)}',
           'width': '240',
           'alt': alt ?? 'QR',
         });

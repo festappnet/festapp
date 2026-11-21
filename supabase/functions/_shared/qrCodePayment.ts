@@ -1,7 +1,13 @@
-import { formatCurrency } from "./utilities.ts";
+import QRCode from "npm:qrcode";
+import type { DeliverEmailInput } from "./emailDelivery.ts";
+import { bankCollectionAllowed } from "./orderEmailPresentation.ts";
 import { presentPayment } from "./paymentPresentation.ts";
-import { qrcode } from "https://deno.land/x/qrcode/mod.ts";
-import { createCanvas, loadImage } from "https://deno.land/x/canvas/mod.ts";
+
+export function showPaymentQrInEmail(
+  formData: Record<string, unknown> | null | undefined,
+): boolean {
+  return formData?.show_payment_qr_in_email === true;
+}
 
 function determinePaymentMessage(order: any, occasionTitle: string): string {
   const type = order?.form?.data?.payment_message?.type;
@@ -15,44 +21,33 @@ export async function generateQrCode(
   order: any,
   occasionTitle: string,
 ): Promise<Uint8Array> {
-  if (paymentInfo?.payment_method !== 'bank' || paymentInfo?.collectionAction?.method !== 'bank' ||
-    paymentInfo?.collectionAction?.purpose !== 'collect_payment' || paymentInfo?.collectionAction?.allowed !== true ||
-    !(Number(paymentInfo.amount) > 0) || !['CZK','EUR'].includes(paymentInfo.currency_code)) throw new Error('payment_qr_action_forbidden');
+  if (
+    !bankCollectionAllowed(paymentInfo) || !(Number(paymentInfo.amount) > 0) ||
+    !["CZK", "EUR"].includes(paymentInfo.currency_code)
+  ) throw new Error("payment_qr_action_forbidden");
+
   const message = determinePaymentMessage(order, occasionTitle);
   const payment = presentPayment(paymentInfo, message);
-  const canvas = createCanvas(500, 700);
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, 500, 700);
-  const base64Qr = await qrcode(payment.qrPayload, {
-    size: 500,
-  }) as unknown as string;
-  const qrImage = await loadImage(
-    `data:image/png;base64,${base64Qr.split(",")[1]}`,
-  );
-  ctx.drawImage(qrImage, 0, 0, 500, 500);
-  ctx.font = "20px Arial";
-  ctx.fillStyle = "black";
-  ctx.textAlign = "left";
-  let y = 550;
-  ctx.fillText(`Objednávka: ${occasionTitle}`, 32, y);
-  y += 30;
-  ctx.fillText(
-    `Bankovní účet: ${paymentInfo.account_number_human_readable}`,
-    32,
-    y,
-  );
-  y += 30;
-  ctx.fillText(`${payment.referenceKind}: ${payment.referenceDisplay}`, 32, y);
-  y += 30;
-  if (payment.qrFormat === "SPD" && message) {
-    ctx.fillText(`Poznámka: ${message}`, 32, y);
-    y += 30;
-  }
-  ctx.fillText(
-    `Celková cena: ${formatCurrency(payment.amount, payment.currency)}`,
-    32,
-    y,
-  );
-  return canvas.toBuffer();
+  return await QRCode.toBuffer(payment.qrPayload, {
+    width: 384,
+    margin: 4,
+    errorCorrectionLevel: "M",
+  });
+}
+
+export async function previewPaymentQr(
+  payment: Record<string, unknown>,
+  lang: unknown,
+): Promise<DeliverEmailInput["paymentQr"]> {
+  if (
+    !bankCollectionAllowed(payment) || !(Number(payment.amount) > 0) ||
+    (payment.currency_code !== "CZK" && payment.currency_code !== "EUR")
+  ) return undefined;
+
+  // Deliberately invalid for both bank payments and ticket admission.
+  return {
+    png: await QRCode.toBuffer("festapp-preview:payment", { width: 256 }),
+    lang,
+    inline: showPaymentQrInEmail(payment),
+  };
 }

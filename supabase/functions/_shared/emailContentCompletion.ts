@@ -6,24 +6,48 @@ export interface EmailRequiredLink {
   companionHtml?: string;
   companionMarker?: string;
 }
-/** Fill authored overview slots only; an omitted action stays omitted. */
+export type EmailPaymentQrBlock = {
+  html: string;
+  paymentDetails: string[];
+};
+
+const paymentQrSlot = "<!--festapp-payment-qr-->";
+
+/** Fill authored action slots, and place any server-issued payment QR. */
 export function completeEmailContent(
   html: string,
   links: EmailRequiredLink[],
   wrapperHtml?: string | null,
   paymentAction = "",
+  paymentQr?: EmailPaymentQrBlock,
 ): string {
+  if (paymentQr) html += paymentQrSlot;
   if (wrapperHtml) {
-    html = wrapperHtml.replace("{{content}}", html);
+    html = wrapperHtml.replace("{{content}}", () => html);
   }
   const paymentSlot = "<!--festapp-payment-action-->",
     authoredSlot = "{{paymentAction}}";
   html = html.replaceAll(authoredSlot, paymentSlot);
   if (html.includes(paymentSlot)) {
     if (paymentAction && !html.includes(paymentAction)) {
-      html = html.replace(paymentSlot, paymentAction);
+      html = html.replace(paymentSlot, () => paymentAction);
     }
     html = html.replaceAll(paymentSlot, "");
+  }
+  if (paymentQr) {
+    const details = [paymentAction, ...paymentQr.paymentDetails].find(
+      (candidate) => candidate && html.includes(candidate),
+    );
+    if (details) {
+      const afterDetails = html.indexOf(details) + details.length;
+      html = html.slice(0, afterDetails) + paymentQr.html +
+        html.slice(afterDetails);
+    } else if (html.includes(paymentQrSlot)) {
+      html = html.replace(paymentQrSlot, () => paymentQr.html);
+    } else {
+      html += paymentQr.html;
+    }
+    html = html.replaceAll(paymentQrSlot, "");
   }
   for (const link of links) {
     // Preserve authored content and its one existing button. Add only the

@@ -49,6 +49,20 @@ void main() {
     expect(_metadata(draft), {'unrelated': 'keep'});
   });
 
+  test('payment QR preference defaults off and persists both choices', () {
+    final draft = _draft();
+    initializeCommunicationDraft(draft);
+    expect(draft['paymentQrInEmail'], false);
+    draft['paymentQrInEmail'] = true;
+    serializeCommunicationDraft(draft);
+    expect(_metadata(draft)['show_payment_qr_in_email'], true);
+    initializeCommunicationDraft(draft, reset: true);
+    expect(draft['paymentQrInEmail'], true);
+    draft['paymentQrInEmail'] = false;
+    serializeCommunicationDraft(draft);
+    expect(_metadata(draft)['show_payment_qr_in_email'], false);
+  });
+
   test('explicit values serialize semantically; free forms omit reminders', () {
     final draft = _draft()
       ..addAll({

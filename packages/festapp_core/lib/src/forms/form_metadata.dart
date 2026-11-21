@@ -39,6 +39,9 @@ abstract final class FormMetadata {
   static const String metaForm = "form";
   static const String metaEmpty = "---";
   static const String metaProducts = "products";
+  static const String metaShowPaymentQrInEmail = 'show_payment_qr_in_email';
+  static bool showPaymentQrInEmail(Map? data) =>
+      data?[metaShowPaymentQrInEmail] == true;
   static const String metaCommunicationTone = "communication_tone";
   static const String metaReplyTo = "reply_to";
   static const String metaDefaultValue = "default_value";
@@ -50,6 +53,7 @@ abstract final class FormMetadata {
     'is_reminder_enabled': null,
     'reminder_interval_seconds': null,
     'communication_tone': null,
+    metaShowPaymentQrInEmail: null,
     'variable_symbol': ['type', 'starting_number'],
     'payment_message': ['type'],
     'payments': [
@@ -86,6 +90,10 @@ abstract final class FormMetadata {
   ) {
     final result = <String, dynamic>{};
     for (final entry in authoringSettings.entries) {
+      if (entry.key == metaShowPaymentQrInEmail &&
+          data?.containsKey(entry.key) != true) {
+        continue;
+      }
       final value = entry.key == 'payments'
           ? FormPaymentConfiguration.fromJson(
               data?['payments'] as Map?,

@@ -1,3 +1,4 @@
+import { showPaymentQrInEmail } from "./qrCodePayment.ts";
 import {
   measurementApprovalEmail,
   metaCapiApprovalEmail,
@@ -191,10 +192,12 @@ export async function renderQueuedEmail(
   const overviewContext = await orderEmailOverviewContext(row, emailRpc);
     const overviewUrl = overviewContext?.url ?? null;
     const overviewActions = overviewContext?.allowedActions ?? [];
+  let formData = rendered.formData;
   if (row.message_kind !== "order_confirmation") {
     const current = await emailRpc("get_order_details_for_email", {
       p_order_id: row.order_id,
     });
+    formData = current.data?.form_data;
     const payment = current.data?.payment_info;
     if (payment) {
       rendered.subs.paymentMethodName =
@@ -237,6 +240,13 @@ export async function renderQueuedEmail(
       ...overviewEmailSubstitutions(overviewUrl, row.data?.lang, overviewActions),
     },
     attachments: rendered.attachments ?? [],
+    paymentQr: rendered.paymentQrPng
+      ? {
+        png: rendered.paymentQrPng,
+        lang: row.data?.lang,
+        inline: showPaymentQrInEmail(formData),
+      }
+      : undefined,
     replyTo: rendered.reply_to,
     from: `${rendered.sender || "Festapp"} | Festapp <${
       Deno.env.get("DEFAULT_EMAIL")

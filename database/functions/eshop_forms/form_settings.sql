@@ -2,7 +2,7 @@
 -- authorization, locking, receipt and side effects stay in the form command.
 CREATE OR REPLACE FUNCTION public.form_settings_keys_internal()
 RETURNS jsonb LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- SELECT '{"is_reminder_enabled":null,"reminder_interval_seconds":null,"communication_tone":null,
+ SELECT '{"is_reminder_enabled":null,"reminder_interval_seconds":null,"communication_tone":null,"show_payment_qr_in_email":null,
  "variable_symbol":["type","starting_number"],"payment_message":["type"],
  "payments":["bankEnabled","stripeConnectionId","providerConnections","cashEnabled","cashInstructions"],
  "payment_deadline":["mode"],
@@ -55,7 +55,7 @@ RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
 DECLARE result jsonb:='{}'; d jsonb:=public.normalize_form_metadata_internal(p_data); spec record; k text; section jsonb;
 BEGIN
  FOR spec IN SELECT * FROM jsonb_each(public.form_settings_keys_internal()) LOOP
-  IF spec.key IN ('payments','sale_opening_notifications','analytics','waitlist') AND NOT d ? spec.key THEN CONTINUE; END IF;
+  IF spec.key IN ('payments','sale_opening_notifications','analytics','waitlist','show_payment_qr_in_email') AND NOT d ? spec.key THEN CONTINUE; END IF;
   IF spec.value='null'::jsonb OR NOT d ? spec.key OR d->spec.key='null'::jsonb THEN
    result:=result||jsonb_build_object(spec.key,coalesce(d->spec.key,'null'::jsonb));
   ELSE
@@ -89,6 +89,8 @@ BEGIN
    IF entry.value='null'::jsonb THEN result:=result-entry.key; CONTINUE; END IF;
    IF entry.key='is_reminder_enabled' AND jsonb_typeof(entry.value)<>'boolean' THEN
     RAISE invalid_parameter_value USING MESSAGE='invalid reminder mode'; END IF;
+   IF entry.key='show_payment_qr_in_email' AND jsonb_typeof(entry.value)<>'boolean' THEN
+    RAISE invalid_parameter_value USING MESSAGE='invalid payment QR email setting'; END IF;
    IF entry.key='reminder_interval_seconds' THEN
     IF jsonb_typeof(entry.value)<>'number' THEN RAISE invalid_parameter_value USING MESSAGE='invalid reminder interval'; END IF;
     n:=(entry.value::text)::numeric;

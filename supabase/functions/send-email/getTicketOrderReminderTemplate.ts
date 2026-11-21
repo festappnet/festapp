@@ -30,7 +30,7 @@ export async function getTicketOrderReminderTemplate(
   const isDepositReminder = reqData.data?.is_deposit_reminder === true;
 
   const tr = translations[lang as keyof typeof translations] || translations.cs;
-  const attachments: any[] = [];
+  let paymentQrPng: Uint8Array | undefined;
 
   // 1. Fetch and authorize base order data
   const {
@@ -79,17 +79,11 @@ export async function getTicketOrderReminderTemplate(
         creditor_reference: payment_info.creditor_reference,
         creditor_name: bank_account.creditor_name,
       };
-      const qrCodeBytes = await generateQrCode(
+      paymentQrPng = await generateQrCode(
         qrPaymentData,
         order.data,
         occasion.title,
       );
-      attachments.push({
-        filename: `qr-payment-${occasion.title}.png`,
-        content: qrCodeBytes,
-        contentType: "image/png",
-        encoding: "binary",
-      });
     } catch (error: any) {
       console.error(
         `Could not generate QR code for deposit reminder ${orderId}:`,
@@ -128,7 +122,7 @@ export async function getTicketOrderReminderTemplate(
       paymentInfoId: payment_info.id,
     };
 
-    return { subs, sender, receiver, context, attachments, reply_to };
+    return { subs, sender, receiver, context, paymentQrPng, reply_to };
   } else {
     // --- REGULAR PAYMENT REMINDER ---
     const orderPrice = Number(order.price) || 0;
@@ -163,17 +157,11 @@ export async function getTicketOrderReminderTemplate(
         creditor_reference: payment_info.creditor_reference,
         creditor_name: bank_account.creditor_name,
       };
-      const qrCodeBytes = await generateQrCode(
+      paymentQrPng = await generateQrCode(
         qrPaymentData,
         order.data,
         occasion.title,
       );
-      attachments.push({
-        filename: `qr-payment-${occasion.title}.png`,
-        content: qrCodeBytes,
-        contentType: "image/png",
-        encoding: "binary",
-      });
     } catch (error: any) {
       console.error(
         `Could not generate QR code for order ${occasion.title}:`,
@@ -223,6 +211,6 @@ export async function getTicketOrderReminderTemplate(
       paymentInfoId: payment_info.id,
     };
 
-    return { subs, sender, receiver, context, attachments, reply_to };
+    return { subs, sender, receiver, context, paymentQrPng, reply_to };
   }
 }

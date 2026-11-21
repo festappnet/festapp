@@ -2,6 +2,15 @@ import 'package:test/test.dart';
 import 'package:festapp_core/forms.dart';
 
 void main() {
+  test('payment QR setting is sent only when present', () {
+    const key = FormMetadata.metaShowPaymentQrInEmail;
+    expect(FormMetadata.authoringSettingsSnapshot({}), isNot(contains(key)));
+    for (final value in [false, true]) {
+      expect(FormMetadata.authoringSettingsSnapshot({key: value})[key], value);
+    }
+  });
+
+
   test(
     'measurement settings serialize independently from read-only policy',
     () {

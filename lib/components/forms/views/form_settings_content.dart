@@ -11,6 +11,7 @@ import 'package:fstapp/components/payments/payment_method_cards.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 
 import 'form_variable_symbol_settings.dart';
+import 'payment_qr_email_setting.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
@@ -113,6 +114,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _reminderDaysController.text,
     _variableSymbolType,
     _paymentMessageType,
+    _showPaymentQrInEmail,
     _communicationTone,
   ];
   void _changed() {
@@ -146,6 +148,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
+  bool _showPaymentQrInEmail = false;
   String _communicationTone = 'inherit';
 
   bool _measurementEnabled = false;
@@ -442,6 +445,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentMessageType =
           msgData?[FormDefinition.metaType] as String? ?? 'name_surname';
 
+      _showPaymentQrInEmail =
+          FormMetadata.showPaymentQrInEmail(_form!.definition.data);
+
       final savedTone =
           _form!.definition.data?[FormMetadata.metaCommunicationTone];
       _communicationTone =
@@ -530,6 +536,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     metadata[FormDefinition.metaPaymentMessage] = {
       FormDefinition.metaType: _paymentMessageType,
     };
+
+    if (_showPaymentQrInEmail ||
+        metadata.containsKey(FormMetadata.metaShowPaymentQrInEmail)) {
+      metadata[FormMetadata.metaShowPaymentQrInEmail] =
+          _showPaymentQrInEmail;
+    }
 
     if (metadata.containsKey('payments') ||
         !_bankEnabled ||
@@ -1605,6 +1617,17 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                       }
                                     : null,
                               ),
+                              if (_bankEnabled) ...[
+                                const SizedBox(height: 16),
+                                PaymentQrEmailSetting(
+                                  value: _showPaymentQrInEmail,
+                                  onChanged: _canEdit
+                                      ? (value) => setState(() {
+                                            _showPaymentQrInEmail = value;
+                                          })
+                                      : null,
+                                ),
+                              ],
                               const SizedBox(height: 24),
                               const Divider(),
                               const SizedBox(height: 16),

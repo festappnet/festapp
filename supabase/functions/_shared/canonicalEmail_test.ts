@@ -11,6 +11,7 @@ import { sendEmailAttempt } from "./emailSender.ts";
 import { normalizeSesEvents } from "../email-provider-events/events.ts";
 import { openEmail, sealEmail } from "./emailPayload.ts";
 import { drainEmails } from "./emailDispatcher.ts";
+import { renderEmail } from "./emailDelivery.ts";
 const config: SesConfig = {
   region: "eu-central-1",
   accessKey: "fixture",
@@ -502,4 +503,27 @@ Deno.test("legacy PDF and CID PNG snapshots roundtrip with backward compatible S
   const attachment = sesBody(restored, config, {}, false).Content.Simple.Attachments[0];
   assertEquals(attachment.ContentDisposition, "INLINE");
   assertEquals(attachment.ContentId, "qr-1@inline");
+});
+
+Deno.test("payment QR remains downloadable and only appears inline when enabled", async () => {
+  const template = { id: 1, subject: "Order", html: "<p>Order instructions</p>" };
+  const render = (inline: boolean) => renderEmail({
+    to: prepared.to,
+    from: prepared.from,
+    context: { organization: 1 },
+    template,
+    substitutions: {},
+    paymentQr: { png: new Uint8Array(2048), lang: "en", inline },
+  }, async () => ({ template }));
+
+  const full = await render(true);
+  const parts = sesBody(full, config, {}, false).Content.Simple.Attachments;
+  assertEquals(parts.map(part => part.ContentDisposition), ["ATTACHMENT", "INLINE"]);
+  assertEquals(parts[0].RawContent, parts[1].RawContent);
+  assert(parts[1].ContentId && full.html.includes(`src="cid:${parts[1].ContentId}"`));
+  assert(full.html.includes('alt="Bank transfer QR code"'));
+
+  const downloadOnly = await render(false);
+  assertEquals(downloadOnly.attachments, [full.attachments[0]]);
+  assertEquals(downloadOnly.html, template.html);
 });

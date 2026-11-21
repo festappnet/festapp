@@ -698,6 +698,8 @@
     "CHECKOUT_CONTEXT_EXPIRED": "Platnosť formulára vypršala. Obnovte stránku a skúste objednávku odoslať znova."
   },
   "FeatureFormSettings": {
+    "labelPaymentQrInEmail": "Zobraziť platobný QR kód v e-maile",
+    "helperPaymentQrInEmail": "Po vypnutí zostane QR kód dostupný na stiahnutie v prílohe.",
     "purchaseTiming": "Udalosť purchase",
     "purchaseTimingOrder": "Pri vytvorení objednávky",
     "purchaseTimingPaid": "Po úplnom zaplatení",

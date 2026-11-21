@@ -522,6 +522,8 @@
     "capacityRetryLater": "Bitte versuchen Sie es später erneut."
   },
   "FeatureFormSettings": {
+    "labelPaymentQrInEmail": "Zahlungs-QR-Code in E-Mails anzeigen",
+    "helperPaymentQrInEmail": "Bei deaktivierter Option bleibt der QR-Code als Anhang verfügbar.",
     "purchaseTiming": "Kaufereignis",
     "purchaseTimingOrder": "Bei der Bestellung",
     "purchaseTimingPaid": "Nach vollständiger Zahlung",

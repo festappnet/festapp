@@ -3,13 +3,15 @@ import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { isBankPaymentInfo, paymentReferenceValue } from "../_shared/paymentPresentation.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
 import {
+  bankCollectionAllowed,
   confirmationPaymentSubstitutions,
   paidPaymentSubstitutions,
 } from "../_shared/orderEmailPresentation.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
+import { previewPaymentQr } from "../_shared/qrCodePayment.ts";
 
 /** Read-only production rendering. Intentionally no queue, checkout, invoice,
- * payment-reference allocation, attachment generation or customer lookup. */
+ * payment-reference allocation or customer lookup. */
 export interface SetupPreviewDependencies {
   draft(authorization: string, id: string, bytes: number): Promise<any | null>;
   catalog(authorization: string, unit: number): Promise<any | null>;
@@ -156,7 +158,12 @@ export async function setupPreviewResponse(
       deadline: paymentInfo.deadline ?? null,
       fullOrder: generateFullOrder(fields, tickets, features, lang, "PREVIEW"),
       ...(code === "TICKET_ORDER_CONFIRMATION"
-        ? confirmation
+        ? {
+          ...confirmation,
+          paymentAction: bankCollectionAllowed(previewPaymentInfo)
+            ? confirmation.balanceReasoning
+            : "",
+        }
         : paidPaymentSubstitutions(
           total,
           total,
@@ -173,6 +180,9 @@ export async function setupPreviewResponse(
       context,
       templateCode: code,
       substitutions,
+      paymentQr: code === "TICKET_ORDER_CONFIRMATION"
+        ? await previewPaymentQr(previewPaymentInfo, lang)
+        : undefined,
     }, async (templateCode, ctx) => {
       const resolved = await deps.resolve(templateCode, ctx);
       return {
@@ -184,6 +194,10 @@ export async function setupPreviewResponse(
       subject: prepared.subject,
       html: prepared.html,
       senderAddress: prepared.from,
+      attachments: prepared.attachments.filter((part) => part.disposition !== "INLINE")
+        .map(({ filename }) => ({ filename })),
+      inlineImages: prepared.attachments.filter((part) => part.disposition === "INLINE")
+        .map(({ contentId, content }) => ({ contentId, content })),
     });
   }
   return reply({ messages, total, currency: currency ?? "CZK", locale: lang });
