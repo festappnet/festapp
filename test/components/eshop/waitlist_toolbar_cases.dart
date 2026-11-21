@@ -236,6 +236,27 @@ void main() {
     expect(proposalCalls, isEmpty);
   });
 
+  testWidgets('expired waitlist offers stay visible with Active on or off',
+      (tester) async {
+    await open(tester, [
+      order(5, lifecycle: 'offer_expired', active: false),
+      order(6, lifecycle: 'withdrawn', active: false),
+    ]);
+
+    final expired = find.text('ORDER5');
+    final withdrawn = find.text('ORDER6');
+    final activeFilter = find.byKey(const ValueKey('onlyNonCancelled'));
+    expect(grid.additionalFilterEnabled, isTrue);
+    expect(expired, findsOneWidget);
+    expect(withdrawn, findsNothing);
+
+    await tester.tap(activeFilter);
+    await tester.pumpAndSettle();
+    expect(grid.additionalFilterEnabled, isFalse);
+    expect(expired, findsOneWidget);
+    expect(withdrawn, findsOneWidget);
+  });
+
   testWidgets(
       'offers work without selection and checked waiting uses the real send path',
       (tester) async {

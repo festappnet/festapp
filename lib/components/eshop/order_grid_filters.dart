@@ -27,8 +27,13 @@ class OrderGridFilters {
           ?.isPersisted ??
       false;
 
-  static bool orderIsActive(TrinaRow row) =>
-      order(row)?.isActive ?? orderIsNonCancelled(row);
+  static bool orderIsActive(TrinaRow row) {
+    final value = order(row);
+    if (value == null) return orderIsNonCancelled(row);
+    return value.isActive ||
+        (value.isWaitlisted &&
+            (value.waitlistSummary?.counts['offer_expired'] ?? 0) > 0);
+  }
 
   static bool allows(TrinaRow row, String action) =>
       order(row)?.allows(action) ?? false;
