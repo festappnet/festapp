@@ -301,3 +301,39 @@ test('cash movement cannot cross stored order units even through private system 
   assert.equal(Number(paid??0),0);
  } finally {await close(c);}
 });
+
+test('an edit queued behind an admission move cannot restore the previous product',async()=>{
+ const setup=await connect(),moving=await connect(),editor=await connect();
+ try{
+  const x=await fixture(setup,null,{withSeat:false});
+  const target=(await setup.query(`INSERT INTO eshop.products(title,product_type,occasion,price,currency_code,is_hidden)
+   SELECT 'Other admission',product_type,occasion,950,currency_code,false FROM eshop.products WHERE id=$1 RETURNING id`,[x.product])).rows[0].id;
+  const input=JSON.stringify({productId:Number(target)});
+  const prior=await before(setup,x);
+  await begin(moving,x);
+  const movingPid=await pid(moving);
+  await moving.query('SET LOCAL ROLE authenticated');
+  const preview=(await moving.query('SELECT public.preview_order_admission_change_v1($1,$2,$3,\'[]\') r',
+   [x.order,x.ticket,input])).rows[0].r;
+  assert.equal(preview.code,200,JSON.stringify(preview));
+  const moved=(await moving.query('SELECT public.confirm_order_admission_change_v1($1,$2,$3,\'[]\',$4,$5) r',
+   [x.order,x.ticket,input,preview.data.fingerprint,randomUUID()])).rows[0].r;
+  assert.equal(moved.status,'applied',JSON.stringify(moved));
+
+  await begin(editor,x);
+  const editorPid=await pid(editor);
+  await editor.query('SET LOCAL ROLE authenticated');
+  const editing=pending(editor.query('SELECT public.update_ticket_products_client_sync_v1($1,$2,$3) r',
+   [x.ticket,JSON.stringify([{id:x.product,price:1000}]),randomUUID()]));
+  await blocked(setup,editorPid,movingPid);
+  await moving.query('COMMIT');
+  const rejection=(await result(editing)).rows[0].r;
+  await editor.query('COMMIT');
+  assert.equal(rejection.code,409);
+  assert.equal(rejection.data.reason,'ADMISSION_CHANGE_REQUIRES_COMMAND');
+  await verify(setup,x,prior,{paid:0,price:950,retainIdentity:false});
+  const after=await identity(setup,x);
+  assert.equal(after.products[0].id,prior.identity.products[0].id);
+  assert.equal(after.products[0].product,Number(target));
+ }finally{await close(editor,moving,setup);}
+});

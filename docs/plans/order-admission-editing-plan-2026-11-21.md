@@ -1,0 +1,69 @@
+# Bezpečné přidání a změna vstupu v objednávce
+
+Datum 2026-11-21
+Stav lokálně implementováno nad `5920b57f8`. Produkční nasazení a volba opravy objednávky čekají na autorizaci.
+Ověření `standard` kvůli rezervacím, cenám, oprávněním a SQL migraci
+
+## Výsledek
+
+Běžná úprava produktů zachová vstup a jeho rezervaci. Druhý návštěvník dostane vlastní vstupenku přes „Přidat vstupenku“. Přesun stávajícího návštěvníka proběhne přes „Změnit místo nebo typ vstupu“. Před potvrzením obsluha vidí změnu a výslednou cenu. Incident na vstupenky.online se opraví jednorázově podle potvrzeného záměru.
+
+## Ověřený stav
+
+- Objednávka `7466`, akce `1072631`, formulář `611`, vstupenka `10409`. Původní položka `15799` (produkt `1962`, hlavní sál, 500 Kč) stále drží místo `27774` v plánku `101`. Historie `9737` a `9739` obsahuje původní vstup, historie `9757` z 21. 11. ve 12:03 CET navíc položku `15817` (produkt `2032`, stání, 400 Kč) bez rezervace. Stav při kontrole byl `ordered`, cena i očekávaná platba 900 Kč, přijato 500 Kč, vráceno 0 Kč, metoda `bank`. Odeslání původní vstupenky je v historii.
+- Read-only kontrola kanonické produkce seskupila vazby `eshop.order_product_ticket` podle objednávky a vstupenky přes shodnou akci, u ní přes `occasions.unit → units.organization=3` a přes katalogový typ `eshop.product_types.type='spot'`. `HAVING count(*) > 1` vrátilo v celé organizaci vstupenky.online právě jeden případ, včetně kontroly stornovaných a historických stavů nad dnes existujícími vazbami. Jde o kontrolu konkrétní třídy vady v tomto tenantu.
+- Produkt stání `2032` momentálně nemá produktový limit, sedadlo v plánku formuláře ani vazbu na oblast a kapacitní kontext. Pro potvrzený prodej stání na tomto formuláři nejprve ověřit zamýšlené nastavení s organizátorem. `assert_admission_seating_internal` kontroluje zdroj vstupu pro aktivní plánek.
+- Referenční stav kódu `origin/main` při šetření byl `e4dbb32ee`. Vstupy do `update_ticket_products_wsv2` v `database/functions/eshop_orders/update_ticket_products_ws.sql` zahrnují přímé RPC, Client Sync přes `update_ticket_products_client_sync_v1` a tím i `manage_operator_order_v1` z `operator_orders.sql`. Stávající vlastník zapíše nové vazby, přepočte platbu a spustí alokace. Vstupní typ při přidávání neomezuje.
+- `materialize_ticket_products_internal_v1` sbírá produkty z formuláře i z vybraného sedadla a volá `assert_admission_seating_internal` pro každý produkt zvlášť. Tuto společnou cestu používá checkout i tvorba dávkových vstupenek. Samostatně ověřit počet vstupních položek, protože kontrola zdroje jednoho produktu počet neřeší.
+- UX posoudil subagent Astra Medium. Editace jde z detailu objednávky (`order_detail_view.dart`) i přímo z tabulky vstupenek (`eshop_columns.dart`). Oba vstupy používají `ProductsDialog` a `SearchProductsScreen`. Detail dnes vypisuje `admission.reason` přímo.
+
+## 1. Uzavřít běžné úpravy produktů
+
+- V `update_ticket_products_wsv2` použít existující zámek objednávky a kapacity a před prvním zápisem ověřit požadovaný seznam proti vstupu uloženému v relačním modelu. Typ ověřovat podle katalogu ve stejné akci. `spot` zahrnuje sedadla i stání. Porovnat identity **včetně násobnosti** a hlídat, že uložený snapshot odpovídá vstupním vazbám. Přidání, odebrání, nahrazení a duplicitu `spot` odmítnout. Platná vstupenka s jedním `spot` smí při už dnes povoleném přecenění změnit jeho cenu. Zachovat původní řádek vazby a metadata místa. Formuláře bez vstupu typu `spot` dál mohou měnit doplňky.
+- Nejednoznačná historická vazba se v běžné editaci řeší čitelným konfliktem. Zachovat existující pravidla pro ochranu použitých, stornovaných, vytištěných a cenově uzamčených objednávek. Pro pokus změnit vstup zavést stabilní doménový důvod, lokalizovaný v klientu. Ověřit propagaci chyby ve všech třech trasách, včetně atomického odmítnutí dávkového operátorského požadavku, pokud obsahuje i jiné změny.
+- V checkoutu a dávkové tvorbě pokrýt kombinaci explicitního `spot` a dalších produktů, dvě nabídky stání i opakované ID. Pokud skutečný vstup dokáže založit druhou vazbu, odmítnout více než jednu vstupní položku v `materialize_ticket_products_internal_v1` před materializací. Ověřit legitimní způsob, kterým klient reprezentuje vybrané sedadlo, a nulový počet `spot` tam, kde je dovolený. Dvoumístná jednotka má dvě samostatné vstupenky. U navazujících přesunů a storen ověřit, že zachovávají tento kontrakt, a opravit konkrétní nalezenou obchozí cestu.
+- Vydat dopřednou migraci přes aktuální vlastnictví zdrojů a regenerovat příslušnou kontrolu parity. Stávající RPC a přenosový formát zůstanou kompatibilní pro validní klienty. Všechny vstupy sdílejí stejnou serverovou kontrolu i během přechodu.
+- **Důkaz dokončení**. Regrese sedadlo + stání, stejné ID dvakrát, odstranění a nahrazení vstupu skončí doménovou chybou. Cena, očekávaná i přijatá platba, stav, vazby, kapacita, historie a doručovací fronty zůstanou po odmítnutí stejné. Povolené přecenění a úpravy doplňků dál fungují. Pokrýt také souběh s přesunem, aby zastaralá editace nemohla vrátit původní vstup.
+
+## 2. Upravit společný dialog a detail
+
+- Omezit nabídku v `get_products_for_ticket_all_available` a společném pickeru na přidatelné doplňky. Při implementaci znovu ověřit jeho volající. V `ProductsDialog` zobrazit stávající vstup i uloženou cenu a odebrat akce pro odstranění a znovupřidání vstupu. Cenové pole respektuje existující oprávnění a omezení.
+- Detail a dialog otevřený z tabulky zobrazí oba historické vstupy pouze pro čtení, s lokalizovanou zprávou o nesrovnalosti. V detailu mapovat technický kód na srozumitelnou zprávu. Rozpoznání více položek odlišit od jiných příčin stejného kódu, například rozporných vazeb. Zobrazené místo ponechat jako evidovanou vazbu bez potvrzení přiřazení.
+- **Důkaz dokončení**. Oba vstupy do dialogu skryjí „stání“ mezi doplňky, existující vstup zůstane viditelný a násilně sestavený neplatný požadavek odmítne server i ze starého klienta.
+
+## 3. Zavést samostatné akce pro vstup
+
+- **Přidat vstupenku** v obsahu objednávky. Vybrat platný vstup z formuláře objednávky, včetně místa nebo kapacity stání a povinných údajů. Náhled ukáže další vstupenku, výsledný počet, změnu ceny a nový zůstatek. Potvrzení vytvoří právě jednu novou identitu vstupenky pro jeden vstup, s výjimkou explicitně potvrzeného nákupu celé nedělitelné jednotky s odpovídajícím počtem vstupenek. Původní vstup ani jeho rezervace se tím nemění.
+- **Změnit místo nebo typ vstupu** na konkrétní vstupence. Náhled ukáže původní a cílový vstup, dopad na rezervaci a cenu. Zachovat ID a kód vstupenky. Pro tentýž produkt použít stávající přiřazení `preview_ticket_seat_assignment` a `set_ticket_seat_assignments`, pokud daný plánek a případ podporují. Pro kompatibilní přesun mezi dvěma fyzickými místy využít stávající `preview_blueprint_seat_swap` a `swap_blueprint_seats`, pokud jejich chování odpovídá potvrzenému přesunu a nemění dalšího držitele. Přechod sedadlo ↔ stání doplnit ve společné logice pro přidělování vstupu a rezervaci kapacity, včetně uvolnění starého místa až po úspěšném přidělení cíle v téže transakci.
+- Pro přidání do existující objednávky použít kanonickou materializaci, kontroly povinných údajů a kapacity z checkoutu. `finalize_ticket_order_internal_v1` zakládá a konfiguruje platební stav celé objednávky, proto pro přidání použít sdílené dílčí kroky v samostatném autorizovaném příkazu. Pro finanční efekt použít stávající vlastníky, včetně `reconcile_order_payment_internal_v1`, alokací, verzování doručení, historie a Wallet. Omezit cenové změny na stavy a platební režimy, které stávající pravidla výslovně podporují. Zachovat ochranu slev, online plateb, záloh a použitých či vytištěných vstupenek.
+- Příkazy autorizovat nad uloženou objednávkou, formulářem a akcí. Potvrdit proti původní revizi nebo otisku náhledu a uložit pod ID příkazu. V pořadí existujících zámků znovu ověřit kapacitu, dočasné rezervace, aktuální cenu i cílovou položku. Změny databáze, historie a doručovacích záměrů provést atomicky. Opakované potvrzení se stejným ID vrátí původní výsledek. Obsazený nebo zastaralý cíl vrátí konflikt a výzvu k obnově náhledu. Nedělitelné skupiny se upravují celé, nepodporované kombinace se v náhledu odmítnou.
+- Obsluze ukázat jen dostupné akce. U formulářů bez plánku použít označení odpovídající jejich vstupům či přihláškám. Pro návrh a validaci UX použít subagenta Astra Medium.
+- **Důkaz dokončení**. Vedle sedadla lze přidat samostatné stání při dostupné kapacitě. Přesun sedadlo ↔ stání zachová identitu a změní rezervaci právě jednou. Pokrýt stejnou cenu, příplatek, nepodporovaný platební režim, vyčerpanou kapacitu, použitou vstupenku, konflikt po náhledu a opakované potvrzení.
+
+## 4. Jednorázově vyřešit objednávku 7466
+
+Po nasazení serverové pojistky znovu ověřit počet případů i přesný stav incidentu. Vyžádat si potvrzení, zda šlo o omyl, vstup pro dalšího návštěvníka, nebo přesun. Dostupné důkazy potvrzují úpravu, její obchodní záměr z nich určit nelze.
+
+- **Omyl**. Zachovat původní vstupenku, produkt i sedačku a odebrat pouze chybnou položku. Při nezměněných faktech bude objednávka za 500 Kč proti již přijatým 500 Kč. Způsobilost objednávky k doručení musí odvodit stávající platební logika.
+- **Další návštěvník**. Zachovat původní vstupenku a po ověření nabídky a kapacity převést chybnou položku na samostatnou vstupenku. Při nezměněných faktech zůstane celkem 900 Kč, přijato 500 Kč a zbývá 400 Kč.
+- **Přesun**. Zachovat kód stávající vstupenky, nahradit vstup platným stáním a uvolnit sedadlo. Při nezměněných faktech bude cena 400 Kč a vznikne přeplatek 100 Kč. Vypořádání přeplatku je samostatná potvrzená platební operace.
+
+Připravit jednorázovou, auditovatelnou opravu pouze pro potvrzenou variantu. S využitím soukromé aplikační logiky ověřit pod zámkem tenant, akci, objednávku, formulář, vstupenku, obě vazby a cenu, rezervaci, stav, platební fakta a revizi. Při odchylce operaci zastavit. Ve stejné transakci srovnat relační vazby, snapshot, kapacitu, cenu a očekávanou platbu, zachovat historii i přijaté platby. Před potvrzením ukázat dopad na e-maily, Wallet a případný přeplatek. Jestliže stávající příkaz neumí bezpečně zpracovat nejednoznačný výchozí stav, připravit pro konkrétní incident neveřejný jednorázový postup s týmiž kontrolami a stejnými vlastníky vedlejších účinků. Žádný trvalý přepínač nebo veřejný bypass pro opravy. Při opakování musí postup podle schváleného otisku poznat již opravený stav a nic dalšího neprovést.
+
+**Důkaz dokončení**. Ověřit výsledek přímo v datech i v detailu objednávky, a zopakovat tenantový dotaz. Při stejném rozsahu musí vrátit nulu. Objeví-li se nová objednávka, ověřit její příčinu a obchodní záměr samostatně.
+
+## Ověření a pořadí nasazení
+
+- Začít na aktuální autoritativní `main` v čistém pracovním stromu. Cílené SQL testy `database/tests/eshop/orders/update_ticket_products_ws_test.sql`, `database/tests/eshop_orders/payment_product_transition_regression_test.sql` a relevantní existující případy checkoutu, operátorských příkazů a plánku spouštět přes `node web_client/scripts/run_db_tests.js <cesta>`. Nové testy přiřadit do kanonického inventáře a před publikací ověřit `python3 automation/ci/run.py inventory`.
+- Flutter ověřit přes dotčený kanonický vstup v `automation/ci/checks.json` (pro detail `navigation-contract`) a zkontrolovat vykonané případy. Před spuštěním ověřit jediný Flutter slot a dodržet `--concurrency=1`.
+- Při samostatně autorizovaném rollout nasadit ochranu na backend před UI. Ověřit přímou i receipted trasu, pak nasadit web pouze pro `prod/festapptickets` přes jeho lokální release workflow s CI gate pro přesný `baseMainSha`. Přidání a přesun lze dodat po pojistce. Jednorázová oprava může následovat po pojistce, jakmile existuje bezpečný postup pro potvrzenou variantu. Při problému s novými akcemi vrátit klienta a ponechat serverovou ochranu druhého vstupu.
+- Hotovo znamená, že běžná úprava nemůže měnit identitu vstupu, přidání a přesun mají vlastní transakční akce, všechny dotčené routy sdílí jejich kontroly a oprava incidentu je buď ověřená, nebo má uvedenou konkrétní chybějící autorizaci či provozní skutečnost.
+
+## Upřesnění z implementace
+
+- Katalogové skupiny doplňků mohou mít typ `NULL`. Picker je nabízí podle ověřené katalogové skupiny. Hodnota `spot` vždy označuje vstup, včetně stání.
+- Výběr sedadla předává samostatné ID místa. Server připojí jeho vstupní produkt a před vytvořením vazeb počítá všechny vstupní položky. Stejnou kontrolu používá náhled dávkového tisku. Kapacitní oblast plánku splňuje i povinný výběr místa, pokud má platnou vazbu produktu a kapacity.
+- Přiřazení stejného produktu zachovává prodejní cenu. Přesun celé nedělitelné skupiny je dostupný mezi stejně velkými skupinami s volnými cíli. Pro přecenění celé skupiny se použije existující přepočet výměny sedadel. Kombinace přeceněných a beze změny ponechaných členů v jedné skupině náhled odmítne, protože výměna by přecenila i původní produkty.
+- Přidání vstupenky je dostupné pro bankovní objednávky. U online plateb lze provést přesun se stejnou celkovou cenou. Cenové změny zálohových objednávek a výběry s novou zálohou se odmítají. U platebně způsobilé objednávky lze novou vstupenku zařadit do stávající automatické doručovací fronty, i když předchozí vstupenky už byly odeslány. Přesun zachovává stávající pravidla pro odeslání aktualizace.
+- Historická místa bez vazby na kanonický plánek zůstávají čitelná. Stávající výměna fyzických míst podporuje i historické záznamy ve stejném plánku. Přidání a přesun z detailu objednávky vybírají cíle z aktuálního formuláře.
+- Stávající potvrzovaná výměna v editoru plánku dál umožňuje výměnu jednotlivého použitého sedadla. Nová akce v detailu objednávky použitou vstupenku chrání. Členové nedělitelné skupiny zůstávají chráněni v obou cestách.

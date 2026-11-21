@@ -55,7 +55,10 @@ class SupabaseEshopCommands implements EshopCommands {
       }),
     );
     if (response.code != 200) {
-      throw StateError('Ticket product update was rejected');
+      throw StateError(
+        response.data['reason']?.toString() ??
+            'Ticket product update was rejected',
+      );
     }
     await applyClientCommandReplacements(response);
     return response.data;

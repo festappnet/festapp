@@ -4,6 +4,8 @@
 -- Create Org/Unit
 INSERT INTO organizations (id, title) VALUES (777, 'UpdateTest Org');
 INSERT INTO units (id, organization, title) VALUES (777, 777, 'UpdateTest Unit');
+INSERT INTO eshop.payment_method_policy_scopes(organization_id,preferred_method) VALUES(777,'bank');
+INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(777,'bank',true);
 
 -- Mock Auth User
 DO $$
@@ -23,7 +25,8 @@ INSERT INTO occasions (id, unit, organization, title, link, start_time, end_time
 VALUES (777, 777, 777, 'UpdateTest Occasion', 'update-test', now(), now() + interval '1 day');
 
 -- A real bank checkout binds its form before a free order gains a balance.
-INSERT INTO public.forms(id,occasion,link) VALUES(777,777,'update-products-form');
+INSERT INTO public.forms(id,occasion,link,data)
+VALUES(777,777,'update-products-form','{"payments":{"bankEnabled":true}}');
 
 -- Setup Product Types
 INSERT INTO eshop.product_types (id, title, occasion) VALUES (701, 'Test Type', 777);

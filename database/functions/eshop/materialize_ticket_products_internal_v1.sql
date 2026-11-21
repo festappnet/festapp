@@ -78,8 +78,19 @@ BEGIN
             ticket_products := '[]'::JSONB;
 
             IF spot_id IS NOT NULL THEN
+                IF NOT EXISTS(SELECT 1 FROM eshop.products p JOIN eshop.product_types pt ON pt.id=p.product_type
+                  WHERE p.id=spot_product_id AND p.occasion=occasion_id AND pt.occasion=occasion_id AND pt.type='spot') THEN
+                    RAISE EXCEPTION 'ADMISSION_SOURCE_REQUIRES_SEATING';
+                END IF;
                 products_array := products_array || spot_product_id;
             END IF;
+
+            BEGIN
+                PERFORM public.assert_single_ticket_admission_internal(products_array);
+            EXCEPTION WHEN raise_exception THEN
+                IF SQLERRM<>'ADMISSION_MULTIPLE_PRODUCTS' THEN RAISE; END IF;
+                RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode',SQLERRM)::text;
+            END;
 
             FOREACH product_id IN ARRAY products_array LOOP
 

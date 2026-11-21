@@ -3651,6 +3651,21 @@
       "anon": false,
       "authenticated": false,
       "service_role": false
+    },
+    "public.get_order_admission_options_v1(bigint,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.preview_order_admission_change_v1(bigint,bigint,jsonb,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.confirm_order_admission_change_v1(bigint,bigint,jsonb,jsonb,text,uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
     }
   },
   "extension_client_execute": {

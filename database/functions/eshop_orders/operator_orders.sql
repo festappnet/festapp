@@ -156,6 +156,9 @@ BEGIN
      IF NOT EXISTS(SELECT 1 FROM eshop.order_product_ticket WHERE "order"=p_order AND ticket=(v_item->>'ticketId')::bigint) THEN RAISE insufficient_privilege USING MESSAGE='ticket unavailable'; END IF;
      SELECT coalesce(jsonb_agg(jsonb_build_object('id',x->'productId','price',x->'price')),'[]') INTO v_products FROM jsonb_array_elements(v_item->'products') x;
      v_result:=public.update_ticket_products_client_sync_v1((v_item->>'ticketId')::bigint,v_products,md5(p_command_id::text||':ticket:'||(v_item->>'ticketId'))::uuid);
+     IF v_result#>>'{data,reason}' IN ('ADMISSION_CHANGE_REQUIRES_COMMAND','ADMISSION_DATA_AMBIGUOUS') THEN
+       RAISE EXCEPTION '%',v_result#>>'{data,reason}';
+     END IF;
      IF (v_result->>'code')::int<>200 THEN RAISE EXCEPTION USING ERRCODE='55000',MESSAGE='ticket products rejected'; END IF;
    END LOOP;
  ELSIF p_action='mark_paid' THEN

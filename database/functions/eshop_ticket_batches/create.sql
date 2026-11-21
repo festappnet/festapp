@@ -56,10 +56,11 @@ BEGIN
  'changedFields',jsonb_build_array('tickets','allocations'))),ARRAY(SELECT "user" FROM public.occasion_users WHERE occasion=o.id AND is_editor_order_view),
  jsonb_build_object('batchId',bid,'stockOrderId',oid,'count',jsonb_array_length(selection)));
  EXCEPTION WHEN raise_exception THEN
-  IF SQLERRM=ANY(ARRAY['FORM_CAPACITY_EXCEEDED','PRODUCT_CAPACITY_EXCEEDED','BATCH_SPOT_UNAVAILABLE','BATCH_SPOT_HOLD_REQUIRED','BATCH_CURRENCY_MISMATCH','BATCH_PRODUCT_UNAVAILABLE','BATCH_ADMISSION_PRODUCT_REQUIRED','CASH_SALE_INVOICE_WORKFLOW_REQUIRED','BATCH_ANONYMOUS_TEMPLATE_REQUIRED','BATCH_PERSONAL_REGISTRATION_UNSUPPORTED']) THEN
+  IF SQLERRM=ANY(ARRAY['ADMISSION_MULTIPLE_PRODUCTS','FORM_CAPACITY_EXCEEDED','PRODUCT_CAPACITY_EXCEEDED','BATCH_SPOT_UNAVAILABLE','BATCH_SPOT_HOLD_REQUIRED','BATCH_CURRENCY_MISMATCH','BATCH_PRODUCT_UNAVAILABLE','BATCH_ADMISSION_PRODUCT_REQUIRED','CASH_SALE_INVOICE_WORKFLOW_REQUIRED','BATCH_ANONYMOUS_TEMPLATE_REQUIRED','BATCH_PERSONAL_REGISTRATION_UNSUPPORTED']) THEN
    RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',409,jsonb_build_object('errorCode',SQLERRM));
   END IF;
   RAISE;
  END;
 END $$;
 REVOKE ALL ON FUNCTION public.create_ticket_batch_client_sync_v1(bigint,text,jsonb,uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.create_ticket_batch_client_sync_v1(bigint,text,jsonb,uuid,uuid) TO authenticated;

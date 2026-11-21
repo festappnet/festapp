@@ -63,7 +63,9 @@ BEGIN
  -- per order, so swaps within one order cannot create intermediate paid emails.
  FOR v_order_id IN SELECT id FROM eshop.orders WHERE id=ANY(v_order_ids) ORDER BY id LOOP
   PERFORM public.reconcile_order_payment_internal_v1(v_order_id,'product_edit');
-  PERFORM public.refresh_order_payment_deadline_internal(v_order_id);
+  IF EXISTS(SELECT 1 FROM eshop.orders WHERE id=v_order_id AND payment_info IS NOT NULL) THEN
+   PERFORM public.refresh_order_payment_deadline_internal(v_order_id);
+  END IF;
   INSERT INTO eshop.orders_history("order",data,state,price,currency_code)
   SELECT id,data,state,price,currency_code FROM eshop.orders WHERE id=v_order_id;
  END LOOP;

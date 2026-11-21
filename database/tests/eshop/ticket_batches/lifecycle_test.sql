@@ -56,6 +56,10 @@ BEGIN
  INSERT INTO eshop.product_inventory_contexts(product,inventory_context,quantity) VALUES((x->>'product')::bigint,context_id,1);
  PERFORM public.adjust_spot_capacity_for_pool(pool_id);
  PERFORM set_config('role','authenticated',true);
+ r:=public.create_ticket_batch_client_sync_v1((x->>'form')::bigint,'Duplicate admission',
+   jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(
+    jsonb_build_object('product_type',x->'product'),jsonb_build_object('product_type',x->'product')))),NULL,gen_random_uuid());
+ PERFORM assert_eq(r#>>'{data,errorCode}','ADMISSION_MULTIPLE_PRODUCTS','batch creation rejects double admission before issuing stock');
  r:=public.create_ticket_batch_client_sync_v1((x->>'form')::bigint,'Test batch',
   (SELECT jsonb_agg(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',x->'product')))) FROM generate_series(1,10)),NULL,gen_random_uuid());
  PERFORM set_config('role','none',true);

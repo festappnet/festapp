@@ -59,18 +59,27 @@ BEGIN
  CASE WHEN v_kind='order_reminder' THEN p_time+interval '7 days' ELSE NULL END,v_order.id,v_version);
 END $$;
 
-CREATE OR REPLACE FUNCTION public.enqueue_paid_order_tickets(p_order bigint) RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
+CREATE OR REPLACE FUNCTION public.enqueue_eligible_order_tickets_internal(p_order bigint,p_include_sent boolean) RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 DECLARE v_order eshop.orders; v_occ public.occasions;
 BEGIN
  IF current_user NOT IN ('postgres','service_role') THEN PERFORM public.require_service_role(); END IF;
  SELECT * INTO v_order FROM eshop.orders WHERE id=p_order FOR UPDATE;
  SELECT * INTO v_occ FROM public.occasions WHERE id=v_order.occasion;
  IF v_order.data ? 'ticketBatchOrigin' AND coalesce((v_order.data#>>'{ticketBatchOrigin,sendTickets}')::boolean,false) IS NOT TRUE THEN RETURN; END IF;
- IF v_order.state='paid' AND (v_occ.is_order_synchronization_enabled OR v_order.data ? 'ticketBatchOrigin') AND v_order.data ? 'email'
+ IF (v_order.state='paid' OR (p_include_sent AND v_order.state='sent')) AND (v_occ.is_order_synchronization_enabled OR v_order.data ? 'ticketBatchOrigin') AND v_order.data ? 'email'
  AND (coalesce(v_order.price,0)<>0 OR EXISTS(SELECT 1 FROM jsonb_array_elements(v_occ.features) f WHERE f->>'code'='ticket' AND (f->>'is_enabled')::boolean)) THEN
   PERFORM public.enqueue_order_email('ORDER_TICKETS',jsonb_build_object('order_id',p_order),v_occ.organization,v_occ.id,v_occ.unit);
  END IF;
 END $$;
+
+REVOKE ALL ON FUNCTION public.enqueue_eligible_order_tickets_internal(bigint,boolean)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.enqueue_eligible_order_tickets_internal(bigint,boolean) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.enqueue_paid_order_tickets(p_order bigint)
+RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT public.enqueue_eligible_order_tickets_internal(p_order,false);
+$$;
 
 CREATE OR REPLACE FUNCTION public.cancel_order_email_intents(p_order bigint) RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,extensions AS $$
 BEGIN
