@@ -1,8 +1,8 @@
 import 'dart:ui' show SemanticsAction;
 
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/services.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
-import 'package:fstapp/components/features/deposit_feature.dart';
 
 import 'dart:convert';
 import 'dart:io';
@@ -22,6 +22,7 @@ import 'package:fstapp/components/occasion_settings/occasion_features_section.da
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
+import '../../support/navigation_fixture.dart';
 
 void main() {
   WidgetEnvironmentFixture.register();
@@ -33,6 +34,77 @@ void main() {
         File('assets/translations/cs.json').readAsStringSync(),
       ),
     ),
+  );
+
+  testWidgetsWithEnvironment(
+    () => environment,
+    'feature URL opens the dialog and follows incoming navigation',
+    (tester) async {
+      const settings = '/occasion-a/reservations/settings';
+      const base = '$settings?filter=one&filter=two';
+      const direct = '$base&feature=deposit';
+      final controller = OccasionFeaturesController();
+      final deposit = DepositFeature(
+        code: FeatureConstants.deposit,
+        isEnabled: true,
+        depositDeadlineDays: 7,
+      );
+      final router = FixtureRouter(Access())
+        ..settingsBuilder = (_) => Scaffold(
+          body: SingleChildScrollView(
+            child: OccasionFeaturesSection(
+              features: [deposit],
+              isEditingEnabled: true,
+              occasionId: 991,
+              controller: controller,
+            ),
+          ),
+        );
+      await environment.pumpWidget(
+        tester,
+        MaterialApp.router(
+          builder: DependencyMaterialBridge.builder,
+          routerConfig: router.config(
+            deepLinkBuilder: (link) => link.initial
+                ? DeepLink.path(direct, includePrefixMatches: false)
+                : link,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsOneWidget);
+      expect(router.urlState.uri.toString(), direct);
+
+      Future<void> navigate(String path) async {
+        await router.navigateAll(
+          router.matcher.match(path, includePrefixMatches: false)!,
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await navigate(base);
+      expect(find.byType(AppDialog), findsNothing);
+      await navigate(direct);
+      expect(find.byType(AppDialog), findsOneWidget);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AppDialog),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsNothing);
+      expect(router.urlState.uri.toString(), base);
+
+      await tester.tap(find.byKey(const ValueKey('configure-deposit')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsOneWidget);
+      expect(router.urlState.uri.toString(), direct);
+
+      await navigate('$base&feature=unknown');
+      expect(find.byType(AppDialog), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
   );
 
   testWidgetsWithEnvironment(

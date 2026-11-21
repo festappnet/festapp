@@ -10,10 +10,10 @@ import 'package:fstapp/components/eshop/order_grid_filters.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.dart';
-import 'package:fstapp/app_router.gr.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
+import 'package:fstapp/components/occasion_settings/occasion_feature_navigation.dart';
 import 'package:fstapp/components/single_data_grid/data_grid_action.dart';
 import 'package:fstapp/components/single_data_grid/single_data_grid_controller.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
@@ -141,11 +141,8 @@ class _TicketsTabState extends State<TicketsTab> {
             isEnabled: () => RightsService.hasCapability(
               AuthorizationCapabilities.navigationOccasionSettings,
             ),
-            action: (_, [originalAction]) => context.tabsRouter.navigate(
-              const SettingsSectionRoute().copyWith(
-                queryParams: {'feature': FeatureConstants.ticket},
-              ),
-            ),
+            action: (_, [_]) =>
+                openOccasionFeatureSettings(context, FeatureConstants.ticket),
           ),
       ],
       columns: EshopColumns.generateColumns(

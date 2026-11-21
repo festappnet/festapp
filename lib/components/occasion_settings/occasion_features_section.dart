@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -12,7 +13,9 @@ import '../features/feature_metadata.dart';
 import '../features/feature_service.dart';
 import '../features/feature_settings_editor.dart';
 import '../features/ticket_feature.dart';
+import '../navigation/route_visibility.dart';
 import '../ticket_layout/ticket_layout_service.dart';
+import 'occasion_feature_navigation.dart';
 import 'occasion_feature_editor_host.dart';
 import 'occasion_features_controller.dart';
 import 'occasion_settings_strings.dart';
@@ -71,6 +74,9 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
   ModalRoute<dynamic>? _dialogRoute;
   NavigatorState? _dialogNavigator;
   Future<void>? _dialogDone;
+  StackRouter? _root;
+  bool _routeSyncScheduled = false;
+  (String, BuildContext)? _pendingReveal;
 
   Iterable<Feature> get _supported => widget.features.where(
     (f) =>
@@ -90,6 +96,83 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final root = context
+        .dependOnInheritedWidgetOfExactType<RouterScope>()
+        ?.controller
+        .root;
+    if (_root != root) {
+      _root?.navigationHistory.removeListener(_scheduleRouteSync);
+      _root = root;
+      _root?.navigationHistory.addListener(_scheduleRouteSync);
+    }
+    _scheduleRouteSync();
+  }
+
+  void _scheduleRouteSync() {
+    if (_root == null || _routeSyncScheduled) return;
+    _routeSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _routeSyncScheduled = false;
+      if (mounted) _syncDialogWithRoute();
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _syncDialogWithRoute() {
+    final code = isVisibleRouteInstance(context)
+        ? _root!.urlState.uri.queryParameters[occasionFeatureParameter]
+        : null;
+    final feature = _supported
+        .where((feature) => feature.code == code)
+        .firstOrNull;
+    if (_dialogDone != null && _selected != feature?.code) {
+      _dismissDialog();
+      return;
+    }
+    if (feature != null) {
+      final pending = _pendingReveal;
+      _pendingReveal = null;
+      _open(feature, target: pending?.$1 == code ? pending?.$2 : null);
+    }
+  }
+
+  Future<void> _writeSelection(String? code, {bool replace = false}) async {
+    final root = _root!;
+    final uri = root.urlState.uri;
+    final query = Map.of(uri.queryParametersAll);
+    if (code == null) {
+      query.remove(occasionFeatureParameter);
+    } else {
+      query[occasionFeatureParameter] = [code];
+    }
+    final target = uri.replace(
+      query: query.isEmpty ? '' : Uri(queryParameters: query).query,
+    );
+    if (target == uri) {
+      _scheduleRouteSync();
+      return;
+    }
+    final matches = root.matcher.match(
+      target.toString(),
+      includePrefixMatches: false,
+    );
+    if (matches == null) return;
+    if (replace) root.markUrlStateForReplace();
+    await root.navigateAll(matches);
+  }
+
+  void _select(Feature feature, {BuildContext? target}) {
+    if (_root == null) {
+      _open(feature, target: target);
+    } else if (isVisibleRouteInstance(context)) {
+      _pendingReveal = target == null ? null : (feature.code, target);
+      _writeSelection(feature.code);
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant OccasionFeaturesSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isEditingEnabled != widget.isEditingEnabled) {
@@ -103,7 +186,7 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
     final feature = _supported.where((f) => f.code == code).firstOrNull;
     if (feature == null) return;
     widget.onReveal?.call();
-    _open(feature, target: target);
+    _select(feature, target: target);
   }
 
   Future<void> _open(Feature feature, {BuildContext? target}) async {
@@ -113,7 +196,7 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
     }
     final previous = _dialogDone;
     if (previous != null) {
-      await _closeDialog();
+      await _dismissDialog();
       await previous;
       if (!mounted) return;
     }
@@ -207,6 +290,7 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
           _dialogAttached = false;
         });
         _buttons[feature.code]?.requestFocus();
+        _scheduleRouteSync();
       }
     }
   }
@@ -219,6 +303,14 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
   }
 
   Future<void> _closeDialog() async {
+    if (_root != null && isVisibleRouteInstance(context)) {
+      await _writeSelection(null, replace: true);
+    } else {
+      await _dismissDialog();
+    }
+  }
+
+  Future<void> _dismissDialog() async {
     if (_closing || !_dialogAttached) return;
     _closing = true;
     final dialogContext = _dialogContext;
@@ -227,7 +319,15 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
     _refreshDialog?.call(() => _dialogAttached = false);
     if (mounted) setState(() => _selected = null);
     await WidgetsBinding.instance.endOfFrame;
-    if (dialogContext?.mounted == true) Navigator.of(dialogContext!).pop();
+    if (dialogContext?.mounted == true) {
+      final route = _dialogRoute!;
+      final navigator = _dialogNavigator!;
+      if (route.isCurrent) {
+        navigator.pop();
+      } else if (route.isActive) {
+        navigator.removeRoute(route);
+      }
+    }
     _closing = false;
   }
 
@@ -244,6 +344,7 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
   @override
   void dispose() {
     widget.controller.onReveal = null;
+    _root?.navigationHistory.removeListener(_scheduleRouteSync);
     final route = _dialogRoute;
     final navigator = _dialogNavigator;
     if (route != null && navigator != null) {
@@ -415,7 +516,7 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
         ),
         focusNode: _buttons[feature.code],
         key: ValueKey('configure-${feature.code}'),
-        onPressed: () => _open(feature),
+        onPressed: () => _select(feature),
         child: Text(
           OccasionSettingsStrings.configure,
           textAlign: TextAlign.center,
@@ -435,9 +536,9 @@ class _OccasionFeaturesSectionState extends State<OccasionFeaturesSection> {
         key: ValueKey('feature-action-${feature.code}'),
         container: true,
         button: true,
-        onTap: () => _open(feature),
+        onTap: () => _select(feature),
         child: InkWell(
-          onTap: () => _open(feature),
+          onTap: () => _select(feature),
           canRequestFocus: false,
           excludeFromSemantics: true,
           borderRadius: BorderRadius.circular(12),
