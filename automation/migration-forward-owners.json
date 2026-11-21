@@ -572,16 +572,6 @@
       "checkSources": true
     },
     {
-      "migration": "20261119050000_scope_form_blueprints_on_copy.sql",
-      "active": false,
-      "checkSources": true,
-      "sources": [
-        "eshop_forms/duplicate_form_to_occasion.sql",
-        "others/duplicate_occasion.sql"
-      ],
-      "sha256": "e6b2d4932eaba894def702bdafdea3cac24ed3de5d1d320d813518d2bd53e6f5"
-    },
-    {
       "migration": "20261119120000_default_form_close_at_occasion_end.sql",
       "active": true,
       "header": "-- Inherit the current occasion end for forms without a custom closing instant.",
@@ -659,6 +649,16 @@
       "checkSources": true
     },
     {
+      "migration": "20261120010000_meta_purchase_order_consent.sql",
+      "active": false,
+      "header": "-- Capture the current CMP grant with the order; decision dates are optional audit metadata.\n-- Preserve existing order grants using their already server-owned capture time.\nUPDATE analytics.meta_purchase_deliveries SET consent_snapshot=(consent_snapshot-'timestamp') || jsonb_build_object('capturedAt',to_char(consent_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) || CASE WHEN consent_decided_at IS NOT NULL THEN jsonb_build_object('decidedAt',to_char(consent_decided_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) ELSE '{}'::jsonb END WHERE consent_snapshot IS NOT NULL AND NOT consent_snapshot ? 'capturedAt';",
+      "sources": [
+        "eshop_forms/meta_purchase_consent.sql"
+      ],
+      "sha256": "ca6551b37702be90f44b30b42e6951385e2e4bcc0744715d88bb78b3147922a1",
+      "checkSources": true
+    },
+    {
       "migration": "20261120000000_meta_purchase_outcomes.sql",
       "active": false,
       "header": "-- Explain terminal Meta purchase outcomes without retaining matching data.\nCREATE INDEX meta_purchase_unit_outcome_history ON analytics.meta_purchase_deliveries(unit,(coalesce(done_at,consent_at)));\nDROP INDEX analytics.meta_purchase_unit_history;",
@@ -673,16 +673,6 @@
         ]
       },
       "sha256": "8e07431f2cecc1c0b34876d0b661ba25d57714c82c7d8af8f2dd32a55ed87307",
-      "checkSources": true
-    },
-    {
-      "migration": "20261120010000_meta_purchase_order_consent.sql",
-      "active": false,
-      "header": "-- Capture the current CMP grant with the order; decision dates are optional audit metadata.\n-- Preserve existing order grants using their already server-owned capture time.\nUPDATE analytics.meta_purchase_deliveries SET consent_snapshot=(consent_snapshot-'timestamp') || jsonb_build_object('capturedAt',to_char(consent_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) || CASE WHEN consent_decided_at IS NOT NULL THEN jsonb_build_object('decidedAt',to_char(consent_decided_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) ELSE '{}'::jsonb END WHERE consent_snapshot IS NOT NULL AND NOT consent_snapshot ? 'capturedAt';",
-      "sources": [
-        "eshop_forms/meta_purchase_consent.sql"
-      ],
-      "sha256": "ca6551b37702be90f44b30b42e6951385e2e4bcc0744715d88bb78b3147922a1",
       "checkSources": true
     },
     {
@@ -757,6 +747,16 @@
       "sources": [
         "others/get_app_config.sql"
       ]
+    },
+    {
+      "migration": "20261119050000_scope_form_blueprints_on_copy.sql",
+      "active": false,
+      "checkSources": true,
+      "sources": [
+        "eshop_forms/duplicate_form_to_occasion.sql",
+        "others/duplicate_occasion.sql"
+      ],
+      "sha256": "e6b2d4932eaba894def702bdafdea3cac24ed3de5d1d320d813518d2bd53e6f5"
     },
     {
       "migration": "20261120140000_form_creation_own_primary_group.sql",
@@ -885,6 +885,14 @@
         "user_permissions/account_private_image_grants.sql",
         "user_permissions/public_auth_operation_policy.sql",
         "users/existing_user_session.sql"
+      ]
+    },
+    {
+      "migration": "20261121152000_account_passkey_pilot.sql",
+      "active": true,
+      "header": "-- Scope discoverable passkey registration and sign-in to an optional pilot account.",
+      "sources": [
+        "user_permissions/account_passkey_pilot.sql"
       ]
     },
     {

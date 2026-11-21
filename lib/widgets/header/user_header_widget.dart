@@ -10,6 +10,7 @@ import 'package:fstapp/data_services/auth_service.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/components/users/views/login_page.dart';
 import 'package:fstapp/components/users/views/signup_page.dart';
+import 'package:fstapp/components/users/widgets/account_connections_link.dart';
 import 'package:fstapp/services/dialog_helper.dart';
 import 'package:fstapp/services/responsive_service.dart';
 import 'package:fstapp/theme_config.dart';
@@ -308,6 +309,7 @@ class _UserHeaderWidgetState extends State<UserHeaderWidget> {
                             )
                           : const SizedBox.shrink(),
                     ),
+                    const AccountConnectionsLink(),
                     ListTile(
                       leading: Icon(
                         Icons.logout,

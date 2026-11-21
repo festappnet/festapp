@@ -3060,6 +3060,8 @@
     "addKey": "Pridať bezpečnostný kľúč",
     "addPasskey": "Pridať passkey",
     "freshProof": "Pred zmenou zabezpečenia overte svoju totožnosť.",
+    "passwordProofHint": "Zadajte heslo k účtu na {appName}. Tým potvrdíte, že zmenu žiadate vy.",
+    "verifyIdentity": "Overiť totožnosť",
     "verified": "Totožnosť je overená. Zvoľte zmenu znova.",
     "qr": "QR kód na nastavenie overovacej aplikácie",
     "manual": "Kľúč na ručné zadanie",
