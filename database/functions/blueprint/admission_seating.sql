@@ -9,6 +9,19 @@ BEGIN
  JOIN eshop.spots s ON s.blueprint=f.blueprint AND s.product=p_product JOIN eshop.blueprint_seat_bindings sb ON sb.spot=s.id
  WHERE jsonb_path_exists(owner.features,'$[*] ? (@.code == "blueprint" && @.is_enabled == true)');
  IF bound_bp IS NOT NULL AND (bp IS DISTINCT FROM bound_bp OR p_spot IS NULL OR NOT EXISTS(SELECT 1 FROM eshop.spots WHERE id=p_spot AND blueprint=bp AND product=p_product)) THEN RAISE EXCEPTION 'ADMISSION_SOURCE_REQUIRES_SEATING'; END IF;
+ IF bp IS NOT NULL AND EXISTS(
+  SELECT 1 FROM eshop.products p JOIN eshop.product_types pt ON pt.id=p.product_type
+  WHERE p.id=p_product AND pt.type='spot'
+ ) AND NOT EXISTS(
+  SELECT 1 FROM eshop.spots s JOIN eshop.blueprint_seat_bindings sb ON sb.spot=s.id AND sb.blueprint=s.blueprint
+  WHERE s.id=p_spot AND s.blueprint=bp AND s.product=p_product
+ ) AND NOT EXISTS(
+  SELECT 1 FROM eshop.blueprint_area_bindings ab JOIN eshop.product_inventory_contexts pic
+    ON pic.product=ab.product AND pic.inventory_context=ab.inventory_context
+  WHERE ab.blueprint=bp AND ab.product=p_product AND pic.quantity>0
+ ) THEN
+  RAISE EXCEPTION '%',jsonb_build_object('code',409,'errorCode','ADMISSION_SOURCE_REQUIRES_SEATING')::text;
+ END IF;
  IF bp IS NOT NULL AND p_spot IS NULL AND EXISTS(SELECT 1 FROM eshop.spots s JOIN eshop.blueprint_seat_bindings sb ON sb.spot=s.id WHERE sb.blueprint=bp AND s.product=p_product)
  AND NOT EXISTS(SELECT 1 FROM eshop.blueprint_area_bindings WHERE blueprint=bp AND product=p_product) THEN RAISE EXCEPTION 'ADMISSION_SOURCE_REQUIRES_SEATING'; END IF;
 END $$;

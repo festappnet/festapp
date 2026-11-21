@@ -46,6 +46,7 @@ BEGIN
  payload:=jsonb_set(payload,'{ticket}',jsonb_build_array(jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',(f->>'product')::bigint)))));
  r:=public.finalize_ticket_order_internal_v1(order_id,payload);
  PERFORM public.assert_eq(r->>'errorCode','PRODUCT_SCOPE_MISMATCH','addressed product requires its actual seat, not just a product ID');
+ UPDATE public.occasions SET features='[{"code":"blueprint","is_enabled":true}]'::jsonb WHERE id=(f->>'occasion')::bigint;
  r:=public.select_spot((f->>'formKey')::uuid,secret,seat,true);
  PERFORM public.assert_eq(r->>'code','200','assigned seat reserves without form product fields');
  payload:=jsonb_set(payload,'{ticket}',jsonb_build_array(jsonb_build_object('spot',seat,'fields','[]'::jsonb),jsonb_build_object('fields',jsonb_build_array(jsonb_build_object('product_type',standing)))));
