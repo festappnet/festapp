@@ -759,6 +759,14 @@
         "eshop_forms/create_form_client_sync_v1.sql",
         "eshop/delete_product_client_sync_v1.sql"
       ]
+    },
+    {
+      "migration": "20261121120000_blueprint_admission_validation.sql",
+      "active": true,
+      "header": "-- Validate admission products against the active seating plan.",
+      "sources": [
+        "blueprint/admission_seating.sql"
+      ]
     }
   ]
 }
