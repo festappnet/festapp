@@ -3,6 +3,35 @@
   publish = "build/web"
   command = "./automation/ci_build.sh"
 
+# The Netlify hostname is a compatibility boundary only. All application
+# traffic moves to the canonical Festapp hostname with path and query intact.
+# Keep the two worker boundaries ahead of the forced domain redirect so old
+# installed clients can retire their cached shell and existing OneSignal
+# registrations can continue receiving pushes during the origin transition.
+[[redirects]]
+  from = "https://hvezdamorska.netlify.app/festapp_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://hvezdamorska.netlify.app/flutter_service_worker.js"
+  to = "/netlify-retire-worker.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://hvezdamorska.netlify.app/push/*"
+  to = "/push/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://hvezdamorska.netlify.app/*"
+  to = "https://hvezdamorska.festapp.net/:splat"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

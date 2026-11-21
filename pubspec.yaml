@@ -169,13 +169,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   fonts:
-    - family: Futura
+    - family: Cerebri
       fonts:
-        - asset: fonts/Futura PT Book.ttf
+        - asset: fonts/Cerebri-Sans-Regular.ttf
           weight: 400
-        - asset: fonts/Futura PT Medium.ttf
-          weight: 500
-        - asset: fonts/Gill Sans Bold.otf
+        - asset: fonts/Cerebri-Sans-Bold.ttf
           weight: 700
     - family: WalletPreviewSans
       fonts:

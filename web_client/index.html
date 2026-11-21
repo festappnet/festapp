@@ -36,7 +36,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#232529" data-light-color="#ebf1f6">
-    <meta name="festapp-supported-languages" content="cs,en,es,sk">
+    <meta name="festapp-supported-languages" content="cs,en">
     <meta name="festapp-legacy-auto-language" content="">
     <meta name="color-scheme" content="light dark">
 <script id="festapp-runtime-startup">
@@ -266,23 +266,23 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     global.addEventListener('festapp-embed-theme-changed', applyStartup);
 })(globalThis);
 </script>
-    <title>Akce a plesy - vstupenky online | vstupenky.online</title>
-    <meta name="description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
+    <title>Hvězda Mořská</title>
+    <meta name="description" content="Mobile app for festivals, conferences or events.">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://vstupenky.online/events">
+    <link rel="canonical" href="https://hvezdamorska.festapp.net/">
 
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"vstupenky.online","url":"https://vstupenky.online/"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Hvězda Mořská","url":"https://hvezdamorska.festapp.net/"}</script>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://vstupenky.online/events">
-    <meta property="og:title" content="Akce a plesy - vstupenky online | vstupenky.online">
-    <meta property="og:description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
+    <meta property="og:url" content="https://hvezdamorska.festapp.net/">
+    <meta property="og:title" content="Hvězda Mořská">
+    <meta property="og:description" content="Mobile app for festivals, conferences or events.">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://vstupenky.online/events">
-    <meta property="twitter:title" content="Akce a plesy - vstupenky online | vstupenky.online">
-    <meta property="twitter:description" content="Vyberte si akci nebo ples a kupte vstupenky online. Prohlédněte si nadcházející akce, informace pořadatelů a dostupná místa.">
+    <meta property="twitter:url" content="https://hvezdamorska.festapp.net/">
+    <meta property="twitter:title" content="Hvězda Mořská">
+    <meta property="twitter:description" content="Mobile app for festivals, conferences or events.">
     <!-- Used font stylesheets and their binaries are persisted by the Festapp
          service worker after their first real use. -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -419,8 +419,8 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
         .startup-spinner{width:32px;height:32px;border:3px solid #ddd;border-top-color:#3879bc;border-radius:50%;animation:startup-spin .8s linear infinite}
 
         .startup-spinner .startup-brand{display:none}
-        .startup-spinner[data-loading-style="brand-outline"]{width:min(72vw,280px);height:auto;aspect-ratio:904/715;border:0;border-radius:0;animation:none}
-        .startup-spinner[data-loading-style="brand-outline"] .startup-brand{display:block;width:100%;height:auto}
+        .startup-spinner[data-loading-style="spinner"]{width:min(72vw,280px);height:auto;aspect-ratio:904/715;border:0;border-radius:0;animation:none}
+        .startup-spinner[data-loading-style="spinner"] .startup-brand{display:block;width:100%;height:auto}
         .startup-spinner[hidden]{display:none}
         @keyframes startup-spin{to{transform:rotate(360deg)}}
         @media(prefers-reduced-motion:reduce){.startup-spinner{animation:none}}
@@ -436,7 +436,7 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     html[data-embed-startup]:has(#web-client-startup:not([hidden])) body,
     html[data-embed-startup] #web-client-startup { background: transparent !important; }
     html[data-embed-startup] #web-client-startup .startup-spinner { width: 24px; height: 24px; }
-    html[data-embed-startup] #web-client-startup .startup-spinner[data-loading-style="brand-outline"] { width: 48px; height: 48px; max-height: 48px; aspect-ratio: 1; }
+    html[data-embed-startup] #web-client-startup .startup-spinner[data-loading-style="spinner"] { width: 48px; height: 48px; max-height: 48px; aspect-ratio: 1; }
     html[data-embed-startup] #web-client-startup .startup-brand { width: 48px; height: 48px; object-fit: contain; filter: brightness(0); }
     html[data-embed-startup] body.dark-mode #web-client-startup .startup-brand { filter: brightness(0) invert(1); }
     /* The helper reserves 120 px before modules load. Retry must fit that slot. */
@@ -444,11 +444,11 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
     html[data-embed-startup] #web-client-startup p { margin: 0 0 8px; }
     html[data-embed-startup] #web-client-startup button { padding: 8px 12px !important; }
   </style>
-<meta property="og:image" content="https://vstupenky.online/android-chrome-512x512.png"><meta property="og:image:width" content="512"><meta property="og:image:height" content="512"><meta property="og:image:alt" content="vstupenky.online"><meta name="twitter:image" content="https://vstupenky.online/android-chrome-512x512.png"><meta name="twitter:image:alt" content="vstupenky.online"><meta property="og:locale" content="cs_CZ"><meta property="og:site_name" content="vstupenky.online"></head>
+<meta property="og:image" content="https://hvezdamorska.festapp.net/android-chrome-512x512.png"><meta property="og:image:width" content="512"><meta property="og:image:height" content="512"><meta property="og:image:alt" content="vstupenky.online"><meta name="twitter:image" content="https://hvezdamorska.festapp.net/android-chrome-512x512.png"><meta name="twitter:image:alt" content="vstupenky.online"><meta property="og:locale" content="cs_CZ"><meta property="og:site_name" content="vstupenky.online"></head>
 <body>
     <div id="web-client-startup" role="status"
          style="position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--festapp-startup-background,#ffffff);color:var(--festapp-startup-foreground,#000000);font:16px sans-serif;padding:24px;text-align:center">
-        <span class="startup-spinner" data-loading-style="brand-outline" aria-hidden="true"><img class="startup-brand" data-dark-src="/loading-animation.svg" alt=""></span>
+        <span class="startup-spinner" data-loading-style="spinner" aria-hidden="true"><img class="startup-brand" data-dark-src="/loading-animation.svg" alt=""></span>
         <p hidden></p>
         <button hidden
                 style="padding:12px 20px;font:inherit;cursor:pointer">Try again</button>
@@ -467,8 +467,8 @@ if (pageContext(window.location) === 'public-embed') document.documentElement.da
 
         <main>
             <section id="site-introduction" hidden style="margin:24px 0;color:var(--text-color,inherit)">
-                <h1 style="margin:0 0 8px;font-size:28px;overflow-wrap:anywhere">vstupenky.online</h1>
-                <p style="margin:0;line-height:1.6">Prodej vstupenek a registrace na plesy, kulturní akce, tábory a kurzy. Vytvořte vlastní akci a spravujte objednávky na jednom místě.</p>
+                <h1 style="margin:0 0 8px;font-size:28px;overflow-wrap:anywhere">Hvězda Mořská</h1>
+                <p style="margin:0;line-height:1.6">Mobile app for festivals, conferences or events.</p>
             </section>
             <section id="unit-introduction" class="unit-introduction" hidden>
                 <h1></h1>
