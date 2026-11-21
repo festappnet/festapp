@@ -8,7 +8,8 @@ CREATE TABLE analytics.meta_purchase_connectors (
  enabled boolean NOT NULL DEFAULT false,
  test_event_code text CHECK(test_event_code ~ '^[A-Za-z0-9_-]{1,60}$'),
  paused_at timestamptz,
- token_changed_at timestamptz
+ token_changed_at timestamptz,
+ token_hint text CHECK(token_hint ~ '^[^[:cntrl:]]{1,10}$')
 );
 CREATE TABLE analytics.meta_purchase_forms (
  form bigint PRIMARY KEY REFERENCES public.forms(id) ON DELETE CASCADE,

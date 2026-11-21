@@ -16,6 +16,8 @@ class MetaCapiStrings {
   static String get enabled => 'MetaCapi.enabled'.tr();
   static String get token => 'MetaCapi.token'.tr();
   static String get saved => 'MetaCapi.saved'.tr();
+  static String savedHint(String hint, String date) =>
+      'MetaCapi.savedHint'.tr(namedArgs: {'hint': hint, 'date': date});
   static String get enableFormMeasurement =>
       'MetaCapi.enableFormMeasurement'.tr();
   static String get configureWebsiteConsent =>

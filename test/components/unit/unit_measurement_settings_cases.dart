@@ -391,6 +391,58 @@ void main() {
     }
   });
 
+  testWidgets('Meta CAPI identifies the saved token by its masked suffix', (
+    tester,
+  ) async {
+    await initializeDateFormatting('cs');
+    final fixture = WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: jsonDecode(
+        File('assets/translations/cs.json').readAsStringSync(),
+      ) as Map<String, dynamic>,
+    );
+    for (final hinted in [true, false]) {
+      await fixture.pumpWidget(
+        tester,
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UnitMetaCapiSettings(
+                key: ValueKey(hinted),
+                unitId: 1,
+                load: (_) async => {
+                  'allowed': true,
+                  'token_saved': true,
+                  'dataset': '123456',
+                  'websites': ['https://tickets.example'],
+                  'website_origin': 'https://tickets.example',
+                  'token_changed_at': '2026-11-21T12:00:00Z',
+                  if (hinted) 'token_hint': 'a1B2c3D4e5',
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MetaCapiStrings.title));
+      await tester.pumpAndSettle();
+      final token = find.byWidgetPredicate(
+        (w) => w is TextField && w.obscureText,
+      );
+      final helper = tester.widget<TextField>(token).decoration!.helperText;
+      if (hinted) {
+        final date = DateFormat.yMd('cs')
+            .format(DateTime.parse('2026-11-21T12:00:00Z').toLocal());
+        expect(helper, MetaCapiStrings.savedHint('a1B2c3D4e5', date));
+        expect(helper, startsWith('Uložený token …a1B2c3D4e5 · uložen $date'));
+      } else {
+        // Connectors saved before hints existed keep the generic text.
+        expect(helper, MetaCapiStrings.saved);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
+  });
   testWidgets('Meta CAPI pause asks to replace the token', (tester) async {
     await initializeDateFormatting('cs');
     final previousLocale = Intl.defaultLocale;

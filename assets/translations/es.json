@@ -5896,6 +5896,7 @@
     "enabled": "Enviar compras pagadas a Meta",
     "token": "Token de acceso",
     "saved": "El token está guardado. Introduzca uno nuevo solo para sustituirlo.",
+    "savedHint": "Token guardado …{hint} · guardado el {date}. Introduzca uno nuevo solo para sustituirlo.",
     "enableFormMeasurement": "Active Meta CAPI y la medición en al menos un formulario.",
     "configureWebsiteConsent": "Configure el consentimiento del sitio web seleccionado en la sección de eventos y consentimiento.",
     "formMeasurementRequired": "Complete la configuración de la medición de este formulario.",

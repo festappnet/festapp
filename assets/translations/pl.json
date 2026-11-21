@@ -3654,6 +3654,7 @@
     "enabled": "Wysyłaj opłacone zakupy do Meta",
     "token": "Token dostępu",
     "saved": "Token jest zapisany. Wpisz nowy tylko wtedy, gdy chcesz go wymienić.",
+    "savedHint": "Zapisany token …{hint} · zapisany {date}. Wpisz nowy tylko wtedy, gdy chcesz go wymienić.",
     "enableFormMeasurement": "Włącz Meta CAPI i pomiar w co najmniej jednym formularzu.",
     "configureWebsiteConsent": "Skonfiguruj zgodę dla wybranej witryny w sekcji zdarzeń i zgody.",
     "formMeasurementRequired": "Dokończ konfigurację pomiaru dla tego formularza.",
