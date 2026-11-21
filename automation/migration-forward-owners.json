@@ -886,6 +886,14 @@
         "user_permissions/public_auth_operation_policy.sql",
         "users/existing_user_session.sql"
       ]
+    },
+    {
+      "migration": "20261121152000_account_passkey_pilot.sql",
+      "active": true,
+      "header": "-- Scope discoverable passkey registration and sign-in to an optional pilot account.",
+      "sources": [
+        "user_permissions/account_passkey_pilot.sql"
+      ]
     }
   ]
 }

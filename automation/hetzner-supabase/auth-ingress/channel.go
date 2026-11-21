@@ -81,6 +81,7 @@ func (store *channelStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for name, method := range policy.Methods {
+		method.SignIn = method.SignIn && store.passkeySeal != nil
 		if method.RegistrationPilotUser != "" {
 			var actor struct {
 				ID string `json:"id"`
@@ -99,12 +100,14 @@ func (store *channelStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if actor.ID != method.RegistrationPilotUser && !recovery {
-				method.Offer = false
+				// At sign-in the account is discovered by the authenticator.
+				// An optional login action reveals no account eligibility.
+				method.Offer = method.Offer && name == "passkey" && method.SignIn &&
+					r.Header.Get("Authorization") == ""
 				method.Registration = false
 			}
 			method.RegistrationPilotUser = ""
 		}
-		method.SignIn = method.SignIn && store.passkeySeal != nil
 		method.SignInRevision = 0
 		policy.Methods[name] = method
 	}
