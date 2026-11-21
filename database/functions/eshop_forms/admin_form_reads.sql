@@ -1,18 +1,15 @@
--- One usage owner for counts and destructive guards. The FK owns current
--- responses; historical UUID references still prevent destructive deletion.
+-- Deletion still checks every order reference, including legacy UUIDs.
 CREATE OR REPLACE FUNCTION public.get_form_usage_rows_internal(p_forms bigint[])
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH selected AS MATERIALIZED (SELECT id,key FROM public.forms WHERE id=ANY(p_forms)), refs AS (
-  SELECT q.form form_id,q.id order_id,true is_response FROM eshop.orders q WHERE q.form=ANY(p_forms)
-  UNION ALL
-  SELECT f.id,q.id,q.form IS NULL FROM eshop.orders q JOIN selected f ON q.data->>'form'=f.key::text
- ), unique_refs AS (
-  SELECT form_id,order_id,bool_or(is_response) is_response FROM refs GROUP BY form_id,order_id
+  SELECT q.form form_id,q.id order_id FROM eshop.orders q WHERE q.form=ANY(p_forms)
+  UNION
+  SELECT f.id,q.id FROM eshop.orders q JOIN selected f ON q.data->>'form'=f.key::text
  ), totals AS (
-  SELECT form_id,count(*) blocking_orders,count(*) FILTER(WHERE is_response) response_count FROM unique_refs GROUP BY form_id
+  SELECT form_id,count(*) blocking_orders FROM refs GROUP BY form_id
  )
- SELECT coalesce(jsonb_object_agg(f.id::text,jsonb_build_object('response_count',coalesce(t.response_count,0),
-  'blocking_orders',coalesce(t.blocking_orders,0))),'{}') FROM selected f LEFT JOIN totals t ON t.form_id=f.id;
+ SELECT coalesce(jsonb_object_agg(f.id::text,jsonb_build_object('blocking_orders',coalesce(t.blocking_orders,0))),
+  '{}') FROM selected f LEFT JOIN totals t ON t.form_id=f.id;
 $$;
 REVOKE ALL ON FUNCTION public.get_form_usage_rows_internal(bigint[]) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -40,8 +37,6 @@ CREATE OR REPLACE FUNCTION public.get_form_catalog_rows_internal(p_occasion bigi
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH selected AS MATERIALIZED (
   SELECT * FROM public.forms WHERE occasion=p_occasion AND (p_after IS NULL OR id>p_after) ORDER BY id LIMIT p_limit
- ), usage AS MATERIALIZED (
-  SELECT public.get_form_usage_rows_internal(ARRAY(SELECT id FROM selected)) rows
  )
  SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'data',f.data,'key',f.key,'link',f.link,
   'occasion',f.occasion,'type',f.type,'is_open',f.is_open,'blueprint',f.blueprint,
@@ -49,9 +44,11 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
   'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
   'aggregate_version',coalesce((SELECT version FROM public.client_aggregate_versions v WHERE v.aggregate_type='form' AND v.scope_type='occasion' AND v.scope_id=p_occasion AND v.aggregate_id=f.id::text),0),
-  'response_count',usage.rows->f.id::text->'response_count',
+  'response_count',coalesce(stats.total,0),
   'fields',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',ff.id,'type',ff.type,'is_ticket_field',ff.is_ticket_field) ORDER BY coalesce(ff."order",0),ff.id),'[]') FROM public.form_fields ff WHERE ff.form=f.id)) ORDER BY f.id),'[]')
- FROM selected f CROSS JOIN usage;
+ FROM selected f LEFT JOIN public.get_order_catalog_counts_internal(
+  ARRAY[p_occasion],ARRAY(SELECT id FROM selected)
+ ) stats ON stats.form_id=f.id;
 $$;
 REVOKE ALL ON FUNCTION public.get_form_catalog_rows_internal(bigint,bigint,integer) FROM PUBLIC,anon,authenticated,service_role;
 

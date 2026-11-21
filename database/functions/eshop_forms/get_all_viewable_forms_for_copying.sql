@@ -11,6 +11,18 @@ BEGIN
     -- Step 1: Aggregate forms into a JSONB array based on the user's combined permissions.
     -- The user can see forms from occasions where they are a direct editor,
     -- or from any occasion within a unit where they are a unit editor.
+    WITH visible_occasions AS MATERIALIZED (
+        SELECT ou.occasion
+        FROM public.occasion_users ou
+        WHERE ou.user = user_id AND ou.is_editor_view = TRUE
+        UNION
+        SELECT o.id
+        FROM public.occasions o
+        JOIN public.unit_users uu ON o.unit=uu.unit
+        WHERE uu.user = user_id AND uu.is_editor_view = TRUE
+    ), visible_forms AS MATERIALIZED (
+        SELECT f.* FROM public.forms f JOIN visible_occasions v ON v.occasion=f.occasion
+    )
     SELECT jsonb_agg(
         jsonb_build_object(
             'id', f.id,
@@ -39,35 +51,11 @@ BEGIN
         ) ORDER BY o.start_time DESC, f.created_at DESC
     )
     INTO forms_data
-    FROM public.forms f
-    JOIN public.occasions o ON f.occasion = o.id
-    LEFT JOIN (
-        -- Subquery to calculate order statistics for each form.
-        SELECT
-            (data->>'form')::uuid AS form_key,
-            COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE state = 'storno') AS storno,
-            COUNT(*) FILTER (WHERE state IN ('paid', 'sent')) AS paid_or_sent,
-            COUNT(*) FILTER (WHERE state = 'ordered') AS ordered
-        FROM eshop.orders
-        WHERE data->>'form' IS NOT NULL
-        GROUP BY form_key
-    ) AS order_stats ON f.key = order_stats.form_key
-    WHERE f.occasion IN (
-        -- Subquery to get all occasion IDs the user has editor view access to.
-        -- This includes direct occasion permissions.
-        SELECT ou.occasion
-        FROM public.occasion_users ou
-        WHERE ou.user = user_id AND ou.is_editor_view = TRUE
-
-        UNION
-
-        -- And permissions inherited from unit-level roles.
-        SELECT o_unit.id
-        FROM public.occasions o_unit
-        JOIN public.unit_users uu ON o_unit.unit = uu.unit
-        WHERE uu.user = user_id AND uu.is_editor_view = TRUE
-    );
+    FROM visible_forms f
+    JOIN public.occasions o ON f.occasion=o.id
+    LEFT JOIN public.get_order_catalog_counts_internal(
+        ARRAY(SELECT occasion FROM visible_occasions),ARRAY(SELECT id FROM visible_forms)
+    ) AS order_stats ON f.id=order_stats.form_id;
 
     -- Step 2: If no forms are found, return an empty JSON array.
     IF forms_data IS NULL THEN

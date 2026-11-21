@@ -51,11 +51,11 @@ website consent binding then needs reconfirmation in Unit settings, and Meta CAP
 `website_ready` for a connector website that relies on such a binding is false until
 then. The `units.settings.save` description states this. MCP reads binding state
 (`units.websiteConsent.inspect`), the import text of a ready binding
-(`units.websiteConsent.export`), dataLayer and Meta CAPI approval
-(`units.measurementApproval.inspect`, `units.metaCapiApproval.inspect`) and generates
+(`units.websiteConsent.export`), dataLayer approval
+(`units.measurementApproval.inspect`) and generates
 the form embed code (`forms.embedCode`, the server port of `formEmbedCode`, checked
-against `packages/festapp_contracts/form-embed-code-cases.json`). It can send the two
-approval requests (`*.request`, organizer settings write) but never confirms, changes
+against `packages/festapp_contracts/form-embed-code-cases.json`). It can send the measurement
+approval request (`units.measurementApproval.request`, organizer settings write) but never confirms, changes
 or disables bindings.
 
 Units store nullable `measurement_privacy_url` as an absolute HTTPS URL without credentials (maximum 2048 characters). A valid URL is required for measurement, conversion recording/export and the consent notice, including host dataLayer transport; partial configuration can still be saved, and changing a valid URL invalidates the processing revision and saved choice.
@@ -89,15 +89,26 @@ bootstrap RPC checks a typed predicate against stored form -> occasion -> Unit
 credentials stay server-side. Browser renewal returns minimal effective policy,
 not GTM IDs, scripts, contacts, JWTs or order capabilities.
 
-A single SQL status owner supplies editor/MCP status and public runtime policy.
-`organization_allowed` means platform permission; `organization_enabled` and
-`unit_enabled` are administrator-owned gates. `eligible` is configuration
-eligibility, never proof of a tag's delivery.
-`enhanced_conversions_unavailable` is false: contact is part of the conversion
-events. Immutable historical receipts may contain historical status; UI/MCP inspect
-current policy through authorized readers.
-SQL facts depend on permanent enablement and valid policy, not temporary runtime
-availability. The browser additionally requires a current eligible policy.
+### Shared measurement decisions
+
+`form_measurement_decision_internal(form)` reads the stored form, its owning
+Unit and organization, the provisioned runtime and its Meta connector. It
+supplies the same configuration decision to checkout, payment, consent capture,
+delivery and the editor. The editor and public runtime retain their existing
+JSON projections.
+
+| Output | What it decides | Additional checks |
+| --- | --- | --- |
+| `conversion_eligible` | The form, Unit and organization enable measurement, the platform permits it, and the privacy URL is valid. | Checkout or settlement provides the order and amount. The order's creation snapshot fixes its cohort and event ID. |
+| `browser_eligible` | Conversion eligibility plus a supported browser runtime and a configured destination. | The browser applies current consent and the runtime's origin policy. |
+| `capi_unit` and `purchase_timing` | The owning Unit's enabled connector sets paid timing even during a pause. A paused connector supplies no delivery destination. | Meta also requires current conversion eligibility, an eligible fully paid order, the saved advertising grant, and a matching connector and consent revision. |
+
+Self-service connector settings belong to the Unit and use its authorized
+organizer settings. Provisioning a browser runtime remains a platform
+operation because it controls where organizer-supplied browser code runs.
+Reporting on actual sales uses `get_report_ws` and the transactional order,
+payment and inventory records. A sale counts there independently of website
+measurement or the visitor's advertising preferences.
 
 ## Runtime, consent and transport
 
@@ -340,34 +351,11 @@ payment processing retryable.
 
 ### Meta CAPI settings
 
-The platform must first approve the organization. Organization administrators
-then open Unit settings → Events and consent → Meta Conversions API. Before
-approval, Unit managers see only the request state there and can request approval
-once with `request_unit_meta_capi_approval`. It uses the measurement request's
-boundary and channel: `can_manage_unit_configuration`, an organization row lock, request
-generations shared by all Units in `analytics.organization_meta_capi_request` and a `META_CAPI_APPROVAL_REQUEST`
-delivery email to every current organization administrator with a delivery
-address. The notice lets the recipient review organization details and forward the request
-to Festapp support for the platform operator’s decision. Accepted, ambiguous or live queued notices block duplicates; terminal or
-expired ones allow a retry. Platform approval fulfils the current generation and retires
-its notices. A later revocation leaves the organization eligible to request again. `get_unit_meta_capi_approval` exposes only the platform
-decision and request state, never settings or delivery details. Demo Units are a
-no-op, and a request grants nothing by itself.
-If approval is removed from an existing connector, only a platform-disabled
-notice and Disconnect remain visible. No settings or delivery details are exposed. The platform uses its protected database administration boundary:
-
-```sql
-INSERT INTO analytics.organization_policy
- (organization, meta_capi_enabled, revision, operator, reason)
-VALUES (123, true, 1, 'platform operator', 'Approved paid purchases to Meta')
-ON CONFLICT (organization) DO UPDATE SET meta_capi_enabled=true,
- revision=analytics.organization_policy.revision+1, changed_at=clock_timestamp(),
- operator=EXCLUDED.operator, reason=EXCLUDED.reason;
-```
-
-Setting `meta_capi_enabled=false` immediately blocks capture, claiming and
-preparing deliveries, independently of organizer switches. A request already
-sent to Meta cannot be recalled. Organizer RPCs cannot change platform policy.
+Unit managers and organization administrators open Unit settings → Events and
+consent → Meta Conversions API. This connector is configured separately for each
+organizer. Turning it off stops capture and preparation, and disconnecting also
+clears the stored token and matching data. The form and website consent settings
+still determine eligible paid purchases.
 
 Enter the dataset ID and access token, choose a saved website and optionally enter a
 test event code. Save can enable delivery together with the token. Configure
@@ -490,9 +478,8 @@ activating `festapp_meta_purchase_delivery` or enabling a connector. Capture
 closes when the last successful sweep is older than ten minutes. Retention runs
 in PostgreSQL even if the delivery worker or Meta is unavailable.
 
-The platform operator approves the organization by setting
-`analytics.organization_policy.meta_capi_enabled`. Organization administrators
-then configure Meta Conversions API in organizer settings → Events and consent:
+Organizer managers and organization administrators configure Meta Conversions API
+in organizer settings under Measurement and consent:
 dataset ID, saved HTTPS website, optional test event code and access token.
 `save_unit_meta_purchase` saves settings and the Vault credential atomically;
 operators do not create connectors or tokens manually. The organizer configures

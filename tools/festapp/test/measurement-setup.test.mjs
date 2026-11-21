@@ -66,11 +66,13 @@ test('new setup operations use organizer settings scopes, delegated access and n
  }
  for(const id of writes){
   const d=measurementSetupDescriptors.find(d=>d.id===id);
-  assert.match(d.description,/Approve the exact change first/);assert.match(d.description,/every administrator of the organization/);
+  if(id==='units.measurementApproval.request'){
+   assert.match(d.description,/Approve the exact change first/);assert.match(d.description,/every administrator of the organization/);
+  }else assert.match(d.description,/without sending any request or email/);
   assert.equal(d.destructive,false);assert.equal(d.idempotent,false);
   assert.equal(d.input.safeParse({unitId:UNIT,commandId:BINDING}).success,false);
  }
- assert.match(measurementSetupDescriptors.find(d=>d.id==='units.metaCapiApproval.inspect').description,/whole organization/);
+ assert.match(measurementSetupDescriptors.find(d=>d.id==='units.metaCapiApproval.inspect').description,/selected organizer/);
 });
 
 test('MCP and the HTTP contract direct uncertain approval requests to inspection without replay',async t=>{
@@ -87,9 +89,11 @@ test('MCP and the HTTP contract direct uncertain approval requests to inspection
   const inspect=`festapp_units_${kind}_approval_inspect`;
   const tool=tools.find(tool=>tool.name===name);
   assert.equal(tool.annotations.idempotentHint,false);
-  assert(tool.description.includes(inspect));
-  assert.match(tool.description,/wait while requestState is requested/);
-  assert.match(tool.description,/retry_available.*Obtain fresh approval/);
+  if(kind==='measurement'){
+   assert(tool.description.includes(inspect));
+   assert.match(tool.description,/wait while requestState is requested/);
+   assert.match(tool.description,/retry_available.*Obtain fresh approval/);
+  }else assert.match(tool.description,/Legacy Meta Conversions API status endpoint/);
   const result=await sdk.callTool({name,arguments:{unitId:UNIT}});
   assert.equal(result.isError,true);
   assert.equal(result.structuredContent.error.code,'TIMEOUT');

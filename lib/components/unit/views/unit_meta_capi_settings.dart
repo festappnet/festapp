@@ -4,14 +4,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/theme_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:fstapp/components/_shared/common_strings.dart';
-import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 import '../db_units.dart';
-import '../meta_capi_approval.dart';
 import '../meta_capi_strings.dart';
-import '../unit_measurement_approval.dart';
 
 class UnitMetaCapiSettings extends StatefulWidget {
   final int unitId;
@@ -20,11 +17,6 @@ class UnitMetaCapiSettings extends StatefulWidget {
   final Future<Map<String, dynamic>> Function(int)? load;
   final Future<void> Function(String, Map<String, dynamic>)? mutate;
 
-  /// Unit managers may ask the platform for approval; settings stay
-  /// organization-administrator only.
-  final bool canRequestApproval;
-  final Future<MetaCapiApproval> Function(int)? loadApproval;
-  final Future<MetaCapiApproval> Function(int)? requestApproval;
   const UnitMetaCapiSettings({
     super.key,
     required this.unitId,
@@ -32,9 +24,6 @@ class UnitMetaCapiSettings extends StatefulWidget {
     this.sectionBuilder,
     this.load,
     this.mutate,
-    this.canRequestApproval = false,
-    this.loadApproval,
-    this.requestApproval,
   });
   @override
   State<UnitMetaCapiSettings> createState() => _UnitMetaCapiSettingsState();
@@ -42,8 +31,7 @@ class UnitMetaCapiSettings extends StatefulWidget {
 
 class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
   Map<String, dynamic>? _data;
-  MetaCapiApproval? _approval;
-  bool _approvalLoadFailed = false;
+  bool _forbidden = false;
   final _dataset = TextEditingController();
   final _testCode = TextEditingController();
   final _token = TextEditingController();
@@ -92,14 +80,15 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
           _website = data['website_origin'] as String?;
           _enabled = data['enabled'] == true;
         }
-        if (data['allowed'] != true) _token.clear();
+        _forbidden = false;
         _loadFailed = false;
       });
     } on PostgrestException catch (error) {
       if (!mounted) return;
       if (error.code == '42501') {
         setState(() {
-          _data = {'allowed': false};
+          _data = null;
+          _forbidden = true;
           _token.clear();
           _loadFailed = false;
         });
@@ -109,7 +98,6 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     } catch (_) {
       if (mounted) setState(() => _loadFailed = true);
     } finally {
-      if (mounted && _data?['allowed'] == false) await _loadApproval();
       if (mounted) {
         setState(() => _loading = false);
         if (_refreshWebsites) {
@@ -118,95 +106,6 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         }
       }
     }
-  }
-
-  Future<void> _loadApproval() async {
-    MetaCapiApproval? approval;
-    var failed = false;
-    try {
-      approval = await (widget.loadApproval ?? DbUnits.getMetaCapiApproval)(
-        widget.unitId,
-      );
-    } on PostgrestException catch (error) {
-      failed = error.code != '42501';
-    } catch (_) {
-      failed = true;
-    }
-    if (!mounted) return;
-    setState(() {
-      _approval = approval;
-      _approvalLoadFailed = failed;
-    });
-  }
-
-  Future<void> _requestApproval() async {
-    if (_busy || _approval?.canRequest != true) return;
-    setState(() => _busy = true);
-    try {
-      final approval = await ExceptionHandler.guard(
-        context,
-        futureFunction: () async {
-          try {
-            return await (widget.requestApproval ??
-                DbUnits.requestMetaCapiApproval)(widget.unitId);
-          } catch (error) {
-            final detail = error.toString();
-            final message = detail.contains('meta_capi_request_no_recipient')
-                ? FormStrings.measurementRequestNoRecipient
-                : detail.contains('meta_capi_notification_origin_missing')
-                ? FormStrings.measurementNotificationOriginMissing
-                : null;
-            if (message != null) {
-              throw AppError(
-                code: 'meta_capi_request',
-                message: message,
-                rawJson: '{}',
-              );
-            }
-            rethrow;
-          }
-        },
-      );
-      if (!mounted || approval == null) return;
-      setState(() => _approval = approval);
-      if (approval.approved) await _load();
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Widget _approvalStatus(BuildContext context, MetaCapiApproval a) {
-    final requested = a.requestState == MeasurementRequestState.requested;
-    final status = a.approved
-        ? MetaCapiStrings.approvedByPlatform
-        : requested
-        ? a.requestedAt == null
-              ? FormStrings.measurementPlatformPending
-              : FormStrings.measurementApprovalRequested(
-                  DateFormat.yMd(context.locale.toString())
-                      .format(a.requestedAt!.toLocal()),
-                )
-        : a.requestState == MeasurementRequestState.retryAvailable &&
-              a.canRequest
-        ? FormStrings.measurementApprovalRetry
-        : FormStrings.measurementApprovalRequired;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(liveRegion: true, child: Text(status)),
-        if (widget.canRequestApproval &&
-            !a.approved &&
-            !requested &&
-            a.canRequest) ...[
-          const SizedBox(height: 8),
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(minimumSize: const Size(48, 48)),
-            onPressed: _busy || _loading ? null : _requestApproval,
-            child: Text(MetaCapiStrings.requestApproval),
-          ),
-        ],
-      ],
-    );
   }
 
   bool get _validDraftToken =>
@@ -280,7 +179,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(CommonStrings.storno),
+            child: Text(CommonStrings.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -345,57 +244,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
   }
 
   Widget? _buildSection(BuildContext context) {
-    // A known platform denial exposes only the approval request status and
-    // authorized disconnect cleanup, never settings or delivery details.
-    if (_data?['allowed'] == false) {
-      final connected = _data?['connected'] == true;
-      final approval = _approval;
-      if (!connected && approval == null && !_approvalLoadFailed) return null;
-      return Padding(
-        padding: const EdgeInsets.only(top: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (connected)
-              Row(
-                children: [
-                  Expanded(child: Text(MetaCapiStrings.platformDisabled)),
-                  TextButton(
-                    onPressed: _busy || _loading ? null : _disconnect,
-                    child: Text(MetaCapiStrings.disconnect),
-                  ),
-                ],
-              )
-            else
-              Text(
-                MetaCapiStrings.title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            if (approval != null) ...[
-              const SizedBox(height: 8),
-              _approvalStatus(context, approval),
-              if (approval.requestState == MeasurementRequestState.requested ||
-                  approval.approved)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: _busy || _loading ? null : () => _load(),
-                    child: Text(CommonStrings.refresh),
-                  ),
-                ),
-            ],
-            if (_approvalLoadFailed) ...[
-              const SizedBox(height: 8),
-              Semantics(
-                liveRegion: true,
-                child: Text(FormStrings.measurementPlatformUnknown),
-              ),
-              Align(alignment: Alignment.centerLeft, child: _retryLoad()),
-            ],
-          ],
-        ),
-      );
-    }
+    if (_forbidden) return null;
     if (_data == null) {
       return _section([
         if (_loadFailed) _retryLoad(),
@@ -435,11 +284,12 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         ? message
         : '$message · ${DateFormat.yMd(context.locale.toString()).add_jm().format(at.toLocal())}';
     final enabled = data['enabled'] == true;
-    final websiteReady = data['website_ready'] != false;
+    final websiteReady = data['website_ready'] == true;
     final hasReadyForm = forms.any(
-      (form) => form['enabled'] == true && form['measurement_ready'] != false,
+      (form) => form['enabled'] == true && form['measurement_ready'] == true,
     );
-    final active = enabled && websiteReady && hasReadyForm;
+    final configured = data['token_saved'] == true && data['dataset'] != null;
+    final active = configured && enabled && websiteReady && hasReadyForm;
     final needsSetup = enabled && !active;
     final statusColor = paused || needsSetup
         ? ThemeConfig.warningColor(context)
@@ -475,6 +325,8 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
                           ? websiteReady
                                 ? MetaCapiStrings.enableFormMeasurement
                                 : MetaCapiStrings.configureWebsiteConsent
+                          : configured
+                          ? MetaCapiStrings.configuredOff
                           : MetaCapiStrings.off,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: paused || needsSetup

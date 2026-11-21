@@ -3,10 +3,9 @@ CREATE OR REPLACE FUNCTION public.meta_purchase_consent_revision_internal(p_form
 RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT md5(jsonb_build_array(c.revision,c.dataset,c.website_origin,c.test_event_code,
          public.unit_measurement_consent_scope_internal(c.unit)->>'consentRevision')::text)
- FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
- JOIN analytics.meta_purchase_connectors c ON c.unit=public.form_meta_purchase_unit_internal(f.id)
- WHERE f.id=p_form
-  AND public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(f.id));
+ FROM public.form_measurement_decision_internal(p_form) d
+ JOIN analytics.meta_purchase_connectors c ON c.unit=d.capi_unit
+ WHERE d.conversion_eligible;
 $$;
 REVOKE ALL ON FUNCTION public.meta_purchase_consent_revision_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -38,7 +37,7 @@ BEGIN
   OR p_snapshot->'ad_personalization' IS DISTINCT FROM 'true'::jsonb
   OR p_snapshot->>'consentRevision' IS DISTINCT FROM public.unit_measurement_consent_scope_internal(p_unit)->>'consentRevision' THEN RETURN false; END IF;
  SELECT * INTO c FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND enabled AND paused_at IS NULL;
- IF NOT FOUND OR NOT public.meta_purchase_platform_allowed_internal(p_unit) OR p_snapshot->>'websiteOrigin' IS DISTINCT FROM c.website_origin THEN RETURN false; END IF;
+ IF NOT FOUND OR p_snapshot->>'websiteOrigin' IS DISTINCT FROM c.website_origin THEN RETURN false; END IF;
  IF p_snapshot->>'source'='klaro' THEN
   SELECT rtrim(org.data->>'DEFAULT_URL','/') INTO service_origin FROM public.units u JOIN public.organizations org ON org.id=u.organization WHERE u.id=p_unit;
   RETURN coalesce(NOT p_snapshot ? 'binding' AND c.website_origin=service_origin,false);
@@ -94,8 +93,7 @@ BEGIN
   IF (p_consent->>'transportExpiresAt')::bigint<=extract(epoch FROM clock_timestamp())*1000
     OR (p_consent->>'transportExpiresAt')::bigint>extract(epoch FROM clock_timestamp())*1000+60000 THEN RETURN; END IF;
  END IF;
- SELECT o.form,o.price,o.data,oc.unit,f.link,c.website_origin,c.revision,c.enabled,c.paused_at,
-  public.meta_purchase_platform_allowed_internal(c.unit) platform_allowed
+ SELECT o.form,o.price,o.data,oc.unit,f.link,c.website_origin,c.revision,c.enabled,c.paused_at
  INTO details
  FROM eshop.orders o JOIN public.occasions oc ON oc.id=o.occasion JOIN public.forms f ON f.id=o.form
  JOIN analytics.meta_purchase_connectors c ON c.unit=oc.unit
@@ -106,7 +104,7 @@ BEGIN
  FOR KEY SHARE OF c SKIP LOCKED;
  IF NOT FOUND THEN RETURN; END IF;
  IF details.enabled IS DISTINCT FROM true OR details.paused_at IS NOT NULL
-    OR details.platform_allowed IS DISTINCT FROM true OR coalesce(details.price,0)<=0
+    OR coalesce(details.price,0)<=0
     OR public.form_measurement_visitor_role_internal(details.form)='staff'
     OR coalesce(details.link,'') !~ '^[a-zA-Z0-9_-]+$'
     OR public.meta_purchase_consent_revision_internal(details.form) IS DISTINCT FROM p_consent->>'revision'

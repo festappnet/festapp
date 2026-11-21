@@ -506,20 +506,22 @@
     },
     {
       "migration": "20261116140000_restore_fakturoid_czk_reference.sql",
-      "active": true,
       "header": "-- Restore Fakturoid-owned CZK variable symbols before order confirmation.",
       "sources": [
         "emails/fakturoid_email_gate.sql"
-      ]
+      ],
+      "sha256": "75df8f4cdafcecdc817559441d57a6846cb85938d9f1f000d838e2cbf63d4268",
+      "checkSources": true
     },
     {
       "migration": "20261116150000_ticket_table_seat_appearance.sql",
-      "active": true,
       "header": "-- Table seat display is a typed ticket-template appearance, shared by preview and PDF.",
       "sources": [
         "others/ticket_layout.sql",
         "others/get_ticket_layout_write_contract_v1.sql"
-      ]
+      ],
+      "sha256": "ab1ad3c1d57ee1a2088d188e35113d0b1eba746d54d179c4c72ba9be600159ab",
+      "checkSources": true
     },
     {
       "migration": "20261118110000_form_paid_conversion.sql",
@@ -625,7 +627,6 @@
     },
     {
       "migration": "20261119230000_organizer_ticket_resend_limits.sql",
-      "active": true,
       "header": "-- Meter authorized ticket resends per organizer and recipient at admission and send.",
       "sources": [
         "abuse/ticket_resend.sql",
@@ -643,19 +644,23 @@
         "emails/email_queue.sql": [
           "begin_email_send"
         ]
-      }
+      },
+      "sha256": "7f1e24f85e9aa05ed17de6dd4e7fee6058e7256bdf8f60c265ad2a2b0c605577",
+      "checkSources": true
     },
     {
       "migration": "20261120010000_meta_purchase_order_consent.sql",
-      "active": true,
+      "active": false,
       "header": "-- Capture the current CMP grant with the order; decision dates are optional audit metadata.\n-- Preserve existing order grants using their already server-owned capture time.\nUPDATE analytics.meta_purchase_deliveries SET consent_snapshot=(consent_snapshot-'timestamp') || jsonb_build_object('capturedAt',to_char(consent_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) || CASE WHEN consent_decided_at IS NOT NULL THEN jsonb_build_object('decidedAt',to_char(consent_decided_at AT TIME ZONE 'UTC','YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')) ELSE '{}'::jsonb END WHERE consent_snapshot IS NOT NULL AND NOT consent_snapshot ? 'capturedAt';",
       "sources": [
         "eshop_forms/meta_purchase_consent.sql"
-      ]
+      ],
+      "sha256": "ca6551b37702be90f44b30b42e6951385e2e4bcc0744715d88bb78b3147922a1",
+      "checkSources": true
     },
     {
       "migration": "20261120000000_meta_purchase_outcomes.sql",
-      "active": true,
+      "active": false,
       "header": "-- Explain terminal Meta purchase outcomes without retaining matching data.\nCREATE INDEX meta_purchase_unit_outcome_history ON analytics.meta_purchase_deliveries(unit,(coalesce(done_at,consent_at)));\nDROP INDEX analytics.meta_purchase_unit_history;",
       "sources": [
         "eshop_forms/meta_purchase_settings.sql",
@@ -666,11 +671,13 @@
         "eshop_forms/meta_purchase_settings.sql": [
           "get_unit_meta_purchase"
         ]
-      }
+      },
+      "sha256": "8e07431f2cecc1c0b34876d0b661ba25d57714c82c7d8af8f2dd32a55ed87307",
+      "checkSources": true
     },
     {
       "migration": "20261120030000_meta_capi_approval_request.sql",
-      "active": true,
+      "active": false,
       "header": "-- Let Unit managers request platform approval of Meta CAPI. Approval itself stays a platform decision.",
       "sources": [
         "eshop_forms/unit_meta_capi_approval.sql",
@@ -681,7 +688,9 @@
         "emails/email_queue.sql": [
           "email_intent_valid"
         ]
-      }
+      },
+      "sha256": "cd424ffbadf8d500f346c63925960671985188eeac95fc9f14ca007c6f35e8e2",
+      "checkSources": true
     },
     {
       "migration": "20261120100000_transactional_order_email_admission.sql",
@@ -758,6 +767,65 @@
         "eshop_forms/form_creation_domain.sql",
         "eshop_forms/create_form_client_sync_v1.sql",
         "eshop/delete_product_client_sync_v1.sql"
+      ]
+    },
+    {
+      "migration": "20261121020000_self_service_meta_capi.sql",
+      "header": "-- Fence any delivery captured under a since-withdrawn grant, even if the\n-- connector was already off when the old platform gate was removed.\nUPDATE analytics.meta_purchase_connectors c SET enabled=false,revision=gen_random_uuid()\nWHERE NOT EXISTS(\n SELECT 1 FROM public.units u JOIN analytics.organization_policy p ON p.organization=u.organization\n WHERE u.id=c.unit AND p.meta_capi_enabled);\n\nDROP TRIGGER fulfil_meta_capi_approval ON analytics.organization_policy;\nDROP FUNCTION public.fulfil_meta_capi_approval_internal();\nDROP FUNCTION public.unit_meta_capi_approval_internal(bigint);\nDROP FUNCTION public.meta_purchase_platform_allowed_internal(bigint);\nDROP INDEX public.unit_meta_capi_notification_generation;\nDROP TABLE analytics.organization_meta_capi_request;\nALTER TABLE analytics.organization_policy DROP COLUMN meta_capi_enabled;\nDROP FUNCTION public.form_conversion_policy_allows_internal(jsonb);\nDROP FUNCTION public.form_meta_purchase_unit_internal(bigint);\nDROP FUNCTION public.form_purchase_timing_internal(bigint);",
+      "sources": [
+        "user_permissions/unit_meta_purchase.sql",
+        "eshop_forms/form_measurement_decision.sql",
+        "eshop_forms/form_measurement_policy.sql",
+        "eshop_forms/form_paid_conversion.sql",
+        "eshop_forms/meta_purchase_settings.sql",
+        "eshop_forms/form_datalayer.sql",
+        "eshop_forms/meta_purchase_consent.sql",
+        "eshop_forms/meta_purchase_worker.sql",
+        "eshop_forms/unit_meta_capi_approval.sql",
+        "emails/email_queue.sql",
+        "units/delete_unit.sql"
+      ],
+      "selectors": {
+        "emails/email_queue.sql": [
+          "email_intent_valid"
+        ],
+        "eshop_forms/form_measurement_policy.sql": [
+          "form_measurement_status_internal"
+        ],
+        "eshop_forms/form_paid_conversion.sql": [
+          "form_paid_conversion_eligible_internal"
+        ]
+      },
+      "sha256": "4960a0c7a4a410afdf731a3783cc61d87be6d9e79dc8ff2b29229e2be51885c7",
+      "checkSources": true
+    },
+    {
+      "migration": "20261121100000_form_measurement_publisher.sql",
+      "active": true,
+      "header": "-- Keep existing conversion facts and deliveries in place as writer ownership changes.\nDROP FUNCTION public.record_form_conversion_internal(bigint);\nDROP FUNCTION public.record_form_conversion_internal(bigint,boolean);\nDROP FUNCTION public.record_form_paid_conversion_internal(bigint);",
+      "sources": [
+        "eshop_forms/form_measurement_subscriptions.sql",
+        "eshop_forms/form_measurement_publisher.sql",
+        "eshop_forms/form_datalayer.sql",
+        "eshop_forms/meta_purchase_worker.sql",
+        "eshop_orders/create_ticket_order_client_sync_v1.sql",
+        "eshop_waitlist/commands.sql",
+        "eshop_transactions/apply_transaction_pairing.sql",
+        "payment_providers/effects.sql"
+      ]
+    },
+    {
+      "migration": "20261121101000_order_catalog_counts.sql",
+      "active": true,
+      "header": "-- Reconcile legacy form UUIDs before switching catalog readers to orders.form.\n-- A UUID has to identify one form within the order's saved occasion.\nDO $$\nDECLARE\n legacy_missing bigint;\n conflicts bigint;\n repaired bigint;\nBEGIN\n SELECT audit.legacy_missing,audit.conflicts INTO legacy_missing,conflicts\n FROM (\n -- BEGIN FORM CATALOG PREFLIGHT\n WITH form_keys AS (\n  SELECT occasion,key,min(id) AS form_id,count(*) AS matches\n  FROM public.forms GROUP BY occasion,key\n ), links AS (\n  SELECT o.form,f.form_id AS matched_form,f.matches\n  FROM eshop.orders o\n  LEFT JOIN form_keys f ON f.occasion=o.occasion AND f.key=CASE\n   WHEN o.data->>'form' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'\n   THEN (o.data->>'form')::uuid END\n  WHERE o.data->>'form' IS NOT NULL\n )\n SELECT count(*) FILTER(WHERE form IS NULL AND matches=1) AS legacy_missing,\n  count(*) FILTER(WHERE matches IS DISTINCT FROM 1::bigint\n   OR (form IS NOT NULL AND form IS DISTINCT FROM matched_form)) AS conflicts\n FROM links\n -- END FORM CATALOG PREFLIGHT\n ) audit;\n\n IF conflicts<>0 THEN\n  RAISE EXCEPTION 'Form catalog migration requires reconciliation of % order/form conflicts',conflicts;\n END IF;\n\n WITH unique_form_keys AS (\n  SELECT occasion,key,min(id) AS form_id FROM public.forms GROUP BY occasion,key HAVING count(*)=1\n )\n UPDATE eshop.orders o SET form=f.form_id\n FROM unique_form_keys f\n WHERE o.form IS NULL AND o.occasion=f.occasion AND f.key=CASE\n  WHEN o.data->>'form' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'\n  THEN (o.data->>'form')::uuid END;\n GET DIAGNOSTICS repaired=ROW_COUNT;\n IF repaired<>legacy_missing THEN\n  RAISE EXCEPTION 'Form associations changed during reconciliation (expected %, repaired %)',legacy_missing,repaired;\n END IF;\n RAISE NOTICE 'Form catalog associations repaired: %, unresolved conflicts: %',repaired,conflicts;\nEND $$;",
+      "sources": [
+        "eshop_waitlist/form_capacity.sql",
+        "eshop_orders/order_catalog_counts.sql",
+        "eshop_forms/get_forms_by_link.sql",
+        "eshop_forms/get_all_viewable_forms_for_copying.sql",
+        "eshop_forms/legacy_form_catalog.sql",
+        "others/legacy_occasion_catalogs.sql",
+        "eshop_forms/admin_form_reads.sql"
       ]
     },
     {

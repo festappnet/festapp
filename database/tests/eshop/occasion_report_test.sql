@@ -2,7 +2,7 @@ BEGIN;
 DO $$
 DECLARE u uuid; org bigint; unit_id bigint; occ bigint; other_occ bigint;
   p1 bigint; p2 bigint; p3 bigint; p4 bigint; o1 bigint; o2 bigint; o3 bigint; o4 bigint;
-  bank bigint; product1 bigint; product2 bigint; ticket_id bigint; limited_form bigint; r jsonb; m jsonb;
+  bank bigint; product1 bigint; product2 bigint; ticket_id bigint; limited_form bigint; r jsonb; m jsonb; expected_catalog jsonb;
 BEGIN
   PERFORM create_user_for_test('report_metrics','report-metrics@test.local');
   u:=get_user_id('report_metrics');
@@ -47,6 +47,16 @@ BEGIN
   INSERT INTO eshop.tickets(occasion,state) VALUES(occ,'paid') RETURNING id INTO ticket_id;
   INSERT INTO eshop.order_product_ticket("order",product,ticket) VALUES(o1,product1,ticket_id),(o1,product2,ticket_id),(o4,product1,NULL);
   UPDATE eshop.orders SET form=limited_form WHERE id=o1;
+  UPDATE public.occasion_users SET is_editor_view=true WHERE occasion=occ AND "user"=u;
+  expected_catalog:='{"total":1,"storno":0,"paid_or_sent":1,"ordered":0}';
+  PERFORM assert_eq((SELECT f->'stats' FROM jsonb_array_elements(public.get_forms_by_link('report-metrics')) f
+    WHERE f->>'id'=limited_form::text),expected_catalog,'form counts include a relational assignment without a JSON key');
+  PERFORM assert_eq((SELECT f->'stats' FROM jsonb_array_elements(public.get_all_viewable_forms_for_copying()) f
+    WHERE f->>'id'=limited_form::text),expected_catalog,'copy catalog uses the same form population');
+  PERFORM assert_eq((SELECT f->>'response_count' FROM jsonb_array_elements(public.get_all_forms('report-metrics')->'data') f
+    WHERE f->>'id'=limited_form::text),'1','legacy catalog keeps its response count field');
+  PERFORM assert_false(has_function_privilege('authenticated','public.get_order_catalog_counts_internal(bigint[],bigint[])','EXECUTE'),
+    'raw scoped catalog counts are private');
   INSERT INTO eshop.spots(occasion,title,secret,order_product_ticket) VALUES(occ,'Seat',gen_random_uuid(),(SELECT min(id) FROM eshop.order_product_ticket WHERE "order"=o1));
   SET LOCAL ROLE authenticated;
   r:=public.get_report_ws('report-metrics');

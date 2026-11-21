@@ -720,24 +720,5 @@
       "title": "Žiadosť o schválenie merania",
       "prompt": "Zisti stav schválenia merania u organizátora Letnej slávnosti. Ak možno požiadať o schválenie, ukáž mi, čo sa odošle správcom. Žiadosť odošli až po mojom potvrdení a potom over jej stav."
     }
-  },
-  {
-    "id": "meta-capi-approval",
-    "operations": [
-      "access.inspect",
-      "units.metaCapiApproval.inspect"
-    ],
-    "cs": {
-      "title": "Zkontrolovat schválení Meta CAPI",
-      "prompt": "Zjisti, jestli je Meta CAPI schválené pro celou organizaci Letní slavnosti a jestli už správci čekají na vyřízení žádosti."
-    },
-    "en": {
-      "title": "Check Meta CAPI approval",
-      "prompt": "Check whether Meta CAPI is approved across the Summer Festival organization and whether an approval request is pending."
-    },
-    "sk": {
-      "title": "Kontrola schválenia Meta CAPI",
-      "prompt": "Zisti, či je Meta CAPI schválené pre celú organizáciu Letnej slávnosti a či správcovia už evidujú žiadosť na vybavenie."
-    }
   }
 ]

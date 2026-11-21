@@ -26,8 +26,11 @@ BEGIN
   SELECT 1 FROM public.occasions o WHERE o.id=f.occasion
   AND jsonb_path_exists(o.features, '$[*] ? (@.code == "blueprint" && @.is_enabled == true)')
  ) THEN RETURN 'blueprint'; END IF;
+ -- The availability window and blueprint have already been checked. Unlimited
+ -- forms have no capacity threshold, so they do not need another inventory read.
+ IF f.participant_capacity IS NULL THEN RETURN 'regular'; END IF;
  c:=public.get_form_capacity_snapshot_internal(p_form,p_at);
- IF f.participant_capacity IS NULL OR (c->>'remainingPublic')::bigint>0 THEN RETURN 'regular'; END IF;
+ IF (c->>'remainingPublic')::bigint>0 THEN RETURN 'regular'; END IF;
  RETURN CASE WHEN f.waitlist_enabled THEN 'waitlist' ELSE 'full' END;
 END $$;
 CREATE OR REPLACE FUNCTION public.check_form_capacity_settings_internal(p_form bigint,p_input jsonb)

@@ -528,6 +528,8 @@
     "purchaseTimingOrder": "Przy złożeniu zamówienia",
     "purchaseTimingPaid": "Po pełnej zapłacie",
     "purchaseTimingHelp": "Tryb zamówienia obejmuje nieopłacone zamówienia. Tryb płatności wymaga kwalifikującej się płatności bankowej lub online i powrotu do podglądu w ciągu 47 godzin.",
+    "measurementBrowserChannel": "Pomiar w przeglądarce",
+    "measurementMetaCapiHelp": "Meta CAPI wybrano dla pełnych płatności. Stan witryny, zgody i dostarczenia znajdziesz w ustawieniach organizatora.",
     "purchaseTimingCapi": "Meta Conversions API wymaga trybu po zapłacie. Przeglądarka i serwer używają tego samego identyfikatora zdarzenia.",
     "measurementPolicySummary": "Polityka prywatności",
     "measurementBannerFallback": "Pojawia się w formularzu otwartym samodzielnie.",
@@ -1096,6 +1098,7 @@
     "removeOrganizationFavorite": "Usuń z ulubionych",
     "webAnalytics": "Analityka internetowa",
     "analyticsVisits": "Wizyty i źródła ruchu",
+    "analyticsCoverage": "Cloudflare Web Analytics mierzy ruch w publicznych katalogach, na stronach organizatorów i w formularzach. Wybierz okres w panelu.",
     "analyticsPages": "Wyświetlenia stron",
     "openCloudflareAnalytics": "Otwórz statystyki w Cloudflare",
     "organizationSettings": "Ustawienia organizacji",
@@ -2344,7 +2347,7 @@
     "unitSettingsRead": "Odczyt ustawień organizatora",
     "unitSettingsWrite": "Zmiana ustawień organizatora",
     "unitWebsiteConsentWrite": "Zapisywanie, potwierdzanie i wyłączanie powiązań zgody witryny",
-    "unitApprovalsRequest": "Prosić o zatwierdzenie pomiaru i Meta CAPI (wysyła e-mail do wszystkich administratorów organizacji)",
+    "unitApprovalsRequest": "Prosić o zatwierdzenie pomiaru w przeglądarce (wysyła e-mail do administratorów organizacji)",
     "emailTemplatesRead": "Odczyt szablonów e-mail, banerów i przykładowych podglądów",
     "emailTemplatesWrite": "Edycja szablonów e-mail i banerów; przywracanie dziedziczenia",
     "productSchedulesRead": "Czytać fale cenowe i zaplanowane zmiany produktów",
@@ -3563,6 +3566,7 @@
     }
   },
   "MetaCapi": {
+    "configuredOff": "Skonfigurowano, wyłączono",
     "invalidCount": "Nieważne",
     "expired": "Wygasłe",
     "connector_changed": "Nie wysłano: zmieniono ustawienia połączenia.",

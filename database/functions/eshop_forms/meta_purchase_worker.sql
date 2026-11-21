@@ -6,9 +6,8 @@ BEGIN
  WITH due AS (
   SELECT d.order_id FROM analytics.meta_purchase_deliveries d
   JOIN analytics.meta_purchase_connectors c ON c.unit=d.unit
-  JOIN analytics.conversion_facts f ON f."order"=d.order_id AND f.kind='order_fully_paid'
+  JOIN analytics.conversion_facts f ON f."order"=d.order_id AND f.kind=public.form_measurement_subscription_kind_internal('meta_purchase')
   WHERE d.status='pending' AND c.enabled AND c.paused_at IS NULL
-    AND public.meta_purchase_platform_allowed_internal(c.unit)
     AND public.form_order_purchase_timing_internal(d.order_id)='paid'
     AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE
     AND d.next_attempt_at<=clock_timestamp() AND (d.lease_until IS NULL OR d.lease_until<=clock_timestamp())
@@ -37,21 +36,20 @@ BEGIN
  SELECT * INTO connector FROM analytics.meta_purchase_connectors WHERE unit=connector_unit FOR NO KEY UPDATE;
  -- Serialize short prepares before a possible credential pause; never upgrade
  -- two concurrent shared connector locks to an update lock.
- IF NOT FOUND OR connector.enabled IS DISTINCT FROM true OR connector.paused_at IS NOT NULL
-  OR NOT public.meta_purchase_platform_allowed_internal(connector.unit) THEN RETURN NULL; END IF;
+ IF NOT FOUND OR connector.enabled IS DISTINCT FROM true OR connector.paused_at IS NOT NULL THEN RETURN NULL; END IF;
  SELECT * INTO delivery FROM analytics.meta_purchase_deliveries
  WHERE order_id=p_order_id AND status='pending' AND lease=p_lease AND lease_until>clock_timestamp() AND NOT prepared
  FOR UPDATE;
  IF NOT FOUND THEN RETURN NULL; END IF;
  IF delivery.unit IS DISTINCT FROM connector.unit THEN RETURN NULL; END IF;
- SELECT * INTO fact FROM analytics.conversion_facts WHERE "order"=p_order_id AND kind='order_fully_paid';
+ SELECT * INTO fact FROM analytics.conversion_facts WHERE "order"=p_order_id AND kind=public.form_measurement_subscription_kind_internal('meta_purchase');
  SELECT * INTO o FROM eshop.orders WHERE id=p_order_id;
  -- Closed reason vocabulary; the first matching guard owns the outcome.
  invalid_reason:=CASE
   WHEN delivery.connector_revision IS DISTINCT FROM connector.revision THEN 'connector_changed'
   WHEN public.form_order_purchase_timing_internal(p_order_id) IS DISTINCT FROM 'paid'
     OR public.form_order_purchase_capi_required_internal(p_order_id) IS DISTINCT FROM true
-    OR public.form_meta_purchase_unit_internal(o.form) IS DISTINCT FROM connector.unit
+    OR (SELECT d.capi_unit FROM public.form_measurement_decision_internal(o.form) d) IS DISTINCT FROM connector.unit
     OR fact.payload IS DISTINCT FROM jsonb_build_object('value',o.price,'currency',trim(o.currency_code))
     OR NOT public.form_paid_conversion_eligible_internal(p_order_id) THEN 'order_ineligible'
   WHEN delivery.consent_revision IS DISTINCT FROM public.meta_purchase_consent_revision_internal(o.form)
@@ -142,10 +140,9 @@ BEGIN
  IF NOT EXISTS(
   SELECT FROM analytics.meta_purchase_deliveries d
   JOIN analytics.meta_purchase_connectors c ON c.unit=d.unit AND c.enabled AND c.paused_at IS NULL
-  JOIN analytics.conversion_facts f ON f."order"=d.order_id AND f.kind='order_fully_paid'
+  JOIN analytics.conversion_facts f ON f."order"=d.order_id AND f.kind=public.form_measurement_subscription_kind_internal('meta_purchase')
   WHERE d.status='pending' AND d.next_attempt_at<=clock_timestamp()
    AND (d.lease_until IS NULL OR d.lease_until<=clock_timestamp())
-   AND public.meta_purchase_platform_allowed_internal(c.unit)
    -- Same cohort filter as claiming, so unclaimable rows do not wake the worker.
    AND public.form_order_purchase_timing_internal(d.order_id)='paid'
    AND public.form_order_purchase_capi_required_internal(d.order_id) IS TRUE

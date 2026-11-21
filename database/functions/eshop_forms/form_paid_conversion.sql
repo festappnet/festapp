@@ -9,7 +9,7 @@ BEGIN
  SELECT * INTO o FROM eshop.orders WHERE id=p_order;
  IF o.form IS NULL OR (o.state IN ('paid','sent')) IS NOT TRUE OR coalesce(o.price,0)<=0
   OR coalesce(trim(o.currency_code),'') !~ '^[A-Z]{3}$'
-  OR NOT public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(o.form))
+  OR NOT EXISTS(SELECT FROM public.form_measurement_decision_internal(o.form) d WHERE d.conversion_eligible)
  THEN RETURN false; END IF;
 
  SELECT * INTO payment FROM eshop.payment_info WHERE id=o.payment_info;
@@ -35,17 +35,3 @@ BEGIN
  RETURN true;
 END $$;
 REVOKE ALL ON FUNCTION public.form_paid_conversion_eligible_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
-
--- Payment owners hold the order and payment locks. Preserve the settlement fact
--- in the same transaction so provider or manual pairing retries cannot lose it.
-CREATE OR REPLACE FUNCTION public.record_form_paid_conversion_internal(p_order bigint)
-RETURNS void LANGUAGE plpgsql VOLATILE SET search_path=public,extensions AS $$
-BEGIN
- IF EXISTS(SELECT FROM analytics.conversion_facts c WHERE c."order"=p_order AND c.kind='order_fully_paid')
-    OR NOT public.form_paid_conversion_eligible_internal(p_order) THEN RETURN; END IF;
- INSERT INTO analytics.conversion_facts("order",kind,payload)
- SELECT id,'order_fully_paid',jsonb_build_object('value',price,'currency',trim(currency_code))
- FROM eshop.orders WHERE id=p_order
- ON CONFLICT("order",kind) DO NOTHING;
-END $$;
-REVOKE ALL ON FUNCTION public.record_form_paid_conversion_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;

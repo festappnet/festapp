@@ -25,6 +25,9 @@ BEGIN
  UPDATE analytics.organization_policy SET enabled=true,revision=3 WHERE organization=(x->>'organization')::bigint;
  replay:=create_ticket_order_client_sync_v1(payload,command,client);
  PERFORM assert_true(replay#>'{data,analytics}' IS NULL OR replay#>'{data,analytics}'='null','later platform permission cannot backfill old receipt');
+ PERFORM assert_true((SELECT conversion_eligible AND NOT browser_eligible AND capi_unit IS NULL
+  FROM public.form_measurement_decision_internal(fid)),
+  'a valid form can record conversions without a configured browser or Meta destination');
  command:=gen_random_uuid();result:=create_ticket_order_client_sync_v1(payload,command,client);
  PERFORM assert_eq(result#>>'{data,code}','200','allowed free registration succeeds');
  conversion:=result#>'{data,analytics}';oid:=(result#>>'{data,order,id}')::bigint;
@@ -33,6 +36,14 @@ BEGIN
  PERFORM assert_eq(conversion->>'lead_source','free_registration','free registration distinguished from waitlist');
  PERFORM assert_true((conversion->>'event_id')::uuid IS NOT NULL,'stable non-capability UUID');
  PERFORM assert_eq(create_ticket_order_client_sync_v1(payload,command,client)#>'{data,analytics}',conversion,'free registration replay identity stable');
+ PERFORM assert_eq(public.publish_form_measurement_event_internal('checkout_finalized',oid),
+  (conversion->>'event_id')::uuid,'publisher retry returns the stored identity');
+ PERFORM assert_false(has_function_privilege('service_role','public.publish_form_measurement_event_internal(text,bigint)','EXECUTE'),
+  'publisher is callable only by the owning server functions');
+ BEGIN
+  PERFORM public.publish_form_measurement_event_internal('purchase',oid);
+  RAISE EXCEPTION 'Publisher accepted an event outside the business vocabulary';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  UPDATE forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":false}}' WHERE id=fid;
  PERFORM assert_true(create_ticket_order_client_sync_v1(payload,command,client)#>'{data,analytics}'='null','form-level revocation also filters replay');
  UPDATE forms SET data=coalesce(data,'{}')||'{"analytics":{"enabled":true}}' WHERE id=fid;

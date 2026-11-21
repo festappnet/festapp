@@ -2,7 +2,6 @@ import 'package:easy_localization/easy_localization.dart';
 
 class MetaCapiStrings {
   static String get loadFailed => 'MetaCapi.loadFailed'.tr();
-  static String get platformDisabled => 'MetaCapi.platformDisabled'.tr();
   static String get noWebsites => 'MetaCapi.noWebsites'.tr();
   static String get noForms => 'MetaCapi.noForms'.tr();
   static String get deliveryFailed => 'MetaCapi.deliveryFailed'.tr();
@@ -25,6 +24,7 @@ class MetaCapiStrings {
       'MetaCapi.formMeasurementRequired'.tr();
   static String get active => 'MetaCapi.active'.tr();
   static String get paused => 'MetaCapi.paused'.tr();
+  static String get configuredOff => 'MetaCapi.configuredOff'.tr();
   static String get off => 'MetaCapi.off'.tr();
   static String get pending => 'MetaCapi.pending'.tr();
   static String get sent => 'MetaCapi.sent'.tr();
@@ -42,6 +42,4 @@ class MetaCapiStrings {
   static String get rejected => 'MetaCapi.rejected'.tr();
   static String get retry => 'MetaCapi.retry'.tr();
   static String get invalid => 'MetaCapi.invalid'.tr();
-  static String get requestApproval => 'MetaCapi.requestApproval'.tr();
-  static String get approvedByPlatform => 'MetaCapi.approvedByPlatform'.tr();
 }

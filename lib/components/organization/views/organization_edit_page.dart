@@ -244,6 +244,14 @@ class _OrganizationEditPageState extends State<OrganizationEditPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (orgId == 3 || orgId == 25)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  AdministrationStrings.analyticsCoverage,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
                             if (orgId == 3) ...[
                               _analyticsReport(
                                 label: 'plesy.vstupenky.online',

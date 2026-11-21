@@ -74,35 +74,20 @@ REVOKE ALL ON FUNCTION public.unit_measurement_consent_scope_internal(bigint) FR
 -- Single status owner. Configuration belongs to Unit; forms contain only intent.
 CREATE OR REPLACE FUNCTION public.form_measurement_status_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- WITH scope AS MATERIALIZED (
-  SELECT coalesce(public.normalize_form_metadata_internal(f.data)#>'{analytics,enabled}'='true'::jsonb,false) requested,
-   coalesce(org.data->'FORM_MEASUREMENT_ENABLED'='true'::jsonb,false) organization_enabled,
-   coalesce(u.data->'measurement_enabled'='true'::jsonb,false) unit_enabled,
-   coalesce(length(u.data->>'measurement_privacy_url') BETWEEN 1 AND 2048
-    AND (u.data->>'measurement_privacy_url') ~ (public.configuration_settings_contract_internal_v1()#>>'{unit,measurement_privacy_url,pattern}'),false) privacy_policy_valid,
-   coalesce(p.enabled,false) allowed,coalesce(p.revision,0) revision,
-   coalesce(nullif(btrim(u.data->>'measurement_gtm_container'),''),nullif(u.data->>'measurement_scripts','')) IS NOT NULL destination,
-   public.form_measurement_runtime_supported_internal(r.runtime_profile,r.runtime_origin,r.parent_origins)
-    AND NOT public.is_demo_occasion(f.occasion) supported
-  FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
-  JOIN public.units u ON u.id=o.unit AND u.organization=o.organization
-  JOIN public.organizations org ON org.id=o.organization
-  LEFT JOIN analytics.organization_policy p ON p.organization=o.organization
-  LEFT JOIN analytics.unit_runtime r ON r.unit=u.id
-  WHERE f.id=p_form
- ) SELECT jsonb_build_object('requested_enabled',requested,'organization_allowed',allowed,
-  'organization_enabled',organization_enabled,'unit_enabled',unit_enabled,
-  'runtime_supported',supported,'eligible',requested AND allowed AND organization_enabled AND unit_enabled AND destination AND supported AND privacy_policy_valid,
-  'meta_purchase_enabled',public.form_meta_purchase_unit_internal(p_form) IS NOT NULL,
-  'purchase_timing',public.form_purchase_timing_internal(p_form),'policy_revision',revision,'consent_required',true,'enhanced_conversions_unavailable',false,
+ SELECT jsonb_build_object('requested_enabled',d.requested_enabled,'organization_allowed',d.organization_allowed,
+  'organization_enabled',d.organization_enabled,'unit_enabled',d.unit_enabled,
+  'runtime_supported',d.runtime_supported,'eligible',d.browser_eligible,
+  'meta_purchase_enabled',d.capi_unit IS NOT NULL,'purchase_timing',d.purchase_timing,
+  'policy_revision',d.policy_revision,'consent_required',true,'enhanced_conversions_unavailable',false,
   'blocked_reasons',to_jsonb(array_remove(ARRAY[
-   CASE WHEN NOT requested THEN 'disabled' END,
-   CASE WHEN NOT allowed THEN 'organization_not_enabled' END,
-   CASE WHEN NOT organization_enabled THEN 'organization_disabled' END,
-   CASE WHEN NOT unit_enabled THEN 'unit_disabled' END,
-   CASE WHEN NOT supported THEN 'runtime_unavailable' END,
-   CASE WHEN NOT destination THEN 'no_destination' END,
-   CASE WHEN NOT privacy_policy_valid THEN 'no_privacy_policy' END],NULL))) FROM scope;
+   CASE WHEN NOT d.requested_enabled THEN 'disabled' END,
+   CASE WHEN NOT d.organization_allowed THEN 'organization_not_enabled' END,
+   CASE WHEN NOT d.organization_enabled THEN 'organization_disabled' END,
+   CASE WHEN NOT d.unit_enabled THEN 'unit_disabled' END,
+   CASE WHEN NOT d.runtime_supported THEN 'runtime_unavailable' END,
+   CASE WHEN NOT d.destination_configured THEN 'no_destination' END,
+   CASE WHEN NOT d.privacy_policy_valid THEN 'no_privacy_policy' END],NULL)))
+ FROM public.form_measurement_decision_internal(p_form) d;
 $$;
 REVOKE ALL ON FUNCTION public.form_measurement_status_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

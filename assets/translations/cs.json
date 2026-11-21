@@ -437,6 +437,8 @@
     "purchaseTimingOrder": "Při vytvoření objednávky",
     "purchaseTimingPaid": "Po úplném zaplacení",
     "purchaseTimingHelp": "Režim objednávky zahrnuje i nezaplacené objednávky. Režim zaplacení vyžaduje způsobilou bankovní nebo online platbu a návrat do přehledu do 47 hodin.",
+    "measurementBrowserChannel": "Měření na webu",
+    "measurementMetaCapiHelp": "Meta CAPI je vybráno pro úplné úhrady. Stav webu, souhlasu a doručení najdete v nastavení pořadatele.",
     "purchaseTimingCapi": "Meta Conversions API vyžaduje režim po zaplacení. Prohlížeč i server používají stejné ID události.",
     "measurementPolicySummary": "Zásady",
     "measurementBannerFallback": "Použije se v samostatně otevřeném formuláři.",
@@ -1505,6 +1507,7 @@
     "googleLoginEnabled": "Povolit přihlášení přes Google",
     "googleLoginDescription": "Uživatelé se mohou přihlásit nebo propojit svůj účet s Google. Vytváření nových účtů se řídí povolením registrace.",
     "analyticsVisits": "Návštěvnost a zdroje návštěv",
+    "analyticsCoverage": "Cloudflare Web Analytics měří veřejné katalogy, stránky pořadatelů a formuláře. Období vyberete v přehledu.",
     "analyticsPages": "Zobrazení stránek"
   },
   "GroupStrings": {
@@ -4245,7 +4248,7 @@
     "unitSettingsRead": "Číst nastavení pořadatele",
     "unitSettingsWrite": "Měnit nastavení pořadatele",
     "unitWebsiteConsentWrite": "Ukládat, potvrzovat a vypínat vazby souhlasu webu",
-    "unitApprovalsRequest": "Žádat o schválení měření a Meta CAPI (pošle e-mail všem správcům organizace)",
+    "unitApprovalsRequest": "Žádat o schválení měření na webu (pošle e-mail správcům organizace)",
     "emailTemplatesRead": "Číst e-mailové šablony, bannery a ukázkové náhledy",
     "emailTemplatesWrite": "Upravovat e-mailové šablony a bannery, obnovovat dědičnost",
     "productSchedulesRead": "Číst cenové vlny a plánované změny produktů",
@@ -5824,6 +5827,7 @@
     "recoveryUnavailable": "Původní objednávku se nepodařilo ověřit. Otevřete potvrzení z e-mailu nebo kontaktujte pořadatele."
   },
   "MetaCapi": {
+    "configuredOff": "Nastaveno, vypnuto",
     "invalidCount": "Neplatné",
     "expired": "Prošlé",
     "connector_changed": "Neodesláno: nastavení propojení se změnilo.",
@@ -5833,7 +5837,6 @@
     "attempts_exhausted": "Neodesláno: počet pokusů byl vyčerpán.",
     "retention_expired": "Neodesláno: uplynula doba uchování souhlasu.",
     "loadFailed": "Nastavení Meta CAPI se nepodařilo načíst",
-    "platformDisabled": "Meta CAPI vypnula platforma",
     "noWebsites": "Nejprve přidejte web v sekci událostí a souhlasu.",
     "noForms": "Zatím nemáte žádné formuláře.",
     "deliveryFailed": "Nákup se nepodařilo odeslat. Další pokusy už neproběhnou.",
@@ -5865,8 +5868,6 @@
     "credentials": "Meta odmítla token. Vyměňte jej.",
     "rejected": "Meta odmítla nákup. Zkontrolujte dataset a web.",
     "retry": "Odeslání dočasně selhalo; další pokus je naplánován.",
-    "invalid": "Zadejte platnou hodnotu.",
-    "requestApproval": "Požádat o povolení Meta CAPI",
-    "approvedByPlatform": "Platforma Meta CAPI povolila. Propojení nastaví správce organizace."
+    "invalid": "Zadejte platnou hodnotu."
   }
 }

@@ -1,21 +1,3 @@
--- Platform policy is intentionally independent of organizer configuration.
-ALTER TABLE analytics.organization_policy ADD COLUMN IF NOT EXISTS meta_capi_enabled boolean NOT NULL DEFAULT false;
-ALTER TABLE analytics.meta_purchase_connectors ALTER COLUMN vault_secret DROP NOT NULL;
-ALTER TABLE analytics.meta_purchase_connectors ADD CONSTRAINT meta_purchase_enabled_requires_token
- CHECK (NOT enabled OR vault_secret IS NOT NULL);
-CREATE INDEX IF NOT EXISTS meta_purchase_unit_history ON analytics.meta_purchase_deliveries(unit,consent_at DESC);
--- Keep terminal delivery audit rows after disconnecting a connector.
-ALTER TABLE analytics.meta_purchase_deliveries DROP CONSTRAINT meta_purchase_deliveries_unit_fkey;
-ALTER TABLE analytics.meta_purchase_deliveries ADD CONSTRAINT meta_purchase_deliveries_unit_fkey
- FOREIGN KEY(unit) REFERENCES public.units(id) ON DELETE CASCADE;
-
-CREATE OR REPLACE FUNCTION public.meta_purchase_platform_allowed_internal(p_unit bigint)
-RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
- SELECT coalesce((SELECT p.meta_capi_enabled FROM public.units u
- JOIN analytics.organization_policy p ON p.organization=u.organization WHERE u.id=p_unit),false);
-$$;
-REVOKE ALL ON FUNCTION public.meta_purchase_platform_allowed_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
-
 -- Saved websites remain available even before a separate runtime is provisioned.
 CREATE OR REPLACE FUNCTION public.unit_meta_purchase_origins_internal(p_unit bigint)
 RETURNS text[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
@@ -33,9 +15,6 @@ DECLARE result jsonb;
 BEGIN
  IF NOT public.can_manage_unit_meta_purchase(p_unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Meta CAPI access denied'; END IF;
- IF NOT public.meta_purchase_platform_allowed_internal(p_unit) THEN
-  RETURN jsonb_build_object('allowed',false,'connected',EXISTS(SELECT FROM analytics.meta_purchase_connectors WHERE unit=p_unit));
- END IF;
  SELECT jsonb_build_object('dataset',c.dataset,'website_origin',c.website_origin,'test_event_code',c.test_event_code,
   'enabled',c.enabled,'paused_at',c.paused_at,'token_saved',c.vault_secret IS NOT NULL,'revision',c.revision,
   'website_ready',coalesce(c.website_origin=ANY(public.unit_meta_purchase_origins_internal(p_unit)) AND (
@@ -61,7 +40,7 @@ BEGIN
     (SELECT jsonb_build_object('code','credentials','status','pending','at',paused_at)
       FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND paused_at IS NOT NULL)),
   'forms',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'enabled',m.form IS NOT NULL,
-     'measurement_ready',public.form_conversion_policy_allows_internal(public.form_measurement_status_internal(f.id))) ORDER BY f.id),'[]'::jsonb)
+     'measurement_ready',EXISTS(SELECT FROM public.form_measurement_decision_internal(f.id) d WHERE d.conversion_eligible)) ORDER BY f.id),'[]'::jsonb)
     FROM public.forms f JOIN public.occasions o ON o.id=f.occasion
     LEFT JOIN analytics.meta_purchase_forms m ON m.form=f.id AND m.unit=p_unit WHERE o.unit=p_unit));
 END $$;
@@ -70,7 +49,7 @@ CREATE OR REPLACE FUNCTION public.save_unit_meta_purchase(p_unit bigint,p_datase
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE secret_id uuid; previous_secret_id uuid;
 BEGIN
- IF NOT public.can_manage_unit_meta_purchase(p_unit) OR NOT public.meta_purchase_platform_allowed_internal(p_unit) THEN
+ IF NOT public.can_manage_unit_meta_purchase(p_unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Meta CAPI not allowed'; END IF;
  -- Serialize settings writers without blocking the delivery FK's key-share lock.
  PERFORM 1 FROM public.units WHERE id=p_unit FOR NO KEY UPDATE;
@@ -121,7 +100,7 @@ END $$;
 CREATE OR REPLACE FUNCTION public.set_form_meta_purchase(p_unit bigint,p_form bigint,p_enabled boolean)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 BEGIN
- IF NOT public.can_manage_unit_meta_purchase(p_unit) OR NOT public.meta_purchase_platform_allowed_internal(p_unit) THEN
+ IF NOT public.can_manage_unit_meta_purchase(p_unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Meta CAPI not allowed'; END IF;
  -- Serialize settings writers without blocking the delivery FK's key-share lock.
  PERFORM 1 FROM public.units WHERE id=p_unit FOR NO KEY UPDATE;
@@ -136,7 +115,6 @@ CREATE OR REPLACE FUNCTION public.delete_unit_meta_purchase(p_unit bigint)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE secret_id uuid;
 BEGIN
- -- Withdrawing platform approval must never prevent authorized cleanup.
  IF NOT public.can_manage_unit_meta_purchase(p_unit) THEN
   RAISE insufficient_privilege USING MESSAGE='Meta CAPI access denied'; END IF;
  -- Serialize settings writers without blocking the delivery FK's key-share lock.

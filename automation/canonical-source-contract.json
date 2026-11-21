@@ -8,7 +8,15 @@
     "eshop_forms/meta_purchase_retention.sql",
     "eshop_forms/meta_purchase_settings.sql",
     "user_permissions/unit_meta_purchase.sql",
-    "eshop_forms/unit_meta_capi_approval.sql"
+    "eshop_forms/unit_meta_capi_approval.sql",
+    "eshop_forms/form_measurement_decision.sql",
+    "eshop_forms/form_measurement_subscriptions.sql",
+    "eshop_forms/form_measurement_publisher.sql",
+    "eshop_orders/order_catalog_counts.sql",
+    "eshop_forms/get_forms_by_link.sql",
+    "eshop_forms/get_all_viewable_forms_for_copying.sql",
+    "eshop_forms/legacy_form_catalog.sql",
+    "eshop_waitlist/form_capacity.sql"
   ],
   "retainedSignatures": [
     "public.uses_ticket_terminology_internal(jsonb)",
@@ -194,6 +202,15 @@
     "public.move_customer_order_domain_internal(bigint,bigint)",
     "public.order_term_occasion_internal(bigint)",
     "public.refresh_order_wallet_term_domain_internal(bigint)",
-    "public.lock_customer_order_change_internal(bigint,bigint)"
+    "public.lock_customer_order_change_internal(bigint,bigint)",
+    "public.fulfil_meta_capi_approval_internal()",
+    "public.unit_meta_capi_approval_internal(bigint)",
+    "public.meta_purchase_platform_allowed_internal(bigint)",
+    "public.form_conversion_policy_allows_internal(jsonb)",
+    "public.form_meta_purchase_unit_internal(bigint)",
+    "public.form_purchase_timing_internal(bigint)",
+    "public.record_form_conversion_internal(bigint)",
+    "public.record_form_conversion_internal(bigint,boolean)",
+    "public.record_form_paid_conversion_internal(bigint)"
   ]
 }

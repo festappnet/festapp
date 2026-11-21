@@ -702,6 +702,8 @@
     "purchaseTimingOrder": "Pri vytvorení objednávky",
     "purchaseTimingPaid": "Po úplnom zaplatení",
     "purchaseTimingHelp": "Režim objednávky zahŕňa aj nezaplatené objednávky. Režim zaplatenia vyžaduje oprávnenú bankovú alebo online platbu a návrat do prehľadu do 47 hodín.",
+    "measurementBrowserChannel": "Meranie na webe",
+    "measurementMetaCapiHelp": "Meta CAPI je vybrané pre úplné úhrady. Stav webu, súhlasu a doručenia nájdete v nastaveniach organizátora.",
     "purchaseTimingCapi": "Meta Conversions API vyžaduje režim po zaplatení. Prehliadač aj server používajú rovnaké ID udalosti.",
     "measurementPolicySummary": "Zásady",
     "measurementBannerFallback": "Použije sa v samostatne otvorenom formulári.",
@@ -1327,6 +1329,7 @@
     "removeOrganizationFavorite": "Odstrániť z obľúbených",
     "webAnalytics": "Webová analytika",
     "analyticsVisits": "Návštevnosť a zdroje návštev",
+    "analyticsCoverage": "Cloudflare Web Analytics meria verejné katalógy, stránky organizátorov a formuláre. Obdobie vyberiete v prehľade.",
     "analyticsPages": "Zobrazenia stránok",
     "openCloudflareAnalytics": "Otvoriť prehľad v Cloudflare",
     "organizationSettings": "Nastavenia organizácie",
@@ -2608,7 +2611,7 @@
     "unitSettingsRead": "Čítať nastavenia organizátora",
     "unitSettingsWrite": "Meniť nastavenia organizátora",
     "unitWebsiteConsentWrite": "Ukladať, potvrdzovať a vypínať väzby súhlasu webu",
-    "unitApprovalsRequest": "Žiadať o schválenie merania a Meta CAPI (pošle e-mail všetkým správcom organizácie)",
+    "unitApprovalsRequest": "Žiadať o schválenie merania na webe (pošle e-mail správcom organizácie)",
     "emailTemplatesRead": "Čítať e-mailové šablóny, bannery a ukážkové náhľady",
     "emailTemplatesWrite": "Upravovať e-mailové šablóny a bannery, obnovovať dedičnosť",
     "productSchedulesRead": "Čítať cenové vlny a plánované zmeny produktov",
@@ -3828,6 +3831,7 @@
     }
   },
   "MetaCapi": {
+    "configuredOff": "Nastavené, vypnuté",
     "invalidCount": "Neplatné",
     "expired": "Expirované",
     "connector_changed": "Neodoslané: nastavenia prepojenia sa zmenili.",

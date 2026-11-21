@@ -351,6 +351,10 @@ void main() {
             'unit_enabled': unitOn,
             'blocked_reasons': reasons,
             'eligible': reasons.isEmpty,
+            if (name == 'no destination') ...{
+              'meta_purchase_enabled': true,
+              'purchase_timing': 'paid',
+            },
             'organization_allowed': name != 'platform block editor',
             'runtime_supported': name != 'platform block editor',
           },
@@ -389,6 +393,9 @@ void main() {
           find.text(FormStrings.measurementReady),
           reasons.isEmpty && formOn ? findsOneWidget : findsNothing,
         );
+        expect(find.text(FormStrings.measurementBrowserChannel), findsOneWidget);
+        expect(find.text(FormStrings.measurementMetaCapiHelp),
+          name == 'no destination' ? findsOneWidget : findsNothing);
         if (name == 'platform block editor') {
           expect(
             find.text(FormStrings.measurementPlatformBlocked),

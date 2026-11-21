@@ -103,7 +103,7 @@ BEGIN
   END IF;
   PERFORM public.payment_provider_call_internal(p_provider,'effect_state',args||jsonb_build_object('state',CASE WHEN action_required THEN 'action_required' ELSE 'paid' END));
   IF NOT action_required THEN
-   PERFORM public.record_form_paid_conversion_internal(o.id);
+   PERFORM public.publish_form_measurement_event_internal('order_fully_paid',o.id);
   END IF;
  END IF;
  IF refunded>=pi.amount AND received>0 THEN

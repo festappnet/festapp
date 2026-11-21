@@ -287,17 +287,8 @@
       "operation": "unit.meta-purchase.settings",
       "budget": "authenticated organization configuration",
       "source": "database/functions/eshop_forms/meta_purchase_settings.sql",
-      "admission": "can_manage_unit_meta_purchase + platform organization policy (disconnect cleanup requires only organization admin and non-demo unit); unit row serializes writes; bounded dataset, token and code; no token reads",
+      "admission": "can_manage_unit_meta_purchase",
       "evidence": "database/tests/eshop_forms/meta_purchase_consent_test.sql",
-      "owner": "Festapp backend maintainers",
-      "reviewBy": "2026-12-19"
-    },
-    {
-      "operation": "unit.meta-capi.approval-request",
-      "budget": "authenticated unit configuration; organization administrator notification",
-      "source": "database/functions/eshop_forms/unit_meta_capi_approval.sql",
-      "admission": "can_manage_unit_configuration",
-      "evidence": "database/tests/eshop_forms/form_measurement_meta_capi_request_test.sql",
       "owner": "Festapp backend maintainers",
       "reviewBy": "2026-12-19"
     }
@@ -949,7 +940,7 @@
       "reviewBy": "2026-11-23",
       "evidence": [
         "supabase/functions/_shared/edgeEntrypoints_test.ts",
-        "supabase/functions/_shared/notificationCenterHealth_test.ts"
+        "database/tests/notification_center/prepared_retention_test.sql"
       ],
       "reason": "Canonical SQL admits user work; signed provider callbacks and bounded service sweeps require verified protocol identity before state access. Entry tests prove fail-closed ingress."
     },
@@ -1110,6 +1101,119 @@
         "supabase/functions/_shared/barion/adapter_test.ts"
       ],
       "reason": "A machine request secret is authorized before constructing providers or performing external I/O. Independent bounded provider queues and leases constrain each reconciliation sweep."
+    },
+    {
+      "name": "probe-complianz",
+      "path": "supabase/functions/probe-complianz/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/probe-complianz/handler_test.ts",
+        "supabase/functions/probe-complianz/policy_test.ts"
+      ],
+      "reason": "Organizer manager permission and a saved origin are checked before the bounded website probe. Confirmation uses the existing consent revision and binding version checks."
+    },
+    {
+      "name": "customer-order-changes",
+      "path": "supabase/functions/customer-order-changes/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/_shared/customerOrderChanges_test.ts"
+      ],
+      "reason": "The request parser bounds input and validates the customer capability. The SQL owner checks order scope and the change receipt before applying an action."
+    },
+    {
+      "name": "organizer-contact",
+      "path": "supabase/functions/organizer-contact/index.ts",
+      "policies": [
+        "bounded-body",
+        "transactional-contact-admission"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/organizer-contact/handler_test.ts"
+      ],
+      "reason": "The handler bounds the request body and delegates admission and queueing to the transactional organizer contact owner."
+    },
+    {
+      "name": "payment-operation",
+      "path": "supabase/functions/payment-operation/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/_shared/payments/operationHandler_test.ts",
+        "supabase/functions/_shared/payments/refunds_test.ts"
+      ],
+      "reason": "The handler verifies a signed-in actor. Typed SQL operations authorize the stored order and own preview, admission, and command replay."
+    },
+    {
+      "name": "ticket-wallet",
+      "path": "supabase/functions/ticket-wallet/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/_shared/ticketWallet_test.ts",
+        "supabase/functions/_shared/googleWallet_test.ts"
+      ],
+      "reason": "The route uses a bounded request body, an allowed origin and a ticket capability. Provider-specific issuance validates ticket scope before returning a file or link."
+    },
+    {
+      "name": "sync-ticket-wallet",
+      "path": "supabase/functions/sync-ticket-wallet/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/_shared/ticketWallet_test.ts",
+        "supabase/functions/_shared/wallet/registry_test.ts"
+      ],
+      "reason": "Service request authorization precedes reconciliation. The worker operates on existing wallet records through the provider registry."
+    },
+    {
+      "name": "manage-member-access",
+      "path": "supabase/functions/manage-member-access/index.ts",
+      "policies": [
+        "email.auth",
+        "email.ordinary"
+      ],
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/manage-member-access/handler_test.ts"
+      ],
+      "reason": "The handler delegates scoped membership commands to the typed SQL owner. Existing email admission owns resulting auth or ordinary messages."
+    },
+    {
+      "name": "apple-wallet",
+      "path": "supabase/functions/apple-wallet/index.ts",
+      "policies": [],
+      "budgetDisposition": "bounded-authenticated-protocol",
+      "status": "local-enforcement",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "evidence": [
+        "supabase/functions/apple-wallet/handler_test.ts",
+        "supabase/functions/_shared/appleWallet_test.ts"
+      ],
+      "reason": "Apple pass credentials and stored pass or device scope govern registration and downloads. The log endpoint bounds the body and discards client logs."
     }
   ],
   "workers": [

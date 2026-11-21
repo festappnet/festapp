@@ -92,14 +92,9 @@ BEGIN
     AND public.unit_measurement_approval_internal(u.id)->'approved'='false'::jsonb
     AND public.get_user_delivery_email(ou."user")=p_message.recipient);
  END IF;
+ -- Messages queued by older releases expire without notifying anyone.
  IF p_message.message_kind='custom' AND p_message.code='META_CAPI_APPROVAL_REQUEST' THEN
-  RETURN EXISTS(SELECT 1 FROM analytics.organization_meta_capi_request q JOIN public.units u ON u.id=q.unit
-   JOIN public.organization_users ou ON ou.organization=u.organization AND ou."user"=p_message.recipient_user AND ou.is_admin
-   WHERE q.unit=p_message.unit AND q.organization=p_message.organization AND q.fulfilled_at IS NULL
-    AND u.organization=q.organization AND NOT public.is_demo_unit(u.id)
-    AND q.revision=(p_message.data->>'request_revision')::integer
-    AND NOT public.meta_purchase_platform_allowed_internal(u.id)
-    AND public.get_user_delivery_email(ou."user")=p_message.recipient);
+  RETURN false;
  END IF;
  IF p_message.message_kind='admin_notification_digest' THEN
   RETURN p_message.recipient IS NOT DISTINCT FROM public.get_user_delivery_email(p_message.recipient_user)

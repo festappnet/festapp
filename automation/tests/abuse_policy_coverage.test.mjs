@@ -18,7 +18,7 @@ test('production route changes require an explicit abuse disposition and evidenc
     assert.deepEqual(route.policies, (coverage.production[route.name].abusePolicy ?? []));
     assert.ok((route.policies.length || route.budgetDisposition === 'bounded-authenticated-protocol') && route.owner && route.reviewBy && route.reason.length > 30);
     assert.ok(fs.existsSync(route.path));
-    for (const evidence of route.evidence) assert.ok(fs.existsSync(evidence));
+    for (const evidence of route.evidence) assert.ok(fs.existsSync(evidence), route.name + ": " + evidence);
   }
 });
 test('new domain commands retain their SQL boundary and canonical forward migration', () => {
@@ -53,22 +53,35 @@ test('worker routes retain explicit admission or a reviewed compatibility bounda
   assert.ok(read(sync.entrypoint).includes(sync.routeExpression), 'sync path contract changed; review the abuse inventory');
 });
 
-test('unmigrated canonical function changes still fail the immutable-history check', () => {
+function assertUnmigratedChange(source, before, after, expected) {
   const result = spawnSync('python3', ['-c', `
-from pathlib import Path
 from unittest.mock import patch
 import runpy,sys
 sys.path.insert(0,'automation')
 import migration_inputs
+source,before,after=sys.argv[1:]
 original = migration_inputs.read_text
 def changed(path, *args, **kwargs):
     value = original(path, *args, **kwargs)
-    if str(path).endswith('/database/functions/occasion_setup/finalize.sql'):
-        value = value.replace('Draft review required', 'Unmigrated test-only drift')
+    if str(path).endswith('/database/functions/' + source):
+        assert before in value
+        value = value.replace(before, after, 1)
     return value
 with patch.object(migration_inputs, 'read_text', changed):
     runpy.run_path('automation/assemble-abuse-migration.py', run_name='__main__')
-`], { encoding: 'utf8' });
+`, source, before, after], { encoding: 'utf8' });
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /Missing forward migration for finalize_occasion_setup_draft/);
+  assert.match(result.stderr, expected);
+}
+
+test('unmigrated canonical function changes still fail the immutable-history check', () => {
+  assertUnmigratedChange('occasion_setup/finalize.sql', 'Draft review required', 'Unmigrated test-only drift',
+    /Missing forward migration for finalize_occasion_setup_draft/);
+});
+
+test('unmigrated notification seed changes fail the same forward check', () => {
+  assertUnmigratedChange('abuse/seeds.sql',
+    "'email.notification.recipient.burst','email.notification','recipient','rolling',60,60,2,6",
+    "'email.notification.recipient.burst','email.notification','recipient','rolling',60,60,3,6",
+    /Canonical non-function source drift: abuse\/seeds\.sql/);
 });
