@@ -259,18 +259,22 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                   : null,
             ),
           ),
-          const SizedBox(height: 16),
-          timestamp(
-            Icons.account_balance_outlined,
-            BankAccountStrings.bankPull,
-            sync.bankPullAt,
-          ),
-          const SizedBox(height: 8),
-          timestamp(
-            Icons.sync_alt,
-            BankAccountStrings.receiverCommit,
-            sync.receiverCommitAt,
-          ),
+          if (!widget.isReadOnly || sync.bankPullAt != null) ...[
+            const SizedBox(height: 16),
+            timestamp(
+              Icons.account_balance_outlined,
+              BankAccountStrings.bankPull,
+              sync.bankPullAt,
+            ),
+          ],
+          if (!widget.isReadOnly || sync.receiverCommitAt != null) ...[
+            const SizedBox(height: 8),
+            timestamp(
+              Icons.sync_alt,
+              BankAccountStrings.receiverCommit,
+              sync.receiverCommitAt,
+            ),
+          ],
         ],
       ),
     );
@@ -309,7 +313,8 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                 Text(BankAccountStrings.emailIdentityNotice),
               const SizedBox(height: 16),
             ],
-            if (widget.isFio) ..._buildFioTokenSectionWidgets(),
+            if (widget.isFio && !widget.isReadOnly)
+              ..._buildFioTokenSectionWidgets(),
             if (widget.account.bankSync == null && !widget.isReadOnly) ...[
               OutlinedButton(
                 onPressed:

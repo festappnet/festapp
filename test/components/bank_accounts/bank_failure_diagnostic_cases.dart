@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 import 'package:fstapp/components/bank_accounts/views/bank_account_connection_tab.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:material_ui/material_ui.dart';
@@ -35,7 +36,7 @@ void main() {
               'state': pending ? 'degraded' : 'connected',
               'warning_pending': pending,
               'mode': 'api',
-              'bank_pull_at': '2026-11-01T22:33:04Z',
+              if (!readOnly) 'bank_pull_at': '2026-11-01T22:33:04Z',
               'last_error': pending ? 'fio_token_invalid_or_inactive' : null,
               'last_failure': {
                 'version': 1,
@@ -85,7 +86,7 @@ void main() {
                       child: BankAccountConnectionTab(
                         account: account,
                         isReadOnly: readOnly,
-                        isFio: false,
+                        isFio: readOnly,
                         isSaving: false,
                         pairingCode: null,
                         onRegenerateToken: () {},
@@ -113,7 +114,13 @@ void main() {
             );
           if (readOnly) {
             expect(find.text('Last recorded error'), findsNothing);
+            expect(find.text(BankAccountStrings.notReceived), findsNothing);
+            expect(
+              find.textContaining(BankAccountStrings.lastFioFetchTime),
+              findsNothing,
+            );
           } else {
+            expect(find.text(BankAccountStrings.notReceived), findsOneWidget);
             await tester.tap(find.text('Last recorded error'));
             await tester.pumpAndSettle();
             expect(
