@@ -43,8 +43,11 @@ Osobní návrh v ChatGPT Pro zůstal 21. listopadu 2026 bez OAuth připojení.
 Rozhraní před vytvořením zobrazilo vybraných 41 čtecích rozsahů, ale
 autorizační požadavek poslal všech 91 rozsahů z discovery a issuer odpověděl
 `invalid_scope`. Nastavení uloženého návrhu umožňuje změnit název a popis.
-Pro aktivaci je třeba ověřit klientský výběr rozsahů nebo zveřejnit
-samostatnou discovery pro čtecí variantu se stejným omezením OAuth klienta.
+Registrace s `narrowDiscoveryScopes` zúží požadavek tohoto klienta ještě
+před souhlasem na jeho povolené čtecí rozsahy. Token i nabídka nástrojů se
+řídí stejným omezením při prvním připojení a při obnově tokenu. Na
+produkčním issueru tuto registraci aktivujte s verzí, která tuto volbu
+podporuje.
 
 ## Připojení plné varianty
 
@@ -114,6 +117,7 @@ jen granty HTTP API. Odběr založený touto MCP registrací proto zatím
 nedoručí webhook. Správce workspace také může omezit jednotlivé nástroje
 nebo zápisy.
 
-Zdroje k nastavení v ChatGPT  
+Zdroje k nastavení v ChatGPT
+
 [Add custom MCP server](https://developers.openai.com/api/docs/guides/custom-mcp-server) ·
 [Connecting custom MCP servers in ChatGPT](https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt)

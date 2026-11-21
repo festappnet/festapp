@@ -10,6 +10,7 @@
     "https://mcp.vstupenky.online/mcp"
   ],
   "tokenEndpointAuthMethod": "none",
+  "narrowDiscoveryScopes": true,
   "redirectUris": [
     "https://chatgpt.com/connector_platform_oauth_redirect"
   ],
