@@ -43,7 +43,6 @@ BEGIN
  PERFORM assert_eq(exported#>>'{binding,version}','2','version advances');
  PERFORM assert_eq(exported#>>'{providerConfig,maxAgeSeconds}','31536000','server owns age ceiling');
  PERFORM assert_true((exported#>>'{providerConfig,consentValidFrom}')::timestamptz >= transaction_timestamp(),'new coverage cannot predate confirmation');
- UPDATE analytics.organization_policy SET meta_capi_enabled=true WHERE organization=org;
  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
  VALUES(un,'123456',gen_random_uuid(),'https://organizer.example',true);
  PERFORM assert_true(public.meta_purchase_snapshot_valid_internal(un,jsonb_build_object(

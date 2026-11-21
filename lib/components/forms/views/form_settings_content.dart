@@ -1485,11 +1485,26 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                                             )
                                           : null,
                                     ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      FormStrings.measurementBrowserChannel,
+                                      style: Theme.of(innerContext)
+                                          .textTheme
+                                          .titleSmall,
+                                    ),
                                     for (final message
                                         in _measurementStatusMessages)
                                       _measurementStatusRow(
                                         innerContext,
                                         message,
+                                      ),
+                                    if (_paidPurchaseRequired &&
+                                        _measurementEnabled)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 8),
+                                        child: Text(
+                                          FormStrings.measurementMetaCapiHelp,
+                                        ),
                                       ),
                                     const SizedBox(height: 8),
                                     if (RightsService.currentUnit()?.id !=

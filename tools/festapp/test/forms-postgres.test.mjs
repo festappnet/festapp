@@ -42,16 +42,18 @@ test('a delegated event creator can copy its form before any administration visi
  }
 });
 
-test('bounded summaries share UI counts, tolerate malformed historical bindings and omit keys, links, data and unrelated products',options,async t=>{
+test('bounded summaries share UI counts, use scoped relational links and omit keys, links, data and unrelated products',options,async t=>{
  const{db,f}=await setup(t);const first=await create(db,f);await db.query('insert into forms(occasion,title) select $1,\'Form \x27||n from generate_series(1,104)n',[f.occasion]);
  const type=Number((await db.query("insert into eshop.product_types(occasion,title,type) values($1,'Unrelated','food') returning id",[f.occasion])).rows[0].id);await db.query("insert into eshop.products(occasion,product_type,title,price,currency_code) select $1,$2,'Unrelated '||n,1,'CZK' from generate_series(1,125)n",[f.occasion,type]);
  await db.query("insert into eshop.orders(occasion,form,state,order_sequence,order_symbol,data) values($1,$2,'ordered',next_order_sequence($1),generate_order_symbol(),'{\"form\":\"not-a-uuid\"}')",[f.occasion,first.formId]);
  const key=(await db.query('select key from forms where id=$1',[first.formId])).rows[0].key;await db.query("insert into eshop.orders(occasion,form,state,order_sequence,order_symbol,data) values($1,$2,'ordered',next_order_sequence($1),generate_order_symbol(),jsonb_build_object('form',$3::text))",[f.occasion,first.formId,key]);
  const other=Number((await db.query('select id from forms where occasion=$1 and id<>$2 order by id limit 1',[f.occasion,first.formId])).rows[0].id);
  await db.query("insert into eshop.orders(occasion,form,state,order_sequence,order_symbol,data) values($1,null,'ordered',next_order_sequence($1),generate_order_symbol(),jsonb_build_object('form',$2::text)),($1,$3,'ordered',next_order_sequence($1),generate_order_symbol(),jsonb_build_object('form',$2::text))",[f.occasion,key,other]);
- await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const seen=[];let after;do{const result=await ex.ops.invoke('forms.list',{occasionId:f.occasion,...(after?{after}:{})});assert.equal(result.ok,true,JSON.stringify(result));assert(result.data.forms.length<=50);for(const row of result.data.forms){assert(!Object.hasOwn(row,'key'));assert(!Object.hasOwn(row,'link'));assert(!Object.hasOwn(row,'data'));}seen.push(...result.data.forms);after=result.data.nextCursor;}while(after);assert.equal(seen.length,105);assert.equal(seen.find(r=>r.id===first.formId).response_count,3);
+ const usage=(await db.query('select get_form_usage_internal($1) as value',[first.formId])).rows[0].value;
+ assert.equal(usage.blocking_orders,4,'the deletion guard still sees all historical references');
+ await db.query('SET LOCAL ROLE authenticated');const ex=executor(db,f);const seen=[];let after;do{const result=await ex.ops.invoke('forms.list',{occasionId:f.occasion,...(after?{after}:{})});assert.equal(result.ok,true,JSON.stringify(result));assert(result.data.forms.length<=50);for(const row of result.data.forms){assert(!Object.hasOwn(row,'key'));assert(!Object.hasOwn(row,'link'));assert(!Object.hasOwn(row,'data'));}seen.push(...result.data.forms);after=result.data.nextCursor;}while(after);assert.equal(seen.length,105);assert.equal(seen.find(r=>r.id===first.formId).response_count,2);
  assert.equal(seen.find(r=>r.id===other).response_count,1);
- const ui=(await db.query('select get_all_forms_with_fields($1) value',[f.link])).rows[0].value.data;assert.equal(ui.find(r=>r.id===first.formId).response_count,3);
+ const ui=(await db.query('select get_all_forms_with_fields($1) value',[f.link])).rows[0].value.data;assert.equal(ui.find(r=>r.id===first.formId).response_count,2);
  const actualLink=(await db.query('select link from forms where id=$1',[first.formId])).rows[0].link;
  assert.equal((await db.query('select get_form_for_edit($1) value',[actualLink])).rows[0].value.data.form.can_delete,false);
  const inspected=await ex.ops.invoke('forms.inspect',{occasionId:f.occasion,formId:first.formId});assert.equal(inspected.ok,true);assert(!inspected.data.authoring.productTypes.some(p=>p.id===type));assert(!JSON.stringify(inspected).includes('Unrelated'));

@@ -18,6 +18,7 @@ test('order consent migration preserves historical pending grants and Complianz 
   await db.query(`UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=$1`,[x.form]);
   await db.query(`UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://tickets.example"]}' WHERE id=$1`,[x.unit]);
   await db.query('SELECT public.reserve_public_link_internal(\'form\',$1,$2,true)',[x.form,x.link]);
+  await db.query('ALTER TABLE analytics.organization_policy ADD COLUMN meta_capi_enabled boolean NOT NULL DEFAULT false');
   await db.query(`INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason) VALUES($1,true,true,1,'fixture','order consent upgrade')`,[x.organization]);
   await db.query(`INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled) VALUES($1,'123456',vault.create_secret(repeat('t',40)),'https://tickets.example',true)`,[x.unit]);
   await db.query('INSERT INTO analytics.meta_purchase_forms(form,unit) VALUES($1,$2)',[x.form,x.unit]);
@@ -35,6 +36,13 @@ test('order consent migration preserves historical pending grants and Complianz 
   const historical=await checkout(snapshot);
   // Reconstruct the exact old persisted format before executing the actual forward.
   await db.query(`UPDATE analytics.meta_purchase_deliveries SET consent_snapshot=$2::jsonb-'revision'-'userAgent',consent_decided_at='2020-01-01T00:00:00Z' WHERE order_id=$1`,[historical,snapshot]);
+  // Restore the older policy functions required by the historical snapshots.
+  const oldPolicy=read('supabase/migrations/20261118160000_meta_purchase_followup.sql');
+  for(const name of ['form_conversion_policy_allows_internal','form_meta_purchase_unit_internal','form_purchase_timing_internal']) {
+   const definition=oldPolicy.match(new RegExp('CREATE OR REPLACE FUNCTION public\\.'+name+'\\([\\s\\S]*?\\$\\$;'));
+   assert(definition, name);
+   await db.query(definition[0]);
+  }
   // Replay both forwards over the previous settings function, as in an upgrade.
   await db.query('DROP INDEX IF EXISTS analytics.meta_purchase_unit_outcome_history');
   await db.query('CREATE INDEX IF NOT EXISTS meta_purchase_unit_history ON analytics.meta_purchase_deliveries(unit,consent_at DESC)');
@@ -44,12 +52,30 @@ test('order consent migration preserves historical pending grants and Complianz 
   assert.equal(saved.consent_snapshot.timestamp,undefined);
   assert.equal(Date.parse(saved.consent_snapshot.capturedAt),saved.consent_at.getTime());
   assert.equal(saved.consent_snapshot.decidedAt,'2020-01-01T00:00:00.000Z');
+  // Restore the old platform gate and request schema for the real cutover.
+  const oldSettings=read('supabase/migrations/20261119210000_meta_purchase_settings.sql');
+  await db.query(oldSettings.match(/CREATE OR REPLACE FUNCTION public\.meta_purchase_platform_allowed_internal\([\s\S]*?\$\$;/)[0]);
+  await db.query(read('supabase/migrations/20261120030000_meta_capi_approval_request.sql'));
+  const blocked=(await db.query('SELECT pg_temp.fixture(NULL) x')).rows[0].x;
+  const blockedRevision=(await db.query(`INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
+    VALUES($1,'123456',vault.create_secret(repeat('t',40)),'https://tickets.example',true)
+    RETURNING revision`,[blocked.unit])).rows[0].revision;
+  const disabled=(await db.query('SELECT pg_temp.fixture(NULL) x')).rows[0].x;
+  const disabledRevision=(await db.query(`INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
+    VALUES($1,'123456',vault.create_secret(repeat('t',40)),'https://tickets.example',false)
+    RETURNING revision`,[disabled.unit])).rows[0].revision;
+  await db.query(read('supabase/migrations/20261121020000_self_service_meta_capi.sql'));
+  const migrated=(await db.query('SELECT enabled,revision FROM analytics.meta_purchase_connectors WHERE unit=$1',[blocked.unit])).rows[0];
+  assert.equal(migrated.enabled,false,'a previously blocked connector stays off');
+  assert.notEqual(migrated.revision,blockedRevision,'earlier pending deliveries cannot resume on manual enable');
+  const disabledMigrated=(await db.query('SELECT enabled,revision FROM analytics.meta_purchase_connectors WHERE unit=$1',[disabled.unit])).rows[0];
+  assert.equal(disabledMigrated.enabled,false);
+  assert.notEqual(disabledMigrated.revision,disabledRevision,'a disabled connector also fences historical deliveries from its withdrawn grant');
   const binding=(await db.query(`INSERT INTO analytics.website_consent_bindings(unit,website_origin,platform,provider_config,version,enabled,confirmed_revision,confirmed_at)
    VALUES($1,'https://tickets.example','html','{"provider":"complianz","policyId":"42"}',1,true,$2,clock_timestamp()) RETURNING id,version`,[x.unit,snapshot.consentRevision])).rows[0];
   const modern={...snapshot,source:'complianz',binding,transportExpiresAt:Date.now()+59000};delete modern.timestamp;
   const complianz=await checkout(modern);
-  // Settings are organization-admin operations; a unit manager is insufficient.
-  // Match the settings fixture in meta_purchase_consent_test.sql.
+  // Existing organization administrators retain access after the cutover.
   await db.query(`INSERT INTO public.organization_users(organization,"user",is_admin) VALUES($1,$2,true) ON CONFLICT(organization,"user") DO UPDATE SET is_admin=true`,[x.organization,x.actor]);
   await db.query("SELECT set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[x.actor]);
   assert.equal((await db.query('SELECT public.can_manage_unit_meta_purchase($1) allowed',[x.unit])).rows[0].allowed,true,'settings fixture must authorize the organization admin');

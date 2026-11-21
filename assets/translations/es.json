@@ -437,6 +437,8 @@
     "purchaseTimingOrder": "Al realizar el pedido",
     "purchaseTimingPaid": "Tras el pago completo",
     "purchaseTimingHelp": "El modo de pedido incluye pedidos sin pagar. El modo de pago requiere un pago bancario o en línea válido y volver al resumen en un plazo de 47 horas.",
+    "measurementBrowserChannel": "Medición en el navegador",
+    "measurementMetaCapiHelp": "Meta CAPI está seleccionada para los pagos completos. Consulte el estado del sitio, del consentimiento y de la entrega en los ajustes del organizador.",
     "purchaseTimingCapi": "Meta Conversions API requiere el modo de pago. El navegador y el servidor comparten el ID del evento.",
     "measurementPolicySummary": "Política de privacidad",
     "measurementBannerFallback": "Se usa cuando el formulario se abre por separado.",
@@ -1499,6 +1501,7 @@
     "googleLoginEnabled": "Permitir iniciar sesión con Google",
     "googleLoginDescription": "Los usuarios pueden iniciar sesión o vincular su cuenta con Google. La creación de cuentas nuevas depende de si el registro está activado.",
     "analyticsVisits": "Visitas y fuentes de tráfico",
+    "analyticsCoverage": "Cloudflare Web Analytics mide catálogos públicos, páginas de organizadores y formularios. Seleccione el intervalo de fechas en el panel.",
     "analyticsPages": "Páginas vistas"
   },
   "GroupStrings": {
@@ -4229,7 +4232,7 @@
     "unitSettingsRead": "Leer los ajustes del organizador",
     "unitSettingsWrite": "Cambiar los ajustes del organizador",
     "unitWebsiteConsentWrite": "Guardar, confirmar y desactivar las vinculaciones de consentimiento del sitio web",
-    "unitApprovalsRequest": "Solicitar la aprobación de la medición y de Meta CAPI (envía un correo a todos los administradores de la organización)",
+    "unitApprovalsRequest": "Solicitar la aprobación de la medición web (envía un correo a los administradores de la organización)",
     "emailTemplatesRead": "Leer plantillas de correo, banners y vistas previas de muestra",
     "emailTemplatesWrite": "Editar plantillas de correo y banners; restaurar la herencia",
     "productSchedulesRead": "Leer los tramos de precio y los cambios programados de los productos",
@@ -5808,6 +5811,7 @@
     "recoveryUnavailable": "No se ha podido verificar el pedido original. Abre su correo de confirmación o ponte en contacto con la organización."
   },
   "MetaCapi": {
+    "configuredOff": "Configurado, desactivado",
     "invalidCount": "No válidos",
     "expired": "Caducados",
     "connector_changed": "No enviado: cambió la configuración de la conexión.",
@@ -5817,7 +5821,6 @@
     "attempts_exhausted": "No enviado: se agotaron los intentos de envío.",
     "retention_expired": "No enviado: venció el plazo de conservación del consentimiento.",
     "loadFailed": "No se pudo cargar la configuración de Meta CAPI",
-    "platformDisabled": "La plataforma desactivó Meta CAPI",
     "noWebsites": "Primero añada un sitio web en la sección de eventos y consentimiento.",
     "noForms": "Todavía no tiene formularios.",
     "deliveryFailed": "No se pudo enviar la compra. No se realizarán más intentos.",
@@ -5849,8 +5852,6 @@
     "credentials": "Meta rechazó el token. Sustitúyalo.",
     "rejected": "Meta rechazó una compra. Compruebe el conjunto de datos y el sitio web.",
     "retry": "El envío falló temporalmente; hay otro intento programado.",
-    "invalid": "Introduzca un valor válido.",
-    "requestApproval": "Solicitar la aprobación de Meta CAPI",
-    "approvedByPlatform": "La plataforma ha aprobado Meta CAPI. Un administrador de la organización configura la conexión."
+    "invalid": "Introduzca un valor válido."
   }
 }

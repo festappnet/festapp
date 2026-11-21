@@ -152,27 +152,15 @@ BEGIN
   )
   INTO occasion_data
   FROM public.occasions o
+  LEFT JOIN public.get_order_catalog_counts_internal(
+    ARRAY(SELECT id FROM public.occasions WHERE unit=unit_id),NULL
+  ) AS order_stats ON o.id=order_stats.occasion_id
   LEFT JOIN (
-      -- This subquery calculates all required order counts in a single pass over the orders table.
-      SELECT
-          occasion,
-          COUNT(*) AS total,
-          COUNT(*) FILTER (WHERE state = 'storno') AS storno,
-          COUNT(*) FILTER (WHERE state IN ('paid', 'sent')) AS paid_or_sent,
-          COUNT(*) FILTER (WHERE state = 'ordered') AS ordered,
-          COUNT(*) FILTER (WHERE state = 'used') AS used
-      FROM eshop.orders
-      WHERE occasion IS NOT NULL
-      GROUP BY occasion
-  ) AS order_stats ON o.id = order_stats.occasion
-  LEFT JOIN (
-      -- New: This subquery aggregates occasion users and provides their count.
-      SELECT
-          occasion,
-          COUNT(*) as user_count
-      FROM public.occasion_users
-      GROUP BY occasion
-  ) AS user_stats ON o.id = user_stats.occasion
+      SELECT ou.occasion,COUNT(*) as user_count
+      FROM public.occasion_users ou
+      JOIN public.occasions scoped ON scoped.id=ou.occasion AND scoped.unit=unit_id
+      GROUP BY ou.occasion
+  ) AS user_stats ON o.id=user_stats.occasion
   WHERE o.unit = unit_id;
 
   -- Step 4: If no occasions were found, return an empty JSON array.

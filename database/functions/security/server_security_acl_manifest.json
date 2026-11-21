@@ -22,7 +22,9 @@
     "enqueue_occasion_setup_invitation",
     "claim_notification_center_bank_health",
     "complete_notification_center_bank_health",
-    "enqueue_bank_sync_health_alerts"
+    "enqueue_bank_sync_health_alerts",
+    "record_form_conversion_internal",
+    "record_form_paid_conversion_internal"
   ],
   "sync_tables": [
     "external_sync_sources",
@@ -3070,11 +3072,6 @@
       "authenticated": true,
       "service_role": false
     },
-    "public.unit_meta_capi_approval_internal(bigint)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": false
-    },
     "public.get_unit_meta_capi_approval(bigint)": {
       "anon": false,
       "authenticated": true,
@@ -3600,11 +3597,6 @@
       "authenticated": false,
       "service_role": true
     },
-    "public.meta_purchase_platform_allowed_internal(bigint)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": false
-    },
     "public.can_manage_unit_meta_purchase(bigint)": {
       "anon": false,
       "authenticated": true,
@@ -3643,6 +3635,21 @@
     "public.set_unit_picker_favorite(uuid,bigint,boolean)": {
       "anon": false,
       "authenticated": true,
+      "service_role": false
+    },
+    "public.form_measurement_subscription_kind_internal(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.publish_form_measurement_event_internal(text,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.get_order_catalog_counts_internal(bigint[],bigint[])": {
+      "anon": false,
+      "authenticated": false,
       "service_role": false
     }
   },

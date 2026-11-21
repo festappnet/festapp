@@ -55,18 +55,9 @@ BEGIN
     )
     INTO forms_data
     FROM public.forms f
-    LEFT JOIN (
-        -- This subquery calculates all required counts in a single pass over the orders table.
-        SELECT
-            (data->>'form')::uuid AS form_key,
-            COUNT(*) AS total,
-            COUNT(*) FILTER (WHERE state = 'storno') AS storno,
-            COUNT(*) FILTER (WHERE state IN ('paid', 'sent')) AS paid_or_sent,
-            COUNT(*) FILTER (WHERE state = 'ordered') AS ordered
-        FROM eshop.orders
-        WHERE data->>'form' IS NOT NULL -- Ensure the key exists before casting
-        GROUP BY form_key
-    ) AS order_stats ON f.key = order_stats.form_key
+    LEFT JOIN public.get_order_catalog_counts_internal(
+      ARRAY[v_occasion_id], ARRAY(SELECT id FROM public.forms WHERE occasion=v_occasion_id)
+    ) AS order_stats ON f.id=order_stats.form_id
     WHERE f.occasion = v_occasion_id;
 
     -- Step 5: If no forms were found, ensure an empty JSON array is returned.

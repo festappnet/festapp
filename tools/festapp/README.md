@@ -542,9 +542,9 @@ with the fixed deadline and 30-day idle limit. Exact spent-token replay evidence
 is packed into capped encrypted buckets in the existing store. No service
 credentials grant exists. Registration ceilings never grant account roles or
 expand existing connections; the user must explicitly approve the requested scopes.
-Measurement and Meta CAPI approval requests use their own `festapp:unit-approvals:request`
+Measurement approval requests use their own `festapp:unit-approvals:request`
 scope rather than `festapp:unit-settings:write`: they email every organization administrator
-and the Meta CAPI request is organization-wide. Add it to a client registration ceiling only
+for the selected organizer. Add it to a client registration ceiling only
 where those requests are intended; existing settings grants do not include it.
 Before offering it on a hosted tenant, deploy the tenant's first-party consent
 and connected-applications UI that recognizes the scope. Then update the client

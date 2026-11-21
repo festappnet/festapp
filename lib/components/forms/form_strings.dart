@@ -13,6 +13,10 @@ class FormStrings {
       'FeatureFormSettings.purchaseTimingHelp'.tr();
   static String get purchaseTimingCapi =>
       'FeatureFormSettings.purchaseTimingCapi'.tr();
+  static String get measurementBrowserChannel =>
+      'FeatureFormSettings.measurementBrowserChannel'.tr();
+  static String get measurementMetaCapiHelp =>
+      'FeatureFormSettings.measurementMetaCapiHelp'.tr();
   static String get measurementFirstApprovalHelp =>
       'FeatureFormSettings.measurementFirstApprovalHelp'.tr();
   static String get measurementRuntimePending =>

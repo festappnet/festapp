@@ -437,6 +437,8 @@
     "purchaseTimingOrder": "When the order is placed",
     "purchaseTimingPaid": "After full payment",
     "purchaseTimingHelp": "Order mode includes unpaid orders. Paid mode requires an eligible bank or online payment and a return to the order overview within 47 hours.",
+    "measurementBrowserChannel": "Browser measurement",
+    "measurementMetaCapiHelp": "Meta CAPI is selected for full payments. Check website, consent and delivery status in organizer settings.",
     "purchaseTimingCapi": "Meta Conversions API requires paid mode. Browser and server purchases share the same event ID.",
     "measurementPolicySummary": "Privacy policy",
     "measurementBannerFallback": "Used when the form opens on its own.",
@@ -1505,6 +1507,7 @@
     "googleLoginEnabled": "Allow Google sign-in",
     "googleLoginDescription": "Users can sign in or link their account with Google. Creating new accounts depends on whether registration is enabled.",
     "analyticsVisits": "Visits and traffic sources",
+    "analyticsCoverage": "Cloudflare Web Analytics measures public catalogues, organizer pages and forms. Choose the date range in the dashboard.",
     "analyticsPages": "Page views"
   },
   "GroupStrings": {
@@ -4243,7 +4246,7 @@
     "unitSettingsRead": "Read organizer settings",
     "unitSettingsWrite": "Change organizer settings",
     "unitWebsiteConsentWrite": "Save, confirm and disable website consent bindings",
-    "unitApprovalsRequest": "Request measurement and Meta CAPI approval (emails all organization administrators)",
+    "unitApprovalsRequest": "Request browser measurement approval (emails organization administrators)",
     "emailTemplatesRead": "Read email templates, banners and synthetic previews",
     "emailTemplatesWrite": "Edit email templates and banners; restore inheritance",
     "productSchedulesRead": "Read product price waves and scheduled changes",
@@ -5822,6 +5825,7 @@
     "recoveryUnavailable": "The original order could not be verified. Open its confirmation email or contact the organizer."
   },
   "MetaCapi": {
+    "configuredOff": "Configured, switched off",
     "invalidCount": "Invalid",
     "expired": "Expired",
     "connector_changed": "Not sent: connection settings changed.",
@@ -5831,7 +5835,6 @@
     "attempts_exhausted": "Not sent: delivery attempts were exhausted.",
     "retention_expired": "Not sent: consent retention period expired.",
     "loadFailed": "Could not load Meta CAPI settings",
-    "platformDisabled": "The platform disabled Meta CAPI",
     "noWebsites": "First add a website in the events and consent section.",
     "noForms": "You do not have any forms yet.",
     "deliveryFailed": "The purchase could not be sent. No further attempts will be made.",
@@ -5863,8 +5866,6 @@
     "credentials": "Meta rejected the token. Replace it.",
     "rejected": "Meta rejected a purchase. Check the dataset and website.",
     "retry": "Delivery failed temporarily; another attempt is scheduled.",
-    "invalid": "Enter a valid value.",
-    "requestApproval": "Request Meta CAPI approval",
-    "approvedByPlatform": "The platform has approved Meta CAPI. An organization administrator sets up the connection."
+    "invalid": "Enter a valid value."
   }
 }

@@ -2,7 +2,6 @@ import 'package:festapp_core/sync.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 import 'unit_occasion_dashboard.dart';
-import 'meta_capi_approval.dart';
 import 'unit_measurement_approval.dart';
 import 'unit_website_consent.dart';
 
@@ -26,26 +25,6 @@ class DbUnits {
   ) async {
     await _supabase.rpc(operation, params: params);
   }
-
-  static Future<MetaCapiApproval> getMetaCapiApproval(int unitId) async =>
-      MetaCapiApproval.fromJson(
-        Map<String, dynamic>.from(
-          await _supabase.rpc(
-            'get_unit_meta_capi_approval',
-            params: {'p_unit': unitId},
-          ),
-        ),
-      );
-
-  static Future<MetaCapiApproval> requestMetaCapiApproval(int unitId) async =>
-      MetaCapiApproval.fromJson(
-        Map<String, dynamic>.from(
-          await _supabase.rpc(
-            'request_unit_meta_capi_approval',
-            params: {'p_unit': unitId},
-          ),
-        ),
-      );
 
   static Future<String> detectComplianzPolicy(int unitId, String origin) async {
     final response = await _supabase.functions.invoke(

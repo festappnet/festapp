@@ -121,7 +121,7 @@ BEGIN
       PERFORM public.recalculate_order_payment_status(v_order_id);
       IF v_transaction.amount>0 AND v_transaction.transaction_type IS DISTINCT FROM 'manual'
         AND v_transaction.ingest_source IS DISTINCT FROM 'manual' THEN
-        PERFORM public.record_form_paid_conversion_internal(v_order_id);
+        PERFORM public.publish_form_measurement_event_internal('order_fully_paid',v_order_id);
       END IF;
     END IF;
   END IF;

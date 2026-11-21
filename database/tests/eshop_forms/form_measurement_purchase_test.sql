@@ -24,12 +24,12 @@ DECLARE
  second_order_id bigint;
 BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
- INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
- VALUES ((fixture->>'organization')::bigint,true,true,1,'fixture','confirmed purchase');
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES ((fixture->>'organization')::bigint,true,1,'fixture','confirmed purchase');
  UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=form_id;
  PERFORM public.reserve_public_link_internal('form',form_id,fixture->>'link',true);
  -- Default order mode restores accepted-order purchase without changing lead semantics.
- PERFORM assert_eq(public.form_purchase_timing_internal(form_id),'order','missing timing defaults to order');
+ PERFORM assert_eq((SELECT purchase_timing FROM public.form_measurement_decision_internal(form_id)),'order','missing timing defaults to order');
  receipt:=public.create_ticket_order_client_sync_v1(checkout,gen_random_uuid(),client_id);
  PERFORM assert_eq(receipt#>>'{data,analytics,event}','purchase','default emits accepted-order purchase');
  unconsented_id:=(receipt#>>'{data,order,id}')::bigint;
@@ -78,7 +78,7 @@ BEGIN
 
  UPDATE eshop.payment_info SET deposit_amount=30 WHERE id=payment_id RETURNING bank_account INTO bank_id;
 
- PERFORM assert_eq(public.form_purchase_timing_internal(form_id),'paid','CAPI overrides legacy order setting');
+ PERFORM assert_eq((SELECT purchase_timing FROM public.form_measurement_decision_internal(form_id)),'paid','CAPI overrides legacy order setting');
  PERFORM assert_eq(public.create_ticket_order_client_sync_v1(checkout,command_id,client_id)#>'{data,analytics}',
   'null'::jsonb,'checkout replay suppresses historical order-time purchase');
 

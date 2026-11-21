@@ -283,11 +283,11 @@ cannot turn the whole form into an unavailable page.
 
 Public runtime form submission remains a separate lifecycle from administrative
 editing. Admin reads share `get_form_editor_bundle_internal`; MCP uses its
-related-only projection through `get_form_for_authoring`. Catalog rows and editor
-and deletion usage guards share `get_form_usage_rows_internal`. Current order
-form FKs own responses; UUID history is a response fallback only without an FK,
-while every historical reference still blocks destructive deletion. Paging is
-applied before summary work and usage scans are batched.
+related-only projection through `get_form_for_authoring`. Catalog rows use
+`get_order_catalog_counts_internal` after paging. Order counts follow the
+relational form in the saved occasion. The editor and deletion guard use
+`get_form_usage_rows_internal` to block deletion while any relational or
+historical UUID reference remains.
 
 `manage_form` delegates to the existing create/save/copy/delete client-sync
 commands and their receipts. It creates no second receipt or transaction owner.

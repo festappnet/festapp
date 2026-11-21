@@ -526,6 +526,8 @@
     "purchaseTimingOrder": "Bei der Bestellung",
     "purchaseTimingPaid": "Nach vollständiger Zahlung",
     "purchaseTimingHelp": "Der Bestellmodus umfasst unbezahlte Bestellungen. Der Zahlungsmodus erfordert eine berechtigte Bank- oder Onlinezahlung und die Rückkehr zur Bestellübersicht innerhalb von 47 Stunden.",
+    "measurementBrowserChannel": "Messung im Browser",
+    "measurementMetaCapiHelp": "Meta CAPI ist für vollständige Zahlungen ausgewählt. Den Status von Website, Einwilligung und Zustellung finden Sie in den Veranstaltereinstellungen.",
     "purchaseTimingCapi": "Meta Conversions API erfordert den Zahlungsmodus. Browser und Server verwenden dieselbe Ereignis-ID.",
     "measurementPolicySummary": "Datenschutz",
     "measurementBannerFallback": "Wird beim separaten Öffnen des Formulars verwendet.",
@@ -1094,6 +1096,7 @@
     "removeOrganizationFavorite": "Aus Favoriten entfernen",
     "webAnalytics": "Webanalyse",
     "analyticsVisits": "Besuche und Besucherquellen",
+    "analyticsCoverage": "Cloudflare Web Analytics erfasst öffentliche Kataloge, Veranstalterseiten und Formulare. Wählen Sie den Zeitraum im Dashboard.",
     "analyticsPages": "Seitenaufrufe",
     "openCloudflareAnalytics": "Statistik in Cloudflare öffnen",
     "organizationSettings": "Organisationseinstellungen",
@@ -2342,7 +2345,7 @@
     "unitSettingsRead": "Veranstaltereinstellungen lesen",
     "unitSettingsWrite": "Veranstaltereinstellungen ändern",
     "unitWebsiteConsentWrite": "Website-Einwilligungsbindungen speichern, bestätigen und deaktivieren",
-    "unitApprovalsRequest": "Freigabe von Messung und Meta CAPI anfordern (E-Mail an alle Organisationsadministratoren)",
+    "unitApprovalsRequest": "Freigabe der Browsermessung anfordern (E-Mail an die Organisationsadministratoren)",
     "emailTemplatesRead": "E-Mail-Vorlagen, Banner und Beispielvorschauen lesen",
     "emailTemplatesWrite": "E-Mail-Vorlagen und Banner bearbeiten; Vererbung wiederherstellen",
     "productSchedulesRead": "Preiswellen und geplante Produktänderungen lesen",
@@ -3561,6 +3564,7 @@
     }
   },
   "MetaCapi": {
+    "configuredOff": "Konfiguriert, deaktiviert",
     "invalidCount": "Ungültig",
     "expired": "Abgelaufen",
     "connector_changed": "Nicht gesendet: Die Verbindungseinstellungen wurden geändert.",

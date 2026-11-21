@@ -567,10 +567,9 @@ class _UnitSettingsScreenState extends State<UnitSettingsScreen> {
     final metaCapiSettings = unitId == null
         ? const SizedBox.shrink()
         : UnitMetaCapiSettings(
-            key: ValueKey('meta-capi-$unitId'),
+            key: ValueKey((RightsService.currentUser()?.id, unitId)),
             unitId: unitId,
             savedWebsites: _savedMeasurementWebsites,
-            canRequestApproval: _canEdit && !_isSaving,
             sectionBuilder: measurementEnabled
                 ? null
                 : (child) => _measurementSection([child]),

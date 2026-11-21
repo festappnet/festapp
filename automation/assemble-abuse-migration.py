@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from generate_canonical_source_contract import definitions
+from migration_forward_owners import historical_text
 import hashlib
 root = Path(__file__).resolve().parents[1]
 files = ['abuse/schema.sql', 'abuse/seeds.sql', 'abuse/policy.sql', 'abuse/budgets.sql', 'abuse/copy.sql',
@@ -29,11 +30,30 @@ def normalized(value):
 
 forward_definitions = {signature: normalized(body) for signature, body in definitions(forward_sql) if isinstance(body, str)}
 
+def notification_source(name, original):
+    """Reconcile the two non-function deltas owned by the pinned notification forward."""
+    forward = historical_text(root, '20261112234500_admin_notification_delivery.sql')
+    if name == 'abuse/seeds.sql':
+        marker = '-- Notification budgets share the existing admission and usage backend.'
+        seeds = forward[forward.index(marker):].removesuffix('COMMIT;\n').rstrip()
+        return original + '\n\n' + seeds
+    original_check = "CHECK(admission_class IN ('ordinary','auth','commitment'));"
+    marker = 'ADD CONSTRAINT email_messages_admission_class_check '
+    notification_check = forward.split(marker, 1)[1].split(';', 1)[0] + ';'
+    if original.count(original_check) != 1:
+        raise SystemExit('Missing historical admission class constraint')
+    return original.replace(original_check, notification_check, 1)
+
+
 def canonical_source(name):
     current_name = 'abuse/image_records.sql' if name == 'abuse/storage.sql' else name
     source = migration_inputs.read_text(root / 'database/functions' / current_name)
     marker = '-- Source: database/functions/' + name + '\n'
     original = historical.split(marker, 1)[1].split('\n-- Source:', 1)[0].split('\nUPDATE eshop.spots SET secret_expiration_time=', 1)[0].rstrip()
+    if name in {'abuse/schema.sql', 'abuse/seeds.sql'}:
+        if normalized(source) != normalized(notification_source(name, original)):
+            raise SystemExit('Canonical non-function source drift: ' + name)
+        return original + '\n'
     if normalized(source) == normalized(original):
         return original + '\n'
     applied = {signature: normalized(body) for signature, body in definitions(original) if isinstance(body, str)}

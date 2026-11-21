@@ -22,6 +22,8 @@ class AdministrationStrings {
       'Administration.oneSignalSecretManagedServerSide'.tr();
   static String get webAnalytics => 'Administration.webAnalytics'.tr();
   static String get analyticsVisits => 'Administration.analyticsVisits'.tr();
+  static String get analyticsCoverage =>
+      'Administration.analyticsCoverage'.tr();
   static String get analyticsPages => 'Administration.analyticsPages'.tr();
   static String get organizationSettings =>
       'Administration.organizationSettings'.tr();

@@ -5,7 +5,6 @@ DECLARE x jsonb:=pg_temp.fixture(NULL); un bigint:=(x->>'unit')::bigint;
 BEGIN
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=org;
  UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://tickets.example"]}' WHERE id=un;
- INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,revision,operator,reason) VALUES(org,true,1,'fixture','CAPI approval');
  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
  VALUES(un,'123456',gen_random_uuid(),'https://tickets.example',true);
  snapshot:=jsonb_build_object('source','klaro','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
@@ -52,8 +51,8 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
  UPDATE public.units SET data=data||'{"measurement_consent_bridge":true,"measurement_websites":["https://tickets.example"]}' WHERE id=un;
- INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
- VALUES((x->>'organization')::bigint,true,true,1,'fixture','saved CMP consent');
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES((x->>'organization')::bigint,true,1,'fixture','saved CMP consent');
  UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=fid;
  PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
@@ -223,8 +222,8 @@ BEGIN
   x:=pg_temp.fixture(NULL);un:=(x->>'unit')::bigint;fid:=(x->>'form')::bigint;
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
- INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
- VALUES((x->>'organization')::bigint,true,true,1,'fixture','immutable purchase cohort');
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES((x->>'organization')::bigint,true,1,'fixture','immutable purchase cohort');
  UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true,"purchase_timing":"order"}}' WHERE id=fid;
  PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
  INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
@@ -243,11 +242,11 @@ BEGIN
    IF mode='no_browser_items' THEN
     SELECT data INTO order_data FROM eshop.orders WHERE id=oid;
     UPDATE eshop.orders SET data=jsonb_set(data,'{tickets}','[]'::jsonb) WHERE id=oid;
-    PERFORM public.record_form_conversion_internal(oid);
+    PERFORM public.publish_form_measurement_event_internal('checkout_finalized',oid);
     UPDATE eshop.orders SET data=order_data WHERE id=oid;
     PERFORM assert_true(public.form_purchase_datalayer_internal(oid) IS NULL,'no browser item payload is exported');
    ELSE
-    PERFORM public.record_form_conversion_internal(oid,false);
+    PERFORM public.publish_form_measurement_event_internal('waitlist_offer_accepted',oid);
     PERFORM assert_eq(public.form_order_purchase_timing_internal(oid),'paid','offer timing follows its form');
    END IF;
   END IF;
@@ -260,7 +259,7 @@ BEGIN
    DELETE FROM analytics.conversion_facts WHERE "order"=oid AND kind='purchase';
   END IF;
   UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=un;
-  PERFORM assert_eq(public.form_purchase_timing_internal(fid),'paid','current CAPI setting requests paid');
+  PERFORM assert_eq((SELECT purchase_timing FROM public.form_measurement_decision_internal(fid)),'paid','current CAPI setting requests paid');
   IF mode IN ('order','legacy') THEN
    PERFORM assert_eq(public.form_order_purchase_timing_internal(oid),'order','old order cohort remains order after enablement');
   ELSIF mode='paid_without_capi' THEN
@@ -295,13 +294,13 @@ BEGIN
    PERFORM assert_true((SELECT status='invalid' AND error_code='order_ineligible' AND attempts=0 AND consent_snapshot IS NULL
     FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'cohort rejection discloses no send payload and scrubs metadata');
   ELSE
-   UPDATE analytics.organization_policy SET meta_capi_enabled=false WHERE organization=(x->>'organization')::bigint;
-   PERFORM assert_false(EXISTS(SELECT FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid),'platform stop prevents claiming an eligible paid delivery');
-   UPDATE analytics.organization_policy SET meta_capi_enabled=true WHERE organization=(x->>'organization')::bigint;
+   UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=un;
+   PERFORM assert_false(EXISTS(SELECT FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid),'connector disabled prevents claiming an eligible paid delivery');
+   UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=un;
    SELECT d.lease INTO STRICT claimed FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid;
-   UPDATE analytics.organization_policy SET meta_capi_enabled=false WHERE organization=(x->>'organization')::bigint;
-   PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'platform stop fences a previously claimed delivery');
-   UPDATE analytics.organization_policy SET meta_capi_enabled=true WHERE organization=(x->>'organization')::bigint;
+   UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=un;
+   PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'connector disabled fences a previously claimed delivery');
+   UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=un;
    prepared:=public.prepare_meta_purchase_delivery(oid,claimed);
    PERFORM assert_eq(prepared->>'phoneHash',encode(extensions.digest('420777123456','sha256'),'hex'),'prepared payload carries phone hash');
    PERFORM assert_eq(prepared->>'fbp','fb.1.1795000000000.1234','prepared payload carries validated browser identifier');
@@ -418,8 +417,8 @@ BEGIN
   x:=pg_temp.fixture(NULL); un:=(x->>'unit')::bigint; fid:=(x->>'form')::bigint;
   PERFORM set_config('request.jwt.claim.sub','',true);
   UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
-  INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
-  VALUES((x->>'organization')::bigint,true,true,1,'fixture','in-flight withdrawal');
+  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+  VALUES((x->>'organization')::bigint,true,1,'fixture','in-flight withdrawal');
   UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=fid;
   PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
   INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
@@ -490,16 +489,13 @@ BEGIN
  BEGIN PERFORM public.set_form_meta_purchase(un,fid,true); RAISE EXCEPTION 'non-admin form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.delete_unit_meta_purchase(un); RAISE EXCEPTION 'non-admin delete accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  INSERT INTO public.organization_users(organization,"user",is_admin) VALUES(org,(x->>'actor')::uuid,true);
- PERFORM assert_eq(public.get_unit_meta_purchase(un),'{"allowed":false,"connected":false}'::jsonb,'no settings before platform approval');
+ PERFORM assert_true(public.get_unit_meta_purchase(un) ? 'websites','admin can configure without an organization measurement policy');
  BEGIN PERFORM public.get_unit_meta_purchase((other->>'unit')::bigint); RAISE EXCEPTION 'foreign organization read accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.save_unit_meta_purchase((other->>'unit')::bigint,'123456','https://tickets.example',NULL,true,repeat('s',32)); RAISE EXCEPTION 'foreign save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.set_form_meta_purchase((other->>'unit')::bigint,(other->>'form')::bigint,true); RAISE EXCEPTION 'foreign form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.delete_unit_meta_purchase((other->>'unit')::bigint); RAISE EXCEPTION 'foreign delete accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true,repeat('s',32)); RAISE EXCEPTION 'unapproved save accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- BEGIN PERFORM public.set_form_meta_purchase(un,fid,true); RAISE EXCEPTION 'unapproved form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- PERFORM public.delete_unit_meta_purchase(un); -- Admin cleanup is allowed without platform approval.
- INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
- VALUES(org,true,true,1,'fixture','CAPI settings');
+ INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+ VALUES(org,true,1,'fixture','CAPI settings');
  UPDATE public.units SET data=coalesce(data,'{}'::jsonb)||'{"measurement_websites":["https://tickets.example"]}'::jsonb WHERE id=un;
  BEGIN
   PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true);
@@ -527,22 +523,22 @@ BEGIN
  PERFORM assert_true((result->>'revision')::uuid<>old_revision,'dataset change advances revision');
  PERFORM public.set_form_meta_purchase(un,fid,true);
  BEGIN PERFORM public.set_form_meta_purchase(un,(other->>'form')::bigint,true); RAISE EXCEPTION 'foreign form accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
- PERFORM assert_eq(public.form_meta_purchase_unit_internal(fid),un,'approved owner selected');
+ PERFORM assert_eq((SELECT capi_unit FROM public.form_measurement_decision_internal(fid)),un,'configured organizer selected');
  UPDATE analytics.meta_purchase_connectors SET paused_at=clock_timestamp() WHERE unit=un;
- PERFORM assert_true(public.form_meta_purchase_unit_internal(fid) IS NULL,'pause blocks CAPI collection');
- PERFORM assert_eq(public.form_purchase_timing_internal(fid),'paid','pause preserves paid browser timing');
+ PERFORM assert_true((SELECT capi_unit FROM public.form_measurement_decision_internal(fid)) IS NULL,'pause blocks CAPI collection');
+ PERFORM assert_eq((SELECT purchase_timing FROM public.form_measurement_decision_internal(fid)),'paid','pause preserves paid browser timing');
  UPDATE analytics.meta_purchase_connectors SET paused_at=NULL WHERE unit=un;
- UPDATE analytics.organization_policy SET meta_capi_enabled=false WHERE organization=org;
- PERFORM assert_true(public.form_meta_purchase_unit_internal(fid) IS NULL,'platform stop blocks collection');
- PERFORM assert_eq(public.form_purchase_timing_internal(fid),'paid','platform stop preserves paid browser timing');
- PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,'{}'::jsonb),'platform stop blocks consent');
- UPDATE analytics.organization_policy SET meta_capi_enabled=true WHERE organization=org;
+ UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=un;
+ PERFORM assert_true((SELECT capi_unit FROM public.form_measurement_decision_internal(fid)) IS NULL,'connector disabled blocks collection');
+ PERFORM assert_eq((SELECT purchase_timing FROM public.form_measurement_decision_internal(fid)),'order','explicitly disabling the connector restores the form purchase timing');
+ PERFORM assert_false(public.meta_purchase_snapshot_valid_internal(un,'{}'::jsonb),'connector disabled blocks consent');
+ UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=un;
  PERFORM public.delete_unit_meta_purchase(un);
  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_connectors WHERE unit=un),'disconnect removes connector');
  PERFORM assert_false(EXISTS(SELECT FROM vault.secrets WHERE id=secret_id),'disconnect erases Vault secret');
  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_forms WHERE unit=un),'disconnect removes form switches');
 END $$;
--- Disconnect after platform withdrawal follows the same prepared receipt fence as consent withdrawal.
+-- Disconnect after disabling the connector follows the same prepared receipt fence as consent withdrawal.
 DO $$
 DECLARE x jsonb; un bigint; fid bigint; snapshot jsonb; receipt jsonb; oid bigint;
  payment_id bigint; transaction_id bigint; claimed uuid; deadline timestamptz; result text; secret_id uuid;
@@ -551,8 +547,8 @@ BEGIN
   x:=pg_temp.fixture(NULL); un:=(x->>'unit')::bigint; fid:=(x->>'form')::bigint;
   PERFORM set_config('request.jwt.claim.sub','',true);
   UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
-  INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
-  VALUES((x->>'organization')::bigint,true,true,1,'fixture','in-flight disconnect');
+  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+  VALUES((x->>'organization')::bigint,true,1,'fixture','in-flight disconnect');
   UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=fid;
   PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
   INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
@@ -578,22 +574,22 @@ BEGIN
    UPDATE analytics.meta_purchase_deliveries SET lease_until=clock_timestamp()-interval '1 second' WHERE order_id=oid;
   END IF;
   SELECT next_attempt_at INTO deadline FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
-  -- Every disconnect below happens after approval has been removed.
-  UPDATE analytics.organization_policy SET meta_capi_enabled=false WHERE organization=(x->>'organization')::bigint;
-  PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'platform stop blocks preparation even with a claimed lease');
+  -- Every disconnect below happens after the connector has been disabled.
+  UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=un;
+  PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'connector disabled blocks preparation even with a claimed lease');
   IF result='before_prepare' THEN
    PERFORM assert_true((SELECT NOT prepared AND attempts=0 AND status='pending' FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
-    'platform refusal authorizes no send and consumes no attempt');
+    'a disabled connector authorizes no send and consumes no attempt');
   END IF;
   PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
   BEGIN
    PERFORM public.delete_unit_meta_purchase(un);
-   RAISE EXCEPTION 'non-admin disconnect accepted after platform stop';
+   RAISE EXCEPTION 'non-admin disconnect accepted after connector disabled';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   INSERT INTO public.organization_users(organization,"user",is_admin) VALUES((x->>'organization')::bigint,(x->>'actor')::uuid,true);
   SELECT vault_secret INTO secret_id FROM analytics.meta_purchase_connectors WHERE unit=un;
   PERFORM public.delete_unit_meta_purchase(un);
-  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_connectors WHERE unit=un),'disconnect removes connector despite platform stop');
+  PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_connectors WHERE unit=un),'disconnect removes connector despite connector disabled');
   PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_forms WHERE unit=un),'disconnect removes form switches');
   PERFORM assert_false(EXISTS(SELECT FROM vault.secrets WHERE id=secret_id),'disconnect deletes Vault secret');
   PERFORM assert_true((SELECT status='revoked' AND revoked_at IS NOT NULL AND consent_snapshot IS NULL
@@ -627,12 +623,12 @@ DECLARE x jsonb; un bigint; fid bigint; snapshot jsonb; receipt jsonb; oid bigin
  payment_id bigint; transaction_id bigint; claimed uuid; result text;
  prepared_time timestamptz; changed_time timestamptz; captured_revision uuid; captured_time timestamptz;
 BEGIN
- FOREACH result IN ARRAY ARRAY['capture_after_disconnect','capture_compatible_lock','disabled','dataset','platform','form_disabled','invalid_token','legacy_token','older_token','newer_token','equal_token','new_revision','legacy_prepare','final_failure'] LOOP
+ FOREACH result IN ARRAY ARRAY['capture_after_disconnect','capture_compatible_lock','disabled','dataset','form_disabled','invalid_token','legacy_token','older_token','newer_token','equal_token','new_revision','legacy_prepare','final_failure'] LOOP
   x:=pg_temp.fixture(NULL); un:=(x->>'unit')::bigint; fid:=(x->>'form')::bigint;
   PERFORM set_config('request.jwt.claim.sub','',true);
   UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
-  INSERT INTO analytics.organization_policy(organization,meta_capi_enabled,enabled,revision,operator,reason)
-  VALUES((x->>'organization')::bigint,true,true,1,'fixture','connector locking');
+  INSERT INTO analytics.organization_policy(organization,enabled,revision,operator,reason)
+  VALUES((x->>'organization')::bigint,true,1,'fixture','connector locking');
   UPDATE public.forms SET is_open=true,data=data||'{"analytics":{"enabled":true}}' WHERE id=fid;
   PERFORM public.reserve_public_link_internal('form',fid,x->>'link',true);
   INSERT INTO analytics.meta_purchase_connectors(unit,dataset,vault_secret,website_origin,enabled)
@@ -686,11 +682,9 @@ BEGIN
    -- must re-read and lock it after delete has completed, not trust that check.
    PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'valid fixture captured before disconnect');
    DELETE FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
-   UPDATE analytics.organization_policy SET meta_capi_enabled=false WHERE organization=(x->>'organization')::bigint;
-   PERFORM assert_eq(public.get_unit_meta_purchase(un),'{"allowed":false,"connected":true}'::jsonb,'platform denial exposes only disconnect availability for an existing connector');
+   UPDATE analytics.meta_purchase_connectors SET enabled=false WHERE unit=un;
    PERFORM public.delete_unit_meta_purchase(un);
-   PERFORM assert_eq(public.get_unit_meta_purchase(un),'{"allowed":false,"connected":false}'::jsonb,'platform denial without a connector stays hidden');
-   UPDATE analytics.organization_policy SET meta_capi_enabled=true WHERE organization=(x->>'organization')::bigint;
+   UPDATE analytics.meta_purchase_connectors SET enabled=true WHERE unit=un;
    PERFORM set_config('request.jwt.claim.sub','',true);
    PERFORM public.capture_meta_purchase_consent_internal(oid,snapshot);
    PERFORM assert_false(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'capture after disconnect cannot reinsert matching data');
@@ -702,8 +696,6 @@ BEGIN
    PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,false);
   ELSIF result='dataset' THEN
    PERFORM public.save_unit_meta_purchase(un,'654321','https://tickets.example',NULL,true);
-  ELSIF result='platform' THEN
-   UPDATE analytics.organization_policy SET meta_capi_enabled=false WHERE organization=(x->>'organization')::bigint;
   ELSIF result='form_disabled' THEN
    PERFORM public.set_form_meta_purchase(un,fid,false);
   ELSIF result='invalid_token' THEN
@@ -714,8 +706,8 @@ BEGIN
    PERFORM public.save_unit_meta_purchase(un,'123456','https://tickets.example',NULL,true,repeat('older-token-',3));
   END IF;
   PERFORM set_config('request.jwt.claim.sub','',true);
-  IF result IN ('disabled','dataset','platform','form_disabled') THEN
-   PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'prepare rejects changed/disabled/platform-blocked connector');
+  IF result IN ('disabled','dataset','form_disabled') THEN
+   PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'prepare rejects changed or disabled connector');
    PERFORM assert_true((SELECT attempts=0 AND NOT prepared AND prepared_at IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'rejected prepare consumes no send attempt or timestamp');
    IF result IN ('dataset','form_disabled') THEN
     PERFORM assert_true((SELECT status='invalid' AND consent_snapshot IS NULL AND email_hash IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'destination change invalidates and scrubs the old revision');

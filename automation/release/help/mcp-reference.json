@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceDigest": "b8788a45eea1a37e613330f8fb77688a3f8d2f87875bc2b3b7800e22201e111a",
+  "sourceDigest": "88194d2bbc40f387f79e251de500b5c0f683f98b083fd7b5971e053715f80575",
   "permissions": [
     {
       "scope": "festapp:information:read",
@@ -924,9 +924,9 @@
     {
       "scope": "festapp:unit-approvals:request",
       "labels": {
-        "cs": "Žádat o schválení měření a Meta CAPI (pošle e-mail všem správcům organizace)",
-        "en": "Request measurement and Meta CAPI approval (emails all organization administrators)",
-        "sk": "Žiadať o schválenie merania a Meta CAPI (pošle e-mail všetkým správcom organizácie)"
+        "cs": "Žádat o schválení měření na webu (pošle e-mail správcům organizace)",
+        "en": "Request browser measurement approval (emails organization administrators)",
+        "sk": "Žiadať o schválenie merania na webe (pošle e-mail správcom organizácie)"
       },
       "operations": [
         "units.measurementApproval.request",
@@ -16226,7 +16226,7 @@
     {
       "id": "units.metaCapiApproval.inspect",
       "name": "festapp_units_meta_capi_approval_inspect",
-      "description": "Read the platform approval of Meta Conversions API. The approval and the pending request belong to the whole organization, not only this organizer: a request from any organizer shows here. approved is always false for demo organizers. canRequest is false without the live manager role or the festapp:unit-approvals:request permission. Connector settings and tokens are not exposed. Requires whole-organizer consent and its organizer administration read or manager role.",
+      "description": "Legacy Meta Conversions API status for clients using the previous approval API. On self-service servers, approved means the account can configure the connector for the selected organizer and canRequest is false. Connector details and tokens are never returned.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read"
@@ -16254,7 +16254,7 @@
     {
       "id": "units.metaCapiApproval.request",
       "name": "festapp_units_meta_capi_approval_request",
-      "description": "Ask the platform to approve Meta Conversions API for the whole organization; the request is shared by all its organizers and the latest requesting organizer is named. Sends a Meta Conversions API approval request email to every administrator of the organization who has a deliverable address, with the organizer and organization and a link to organization settings; the platform then confirms the approval. Approve the exact change first: name the organizer and that all organization administrators will be emailed. Uses the administration request owner; there is no commandId. While a request is active, after approval or for a demo organizer nothing is sent and the current status is returned. After an uncertain response, inspect with festapp_units_meta_capi_approval_inspect and wait while requestState is requested. If requestState is retry_available, a new request can send another round of emails. Obtain fresh approval before sending a new request. APPROVAL_REQUEST_LIMITED means nothing was sent; when retryable, its message states the seconds to wait. APPROVAL_REQUEST_NO_RECIPIENT means no administrator has a deliverable email address; nothing was sent and the request stays available. Requires whole-organizer consent and its live manager role.",
+      "description": "Legacy Meta Conversions API status endpoint for existing clients. On self-service servers it returns organizer access status without sending any request or email. Configure the connector from organizer settings.",
       "scopes": [
         "festapp:ticket-layouts:read",
         "festapp:unit-settings:read",

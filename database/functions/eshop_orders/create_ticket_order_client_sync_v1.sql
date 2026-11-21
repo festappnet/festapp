@@ -84,7 +84,7 @@ BEGIN
   -- same immutable facts, filtered through current stored form policy.
   IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
       (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN
-    PERFORM public.record_form_conversion_internal((v_result#>>'{data,order,id}')::bigint);
+    PERFORM public.publish_form_measurement_event_internal('checkout_finalized',(v_result#>>'{data,order,id}')::bigint);
   END IF;
   IF p_context IS NULL AND public.form_measurement_visitor_role_internal(
       (SELECT form FROM eshop.orders WHERE id=(v_result#>>'{data,order,id}')::bigint)) IN ('visitor','anonymous') THEN

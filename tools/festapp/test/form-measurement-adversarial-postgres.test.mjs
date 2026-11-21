@@ -8,6 +8,10 @@ async function admin(db,f){await db.query('insert into organization_users(organi
 
 test('actual API roles cannot write measurement policy, conversion facts or forms and cannot call private helpers',options,async t=>{
  const {db,f}=await setup(t);const made=await create(db,f);await admin(db,f);
+ for(const signature of ['record_form_conversion_internal(bigint)','record_form_conversion_internal(bigint,boolean)','record_form_paid_conversion_internal(bigint)']){
+  const {rows}=await db.query('select to_regprocedure($1) as value',['public.'+signature]);
+  assert.equal(rows[0].value,null);
+ }
  for(const role of ['anon','authenticated','service_role']){
   await db.query('SET LOCAL ROLE '+role);
   for(const sql of [
@@ -20,7 +24,7 @@ test('actual API roles cannot write measurement policy, conversion facts or form
   await denied(db,"update forms set data='{\"analytics\":{\"enabled\":true}}' where id=$1",[made.formId]);
   await denied(db,'select * from analytics.conversion_facts',[]);
   for(const sql of ['select form_measurement_status_internal($1)','select form_measurement_runtime_internal($1)',
-"select form_conversion_datalayer_internal($1,'purchase')",'select record_form_conversion_internal($1)',
+"select form_conversion_datalayer_internal($1,'purchase')","select publish_form_measurement_event_internal('checkout_finalized',$1)",
    'select get_effective_form_data($1)'])await denied(db,sql,[made.formId]);
   await db.query('RESET ROLE');
  }
