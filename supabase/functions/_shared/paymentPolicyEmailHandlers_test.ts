@@ -105,7 +105,7 @@ Deno.test("production payment emails honor method, current collection and inheri
       assertEquals(inline.content,download.content);
       assert(inline.contentId);
       if (kind === "order_payment_notice") {
-        assertStringIncludes(html, currency === "EUR" ? "RF18539007547034" : "12345");
+        assertStringIncludes(html.replace(/<[^>]*>/g, ""), currency === "EUR" ? "RF18539007547034" : "12345");
         assertStringIncludes(html, "IBAN");
       }
       assertEquals(html.split(`src="cid:${inline.contentId}"`).length,2);
