@@ -1,3 +1,4 @@
+import {formLinkFromPath} from '../services/public_link.js';
 import {campaignKeys, measurementSignalKeys} from '../components/forms/form_measurement_contract.js';
 import {readCheckoutOrigin} from '../services/checkout_origin.js';
 import {parseOrderLocation, parseWaitlistLocation} from '../components/forms/customer_order_location.js';
@@ -12,8 +13,9 @@ export function publicCheckoutLocation(location) {
     catch { return false; }
 }
 
-export function publicFormLocation(location, {entry = false, checkout = false} = {}) {
+export function publicFormLocation(location, {entry = false, checkout = false, link} = {}) {
     if (!location || !/^\/form\/[a-zA-Z0-9_-]+\/?$/.test(location.pathname)) return false;
+    if (link !== undefined && formLinkFromPath(location.pathname) !== link) return false;
     const query = new URLSearchParams(location.search);
     if (checkout && query.has('checkout_origin')) {
         try { readCheckoutOrigin(location); }

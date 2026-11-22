@@ -87,6 +87,17 @@ test('policy expiry always removes transport including hidden pages; disposed st
 for(const url of ['https://tickets.test/admin','https://tickets.test/form/summer?token=SECRET','https://tickets.test/form/summer?preview=true','https://tickets.test/form/summer#access_token=SECRET'])test('private context blocked '+url,async t=>{
  const f=fixture(t,{url});await f.start();assert.equal(f.starts.length,0);assert.deepEqual(f.sent,[]);
 });
+test('a live form measurement grant cannot send or reactivate on another form URL',async t=>{
+ const f=fixture(t);await f.start();
+ const {window}=f.dom;
+ const send=f.session.capture();
+ window.history.pushState({},'', '/form/other');
+ assert.equal(send({event:'page_view'}),false);
+ window.dispatchEvent(new window.PopStateEvent('popstate'));
+ await f.session.refresh();
+ assert.equal(f.transport.grant,null);
+ assert.equal(f.starts.length,1);
+});
 test('transport errors cannot reach checkout callbacks or consume conversion identity',async t=>{
  const f=fixture(t);await f.start();f.sent.length=0;f.delivery(false);
  const outcome=f.layer.captureSubmission();assert.doesNotThrow(()=>outcome(true,{ticketOrder:{analytics:registrationLead}}));

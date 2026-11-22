@@ -66,11 +66,16 @@ export class FormPage extends Component {
         this._previewModulePromise = null;
     }
 
-    clear() {
+    disposeMeasurement() {
         this.measurementSession?.dispose(); this.measurementSession=null;
+        this.measurementRefreshPending = null;
         this.measurementRuntime?.destroy(); this.measurementRuntime = null;
         this.analytics?.dispose();
         this.analytics = null;
+    }
+
+    clear() {
+        this.disposeMeasurement();
         ThemeService.clearFormTheme();
         this.embedBridge?.destroy();
         this.embedBridge = null;
@@ -141,10 +146,20 @@ export class FormPage extends Component {
         this.cleanup(); // Clean previous content
         window.scrollTo(0, 0);
 
-        this.measurementSession?.dispose(); this.measurementSession=null;
-        this.measurementRuntime?.destroy(); this.measurementRuntime = null;
-        this.analytics?.dispose();
-        this.analytics = null;
+        // Only internal success navigation may retain the live consent owner.
+        // Never reuse it for another link or for an ordinary reload/retry.
+        const preserveMeasurement = options.preserveMeasurement === true && link != null &&
+            publicFormLocation(window.location, {entry: true, link}) &&
+            this.currentLink === link && this.measurementSession?.model.link === link &&
+            !this.measurementSession.disposed;
+        if (preserveMeasurement) {
+            // Rebuild the catalog and cart observation from the fresh form.
+            this.analytics?.dispose();
+            this.analytics = null;
+            this.measurementRefreshPending = null;
+        } else {
+            this.disposeMeasurement();
+        }
         this.analyticsEntryAllowed = publicFormLocation(window.location, {entry: true});
         this.currentLink = link;
         this.embedBridge?.setInheritStyle(false);
@@ -167,6 +182,7 @@ export class FormPage extends Component {
         // Ensure Host
         if (!this.host) {
              console.error("FormPage: No host element!");
+             this.disposeMeasurement();
              return;
         }
 
@@ -199,6 +215,7 @@ export class FormPage extends Component {
             const viewScope = parseOrderLocation(window.location);
             if (window.location.pathname === '/order' && !viewScope && !this.waitlistScope) throw new Error('INVALID_CAPABILITY');
             if (viewScope) {
+                this.disposeMeasurement();
                 this.setOverviewLayout(true);
                 this.overviewScope = viewScope;
                 this.host.replaceChildren();
@@ -213,6 +230,7 @@ export class FormPage extends Component {
             this.overviewScope = null;
             let formModel;
             if (this.waitlistScope) {
+                this.disposeMeasurement();
                 let referrer = document.querySelector('meta[name="referrer"]');
                 if (!referrer) { referrer = document.createElement('meta'); referrer.name = 'referrer'; document.head.appendChild(referrer); }
                 referrer.content = 'no-referrer';
@@ -237,6 +255,7 @@ export class FormPage extends Component {
             if (loadGeneration !== this.loadGeneration) return;
 
             if (!formModel) {
+                this.disposeMeasurement();
                 this.renderError(FormStrings.formNotFound);
                 return;
             }
@@ -244,6 +263,7 @@ export class FormPage extends Component {
             RouterService.canonicalizePublicLink('form', link, formModel.link);
             link = formModel.link || link;
             this.currentLink = link;
+            if (this.measurementSession && this.measurementSession.model.link !== link) this.disposeMeasurement();
             this.identityFooter.render(formModel.organizationIdentity);
             // 4. Apply Theme
             this.applyTheme(formModel);
@@ -267,21 +287,32 @@ export class FormPage extends Component {
             const isPreviewParam = !isEmbed() && urlParams.get('preview') === 'true';
             if (isPreviewParam) await RightsService.updateAppData({ formLink: link });
             const canPreview = RightsService.canSeeReservations();
+            if (loadGeneration !== this.loadGeneration) return;
             const showPreview = canPreview && isPreviewParam;
+            if (showPreview) this.disposeMeasurement();
 
             if (this.saleOpeningScope) {
+                this.disposeMeasurement();
                 this.host.replaceChildren();
                 renderSaleOpening(this.host, formModel, {scope: this.saleOpeningScope});
                 const back = document.createElement('a'); back.href = `/form/${encodeURIComponent(formModel.link || link)}`;
                 back.textContent = formModel.title || link; this.host.append(back); return;
             }
+            let statusMeasurementStarted = false;
             const handled = FormAvailabilityService.renderStatus(this.host, formModel, statusResult, {
                 showPreview,
-                onSaleOpening: () => this.startMeasurement(formModel, showPreview, 'sale_opening'),
+                onSaleOpening: () => {
+                    statusMeasurementStarted = true;
+                    this.disposeMeasurement();
+                    return this.startMeasurement(formModel, showPreview, 'sale_opening');
+                },
                 onReload: () => this.init(link, { forceReload: true })
             });
 
-            if (handled) return;
+            if (handled) {
+                if (!statusMeasurementStarted) this.disposeMeasurement();
+                return;
+            }
 
             // 5. Render Form
             this.renderForm(formModel, showPreview);
@@ -289,6 +320,7 @@ export class FormPage extends Component {
 
         } catch (e) {
             if (loadGeneration !== this.loadGeneration) return;
+            this.disposeMeasurement();
             this.identityFooter?.clear();
             // Capability failures must never log request or transport details.
             this.currentLink = null; // A retry must not hit the same-link guard.
@@ -577,8 +609,33 @@ export class FormPage extends Component {
         ThemeService.applyThemeFromModel(formModel);
     }
 
+    activateMeasurement() {
+        const measurement = this.measurementSession;
+        if (!measurement || measurement.disposed || measurement.state !== 'active' ||
+            this.measurementLayerGeneration !== this.loadGeneration || this.analytics?.sink !== measurement) return;
+        if (this.measurementPageType === 'sale_opening') this.analytics.page(this.measurementPageType);
+        else this.analytics.activate(this.currentSession);
+    }
+
     startMeasurement(formModel, showPreview = false, pageType = 'product') {
-        if (!showPreview && !this.analytics) {
+        if (showPreview) { this.disposeMeasurement(); return null; }
+        this.measurementPageType = pageType;
+        this.measurementLayerGeneration = this.loadGeneration;
+        if (this.measurementSession && (this.measurementSession.disposed || this.measurementSession.model.link !== formModel.link)) this.disposeMeasurement();
+        if (!this.analytics && this.measurementSession) {
+            const measurement = this.measurementSession;
+            const refresh = measurement.refresh();
+            this.measurementRefreshPending = refresh;
+            // The form can render while the retained grant is rechecked.
+            void refresh.then(() => {
+                if (this.measurementRefreshPending !== refresh || this.measurementSession !== measurement) return;
+                this.measurementRefreshPending = null;
+                this.analytics = new FormDataLayer({model:formModel, sink:measurement});
+                this.activateMeasurement();
+            });
+            return null;
+        }
+        if (!this.analytics) {
             const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,embedded:!!this.embedBridge,
                 campaign:()=>this.embedBridge?.measurementCampaign||{}});
             const transport=this.embedBridge||runtime;
@@ -607,7 +664,7 @@ export class FormPage extends Component {
                         if(identity!==next){identity=next;notify();}
                     })?.data?.subscription;
                     return ()=>subscription?.unsubscribe();
-                }},onActive:()=>pageType==='sale_opening'?this.analytics?.page(pageType):this.analytics?.activate(this.currentSession)});
+                }},onActive:()=>{ if (this.measurementSession === measurement) this.activateMeasurement(); }});
             this.analytics=new FormDataLayer({model:formModel,sink:measurement});
             measurement.start();
         }
@@ -908,7 +965,7 @@ export class FormPage extends Component {
                      this._pendingPaymentType = paymentType || null;
                      this._pendingPaymentMethod = paymentMethod;
                      this._pendingPaymentQuote = paymentQuote;
-                     const snapshot = purchaseConsentSnapshot(this.measurementSession?.consent, metaConsent);
+                     const snapshot = this.currentPurchaseConsent(metaConsent);
                      this.submitOrder(form, formModel, overlay || document.body, null,
                          snapshot ? {...snapshot,userAgent:window.navigator.userAgent} : null);
                  }, () => {
@@ -937,10 +994,16 @@ export class FormPage extends Component {
         }
     }
 
+    currentPurchaseConsent(notice) {
+        const measurement = this.measurementSession;
+        return !this.measurementRefreshPending && measurement?.hasCurrentPolicy()
+            ? purchaseConsentSnapshot(measurement.consent, notice) : null;
+    }
+
     async collectMetaCheckoutMatching(formModel,snapshot) {
         try {
             const notice=await DbForms.getMetaPurchaseConsent(formModel.link);
-            const current=()=>purchaseConsentSnapshot(this.measurementSession?.consent,notice);
+            const current=()=>this.currentPurchaseConsent(notice);
             if (this.currentSession?.formModel!==formModel || notice?.revision!==snapshot.revision ||
                 !samePurchaseDecision(current(),snapshot))return {};
             const matching=snapshot.source==='klaro'
@@ -1217,9 +1280,9 @@ export class FormPage extends Component {
 
             if (success) {
                 const link = this.currentLink;
-                this.currentLink = null;
-                // init renders a loading state before fetching the current server mode.
-                void this.init(link);
+                // Fetch current availability without ending the same-tab consent link.
+                void this.init(link, {forceReload:true, preserveMeasurement:
+                    publicFormLocation(window.location, {entry:true}) && link === formModel.link});
             } else if (retryAfterClose && retryOriginal) queueMicrotask(retryOriginal);
         };
 

@@ -314,12 +314,12 @@ test('checkout only asks the host after a fresh notice and discards matching if 
     const model={link:'pilot'};
     const initial=choice();
     const snapshot=purchaseConsentSnapshot(initial,notice,now);
-    const page={
+    const page=Object.assign(Object.create(FormPage.prototype),{
         currentSession:{formModel:model},
-        measurementSession:{consent:initial},
+        measurementSession:{consent:initial,hasCurrentPolicy:()=>true},
         embedBridge:{collectMetaCheckoutMatching:async()=>({fbp:'fb.1.1795000000000.good'})},
-    };
-    const collect=()=>FormPage.prototype.collectMetaCheckoutMatching.call(page,model,snapshot);
+    });
+    const collect=()=>page.collectMetaCheckoutMatching(model,snapshot);
     const host=t.mock.method(page.embedBridge,'collectMetaCheckoutMatching');
     const lookup=t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>null);
     assert.deepEqual(await collect(),{});

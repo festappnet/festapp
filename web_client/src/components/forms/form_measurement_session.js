@@ -35,7 +35,7 @@ export class FormMeasurementSession {
         this.pagehide=()=>{this.suspended=true; this.invalidate();};
         this.pageshow=()=>{this.suspended=false; this.invalidate(); this.refresh();};
         this.observedIdentity=this.identity();
-        this.contextChanged=()=>{this.observedIdentity=this.identity(); this.contextEpoch++; this.pendingConversions.clear(); this.invalidate(); this.refresh();};
+        this.contextChanged=()=>{this.observedIdentity=this.identity(); this.contextEpoch++; this.pendingConversions.clear(); this.until=0; this.invalidate(); this.refresh();};
         this.win.document.addEventListener('visibilitychange',this.visibility);
         this.win.addEventListener('pagehide',this.pagehide); this.win.addEventListener('pageshow',this.pageshow);
         // Consent sources own their storage updates. Other tabs can change unrelated
@@ -74,7 +74,7 @@ export class FormMeasurementSession {
     }
     contextAllowed() {
         try {return !this.disposed && !this.suspended && this.entryAllowed &&
-            !this.model.demoSimulation && (this.orderContextAllowed() || publicFormLocation(this.win.location));} catch {return false;}
+            !this.model.demoSimulation && (this.orderContextAllowed() || publicFormLocation(this.win.location,{link:this.model.link}));} catch {return false;}
     }
     refresh() {
         if (this.disposed) return Promise.resolve();
@@ -122,15 +122,19 @@ export class FormMeasurementSession {
         } catch {this.consentConnected=false;this.consent=measurementConsent(false);this.transport.updateConsent?.(this.consent);}
     }
     consentDeadline() { return Math.min(this.until, this.consent.expiresAt ?? Infinity); }
+    hasCurrentPolicy() {
+        return this.contextAllowed() && this.identity()===this.verifiedIdentity &&
+            this.policy?.visitor_role!=='staff' && this.clock()<this.until;
+    }
     permitted() {
         const p=this.policy;
         const host=this.transport.hostContext?.() || null;
         const hostAllowed=!host || (Array.isArray(p?.approved_hosts) && p.approved_hosts.includes(host.origin));
         const hostUnchanged=!this.grant || (host?.origin===this.grant.host?.origin && host?.instance===this.grant.host?.instance);
-        return hostAllowed && hostUnchanged && this.clock()>=(this.failureUntil||0) && this.contextAllowed() && this.identity()===this.verifiedIdentity && p?.visitor_role!=='staff' &&
+        return hostAllowed && hostUnchanged && this.clock()>=(this.failureUntil||0) && this.hasCurrentPolicy() &&
             (this.identity()==='anonymous' || p?.visitor_role==='visitor') &&
             p?.enabled===true && p.organization_allowed===true && p.runtime_supported===true && p.eligible===true &&
-            !!this.manifest && this.clock()<this.until &&
+            !!this.manifest &&
             (this.consent.expiresAt === undefined || (Number.isFinite(this.consent.expiresAt) && this.clock()<this.consent.expiresAt && this.consent.expiresAt<=this.clock()+60000));
     }
     reconcile() {
