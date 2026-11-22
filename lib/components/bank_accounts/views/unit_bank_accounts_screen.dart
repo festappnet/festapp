@@ -36,6 +36,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
   bool _isLoading = true;
   bool _hasLoaded = false;
+  bool _isReordering = false;
   int? _organizationId;
   bool _accountsLoadFailed = false;
   bool _organizationLoadFailed = false;
@@ -446,22 +447,26 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    final item = _unitAccounts.removeAt(oldIndex);
-    _unitAccounts.insert(newIndex, item);
-    setState(() {}); // Update UI immediately
+    if (oldIndex < newIndex) newIndex -= 1;
+    if (_isReordering || oldIndex == newIndex) return;
+    final reordered = [..._unitAccounts];
+    reordered.insert(newIndex, reordered.removeAt(oldIndex));
+    setState(() {
+      _isReordering = true;
+      _unitAccounts = reordered;
+    });
 
-    // Update priorities in DB
     try {
-      for (int i = 0; i < _unitAccounts.length; i++) {
+      for (var index = 0; index < reordered.length; index++) {
         await DbBankAccounts.current
-            .linkBankAccountToUnit(widget.unitId, _unitAccounts[i].id, i);
+            .linkBankAccountToUnit(widget.unitId, reordered[index].id, index);
       }
-    } catch (e) {
-      _showError('Error saving order: $e');
-      _loadData(); // Revert on error
+    } catch (error) {
+      if (!mounted) return;
+      _showError('Error saving order: $error');
+      await _loadData();
+    } finally {
+      if (mounted) setState(() => _isReordering = false);
     }
   }
 
@@ -482,10 +487,18 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                     if (_organizationLoadFailed) _loadError(_loadOrganization),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        '${BankAccountStrings.description}\n\n${BankAccountStrings.formAccountOrderHelp}',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        children: [
+                          Text(
+                            BankAccountStrings.description,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            BankAccountStrings.formAccountOrderHelp,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
                     Padding(
@@ -519,6 +532,13 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                                     .contains(currency))
                                 .toSet(),
                             index: index,
+                            reordering: _isReordering,
+                            onMoveUp: index > 0
+                                ? () => _onReorder(index, index - 1)
+                                : null,
+                            onMoveDown: index + 1 < _unitAccounts.length
+                                ? () => _onReorder(index, index + 2)
+                                : null,
                             onOpen: () => _addOrEditAccount(account),
                             onUnlink: () => _unlinkAccount(account),
                           );

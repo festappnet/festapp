@@ -119,6 +119,7 @@ void main() {
           .setMockMethodCallHandler(SystemChannels.platform, null));
       var opened = 0;
       var unlinked = 0;
+      var movedDown = 0;
       final account = BankAccountModel.fromJson({
         'id': 42,
         'is_admin': true,
@@ -163,7 +164,8 @@ void main() {
                             primaryCurrencies: const {'CZK', 'EUR'},
                             index: 0,
                             onOpen: () => opened++,
-                            onUnlink: () => unlinked++)
+                            onUnlink: () => unlinked++,
+                            onMoveDown: () => movedDown++)
                       ],
                     ))),
                   ),
@@ -176,6 +178,10 @@ void main() {
       expect(find.byIcon(Icons.star), findsNWidgets(2));
       await tester.tap(find.byIcon(Icons.edit_outlined));
       await tester.tap(find.byIcon(Icons.link_off));
+      final moveUp = find.widgetWithIcon(IconButton, Icons.arrow_upward);
+      expect(tester.widget<IconButton>(moveUp).onPressed, isNull);
+      await tester.tap(find.byIcon(Icons.arrow_downward));
+      expect(movedDown, 1);
       expect(opened, 1);
       expect(unlinked, 1);
       expect(tester.takeException(), isNull);

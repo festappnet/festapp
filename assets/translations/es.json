@@ -2327,7 +2327,7 @@
     "formAccountNone": "ninguna cuenta compatible",
     "formAccountUnavailable": "Cuenta seleccionada no disponible ({account})",
     "formAccountUnavailableHelp": "Esta cuenta no está disponible para estas monedas. Si ya no está vinculada, al guardar se borra la selección y se usa el orden de la organización. De lo contrario, seleccione una cuenta compatible.",
-    "formAccountOrderHelp": "Los formularios sin cuenta seleccionada usan la primera cuenta que admita la moneda del pago, según el orden de la organización.",
+    "formAccountOrderHelp": "Los formularios sin cuenta seleccionada usan la primera cuenta que admita la moneda del pago, según el orden de la organización. Para cambiar el orden, usa el asa de arrastre o los botones de flecha.",
     "organizationSettings": "ajustes de la organización",
     "settingsTitle": "Ajustes de la cuenta bancaria",
     "generalTab": "General",

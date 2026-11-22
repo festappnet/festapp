@@ -709,27 +709,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
   }
 
-  Set<String> _getFormCurrencies() {
-    if (_form == null) return {};
-    final currencies = <String>{};
-    for (var field in _form!.relatedFields) {
-      if (field.definition.productType != null) {
-        for (var product in field.definition.productType!.products ?? []) {
-          if (product.currencyCode != null &&
-              product.currencyCode!.isNotEmpty) {
-            currencies.add(product.currencyCode!);
-          }
-        }
-      }
-    }
-    return currencies;
-  }
-
-  List<BankAccountModel> _getUsedBankAccounts() {
+  List<BankAccountModel> _getUsedBankAccounts(Set<String> usedCurrencies) {
     if (_form == null || _form!.availableBankAccounts == null) return [];
-
-    final usedCurrencies = _getFormCurrencies();
-    if (usedCurrencies.isEmpty) return [];
 
     final usedAccounts = <BankAccountModel>{};
 
@@ -752,9 +733,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Widget _buildUsedBankAccounts(BuildContext context) {
     if (_form == null) return const SizedBox.shrink();
 
-    final usedCurrencies = _getFormCurrencies();
-
-    final usedAccounts = _getUsedBankAccounts();
+    final usedCurrencies = formBankTransferCurrencies(_form!);
+    final usedAccounts = _getUsedBankAccounts(usedCurrencies);
     final missingCurrencies =
         usedCurrencies
             .where(
@@ -791,7 +771,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         children: [
           FormBankAccountPicker(
             form: _form!,
-            currencies: formBankTransferCurrencies(_form!),
+            currencies: usedCurrencies,
             canEdit: _canEdit,
             onChanged: () => setState(() {}),
           ),
