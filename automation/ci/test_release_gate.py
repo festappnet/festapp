@@ -55,6 +55,30 @@ class CheckPolicyTest(unittest.TestCase):
                 gate.identify_informational_workflows([drift], 'fixture/repo')
             self.assertEqual(bool(gate.problems([drift], [], SHA)), expected)
 
+    def test_scheduled_artifact_storage_monitor_requires_exact_provenance(self):
+        monitor = check('cleanup', 'failure')
+        monitor['check_suite'] = {'id': 42}
+        run = dict(check_suite_id=42, path='.github/workflows/artifact-retention.yml',
+                   event='schedule', head_sha=SHA)
+        def resolve(value):
+            with patch.object(gate.subprocess, 'check_output', return_value=json.dumps(
+                    {'workflow_runs': [value]})):
+                gate.identify_informational_workflows([monitor], 'fixture/repo')
+        self.assertTrue(gate.problems([check('a'), monitor], ['a'], SHA))
+        resolve(run)
+        self.assertEqual(gate.problems([check('a'), monitor], ['a'], SHA), [])
+        self.assertTrue(gate.problems([monitor], ['a'], SHA))
+        self.assertTrue(gate.problems([monitor], ['cleanup'], SHA))
+        for field, value in [('path', '.github/workflows/other.yml'),
+                             ('event', 'push'), ('event', 'workflow_dispatch'),
+                             ('head_sha', 'b' * 40), ('check_suite_id', 99)]:
+            with self.subTest(field=field, value=value):
+                resolve({**run, field: value})
+                self.assertTrue(gate.problems([check('a'), monitor], ['a'], SHA))
+        with patch.object(gate.subprocess, 'check_output', side_effect=OSError('unavailable')):
+            gate.identify_informational_workflows([monitor], 'fixture/repo')
+        self.assertTrue(gate.problems([check('a'), monitor], ['a'], SHA))
+
     def test_other_app_cannot_supply_missing_github_job(self):
         fake = check('a')
         fake['app'] = {'slug': 'unrelated'}
