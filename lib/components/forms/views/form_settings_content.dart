@@ -29,7 +29,6 @@ import 'package:fstapp/components/_shared/editor_action_bar.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
@@ -95,7 +94,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   bool _cashEnabled = false;
   bool _paymentSelectionChanged = false;
   final _cashInstructionsController = TextEditingController();
-  final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
     _form?.definition.customerSelfService,
     _form?.definition.bankAccountId,
@@ -265,7 +263,6 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   void dispose() {
     RightsService.occasionLinkModelNotifier.removeListener(_changed);
     _bankChanges.removeListener(_bankConnectionChanged);
-    _bankSettingsLink.dispose();
     _titleController.dispose();
     _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
@@ -709,41 +706,23 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
   }
 
-  List<BankAccountModel> _getUsedBankAccounts(Set<String> usedCurrencies) {
-    if (_form == null || _form!.availableBankAccounts == null) return [];
-
-    final usedAccounts = <BankAccountModel>{};
-
-    // availableBankAccounts are sorted by priority ASC from DB
-    // For each currency, pick the first account that supports it.
-    for (final currency in usedCurrencies) {
-      for (final account in _form!.availableBankAccounts!) {
-        if (account.type != 'CASH' &&
-            (_form!.definition.bankAccountId == null ||
-                account.id == _form!.definition.bankAccountId) &&
-            account.supportedCurrencies.contains(currency.trim())) {
-          usedAccounts.add(account);
-          break;
-        }
-      }
-    }
-    return usedAccounts.toList();
-  }
-
   Widget _buildUsedBankAccounts(BuildContext context) {
-    if (_form == null) return const SizedBox.shrink();
+    final form = _form;
+    if (form == null) return const SizedBox.shrink();
 
-    final usedCurrencies = formBankTransferCurrencies(_form!);
-    final usedAccounts = _getUsedBankAccounts(usedCurrencies);
-    final missingCurrencies =
-        usedCurrencies
-            .where(
-              (currency) => !usedAccounts.any(
-                (account) => account.supportedCurrencies.contains(currency.trim()),
-              ),
-            )
-            .toList()
-          ..sort();
+    final usedCurrencies = formBankTransferCurrencies(form);
+    final receivingAccounts = formBankTransferAccounts(
+      form,
+      usedCurrencies,
+      accountId: form.definition.bankAccountId,
+    );
+    final usedAccounts = receivingAccounts.values
+        .whereType<BankAccountModel>()
+        .toSet();
+    final missingCurrencies = [
+      for (final entry in receivingAccounts.entries)
+        if (entry.value == null) entry.key,
+    ];
     final unitId = RightsService.currentUnit()?.id;
     final canManageAccounts =
         unitId != null &&
@@ -751,26 +730,12 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           AuthorizationCapabilities.bankAccountsUnitManage,
         );
 
-    final guidance = missingCurrencies.isNotEmpty
-        ? (canManageAccounts
-              ? BankAccountStrings.addAccountForPayments
-              : BankAccountStrings.askManagerForPaymentAccount)
-        : BankAccountStrings.manageInUnitSettings;
-    final settingsLabel = BankAccountStrings.organizationSettings;
-    final linkStart = guidance.indexOf(settingsLabel);
-    _bankSettingsLink.onTap = canManageAccounts
-        ? () => pushRootPath(
-            context.router.root,
-            '/unit/$unitId/edit/bank-accounts',
-          )
-        : null;
-
     return SelectionArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FormBankAccountPicker(
-            form: _form!,
+            form: form,
             currencies: usedCurrencies,
             canEdit: _canEdit,
             onChanged: () => setState(() {}),
@@ -783,35 +748,20 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
               ),
             ),
             const SizedBox(height: 4),
-          ],
-          Text.rich(
-            TextSpan(
-              children: canManageAccounts && linkStart >= 0
-                  ? [
-                      TextSpan(text: guidance.substring(0, linkStart)),
-                      TextSpan(
-                        text: settingsLabel,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          decoration: TextDecoration.underline,
-                        ),
-                        mouseCursor: SystemMouseCursors.click,
-                        recognizer: _bankSettingsLink,
-                      ),
-                      TextSpan(
-                        text: guidance.substring(
-                          linkStart + settingsLabel.length,
-                        ),
-                      ),
-                    ]
-                  : [TextSpan(text: guidance)],
+            Text(
+              canManageAccounts
+                  ? BankAccountStrings.addAccountForPayments
+                  : BankAccountStrings.askManagerForPaymentAccount,
             ),
-            style: missingCurrencies.isNotEmpty
-                ? null
-                : Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-          ),
+          ],
+          if (canManageAccounts)
+            TextButton(
+              onPressed: () => pushRootPath(
+                context.router.root,
+                '/unit/$unitId/edit/bank-accounts',
+              ),
+              child: Text(BankAccountStrings.bankAccountSettingsTitle),
+            ),
           if (usedAccounts.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(

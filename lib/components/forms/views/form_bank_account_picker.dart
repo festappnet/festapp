@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/eshop.dart';
 
@@ -45,16 +46,10 @@ class FormBankAccountPicker extends StatelessWidget {
               currencies.every((c) => a.supportedCurrencies.contains(c.trim())),
         )
         .toList();
-    final current = <String>[];
-    for (final currency in currencies.toList()..sort()) {
-      final matches = accounts.where(
-        (a) =>
-            a.type != 'CASH' && a.supportedCurrencies.contains(currency.trim()),
-      );
-      current.add(
-        '$currency: ${matches.isEmpty ? BankAccountStrings.formAccountNone : _label(matches.first)}',
-      );
-    }
+    final current = [
+      for (final entry in formBankTransferAccounts(form, currencies).entries)
+        '${entry.key}: ${entry.value == null ? BankAccountStrings.formAccountNone : _label(entry.value!)}',
+    ];
     final unavailable =
         selected != null && !eligible.any((a) => a.id == selected);
     // String values give the inherited NULL option a concrete dropdown value.
@@ -63,6 +58,7 @@ class FormBankAccountPicker extends StatelessWidget {
       children: [
         DropdownButtonFormField<String>(
           initialValue: selected?.toString() ?? 'default',
+          isDense: false,
           isExpanded: true,
           decoration: InputDecoration(
             labelText: BankAccountStrings.formAccountLabel,
@@ -132,4 +128,23 @@ Set<String> formBankTransferCurrencies(FormEditorDraft form) {
     }
   }
   return currencies;
+}
+
+/// The editor RPC returns non-cash accounts in the same priority and ID order
+/// used when checkout resolves an inherited receiving account.
+Map<String, BankAccountModel?> formBankTransferAccounts(
+  FormEditorDraft form,
+  Set<String> currencies, {
+  int? accountId,
+}) {
+  final accounts = form.availableBankAccounts ?? const <BankAccountModel>[];
+  return {
+    for (final currency in currencies.toList()..sort())
+      currency: accounts.firstWhereOrNull(
+        (account) =>
+            account.type != 'CASH' &&
+            (accountId == null || account.id == accountId) &&
+            account.supportedCurrencies.contains(currency),
+      ),
+  };
 }

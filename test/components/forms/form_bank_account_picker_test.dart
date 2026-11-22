@@ -172,6 +172,12 @@ void main() {
   testWidgets('picker offers inherited and currency eligible accounts', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.binding.platformDispatcher.textScaleFactorTestValue = 1.8;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
     final form = _load();
     await _pump(tester, form, currencies: {'CZK'});
     expect(_dropdown(tester).items!.map((i) => i.value), ['default', '1', '3']);
@@ -232,6 +238,18 @@ void main() {
       expect(find.textContaining('Selected account unavailable'), findsNothing);
       await _pump(tester, _load(), currencies: {'CZK', 'EUR'});
       expect(_dropdown(tester).items!.map((i) => i.value), ['default', '3']);
+      expect(
+        formBankTransferAccounts(form, {'CZK', 'EUR'}).map(
+          (currency, account) => MapEntry(currency, account?.id),
+        ),
+        {'CZK': 1, 'EUR': 2},
+      );
+      expect(
+        formBankTransferAccounts(form, {'CZK', 'EUR'}, accountId: 1).map(
+          (currency, account) => MapEntry(currency, account?.id),
+        ),
+        {'CZK': 1, 'EUR': null},
+      );
     },
   );
 

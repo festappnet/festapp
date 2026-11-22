@@ -86,8 +86,8 @@ class UnitBankAccountCard extends StatelessWidget {
             enabled: !reordering,
             index: index,
             child: const SizedBox(
-              width: 40,
-              height: 40,
+              width: 48,
+              height: 48,
               child: DragHandleDots(),
             ),
           ),
