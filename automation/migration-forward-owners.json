@@ -951,6 +951,19 @@
           "manage_bank_authoring"
         ]
       }
+    },
+    {
+      "migration": "20261122135000_settle_sparse_notification_projections.sql",
+      "active": true,
+      "header": "-- Settle notification projections when deleted deliveries leave gaps below the allocator high-water mark.",
+      "sources": [
+        "notification_center/prepared_worker.sql"
+      ],
+      "selectors": {
+        "notification_center/prepared_worker.sql": [
+          "prepare_notification_center"
+        ]
+      }
     }
   ]
 }
