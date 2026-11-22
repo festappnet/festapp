@@ -300,10 +300,8 @@ class MirrorContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'no executed CI entrypoint'):
             runner.check_ci_entrypoints(contract,manifest)
 
-    def test_browser_installer_matches_the_declared_playwright_version(self):
-        version=json.loads((ROOT/'web_client/package.json').read_text())['devDependencies']['playwright']
+    def test_browser_installer_uses_the_existing_system_libraries(self):
         installer=(ROOT/'automation/ci/browser.sh').read_text()
-        self.assertIn('playwright@'+version,installer)
         self.assertIn('playwright install --only-shell chromium',installer)
         self.assertNotIn('--with-deps',installer)
         self.assertNotIn('apt-get',installer)
@@ -435,6 +433,9 @@ class RunnerSafetyTest(unittest.TestCase):
                 for relative in ('automation/ci/prepare-seat.sh','automation/ci/browser.sh','automation/local_db/test-base.json','automation/local_db/images.py'):
                     target=root/relative;target.parent.mkdir(parents=True,exist_ok=True)
                     shutil.copyfile(ROOT/relative,target)
+                manifest = root / 'web_client/package.json'
+                manifest.parent.mkdir()
+                manifest.write_text(json.dumps({'devDependencies': {'playwright': '9.8.7'}}))
                 binary=root/'bin';binary.mkdir()
                 for name in ('docker','pnpm'):
                     tool=binary/name
@@ -466,7 +467,8 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
                 image=config['providers'][major]['image']
                 expected=('image inspect '+image) if not image_exit else ('pull '+image.replace('public.ecr.aws/','docker.io/',1))
                 self.assertEqual((root/'docker.started').read_text(),expected)
-                self.assertIn('--only-shell chromium',(root/'pnpm.started').read_text())
+                self.assertEqual((root/'pnpm.started').read_text(),
+                                 '--package=playwright@9.8.7 dlx playwright install --only-shell chromium')
 
     def test_ticket_rendering_has_a_single_hosted_owner(self):
         contract = runner.CONTRACT
