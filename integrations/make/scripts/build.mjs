@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
+import { apiCallCommunication, apiCallParameters, salesReportOutput } from './lib/module-communication.mjs';
 const require = createRequire(new URL('../../../tools/festapp/package.json', import.meta.url));
 const Ajv = require('ajv/dist/2020').default;
 const addFormats = require('ajv-formats');
@@ -109,19 +110,10 @@ for (const m of presentation.modules) {
 for (const m of presentation.modules) {
     const path = 'modules/'+m.key+'/';
     if (!m.operation) {
-        const cases = MAKE_READ_OPERATIONS.flatMap(id=>[JSON.stringify('/operations/'+id),JSON.stringify('/operations/'+id)]).join(', ');
-        const url = "https://api.vstupenky.online/integrations/v1{{switch(parameters.url, "+cases+", '/operations/forbidden')}}";
-        put(path+'api.json',{ url, method:"{{ifempty(parameters.method, 'POST')}}", type:'raw',
-            headers:{'{{...}}':"{{pick(toCollection(parameters.headers, 'key', 'value'), 'Accept', 'Content-Type', 'X-Request-ID')}}",'content-type':'application/json',authorization:'Bearer {{connection.accessToken}}'},
-            qs:{'{{...}}':"{{toCollection(parameters.qs, 'key', 'value')}}"},
-            body:"{{ifempty(parameters.body, '{}')}}", response:{output:{body:'{{body}}',headers:'{{headers}}',statusCode:'{{statusCode}}'}},log:{sanitize:['request.body','request.headers.authorization','request.headers.Authorization']} });
-        const pairs=[{name:'key',label:'Key',type:'text'},{name:'value',label:'Value',type:'text'}];
-        put(path+'expect.json',[{name:'url',label:'URL',type:'text',required:true,help:'Enter a path relative to https://api.vstupenky.online/integrations/v1, for example /operations/context.inspect. This API exposes five authorized read operations only.'},
-            {name:'method',label:'Method',type:'select',required:true,default:'POST',options:['GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS'].map(value=>({label:value,value})),help:'The current read API supports POST; unsupported methods return HTTP 405.'},
-            {name:'headers',label:'Headers',type:'array',spec:pairs,help:'Supported additional headers: Accept, Content-Type and X-Request-ID. Authorization is supplied by the connection; authentication, host and pagination-control overrides are not forwarded.'},
-            {name:'qs',label:'Query string',type:'array',spec:pairs},
-            {name:'body',label:'Body',type:'text',default:'{}',help:'JSON object matching the canonical operation input. POST is the only transport method.'}]);
-        put(path+'interface.json',[{name:'body',label:'Body',type:'collection'},{name:'headers',label:'Headers',type:'collection'},{name:'statusCode',label:'Status code',type:'number'}]);
+        const { origin, pathname } = new URL(contract.servers[0].url);
+        put(path+'api.json', apiCallCommunication(origin));
+        put(path+'expect.json', apiCallParameters(origin, pathname + '/operations/context.inspect'));
+        put(path+'interface.json',[{name:'body',label:'Body',type:'any'},{name:'headers',label:'Headers',type:'collection'},{name:'statusCode',label:'Status code',type:'number'}]);
         put(path+'scope.json',[...MAKE_SCOPES]);put(path+'samples.json',{});
         put(path+'module.json',{name:m.key,label:m.label,description:m.description,typeId:12,connection:app.connectionName});
     } else {
@@ -135,7 +127,7 @@ for (const m of presentation.modules) {
         let output=schemas[m.operation].output.properties.data;
         if(list){const collection=m.operation==='access.inspect'?'occasions':'orders';api.response={iterate:'{{body.data.'+collection+'}}',output:'{{item}}',limit:`{{if(contains(keys(parameters), 'limit'), ifempty(parameters.limit, ${MAKE_LIMITS.totalInputCap}), ${MAKE_LIMITS.defaultTotal})}}`};output=output.properties[collection].items;}
         if(m.operation==='orders.inspect'){api.response.output='{{first(body.data.orders)}}';output=output.properties.orders.items;}
-        if(m.operation==='orders.report')api.response.output="{{set(body.data, 'report.generated_at', parseDate(body.data.report.generated_at))}}";
+        if(m.operation==='orders.report')api.response.output=salesReportOutput;
         if(m.operation==='orders.list'){
             const requested = `if(contains(keys(parameters), 'limit'), ifempty(parameters.limit, ${MAKE_LIMITS.totalInputCap}), ${MAKE_LIMITS.defaultTotal})`;
             // Make owns its run ceiling. A remaining cursor at the last
@@ -158,7 +150,7 @@ put('rpcs/occasions/api.json',{url:'/operations/access.inspect',method:'POST',ty
 put('rpcs/occasions/parameters.json',[]);
 put('rpcs/occasions/rpc.json',{name:'occasions',label:'Accessible events',connection:app.connectionName});
 put('groups.json',[...new Set(presentation.modules.map(m=>m.group))].map(label=>({label,modules:presentation.modules.filter(m=>m.group===label).map(m=>m.key)})));
-const manifest={app:app.name,version:app.version,apiProjectionDigest:contract['x-projection-digest'],metadata:app,readmeSha256:createHash('sha256').update(await readFile(new URL('SETUP.md',root))).digest('hex'),logoSha256:createHash('sha256').update(await readFile(new URL('../chatgpt/assets/logo.png',root))).digest('hex'),modules,rpcs:['occasions'],files:Object.fromEntries([...files].map(([p,s])=>[p,createHash('sha256').update(s).digest('hex')]))};
+const manifest={app:app.name,version:app.version,apiProjectionDigest:contract['x-projection-digest'],metadata:app,readmeSha256:createHash('sha256').update(await readFile(new URL('SETUP.md',root))).digest('hex'),logoSha256:createHash('sha256').update(await readFile(new URL('assets/logo.png',root))).digest('hex'),modules,rpcs:['occasions'],files:Object.fromEntries([...files].map(([p,s])=>[p,createHash('sha256').update(s).digest('hex')]))};
 put('manifest.json',manifest);
 return files;
 }

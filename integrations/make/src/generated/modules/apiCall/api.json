@@ -1,10 +1,13 @@
 {
-  "url": "https://api.vstupenky.online/integrations/v1{{switch(parameters.url, \"/operations/orders.report\", \"/operations/orders.report\", \"/operations/orders.list\", \"/operations/orders.list\", \"/operations/orders.inspect\", \"/operations/orders.inspect\", \"/operations/access.inspect\", \"/operations/access.inspect\", \"/operations/context.inspect\", \"/operations/context.inspect\", '/operations/forbidden')}}",
+  "url": "https://api.vstupenky.online/{{parameters.url}}",
   "method": "{{ifempty(parameters.method, 'POST')}}",
   "type": "raw",
+  "followRedirect": false,
+  "followAllRedirect": false,
   "headers": {
-    "{{...}}": "{{pick(toCollection(parameters.headers, 'key', 'value'), 'Accept', 'Content-Type', 'X-Request-ID')}}",
     "content-type": "application/json",
+    "{{...}}": "{{toCollection(parameters.headers, 'key', 'value')}}",
+    "host": "api.vstupenky.online",
     "authorization": "Bearer {{connection.accessToken}}"
   },
   "qs": {
@@ -12,6 +15,7 @@
   },
   "body": "{{ifempty(parameters.body, '{}')}}",
   "response": {
+    "valid": "{{if(statusCode >= 200, statusCode < 300, false)}}",
     "output": {
       "body": "{{body}}",
       "headers": "{{headers}}",

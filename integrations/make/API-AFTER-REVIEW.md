@@ -1,4 +1,5 @@
-> Prepared migration only. Do not switch the connector until its existing Make review is accepted.
+> Prepared canonical connector for the existing Make review. See the
+> [rollout plan](../../docs/plans/make-review-and-cutover-plan-2026-11-19.md).
 
 # Public integrations API
 

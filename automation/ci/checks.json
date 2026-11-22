@@ -1486,7 +1486,7 @@
       }
     },
     "mcp-api-contract": {
-      "script": "pnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\npython3 automation/assemble-information-authoring-migration.py --check\npnpm --dir tools/festapp exec node scripts/check-api-contract.mjs\npnpm --dir tools/festapp run api:compatibility\npnpm --dir tools/festapp exec node ../../integrations/make/scripts/build.mjs --check\npython3 automation/assemble-integration-webhooks-migration.py --check\npython3 automation/assemble-ticket-layout-contract-refresh-migration.py --check\npython3 automation/check_api_artifacts.py\npython3 -m unittest automation.tests.test_api_artifacts\npnpm --dir tools/festapp exec node --test test/api-artifacts.test.mjs\n",
+      "script": "pnpm --dir tools/festapp run docs:check\npython3 automation/assemble-mcp-completion-migration.py --check\npython3 automation/assemble-information-authoring-migration.py --check\npnpm --dir tools/festapp exec node scripts/check-api-contract.mjs\npnpm --dir tools/festapp run api:compatibility\npnpm --dir tools/festapp exec node ../../integrations/make/scripts/build.mjs --check\npython3 automation/assemble-integration-webhooks-migration.py --check\npython3 automation/assemble-ticket-layout-contract-refresh-migration.py --check\npython3 automation/check_api_artifacts.py\npython3 -m unittest automation.tests.test_api_artifacts\npnpm --dir tools/festapp exec node --test test/api-artifacts.test.mjs test/make-connector.test.mjs\n",
       "after": [
         "mcp-api-prepare"
       ],

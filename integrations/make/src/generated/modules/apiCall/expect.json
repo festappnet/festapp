@@ -4,7 +4,10 @@
     "label": "URL",
     "type": "text",
     "required": true,
-    "help": "Enter a path relative to https://api.vstupenky.online/integrations/v1, for example /operations/context.inspect. This API exposes five authorized read operations only."
+    "validate": {
+      "pattern": "^/(?!/)[^\\s\\\\#]*$"
+    },
+    "help": "Enter a path relative to https://api.vstupenky.online, for example /integrations/v1/operations/context.inspect."
   },
   {
     "name": "method",
@@ -42,7 +45,7 @@
         "value": "OPTIONS"
       }
     ],
-    "help": "The current read API supports POST; unsupported methods return HTTP 405."
+    "help": "The documented read operations use POST."
   },
   {
     "name": "headers",
@@ -60,7 +63,7 @@
         "type": "text"
       }
     ],
-    "help": "Supported additional headers: Accept, Content-Type and X-Request-ID. Authorization is supplied by the connection; authentication, host and pagination-control overrides are not forwarded."
+    "help": "Additional request headers. Make supplies the host and the connection’s Authorization header."
   },
   {
     "name": "qs",
@@ -84,6 +87,6 @@
     "label": "Body",
     "type": "text",
     "default": "{}",
-    "help": "JSON object matching the canonical operation input. POST is the only transport method."
+    "help": "Enter the request body as JSON for an operation that accepts it."
   }
 ]

@@ -35,10 +35,11 @@ const logoBytes=await get(prefix+'/icon/512','GET',undefined,{binary:true});asse
 const receipt={at:new Date().toISOString(),app:app.name,version:app.version,zone:app.zone,definitionSectionsMatched:checked,
     generatedManifestSha256:createHash('sha256').update(await readFile(new URL('src/generated/manifest.json',root))).digest('hex'),
     sourceLogoSha256:manifest.logoSha256,renderedLogoSha256:createHash('sha256').update(logoBytes).digest('hex'),
+    logoVerification:'PNG readback. Confirm the rendered mark in the Make editor.',
     visibilityAtReadback:meta.public?'public':'private',inReview:meta.inReview??meta.in_review??null,
     reviewStateSource:'SDK selected inReview field when available; native Review tab and confirmation email retain the workflow history.',
     modules:manifest.modules,connectionCount:1,rpcCount:1,prototypeFunctionCount:0,tokenValuesIncluded:false};
 await save({...receipt,status:'verified'});
-process.stdout.write('PASS: live Make definitions, metadata, README and logo match the frozen source; '+checked+' sections verified.\n');
+process.stdout.write('PASS: live Make definitions, metadata and README match source; '+checked+' sections verified. Logo PNG received for visual verification.\n');
 
 } catch(error) { await save({status:'failed',error:safeFailure(error)}); throw error; }

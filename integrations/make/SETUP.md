@@ -13,11 +13,12 @@ record payments, send tickets or export buyer contacts.
   including currencies, waiting tickets and warnings.
 - **List orders** returns one bundle per order, with cursor pagination.
 - **Get an order** returns one matching order from the selected event.
-- **Make an API call** calls one of the five documented read operations. Enter
-  a service-relative path such as `/integrations/v1/operations/context.inspect` and a
-  JSON body. The API currently supports POST for five authorized read operations.
-  The module exposes method, supported headers, query string, body, response
-  headers and status code; write operations and foreign URLs remain forbidden.
+- **Make an API call** sends an authorized request to
+  `https://api.vstupenky.online`. Enter a path such as
+  `/integrations/v1/operations/context.inspect`, select POST and enter the JSON
+  body for the operation. The module accepts additional headers and query
+  parameters and returns the response body, headers and status code. Your
+  connection grants access to the documented read operations.
 
 ## Limits and reconnecting
 
@@ -62,7 +63,7 @@ corrected. Throttling or a temporary upstream failure can require a later retry;
 do not configure another unbounded retry loop. `PAGINATION_LIMIT_EXCEEDED`
 means the requested export did not complete.
 
-[API schemas and authentication](https://api.vstupenky.online/integrations/v1/docs/).
+[API schemas and authentication](https://api.vstupenky.online/integrations/v1/profiles/order-summary/docs/).
 [Privacy](https://vstupenky.online/privacy/).
 [Service terms](https://vstupenky.online/terms/).
 Support: info@festapp.net.

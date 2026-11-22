@@ -11,7 +11,9 @@ Terms: https://vstupenky.online/terms/
 Support and partnership contact: info@festapp.net
 Legal operator, as displayed in service terms: Michael Bujnovský, IČO 06455361, Přívozská 1704/24, 702 00 Ostrava, Czech Republic. Festapp is the platform name; vstupenky.online is the service brand.
 Submitted category: Commerce / E-Commerce (actual form options; no Event Management category offered).
-Logo source: `integrations/chatgpt/assets/logo.png` (same regional service identity, uploaded to this app).
+Logo for the next update: `integrations/make/assets/logo.png`. The transparent
+PNG uses the vstupenky.online brand symbol from
+`assets/brand/vstupenky-online/vstupenky-online-symbol.svg` in a single dark color.
 
 ## Scenarios
 

@@ -6,6 +6,6 @@
     "occasionId": "{{parameters.occasionId}}"
   },
   "response": {
-    "output": "{{set(body.data, 'report.generated_at', parseDate(body.data.report.generated_at))}}"
+    "output": "{{if(body.data.report.generated_at, set(body.data, 'report.generated_at', parseDate(body.data.report.generated_at, 'YYYY-MM-DDTHH:mm:ss.SSSSSSZ')), body.data)}}"
   }
 }
