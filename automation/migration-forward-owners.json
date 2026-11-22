@@ -916,6 +916,19 @@
           "queue_account_security_enrollment_notice_v1"
         ]
       }
+    },
+    {
+      "migration": "20261122011000_passkey_satisfies_account_assurance.sql",
+      "active": true,
+      "header": "-- Let user-verified passkeys redeemed through the broker satisfy Festapp account assurance.",
+      "sources": [
+        "user_permissions/session_assurance.sql"
+      ],
+      "selectors": {
+        "user_permissions/session_assurance.sql": [
+          "get_account_assurance_v1"
+        ]
+      }
     }
   ]
 }

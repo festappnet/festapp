@@ -103,6 +103,22 @@ describe('LoginModal Conditional Registration', () => {
         }
     });
 
+    it('gives supported passkey sign-in priority and keeps password sign-in available', () => {
+        const modal = new LoginModal();
+        const container = document.createElement('div');
+        container.innerHTML = modal._getContent();
+        assert.equal(container.querySelector('#passkey-start'), null);
+        assert.ok(container.querySelector('#login-form .btn-primary[type="submit"]'));
+
+        modal.passkeyEnabled = true;
+        container.innerHTML = modal._getContent();
+        const preferred = container.querySelector('#passkey-start.btn-primary');
+        const password = container.querySelector('#login-form');
+        assert.ok(preferred);
+        assert.ok(preferred.compareDocumentPosition(password) & window.Node.DOCUMENT_POSITION_FOLLOWING);
+        assert.ok(password.querySelector('.btn-secondary[type="submit"]'));
+    });
+
     it('opens registration directly and switches both ways inside the same modal', async () => {
         RightsService._context = { organization: { IS_REGISTRATION_ENABLED: true } };
         const { LocalizationService } = await import('../../src/services/localization_service.js');

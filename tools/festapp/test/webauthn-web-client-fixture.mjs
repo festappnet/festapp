@@ -20,16 +20,11 @@ window.qualifyFestappPasskey = async input => {
     configure(input);
     if (!await PasskeyService.capability()) throw new Error('The optional passkey sign-in action is unavailable');
     const result = await AuthService.loginWithPasskey();
-    const pending = result?.verification;
-    if (!pending?.webauthn?.length || pending.recovery) {
-        throw new Error('The normal web login did not request the independent factor');
-    }
+    if (result?.verification) throw new Error('Web login required another factor after the verified passkey');
     const client = SupabaseService.getClient();
-    const decision = () => client.rpc('get_account_assurance_v1', {p_organization: organization});
-    if ((await decision()).data !== 'mfa_required') throw new Error('First proof exceeded its permitted access');
-    await AuthService.verifyWebAuthn(pending, pending.webauthn[0].id);
-    if ((await decision()).data !== 'allowed') throw new Error('Normal web login did not complete the second proof');
-    return {passkeyFirstFactor: true, independentWebAuthnSecondFactor: true};
+    const { data } = await client.rpc('get_account_assurance_v1', {p_organization: organization});
+    if (data !== 'allowed') throw new Error('The verified passkey did not unlock account access');
+    return {passkeySatisfiesMfa: true};
 };
 
 window.mountFestappAccountSecurity = async input => {

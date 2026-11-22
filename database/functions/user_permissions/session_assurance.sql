@@ -67,7 +67,8 @@ BEGIN
     RETURN 'account_recovery';
   END IF;
 
-  IF p_account_security THEN
+  IF (v_aal = 'aal1' OR p_account_security)
+    AND v_amr @> '[{"method":"passkey"}]'::jsonb THEN
     SELECT EXISTS (
       SELECT FROM public.account_passkey_primary_proofs proof
       JOIN public.user_info profile ON profile.id = v_session.user_id AND profile.organization = proof.organization
@@ -75,7 +76,12 @@ BEGIN
     ) INTO v_brokered_passkey;
   END IF;
 
-  IF NOT EXISTS (
+  -- The broker checks signed WebAuthn user verification and completes a bound
+  -- exchange before recording this proof. GoTrue still labels this session AAL1.
+  IF v_brokered_passkey AND v_aal = 'aal1' AND v_session.aal::text = 'aal1'
+    AND v_session.oauth_client_id IS NULL THEN
+    v_method := 'passkey';
+  ELSIF NOT EXISTS (
     SELECT FROM auth.mfa_factors f WHERE f.user_id = v_session.user_id
       AND f.status = 'verified' AND f.factor_type IN ('totp','phone','webauthn')
   ) THEN
@@ -86,9 +92,9 @@ BEGIN
     IF NOT p_account_security THEN
       RETURN 'allowed';
     END IF;
-    -- OTP also represents reset and internal session minting. Only password and
-    -- passkey sign-in with a completed broker exchange carry a known purpose.
-    v_method := CASE WHEN v_brokered_passkey THEN 'passkey' ELSE 'password' END;
+    -- OTP also represents reset and internal session minting. The fallback
+    -- for account security requires a recent password proof.
+    v_method := 'password';
   ELSE
     IF v_aal <> 'aal2' OR v_session.aal::text IS DISTINCT FROM 'aal2' THEN
       RETURN 'mfa_required';

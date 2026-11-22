@@ -222,7 +222,7 @@ export class LoginModal extends HTMLElement {
         )}</p>`;
 
         const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '';
-        const passkeyAction = this.passkeyEnabled ? `<button type="button" class="btn-secondary" id="passkey-start" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.passkeySignIn}</button>` : '';
+        const passkeyAction = this.passkeyEnabled ? `<button type="button" class="btn-primary" id="passkey-start" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.passkeySignIn}</button>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
         if (this.currentView === 'account_recovery') return `<h2>${LocalizationService.tr('AccountSecurity.recoveryTitle')}</h2>`;
@@ -248,11 +248,11 @@ export class LoginModal extends HTMLElement {
         if (this.currentView === 'login') {
             return `
                 <h2>${CommonStrings.signIn}</h2>
-                ${feedback}${passkeyAction}${googleAction}
+                ${feedback}${passkeyAction}${googleAction || (passkeyAction ? `<div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '')}
                 <form id="login-form" novalidate>
                     ${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'username')}
                     ${validatedField('password', CommonStrings.password, 'password', true, 0, '', 'current-password')}
-                    <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
+                    <button type="submit" class="${this.passkeyEnabled ? 'btn-secondary' : 'btn-primary'}" ${this.isLoading ? 'disabled' : ''}>
                         ${this.isLoading ? CommonStrings.loading : CommonStrings.signIn}
                     </button>
                     <div class="auth-links">

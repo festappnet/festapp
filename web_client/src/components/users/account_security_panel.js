@@ -95,7 +95,7 @@ export class AccountSecurityPanel {
         const result = await PasskeyService.signIn(signal);
         signal?.throwIfAborted();
         await this.session(session);
-        if (this.passwordProof || this.factors.length || result.requiresMfa !== false ||
+        if (this.passwordProof || result.requiresMfa !== false ||
             result.userId !== this.userId || result.organization !== this.organization) throw new Error('invalid_session');
         return this.client.auth.setSession(result.session);
     }
@@ -327,13 +327,13 @@ export class AccountSecurityPanel {
                 add('h3', text(enrollmentLabels[this.proofEnrollmentMethod]));
             }
             add('p', text('freshProof'));
+            const passkey = this.methods.passkey;
+            if (!this.passwordProof && this.passkeys?.length && passkey?.offer && passkey.signIn && PasskeyService.credentialSupport()) {
+                button(CommonStrings.passkeySignIn, () => this.run(signal => this.verifyProof('passkey', null, signal)));
+            }
             if (this.passwordProof || this.factors.length === 0) {
                 add('p', text('passwordProofHint', { appName: AppConfig.appName }));
                 form(CommonStrings.password, 'password', (value, signal) => this.verifyProof('password', value, signal));
-                const passkey = this.methods.passkey;
-                if (!this.passwordProof && this.passkeys?.length && passkey?.offer && passkey.signIn && PasskeyService.credentialSupport()) {
-                    button(CommonStrings.passkeySignIn, () => this.run(signal => this.verifyProof('passkey', null, signal)));
-                }
             } else {
                 for (const factor of this.factors) {
                     const item = add('div', '');
