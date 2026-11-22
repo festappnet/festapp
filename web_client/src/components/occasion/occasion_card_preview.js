@@ -20,8 +20,11 @@ export function mountOccasionCardPreview(host = window) {
         if (event.source !== host.parent || event.origin !== host.location.origin ||
             event.data?.type !== 'festapp-occasion-card-draft') return;
         const payload = event.data;
-        host.document.documentElement.lang = payload.locale;
-        host.document.body.classList.toggle('dark-mode', payload.dark === true);
+        const dark = payload.dark === true;
+        const root = host.document.documentElement;
+        root.lang = payload.locale;
+        root.style.colorScheme = dark ? 'dark' : 'light';
+        host.document.body.classList.toggle('dark-mode', dark);
         renderOccasionCardPreview(container, payload);
         reportHeight();
     });

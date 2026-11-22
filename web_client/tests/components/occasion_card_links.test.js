@@ -60,9 +60,11 @@ test('preview accepts drafts only from its same-origin parent and reports conten
     send(host, host.location.origin);
     assert.equal(host.document.querySelector('.oc-title').textContent, occasion.title);
     assert.equal(host.document.documentElement.lang, 'cs');
+    assert.equal(host.document.documentElement.style.colorScheme, 'light');
     assert.equal(host.document.body.classList.contains('dark-mode'), false);
     send(host, host.location.origin, { ...data, locale: 'en', dark: true });
     assert.equal(host.document.body.classList.contains('dark-mode'), true);
+    assert.equal(host.document.documentElement.style.colorScheme, 'dark');
     assert.equal(reports.at(-1).data.type, 'festapp-occasion-card-height');
     assert.ok(reports.every(report => report.origin === host.location.origin));
     host.close();

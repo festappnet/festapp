@@ -62,7 +62,11 @@ class _OccasionCatalogPreviewState extends State<OccasionCatalogPreview> {
   }
 
   void _sendDraft() {
-    if (!_ready || !mounted) return;
+    final frame = _frame;
+    if (!_ready || !mounted || frame == null) return;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    // A transparent iframe needs the same color scheme as its document.
+    frame.style.colorScheme = dark ? 'dark' : 'light';
     final occasion = widget.occasion;
     final data = occasion.toJson();
     final form = FeatureService.getFeatureDetails(
@@ -86,12 +90,12 @@ class _OccasionCatalogPreviewState extends State<OccasionCatalogPreview> {
           },
       ],
     };
-    _frame?.contentWindow?.postMessage(
+    frame.contentWindow?.postMessage(
       {
         'type': 'festapp-occasion-card-draft',
         'occasion': card,
         'locale': context.locale.toLanguageTag(),
-        'dark': Theme.of(context).brightness == Brightness.dark,
+        'dark': dark,
       }.jsify(),
       web.window.location.origin.toJS,
     );
@@ -135,6 +139,7 @@ class _OccasionCatalogPreviewState extends State<OccasionCatalogPreview> {
               ..width = '100%'
               ..height = '100%'
               ..border = '0'
+              ..colorScheme = 'light'
               ..opacity = '0'
               ..pointerEvents = 'none';
             frame.src = Uri.base
