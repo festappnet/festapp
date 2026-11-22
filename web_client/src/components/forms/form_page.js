@@ -68,6 +68,7 @@ export class FormPage extends Component {
 
     disposeMeasurement() {
         this.measurementSession?.dispose(); this.measurementSession=null;
+        this.measurementRefreshPending = null;
         this.measurementRuntime?.destroy(); this.measurementRuntime = null;
         this.analytics?.dispose();
         this.analytics = null;
@@ -157,6 +158,7 @@ export class FormPage extends Component {
         // the consent channel, runtime and purchase-order observer alive.
         this.analytics?.dispose();
         this.analytics = null;
+        this.measurementRefreshPending = null;
         this.analyticsEntryAllowed = publicFormLocation(window.location, {entry: true});
         this.currentLink = link;
         this.embedBridge?.setInheritStyle(false);
@@ -309,12 +311,6 @@ export class FormPage extends Component {
             if (handled) {
                 if (!statusMeasurementStarted) this.disposeMeasurement();
                 return;
-            }
-
-            if (preserveMeasurement && this.measurementSession) {
-                // Check the policy before the rebuilt checkout can use the retained session.
-                await this.measurementSession.refresh();
-                if (loadGeneration !== this.loadGeneration) return;
             }
 
             // 5. Render Form
@@ -626,8 +622,17 @@ export class FormPage extends Component {
         this.measurementLayerGeneration = this.loadGeneration;
         if (this.measurementSession && (this.measurementSession.disposed || this.measurementSession.model.link !== formModel.link)) this.disposeMeasurement();
         if (!this.analytics && this.measurementSession) {
-            this.analytics = new FormDataLayer({model:formModel, sink:this.measurementSession});
-            this.activateMeasurement();
+            const measurement = this.measurementSession;
+            const refresh = measurement.refresh();
+            this.measurementRefreshPending = refresh;
+            // The form can render while the retained grant is rechecked.
+            void refresh.then(() => {
+                if (this.measurementRefreshPending !== refresh || this.measurementSession !== measurement) return;
+                this.measurementRefreshPending = null;
+                this.analytics = new FormDataLayer({model:formModel, sink:measurement});
+                this.activateMeasurement();
+            });
+            return null;
         }
         if (!this.analytics) {
             const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,embedded:!!this.embedBridge,
@@ -959,7 +964,7 @@ export class FormPage extends Component {
                      this._pendingPaymentType = paymentType || null;
                      this._pendingPaymentMethod = paymentMethod;
                      this._pendingPaymentQuote = paymentQuote;
-                     const snapshot = purchaseConsentSnapshot(this.measurementSession?.consent, metaConsent);
+                     const snapshot = this.currentPurchaseConsent(metaConsent);
                      this.submitOrder(form, formModel, overlay || document.body, null,
                          snapshot ? {...snapshot,userAgent:window.navigator.userAgent} : null);
                  }, () => {
@@ -988,10 +993,15 @@ export class FormPage extends Component {
         }
     }
 
+    currentPurchaseConsent(notice) {
+        return this.measurementRefreshPending
+            ? null : purchaseConsentSnapshot(this.measurementSession?.consent, notice);
+    }
+
     async collectMetaCheckoutMatching(formModel,snapshot) {
         try {
             const notice=await DbForms.getMetaPurchaseConsent(formModel.link);
-            const current=()=>purchaseConsentSnapshot(this.measurementSession?.consent,notice);
+            const current=()=>this.currentPurchaseConsent(notice);
             if (this.currentSession?.formModel!==formModel || notice?.revision!==snapshot.revision ||
                 !samePurchaseDecision(current(),snapshot))return {};
             const matching=snapshot.source==='klaro'

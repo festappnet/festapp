@@ -444,9 +444,12 @@ for(const end of ['expired','detached','closed','withdrawn','unknown','scope-cha
    let releasePolicy;
    const freshPolicy=new Promise(resolve=>{releasePolicy=()=>resolve(form.policy);});
    t.mock.method(form.win.testModules.DbForms,'getMeasurementPolicy',()=>freshPolicy);
+   const previousSession=page.currentSession;
    form.events.length=0;await back();
-   try{assert.deepEqual(form.events,[],'checkout waits for fresh policy before sending events');}
-   finally{releasePolicy();}
+   try{
+    assert.notEqual(page.currentSession,previousSession,'checkout renders while policy refresh is pending');
+    assert.deepEqual(form.events,[],'checkout waits for fresh policy before sending events');
+   }finally{releasePolicy();}
    await settle(80);
   }else await back();
   assert.equal(page.measurementSession,form.session);
