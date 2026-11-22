@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.manage_bank_authoring(
  p_unit bigint,p_organization bigint,p_action text,p_payload jsonb,p_command_id uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE unit_id bigint:=p_unit; bank bigint:=(p_payload->>'accountId')::bigint; result jsonb; begun jsonb; hash text; lim int:=coalesce((p_payload->>'limit')::int,50); ident bigint;
+ current_order bigint[]; expected_order bigint[]; requested_order bigint[];
 BEGIN
  IF unit_id IS NULL AND bank IS NOT NULL THEN
   SELECT r.unit INTO unit_id FROM public.client_mutation_receipts r WHERE r.command_id=p_command_id AND r.actor_id=auth.uid() AND r.command_name='unit.bank.'||p_action;
@@ -37,6 +38,9 @@ BEGIN
   IF (p_payload->>'priority' IS NULL OR FOUND) THEN
    IF NOT public.can_manage_unit_bank_accounts(unit_id) THEN RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
   ELSIF NOT public.can_link_bank_account_to_unit(bank,unit_id) THEN RAISE insufficient_privilege USING MESSAGE='bank admin and target unit manager required'; END IF;
+ ELSIF p_action='reorder' THEN
+  IF NOT public.can_manage_unit_bank_accounts(unit_id) THEN RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
+  PERFORM public.require_bank_authoring_scope_internal(NULL,unit_id);
  ELSIF p_action='save' AND bank IS NULL THEN
   IF NOT public.can_manage_unit_bank_accounts(unit_id) THEN RAISE insufficient_privilege USING MESSAGE='unit manager required'; END IF;
  ELSE
@@ -66,7 +70,7 @@ BEGIN
   SELECT coalesce(jsonb_agg(jsonb_build_object('deliveryId',x->'delivery_id','receivedAt',x->'received_at','outcome',x->'outcome')),'[]') INTO result FROM jsonb_array_elements(public.get_bank_sync_observations(bank,lim)) x;
   RETURN jsonb_build_object('items',result);
  END IF;
- IF p_action NOT IN ('save','link','user') OR p_command_id IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='bank command required'; END IF;
+ IF p_action NOT IN ('save','link','user','reorder') OR p_command_id IS NULL THEN RAISE invalid_parameter_value USING MESSAGE='bank command required'; END IF;
  hash:=encode(extensions.digest(jsonb_build_object('unit',unit_id,'action',p_action,'payload',p_payload)::text,'sha256'),'hex');
  begun:=public.begin_unit_client_mutation_v1(p_command_id,'unit.bank.'||p_action,unit_id,auth.uid(),hash);
  IF begun->>'disposition'='replay' THEN RETURN begun->'response'; END IF;
@@ -74,6 +78,31 @@ BEGIN
   ident:=public.update_bank_account(bank,p_payload->>'accountNumber',p_payload->>'title',p_payload->>'type',
    CASE WHEN p_payload->'currencies' IS NULL OR p_payload->'currencies'='null'::jsonb THEN NULL ELSE ARRAY(SELECT jsonb_array_elements_text(p_payload->'currencies')) END,p_payload->>'displayNumber',unit_id,p_payload->>'creditorName');
   result:=jsonb_build_object('accountId',ident,'detailsSyncPending',EXISTS(SELECT 1 FROM eshop.bank_sync_operations WHERE bank_account_id=ident AND operation='update_details' AND state<>'completed'));
+ ELSIF p_action='reorder' THEN
+  IF jsonb_typeof(p_payload->'expectedOrder') IS DISTINCT FROM 'array'
+    OR jsonb_typeof(p_payload->'accountOrder') IS DISTINCT FROM 'array' THEN
+   RAISE invalid_parameter_value USING MESSAGE='bank account order arrays required';
+  END IF;
+  expected_order:=ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(p_payload->'expectedOrder') WITH ORDINALITY AS item(value,position) ORDER BY position);
+  requested_order:=ARRAY(SELECT value::bigint FROM jsonb_array_elements_text(p_payload->'accountOrder') WITH ORDINALITY AS item(value,position) ORDER BY position);
+  -- The unit authoring lock serializes organizer link and reorder commands.
+  SELECT ARRAY(SELECT l.bank_account FROM eshop.unit_bank_accounts l
+   JOIN eshop.bank_accounts a ON a.id=l.bank_account
+   WHERE l.unit=unit_id AND a.type <> 'CASH'
+   ORDER BY coalesce(l.priority,0),l.bank_account FOR UPDATE OF l) INTO current_order;
+  IF expected_order IS DISTINCT FROM current_order THEN
+   RAISE serialization_failure USING MESSAGE='BANK_ACCOUNT_ORDER_CHANGED';
+  END IF;
+  IF cardinality(requested_order) <> cardinality(current_order)
+    OR NOT (requested_order @> current_order AND current_order @> requested_order) THEN
+   RAISE invalid_parameter_value USING MESSAGE='bank account order must include each linked account once';
+  END IF;
+  PERFORM public.check_bank_account_writable(account_id) FROM unnest(requested_order) AS requested(account_id);
+  UPDATE eshop.unit_bank_accounts l SET priority=(requested.position-1)::int
+   FROM unnest(requested_order) WITH ORDINALITY AS requested(account_id,position)
+   WHERE l.unit=unit_id AND l.bank_account=requested.account_id;
+  RETURN public.complete_unit_mutation_internal_v1(p_command_id,unit_id,'unit.bank.reorder','unit',unit_id,'update',
+    jsonb_build_object('accountOrder',requested_order));
  ELSIF p_action='user' THEN
   PERFORM public.update_bank_account_user(bank,p_payload->>'email',(p_payload->>'isAdmin')::boolean,(p_payload->>'isSupport')::boolean);
   result:=jsonb_build_object('accountId',bank);

@@ -937,6 +937,20 @@
       "sources": [
         "eshop_bank_accounts/link_bank_account_to_unit.sql"
       ]
+    },
+    {
+      "migration": "20261122121500_atomic_bank_account_order.sql",
+      "active": true,
+      "header": "-- Apply unit bank account priorities in one receipted command.",
+      "sources": [
+        "units/begin_unit_client_mutation_v1.sql",
+        "authoring/finance.sql"
+      ],
+      "selectors": {
+        "authoring/finance.sql": [
+          "manage_bank_authoring"
+        ]
+      }
     }
   ]
 }

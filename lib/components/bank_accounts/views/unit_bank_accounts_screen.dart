@@ -449,7 +449,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   Future<void> _onReorder(int oldIndex, int newIndex) async {
     if (oldIndex < newIndex) newIndex -= 1;
     if (_isReordering || oldIndex == newIndex) return;
-    final reordered = [..._unitAccounts];
+    final previous = _unitAccounts;
+    final reordered = [...previous];
     reordered.insert(newIndex, reordered.removeAt(oldIndex));
     setState(() {
       _isReordering = true;
@@ -457,10 +458,12 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
     });
 
     try {
-      for (var index = 0; index < reordered.length; index++) {
-        await DbBankAccounts.current
-            .linkBankAccountToUnit(widget.unitId, reordered[index].id, index);
-      }
+      await DbBankAccounts.current.reorderUnitBankAccounts(
+        widget.unitId,
+        previous.map((account) => account.id).toList(),
+        reordered.map((account) => account.id).toList(),
+      );
+      await _loadData();
     } catch (error) {
       if (!mounted) return;
       _showError('Error saving order: $error');

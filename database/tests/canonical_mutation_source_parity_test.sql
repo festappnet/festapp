@@ -174,8 +174,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_stripe_disconnect(bigint,boolean,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='96385aa5bdc7fab3273a13c35537337e'),'current SQL source parity: public.begin_stripe_disconnect(bigint,boolean,uuid)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_stripe_disconnect_client_sync_v1(bigint,boolean,uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='48d7860f6c3c3d5b01d128e6e7114959'),'current SQL source parity: public.begin_stripe_disconnect_client_sync_v1(bigint,boolean,uuid,uuid)');
--- supabase/migrations/20261111010000_access_membership.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)') AND md5(btrim(prosrc,E' \n\r\t'))='420eec79487ab047672475284e65578e'),'current SQL source parity: public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)');
+-- supabase/migrations/20261122121500_atomic_bank_account_order.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)') AND md5(btrim(prosrc,E' \n\r\t'))='062ded7e92ca1432efa01f36ba8aecc8'),'current SQL source parity: public.begin_unit_client_mutation_v1(uuid,text,bigint,uuid,text)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='46a2e1dd1f8ec1d16b1f06852994af32'),'current SQL source parity: public.block_blueprint_seats(bigint,bigint,bigint,bigint,bigint[],bigint[],bigint,boolean,uuid)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -1674,8 +1674,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.maintain_sale_opening_notifications(integer)') AND md5(btrim(prosrc,E' \n\r\t'))='15537a97f39da3a2a6c1bc5e01293c18'),'current SQL source parity: public.maintain_sale_opening_notifications(integer)');
 -- supabase/migrations/20261113090100_ticket_wallet_queue_contract.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.maintain_ticket_wallet(integer)') AND md5(btrim(prosrc,E' \n\r\t'))='80cd80568c5ad1b92618928854e38b26'),'current SQL source parity: public.maintain_ticket_wallet(integer)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_bank_authoring(bigint,bigint,text,jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='54271fba50119f8bec1d9a3e78cb3eba'),'current SQL source parity: public.manage_bank_authoring(bigint,bigint,text,jsonb,uuid)');
+-- supabase/migrations/20261122121500_atomic_bank_account_order.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_bank_authoring(bigint,bigint,text,jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='7f1c9633141a51a1baaac1e3f8685a5a'),'current SQL source parity: public.manage_bank_authoring(bigint,bigint,text,jsonb,uuid)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.manage_blueprint_authoring(bigint,bigint,bigint,text,jsonb,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='8f5f28d5f2e11adbb9571a7c5639541e'),'current SQL source parity: public.manage_blueprint_authoring(bigint,bigint,bigint,text,jsonb,uuid)');
 -- supabase/baseline/20261107170000_schema.sql

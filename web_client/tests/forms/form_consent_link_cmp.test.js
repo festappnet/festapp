@@ -424,6 +424,32 @@ test('Back to form after success retains the linked lease and second-order purch
  }finally{form.close();site.close();}
 });
 
+test('Back to form keeps the same Meta CAPI lease without a GTM runtime',async t=>{
+ const site=website(),binding={id:'00000000-0000-4000-8000-000000000001',version:1};
+ site.registry.connect({read:()=>({consentRevision,analytics:true,marketing:true,binding,
+  purchaseConsent:{source:'complianz',ad_storage:true,ad_user_data:true,ad_personalization:true}}),subscribe:()=>()=>{}});
+ const policy={...basePolicy(),consent_only:true,runtime_supported:false,runtime_revision:0,profile:null,
+  website_consent_bindings:[{...binding,websiteOrigin:HOST,effective:true}]};
+ const form=linkedForm(site,{production:true,policy});
+ try{
+  await ready(form);
+  const {page,back}=await returningPage(t,form);
+  const notice={revision:'checkout-revision',origin:HOST};
+  const lease=form.session.consent.leaseId;
+  const requests=site.requests.length;
+  assert.ok(page.currentPurchaseConsent(notice));
+  await back();
+  assert.equal(form.session.consent.leaseId,lease);
+  assert.equal(site.requests.length,requests);
+  assert.equal(form.session.grant,null);
+  assert.ok(page.currentPurchaseConsent(notice));
+  form.policy={...policy,website_consent_bindings:[{...binding,websiteOrigin:HOST,effective:false}]};
+  await form.session.refresh();
+  await settle();
+  assert.equal(page.currentPurchaseConsent(notice),null);
+ }finally{form.close();site.close();}
+});
+
 test('a failed policy refresh keeps checkout available without using the old purchase consent',async t=>{
  const site=website(),binding={id:'00000000-0000-4000-8000-000000000001',version:1};
  site.registry.connect({read:()=>({consentRevision,analytics:true,marketing:true,binding,

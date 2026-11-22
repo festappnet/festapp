@@ -1,4 +1,4 @@
-import {measurementConsent, measurementManifest, sameMeasurementManifest, analyticsPayload, currentMetaPurchaseRouting} from './form_measurement_contract.js';
+import {consentTransportManifest, measurementConsent, measurementManifest, sameMeasurementManifest, analyticsPayload, currentMetaPurchaseRouting} from './form_measurement_contract.js';
 import {hasCurrentPurchaseConsent} from './meta_purchase_consent.js';
 import {publicFormLocation, documentEntryAllowed} from '../../utils/public_form_location.js';
 import {AppConfig} from '../../app_config.js';
@@ -83,11 +83,15 @@ export class FormMeasurementSession {
         const request=Promise.resolve().then(()=>this.policySource()).then(policy=>{
             if (this.disposed || generation!==this.generation || identity!==this.identity()) return;
             const manifest=measurementManifest(policy,this.model.link);
-            const changed=!sameMeasurementManifest(manifest,this.manifest);
-            if (changed || (this.grant && this.clock()>=this.until)) this.invalidate();
-            this.verifiedIdentity=identity; this.policy=policy; this.model.data.analytics=policy; this.manifest=changed?manifest:this.manifest;
+            const consentManifest=consentTransportManifest(policy,this.model.link);
+            const runtimeChanged=manifest!==(this.manifest ?? null) && !sameMeasurementManifest(manifest,this.manifest);
+            const consentChanged=!sameMeasurementManifest(consentManifest,this.consentManifest);
+            if (runtimeChanged || consentChanged || (this.grant && this.clock()>=this.until)) this.invalidate();
+            this.verifiedIdentity=identity; this.policy=policy; this.model.data.analytics=policy;
+            if (runtimeChanged) this.manifest=manifest;
+            if (consentChanged) this.consentManifest=consentManifest;
             this.until=this.clock()+Math.min(60,Math.max(0,Number(policy?.valid_for_seconds)||0))*1000;
-            if (changed || !this.consentConnected || this.consentStaff!==(policy?.visitor_role==='staff')) this.connectConsent();
+            if (consentChanged || !this.consentConnected || this.consentStaff!==(policy?.visitor_role==='staff')) this.connectConsent();
             this.win.clearTimeout(this.expiry);
             this.expiry=this.win.setTimeout(()=>{this.invalidate();},Math.max(0,this.until-this.clock()));
             this.transport.renew?.(this.consentDeadline());
@@ -102,10 +106,10 @@ export class FormMeasurementSession {
     }
     connectConsent() {
         this.consentBinding=null; this.disconnectConsent?.(); this.consentStaff=this.policy?.visitor_role==='staff'; this.consent=measurementConsent(false); this.consentConnected=true;
-        const manifest=this.manifest; const binding={}; this.consentBinding=binding;
+        const manifest=this.consentManifest; const binding={}; this.consentBinding=binding;
         try {
             this.disconnectConsent=this.consentSource.connect(this.policy,value=>{
-                if(this.disposed || this.consentBinding!==binding || manifest!==this.manifest) return;
+                if(this.disposed || this.consentBinding!==binding || manifest!==this.consentManifest) return;
                 if(value==null)this.consentConnected=false;
                 const leased = value?.leaseId !== undefined || value?.expiresAt !== undefined;
                 const validLease = !leased || (typeof value.leaseId === 'string' && value.leaseId.length > 0 &&
