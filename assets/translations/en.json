@@ -4748,6 +4748,8 @@
     "addTotp": "Add authenticator app",
     "addKey": "Add security key",
     "addPasskey": "Add passkey",
+    "passkeyAlreadyRegistered": "This key is already registered. To add another passkey, choose a different password manager or device.",
+    "passkeyRegistrationCancelled": "Passkey setup was cancelled or timed out.",
     "freshProof": "Verify your identity before changing account security.",
     "passwordProofHint": "Enter your {appName} account password to confirm that you requested this change.",
     "verifyIdentity": "Verify identity",

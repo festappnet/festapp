@@ -871,7 +871,8 @@
     },
     {
       "migration": "20261121151000_account_session_assurance.sql",
-      "active": true,
+      "sha256": "ee64d6fb707fb7c128e06b0c10034cf52576c9639e0491af7ea8fa7b684f4c8b",
+      "checkSources": true,
       "header": "-- Add account-level assurance based on live GoTrue state and a durable recovery hold.",
       "sources": [
         "user_permissions/session_assurance.sql",
@@ -902,6 +903,32 @@
       "sources": [
         "eshop_forms/meta_purchase_settings.sql"
       ]
+    },
+    {
+      "migration": "20261122010000_account_security_notice_context.sql",
+      "active": true,
+      "header": "-- Identify the account, registered origin and method in account security enrollment notices.",
+      "sources": [
+        "user_permissions/account_mfa_factor_registration.sql"
+      ],
+      "selectors": {
+        "user_permissions/account_mfa_factor_registration.sql": [
+          "queue_account_security_enrollment_notice_v1"
+        ]
+      }
+    },
+    {
+      "migration": "20261122011000_passkey_satisfies_account_assurance.sql",
+      "active": true,
+      "header": "-- Let user-verified passkeys redeemed through the broker satisfy Festapp account assurance.",
+      "sources": [
+        "user_permissions/session_assurance.sql"
+      ],
+      "selectors": {
+        "user_permissions/session_assurance.sql": [
+          "get_account_assurance_v1"
+        ]
+      }
     }
   ]
 }

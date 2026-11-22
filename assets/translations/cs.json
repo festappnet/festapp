@@ -4750,6 +4750,8 @@
     "addTotp": "Přidat ověřovací aplikaci",
     "addKey": "Přidat bezpečnostní klíč",
     "addPasskey": "Přidat passkey",
+    "passkeyAlreadyRegistered": "Tento klíč už je zaregistrovaný. Chcete-li přidat další passkey, vyberte jiného správce nebo zařízení.",
+    "passkeyRegistrationCancelled": "Přidávání passkey bylo zrušeno nebo vypršelo.",
     "freshProof": "Před změnou zabezpečení ověřte svou totožnost.",
     "passwordProofHint": "Zadejte heslo k účtu na {appName}. Tím potvrdíte, že změnu požadujete vy.",
     "verifyIdentity": "Ověřit totožnost",

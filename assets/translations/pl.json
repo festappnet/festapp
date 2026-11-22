@@ -2795,6 +2795,8 @@
     "addTotp": "Dodaj aplikację uwierzytelniającą",
     "addKey": "Dodaj klucz bezpieczeństwa",
     "addPasskey": "Dodaj klucz dostępu",
+    "passkeyAlreadyRegistered": "Ten klucz jest już zarejestrowany. Aby dodać kolejny klucz dostępu, wybierz inny menedżer haseł lub urządzenie.",
+    "passkeyRegistrationCancelled": "Konfiguracja klucza dostępu została anulowana lub wygasła.",
     "freshProof": "Potwierdź tożsamość przed zmianą zabezpieczeń konta.",
     "passwordProofHint": "Wpisz hasło do konta w {appName}, aby potwierdzić, że to Ty chcesz wprowadzić tę zmianę.",
     "verifyIdentity": "Potwierdź tożsamość",

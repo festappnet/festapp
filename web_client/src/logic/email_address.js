@@ -13,3 +13,9 @@ export function isValidEmail(value) {
             /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(label)) &&
         !/^[0-9]+$/.test(domain.at(-1));
 }
+
+// Strip the current tenant's internal Auth namespace for display only.
+export function displayAuthEmail(email, organization) {
+    const prefix = `${organization}+`;
+    return email.startsWith(prefix) ? email.slice(prefix.length) : email;
+}

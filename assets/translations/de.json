@@ -2793,6 +2793,8 @@
     "addTotp": "Authenticator-App hinzufügen",
     "addKey": "Sicherheitsschlüssel hinzufügen",
     "addPasskey": "Passkey hinzufügen",
+    "passkeyAlreadyRegistered": "Dieser Schlüssel ist bereits registriert. Wählen Sie für einen weiteren Passkey einen anderen Passwortmanager oder ein anderes Gerät.",
+    "passkeyRegistrationCancelled": "Die Einrichtung des Passkeys wurde abgebrochen oder ist abgelaufen.",
     "freshProof": "Bestätigen Sie Ihre Identität, bevor Sie die Kontosicherheit ändern.",
     "passwordProofHint": "Geben Sie das Passwort für Ihr Konto bei {appName} ein, um die Änderung zu bestätigen.",
     "verifyIdentity": "Identität bestätigen",

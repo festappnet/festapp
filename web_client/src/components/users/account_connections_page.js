@@ -4,6 +4,7 @@ import { GoogleAuthService } from '../../services/google_auth_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
 import { AppConfig } from '../../app_config.js';
+import { displayAuthEmail } from '../../logic/email_address.js';
 import { AccountSecurityPanel } from './account_security_panel.js';
 import { connectionPageStyles } from './connection_page_styles.js';
 
@@ -128,7 +129,7 @@ export class AccountConnectionsPage {
             add('p', this.text('error')).setAttribute('role', 'alert');
             button(CommonStrings.retry, () => this.init());
         } else {
-            add('p', (this.user.email ?? '').replace(new RegExp(`^${AppConfig.organization}\\+`), '')).className = 'connection-identity';
+            add('p', displayAuthEmail(this.user.email ?? '', AppConfig.organization)).className = 'connection-identity';
             add('p', this.text('intro'));
             const methods = add('section'); methods.setAttribute('aria-labelledby', 'account-signin-heading');
             add('h2', this.text('signInMethods'), methods).id = 'account-signin-heading';
@@ -191,6 +192,9 @@ export class AccountConnectionsPage {
 .account-security img{display:block;max-inline-size:100%;block-size:auto}
 .account-security label{display:block}
 .account-security input{display:block;max-inline-size:100%;min-block-size:44px;margin-block:6px;padding:6px 10px;font:inherit;color:inherit;background:transparent;border:1px solid var(--connection-control-line);border-radius:6px}
+.account-security .password-input{position:relative;display:inline-grid;max-inline-size:100%;align-items:center}
+.account-security .password-input input{padding-inline-end:48px}
+.account-security .password-input .toggle-password{position:absolute;inset-inline-end:0;display:grid;place-items:center;inline-size:44px;padding:0;margin:0;border:0}
 .account-connections ul{padding-inline-start:22px;line-height:1.6}
 .account-connection{margin-block:20px;padding:20px 0;border-block-start:1px solid var(--connection-line)}
 .account-connection h3{margin:0 0 8px}

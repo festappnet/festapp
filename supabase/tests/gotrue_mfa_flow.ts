@@ -983,6 +983,12 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
                     ...(jwt && { Authorization: `Bearer ${jwt}` }) },
                 body: JSON.stringify(body),
             });
+        const managePasskey = (operation: string, body: Record<string, unknown>, jwt: string) =>
+            fetch(strict + 'festapp/passkey/manage/' + operation, {
+                method: 'POST',
+                headers: { Origin: origin, Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
         const startFields = { clientId, organization, redirectUri, codeChallenge: challenge };
         ensure((await signIn('options', startFields, origin, passkeyActor)).status === 409,
             'An authenticated caller cannot start the anonymous passkey flow');
@@ -1011,6 +1017,15 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
             allowCredentials: [{ id: passkey.id, type: 'public-key', transports: ['internal'] }],
         }, false)));
         ensure(await activeSessions() === beforeSignIn, 'UV rejection must leave the session inventory unchanged');
+        const unbrokeredOptions = await requireJson(await direct('passkeys/authentication/options'),
+            'Provider-only passkey options for MFA account');
+        const unbrokered = await requireJson(await direct('passkeys/authentication/verify', {
+            body: { challenge_id: unbrokeredOptions.challenge_id, credential: await ceremony('get', unbrokeredOptions.options) },
+        }), 'Provider-only passkey assertion for MFA account');
+        ensure(await decision(unbrokered.access_token) === 'mfa_required',
+            'A signed provider passkey token without a broker exchange must still require MFA');
+        await expectDenied(await rest('user_info?id=eq.' + user.data.user.id, unbrokered.access_token), 'mfa_required');
+
         const assertion = await ceremony('get', discovery.options);
         ensure(assertion.id === passkey.id, 'Use the credential registered through the broker');
         const handoff = await requireJson(await verifyLogin(assertion), 'Verified passkey sign-in');
@@ -1031,22 +1046,33 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
         ensure(accepted && exchanges.filter(result => result.status === 403).length === 1,
             'Exactly one concurrent PKCE exchange must succeed');
         const login = await accepted.json();
-        ensure(login.userId === user.data.user.id && login.organization === organization && login.requiresMfa,
-            'The discoverable credential must resolve the correct enrolled account and require MFA');
+        ensure(login.userId === user.data.user.id && login.organization === organization && login.requiresMfa === false,
+            'The verified discoverable credential must complete MFA for the enrolled account');
         const passkeyJwt = login.session.access_token;
         const passkeyFacts = await facts(passkeyJwt);
         ensure(passkeyFacts.aal === 'aal1' && passkeyFacts.methods.includes('passkey') &&
-            await decision(passkeyJwt) === 'mfa_required',
-            'Brokered passkey sign-in must only provide the first factor for an MFA account');
-        await expectDenied(await rest('user_info?id=eq.' + user.data.user.id, passkeyJwt), 'mfa_required');
-        const existingChallenge = await requireJson(await raw(`factors/${active.factorId}/challenge`, passkeyJwt, {}),
+            await decision(passkeyJwt) === 'allowed' && await decision(passkeyJwt, true) === 'allowed',
+            'Festapp accepts the brokered UV proof without changing the provider AAL');
+        ensure((await rest('user_info?id=eq.' + user.data.user.id, passkeyJwt)).ok,
+            'Brokered passkey proof must unlock the authenticated application');
+        const passkeyList = await requireJson(await managePasskey('list', {}, passkeyJwt), 'Brokered passkey list');
+        ensure(passkeyList.length === 1, 'Expected one passkey on the verified account');
+        const missingAlternative = await managePasskey('remove', { id: passkeyList[0].id }, passkeyJwt);
+        const removalError = await missingAlternative.json();
+        ensure(missingAlternative.status === 409 && removalError.code === 'password_proof_required',
+            `A passkey-only session must prove a password before deleting its last key (status ${missingAlternative.status}, code ${removalError.code})`);
+
+        const passwordJwt = await passwordSession();
+        ensure(await decision(passwordJwt) === 'mfa_required', 'A password still requires an independent factor');
+        await expectDenied(await rest('user_info?id=eq.' + user.data.user.id, passwordJwt), 'mfa_required');
+        const existingChallenge = await requireJson(await raw(`factors/${active.factorId}/challenge`, passwordJwt, {}),
             'Existing WebAuthn challenge');
         const secondAssertion = await ceremony('get', existingChallenge.webauthn.credential_options.publicKey);
         ensure(secondAssertion.id !== passkey.id, 'MFA must use a separate registered credential');
-        const upgraded = await requireJson(await raw(`factors/${active.factorId}/verify`, passkeyJwt, {
+        const upgraded = await requireJson(await raw(`factors/${active.factorId}/verify`, passwordJwt, {
             challenge_id: existingChallenge.id,
             webauthn: { type: 'request', credential_response: secondAssertion },
-        }), 'WebAuthn after brokered passkey sign-in');
+        }), 'WebAuthn after password sign-in');
         ensure(await decision(upgraded.access_token) === 'allowed',
             'Client context must only unlock after the second proof');
 
@@ -1068,8 +1094,8 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
             await activeSessions() === beforeOutsidePilot, 'Outside-pilot passkeys must issue no handoff or retained session');
         await sql(`SELECT public.set_passkey_pilot_user_v1('${webClientId}', '${user.data.user.id}');`);
         const webProof = await ceremony('client_sign_in', {auth: new URL(strict).origin, rest: base, organization, anonKey});
-        ensure(webProof.passkeyFirstFactor && webProof.independentWebAuthnSecondFactor,
-            'The normal web auth service must complete independent MFA through the pinned Auth stack');
+        ensure(webProof.passkeySatisfiesMfa,
+            'The normal web auth service must accept verified passkey MFA through the pinned Auth stack');
 
         const settingsEmail = `${organization}+web-settings-${crypto.randomUUID()}@example.invalid`;
         const settingsCredentials = {email: settingsEmail, password: randomSecret()};
@@ -1112,12 +1138,6 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
         ensure(remainingFactors === '0' && keptPasskeys === '1',
             `Settings must remove the factors and preserve the named passwordless credential (factors ${remainingFactors}, named passkeys ${keptPasskeys})`);
 
-        const managePasskey = (operation: string, body: Record<string, unknown>, jwt: string) =>
-            fetch(strict + 'festapp/passkey/manage/' + operation, {
-                method: 'POST',
-                headers: { Origin: origin, Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
 
         const primaryEmail = `${organization}+passkey-primary-${crypto.randomUUID()}@example.invalid`;
         const primaryPassword = crypto.randomUUID() + crypto.randomUUID();
@@ -1179,9 +1199,6 @@ async function qualifyRegistrationHandoff(clientId: string, origin: string) {
         const named = await requireJson(await managePasskey('rename', { id: passkeyId, name: 'Reference key' },
             upgraded.access_token), 'Passkey rename');
         ensure(named.friendly_name === 'Reference key', 'Managed rename must persist on GoTrue');
-        const missingAlternative = await managePasskey('remove', { id: passkeyId }, upgraded.access_token);
-        ensure(missingAlternative.status === 409 && (await missingAlternative.json()).code === 'password_proof_required',
-            'A session opened with the last passkey must also prove a usable password before deletion');
         const removeFactor = (jwt: string, factorId: string, confirmDisable = false) =>
             fetch(strict + 'festapp/mfa/factors/remove', {
                 method: 'POST',

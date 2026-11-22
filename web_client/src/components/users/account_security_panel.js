@@ -4,6 +4,8 @@ import { AuthService } from '../../services/auth_service.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { PasskeyService } from '../../services/passkey_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
+import { passwordVisibilityIcon, togglePasswordVisibility } from '../shared/password_visibility.js';
+import { displayAuthEmail } from '../../logic/email_address.js';
 
 const text = (key, args) => LocalizationService.tr(`AccountSecurity.${key}`, args);
 const typeOf = factor => factor.factor_type;
@@ -93,7 +95,7 @@ export class AccountSecurityPanel {
         const result = await PasskeyService.signIn(signal);
         signal?.throwIfAborted();
         await this.session(session);
-        if (this.passwordProof || this.factors.length || result.requiresMfa !== false ||
+        if (this.passwordProof || result.requiresMfa !== false ||
             result.userId !== this.userId || result.organization !== this.organization) throw new Error('invalid_session');
         return this.client.auth.setSession(result.session);
     }
@@ -117,9 +119,36 @@ export class AccountSecurityPanel {
         if (method === 'passkey') {
             const request = path => `festapp/passkey/registration/${path}`;
             const options = await PasskeyService.request(request('options'), { receipt }, settings);
-            const credential = await PasskeyService.creation(options.options, signal);
-            await this.session(session);
-            await PasskeyService.request(request('verify'), { receipt, challengeId: options.challenge_id, credential }, settings);
+            const { user } = options.options;
+            const name = displayAuthEmail(user.name, this.organization);
+            const displayName = user.displayName === user.name ? name : user.displayName;
+            try {
+                const credential = await PasskeyService.creation({
+                    ...options.options,
+                    user: { ...user, name, displayName },
+                }, signal);
+                signal?.throwIfAborted();
+                await this.session(session);
+                await PasskeyService.request(request('verify'), { receipt, challengeId: options.challenge_id, credential }, settings);
+            } catch (error) {
+                signal?.throwIfAborted();
+                if (error.name === 'InvalidStateError' || error.message === 'webauthn_credential_exists') {
+                    await this.session(session);
+                    if (name !== user.name) {
+                        void globalThis.PublicKeyCredential?.signalCurrentUserDetails?.({
+                            rpId: options.options.rp.id, userId: user.id, name, displayName,
+                        }).catch(() => {});
+                    }
+                    this.notice = text('passkeyAlreadyRegistered');
+                    await this.load(session).catch(() => {});
+                    return;
+                }
+                if (error.name === 'NotAllowedError') {
+                    this.notice = text('passkeyRegistrationCancelled');
+                    return;
+                }
+                throw error;
+            }
         } else {
             const verified = await PasskeyService.enrollWebAuthn(receipt, settings, () => this.session(session));
             await this.install(session, verified);
@@ -240,11 +269,23 @@ export class AccountSecurityPanel {
             const wrapper = add('form', '', parent);
             wrapper.method = 'post';
             const field = add('label', label, wrapper);
-            const input = add('input', '', field);
+            const password = type === 'password';
+            const inputWrapper = password ? add('div', '', wrapper) : field;
+            const input = add('input', '', inputWrapper);
+            if (password) {
+                field.htmlFor = input.id = 'account-security-password';
+                input.name = 'password';
+                inputWrapper.className = 'input-wrapper password-input';
+                const toggle = button('', togglePasswordVisibility, inputWrapper);
+                toggle.className = 'toggle-password';
+                toggle.setAttribute('aria-label', CommonStrings.googlePasswordVisibility);
+                toggle.setAttribute('aria-pressed', 'false');
+                toggle.innerHTML = passwordVisibilityIcon();
+            }
             input.type = type === 'name' ? 'text' : type;
             input.required = true;
             input.disabled = Boolean(this.operation);
-            input.autocomplete = type === 'password' ? 'current-password'
+            input.autocomplete = password ? 'current-password'
                 : type === 'text' ? 'one-time-code' : 'off';
             if (type === 'text') {
                 input.inputMode = 'numeric';
@@ -286,13 +327,13 @@ export class AccountSecurityPanel {
                 add('h3', text(enrollmentLabels[this.proofEnrollmentMethod]));
             }
             add('p', text('freshProof'));
+            const passkey = this.methods.passkey;
+            if (!this.passwordProof && this.passkeys?.length && passkey?.offer && passkey.signIn && PasskeyService.credentialSupport()) {
+                button(CommonStrings.passkeySignIn, () => this.run(signal => this.verifyProof('passkey', null, signal)));
+            }
             if (this.passwordProof || this.factors.length === 0) {
                 add('p', text('passwordProofHint', { appName: AppConfig.appName }));
                 form(CommonStrings.password, 'password', (value, signal) => this.verifyProof('password', value, signal));
-                const passkey = this.methods.passkey;
-                if (!this.passwordProof && this.passkeys?.length && passkey?.offer && passkey.signIn && PasskeyService.credentialSupport()) {
-                    button(CommonStrings.passkeySignIn, () => this.run(signal => this.verifyProof('passkey', null, signal)));
-                }
             } else {
                 for (const factor of this.factors) {
                     const item = add('div', '');

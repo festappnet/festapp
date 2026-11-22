@@ -7,6 +7,7 @@ import { GOOGLE_AUTH_STYLES, GOOGLE_G } from './google_auth_styles.js';
 import { PasskeyService } from '../../services/passkey_service.js';
 import { AuthService } from '../../services/auth_service.js';
 import { CommonStrings } from '../shared/common_strings.js';
+import { passwordVisibilityIcon, togglePasswordVisibility } from '../shared/password_visibility.js';
 import { ToastHelper } from '../ui/toast.js';
 import { Modal } from '../ui/modal.js';
 import { RightsService } from '../../services/rights_service.js';
@@ -35,7 +36,6 @@ export class LoginModal extends HTMLElement {
         this._render = this._render.bind(this);
         this._handleReset = this._handleReset.bind(this);
         this._handleChangePassword = this._handleChangePassword.bind(this);
-        this._togglePasswordVisibility = this._togglePasswordVisibility.bind(this);
         this._handleLogin = this._handleLogin.bind(this);
         this._handleRegister = this._handleRegister.bind(this);
     }
@@ -205,8 +205,8 @@ export class LoginModal extends HTMLElement {
                             ${type === 'email' ? 'inputmode="email" autocapitalize="none" spellcheck="false"' : ''}
                         >
                         ${isPassword ? `
-                        <button type="button" class="btn-icon toggle-password" data-target="${id}" aria-label="${CommonStrings.googlePasswordVisibility}">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <button type="button" class="btn-icon toggle-password" data-target="${id}" aria-label="${CommonStrings.googlePasswordVisibility}" aria-pressed="false">
+                            ${passwordVisibilityIcon()}
                         </button>
                         ` : ''}
                     </div>
@@ -222,7 +222,7 @@ export class LoginModal extends HTMLElement {
         )}</p>`;
 
         const googleAction = this.googleEnabled ? `<button type="button" class="google-button" id="google-start" ${this.isLoading ? 'disabled' : ''}>${GOOGLE_G}<span>${this.isLoading ? CommonStrings.googleOpening : CommonStrings.googleContinue}</span></button><div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '';
-        const passkeyAction = this.passkeyEnabled ? `<button type="button" class="btn-secondary" id="passkey-start" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.passkeySignIn}</button>` : '';
+        const passkeyAction = this.passkeyEnabled ? `<button type="button" class="btn-primary" id="passkey-start" ${this.isLoading ? 'disabled' : ''}>${CommonStrings.passkeySignIn}</button>` : '';
         const feedback = this.googleError ? `<div class="auth-feedback" role="alert">${this._googleErrorText()}</div>` : '';
         if (this.currentView === 'google_completing') return `<h2>${CommonStrings.signIn}</h2><p role="status">${CommonStrings.googleCompleting}</p>`;
         if (this.currentView === 'account_recovery') return `<h2>${LocalizationService.tr('AccountSecurity.recoveryTitle')}</h2>`;
@@ -248,11 +248,11 @@ export class LoginModal extends HTMLElement {
         if (this.currentView === 'login') {
             return `
                 <h2>${CommonStrings.signIn}</h2>
-                ${feedback}${passkeyAction}${googleAction}
+                ${feedback}${passkeyAction}${googleAction || (passkeyAction ? `<div class="auth-divider">${CommonStrings.emailAlternative}</div>` : '')}
                 <form id="login-form" novalidate>
                     ${validatedField('email', CommonStrings.email, 'email', true, 0, '', 'username')}
                     ${validatedField('password', CommonStrings.password, 'password', true, 0, '', 'current-password')}
-                    <button type="submit" class="btn-primary" ${this.isLoading ? 'disabled' : ''}>
+                    <button type="submit" class="${this.passkeyEnabled ? 'btn-secondary' : 'btn-primary'}" ${this.isLoading ? 'disabled' : ''}>
                         ${this.isLoading ? CommonStrings.loading : CommonStrings.signIn}
                     </button>
                     <div class="auth-links">
@@ -388,29 +388,11 @@ export class LoginModal extends HTMLElement {
     _initPasswordToggles() {
         if (!this.authContainer) return;
         this.authContainer.querySelectorAll('.toggle-password').forEach(btn => {
-            btn.removeEventListener('click', this._togglePasswordVisibility);
-            btn.addEventListener('click', this._togglePasswordVisibility);
+            btn.removeEventListener('click', togglePasswordVisibility);
+            btn.addEventListener('click', togglePasswordVisibility);
         });
     }
     
-    _togglePasswordVisibility(e) {
-        e.preventDefault();
-        const btn = e.currentTarget;
-        const wrapper = btn.closest('.input-wrapper');
-        const input = wrapper ? wrapper.querySelector('input') : null;
-        
-        if (input) {
-            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-            input.setAttribute('type', type);
-            
-            // Update icon
-            if (type === 'text') {
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M1 1l22 22"></path><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path></svg>';
-            } else {
-                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-            }
-        }
-    }
 
     _setView(view) {
         if (view !== this.currentView) this.emailSuffixConfirmations.clear();

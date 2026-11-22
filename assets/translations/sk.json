@@ -3059,6 +3059,8 @@
     "addTotp": "Pridať overovaciu aplikáciu",
     "addKey": "Pridať bezpečnostný kľúč",
     "addPasskey": "Pridať passkey",
+    "passkeyAlreadyRegistered": "Tento kľúč už je zaregistrovaný. Ak chcete pridať ďalší passkey, vyberte iného správcu alebo zariadenie.",
+    "passkeyRegistrationCancelled": "Pridávanie passkey bolo zrušené alebo vypršalo.",
     "freshProof": "Pred zmenou zabezpečenia overte svoju totožnosť.",
     "passwordProofHint": "Zadajte heslo k účtu na {appName}. Tým potvrdíte, že zmenu žiadate vy.",
     "verifyIdentity": "Overiť totožnosť",
