@@ -147,8 +147,8 @@ needs a web preview; an HTTP preview is justified for this explicit player
 request. Do not claim file:// playback or a deployed production check.
 
 Content audit: organizer scanner configuration is separate from door-staff
-check-in and recovery. Receiving accounts in existing forms are automatic by
-currency and organizer account priority; do not invent a per-form account picker.
+check-in and recovery. Existing forms can select a receiving account in payment settings. Without an
+explicit selection, routing follows currency and organizer account priority.
 Keep QA narration and pixel dimensions in provenance metadata, not captions.
 
 Directory previews: each task page and localized category selects a `preview`

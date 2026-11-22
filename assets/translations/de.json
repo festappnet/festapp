@@ -269,6 +269,13 @@
     "validationSummary": "Prüfen Sie die markierten Felder. Ihre Änderungen wurden noch nicht gespeichert."
   },
   "BankAccount": {
+    "formAccountDefaultPlain": "Nach Reihenfolge der Organisation",
+    "formAccountLabel": "Konto für Banküberweisungen",
+    "formAccountDefault": "Nach Reihenfolge der Organisation (aktuell: {account})",
+    "formAccountNone": "kein geeignetes Konto",
+    "formAccountUnavailable": "Ausgewähltes Konto nicht verfügbar ({account})",
+    "formAccountUnavailableHelp": "Dieses Konto ist für diese Währungen nicht verfügbar. Ist es nicht mehr verknüpft, wird die Auswahl beim Speichern gelöscht und die Reihenfolge der Organisation verwendet. Wählen Sie andernfalls ein geeignetes Konto.",
+    "formAccountOrderHelp": "Formulare ohne ausgewähltes Konto verwenden das erste Konto in der Reihenfolge der Organisation, das die Zahlungswährung unterstützt.",
     "accountFormat": "Kontoformat",
     "inputModeSplit": "Tschechisches Konto",
     "inputModeSlovak": "Slowakisches Konto",

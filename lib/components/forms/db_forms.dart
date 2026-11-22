@@ -66,8 +66,8 @@ class FormEditBundle {
     form.captureProductCatalog(catalog.types);
 
     // Find and assign the selected bank account model to the form.
+    form.availableBankAccounts = availableBankAccounts;
     if (availableBankAccounts.isNotEmpty) {
-      form.availableBankAccounts = availableBankAccounts;
       if (form.definition.bankAccountId != null) {
         form.bankAccount = availableBankAccounts.firstWhereOrNull(
           (ba) => ba.id == form.definition.bankAccountId,

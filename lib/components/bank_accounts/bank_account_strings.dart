@@ -2,6 +2,18 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class BankAccountStrings {
+  static String get formAccountLabel => 'BankAccount.formAccountLabel'.tr();
+  static String formAccountDefault(String account) =>
+      'BankAccount.formAccountDefault'.tr(namedArgs: {'account': account});
+  static String get formAccountNone => 'BankAccount.formAccountNone'.tr();
+  static String formAccountUnavailable(String account) =>
+      'BankAccount.formAccountUnavailable'.tr(namedArgs: {'account': account});
+  static String get formAccountDefaultPlain =>
+      'BankAccount.formAccountDefaultPlain'.tr();
+  static String get formAccountUnavailableHelp =>
+      'BankAccount.formAccountUnavailableHelp'.tr();
+  static String get formAccountOrderHelp =>
+      'BankAccount.formAccountOrderHelp'.tr();
   static String get errorTitle => 'BankAccount.errorTitle'.tr();
   static String get tokenVerifying => 'BankAccount.tokenVerifying'.tr();
   static String get tokenVerificationWait =>

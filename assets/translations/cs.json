@@ -2334,6 +2334,13 @@
     "processingCompletedTitle": "Dokončeno"
   },
   "BankAccount": {
+    "formAccountDefaultPlain": "Podle pořadí organizace",
+    "formAccountLabel": "Účet pro bankovní převody",
+    "formAccountDefault": "Podle pořadí organizace (nyní: {account})",
+    "formAccountNone": "žádný vyhovující účet",
+    "formAccountUnavailable": "Vybraný účet není dostupný ({account})",
+    "formAccountUnavailableHelp": "Účet není dostupný pro tyto měny. Pokud již není připojený, uložením se výběr odstraní a použije se pořadí organizace. Jinak vyberte účet podporující tyto měny.",
+    "formAccountOrderHelp": "Formuláře bez vybraného účtu používají první účet v pořadí organizace, který podporuje měnu platby.",
     "organizationSettings": "nastavení organizace",
     "settingsTitle": "Nastavení bankovního účtu",
     "generalTab": "Obecné",

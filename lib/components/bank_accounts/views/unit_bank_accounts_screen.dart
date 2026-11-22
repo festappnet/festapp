@@ -483,7 +483,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Text(
-                        BankAccountStrings.description,
+                        '${BankAccountStrings.description}\n\n${BankAccountStrings.formAccountOrderHelp}',
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),

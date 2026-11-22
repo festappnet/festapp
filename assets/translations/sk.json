@@ -413,6 +413,13 @@
     "validationSummary": "Skontrolujte zvýraznené polia. Zmeny zatiaľ nie sú uložené."
   },
   "BankAccount": {
+    "formAccountDefaultPlain": "Podľa poradia organizácie",
+    "formAccountLabel": "Účet pre bankové prevody",
+    "formAccountDefault": "Podľa poradia organizácie (teraz: {account})",
+    "formAccountNone": "žiadny vyhovujúci účet",
+    "formAccountUnavailable": "Vybraný účet nie je dostupný ({account})",
+    "formAccountUnavailableHelp": "Účet nie je dostupný pre tieto meny. Ak už nie je pripojený, uložením sa výber odstráni a použije sa poradie organizácie. Inak vyberte účet podporujúci tieto meny.",
+    "formAccountOrderHelp": "Formuláre bez vybraného účtu používajú prvý účet v poradí organizácie, ktorý podporuje menu platby.",
     "accountFormat": "Formát účtu",
     "inputModeSplit": "Český účet",
     "inputModeSlovak": "Slovenský účet",

@@ -1,3 +1,4 @@
+import 'form_bank_account_picker.dart';
 import 'customer_self_service_settings.dart';
 
 import 'package:festapp_core/communication_tone.dart';
@@ -97,6 +98,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   final _bankSettingsLink = TapGestureRecognizer();
   Object get _draft => [
     _form?.definition.customerSelfService,
+    _form?.definition.bankAccountId,
     _bankEnabled,
     _cashEnabled,
     _cashInstructionsController.text,
@@ -735,7 +737,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     // For each currency, pick the first account that supports it.
     for (final currency in usedCurrencies) {
       for (final account in _form!.availableBankAccounts!) {
-        if (account.supportedCurrencies.contains(currency)) {
+        if (account.type != 'CASH' &&
+            (_form!.definition.bankAccountId == null ||
+                account.id == _form!.definition.bankAccountId) &&
+            account.supportedCurrencies.contains(currency.trim())) {
           usedAccounts.add(account);
           break;
         }
@@ -748,14 +753,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     if (_form == null) return const SizedBox.shrink();
 
     final usedCurrencies = _getFormCurrencies();
-    if (usedCurrencies.isEmpty) return const SizedBox.shrink();
 
     final usedAccounts = _getUsedBankAccounts();
     final missingCurrencies =
         usedCurrencies
             .where(
               (currency) => !usedAccounts.any(
-                (account) => account.supportedCurrencies.contains(currency),
+                (account) => account.supportedCurrencies.contains(currency.trim()),
               ),
             )
             .toList()
@@ -785,6 +789,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          FormBankAccountPicker(
+            form: _form!,
+            currencies: formBankTransferCurrencies(_form!),
+            canEdit: _canEdit,
+            onChanged: () => setState(() {}),
+          ),
+          const SizedBox(height: 8),
           if (missingCurrencies.isNotEmpty) ...[
             Text(
               BankAccountStrings.missingAccountForCurrencies(

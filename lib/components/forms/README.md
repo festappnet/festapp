@@ -486,3 +486,21 @@ identity, without a new quote or reservation preflight. Missing pending identity
 or a changed principal fails closed instead of allocating a replacement UUID.
 Flutter also freezes the confirmed quote outside the review builder; invalidating
 a form draft cannot remove a discount from an already confirmed request.
+
+## Form bank account selection
+
+The editor's linked-account projection permits selection without bank management
+access. Management capability only gates navigation to organization bank settings.
+Currencies come from visible fields and visible products with price > 0; trim
+currency codes and ignore blanks. Explicit accounts must support all of these
+currencies; organization order resolves each payment currency separately.
+
+The picker sets both `definition.bankAccountId` and `bankAccount`. Serialization
+keeps the existing `bankAccount?.id` behavior: an unchanged unlinked account
+serializes as NULL, restoring organization order on save. Selecting organization
+order also sends explicit NULL. A linked account with a currency mismatch remains
+selected until repaired; saving an open form with paid products also runs
+`validate_form_payment_configuration_internal` and may reject it with
+`PAYMENT_CONFIGURATION_INCOMPLETE`. An ineligible explicit account cannot fall
+back when new instructions are issued (1018). Existing issued references retain
+their account. No bank management RPC is needed for form authoring.
