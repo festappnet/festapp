@@ -10,6 +10,8 @@ export const apiProjectionDirectory = (endpointId, dataProfile, proofProfile = '
     (dataProfile === 'operator' ? '' : '/profiles/order-summary') + (proofProfile === 'dpop' ? '/proofs/dpop' : '');
 
 export const API_PREFIX = '/integrations/v1';
+const MAKE_DEVELOPMENT_CALLBACK = 'https://www.make.com/oauth/cb/app';
+const MAKE_CATALOGUE_CALLBACK = 'https://www.make.com/oauth/cb/vstupenky-online';
 export const PUBLIC_API_FACADES = Object.freeze(publicFacades.map(facade => Object.freeze(facade)));
 export const endpointSchema = z.strictObject({
     endpointId: z.enum(['global-api', 'regional-api']),
@@ -72,7 +74,10 @@ export function normalizeClient(client, config, endpoints) {
         API_SUMMARY_OPERATIONS.includes(id)) &&
         client.allowedScopes?.every(scope => [READ_SCOPE,'festapp:orders:read'].includes(scope)), 'INVALID_SUMMARY_CLIENT_POLICY');
     if (api && client.id === 'festapp-make') check(client.dataProfile === 'order-summary' && policy.proofProfile === 'bearer' &&
-        policy.tokenEndpointAuthMethod === 'none' && client.redirectUris.length === 1 && client.redirectUris[0] === 'https://www.make.com/oauth/cb/app' &&
+        policy.tokenEndpointAuthMethod === 'none' &&
+        client.redirectUris.includes(MAKE_DEVELOPMENT_CALLBACK) &&
+        new Set(client.redirectUris).size === client.redirectUris.length &&
+        client.redirectUris.every(uri => uri === MAKE_DEVELOPMENT_CALLBACK || uri === MAKE_CATALOGUE_CALLBACK) &&
         policy.resources.some(resource => endpoints.some(e => e.endpointId === 'regional-api' && e.resource === resource)) &&
         policy.resources.every(resource => endpoints.some(e => e.endpointId === 'regional-api' && e.resource === resource) ||
             resource === config.resource && policy.transports.includes('legacy-make')), 'INVALID_MAKE_API_POLICY');

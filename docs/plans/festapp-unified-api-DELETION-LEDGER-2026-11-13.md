@@ -1,5 +1,10 @@
 # API cutover ledger - deployed shared core, Make review hold
 
+> The [November 19 Make plan](make-review-and-cutover-plan-2026-11-19.md)
+> supersedes the pre-approval ordering below. The canonical API is the target
+> for the existing review. Removal still requires catalogue verification and
+> evidence that the original consumers have moved.
+
 Owner: Festapp integration runtime maintainer (Michael Bujnovský).
 Make cutover gate: **accepted in the existing Make review first**, per explicit
 user steering on 2026-11-13. Until acceptance, retain the original route,

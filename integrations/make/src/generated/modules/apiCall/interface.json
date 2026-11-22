@@ -2,7 +2,7 @@
   {
     "name": "body",
     "label": "Body",
-    "type": "collection"
+    "type": "any"
   },
   {
     "name": "headers",

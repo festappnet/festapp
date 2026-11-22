@@ -59,6 +59,26 @@ test('single presentation owns groups/scopes; limits preserve omitted versus bla
     await assert.rejects(assemble({presentation}));
 });
 
+test('universal Make requests use the regional origin and date reports use the SQL timestamp format', async () => {
+    const files = await assemble();
+    const request = JSON.parse(files.get('modules/apiCall/api.json'));
+    const parameters = JSON.parse(files.get('modules/apiCall/expect.json'));
+    assert.equal(request.url, 'https://api.vstupenky.online/{{parameters.url}}');
+    assert.equal(request.headers['{{...}}'], "{{toCollection(parameters.headers, 'key', 'value')}}");
+    assert.equal(request.headers.host, 'api.vstupenky.online');
+    assert.equal(request.headers.authorization, 'Bearer {{connection.accessToken}}');
+    assert.equal(request.followRedirect, false);
+    assert.equal(request.followAllRedirect, false);
+    assert.match(request.response.valid, /statusCode < 300/);
+    assert.equal(JSON.parse(files.get('modules/apiCall/interface.json'))[0].type, 'any');
+    const validPath = new RegExp(parameters.find(field => field.name === 'url').validate.pattern);
+    assert(validPath.test('/integrations/v1/operations/future.read'));
+    assert(!validPath.test('https://example.invalid/path'));
+    assert(!validPath.test('//example.invalid/path'));
+    const report = JSON.parse(files.get('modules/salesReport/api.json'));
+    assert.match(report.response.output, /parseDate\(body\.data\.report\.generated_at, 'YYYY-MM-DDTHH:mm:ss\.SSSSSSZ'\)/);
+});
+
 test('generator rejects extra outputs and symlinks, removes retired modules only inside its owned tree', async t => {
     const directory=await temporary(t), files=await assemble();await writeGenerated(files,{directory});
     await writeGenerated(files,{directory,check:true});

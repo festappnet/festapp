@@ -379,8 +379,11 @@ test('legacy Make remains available beyond the former date while review cutover 
 });
 
 test('same Make client keeps original grants live while a distinct regional API grant is consented, without audience promotion',async t=>{
- const f=await setup(t,{makeMigration:true}),scope='festapp:ticket-layouts:read festapp:orders:read';
- const options={clientId:'festapp-make',callbackUri:'https://www.make.com/oauth/cb/app',scope};
+ const developmentCallback='https://www.make.com/oauth/cb/app';
+ const catalogueCallback='https://www.make.com/oauth/cb/vstupenky-online';
+ const f=await setup(t,{makeMigration:true,apiPolicy:{redirectUris:[developmentCallback,catalogueCallback]}});
+ const scope='festapp:ticket-layouts:read festapp:orders:read';
+ const options={clientId:'festapp-make',callbackUri:developmentCallback,scope};
  const old=await connect(f,{...options,resources:[f.config.resource]});
  const grant=f.storage.values('Delegation').find(g=>g.clientId==='festapp-make');
  const legacy={...grant};delete legacy.resource;delete legacy.endpointId;delete legacy.operationAllowlist;f.storage.putUntil('Delegation',grant.id,legacy,grant.expiresAt);
@@ -388,7 +391,7 @@ test('same Make client keeps original grants live while a distinct regional API 
  assert.equal((await exchange(old.tokens.refresh_token,f.config.endpoints[1].resource)).status,400);
  const rotated=await exchange(old.tokens.refresh_token);assert.equal(rotated.status,200,await rotated.clone().text());const oldTokens=await rotated.json();
  assert.equal(f.storage.get('Delegation',grant.id).resource,undefined);
- const regional=await connect(f,{...options,resources:[f.config.endpoints[1].resource]});
+ const regional=await connect(f,{...options,callbackUri:catalogueCallback,resources:[f.config.endpoints[1].resource]});
  assert.equal((await apiRequest(f,regional.tokens,'context.inspect',{},'regional-api')).status,200);
  assert.equal((await apiRequest(f,oldTokens,'context.inspect',{},'regional-api')).status,401);
  const callOld=token=>httpRequest(f.issuer+'/make/v1/operations/context.inspect',{method:'POST',headers:{authorization:'Bearer '+token.access_token,'content-type':'application/json'},body:'{}'});

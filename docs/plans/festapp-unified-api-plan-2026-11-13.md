@@ -1,3 +1,5 @@
+> Pro Make platí nové pořadí z [plánu 2026-11-19](make-review-and-cutover-plan-2026-11-19.md). Původní rozhodnutí níže zachycuje stav k 2026-11-13.
+>
 > Aktualizace uživatele 2026-11-13: přepnutí Make je dovoleno až po přijetí
 > stávající aplikace v Make review. Do té doby zachovat původní `/make/v1`,
 > klienta, granty, publikované definice, README, připojení i scénáře. Nové API
