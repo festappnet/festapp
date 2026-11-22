@@ -447,13 +447,14 @@ for(const end of ['expired','detached','closed','withdrawn','unknown','scope-cha
  }finally{form.close();site.close();}
 });
 
-test('success re-init for a different link tears down the previous consent session and runtime',async t=>{
+for(const {link,path} of [{link:'different',path:'/form/test'},{link:'test',path:'/form/different'}])test(`success re-init tears down linked consent when requested link ${link} differs from ${path}`,async t=>{
  const site=website();site.choose(both);const form=linkedForm(site,{production:true});
  try{
   await ready(form);const {page,runtime}=await returningPage(t,form);
   // Do not create another real runtime; this test inspects teardown at load.
   page.renderForm=()=>{};
-  await page.init('different',{forceReload:true,preserveMeasurement:true});
+  form.win.history.replaceState({},'',path);
+  await page.init(link,{forceReload:true,preserveMeasurement:true});
   assert.equal(form.session.disposed,true);assert.equal(runtime.disposed,true);
   assert.equal(page.measurementSession,null);
   assert.equal(site.requests.at(-1).type,'detach');

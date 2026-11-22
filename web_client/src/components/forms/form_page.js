@@ -149,6 +149,7 @@ export class FormPage extends Component {
         // Never reuse it for another link or for an ordinary reload/retry.
         const preserveMeasurement = options.preserveMeasurement === true && link != null &&
             publicFormLocation(window.location, {entry: true}) &&
+            RouterService.getFormLink(window.location.pathname) === link &&
             this.currentLink === link && this.measurementSession?.model.link === link &&
             !this.measurementSession.disposed;
         if (!preserveMeasurement) this.disposeMeasurement();
