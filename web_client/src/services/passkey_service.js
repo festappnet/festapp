@@ -63,7 +63,8 @@ export class PasskeyService {
         });
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
-            throw new Error(error.code || 'passkey_operation_failed');
+            const code = error.error_code ?? error.code;
+            throw new Error(typeof code === 'string' ? code : 'passkey_operation_failed');
         }
         return response.json();
     }

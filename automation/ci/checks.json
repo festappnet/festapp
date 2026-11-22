@@ -1479,7 +1479,7 @@
       ]
     },
     "mcp-edge-policy": {
-      "script": "deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/ supabase/functions/_shared/issueExistingUserSession_test.ts\nnode --test automation/tests/function_bundle_selection.test.mjs\npython3 -m unittest automation.tests.test_function_environment\n",
+      "script": "deno test --frozen --lock=supabase/functions/deno.lock --allow-env --allow-net --allow-read supabase/functions/mcp-session-exchange/ supabase/functions/_shared/issueExistingUserSession_test.ts supabase/functions/_shared/accountSecurityEmail_test.ts\nnode --test automation/tests/function_bundle_selection.test.mjs\npython3 -m unittest automation.tests.test_function_environment\n",
       "after": [],
       "resources": {
         "ramMiB": 768
@@ -3297,6 +3297,7 @@
     "integrations/wordpress/tests/measurement-defaults.test.mjs",
     "supabase/functions/_shared/accountAssets_test.ts",
     "supabase/functions/_shared/accountDeletion_test.ts",
+    "supabase/functions/_shared/accountSecurityEmail_test.ts",
     "supabase/functions/_shared/adminNotificationEmail_test.ts",
     "supabase/functions/_shared/adminNotificationSender_test.ts",
     "supabase/functions/_shared/appleWallet_test.ts",

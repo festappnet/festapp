@@ -7,7 +7,7 @@ import { renderAdminNotificationEmail } from "./adminNotificationEmail.ts";
 import { providerPaymentSubstitutions } from "./orderEmailPresentation.ts";
 import { paymentRegistry } from "./payments/runtime.ts";
 import { renderSaleOpeningEmail } from "./saleOpeningEmail.ts";
-import { overviewRequiredLinks } from "./emailActionLink.ts";
+import { escapeEmailHtml, overviewRequiredLinks } from "./emailActionLink.ts";
 import { unitVerificationEmail } from "./unitVerificationEmail.ts";
 import {
   orderEmailOverviewContext,
@@ -82,6 +82,34 @@ const factorChangeNoticeCopy: Record<string, [added: string, removed: string, me
   uk: ["Додано спосіб підтвердження", "Фактор перевірки видалено", "Якщо ви не вносили цю зміну, зверніться до підтримки Festapp."],
 };
 
+const enrollmentNoticeCopy = {
+  cs: ["K účtu byla přidána passkey", "Účet", "Platforma", "Metoda", "Ověřovací aplikace", "Bezpečnostní klíč"],
+  sk: ["K účtu bol pridaný passkey", "Účet", "Platforma", "Metóda", "Overovacia aplikácia", "Bezpečnostný kľúč"],
+  en: ["A passkey was added to your account", "Account", "Platform", "Method", "Authenticator app", "Security key"],
+  de: ["Ein Passkey wurde zu Ihrem Konto hinzugefügt", "Konto", "Plattform", "Methode", "Authenticator-App", "Sicherheitsschlüssel"],
+  es: ["Se añadió una llave de acceso a tu cuenta", "Cuenta", "Plataforma", "Método", "Aplicación de autenticación", "Llave de seguridad"],
+  pl: ["Do konta dodano klucz dostępu", "Konto", "Platforma", "Metoda", "Aplikacja uwierzytelniająca", "Klucz bezpieczeństwa"],
+  uk: ["До облікового запису додано ключ доступу", "Обліковий запис", "Платформа", "Метод", "Застосунок для автентифікації", "Ключ безпеки"],
+} as const;
+
+function enrollmentNoticeDetails(lang: string, data: EmailRow["data"]) {
+  const copy = Object.hasOwn(enrollmentNoticeCopy, lang)
+    ? enrollmentNoticeCopy[lang as keyof typeof enrollmentNoticeCopy] : enrollmentNoticeCopy.cs;
+  const [passkeySubject, accountLabel, platformLabel, methodLabel, totp, securityKey] = copy;
+  const origin = typeof data?.origin === "string" ? URL.parse(data.origin) : null;
+  const platform = origin?.protocol === "https:" && origin.origin === data.origin ? origin.host : "";
+  const method = data?.method;
+  const methodName = method === "passkey" ? "Passkey" : method === "totp" ? totp
+    : method === "webauthn" ? securityKey : "";
+  const fields = [[accountLabel, data?.account_email], [platformLabel, platform], [methodLabel, methodName]];
+  return {
+    subject: method === "passkey" ? passkeySubject : null,
+    platform,
+    html: fields.filter(([, value]) => typeof value === "string" && value)
+      .map(([label, value]) => `<p><strong>${label}:</strong> ${escapeEmailHtml(value)}</p>`).join(""),
+  };
+}
+
 export async function renderQueuedEmail(
   input: EmailRow,
 ): Promise<{ prepared: PreparedEmail; postAction: Record<string, unknown> }> {
@@ -110,13 +138,17 @@ export async function renderQueuedEmail(
     const lang = String(row.data?.lang ?? "cs");
     const recovery = Object.hasOwn(recoveryNoticeCopy, lang) ? recoveryNoticeCopy[lang] : recoveryNoticeCopy.cs;
     const [added, removed, changeMessage] = Object.hasOwn(factorChangeNoticeCopy, lang) ? factorChangeNoticeCopy[lang] : factorChangeNoticeCopy.cs;
-    const [subject, message] = row.code === "ACCOUNT_MFA_RECOVERY_STARTED" ? recovery
+    const [baseSubject, message] = row.code === "ACCOUNT_MFA_RECOVERY_STARTED" ? recovery
       : [row.code === "ACCOUNT_MFA_METHOD_ADDED" ? added : removed, changeMessage];
+    const details = row.code === "ACCOUNT_MFA_METHOD_ADDED"
+      ? enrollmentNoticeDetails(lang, row.data) : null;
+    const noticeSubject = details?.subject ?? baseSubject;
+    const subject = details?.platform ? `${noticeSubject} · ${details.platform}` : noticeSubject;
     const sender = Deno.env.get("DEFAULT_EMAIL") ?? "";
     return {
       prepared: {
         from: `Festapp <${sender}>`, to: row.recipient, replyTo: sender,
-        subject, html: `<h2>${subject}</h2><p>${message}</p>`, attachments: [],
+        subject, html: `<h2>${escapeEmailHtml(subject)}</h2>${details?.html ?? ""}<p>${message}</p>`, attachments: [],
       },
       postAction: { tracking_policy: "disabled" },
     };

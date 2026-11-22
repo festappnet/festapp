@@ -4732,6 +4732,8 @@
     "addTotp": "Añadir aplicación de autenticación",
     "addKey": "Añadir llave de seguridad",
     "addPasskey": "Añadir llave de acceso",
+    "passkeyAlreadyRegistered": "Esta llave ya está registrada. Para añadir otra llave de acceso, elige otro gestor de contraseñas o dispositivo.",
+    "passkeyRegistrationCancelled": "Se canceló la configuración de la llave de acceso o se agotó el tiempo.",
     "freshProof": "Verifica tu identidad antes de cambiar la seguridad de tu cuenta.",
     "passwordProofHint": "Introduce la contraseña de tu cuenta en {appName} para confirmar que tú solicitaste el cambio.",
     "verifyIdentity": "Verificar identidad",
