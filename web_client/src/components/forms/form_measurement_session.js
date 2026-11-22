@@ -74,7 +74,7 @@ export class FormMeasurementSession {
     }
     contextAllowed() {
         try {return !this.disposed && !this.suspended && this.entryAllowed &&
-            !this.model.demoSimulation && (this.orderContextAllowed() || publicFormLocation(this.win.location));} catch {return false;}
+            !this.model.demoSimulation && (this.orderContextAllowed() || publicFormLocation(this.win.location,{link:this.model.link}));} catch {return false;}
     }
     refresh() {
         if (this.disposed) return Promise.resolve();

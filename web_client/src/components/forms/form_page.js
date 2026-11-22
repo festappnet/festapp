@@ -149,16 +149,17 @@ export class FormPage extends Component {
         // Only internal success navigation may retain the live consent owner.
         // Never reuse it for another link or for an ordinary reload/retry.
         const preserveMeasurement = options.preserveMeasurement === true && link != null &&
-            publicFormLocation(window.location, {entry: true}) &&
-            RouterService.getFormLink(window.location.pathname) === link &&
+            publicFormLocation(window.location, {entry: true, link}) &&
             this.currentLink === link && this.measurementSession?.model.link === link &&
             !this.measurementSession.disposed;
-        if (!preserveMeasurement) this.disposeMeasurement();
-        // Rebuild catalog/cart observation from the newly fetched form, keeping
-        // the consent channel, runtime and purchase-order observer alive.
-        this.analytics?.dispose();
-        this.analytics = null;
-        this.measurementRefreshPending = null;
+        if (preserveMeasurement) {
+            // Rebuild the catalog and cart observation from the fresh form.
+            this.analytics?.dispose();
+            this.analytics = null;
+            this.measurementRefreshPending = null;
+        } else {
+            this.disposeMeasurement();
+        }
         this.analyticsEntryAllowed = publicFormLocation(window.location, {entry: true});
         this.currentLink = link;
         this.embedBridge?.setInheritStyle(false);
