@@ -83,7 +83,7 @@ jobs:
         id: warm-cache
         if: ${{ inputs.reuse_build_cache && steps.warm-cache-keys.outcome == 'success' }}
         continue-on-error: true
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/.gradle/caches
@@ -101,7 +101,7 @@ jobs:
       - name: Save shared Gradle warm state
         if: ${{ always() && inputs.reuse_build_cache && steps.warm-cache-keys.outcome == 'success' && steps.warm-cache.outputs.cache-matched-key == '' }}
         continue-on-error: true
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/.gradle/caches
@@ -197,7 +197,7 @@ jobs:
         id: gradle-cache
         if: ${{ inputs.reuse_build_cache && steps.build-cache-keys.outcome == 'success' }}
         continue-on-error: true
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/.gradle/caches
@@ -208,7 +208,7 @@ jobs:
         id: native-cache
         if: ${{ inputs.reuse_build_cache && steps.build-cache-keys.outcome == 'success' }}
         continue-on-error: true
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             build/super_native_extensions/build
@@ -265,7 +265,7 @@ jobs:
       - name: Save shared native compilation artifacts
         if: ${{ success() && inputs.reuse_build_cache && matrix.tenant == needs.plan.outputs.cache_writer && steps.native-cache-state.outputs.available == 'true' && steps.native-cache.outputs.cache-matched-key == '' }}
         continue-on-error: true
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             build/super_native_extensions/build
@@ -275,7 +275,7 @@ jobs:
       - name: Save shared Gradle compilation state
         if: ${{ always() && inputs.reuse_build_cache && matrix.tenant == needs.plan.outputs.cache_writer && steps.build-cache-keys.outcome == 'success' }}
         continue-on-error: true
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/.gradle/caches
