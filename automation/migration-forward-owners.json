@@ -929,6 +929,14 @@
           "get_account_assurance_v1"
         ]
       }
+    },
+    {
+      "migration": "20261122112000_protect_form_receiving_account_unlink.sql",
+      "active": true,
+      "header": "-- Warn before unlinking a bank account selected on an active form.",
+      "sources": [
+        "eshop_bank_accounts/link_bank_account_to_unit.sql"
+      ]
     }
   ]
 }

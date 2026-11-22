@@ -1606,8 +1606,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.is_demo_unit(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='becab0b049100d41758d6e52be3bc4e2'),'current SQL source parity: public.is_demo_unit(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.issue_stripe_capability_internal(bigint,text,timestamp with time zone,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='e32c5599e173e11c0a8b885a0208577d'),'current SQL source parity: public.issue_stripe_capability_internal(bigint,text,timestamp with time zone,uuid)');
--- supabase/migrations/20261112210000_payment_policy_release_integration.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.link_bank_account_to_unit(bigint,bigint,integer,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='3c8da2ffa0693bd557a236c68a4d97e3'),'current SQL source parity: public.link_bank_account_to_unit(bigint,bigint,integer,boolean)');
+-- supabase/migrations/20261122112000_protect_form_receiving_account_unlink.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.link_bank_account_to_unit(bigint,bigint,integer,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='4a9fbce07183b360f071f9f41de672ad'),'current SQL source parity: public.link_bank_account_to_unit(bigint,bigint,integer,boolean)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.list_activity_history(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='6fab1c63c2ef5eb60f4d627e51a14419'),'current SQL source parity: public.list_activity_history(bigint)');
 -- supabase/migrations/20261113190000_apple_ticket_wallet_updates.sql

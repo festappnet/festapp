@@ -506,7 +506,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: FilledButton.icon(
-                          onPressed: () => _addOrEditAccount(),
+                          onPressed: _isReordering ? null : () => _addOrEditAccount(),
                           icon: const Icon(Icons.add),
                           label: Text(BankAccountStrings.addBankAccount),
                         ),
@@ -540,7 +540,9 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                                 ? () => _onReorder(index, index + 2)
                                 : null,
                             onOpen: () => _addOrEditAccount(account),
-                            onUnlink: () => _unlinkAccount(account),
+                            onUnlink: _isReordering
+                                ? null
+                                : () => _unlinkAccount(account),
                           );
                         },
                       ),

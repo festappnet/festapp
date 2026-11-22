@@ -59,18 +59,20 @@ BEGIN
                 SELECT curr FROM OtherAccs
             ),
             ConflictingForms AS (
-                SELECT DISTINCT f.title as form_title, f.link as form_link, p.currency_code, o.title as occasion_title
+                SELECT DISTINCT f.title as form_title, f.link as form_link, trim(p.currency_code) AS currency_code, o.title as occasion_title
                 FROM public.forms f
                 JOIN public.occasions o ON f.occasion = o.id
                 JOIN public.form_fields ff ON ff.form = f.id
-                JOIN eshop.product_types pt ON ff.product_type = pt.id
-                JOIN eshop.products p ON p.product_type = pt.id
-                JOIN eshop.products p2 ON ff.product_type = p2.product_type
+                JOIN eshop.products p ON p.product_type = ff.product_type
                 WHERE o.unit = p_unit_id
                   AND f.is_open = true
                   AND coalesce(f.data#>'{payments,bankEnabled}','true'::jsonb)='true'::jsonb
-                  -- AND p.is_hidden = false -- Removed is_hidden check? Original SQL had it. Let's keep it tight.
-                  AND p.currency_code IN (SELECT curr FROM LostCurrencies)
+                  AND NOT coalesce(ff.is_hidden,false)
+                  AND NOT coalesce(p.is_hidden,false)
+                  AND p.price > 0
+                  AND (f.bank_account = p_bank_account_id OR (
+                      f.bank_account IS NULL AND trim(p.currency_code) IN (SELECT curr FROM LostCurrencies)
+                  ))
             )
             SELECT jsonb_agg(jsonb_build_object('form', form_title, 'link', form_link, 'currency', currency_code, 'occasion', occasion_title))
             INTO v_conflict_data
@@ -79,7 +81,7 @@ BEGIN
             IF v_conflict_data IS NOT NULL THEN
                  RAISE EXCEPTION '%', jsonb_build_object(
                     'code', 'LINK_DEPENDENCY_ERROR',
-                    'message', 'Cannot unlink bank account because some active forms depend on its currency support.',
+                    'message', 'Cannot unlink bank account because some active forms depend on it.',
                     'conflicts', v_conflict_data
                  )::text;
             END IF;

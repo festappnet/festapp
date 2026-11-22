@@ -1,8 +1,12 @@
 DO $$
 DECLARE
+    v_org_id bigint;
     v_unit_id bigint;
     v_acc_czk bigint;
     v_acc_eur bigint;
+    v_acc_eur_backup bigint;
+    v_backup_secret bigint;
+    v_error_payload jsonb;
     v_occasion_id bigint;
     v_form_id bigint;
     v_product_type_id bigint;
@@ -23,8 +27,11 @@ BEGIN
     PERFORM set_config('request.jwt.claim.sub', v_test_user::text, true);
 
     -- Create Unit
-    INSERT INTO public.organizations (title) VALUES ('Test Org') RETURNING id INTO v_unit_id; 
-    INSERT INTO public.units (title, organization) VALUES ('Test Unit', v_unit_id) RETURNING id INTO v_unit_id;
+    INSERT INTO public.organizations (title) VALUES ('Test Org') RETURNING id INTO v_org_id;
+    INSERT INTO eshop.organization_payment_method_policies (organization_id, method, enabled)
+    VALUES (v_org_id, 'bank', true)
+    ON CONFLICT (organization_id, method) DO UPDATE SET enabled = EXCLUDED.enabled;
+    INSERT INTO public.units (title, organization) VALUES ('Test Unit', v_org_id) RETURNING id INTO v_unit_id;
     
     -- Make user manager
     INSERT INTO public.unit_users (unit, "user", is_manager)
@@ -51,14 +58,14 @@ BEGIN
     INSERT INTO public.occasions (title, unit, link, start_time, end_time) 
     VALUES ('Test Occasion', v_unit_id, 'test-occ', now(), now()) RETURNING id INTO v_occasion_id;
 
-    INSERT INTO public.forms (title, occasion, is_open) 
-    VALUES ('Test Form', v_occasion_id, true) RETURNING id INTO v_form_id;
+    INSERT INTO public.forms (title, occasion, is_open, data)
+    VALUES ('Test Form', v_occasion_id, true, '{"payments":{"bankEnabled":true}}') RETURNING id INTO v_form_id;
 
     INSERT INTO eshop.product_types (title, occasion) 
     VALUES ('Test PT', v_occasion_id) RETURNING id INTO v_product_type_id;
 
-    INSERT INTO eshop.products (title, product_type, currency_code, is_hidden, occasion)
-    VALUES ('Test Product EUR', v_product_type_id, 'EUR', false, v_occasion_id) RETURNING id INTO v_product_id;
+    INSERT INTO eshop.products (title, product_type, currency_code, is_hidden, occasion, price)
+    VALUES ('Test Product EUR', v_product_type_id, 'EUR', false, v_occasion_id, 100) RETURNING id INTO v_product_id;
 
     -- Link Form to Product Type
     INSERT INTO public.form_fields (form, product_type) VALUES (v_form_id, v_product_type_id);
@@ -74,6 +81,25 @@ BEGIN
         ELSE
             RAISE EXCEPTION 'TEST 1 FAILED: Got unexpected error: %', SQLERRM;
         END IF;
+    END;
+
+    INSERT INTO eshop.secrets (secret) VALUES ('test_backup_secret') RETURNING id INTO v_backup_secret;
+    INSERT INTO eshop.bank_accounts (title, supported_currencies, secret, type)
+    VALUES ('Backup EUR', ARRAY['EUR'], v_backup_secret, 'FIO')
+    RETURNING id INTO v_acc_eur_backup;
+    INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority)
+    VALUES (v_unit_id, v_acc_eur_backup, 3);
+
+    UPDATE public.forms SET bank_account = v_acc_eur WHERE id = v_form_id;
+    BEGIN
+        PERFORM public.link_bank_account_to_unit(v_acc_eur, v_unit_id, NULL, false);
+        RAISE EXCEPTION 'The explicitly selected account unlinked without warning.';
+    EXCEPTION WHEN raise_exception THEN
+        v_error_payload := SQLERRM::jsonb;
+        PERFORM assert_true(v_error_payload->>'code' = 'LINK_DEPENDENCY_ERROR',
+           'Explicit receiving account requires confirmation even with a backup');
+        PERFORM assert_true(v_error_payload->'conflicts' @> '[{"form": "Test Form", "currency": "EUR"}]',
+           'Unlink warning identifies the affected form and currency');
     END;
 
     -- TEST 2: Unlink EUR (hard=true) -> Should PASS
