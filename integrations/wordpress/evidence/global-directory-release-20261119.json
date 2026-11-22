@@ -1,0 +1,36 @@
+{
+  "state": "PUBLISHED_AND_VERIFIED",
+  "checkedAt": "2026-11-19T05:06:58.624409+00:00",
+  "plugin": "festapp-tickets",
+  "publisher": "festappnet",
+  "version": "1.0.4",
+  "sourceRevision": "83ba23d6eac94111e90b1a8852595a9f5ad621b8",
+  "svn": {
+    "url": "https://plugins.svn.wordpress.org/festapp-tickets/",
+    "revision": 3810686,
+    "stableTag": "1.0.4",
+    "stageMatchesRepository": true
+  },
+  "directory": "https://wordpress.org/plugins/festapp-tickets/",
+  "publicZip": {
+    "url": "https://downloads.wordpress.org/plugin/festapp-tickets.1.0.4.zip",
+    "sha256": "052894c24f4176ea435bdce7997abc32f4f6029417bb867fbadfc93aec709557",
+    "matchingFiles": 8
+  },
+  "installationFromPublicZip": {
+    "cli": {
+      "wordpress": "7.1.3",
+      "php": "8.5.12",
+      "plugin": "1.0.4",
+      "activationAndRegistration": "PASS"
+    },
+    "tests-cli": {
+      "wordpress": "6.6",
+      "php": "7.4.33",
+      "plugin": "1.0.4",
+      "activationAndRegistration": "PASS"
+    }
+  },
+  "qualification": "global-directory-readiness-20261119.json",
+  "languagePacksAvailableAtVerification": []
+}
