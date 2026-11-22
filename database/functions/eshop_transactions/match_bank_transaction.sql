@@ -1,3 +1,37 @@
+-- One extraction owner for automatic matching, email suggestions and identity checks.
+CREATE OR REPLACE FUNCTION public.bank_transaction_signals_internal(
+ p_vs text,p_reference text,p_message text,p_identification text DEFAULT NULL,p_comment text DEFAULT NULL
+) RETURNS TABLE(kind text,value text) LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
+ WITH raw_signals(kind, value) AS (
+    SELECT 'vs', trim(p_vs)
+      WHERE trim(COALESCE(p_vs, '')) ~ '^[0-9]{1,10}$'
+    UNION ALL
+    SELECT 'rf', public.normalize_creditor_reference(p_reference)
+      WHERE p_reference IS NOT NULL
+        AND public.is_valid_creditor_reference(p_reference)
+    UNION ALL
+    SELECT 'rf', public.normalize_creditor_reference(m.captures[2])
+      FROM regexp_matches(
+        upper(concat_ws(E'\n', p_message,
+          p_identification, p_comment)),
+        '(^|[^A-Z0-9])(RF[0-9]{2}[A-Z0-9[:space:]]{1,25})([^A-Z0-9]|$)', 'g'
+      ) AS m(captures)
+      WHERE public.is_valid_creditor_reference(m.captures[2])
+    UNION ALL
+    SELECT 'vs', trim(p_message)
+      WHERE nullif(trim(COALESCE(p_vs, '')), '') IS NULL
+        AND trim(COALESCE(p_message, '')) ~ '^[0-9]{1,10}$'
+    UNION ALL
+    SELECT 'vs', substring(p_message
+      FROM '(?i)(?:VS|variabilní symbol)[[:space:]]*[:=-]?[[:space:]]*([0-9]{1,10})')
+      WHERE nullif(trim(COALESCE(p_vs, '')), '') IS NULL
+        AND substring(p_message
+          FROM '(?i)(?:VS|variabilní symbol)[[:space:]]*[:=-]?[[:space:]]*([0-9]{1,10})') IS NOT NULL
+
+ ) SELECT DISTINCT kind,CASE WHEN kind='vs' THEN value::bigint::text ELSE value END FROM raw_signals;
+$$;
+REVOKE ALL ON FUNCTION public.bank_transaction_signals_internal(text,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.match_bank_transaction(p_transaction_id bigint)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -36,39 +70,15 @@ BEGIN
     RETURN jsonb_build_object('verdict', 'ineligible', 'reason', 'unverified_identity');
   END IF;
 
-  WITH raw_signals(kind, value) AS (
-    SELECT 'vs', trim(v_transaction.vs::text)
-      WHERE trim(COALESCE(v_transaction.vs::text, '')) ~ '^[0-9]{1,10}$'
-    UNION ALL
-    SELECT 'rf', public.normalize_creditor_reference(v_transaction.payer_reference)
-      WHERE v_transaction.payer_reference IS NOT NULL
-        AND public.is_valid_creditor_reference(v_transaction.payer_reference)
-    UNION ALL
-    SELECT 'rf', public.normalize_creditor_reference(m.captures[2])
-      FROM regexp_matches(
-        upper(concat_ws(E'\n', v_transaction.message_for_recipient,
-          v_transaction.user_identification, v_transaction.comment)),
-        '(^|[^A-Z0-9])(RF[0-9]{2}[A-Z0-9[:space:]]{1,25})([^A-Z0-9]|$)', 'g'
-      ) AS m(captures)
-      WHERE public.is_valid_creditor_reference(m.captures[2])
-    UNION ALL
-    SELECT 'vs', trim(v_transaction.message_for_recipient)
-      WHERE nullif(trim(COALESCE(v_transaction.vs::text, '')), '') IS NULL
-        AND trim(COALESCE(v_transaction.message_for_recipient, '')) ~ '^[0-9]{1,10}$'
-    UNION ALL
-    SELECT 'vs', substring(v_transaction.message_for_recipient
-      FROM '(?i)(?:VS|variabilní symbol)[[:space:]]*[:=-]?[[:space:]]*([0-9]{1,10})')
-      WHERE nullif(trim(COALESCE(v_transaction.vs::text, '')), '') IS NULL
-        AND substring(v_transaction.message_for_recipient
-          FROM '(?i)(?:VS|variabilní symbol)[[:space:]]*[:=-]?[[:space:]]*([0-9]{1,10})') IS NOT NULL
-  ), signals AS (
-    SELECT DISTINCT kind, value FROM raw_signals
+  WITH signals AS (
+    SELECT * FROM public.bank_transaction_signals_internal(v_transaction.vs,v_transaction.payer_reference,
+      v_transaction.message_for_recipient,v_transaction.user_identification,v_transaction.comment)
   ), candidates AS (
     SELECT DISTINCT pi.id
     FROM signals s
     JOIN eshop.payment_info pi
       ON (s.kind = 'rf' AND pi.creditor_reference = s.value)
-      OR (s.kind = 'vs' AND pi.variable_symbol = s.value::bigint)
+      OR (s.kind = 'vs' AND pi.variable_symbol = CASE WHEN s.kind='vs' THEN s.value::bigint END)
     WHERE (pi.bank_account = v_transaction.bank_account_id
       OR public.bank_sync_accounts_match(p_transaction_id,pi.bank_account))
       AND upper(trim(pi.currency_code::text)) = upper(trim(v_transaction.currency::text))

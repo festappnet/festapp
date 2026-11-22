@@ -964,6 +964,19 @@
           "prepare_notification_center"
         ]
       }
+    },
+    {
+      "migration": "20261122180000_bank_email_confirmation.sql",
+      "active": true,
+      "header": "-- Admin-confirmed email observations; no automatic email pairing.",
+      "sources": [
+        "eshop_bank_sync/schema.sql",
+        "eshop_transactions/match_bank_transaction.sql",
+        "eshop_bank_sync/bank_sync_existing_facts_match.sql",
+        "eshop_bank_sync/bank_sync_email_confirmation.sql",
+        "eshop_bank_sync/bank_sync_authority.sql",
+        "eshop_bank_sync/ingest_bank_sync_transaction.sql"
+      ]
     }
   ]
 }

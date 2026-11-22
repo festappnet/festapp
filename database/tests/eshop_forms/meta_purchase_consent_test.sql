@@ -215,10 +215,10 @@ END $$;
 -- order-time cohort, even when a captured delivery and fully-paid fact exist.
 DO $$
 DECLARE x jsonb; un bigint; fid bigint;
- mode text; receipt jsonb; oid bigint; snapshot jsonb; payment_id bigint; transaction_id bigint;
+ mode text; email_event jsonb; email_connection bigint; email_bank bigint; email_receipt jsonb; receipt jsonb; oid bigint; snapshot jsonb; payment_id bigint; transaction_id bigint;
  paid_event uuid; order_event uuid; claimed uuid; prepared jsonb; order_data jsonb; reason_case text; expected_reason text; baseline analytics.meta_purchase_deliveries; paid_at timestamptz; overview jsonb;
 BEGIN
- FOREACH mode IN ARRAY ARRAY['order','legacy','missing','paid_without_capi','legacy_capi_flag','paid','no_browser_items','waitlist_acceptance'] LOOP
+ FOREACH mode IN ARRAY ARRAY['order','legacy','missing','paid_without_capi','legacy_capi_flag','paid','no_browser_items','waitlist_acceptance','confirmed_email'] LOOP
   x:=pg_temp.fixture(NULL);un:=(x->>'unit')::bigint;fid:=(x->>'form')::bigint;
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
@@ -233,7 +233,7 @@ BEGIN
   -- browser order created before enablement must also remain excluded.
   UPDATE public.forms SET data=jsonb_set(data,'{analytics,purchase_timing}',
    to_jsonb(CASE WHEN mode='paid_without_capi' THEN 'paid'::text ELSE 'order'::text END)) WHERE id=fid;
-  UPDATE analytics.meta_purchase_connectors SET enabled=(mode IN ('paid','legacy_capi_flag','no_browser_items','waitlist_acceptance')) WHERE unit=un;
+  UPDATE analytics.meta_purchase_connectors SET enabled=(mode IN ('paid','legacy_capi_flag','no_browser_items','waitlist_acceptance','confirmed_email')) WHERE unit=un;
   receipt:=public.create_ticket_order_client_sync_v1(pg_temp.checkout(x)||jsonb_build_object('email','consent-'||mode||'-'||un::text||'@example.invalid'),gen_random_uuid(),gen_random_uuid());
   PERFORM assert_eq(receipt#>>'{data,code}','200','cohort fixture checkout succeeds');
   oid:=(receipt#>>'{data,order,id}')::bigint;
@@ -267,7 +267,7 @@ BEGIN
   ELSIF mode='missing' THEN
    PERFORM assert_true(public.form_order_purchase_timing_internal(oid) IS NULL,'missing snapshot confers no paid cohort');
   END IF;
-  PERFORM assert_true(public.form_order_purchase_capi_required_internal(oid) IS NOT DISTINCT FROM (mode IN ('paid','no_browser_items')),
+  PERFORM assert_true(public.form_order_purchase_capi_required_internal(oid) IS NOT DISTINCT FROM (mode IN ('paid','no_browser_items','confirmed_email')),
    'CAPI is required only when frozen at creation, missing flag fails closed');
   snapshot:=jsonb_build_object('source','klaro','capturedAt',to_char((clock_timestamp()-interval '1 second') AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
    'websiteOrigin','https://tickets.example','consentRevision',public.unit_measurement_consent_scope_internal(un)->>'consentRevision',
@@ -278,13 +278,34 @@ BEGIN
   PERFORM assert_eq((SELECT phone_hash FROM analytics.meta_purchase_deliveries WHERE order_id=oid),encode(extensions.digest('420777123456','sha256'),'hex'),'hash uses country code and digits only');
   PERFORM assert_true(EXISTS(SELECT FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'captured pending delivery exists before payment');
   SELECT payment_info INTO STRICT payment_id FROM eshop.orders WHERE id=oid;
-  INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source)
-  SELECT bank_account,100,'CZK',now(),'fio_api' FROM eshop.payment_info WHERE id=payment_id RETURNING id INTO transaction_id;
-  PERFORM public.apply_transaction_pairing(transaction_id,payment_id,'manual_attach','user');
+  IF mode='confirmed_email' THEN
+   SELECT bank_account INTO email_bank FROM eshop.payment_info WHERE id=payment_id;
+   PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
+   INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(email_bank,(x->>'actor')::uuid,true);
+   INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(un,(x->>'actor')::uuid,true);
+   INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,bank_account_id,
+    physical_account,provider,mode,state,pairing_code,manifest_sha256,legacy_blocked_at)
+   VALUES('capi-email','festapp',un::text,email_bank,'capi-email-'||un,'FIO','email','connected','abcdef0123',repeat('a',64),now()) RETURNING id INTO email_connection;
+   SELECT jsonb_build_object('event','transaction.received','event_version','2','delivery_id','01K00000000000000000000999',
+    'data',jsonb_build_object('id',un::text,'bank_account_id',un::text,'amount_cents',10000,'currency','CZK',
+     'date',to_char(clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+     'direction','incoming','identity_kind','observation','source','email',
+     'raw_vs',variable_symbol::text,'payer_reference',creditor_reference,'counter_account','222/2010'))
+    INTO email_event FROM eshop.payment_info WHERE id=payment_id;
+   PERFORM public.ingest_bank_sync_transaction('capi-email','festapp',repeat('a',64),email_event);
+   email_receipt:=public.confirm_bank_sync_email_observation(email_bank,email_event->>'delivery_id',payment_id,repeat('a',64),true);
+   transaction_id:=(email_receipt->>'transaction_id')::bigint;
+   PERFORM assert_eq(email_receipt->>'action','confirmed','CAPI fixture passes through real attested confirmation');
+   PERFORM set_config('request.jwt.claim.sub','',true);
+  ELSE
+   INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,ingest_source)
+   SELECT bank_account,100,'CZK',now(),'fio_api' FROM eshop.payment_info WHERE id=payment_id RETURNING id INTO transaction_id;
+   PERFORM public.apply_transaction_pairing(transaction_id,payment_id,'manual_attach','user');
+  END IF;
   SELECT event_id INTO STRICT paid_event FROM analytics.conversion_facts WHERE "order"=oid AND kind='order_fully_paid';
   PERFORM assert_true(paid_event<>order_event,'paid fact already exists with a distinct event UUID');
   PERFORM assert_true(public.form_paid_conversion_eligible_internal(oid),'payment and live policy qualify independently of cohort');
-  IF mode NOT IN ('paid','no_browser_items') THEN
+  IF mode NOT IN ('paid','no_browser_items','confirmed_email') THEN
    PERFORM assert_false(EXISTS(SELECT FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid),
     'order/legacy/missing/non-CAPI-paid cohort is never claimed despite captured paid fact');
    -- Simulate an older worker claim: prepare must independently fence it.
@@ -310,6 +331,25 @@ BEGIN
    prepared:=public.prepare_meta_purchase_delivery(oid,claimed);
    PERFORM assert_true(prepared IS NOT NULL AND prepared->>'clientIp' IS NULL,'prepare independently suppresses expired raw addresses');
    PERFORM assert_true((SELECT client_ip IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'prepare scrubs expired raw address');
+   IF mode='confirmed_email' THEN
+    -- Use the real worker boundary with a fully eligible consent/cohort fixture.
+    -- An unlink before prepare cancels the pending send; a sent receipt remains.
+    SELECT * INTO baseline FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+    UPDATE analytics.meta_purchase_deliveries SET prepared=false WHERE order_id=oid;
+    PERFORM public.apply_transaction_pairing(transaction_id,NULL,'manual_unlink','system');
+    PERFORM assert_false(public.form_paid_conversion_eligible_internal(oid),'confirmed email unlinked before dispatch is ineligible');
+    PERFORM assert_true(public.prepare_meta_purchase_delivery(oid,claimed) IS NULL,'worker refuses unlinked confirmed email');
+    PERFORM assert_true((SELECT status='invalid' AND error_code='order_ineligible' FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'worker records ineligible receipt');
+    PERFORM public.apply_transaction_pairing(transaction_id,payment_id,'manual_attach','system');
+    UPDATE analytics.meta_purchase_deliveries SET status='pending',lease=claimed,
+      lease_until=clock_timestamp()+interval '2 minutes',prepared=true,prepared_at=clock_timestamp(),done_at=NULL WHERE order_id=oid;
+    PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent'),'confirmed bank email sent receipt finalized');
+    SELECT * INTO baseline FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+    PERFORM public.apply_transaction_pairing(transaction_id,NULL,'manual_unlink','system');
+    PERFORM assert_true((SELECT status='sent' AND done_at=baseline.done_at FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'unlink after dispatch retains sent receipt and timestamp');
+    PERFORM assert_false(EXISTS(SELECT FROM public.claim_meta_purchase_deliveries(20) d WHERE d.order_id=oid),'sent receipt cannot be claimed again');
+    CONTINUE;
+   END IF;
    IF mode='paid' THEN
     SELECT * INTO baseline FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
     SELECT created_at INTO paid_at FROM analytics.conversion_facts WHERE "order"=oid AND kind='order_fully_paid';

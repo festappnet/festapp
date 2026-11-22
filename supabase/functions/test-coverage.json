@@ -74,8 +74,13 @@
       ]
     },
     "probe-complianz": {
-      "smokeTests": ["supabase/functions/probe-complianz/handler_test.ts"],
-      "behaviorTests": ["supabase/functions/probe-complianz/handler_test.ts", "supabase/functions/probe-complianz/policy_test.ts"]
+      "smokeTests": [
+        "supabase/functions/probe-complianz/handler_test.ts"
+      ],
+      "behaviorTests": [
+        "supabase/functions/probe-complianz/handler_test.ts",
+        "supabase/functions/probe-complianz/policy_test.ts"
+      ]
     },
     "fetch-http-data": {
       "smokeTests": [
@@ -376,6 +381,10 @@
       "abusePolicy": [
         "signed-inbox-idempotency",
         "email.commitment"
+      ],
+      "sqlTests": [
+        "database/tests/eshop/transactions/bank_sync_ingest_test.sql",
+        "database/tests/eshop/transactions/bank_sync_email_confirmation_test.sql"
       ]
     },
     "waitlist-commands": {

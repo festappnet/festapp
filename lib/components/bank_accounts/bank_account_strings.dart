@@ -2,6 +2,55 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
 class BankAccountStrings {
+  static String emailOrderState(String? state) => switch (state) {
+    'created' => 'BankAccount.emailStateCreated'.tr(),
+    'ordered' => 'BankAccount.emailStateOrdered'.tr(),
+    'expired' => 'BankAccount.emailStateExpired'.tr(),
+    _ => '—',
+  };
+  static String get emailLookup => 'BankAccount.emailLookup'.tr();
+  static String get emailLookupHint => 'BankAccount.emailLookupHint'.tr();
+  static String get emailDismiss => 'BankAccount.emailDismiss'.tr();
+  static String get emailDismissReason => 'BankAccount.emailDismissReason'.tr();
+  static String get emailLoadMore => 'BankAccount.emailLoadMore'.tr();
+  static String get emailExactDuplicate =>
+      'BankAccount.emailExactDuplicate'.tr();
+  static String get emailConflict => 'BankAccount.emailConflict'.tr();
+  static String get emailPossibleDuplicates =>
+      'BankAccount.emailPossibleDuplicates'.tr();
+  static String get emailNotDuplicate => 'BankAccount.emailNotDuplicate'.tr();
+  static String get emailOutcomeConfirmed =>
+      'BankAccount.emailOutcomeConfirmed'.tr();
+  static String get emailOutcomePossibleDuplicate =>
+      'BankAccount.emailOutcomePossibleDuplicate'.tr();
+  static String get emailOutcomeDuplicatePaired =>
+      'BankAccount.emailOutcomeDuplicatePaired'.tr();
+  static String get emailOutcomeDuplicateUnpaired =>
+      'BankAccount.emailOutcomeDuplicateUnpaired'.tr();
+  static String emailDuplicatePaidOrder(String order) =>
+      'BankAccount.emailDuplicatePaidOrder'.tr(namedArgs: {'order': order});
+  static String get emailDuplicateUnpaired =>
+      'BankAccount.emailDuplicateUnpaired'.tr();
+  static String get emailPendingQueueExpand =>
+      'BankAccount.emailPendingQueueExpand'.tr();
+  static String get emailLookupPayableOnly =>
+      'BankAccount.emailLookupPayableOnly'.tr();
+
+  static String get emailConfirmationRequired =>
+      'BankAccount.emailConfirmationRequired'.tr();
+  static String get emailQueue => 'BankAccount.emailQueue'.tr();
+  static String get emailQueueEmpty => 'BankAccount.emailQueueEmpty'.tr();
+  static String get emailConfirm => 'BankAccount.emailConfirm'.tr();
+  static String get emailAttestation => 'BankAccount.emailAttestation'.tr();
+  static String get emailNoCandidates => 'BankAccount.emailNoCandidates'.tr();
+  static String get emailOrder => 'BankAccount.emailOrder'.tr();
+  static String get emailAmountMatches => 'BankAccount.emailAmountMatches'.tr();
+  static String get emailAmountDiffers => 'BankAccount.emailAmountDiffers'.tr();
+  static String get emailVs => 'BankAccount.emailVs'.tr();
+  static String get emailCounterAccount =>
+      'BankAccount.emailCounterAccount'.tr();
+  static String get emailSender => 'BankAccount.emailSender'.tr();
+
   static String get formAccountLabel => 'BankAccount.formAccountLabel'.tr();
   static String formAccountDefault(String account) =>
       'BankAccount.formAccountDefault'.tr(namedArgs: {'account': account});

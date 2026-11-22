@@ -1,19 +1,20 @@
-import 'package:fstapp/services/locale_date_time.dart';
-import 'package:fstapp/components/_shared/copy_button.dart';
-import 'package:fstapp/data_services/authorization_capabilities.dart';
-import 'package:fstapp/data_services/rights_service.dart';
-
-import 'bank_account_dialog_scope.dart';
-
 import 'dart:async';
 
-import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/services/locale_date_time.dart';
 import 'package:fstapp/services/toast_helper.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:timeago/timeago.dart' as timeago;
+
+import '../db_bank_accounts.dart';
+import 'bank_account_dialog_scope.dart';
+import 'bank_sync_email_queue.dart';
 
 class BankAccountConnectionTab extends StatefulWidget {
   final BankAccountModel account;
@@ -58,6 +59,8 @@ class BankAccountConnectionTab extends StatefulWidget {
 
 class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   bool _isTokenVisible = false;
+  bool _showPendingEmailQueue = false;
+  Future<Map<String, dynamic>>? _pendingEmailPage;
   Timer? _relativeTimeRefresh;
 
   @override
@@ -71,6 +74,18 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   }
 
   @override
+  void didUpdateWidget(covariant BankAccountConnectionTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.account.id != widget.account.id ||
+        oldWidget.account.bankSync != widget.account.bankSync) {
+      _pendingEmailPage = null;
+      if (oldWidget.account.id != widget.account.id) {
+        _showPendingEmailQueue = false;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _relativeTimeRefresh?.cancel();
     super.dispose();
@@ -80,6 +95,32 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
       ? widget.account.bankSync!.tokenMasked
       : widget.account.tokenMasked;
   DateTime? get _lastBankPull => widget.account.bankSync?.bankPullAt;
+
+  Widget _buildEmailQueue() => BankSyncEmailQueue(
+    key: ValueKey(widget.account.id),
+    readOnly: widget.isReadOnly,
+    onEmpty: () {
+      if (mounted) {
+        setState(() => _pendingEmailPage = Future.value({'items': []}));
+      }
+    },
+    loadPage: (cursor) =>
+        DbBankAccounts.current.getEmailQueuePage(widget.account.id, cursor),
+    lookup: (facts, query) => DbBankAccounts.current.findEmailTargets(
+      widget.account.id,
+      facts,
+      query,
+    ),
+    dismiss: (row, reason) =>
+        DbBankAccounts.current.dismissEmail(widget.account.id, row, reason),
+    confirm: (row, payment, {bool notDuplicate = false}) =>
+        DbBankAccounts.current.confirmEmail(
+          widget.account.id,
+          row,
+          payment,
+          notDuplicate: notDuplicate,
+        ),
+  );
 
   Widget _buildLastFailure(BuildContext context, BankSyncFailure failure) {
     final sync = widget.account.bankSync!;
@@ -309,8 +350,45 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                   context,
                   widget.account.bankSync!.lastFailure!,
                 ),
-              if (widget.account.bankSync!.mode == 'email')
+              if (widget.account.bankSync!.mode == 'email') ...[
+                Text(BankAccountStrings.emailConfirmationRequired),
                 Text(BankAccountStrings.emailIdentityNotice),
+                if (!widget.isReadOnly &&
+                    RightsService.hasBankCapability(
+                      widget.account.id,
+                      AuthorizationCapabilities.bankSyncManage,
+                    ))
+                  _buildEmailQueue(),
+              ] else if (!widget.isReadOnly &&
+                  RightsService.hasBankCapability(
+                    widget.account.id,
+                    AuthorizationCapabilities.bankSyncManage,
+                  )) ...[
+                FutureBuilder<Map<String, dynamic>>(
+                  future: _pendingEmailPage ??= DbBankAccounts.current
+                      .getEmailQueuePage(widget.account.id, null),
+                  builder: (context, snapshot) {
+                    final items = snapshot.data?['items'] as List?;
+                    if (items == null || items.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return ExpansionTile(
+                      key: const ValueKey('bank-pending-email-queue'),
+                      tilePadding: EdgeInsets.zero,
+                      title: Text(BankAccountStrings.emailPendingQueueExpand),
+                      initiallyExpanded: false,
+                      onExpansionChanged: (expanded) {
+                        if (expanded && !_showPendingEmailQueue) {
+                          setState(() => _showPendingEmailQueue = true);
+                        }
+                      },
+                      children: [
+                        if (_showPendingEmailQueue) _buildEmailQueue(),
+                      ],
+                    );
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
             ],
             if (widget.isFio && !widget.isReadOnly)

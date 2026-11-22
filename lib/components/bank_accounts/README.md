@@ -106,3 +106,60 @@ production, and historical response metadata cannot be reconstructed retroactive
 The same safe UUID and metadata are emitted in the structured
 `bank_api_fetch_failure` log after persistence, so operators can correlate the UI
 reference with runtime logs without logging the bank response.
+
+## Email confirmation queue
+
+The old observations and list queue RPCs keep their contracts. The paged queue
+uses `(received_at, delivery_id)` as a cursor and fetches one extra row to detect
+the next page. Email identity quarantines can be confirmed or dismissed; possible
+conflicts are visible for review/dismissal, with no confirmation action.
+
+Account authorization (selected account and canonical source for aliases)
+precedes inbox access, digest checks and replay. Confirmation additionally calls
+`check_is_editor_order_on_occasion` before inbox access, including receipt replay.
+The shared payable-target owner filters suggestions, VS/RF/public order-number
+lookup and writes to the same bank account, currency, actual unit link, live
+order-editor permission, positive amount due and created/ordered/expired states.
+Paid/sent and immutable orders are excluded. Customer identity, public order
+symbol/number, state and amount due are supplied by SQL. The UI displays SQL's
+amount-match result. New-sales bank policy does not block receipt recovery; the
+policy fence still precedes money locks.
+
+`bank_transaction_signals_internal` is the extraction owner shared with the
+existing automatic matcher: normalized numeric VS, valid RF, RF from messages,
+and message VS only when the explicit VS is absent. Normalized keys include RF,
+uppercase currency, counter-account whitespace/split bank code and bank-local
+Europe/Prague date. `bank_sync_fact_dates_match_internal` also owns legacy
+midnight-offset handling for the existing fact matcher.
+
+API adoption first checks all unadopted confirmed receipts with the same amount,
+currency, overlapping references (or missing references) and a bank-date window
+of one day. Exactly one candidate whose full normalized key agrees is adopted;
+a possible duplicate is stored as an unpaired API movement instead of falling
+through to automatic payment matching. The receipt keeps the published five keys
+and reports `unmatched`. Internal transaction ID, possible duplicate IDs and the
+`stored_unpaired_possible_duplicate` reason live in nullable inbox `diagnostics`,
+separate from `resolution` so unresolved email observations stay in the queue.
+Possible-duplicate confirmation responses do not mutate committed receipts or outcomes. The same comparison prevents API-first or repeated email credits.
+Recognized duplicates are resolved as `duplicate_of`, with actor kind, time,
+transaction ID and original confirmation delivery when available. A service
+resolution has no human actor; a confirmation resolution identifies its user.
+
+Confirmation uses delivery advisory -> connection -> inbox/new transaction ->
+existing order/payment pairing locks. Payability is checked again under those
+locks before pairing, so a concurrently paid order cannot receive a second
+confirmation. Inbox resolution records the immutable original confirmation and
+attestation. Current assignment belongs to `transactions.payment_info`; later
+unpair/re-pair actors and timestamps belong to existing pairing events. Retry
+returns the original resolution rather than reattaching an unpaired payment.
+Dismissal takes the same delivery/connection/inbox lock order, requires a short
+reason and records user/time/facts. Same-reason replay is stable; changing the
+reason or replacing another resolution is rejected. No persistent trigger or
+parallel pairing engine is introduced.
+
+Queue, confirmation and dismissal require an email payload source, independently
+of the connection's current mode. API-era quarantines cannot be confirmed after
+a mode switch. The page RPC marks exact API/legacy matches as `exact_duplicate`;
+the interface offers dismissal and recorded-movement information without asking
+for a separate-payment attestation. API-mode pending email access is hidden when
+the queue is empty. Only the page RPC is exposed; no compatibility list RPC remains.

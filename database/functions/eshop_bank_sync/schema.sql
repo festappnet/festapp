@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_inbox (
   payload jsonb NOT NULL CHECK(octet_length(payload::text)<=65536),
   outcome text,
   resolution jsonb,
+  diagnostics jsonb,
   resolved_at timestamptz,
   receipt jsonb,
   received_at timestamptz NOT NULL DEFAULT now(),
@@ -92,3 +93,13 @@ REVOKE ALL ON eshop.bank_sync_connections,eshop.bank_sync_account_aliases,eshop.
 -- Supported notification providers; existing connection identities remain unchanged.
 ALTER TABLE eshop.bank_sync_connections DROP CONSTRAINT IF EXISTS bank_sync_connections_provider_check;
 ALTER TABLE eshop.bank_sync_connections ADD CONSTRAINT bank_sync_connections_provider_check CHECK(provider IN ('FIO','AIRBANK','CSOB','MONETA','CREDITAS','RAIFFEISENBANK','UNICREDIT','CSAS'));
+
+-- Internal ingestion evidence is separate from the bounded BankSync receipt.
+ALTER TABLE eshop.bank_sync_inbox ADD COLUMN IF NOT EXISTS diagnostics jsonb;
+CREATE INDEX IF NOT EXISTS transactions_email_confirmed_adoption_idx
+ ON eshop.transactions(bank_account_id,amount,date) WHERE ingest_source='banksync_email_confirmed';
+CREATE INDEX IF NOT EXISTS transactions_bank_email_duplicate_idx
+ ON eshop.transactions(bank_account_id,date)
+ WHERE ingest_source IN ('banksync_email_confirmed','banksync_api','fio_api','legacy_api','legacy');
+CREATE INDEX IF NOT EXISTS bank_sync_inbox_unresolved_queue_idx
+ ON eshop.bank_sync_inbox(connection_id,received_at,delivery_id) WHERE resolution IS NULL;

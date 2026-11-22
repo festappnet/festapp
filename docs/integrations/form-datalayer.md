@@ -1100,3 +1100,42 @@ visitor consent. The existing organization/Unit/form switches, privacy notice,
 runtime and consent checks remain. No additional domain-approval request is sent.
 Removing a saved website withdraws its self-service grant on policy renewal.
 Explicit operator-owned application origins remain separately configured.
+
+### Administrator-confirmed bank email payments
+
+Quarantined email notifications do not qualify as received payments. After an
+account administrator verifies internet banking and confirms and pairs a positive
+notification, `banksync_email_confirmed` contributes bank receipts through the
+existing financial totals. `form_paid_conversion_eligible_internal` still requires
+full net bank receipts, the order's paid/sent state and live measurement policy;
+cash and manual settlements remain excluded. Confirmation is not visitor consent
+and does not bypass the saved purchase cohort, connector, consent or age checks.
+
+The Meta worker rechecks live eligibility in `prepare_meta_purchase_delivery`.
+Unpairing before preparation makes the order ineligible unless other eligible
+receipts still fully cover it. Preparation is the existing last database check
+before the external request; unpairing after preparation can race an in-flight
+send. After a successful dispatch, the existing sent receipt remains; no event
+retraction or refund event is introduced. Browser facts likewise retain their
+existing immutable event identity. A later matching API movement adopts the confirmed transaction without another
+paid event only when the normalised reference signals (VS/RF), counter-account
+and bank-local date agree uniquely. Two facts are treated as a possible
+duplicate only when amount and currency match within a ±1 bank-day window and
+either a normalised VS/RF signal overlaps or both lack VS/RF signals while
+having the same normalised non-empty counter-account; missing signals are not a
+wildcard. On the API ingest path, a possible duplicate that is not a unique full
+match is still stored in `eshop.transactions` without running automatic pairing
+(`stored_unpaired_possible_duplicate`, with the related confirmed transaction
+IDs recorded in the inbox receipt) so real funds are never trapped and nothing
+double-credits; an administrator can pair it manually if it is a separate
+payment. On the email path, exact duplicates of an API or legacy movement are
+auto-resolved as `duplicate_of` (reporting live paired status), whereas possible
+duplicates — including duplicates of another confirmed email — stay visible in
+the queue with the related transactions so the administrator can either dismiss
+the observation (audited) or explicitly attest `p_not_duplicate = true` to
+confirm it as a separate payment (audited). VS/RF extraction is shared with the
+automatic matcher; currency and account notation are normalised. Bank dates use
+Europe/Prague and the shared legacy midnight-offset comparison. Confirmation
+also requires event order-editing permission and accepts only editable unpaid
+non-demo orders on the selected account and currency. These restrictions apply
+equally to suggestions, manual lookup and the confirming mutation.
