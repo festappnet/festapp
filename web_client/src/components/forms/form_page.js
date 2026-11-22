@@ -995,8 +995,9 @@ export class FormPage extends Component {
     }
 
     currentPurchaseConsent(notice) {
-        return this.measurementRefreshPending
-            ? null : purchaseConsentSnapshot(this.measurementSession?.consent, notice);
+        const measurement = this.measurementSession;
+        return !this.measurementRefreshPending && measurement?.hasCurrentPolicy()
+            ? purchaseConsentSnapshot(measurement.consent, notice) : null;
     }
 
     async collectMetaCheckoutMatching(formModel,snapshot) {

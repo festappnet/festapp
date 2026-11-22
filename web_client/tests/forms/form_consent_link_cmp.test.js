@@ -424,6 +424,33 @@ test('Back to form after success retains the linked lease and second-order purch
  }finally{form.close();site.close();}
 });
 
+test('a failed policy refresh keeps checkout available without using the old purchase consent',async t=>{
+ const site=website(),binding={id:'00000000-0000-4000-8000-000000000001',version:1};
+ site.registry.connect({read:()=>({consentRevision,analytics:true,marketing:true,binding,
+  purchaseConsent:{source:'complianz',ad_storage:true,ad_user_data:true,ad_personalization:true}}),subscribe:()=>()=>{}});
+ const form=linkedForm(site,{production:true,policy:{...basePolicy(),binding,websiteOrigin:HOST}});
+ try{
+  await ready(form);
+  const {page,back}=await returningPage(t,form);
+  const notice={revision:'checkout-revision',origin:HOST};
+  assert.ok(page.currentPurchaseConsent(notice));
+  let offline=true;
+  t.mock.method(form.win.testModules.DbForms,'getMeasurementPolicy',async()=>{
+   if(offline)throw Error('offline');
+   return form.policy;
+  });
+  const previousCheckout=page.currentSession;
+  await back();
+  assert.notEqual(page.currentSession,previousCheckout);
+  assert.equal(page.measurementRefreshPending,null);
+  assert.ok(form.session.consent.purchaseConsent,'the live choice survives for verified recovery');
+  assert.equal(page.currentPurchaseConsent(notice),null);
+  offline=false;
+  await form.session.refresh();
+  assert.ok(page.currentPurchaseConsent(notice));
+ }finally{form.close();site.close();}
+});
+
 for(const end of ['expired','detached','closed','withdrawn','unknown','scope-changed'])test(`Back to form keeps fail-closed behavior when source is ${end}`,async t=>{
  const site=website();site.choose(both);const form=linkedForm(site,{production:true});
  try{
