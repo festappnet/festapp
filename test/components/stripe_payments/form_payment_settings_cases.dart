@@ -65,7 +65,7 @@ FormEditBundle _bundle(
           relatedFields: [
             FormFieldDraft(
               productType: ProductTypeModel(
-                products: [ProductModel(currencyCode: 'CZK')],
+                products: [ProductModel(currencyCode: 'CZK', price: 100)],
               ),
             ),
           ],
