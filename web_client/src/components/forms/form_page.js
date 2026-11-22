@@ -300,6 +300,7 @@ export class FormPage extends Component {
                 showPreview,
                 onSaleOpening: () => {
                     statusMeasurementStarted = true;
+                    this.disposeMeasurement();
                     return this.startMeasurement(formModel, showPreview, 'sale_opening');
                 },
                 onReload: () => this.init(link, { forceReload: true })
@@ -308,6 +309,12 @@ export class FormPage extends Component {
             if (handled) {
                 if (!statusMeasurementStarted) this.disposeMeasurement();
                 return;
+            }
+
+            if (preserveMeasurement && this.measurementSession) {
+                // Check the policy before the rebuilt checkout can use the retained session.
+                await this.measurementSession.refresh();
+                if (loadGeneration !== this.loadGeneration) return;
             }
 
             // 5. Render Form
@@ -621,7 +628,6 @@ export class FormPage extends Component {
         if (!this.analytics && this.measurementSession) {
             this.analytics = new FormDataLayer({model:formModel, sink:this.measurementSession});
             this.activateMeasurement();
-            void this.measurementSession.refresh();
         }
         if (!this.analytics) {
             const runtime=this.measurementRuntime=new FormMeasurementRuntime({model:formModel,embedded:!!this.embedBridge,

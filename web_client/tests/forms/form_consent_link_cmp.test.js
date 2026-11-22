@@ -440,7 +440,15 @@ for(const end of ['expired','detached','closed','withdrawn','unknown','scope-cha
    form.win.Date.now=original;
   }
   await settle(end==='closed'?1100:80);
-  await back();
+  if(end==='scope-changed'){
+   let releasePolicy;
+   const freshPolicy=new Promise(resolve=>{releasePolicy=()=>resolve(form.policy);});
+   t.mock.method(form.win.testModules.DbForms,'getMeasurementPolicy',()=>freshPolicy);
+   form.events.length=0;await back();
+   try{assert.deepEqual(form.events,[],'checkout waits for fresh policy before sending events');}
+   finally{releasePolicy();}
+   await settle(80);
+  }else await back();
   assert.equal(page.measurementSession,form.session);
   assert.deepEqual(form.consent(),none);
   if(end!=='withdrawn')assert.equal(form.notice(),true);
@@ -552,16 +560,16 @@ for(const exit of ['404','error','full','closed','countdown','preview','sale-ope
  }finally{form.close();site.close();}
 });
 
-test('availability subscription starts its own measurement and later activation reads the current page type',async t=>{
+test('availability subscription starts new measurement without the previous checkout lease',async t=>{
  const site=website();site.choose(both);const form=linkedForm(site,{production:true});
  try{
   await ready(form);const {page,back}=await returningPage(t,form);
   t.mock.method(form.win.testModules.FormAvailabilityService,'renderStatus',(_host,_model,_status,context)=>{context.onSaleOpening();return true;});
   form.events.length=0;await back();
-  assert.equal(page.measurementSession,form.session);
-  assert.equal(form.events.find(p=>p.page_type).page_type,'sale_opening');
-  form.events.length=0;form.session.invalidate();await form.session.refresh();
-  assert.equal(form.events.find(p=>p.page_type).page_type,'sale_opening');
+  assert.notEqual(page.measurementSession,form.session);
+  assert.equal(form.session.disposed,true);
+  assert.equal(page.measurementSession.consent.leaseId,undefined);
+  assert.equal(site.requests.at(-1).type,'detach');
   assert.equal(form.events.some(p=>p.event==='view_item'),false);
  }finally{form.close();site.close();}
 });
@@ -574,8 +582,9 @@ for(const action of ['onReload','retry'])test(`${action} performs full teardown`
   if(action==='onReload'){
    let reload;
    t.mock.method(FormAvailabilityService,'renderStatus',(_host,_model,_status,context)=>{context.onSaleOpening();reload=context.onReload;return true;});
-   await back();assert.equal(page.measurementSession,form.session);
-   await reload();
+   await back();const openingSession=page.measurementSession;
+   assert.notEqual(openingSession,form.session);
+   await reload();assert.equal(openingSession.disposed,true);
   }else{
    t.mock.method(DbForms,'getFormByLink',async()=>{throw Error('offline');});
    let retry;page.renderError=(_message,callback)=>retry=callback;
