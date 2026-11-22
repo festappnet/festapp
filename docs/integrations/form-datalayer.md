@@ -893,6 +893,13 @@ are retired before publishing choices. Explicit local saves use the existing
 saved local decision wins when the link checks it; ordinary open Klaro tabs are
 not continuously synchronized.
 
+After a successful order on the standalone consent-link form, “Back to form” in
+the same tab preserves the existing measurement session and active consent link
+for the same public form, without reloading or reconnecting. The form data and
+cart observation are rebuilt, and subsequent orders use the current consent
+choice. Withdrawal, disconnection and lease expiry continue to apply; an ended
+link is not restored, and another form does not inherit it.
+
 Successful transfer to a top-level new tab shows the floating settings button.
 Saving there makes a local decision; Escape closes settings without saving. Link helpers preserve
 modifier clicks, downloads, noreferrer and referrer policies. A bare noopener

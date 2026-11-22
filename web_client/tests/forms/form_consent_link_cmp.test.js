@@ -18,13 +18,54 @@ window.startLinkedForm = (translations, policySource, transport) => {
  LocalizationService.translations = translations;
  const model = {link:'test', data:{}};
  const consentSource = {connect:(policy, notify) => {
-  const cleanup = startMeasurementConsent({model, setConsent:notify, host:document.querySelector('main')});
+  const cleanup = startMeasurementConsent({model, setConsent:notify, host:document.querySelector('main'), includePurchaseConsent:true});
   return () => cleanup();
  }};
  const session = new FormMeasurementSession({model, transport, consentSource, entryAllowed:true, policySource});
  session.start();
  return session;
 };`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
+// The return regressions construct the session through production startMeasurement,
+// including its onActive closure. Only the runtime's iframe/ACK boundary is modeled.
+// IIFE evaluation has no module URL; the real preview uses it only for its stylesheet.
+const PRODUCTION_MODULE_URL='https://tickets.example/src/components/forms/order_preview.js';
+const productionBundle = await build({stdin:{contents:`
+import {FormPage} from './src/components/forms/form_page.js';
+import {FormModel} from './src/components/forms/form_models.js';
+import {FormMeasurementRuntime} from './src/components/forms/form_measurement_runtime.js';
+import {LocalizationService} from './src/services/localization_service.js';
+import {DbForms} from './src/components/forms/db_forms.js';
+import {SupabaseService} from './src/services/supabase_service.js';
+import {FormAvailabilityService} from './src/components/forms/form_availability_service.js';
+import {RightsService} from './src/services/rights_service.js';
+import {SeoService} from './src/services/seo_service.js';
+import {OrderResult} from './src/components/forms/order_result.js';
+import {FormNetwork} from './src/components/forms/form_network.js';
+import {purchaseConsentSnapshot} from './src/components/forms/meta_purchase_consent.js';
+import {EmbedBridge} from './src/services/embed_bridge.js';
+import {measurementManifest,measurementProtocol} from './src/components/forms/form_measurement_contract.js';
+window.testModules={FormModel,DbForms,SupabaseService,FormAvailabilityService,RightsService,SeoService,OrderResult,FormNetwork,purchaseConsentSnapshot,EmbedBridge,measurementManifest,measurementProtocol};
+window.startProductionForm = (translations, policySource, transport) => {
+ LocalizationService.translations=translations;
+ DbForms.getMeasurementPolicy=policySource;
+ SupabaseService.getClient=()=>({auth:{},rpc:async()=>({error:null})});
+ for(const method of ['activate','stop','renew','updateConsent','track']) FormMeasurementRuntime.prototype[method]=transport[method].bind(transport);
+ const page=new FormPage(document.querySelector('main'));
+ page.currentLink='test';
+ page.currentSession={payload:{fields:[{4:11}]}};
+ page.startMeasurement(window.returnModel(policySource()));
+ return page;
+};
+window.returnModel = policy => ({link:'test',occasionTitle:'Letní koncert',data:{analytics:policy},visibleFields:[
+ {id:4,type:'product_type',productTypeData:{title:'Vstupenky'},options:[{id:11,title:'Vstupenka',price:100,currency:'CZK'}]}]});
+`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser',define:{'import.meta.url':JSON.stringify(PRODUCTION_MODULE_URL)},loader:{'.css':'empty'},plugins:[{name:'vite-asset-url',setup(builder){
+ builder.onResolve({filter:/\?url$/},args=>({path:args.path,namespace:'asset-url'}));
+ builder.onLoad({filter:/.*/,namespace:'asset-url'},()=>({contents:'export default "/fixture-asset.js"',loader:'js'}));
+ }}],logLevel:'silent'});
+const hostBundle = await build({stdin:{contents:`
+import {createHostMeasurement} from './src/embed/host_measurement.js';
+window.createTestHost = createHostMeasurement;
+`,resolveDir:new URL('../../',import.meta.url).pathname},bundle:true,write:false,format:'iife',platform:'browser'});
 const translations = JSON.parse(readFileSync(new URL('../../../assets/translations/cs.json',import.meta.url)));
 const settle = (ms=30) => new Promise(resolve => setTimeout(resolve, ms));
 const none = {analytics:false, marketing:false}, both = {analytics:true, marketing:true};
@@ -35,7 +76,7 @@ const basePolicy = () => ({enabled:true, organization_allowed:true, runtime_supp
  consent_revision:consentRevision, processing_revision:'rev-1', runtime_revision:1, policy_revision:1, valid_for_seconds:60});
 
 function website() {
- const dom = new JSDOM('<a data-festapp-consent-link target="_blank" href="https://tickets.example/form/test">Koupit</a>', {url:HOST});
+ const dom = new JSDOM('<a data-festapp-consent-link target="_blank" href="https://tickets.example/form/test">Koupit</a>', {url:HOST,runScripts:'outside-only'});
  const win = dom.window;
  const cmp = complianzFixture(win);
  const registry = createConsentSourceRegistry();
@@ -56,10 +97,11 @@ function transportLog() {
  return log;
 }
 // Opens the form from a click on the website, like a real visitor.
-function linkedForm(site, {jar = new CookieJar(), policy = basePolicy(), opener = true} = {}) {
+function linkedForm(site, {jar = new CookieJar(), policy = basePolicy(), opener = true, production = false} = {}) {
  const dom = new JSDOM('<html lang="cs"><body style="overflow:auto"><main></main></body></html>',
   {url:PRODUCT + '/form/test', referrer:HOST + '/event', cookieJar:jar, runScripts:'outside-only', pretendToBeVisual:true});
  const win = dom.window, grants = [];
+ win.structuredClone=structuredClone;
  const form = {win, grants, policy, closed:false};
  const clone = data => JSON.parse(JSON.stringify(data));
  const hostProxy = {get closed() { return site.closed; }, postMessage(data, origin) {
@@ -79,15 +121,20 @@ function linkedForm(site, {jar = new CookieJar(), policy = basePolicy(), opener 
   win.name = 'festapp-consent-link-00000000-0000-0000-0000-000000000000';
   win.opener = hostProxy;
  }
- win.eval(bundle.outputFiles[0].text);
+ win.eval((production ? productionBundle : bundle).outputFiles[0].text);
  form.log = transportLog();
+ form.events=[];
+ form.log.transport.track=payload=>{form.events.push(clone(payload));return true;};
  const transport = {...form.log.transport, activate:grant => { form.log.transport.activate(grant); }};
- form.session = win.startLinkedForm(translations, () => form.policy, transport);
+ if(production) {
+  form.page=win.startProductionForm(translations, () => form.policy, transport);
+  form.session=form.page.measurementSession;
+ }else form.session = win.startLinkedForm(translations, () => form.policy, transport);
  // The session reports consent to the transport; read it there, like the runtime does.
  form.consent = () => { const s = form.session; return {analytics:s.consent.analytics, marketing:s.consent.marketing}; };
  form.notice = () => !!win.document.querySelector('.cookie-modal-notice');
  form.fab = () => win.document.querySelector('.festapp-consent-fab');
- form.close = () => { form.closed = true; form.session.dispose(); win.close(); };
+ form.close = () => { form.closed = true; form.page?.clear(); form.session.dispose(); win.close(); };
  return form;
 }
 // Ready once the session has a manifest and the first website answer (if any) was applied.
@@ -289,4 +336,428 @@ test('Complianz link: a fresh form after a runtime-only deploy can reuse the sam
  const form = linkedForm(site, {policy:{...basePolicy(), runtime_revision:2, processing_revision:'new-runtime'}});
  try { await ready(form); assert.deepEqual(form.consent(), both); assert.equal(form.notice(), false); }
  finally { form.close(); site.close(); }
+});
+
+// Keep the real link/CMP/session and real FormPage init/result lifecycle. Only
+// backend, availability and form widgets are replaced at their boundaries.
+async function returningPage(t, form) {
+ const win=form.win;
+ win.scrollTo=()=>{};
+ const {DbForms,FormAvailabilityService,RightsService,SeoService,OrderResult}=win.testModules;
+ const page=form.page;
+ const runtime=page.measurementRuntime;
+ const availability={getStatus:FormAvailabilityService.getStatus,renderStatus:FormAvailabilityService.renderStatus};
+ t.mock.method(DbForms,'getFormByLink',async link=>({...win.returnModel(form.policy),link}));
+ t.mock.method(DbForms,'getMeasurementPolicy',async()=>form.policy);
+ t.mock.method(FormAvailabilityService,'getStatus',()=>({}));
+ t.mock.method(FormAvailabilityService,'renderStatus',()=>false);
+ t.mock.method(RightsService,'updateAppData',async()=>{});
+ t.mock.method(RightsService,'canSeeReservations',()=>false);
+ t.mock.method(SeoService,'updateMetaTags',()=>{});
+ page.applyTheme=()=>{};
+ page.renderForm=(model,preview)=>{
+  page.currentSession={payload:{fields:[{4:11}]}};
+  page.startMeasurement(model,preview);
+ };
+ t.mock.method(OrderResult,'render',(host,_success,_data,_model,back)=>{
+  const button=win.document.createElement('button');button.className='btn-back-to-form';button.onclick=back;host.append(button);
+ });
+ return {page,runtime,availability,async back(){
+  page.showFullScreenResult(true,{},{link:'test'});
+  win.document.querySelector('.btn-back-to-form').click();
+  await settle(120); // JSDOM history.back dispatches a real asynchronous popstate.
+  assert.equal(win.document.querySelector('.fullscreen-result-overlay'),null);
+ }};
+}
+
+test('Back to form after success retains the linked lease and second-order purchase consent',async t=>{
+ const site=website(),binding={id:'00000000-0000-4000-8000-000000000001',version:1};
+ site.registry.connect({read:()=>({consentRevision,analytics:true,marketing:true,binding,
+  purchaseConsent:{source:'complianz',ad_storage:true,ad_user_data:true,ad_personalization:true}}),subscribe:()=>()=>{}});
+ const form=linkedForm(site,{production:true,policy:{...basePolicy(),binding,websiteOrigin:HOST}});
+ try{
+  await ready(form);
+  const {page,runtime,back}=await returningPage(t,form);
+  const {purchaseConsentSnapshot}=form.win.testModules;
+  const notice={revision:'checkout-revision',origin:HOST};
+  const first=purchaseConsentSnapshot(form.session.consent,notice);assert.ok(first);
+  const orders=page.purchaseConsentOrders;
+  const attempt=orders.capture(first,notice);assert.equal(orders.canDispatch(attempt),true);
+  orders.authorize(attempt,{orderId:1,token:'a'.repeat(64)});
+  const lease=form.session.consent.leaseId,expires=form.session.consent.expiresAt,requests=site.requests.length;
+  await back();
+  assert.equal(page.measurementSession,form.session);assert.notEqual(runtime.disposed,true);
+  assert.equal(form.win.opener,null);assert.equal(form.notice(),false);
+  assert.equal(form.session.consent.leaseId,lease);assert.equal(form.session.consent.expiresAt,expires);
+  assert.equal(site.requests.length,requests,'no second handshake or detach');
+  assert.equal(page.purchaseConsentOrders,orders);
+  const second=purchaseConsentSnapshot(page.measurementSession.consent,notice);assert.ok(second);
+  assert.deepEqual(second.binding,first.binding);assert.equal(second.source,first.source);
+  const {FormNetwork}=form.win.testModules;
+  let sentPayload,finished;
+  const shown=new Promise(resolve=>finished=resolve);
+  t.mock.method(FormNetwork,'submitOrder',async(payload,options)=>{
+   assert.equal(options.canSendMetaPurchaseConsent(),true);sentPayload=payload;
+   return {success:true,data:{orderOverviewUrl:PRODUCT+'/order?order_id=2&token='+'b'.repeat(64)}};
+  });
+  page.currentSession={payload:{form:'test',ticket:[]},awaitPendingReservations:async()=>{},
+   captureReservationCapability:()=>null,completeReservation:()=>{}};
+  page.closePreview=()=>{};page.collectMetaCheckoutMatching=async()=>null;
+  page.showFullScreenResult=()=>finished();
+  page.submitOrder(form.win.document.createElement('form'),{},null,null,second);
+  await shown;
+  assert.deepEqual(sentPayload.metaPurchaseConsent,second);
+  assert.equal(orders.orders.size,2);
+  assert.deepEqual([...orders.orders.values()].map(order=>order.scope.orderId),[1,2]);
+  const sequence=site.sent.at(-1).sequence;
+  form.deliver({...site.sent.at(-1),sequence,choice:{analytics:false,marketing:false}});
+  await settle();assert.deepEqual(form.consent(),both,'old sequence remains inert after return');
+  const revoked=[];
+  t.mock.method(form.win.testModules.SupabaseService,'getClient',()=>({auth:{},rpc:async(name,args)=>{
+   assert.equal(name,'revoke_meta_purchase_consent');revoked.push(args.p_order_id);return {error:null};
+  }}));
+  const response=site.sent.at(-1);
+  form.deliver({...response,sequence:sequence+1,choice:{analytics:false,marketing:false,purchaseConsent:{
+   ...response.choice.purchaseConsent,ad_storage:false,ad_user_data:false,ad_personalization:false}}});
+  await settle(80);assert.deepEqual(revoked.sort(),[1,2]);
+  assert.equal(orders.orders.size,0,'both authorized orders observe the same withdrawal');
+ }finally{form.close();site.close();}
+});
+
+for(const end of ['expired','detached','closed','withdrawn','unknown','scope-changed'])test(`Back to form keeps fail-closed behavior when source is ${end}`,async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,back}=await returningPage(t,form);
+  if(end==='detached')site.win.dispatchEvent(new site.win.Event('pagehide'));
+  if(end==='closed')site.closed=true;
+  if(end==='withdrawn')site.choose(none);
+  if(end==='unknown')site.choose(null);
+  if(end==='scope-changed')form.policy={...form.policy,processing_revision:'different-revision'};
+  if(end==='expired'){
+   const deadline=form.session.consent.expiresAt;
+   const original=form.win.Date.now;form.win.Date.now=()=>deadline+1;
+   form.win.dispatchEvent(new form.win.Event('pageshow'));
+   form.win.Date.now=original;
+  }
+  await settle(end==='closed'?1100:80);
+  await back();
+  assert.equal(page.measurementSession,form.session);
+  assert.deepEqual(form.consent(),none);
+  if(end!=='withdrawn')assert.equal(form.notice(),true);
+ }finally{form.close();site.close();}
+});
+
+test('success re-init for a different link tears down the previous consent session and runtime',async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,runtime}=await returningPage(t,form);
+  // Do not create another real runtime; this test inspects teardown at load.
+  page.renderForm=()=>{};
+  await page.init('different',{forceReload:true,preserveMeasurement:true});
+  assert.equal(form.session.disposed,true);assert.equal(runtime.disposed,true);
+  assert.equal(page.measurementSession,null);
+  assert.equal(site.requests.at(-1).type,'detach');
+ }finally{form.close();site.close();}
+});
+
+for(const mode of ['waitlist-return','offer-success','waitlist-registration'])test(`${mode} tears down the previous linked consent owner`,async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,runtime}=await returningPage(t,form);
+  if(mode==='waitlist-return'){
+   page.renderWaitlistOutcome('registered',{form:{link:'test',data:{}}});
+   form.win.document.querySelector('.btn-back-to-form').click();
+   await settle(120);
+  }else{
+   let finished;const shown=new Promise(resolve=>finished=resolve);
+   page.currentSession={payload:{ticket:[]},awaitPendingReservations:async()=>{},
+    captureReservationCapability:()=>null,completeReservation:()=>{}};
+   const overviewUrl=PRODUCT+'/order?order_id=1&token='+'a'.repeat(64);
+   const oldSession=form.session;
+   page.currentSession.formModel={key:'test',visibleFields:[]};
+   page.currentSession.state={tickets:[]};
+   page.waitlistCommands={accept:async()=>({order:{}}),command:async()=>({orderOverviewUrl:overviewUrl}),
+    overview:async()=>{assert.equal(oldSession.disposed,true,'teardown precedes overview construction');throw Error('OVERVIEW_UNAVAILABLE');}};
+   page.closePreview=()=>{};page.showFullScreenResult=()=>finished();
+   page.submitOrder(form.win.document.createElement('form'),mode==='offer-success'?{offerBundle:true}:{registrationMode:'waitlist'});
+   await shown;
+  }
+  assert.equal(form.session.disposed,true);assert.equal(runtime.disposed,true);
+  assert.notEqual(page.measurementSession,form.session);
+  assert.equal(site.requests.at(-1).type,'detach');
+ }finally{form.close();site.close();}
+});
+
+for(const timing of ['active','ready-during-fetch','ready-after-render'])test(`return emits the fresh-session funnel and cart baseline: ${timing}`,async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,back}=await returningPage(t,form);
+  const {DbForms}=form.win.testModules;
+  let resolveFetch;
+  if(timing==='ready-during-fetch')t.mock.method(DbForms,'getFormByLink',()=>new Promise(resolve=>resolveFetch=resolve));
+  let pendingGrant;
+  if(timing==='ready-after-render')form.log.transport.activate=grant=>{pendingGrant=grant;};
+  page.analytics.page('confirmation');
+  form.events.length=0;
+  await back();
+  if(timing==='ready-during-fetch'){
+   assert.equal(page.analytics,null);assert.equal(form.session.state,'active','runtime ACK preceded the form response');
+   resolveFetch(form.win.returnModel(form.policy));await settle(80);
+  }
+  if(timing==='ready-after-render'){
+   assert.equal(form.session.state,'starting');assert.equal(form.events.length,0);
+   pendingGrant.onReady();await settle();
+  }
+  const returned=structuredClone(form.events);
+  assert.deepEqual(returned.filter(p=>p.event).map(p=>p.event),['page_view','view_item']);
+  assert.equal(returned.find(p=>p.page_type).page_type,'product');
+  assert.equal(page.analytics.previous[0].quantity,1);
+  page.analytics.observe(page.currentSession);await settle();
+  assert.equal(form.events.some(p=>p.event==='add_to_cart'),false,'initial selection is a baseline, not a cart delta');
+  // This is main's old full-teardown behavior, using the same production
+  // constructors/model/transport, for a direct event-for-event comparison.
+  if(resolveFetch)t.mock.method(DbForms,'getFormByLink',async()=>form.win.returnModel(form.policy));
+  if(pendingGrant)form.log.transport.activate=grant=>grant.onReady();
+  form.events.length=0;
+  await page.init('test',{forceReload:true});await settle(100);
+  assert.deepEqual(form.events,returned);
+ }finally{form.close();site.close();}
+});
+
+for(const exit of ['404','error','full','closed','countdown','preview','sale-opening'])test(`return to ${exit} disposes the preserved session`,async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,runtime,availability,back}=await returningPage(t,form);
+  const {DbForms,FormAvailabilityService,RightsService}=form.win.testModules;
+  if(exit==='404')t.mock.method(DbForms,'getFormByLink',async()=>null);
+  if(exit==='error')t.mock.method(DbForms,'getFormByLink',async()=>{throw Error('offline');});
+  if(['full','closed','countdown'].includes(exit)){
+   t.mock.method(FormAvailabilityService,'getStatus',availability.getStatus);
+   t.mock.method(FormAvailabilityService,'renderStatus',availability.renderStatus);
+   t.mock.method(DbForms,'getFormByLink',async()=>({...form.win.returnModel(form.policy),
+    registrationMode:exit==='full'?'full':'closed',
+    ...(exit==='countdown'?{startTime:new form.win.Date('2099-01-01'),enableCountdown:true}:{}),
+   }));
+  }
+  if(exit==='preview'){
+   form.win.history.replaceState(null,'','?preview=true');
+   t.mock.method(RightsService,'canSeeReservations',()=>true);page.renderEditButton=()=>{};
+  }
+  if(exit==='sale-opening')page.saleOpeningScope={operation:'invalid'};
+  await back();
+  assert.equal(form.session.disposed,true);assert.equal(runtime.disposed,true);
+  assert.equal(page.measurementSession,null);assert.equal(page.analytics,null);
+  assert.equal(site.requests.at(-1).type,'detach');
+ }finally{form.close();site.close();}
+});
+
+test('availability subscription starts its own measurement and later activation reads the current page type',async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,back}=await returningPage(t,form);
+  t.mock.method(form.win.testModules.FormAvailabilityService,'renderStatus',(_host,_model,_status,context)=>{context.onSaleOpening();return true;});
+  form.events.length=0;await back();
+  assert.equal(page.measurementSession,form.session);
+  assert.equal(form.events.find(p=>p.page_type).page_type,'sale_opening');
+  form.events.length=0;form.session.invalidate();await form.session.refresh();
+  assert.equal(form.events.find(p=>p.page_type).page_type,'sale_opening');
+  assert.equal(form.events.some(p=>p.event==='view_item'),false);
+ }finally{form.close();site.close();}
+});
+
+for(const action of ['onReload','retry'])test(`${action} performs full teardown`,async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,back}=await returningPage(t,form);
+  const {DbForms,FormAvailabilityService}=form.win.testModules;
+  if(action==='onReload'){
+   let reload;
+   t.mock.method(FormAvailabilityService,'renderStatus',(_host,_model,_status,context)=>{context.onSaleOpening();reload=context.onReload;return true;});
+   await back();assert.equal(page.measurementSession,form.session);
+   await reload();
+  }else{
+   t.mock.method(DbForms,'getFormByLink',async()=>{throw Error('offline');});
+   let retry;page.renderError=(_message,callback)=>retry=callback;
+   await back();assert.equal(form.session.disposed,true);
+   // Keep an independent live stack to ensure the retry itself tears down,
+   // rather than merely observing disposal by the preceding error screen.
+   page.startMeasurement(form.win.returnModel(form.policy));const before=page.measurementSession;
+   await retry();assert.equal(before.disposed,true);
+  }
+  assert.equal(form.session.disposed,true);
+ }finally{form.close();site.close();}
+});
+
+for(const timing of ['active','ready-during-fetch'])test(`embedded return restores the host dataLayer funnel: ${timing}`,async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);
+  const {page}=form;page.disposeMeasurement();
+  const win=form.win,{EmbedBridge,measurementProtocol}=win.testModules;
+  win.history.replaceState(null,'','/form/test?embed=1');
+  win.ResizeObserver=class {observe(){} disconnect(){}};
+  let host;
+  const frame=site.win.document.createElement('iframe');frame.setAttribute('data-festapp-datalayer','');
+  const record={};const frames=new Map([[frame,record]]);
+  const parent={postMessage:data=>setTimeout(()=>host?.receive(frame,record,structuredClone(data)),0)};
+  Object.defineProperty(win,'parent',{value:parent});
+  const message=(type,values={})=>win.dispatchEvent(new win.MessageEvent('message',{
+   source:parent,origin:HOST,data:{namespace:'festapp-embed',protocol:1,instance:'one',type,...values}}));
+  record.channel={send:(type,values)=>setTimeout(()=>message(type,values),0)};
+  site.win.eval(hostBundle.outputFiles[0].text);
+  host=site.win.createTestHost({frames,currentRecord:(f,r)=>frames.get(f)===r,disposeRecord:()=>{},scan:()=>{},consentSource:site.registry});
+  const bridge=page.embedBridge=new EmbedBridge(win);bridge.start();
+  message('init',{viewportHeight:600,dataLayer:true,measurementProtocol});
+  page.startMeasurement(win.returnModel(form.policy));form.session=page.measurementSession;
+  await settle(120);assert.equal(form.session.state,'active');
+  const {back}=await returningPage(t,form);
+  let release;
+  if(timing==='ready-during-fetch')t.mock.method(win.testModules.DbForms,'getFormByLink',()=>new Promise(resolve=>release=resolve));
+  page.analytics.page('confirmation');await settle();site.win.dataLayer=[];
+  await back();
+  if(release){
+   assert.equal(page.analytics,null);assert.equal(form.session.state,'active');
+   release(win.returnModel(form.policy));await settle(80);
+  }
+  const returned=JSON.parse(JSON.stringify(site.win.dataLayer));
+  assert.deepEqual(returned.filter(p=>p.event).map(p=>p.event),['form_page_view','view_item']);
+  assert.equal(returned.find(p=>p.event==='form_page_view').page_type,'product');
+  assert.equal(page.analytics.previous[0].quantity,1);
+  page.analytics.observe(page.currentSession);await settle();
+  assert.equal(site.win.dataLayer.some(p=>p.event==='add_to_cart'),false);
+  // Compare with main's full-teardown behavior over the same real bridge and host adapter.
+  t.mock.method(win.testModules.DbForms,'getFormByLink',async()=>win.returnModel(form.policy));
+  site.win.dataLayer=[];
+  await page.init('test',{forceReload:true});await settle(120);
+  assert.deepEqual(JSON.parse(JSON.stringify(site.win.dataLayer)),returned);
+  host.stopHeartbeat(record);
+ }finally{form.close();site.close();}
+});
+
+test('superseding load and dispose prevent a stale RPC or onActive from activating a replacement layer',async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,back}=await returningPage(t,form);
+  let release;
+  t.mock.method(form.win.testModules.DbForms,'getFormByLink',()=>new Promise(resolve=>release=resolve));
+  await back();const oldActive=form.session.onActive;
+  t.mock.method(form.win.testModules.DbForms,'getFormByLink',async()=>null);
+  await page.init('another',{forceReload:true});
+  form.events.length=0;release(form.win.returnModel(form.policy));oldActive();await settle();
+  assert.equal(page.analytics,null);assert.equal(page.measurementSession,null);assert.deepEqual(form.events,[]);
+  page.clear();oldActive();assert.deepEqual(form.events,[]);
+ }finally{form.close();site.close();}
+});
+
+test('a disposed same-link session is never reused',async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page,back}=await returningPage(t,form);
+  form.session.dispose();await back();
+  assert.notEqual(page.measurementSession,form.session);
+  assert.equal(form.session.disposed,true);
+ }finally{form.close();site.close();}
+});
+
+test('entering a waitlist capability route tears down before reading its bundle',async t=>{
+ const site=website();site.choose(both);const form=linkedForm(site,{production:true});
+ try{
+  await ready(form);const {page}=await returningPage(t,form);
+  let read=false;
+  page.waitlistCommands={read:async()=>{
+   read=true;assert.equal(form.session.disposed,true);assert.equal(page.measurementSession,null);
+   throw Error('INVALID_CAPABILITY');
+  }};
+  form.win.history.replaceState(null,'','/order?waitlist=1&order_id=1&token='+'a'.repeat(64));
+  await page.init('test',{forceReload:true,preserveMeasurement:true});
+  assert.equal(read,true);assert.equal(form.session.disposed,true);
+ }finally{form.close();site.close();}
+});
+
+test('Back to form fetches the new Meta notice revision for the real preview and rejects stale checkout matching',async t=>{
+ const site=website(),binding={id:'00000000-0000-4000-8000-000000000001',version:1};
+ site.registry.connect({read:()=>({consentRevision,analytics:true,marketing:true,binding,
+  purchaseConsent:{source:'complianz',ad_storage:true,ad_user_data:true,ad_personalization:true}}),subscribe:()=>()=>{}});
+ const form=linkedForm(site,{production:true,policy:{...basePolicy(),website_consent_bindings:[{...binding,websiteOrigin:HOST,effective:true}]}});
+ try{
+  await ready(form);
+  const win=form.win,{page}=form;
+  const {FormModel,EmbedBridge,measurementProtocol,SupabaseService,DbForms,FormNetwork}=win.testModules;
+  // Real embed and host adapters provide a nonempty positive matching control;
+  // only RPC/order transport and the isolated measurement iframe are modeled.
+  page.disposeMeasurement();win.history.replaceState(null,'','/form/test?embed=1');
+  win.ResizeObserver=class {observe(){} disconnect(){}};
+  let host;
+  const frame=site.win.document.createElement('iframe');frame.setAttribute('data-festapp-datalayer','');
+  const record={},frames=new Map([[frame,record]]),matchingRequests=[];
+  const parent={postMessage:data=>setTimeout(()=>{
+   if(data.type==='meta-checkout-matching-request')matchingRequests.push(structuredClone(data.matchingRequest));
+   host?.receive(frame,record,structuredClone(data));
+  },0)};
+  Object.defineProperty(win,'parent',{value:parent});
+  const message=(type,values={})=>win.dispatchEvent(new win.MessageEvent('message',{
+   source:parent,origin:HOST,data:{namespace:'festapp-embed',protocol:1,instance:'one',type,...values}}));
+  record.channel={send:(type,values)=>setTimeout(()=>message(type,values),0)};
+  site.win.eval(hostBundle.outputFiles[0].text);
+  host=site.win.createTestHost({frames,currentRecord:(f,r)=>frames.get(f)===r,disposeRecord:()=>{},scan:()=>{},consentSource:site.registry});
+  page.embedBridge=new EmbedBridge(win);page.embedBridge.start();
+  message('init',{viewportHeight:600,dataLayer:true,measurementProtocol});
+  page.startMeasurement(win.returnModel(form.policy));form.session=page.measurementSession;
+  await settle(120);assert.equal(form.session.state,'active');
+  await returningPage(t,form);
+  delete page.renderForm; // Exercise production renderForm, including metaPurchaseNotice.
+  const model=()=>new FormModel({id:1,key:'test-key',link:'test',title:'Letní koncert',is_open:true,
+   fields:[],data:{analytics:form.policy}});
+  t.mock.method(DbForms,'getFormByLink',async()=>model());
+  let revision='b'.repeat(32),noticeReads=0;
+  t.mock.method(SupabaseService,'publicCheckoutRpc',async(name,args)=>{
+   assert.equal(name,'get_meta_purchase_consent');assert.equal(args.p_form_link,'test');noticeReads++;
+   return {data:{revision,origin:HOST}};
+  });
+  const payloads=[];
+  t.mock.method(FormNetwork,'submitOrder',async(payload,options)=>{
+   assert.equal(options.canSendMetaPurchaseConsent(),true);payloads.push(structuredClone(payload));
+   return {success:true,data:{orderOverviewUrl:PRODUCT+'/order?order_id='+payloads.length+'&token='+'a'.repeat(64)}};
+  });
+  const waitFor=async predicate=>{
+   for(let i=0;i<100&&!predicate();i++)await settle(10);
+   assert.ok(predicate(),'expected checkout UI/state to settle');
+  };
+  const submitPreview=async()=>{
+   const checkout=page.host.querySelector('form');assert.ok(checkout);
+   await page.handlePreview(checkout,page.currentSession.formModel);
+   await waitFor(()=>win.document.querySelector('#order-preview-overlay .btn-submit-order'));
+   win.document.querySelector('#order-preview-overlay .btn-submit-order').click();
+   await waitFor(()=>win.document.querySelector('.fullscreen-result-overlay .btn-back-to-form'));
+  };
+  const oldMatching='fb.1.1700000000000.first';
+  site.win.document.cookie='_fbp='+oldMatching+';path=/';
+  page.renderForm(model(),false);
+  await page.metaPurchaseNotice.choice;
+  const firstModel=page.currentSession.formModel;
+  assert.equal(page.metaPurchaseNotice.model,firstModel);
+  await submitPreview();
+  const firstSnapshot=payloads[0].metaPurchaseConsent;
+  assert.equal(firstSnapshot.revision,'b'.repeat(32));assert.equal(firstSnapshot.matching.fbp,oldMatching);
+  const retained=page.measurementSession,readsBeforeBack=noticeReads;
+  revision='c'.repeat(32);
+  const newMatching='fb.1.1700000000001.second';
+  site.win.document.cookie='_fbp='+newMatching+';path=/';
+  win.document.querySelector('.fullscreen-result-overlay .btn-back-to-form').click();
+  await waitFor(()=>page.currentSession?.formModel!==firstModel&&page.metaPurchaseNotice?.model===page.currentSession?.formModel);
+  assert.equal((await page.metaPurchaseNotice.choice).revision,revision);
+  assert.ok(noticeReads>readsBeforeBack,'return fetched a fresh notice through real DbForms');
+  assert.equal(page.measurementSession,retained);
+  const beforeStale=matchingRequests.length;
+  const rejected=await page.collectMetaCheckoutMatching(page.currentSession.formModel,firstSnapshot);
+  assert.deepEqual(JSON.parse(JSON.stringify(rejected)),{});
+  assert.equal(matchingRequests.length,beforeStale,'old revision is rejected before requesting host identifiers');
+  await submitPreview();
+  assert.equal(payloads.length,2);
+  assert.equal(payloads[1].metaPurchaseConsent.revision,revision);
+  assert.equal(payloads[1].metaPurchaseConsent.matching.fbp,newMatching);
+  assert.notEqual(payloads[1].metaPurchaseConsent.matching.fbp,oldMatching);
+  assert.deepEqual(matchingRequests.map(request=>request.revision),['b'.repeat(32),'c'.repeat(32)]);
+  host.stopHeartbeat(record);
+ }finally{form.close();site.close();}
 });
