@@ -54,6 +54,8 @@ BEGIN
      UPDATE public.notification_center_recipients SET view_applied_revision=e.view_revision,view_required_revision=e.view_revision WHERE event_id=e.id AND recipient=s.recipient;
      s.cursor_sequence:=d.sequence;n:=n+1;
     END LOOP;
+    -- Deletions leave gaps below the locked allocator high-water mark.
+    IF n<budget THEN s.cursor_sequence:=personal.last_delivery_sequence; END IF;
     UPDATE public.notification_center_projection_scopes SET cursor_sequence=s.cursor_sequence,prepared_sequence=s.cursor_sequence,
      phase=CASE WHEN s.cursor_sequence>=personal.last_delivery_sequence THEN 'ready' ELSE 'backfill' END,
      applied_read_revision=CASE WHEN pending_groups=0 THEN personal.view_read_revision ELSE applied_read_revision END,
@@ -130,6 +132,7 @@ BEGIN
       UPDATE public.notification_center_recipients SET view_applied_revision=e.view_revision,view_required_revision=e.view_revision WHERE event_id=e.id AND recipient=s.recipient;
       s.prepared_sequence:=d.sequence;n:=n+1;
      END LOOP;
+     IF n<budget THEN s.prepared_sequence:=personal.last_delivery_sequence; END IF;
      UPDATE public.notification_center_projection_scopes SET prepared_sequence=s.prepared_sequence WHERE organization=s.organization AND recipient=s.recipient;
      processed:=processed+greatest(n,1);
     ELSE

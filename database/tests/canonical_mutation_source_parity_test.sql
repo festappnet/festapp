@@ -2050,8 +2050,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_email(uuid,uuid,jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='e46c92109d85c8eee969a182a952ef1d'),'current SQL source parity: public.prepare_email(uuid,uuid,jsonb,jsonb)');
 -- supabase/migrations/20261121100000_form_measurement_publisher.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_meta_purchase_delivery(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='4e74cb100fd9ff1da3ec63f59365c9ed'),'current SQL source parity: public.prepare_meta_purchase_delivery(bigint,uuid)');
--- supabase/baseline/20261107170000_schema.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_notification_center(integer)') AND md5(btrim(prosrc,E' \n\r\t'))='29ccf7bfdb39aedff8af3ed9760d98ac'),'current SQL source parity: public.prepare_notification_center(integer)');
+-- supabase/migrations/20261122135000_settle_sparse_notification_projections.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_notification_center(integer)') AND md5(btrim(prosrc,E' \n\r\t'))='21b3166b0671c2a456b8f49660025e11'),'current SQL source parity: public.prepare_notification_center(integer)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.prepare_notification_center_views(integer)') AND md5(btrim(prosrc,E' \n\r\t'))='cbb56f4b716773d116fbbd7dad266eee'),'current SQL source parity: public.prepare_notification_center_views(integer)');
 -- supabase/migrations/20261115130000_customer_order_policy_foundation.sql

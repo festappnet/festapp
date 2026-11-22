@@ -51,4 +51,24 @@ BEGIN
  PERFORM public.prepare_notification_center_views(100);
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.notification_center_views WHERE token=(v->>'viewToken')::uuid AND expires_at<=clock_timestamp()),'bounded worker reclaims expired leases');
 END $$;
+DO $$
+DECLARE
+ org bigint;
+ backfill_recipient uuid:=gen_random_uuid();
+ ready_recipient uuid:=gen_random_uuid();
+BEGIN
+ INSERT INTO public.organizations(title) VALUES('Sparse notification sequences') RETURNING id INTO org;
+ -- The allocator retains its high-water mark after the final deliveries are deleted.
+ INSERT INTO public.notification_center_user_state(organization,recipient,last_delivery_sequence)
+ VALUES(org,backfill_recipient,3),(org,ready_recipient,3);
+ INSERT INTO public.notification_center_projection_scopes(
+  organization,recipient,phase,build_revision,cursor_sequence,prepared_sequence,privacy)
+ VALUES
+  (org,backfill_recipient,'backfill',1,1,1,public.notification_center_prepared_privacy(org)),
+  (org,ready_recipient,'ready',1,1,1,public.notification_center_prepared_privacy(org));
+ PERFORM public.prepare_notification_center(100);
+ PERFORM assert_eq((SELECT count(*) FROM public.notification_center_projection_scopes
+  WHERE organization=org AND phase='ready' AND prepared_sequence=3 AND NOT work_requested
+    AND next_check_at='infinity'::timestamptz),2::bigint,'deleted tail sequences let both projection phases settle');
+END $$;
 ROLLBACK;
