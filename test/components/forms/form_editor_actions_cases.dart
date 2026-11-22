@@ -561,8 +561,10 @@ void main() {
           final field = FormFieldDraft(
             productType: ProductTypeModel(
               products: [
-                ProductModel(currencyCode: 'CZK'),
-                ProductModel(currencyCode: 'EUR'),
+                ProductModel(currencyCode: 'CZK', price: 100),
+                ProductModel(currencyCode: 'EUR', price: 10),
+                ProductModel(currencyCode: 'PLN', price: 0),
+                ProductModel(currencyCode: 'USD', price: 10, isHidden: true),
               ],
             ),
           );
@@ -611,26 +613,13 @@ void main() {
             ),
             findsOneWidget,
           );
-          final guidance = tester.widget<Text>(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget is Text &&
-                  widget.textSpan?.toPlainText() ==
-                      (canManage
-                          ? BankAccountStrings.addAccountForPayments
-                          : BankAccountStrings.askManagerForPaymentAccount),
+          expect(
+            find.widgetWithText(
+              TextButton,
+              BankAccountStrings.bankAccountSettingsTitle,
             ),
+            canManage ? findsOneWidget : findsNothing,
           );
-
-          final links = (guidance.textSpan! as TextSpan).children!
-              .whereType<TextSpan>()
-              .where((span) => span.recognizer != null);
-          expect(links.length, canManage ? 1 : 0);
-          if (canManage) {
-            expect(links.single.text, BankAccountStrings.organizationSettings);
-            expect(links.single.style?.decoration, TextDecoration.underline);
-          }
-          expect(find.text('Spravovat účty'), findsNothing);
           await _environment.pumpWidget(tester, const SizedBox.shrink());
         },
       );

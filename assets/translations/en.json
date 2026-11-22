@@ -2333,6 +2333,13 @@
     "processingCompletedTitle": "Completed"
   },
   "BankAccount": {
+    "formAccountDefaultPlain": "By organization order",
+    "formAccountLabel": "Account for bank transfers",
+    "formAccountDefault": "By organization order (currently: {account})",
+    "formAccountNone": "no eligible account",
+    "formAccountUnavailable": "Selected account unavailable ({account})",
+    "formAccountUnavailableHelp": "This account is unavailable for these currencies. If it is no longer linked, saving clears the selection and restores organization order. Otherwise, select a compatible account.",
+    "formAccountOrderHelp": "Forms without a selected account use the first account supporting the payment currency, in organization order. To change the order, use the drag handle or the arrow buttons.",
     "organizationSettings": "organization settings",
     "settingsTitle": "Bank Account Settings",
     "generalTab": "General",

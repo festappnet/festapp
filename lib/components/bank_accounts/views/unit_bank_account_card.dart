@@ -15,6 +15,9 @@ class UnitBankAccountCard extends StatelessWidget {
   final VoidCallback? onOpen;
   final VoidCallback? onHistory;
   final VoidCallback? onUnlink;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
+  final bool reordering;
   final Widget? selection;
   final bool showSyncHelp;
 
@@ -26,6 +29,9 @@ class UnitBankAccountCard extends StatelessWidget {
     this.onOpen,
     this.onHistory,
     this.onUnlink,
+    this.onMoveUp,
+    this.onMoveDown,
+    this.reordering = false,
     this.selection,
     this.showSyncHelp = true,
   });
@@ -33,8 +39,13 @@ class UnitBankAccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final actions = Row(
-      mainAxisSize: MainAxisSize.min,
+    final canReorder = selection == null && RightsService.hasCapability(
+      AuthorizationCapabilities.bankAccountsUnitManage,
+    );
+    final localizations = MaterialLocalizations.of(context);
+    final actions = Wrap(
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (selection != null) selection!,
         if (onHistory != null) IconButton(tooltip: BankAccountStrings.bankAccount, icon: const Icon(Icons.history), onPressed: onHistory),
@@ -58,14 +69,25 @@ class UnitBankAccountCard extends StatelessWidget {
             icon: const Icon(Icons.link_off),
             onPressed: onUnlink,
           ),
-        if (selection == null &&
-            RightsService.hasCapability(
-                AuthorizationCapabilities.bankAccountsUnitManage))
+        if (canReorder && (onMoveUp != null || onMoveDown != null)) ...[
+          IconButton(
+            tooltip: localizations.reorderItemUp,
+            icon: const Icon(Icons.arrow_upward),
+            onPressed: reordering ? null : onMoveUp,
+          ),
+          IconButton(
+            tooltip: localizations.reorderItemDown,
+            icon: const Icon(Icons.arrow_downward),
+            onPressed: reordering ? null : onMoveDown,
+          ),
+        ],
+        if (canReorder)
           ReorderableDragStartListener(
+            enabled: !reordering,
             index: index,
             child: const SizedBox(
-              width: 40,
-              height: 40,
+              width: 48,
+              height: 48,
               child: DragHandleDots(),
             ),
           ),

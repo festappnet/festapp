@@ -3452,6 +3452,7 @@
     "test/components/eshop/ticket_delivery_request_test.dart",
     "test/components/fonts/ticket_font_recovery_test.dart",
     "test/components/forms/card_payment_status_test.dart",
+    "test/components/forms/form_bank_account_picker_test.dart",
     "test/components/images/image_upload_contract_test.dart",
     "test/components/navigation/admin_breadcrumb_navigation_test.dart",
     "test/components/navigation/help_occasion_picker_test.dart",
