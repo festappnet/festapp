@@ -157,7 +157,11 @@ class SupabaseBankAccounts {
     );
     final accounts = (response as List)
         .map((e) => BankAccountModel.fromJson(e))
-        .toList();
+        .toList()
+      ..sort((first, second) {
+        final priority = first.priority.compareTo(second.priority);
+        return priority == 0 ? first.id.compareTo(second.id) : priority;
+      });
     for (final account in accounts) {
       _accountUnitContexts[account.id] = unitId;
     }
@@ -235,6 +239,17 @@ class SupabaseBankAccounts {
   Future<List<BankAccountModel>> getLinkableBankAccounts(int unitId) async {
     final response = await _rpc('get_linkable_bank_accounts', params: {'p_unit_id': unitId});
     return (response as List).map((e) => BankAccountModel.fromJson(e)).toList();
+  }
+
+  Future<void> reorderUnitBankAccounts(
+    int unitId,
+    List<int> expectedOrder,
+    List<int> accountOrder,
+  ) async {
+    await _bankCommand('reorder', {
+      'expectedOrder': expectedOrder,
+      'accountOrder': accountOrder,
+    }, unitId: unitId);
   }
 
   Future<void> linkBankAccountToUnit(

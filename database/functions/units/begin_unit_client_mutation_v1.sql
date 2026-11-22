@@ -25,7 +25,7 @@ BEGIN
        WHEN p_command_name='unit.order_history.delete' THEN public.can_manage_unit_configuration(p_unit) AND NOT public.is_demo_unit(p_unit)
        WHEN p_command_name='unit.delete' THEN public.can_manage_unit_configuration(p_unit) AND NOT public.is_demo_unit(p_unit)
        WHEN p_command_name IN ('unit.legal.save','unit.legal.submit') THEN public.can_manage_unit_legal_profile(p_unit)
-       WHEN p_command_name IN ('unit.bank.save','unit.bank.link','unit.bank.user') THEN public.can_manage_unit_bank_accounts(p_unit)
+       WHEN p_command_name IN ('unit.bank.save','unit.bank.link','unit.bank.user','unit.bank.reorder') THEN public.can_manage_unit_bank_accounts(p_unit)
        WHEN p_command_name='occasion.duplicate' THEN public.can_copy_occasion_target(p_unit)
        ELSE false END) THEN
     RAISE insufficient_privilege USING MESSAGE='invalid unit mutation receipt claim';
