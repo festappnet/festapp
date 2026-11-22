@@ -38,6 +38,15 @@ def dependency_update(check):
             and run.get('head_sha') == check.get('head_sha'))
 
 
+def scheduled_artifact_storage_monitor(check):
+    """Only the repository's scheduled storage monitor, bound to this source."""
+    run = check.get('_workflow_run') or {}
+    return (check.get('name') == 'cleanup'
+            and run.get('path') == '.github/workflows/artifact-retention.yml'
+            and run.get('event') == 'schedule'
+            and run.get('head_sha') == check.get('head_sha'))
+
+
 def problems(checks, required, sha):
     latest = {}
     for check in checks:
@@ -45,6 +54,8 @@ def problems(checks, required, sha):
             continue
         if (check['name'] in INFORMATIONAL_CHECKS and check['name'] not in required
                 and check.get('_workflow_path') == '.github/workflows/measurement-runtime-drift.yml'):
+            continue
+        if check['name'] not in required and scheduled_artifact_storage_monitor(check):
             continue
         if check['name'] not in required and dependency_update(check):
             continue
@@ -68,7 +79,7 @@ def identify_informational_workflows(checks, repository):
     """
     runs_by_suite = {}
     for check in checks:
-        if check.get('name') not in INFORMATIONAL_CHECKS | {'Dependabot'}:
+        if check.get('name') not in INFORMATIONAL_CHECKS | {'Dependabot', 'cleanup'}:
             continue
         check['_workflow_path'] = None
         check['_workflow_run'] = None
