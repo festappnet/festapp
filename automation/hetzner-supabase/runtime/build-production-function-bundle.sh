@@ -69,6 +69,7 @@ if [[ "$EXACT_SHARED_JSON" != null ]]; then SHARED_PLAN="$EXACT_SHARED_JSON"; fi
 if jq -e '.shared_modules | length > 0' <<<"$SHARED_PLAN" >/dev/null; then
   install -d -m 0700 "$STAGE/_shared"
   while IFS= read -r module; do
+    install -d -m 0700 "$STAGE/${module%/*}"
     install -m 0600 "$SOURCE_ROOT/$module" "$STAGE/$module"
   done < <(jq -r '.shared_modules | keys[]' <<<"$SHARED_PLAN")
   PACKAGED_NAMES+=("_shared")

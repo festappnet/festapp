@@ -154,6 +154,18 @@ test('selected shared code cannot pull changed unselected dependencies or a chan
 for (const exact of [false, true]) test(
     `canonical builder packages ${exact ? 'an exact shared replacement' : 'explicit shared code with a Function'} for the pinned base`, t=>{
  const f=fixture(t),repo=join(f.root,'repo'),output=join(f.root,'bundles');
+ const locale='_shared/translations/translations.cs.ts';
+ if (exact) {
+  for (const root of [f.source,f.base]) {
+   mkdirSync(join(root,'_shared/translations'));
+   writeFileSync(join(root,locale),'export const copy = "original";');
+   writeFileSync(join(root,'_shared/translations/translations.en.ts'),'export const copy = "unchanged";');
+  }
+  const current=f.run('inventory',[]);
+  assert.equal(current.status,0,current.stderr);
+  writeFileSync(join(f.root,'base.json'),current.stdout);
+  writeFileSync(join(f.source,locale),'export const copy = "new";');
+ }
  mkdirSync(join(repo,'automation/hetzner-supabase/runtime'),{recursive:true});
  mkdirSync(join(repo,'automation/hetzner-supabase/merge'),{recursive:true});
  mkdirSync(join(repo,'supabase'),{recursive:true});
@@ -169,15 +181,21 @@ for (const exact of [false, true]) test(
  const built=spawnSync('bash',[join(repo,'automation/hetzner-supabase/runtime/build-production-function-bundle.sh')],{
   cwd:repo,encoding:'utf8',env:{...process.env,FESTAPP_FUNCTION_BUNDLE_ACK:'build-reviewed-production-function-bundle',FESTAPP_FUNCTION_BUNDLE_OUTPUT_DIR:output,
    FESTAPP_FUNCTION_BUNDLE_BASE_INVENTORY:join(f.root,'base.json'),
-   ...(exact ? {FESTAPP_FUNCTION_BUNDLE_EXACT_SHARED_MODULES:'_shared/common.ts'} :
+   ...(exact ? {FESTAPP_FUNCTION_BUNDLE_EXACT_SHARED_MODULES:`_shared/common.ts,${locale}`} :
        {FESTAPP_FUNCTION_BUNDLE_FUNCTIONS:'alpha',FESTAPP_FUNCTION_BUNDLE_SHARED_MODULES:'_shared/common.ts'})}});
  assert.equal(built.status,0,built.stderr);
  const run=join(output,readdirSync(output)[0]),manifest=join(run,'manifest.json');
  assert.deepEqual(JSON.parse(readFileSync(manifest,'utf8')).packaged_directories,exact ? ['_shared'] : ['_shared','alpha']);
  const extracted=join(f.root,'extracted');mkdirSync(extracted);
  const untar=spawnSync('tar',['-xzf',join(run,'functions.tar.gz'),'-C',extracted],{encoding:'utf8'});assert.equal(untar.status,0,untar.stderr);
- assert.deepEqual(readdirSync(join(extracted,'_shared')),['common.ts']);
+ assert.deepEqual(readdirSync(join(extracted,'_shared')).sort(),exact ? ['common.ts','translations'] : ['common.ts']);
+ if (exact) assert.deepEqual(readdirSync(join(extracted,'_shared/translations')),['translations.cs.ts']);
  const staged=f.run(exact ? 'stage-exact-shared' : 'stage',['--stage',extracted,'--manifest',manifest]);assert.equal(staged.status,0,staged.stderr);
+ if (exact) {
+  assert.deepEqual(readFileSync(join(extracted,locale)),readFileSync(join(f.source,locale)));
+  assert.deepEqual(readFileSync(join(extracted,'_shared/translations/translations.en.ts')),
+   readFileSync(join(f.base,'_shared/translations/translations.en.ts')));
+ }
  for(const name of ['beta/index.ts','main/index.ts','_shared/unrelated.ts','deno.lock'])
   assert.equal(readFileSync(join(extracted,name),'utf8'),readFileSync(join(f.base,name),'utf8'));
 });
@@ -209,6 +227,9 @@ test('exact shared update preserves worker-only dependencies and every unselecte
     writeFileSync(join(patch, '_shared/unrelated.ts'), 'export const injected = true;');
     assert.match(stageExact().stderr, /unexpected bytes or paths/);
     rmSync(join(patch, '_shared/unrelated.ts'));
+    mkdirSync(join(patch, '_shared/unexpected'));
+    assert.match(stageExact().stderr, /unexpected paths/);
+    rmSync(join(patch, '_shared/unexpected'), { recursive: true });
     writeFileSync(join(f.base, 'main/index.ts'), 'export const router = "newer";');
     assert.match(stageExact().stderr, /tree changed/);
     writeFileSync(join(f.base, 'main/index.ts'), 'export const router = "installed";');
