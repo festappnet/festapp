@@ -3743,6 +3743,7 @@
     "notApplied": "Požiadavka nebola vykonaná. Upravte údaje a skúste ju znova.",
     "prepareTransfer": "Pripraviť prevod",
     "bankManualPrepared": "Údaje k prevodu sú pripravené. QR pre túto menu nie je dostupný. Banka prevod zatiaľ nepotvrdila.",
+    "waitlistNoPayment": "Prihláška je na čakacej listine. Platba zatiaľ nie je potrebná.",
     "ledgerIncomplete": "História platieb nie je úplná. Finančný stav treba overiť.",
     "dispute": "Platobný spor"
   },

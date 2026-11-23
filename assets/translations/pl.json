@@ -3479,6 +3479,7 @@
     "notApplied": "Żądanie nie zostało wykonane. Popraw dane i spróbuj ponownie.",
     "prepareTransfer": "Przygotować przelew",
     "bankManualPrepared": "Dane przelewu są gotowe. QR nie jest dostępny dla tej waluty. Bank nie potwierdził jeszcze przelewu.",
+    "waitlistNoPayment": "Zgłoszenie jest na liście rezerwowej. Na razie nie trzeba płacić.",
     "ledgerIncomplete": "Historia płatności jest niepełna. Stan finansowy wymaga weryfikacji.",
     "dispute": "Spór płatniczy"
   },

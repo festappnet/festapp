@@ -229,9 +229,6 @@ export async function renderWaitlistEmail(
     });
   return {
     prepared,
-    postAction: {
-      tracking_policy: "disabled",
-      ...(offer ? { waitlist_pending_count: context.offeredCount } : {}),
-    },
+    postAction: offer ? { waitlist_pending_count: context.offeredCount } : {},
   };
 }
