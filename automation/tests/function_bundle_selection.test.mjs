@@ -240,3 +240,44 @@ test('exact shared update preserves worker-only dependencies and every unselecte
             readFileSync(join(name === module ? f.source : f.base, name)), name);
     }
 });
+
+test('exact authoring update requires installed canonical artwork and preserves every other file', t => {
+    const f = fixture(t);
+    const module = 'send-custom-email/authoringContext.ts';
+    const resources = [
+        '_shared/qrCodePayment.ts',
+        '_shared/paymentQrArtwork.ts',
+        '_shared/ticket-assets/roboto.ttf',
+    ];
+    for (const root of [f.base, f.source]) {
+        mkdirSync(join(root, '_shared/ticket-assets'));
+        mkdirSync(join(root, 'send-custom-email'));
+        writeFileSync(join(root, module), 'export const original = true;');
+        for (const resource of resources) writeFileSync(join(root, resource), resource);
+    }
+    const installed = f.run('inventory', []);
+    const inventoryPath = join(f.root, 'base.json');
+    writeFileSync(inventoryPath, installed.stdout);
+    const patch = join(f.root, 'authoring-patch');
+    mkdirSync(join(patch, 'send-custom-email'), { recursive: true });
+    const replacement = 'import { Buffer } from "node:buffer";\nimport "../_shared/qrCodePayment.ts";\n';
+    const plan = () => spawnSync('python3', [script, 'plan-exact-shared', '--root', f.source,
+        '--base', inventoryPath, '--shared-modules', module], { encoding: 'utf8' });
+    const stage = content => {
+        for (const root of [f.source, patch]) writeFileSync(join(root, module), content);
+        const result = plan();
+        assert.equal(result.status, 0, result.stderr);
+        writeFileSync(f.manifest, JSON.stringify({ exact_shared_replacement: JSON.parse(result.stdout) }));
+        return f.run('stage-exact-shared', ['--stage', patch, '--manifest', f.manifest]);
+    };
+    assert.match(stage(replacement + 'import "../_shared/unrelated.ts";').stderr, /changes dependencies/);
+    writeFileSync(join(f.source, resources[0]), 'different renderer');
+    assert.match(plan().stderr, /artwork dependencies differ/);
+    writeFileSync(join(f.source, resources[0]), resources[0]);
+    const staged = stage(replacement);
+    assert.equal(staged.status, 0, staged.stderr);
+    for (const name of Object.keys(JSON.parse(installed.stdout).files)) {
+        assert.deepEqual(readFileSync(join(patch, name)),
+            readFileSync(join(name === module ? f.source : f.base, name)), name);
+    }
+});

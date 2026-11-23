@@ -7,6 +7,7 @@ import 'package:fstapp/data_services/authorization_capabilities.dart';
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:festapp_core/email_templates.dart';
 import 'package:super_editor/super_editor.dart';
@@ -67,6 +68,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
   EmailAuthoringContext? _authoringContext;
   late final Future<void> _initialAuthoringContext;
   bool _authoringContextLoading = false;
+  Future<void>? _paymentQrRequest;
+  Uint8List? _paymentQrPng;
   Timer? _suggestTimer;
   bool _dismissSuggestions = false;
   ({
@@ -184,8 +187,36 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
         ? _authoringContext?.walletProviders ?? const {}
         : const {};
     _subjectProvider.scenario = _scenario;
-    _bodyProvider.scenario = _scenario;
+    _bodyProvider
+      ..scenario = _scenario
+      ..imageBytesResolver = _previewImageBytes;
+    _paymentQrPng = null;
+    final sample = _scenario?.paymentQrSample;
+    final loadPaymentQr = _authoringContext?.loadPaymentQr;
+    _paymentQrRequest = sample == null || loadPaymentQr == null
+        ? null
+        : _loadPaymentQr(_scenario!, loadPaymentQr, sample);
   }
+
+  Future<void> _loadPaymentQr(
+    EmailPreviewScenario scenario,
+    Future<Uint8List?> Function(Map<String, Object>) load,
+    Map<String, Object> sample,
+  ) async {
+    try {
+      final png = await load(sample);
+      if (!mounted || !identical(_scenario, scenario)) return;
+      setState(() => _paymentQrPng = png);
+      _bodyDraft?.refreshAuthoringPresentation();
+    } catch (_) {
+      // Keep the template editable if sample artwork is unavailable.
+    }
+  }
+
+  Uint8List? _previewImageBytes(String source) =>
+      source == emailPreviewPaymentQrSource
+          ? _paymentQrPng
+          : _htmlSave.media.previewBytes(source);
 
   void _draftUpdated(RichHtmlEditorController controller) {
     _htmlSave.draftChanged();
@@ -362,6 +393,8 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
       await _loadExamples();
       if (!mounted || _scenario == null) return;
     }
+    await _paymentQrRequest;
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -388,6 +421,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                           final request = _loadAuthoringContext();
                           update(() {});
                           await request;
+                          await _paymentQrRequest;
                           if (context.mounted) update(() {});
                         },
                       ),
@@ -397,7 +431,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                     if (widget.template.code == 'TICKET_ORDER_PAYMENT_DONE')
                       TicketEmailPreview(
                         senderAddress: _authoringContext!.senderAddress,
-                        imageBytesResolver: _htmlSave.media.previewBytes,
+                        imageBytesResolver: _previewImageBytes,
                         sampleCount: _bodyProvider.inlineTicketsEnabled ? 1 : 0,
                         includesPdf: _ticketMode?.includesPdf == true,
                         preview: {
@@ -434,7 +468,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                           _scenario!,
                           _bodyDraft?.html ?? _htmlContent ?? '',
                         ),
-                        imageBytesResolver: _htmlSave.media.previewBytes,
+                        imageBytesResolver: _previewImageBytes,
                       ),
                 ],
               ),
@@ -539,6 +573,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: EmailPreviewHtml(
                 key: const ValueKey('email-automatic-leading'),
+                imageBytesResolver: _previewImageBytes,
                 html: html,
               ),
             );
@@ -569,6 +604,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: EmailPreviewHtml(
               key: const ValueKey('email-automatic-completion'),
+              imageBytesResolver: _previewImageBytes,
               html: automatic,
             ),
           ),

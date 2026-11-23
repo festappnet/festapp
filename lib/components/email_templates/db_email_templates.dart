@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'email_preview_html.dart';
 import 'email_template_commands.dart';
 import '../ticket_layout/ticket_delivery_strings.dart';
 import 'package:fstapp/components/email_templates/email_template_model.dart';
@@ -13,17 +16,7 @@ class DbEmailTemplates {
   static Future<EmailAuthoringContext> getAuthoringContext(
       EmailTemplatesResponse scope, String templateCode) async {
     final occasionId = scope.occasion?.id;
-    final response =
-        await _supabase.functions.invoke('send-custom-email', body: {
-      'action': 'authoringContext',
-      'entityType': occasionId != null ? 'occasion' : 'unit',
-      'entityId': occasionId ?? scope.unit.id,
-      'templateCode': templateCode,
-    });
-    if (response.status != 200 || response.data is! Map) {
-      throw StateError('Email authoring metadata unavailable');
-    }
-    final context = Map<String, dynamic>.from(response.data as Map);
+    final context = await _requestAuthoringContext(scope, templateCode);
     if (occasionId != null &&
         templateCode == 'TICKET_ORDER_PAYMENT_DONE' &&
         context['walletEnabled'] == true) {
@@ -34,7 +27,46 @@ class DbEmailTemplates {
         // Email authoring can still be available without ticket-layout access.
       }
     }
-    return EmailAuthoringContext.fromJson(context);
+    return EmailAuthoringContext.fromJson(
+      context,
+      loadPaymentQr: (sample) => _loadPaymentQr(scope, templateCode, sample),
+    );
+  }
+
+  static Future<Uint8List?> _loadPaymentQr(
+    EmailTemplatesResponse scope,
+    String templateCode,
+    Map<String, Object> sample,
+  ) async {
+    final response = await _requestAuthoringContext(
+      scope, templateCode, paymentQrSample: sample,
+    );
+    return emailPreviewInlinePngs([
+      {
+        'contentId': emailPreviewPaymentQrSource.substring('cid:'.length),
+        'content': response['paymentQrPng'],
+      },
+    ])[emailPreviewPaymentQrSource];
+  }
+
+  static Future<Map<String, dynamic>> _requestAuthoringContext(
+    EmailTemplatesResponse scope,
+    String templateCode, {
+    Map<String, Object>? paymentQrSample,
+  }) async {
+    final occasionId = scope.occasion?.id;
+    final response =
+        await _supabase.functions.invoke('send-custom-email', body: {
+      'action': 'authoringContext',
+      'entityType': occasionId != null ? 'occasion' : 'unit',
+      'entityId': occasionId ?? scope.unit.id,
+      'templateCode': templateCode,
+      if (paymentQrSample != null) 'paymentQrSample': paymentQrSample,
+    });
+    if (response.status != 200 || response.data is! Map) {
+      throw StateError('Email authoring metadata unavailable');
+    }
+    return Map<String, dynamic>.from(response.data as Map);
   }
 
   static Future<Map<String, dynamic>> getTicketDeliveryPreview({
@@ -128,6 +160,7 @@ class EmailAuthoringContext {
   final Set<TicketWalletProvider> walletProviders;
   final String language;
   final String? ticketDeliveryMode;
+  final Future<Uint8List?> Function(Map<String, Object>)? loadPaymentQr;
   const EmailAuthoringContext({
     required this.senderAddress,
     this.wrapperHtml,
@@ -135,15 +168,20 @@ class EmailAuthoringContext {
     this.walletProviders = const {},
     this.language = 'cs',
     this.ticketDeliveryMode,
+    this.loadPaymentQr,
   });
 
-  factory EmailAuthoringContext.fromJson(Map<String, dynamic> json) {
+  factory EmailAuthoringContext.fromJson(
+    Map<String, dynamic> json, {
+    Future<Uint8List?> Function(Map<String, Object>)? loadPaymentQr,
+  }) {
     final sender = json['senderAddress'];
     if (sender is! String || sender.trim().isEmpty) {
       throw const FormatException('Missing canonical sender');
     }
     return EmailAuthoringContext(
       senderAddress: sender,
+      loadPaymentQr: loadPaymentQr,
       wrapperHtml: json['wrapperHtml'] as String?,
       walletProviders: json['walletEnabled'] == true
           ? TicketWalletProvider.ready(json['walletProviders'])

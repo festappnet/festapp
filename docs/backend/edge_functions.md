@@ -200,6 +200,14 @@ hashes; it describes a selected release, not a whole-main runtime. Preserve that
 distinction in receipts. Code activation still requires the standard email
 pause/drain, existing-container reload and health probes.
 
+A bounded authoring release can set
+`FESTAPP_FUNCTION_BUNDLE_EXACT_SHARED_MODULES=send-custom-email/authoringContext.ts`.
+This replaces the existing handler while pinning the complete installed tree.
+The builder checks that the installed payment QR renderer, artwork module and
+Roboto font match canonical source, allowing the pinned earlier QR module
+whose sample artwork uses the same renderer. Staging permits the handler to
+import the installed QR renderer and Deno's built-in Node buffer module.
+
 ### Deliberate Functions environment changes
 
 The normal restart command preserves the existing environment. A reviewed

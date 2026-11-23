@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/email_templates.dart';
@@ -46,6 +48,7 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
   WidgetBuilder? footerBuilder;
   WidgetBuilder? headerBuilder;
   Listenable? previewChanges;
+  Uint8List? Function(String)? imageBytesResolver;
   EmailAuthoringCompletion? Function()? completion;
   @override
   Widget? header(BuildContext context) => headerBuilder?.call(context);
@@ -204,6 +207,7 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
       return value == null
           ? Text(EmailTemplatesStrings.previewUnavailable)
           : EmailPreviewHtml(
+              imageBytesResolver: imageBytesResolver,
               html:
                   scenario?.richCodes.contains(code) == false &&
                       wrapHtml != null

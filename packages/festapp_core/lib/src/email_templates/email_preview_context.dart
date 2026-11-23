@@ -99,6 +99,8 @@ class EmailPreviewContext {
       'preview_price_0': money(zero ? 0 : first.price),
       'preview_price_1': money(zero ? 0 : second.price),
       'preview_total': money(total),
+      'preview_total_number': total.toString(),
+      'preview_deposit_number': deposit.toString(),
       'preview_deposit': money(deposit),
       'preview_remaining': money(total - deposit),
       'preview_previous_price': money(previousSecond),

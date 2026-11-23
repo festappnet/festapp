@@ -447,10 +447,18 @@ void main() {
           previewExamplesLoader: () => examples.future,
           authoringContextLoader: () => metadata.future,
         );
+        final png = base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7QAAAABJRU5ErkJggg==',
+        );
+        final qrSamples = <Map<String, Object>>[];
         void completeMetadata() => metadata.complete(
-          const EmailAuthoringContext(
+          EmailAuthoringContext(
             senderAddress: 'sender@test.invalid',
-            paymentAccounts: [account],
+            paymentAccounts: const [account],
+            loadPaymentQr: (sample) async {
+              qrSamples.add(sample);
+              return png;
+            },
           ),
         );
         void completeExamples() => examples.complete(
@@ -475,10 +483,13 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text(account.accountNumber), findsOneWidget);
         expect(find.text(account.iban), findsOneWidget);
-        expect(
-          tester.widget<EmailPreviewHtml>(find.byType(EmailPreviewHtml)).html,
-          contains(account.iban),
+        final preview = tester.widget<EmailPreviewHtml>(
+          find.byType(EmailPreviewHtml),
         );
+        expect(preview.html, contains(account.iban));
+        expect(qrSamples.single['accountNumber'], account.accountNumber);
+        expect(qrSamples.single['amount'], 800);
+        expect(preview.imageBytesResolver!(emailPreviewPaymentQrSource), png);
         final body = tester
             .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
             .last
