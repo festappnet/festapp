@@ -109,6 +109,14 @@ test('SDK fixes origin, paces concurrent calls, sanitizes errors and never retri
     await assert.rejects(sdk('/test','POST',{}),/outcome unknown/);assert.equal(calls,1);
     assert.throws(()=>createSdk({...app,zone:'evil.invalid'},'SECRET'));
     assert.throws(()=>sdk('//evil.invalid'));
+    const markdown='# App\n';
+    const docs=createSdk(app,'SECRET',{paceMs:0,fetchImpl:async(_url,init)=>{
+        assert.equal(init.headers['content-type'],'text/markdown');
+        assert.equal(init.body,markdown);
+        return Response.json({changed:true});
+    }});
+    assert.throws(()=>docs('/wrong','PUT',markdown,{markdown:true}));
+    assert.deepEqual(await docs('/sdk/apps/'+app.name+'/1/readme','PUT',markdown,{markdown:true}),{changed:true});
     let active=0,max=0;const paced=createSdk(app,'SECRET',{paceMs:0,fetchImpl:async()=>{active++;max=Math.max(max,active);await new Promise(r=>setTimeout(r,5));active--;return Response.json({ok:true});}});
     await Promise.all([paced('/one'),paced('/two')]);assert.equal(max,1);
 });
@@ -141,9 +149,11 @@ test('SDK timeout aborts once and never exposes transport details', async () => 
 test('reviewer guards fail closed on foreign ownership or schedules; cleanup failure remains explicit', async () => {
     const context=await json('src/reviewer.json');
     const response=path=>path.startsWith('/organizations/')?{organization:{productName:'Free',autoPurchasingActivated:false}}:
-        path.startsWith('/connections/')?{connection:{teamId:app.teamId,organizationId:app.organizationId,authorId:context.ownerId}}:
+        path.endsWith('/test')?{verified:true}:
+        path.startsWith('/connections/')?{connection:{teamId:app.teamId,organizationId:app.organizationId,authorId:context.ownerId,accountName:'app#'+app.name,accountType:'oauth',expire:new Date(Date.now()+60_000).toISOString()}}:
         {scenario:{id:Number(path.split('/')[2]),teamId:app.teamId,createdByUser:{id:context.ownerId},isActive:false,scheduling:{type:'on-demand'}}};
     await assertReviewerContext(async path=>response(path),app,context);
+    await assert.rejects(assertReviewerContext(async path=>path.endsWith('/test')?{verified:false}:response(path),app,context),/did not pass Make verification/);
     for(const foreign of ['owner','team','schedule'])await assert.rejects(assertReviewerContext(async path=>{
         const r=response(path);if(r.scenario){if(foreign==='owner')r.scenario.createdByUser.id++;if(foreign==='team')r.scenario.teamId++;if(foreign==='schedule')r.scenario.scheduling.type='daily';}return r;
     },app,context));

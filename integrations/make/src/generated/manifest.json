@@ -17,7 +17,7 @@
     "supportEmail": "info@festapp.net",
     "apiDocumentation": "https://api.vstupenky.online/integrations/v1/profiles/order-summary/docs/"
   },
-  "readmeSha256": "44ec0c1a6488e28f03900ba01db2035f479db530292e752907d01d2d85f2a9fd",
+  "readmeSha256": "6781058998affd3e8cfab1c5f25bf58e271ed17a2ef1d57364ee37b5c505fd8b",
   "logoSha256": "dcc27cfe54f914d61133fc01329470b2fd1863fec5a4bb79ba2290e844f63df8",
   "modules": [
     "listOccasions",
