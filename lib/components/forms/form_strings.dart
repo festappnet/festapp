@@ -307,6 +307,17 @@ class FormStrings {
   static String get embedTitle => 'FeatureFormSettings.embedTitle'.tr();
   static String get embedFallback => 'FeatureFormSettings.embedFallback'.tr();
   static String get embedHelp => 'FeatureFormSettings.embedHelp'.tr();
+  static String get embedDisplay => 'FeatureFormSettings.embedDisplay'.tr();
+  static String get embedScriptHint =>
+      'FeatureFormSettings.embedScriptHint'.tr();
+  static String get embedTracking => 'FeatureFormSettings.embedTracking'.tr();
+  static String get embedHostHint => 'FeatureFormSettings.embedHostHint'.tr();
+  static String get embedOrganizerHint =>
+      'FeatureFormSettings.embedOrganizerHint'.tr();
+  static String get embedConversionHint =>
+      'FeatureFormSettings.embedConversionHint'.tr();
+  static String get embedPreview => 'FeatureFormSettings.embedPreview'.tr();
+  static String get embedCopy => 'FeatureFormSettings.embedCopy'.tr();
   static String get embedSaveFirst => 'FeatureFormSettings.embedSaveFirst'.tr();
   static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
   static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
@@ -599,7 +610,8 @@ class FormStrings {
       'FeatureFormSettings.endedWithTime'.tr(
         namedArgs: {'time': time},
       ); // "Ended (Closed: {time})"
-  static String get formOpenMessage => 'FeatureFormSettings.formOpenMessage'.tr();
+  static String get formOpenMessage =>
+      'FeatureFormSettings.formOpenMessage'.tr();
   static String get scheduleAndLimits =>
       'FeatureFormSettings.scheduleAndLimits'.tr(); // "Schedule & Limits"
   static String get autoOpenHelp =>

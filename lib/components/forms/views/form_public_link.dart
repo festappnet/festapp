@@ -170,6 +170,7 @@ class _EmbedDialogState extends State<_EmbedDialog> {
   bool automatic = true;
   bool hostDataLayer = true;
   bool importEnabled = false;
+  bool trackingExpanded = false;
   final _consentExport = TextEditingController();
   @override
   void dispose() {
@@ -197,95 +198,169 @@ class _EmbedDialogState extends State<_EmbedDialog> {
             consentExport: importEnabled ? _consentExport.text : null,
           )
         : null;
+    final theme = Theme.of(context);
+    final hintStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return AppAlertDialog(
       title: Text(FormStrings.embedAction),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       content: SizedBox(
-        width: 600,
+        width: 440,
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(FormStrings.embedHelp),
-              Text(FormStrings.embedInheritStyleHelp),
-              if (widget.onOpenAppearance != null)
-                TextButton.icon(
-                  key: const ValueKey('embed-open-appearance'),
-                  icon: const Icon(Icons.palette_outlined),
-                  label: Text(FormStrings.embedOpenAppearance),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    widget.onOpenAppearance!();
-                  },
-                ),
-              const SizedBox(height: 12),
-              DropdownButton<bool>(
-                value: automatic,
-                isExpanded: true,
-                items: [
-                  DropdownMenuItem(
-                    value: true,
-                    child: Text(FormStrings.embedAutomatic),
+              const SizedBox(height: 16),
+              ExpansionTile(
+                key: const ValueKey('embed-display'),
+                tilePadding: EdgeInsets.zero,
+                title: Text(FormStrings.embedDisplay),
+                children: [
+                  DropdownButton<bool>(
+                    value: automatic,
+                    isExpanded: true,
+                    items: [
+                      DropdownMenuItem(
+                        value: true,
+                        child: Text(FormStrings.embedAutomatic),
+                      ),
+                      DropdownMenuItem(
+                        value: false,
+                        child: Text(FormStrings.embedFixed),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => automatic = value);
+                    },
                   ),
-                  DropdownMenuItem(
-                    value: false,
-                    child: Text(FormStrings.embedFixed),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(FormStrings.embedScriptHint, style: hintStyle),
                   ),
+                  if (widget.onOpenAppearance != null)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        key: const ValueKey('embed-open-appearance'),
+                        icon: const Icon(Icons.palette_outlined),
+                        label: Text(FormStrings.embedOpenAppearance),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          widget.onOpenAppearance!();
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 8),
                 ],
-                onChanged: (value) {
-                  if (value != null) setState(() => automatic = value);
-                },
               ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                key: const ValueKey('embed-host-datalayer'),
-                title: Text(FormStrings.embedHostDataLayer),
-                value: hostDataLayer,
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-                onChanged: (value) {
-                  if (value != null) setState(() => hostDataLayer = value);
-                },
-              ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                key: const ValueKey('embed-consent-import'),
-                title: Text(FormStrings.cmsEnableImport),
-                value: importEnabled,
-                onChanged: (value) =>
-                    setState(() => importEnabled = value == true),
-              ),
-              if (importEnabled) ...[
-                TextField(
-                  key: const ValueKey('embed-consent-export'),
-                  controller: _consentExport,
-                  minLines: 3,
-                  maxLines: 6,
-                  maxLength: 16384,
-                  decoration: InputDecoration(
-                    labelText: FormStrings.cmsImportLabel,
-                    helperText: FormStrings.cmsHtmlImportHelp,
-                    helperMaxLines: 6,
-                    errorText: importValid
-                        ? null
-                        : FormStrings.cmsImportInvalid,
-                    border: const OutlineInputBorder(),
+              ExpansionTile(
+                key: const ValueKey('embed-tracking'),
+                tilePadding: EdgeInsets.zero,
+                title: Text(FormStrings.embedTracking),
+                subtitle: !valid && !trackingExpanded
+                    ? Text(
+                        FormStrings.cmsImportInvalid,
+                        style: TextStyle(color: theme.colorScheme.error),
+                      )
+                    : null,
+                onExpansionChanged: (expanded) =>
+                    setState(() => trackingExpanded = expanded),
+                children: [
+                  CheckboxListTile(
+                    key: const ValueKey('embed-host-datalayer'),
+                    title: Text(FormStrings.embedHostDataLayer),
+                    value: hostDataLayer,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (value) {
+                      if (value != null) setState(() => hostDataLayer = value);
+                    },
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (code != null) SelectableText(code),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      hostDataLayer
+                          ? FormStrings.embedHostHint
+                          : FormStrings.embedOrganizerHint,
+                      style: hintStyle,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      FormStrings.embedConversionHint,
+                      style: hintStyle,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    key: const ValueKey('embed-consent-import'),
+                    title: Text(FormStrings.cmsEnableImport),
+                    value: importEnabled,
+                    onChanged: (value) =>
+                        setState(() => importEnabled = value == true),
+                  ),
+                  if (importEnabled) ...[
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        FormStrings.cmsHtmlImportHelp,
+                        style: hintStyle,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      key: const ValueKey('embed-consent-export'),
+                      controller: _consentExport,
+                      minLines: 2,
+                      maxLines: 4,
+                      maxLength: 16384,
+                      decoration: InputDecoration(
+                        labelText: FormStrings.cmsImportLabel,
+                        errorText: _consentExport.text.isEmpty || importValid
+                            ? null
+                            : FormStrings.cmsImportInvalid,
+                        errorMaxLines: 3,
+                        border: const OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                ],
+              ),
               if (code != null)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: CopyButton(value: code),
+                ExpansionTile(
+                  key: const ValueKey('embed-preview'),
+                  tilePadding: EdgeInsets.zero,
+                  title: Text(FormStrings.embedPreview),
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child: SelectableText(
+                        code,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
             ],
           ),
         ),
       ),
+      actions: [
+        CopyButton(value: code ?? '', primaryLabel: FormStrings.embedCopy),
+      ],
     );
   }
 }
