@@ -192,6 +192,8 @@ void main() {
     () => _environment,
     'embed dialog preserves appearance and independently controls sizing and measurement',
     (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 720));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       await _environment.pumpWidget(
         tester,
         const MaterialApp(
@@ -207,6 +209,18 @@ void main() {
           .widgetList<CopyButton>(find.byType(CopyButton))
           .singleWhere((button) => button.value.contains('<iframe'))
           .value;
+      expect(find.byType(CheckboxListTile), findsNothing);
+      expect(find.text(FormStrings.embedCopy), findsOneWidget);
+      expect(find.text(copiedCode()), findsNothing);
+      await tester.tap(find.text(FormStrings.embedPreview));
+      await tester.pumpAndSettle();
+      expect(find.text(copiedCode()), findsOneWidget);
+      await tester.tap(find.text(FormStrings.embedPreview));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.embedTracking));
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.embedHostHint), findsOneWidget);
+      expect(find.text(FormStrings.embedConversionHint), findsOneWidget);
       expect(find.byType(CheckboxListTile), findsNWidgets(2));
       expect(find.text(FormStrings.embedInheritStyle), findsNothing);
       expect(copiedCode(), isNot(contains('data-festapp-style')));
@@ -214,6 +228,24 @@ void main() {
       final measurement = find.byKey(const ValueKey('embed-host-datalayer'));
       expect(find.text(FormStrings.embedHostDataLayer), findsOneWidget);
       expect(tester.widget<CheckboxListTile>(measurement).value, isTrue);
+      final importToggle = find.byKey(const ValueKey('embed-consent-import'));
+      await tester.ensureVisible(importToggle);
+      await tester.tap(importToggle);
+      await tester.pumpAndSettle();
+      final copyAction = find.widgetWithText(
+        FilledButton,
+        FormStrings.embedCopy,
+      );
+      expect(tester.widget<FilledButton>(copyAction).onPressed, isNull);
+      final exportField = find.byKey(const ValueKey('embed-consent-export'));
+      await tester.ensureVisible(exportField);
+      await tester.enterText(exportField, '{');
+      await tester.pumpAndSettle();
+      expect(find.text(FormStrings.cmsImportInvalid), findsOneWidget);
+      await tester.ensureVisible(importToggle);
+      await tester.tap(importToggle);
+      await tester.pumpAndSettle();
+      expect(tester.widget<FilledButton>(copyAction).onPressed, isNotNull);
       final hostCode = copiedCode();
       await tester.ensureVisible(measurement);
       await tester.tap(measurement);
@@ -223,6 +255,11 @@ void main() {
         copiedCode(),
         hostCode.replaceFirst(' data-festapp-datalayer', ''),
       );
+      expect(find.text(FormStrings.embedOrganizerHint), findsOneWidget);
+      final display = find.text(FormStrings.embedDisplay);
+      await tester.ensureVisible(display);
+      await tester.tap(display);
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.byType(DropdownButton<bool>));
       await tester.tap(find.byType(DropdownButton<bool>));
       await tester.pumpAndSettle();
@@ -270,6 +307,8 @@ void main() {
         ),
       );
       await tester.tap(find.text(FormStrings.embedAction));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.embedDisplay));
       await tester.pumpAndSettle();
       final openAppearance = find.byKey(
         const ValueKey('embed-open-appearance'),

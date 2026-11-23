@@ -10,7 +10,13 @@ import 'common_strings.dart';
 class CopyButton extends StatefulWidget {
   final String value;
   final bool showLabel;
-  const CopyButton({super.key, required this.value, this.showLabel = false});
+  final String? primaryLabel;
+  const CopyButton({
+    super.key,
+    required this.value,
+    this.showLabel = false,
+    this.primaryLabel,
+  });
 
   /// Canonical clipboard action for widgets and menu commands. Returns true
   /// only after a successful system write; denied access offers manual copying.
@@ -100,6 +106,16 @@ class _CopyButtonState extends State<CopyButton> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final label = _copied
+        ? CommonStrings.copied
+        : widget.primaryLabel ?? CommonStrings.copy;
+    if (widget.primaryLabel != null) {
+      return FilledButton.icon(
+        onPressed: widget.value.isEmpty ? null : _copy,
+        icon: Icon(_copied ? Icons.check : Icons.copy, size: 18),
+        label: Text(label),
+      );
+    }
     return Tooltip(
       key: _tooltipKey,
       message: _copied ? CommonStrings.copied : CommonStrings.copy,
