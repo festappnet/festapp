@@ -17,7 +17,7 @@
     "supportEmail": "info@festapp.net",
     "apiDocumentation": "https://api.vstupenky.online/integrations/v1/profiles/order-summary/docs/"
   },
-  "readmeSha256": "6781058998affd3e8cfab1c5f25bf58e271ed17a2ef1d57364ee37b5c505fd8b",
+  "readmeSha256": "7ab6320bf15860f12340b12bdcb23ab469dd709e7e36741cd4716c3000e27a78",
   "logoSha256": "dcc27cfe54f914d61133fc01329470b2fd1863fec5a4bb79ba2290e844f63df8",
   "modules": [
     "listOccasions",
@@ -62,7 +62,7 @@
     "modules/getOrder/scope.json": "2d7f2e2975c25f7ce4c7e90d26d27f69445cb3cb5b405902dfdbef8638b6100f",
     "modules/getOrder/samples.json": "f85c33f229585cc8e32e7dc377e88a6366db9c612102001ac452f5ecd44be416",
     "modules/apiCall/api.json": "088b0a4f7135ab867da6d22b5a38b5dfb9c0fb3b872cd21859fe131285c4bed0",
-    "modules/apiCall/expect.json": "4fa95489fa1ef40848aff88b2d3b229206ccd22833378d6125332e5986155f2c",
+    "modules/apiCall/expect.json": "c5c42cfa008ce72b9fa7e879df32d90a2dfb5a6e5d960f75fff87ebfed28258e",
     "modules/apiCall/interface.json": "e1edfa69de6ba5749e6fc7493224a373c69ed809d5e8bbd3b9faad929fc444b0",
     "modules/apiCall/scope.json": "2d7f2e2975c25f7ce4c7e90d26d27f69445cb3cb5b405902dfdbef8638b6100f",
     "modules/apiCall/samples.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",

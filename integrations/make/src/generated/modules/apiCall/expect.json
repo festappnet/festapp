@@ -55,7 +55,12 @@
       {
         "name": "key",
         "label": "Key",
-        "type": "text"
+        "type": "text",
+        "required": true,
+        "validate": {
+          "pattern": "^(?!(?:[Hh][Oo][Ss][Tt]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn])$)[!#$%&'*+.^_`|~0-9A-Za-z-]+$"
+        },
+        "help": "Enter a header name other than Host or Authorization."
       },
       {
         "name": "value",
@@ -63,7 +68,7 @@
         "type": "text"
       }
     ],
-    "help": "Additional request headers. Make supplies the host and the connection’s Authorization header."
+    "help": "Additional request headers. Host and Authorization are supplied by Make."
   },
   {
     "name": "qs",
