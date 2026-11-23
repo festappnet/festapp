@@ -132,20 +132,20 @@ if (!project.includes(`DEVELOPMENT_TEAM = ${manifest.signingTeamId};`)) fail('si
 const runnerInfo = fs.readFileSync(path.join(root, 'ios/Runner/Info.plist'), 'utf8');
 const whenInUse = runnerInfo.match(/<key>NSLocationWhenInUseUsageDescription<\/key>\s*<string>([^<]+)<\/string>/);
 if (!whenInUse?.[1]?.trim()) fail('Runner Info.plist is missing a non-empty NSLocationWhenInUseUsageDescription');
-const alwaysAndWhenInUse = runnerInfo.match(/<key>NSLocationAlwaysAndWhenInUseUsageDescription<\/key>\s*<string>([^<]+)<\/string>/);
-if (!alwaysAndWhenInUse?.[1]?.trim()) {
-  fail('Runner Info.plist is missing NSLocationAlwaysAndWhenInUseUsageDescription required by MapLibre');
-}
 const podfile = fs.readFileSync(path.join(root, 'ios/Podfile'), 'utf8');
-if (!/target\.name == ['"]geolocator_apple['"]/.test(podfile) ||
-    !/BYPASS_PERMISSION_LOCATION_ALWAYS=1/.test(podfile)) {
-  fail('geolocator_apple must compile with the background-location permission bypass');
+const notificationTarget = project.match(/\/\* OneSignalNotificationServiceExtension \*\/ = \{\s*isa = PBXNativeTarget;[^}]+/)?.[0];
+if (/OneSignalXCFramework|target ['"]OneSignalNotificationServiceExtension/.test(podfile) ||
+    !notificationTarget?.includes('/* OneSignalExtension */') ||
+    !project.includes('repositoryURL = "https://github.com/OneSignal/OneSignal-XCFramework"')) {
+  fail('OneSignal and its notification extension must share the Swift package');
 }
-if (!/ENV\[['"]ONESIGNAL_DISABLE_LOCATION['"]\]\s*=\s*['"]true['"]/.test(podfile) ||
-    !/onesignal_sdk_version\s*=\s*onesignal_dependency\.requirement\.to_s/.test(podfile) ||
-    !/pod ['"]OneSignalXCFramework\/OneSignal['"], onesignal_sdk_version/.test(podfile) ||
-    !/pod ['"]OneSignalXCFramework\/OneSignalInAppMessages['"], onesignal_sdk_version/.test(podfile)) {
-  fail('OneSignal must resolve without its unused native location module');
+for (const script of ['ios_build_candidate.sh', 'ios_build_and_upload.sh']) {
+  const contents = fs.readFileSync(path.join(root, 'automation/release', script), 'utf8');
+  if (!contents.includes('export ONESIGNAL_DISABLE_LOCATION=true') ||
+      !contents.includes('export BYPASS_PERMISSION_LOCATION_ALWAYS=1') ||
+      !contents.includes('OneSignalLocation.framework')) {
+    fail(`${script} must build and verify the foreground-only location configuration`);
+  }
 }
 const notificationExtensionInfo = fs.readFileSync(
   path.join(root, 'ios/OneSignalNotificationServiceExtension/Info.plist'),

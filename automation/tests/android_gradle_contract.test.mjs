@@ -5,18 +5,6 @@ import path from 'node:path';
 import test from 'node:test';
 
 const root = path.resolve(import.meta.dirname, '../..');
-const maplibreBuild = fs.readFileSync(
-  path.join(root, 'packages/maplibre_android/android/build.gradle.kts'),
-  'utf8',
-);
-
-test('vendored MapLibre explicitly applies Kotlin when built-in Kotlin is disabled', () => {
-  assert.match(
-    maplibreBuild,
-    /id\("org\.jetbrains\.kotlin\.android"\)/,
-    'The application opts out of AGP built-in Kotlin, so the Kotlin module must apply the app-owned plugin',
-  );
-});
 
 test('Android CI tracks and pins the Flutter 3.50 Gradle 9.5.0 wrapper', () => {
   const wrapperProperties = fs.readFileSync(
@@ -63,8 +51,6 @@ test('vendored Android libraries consume the SDK selected by Flutter', () => {
     assert.match(build, /compileSdk(?:Version)? flutter\.compileSdkVersion/, name);
     assert.doesNotMatch(build, /compileSdk(?:Version)?\s+[0-9]+/, name);
   }
-  assert.match(maplibreBuild, /getProperty\("compileSdkVersion"\)/);
-  assert.match(maplibreBuild, /compileSdk = flutterCompileSdk/);
 });
 
 test('hosted Flutter plugins inherit a compile SDK floor without changing minimum SDKs', () => {

@@ -1,18 +1,15 @@
-# Blueprint distribution snapshot
+# Blueprint distributions
 
-These are the exact pub-selected 0.4.10 wrapper and 0.2.8 core archives,
-verified with the npm 0.3.13 archive by the package archive gate.
-They are dependency artifacts. Edit the canonical `festappnet/venue_seat_picker`
-package, then rebuild and verify its distributions before updating this snapshot.
-Do not patch these copies or add another rendering implementation here.
-`manifest.json` records the archive and every extracted file SHA-256.
-The host uses repository-relative paths and needs no workstation checkout,
-unpublished Git revision or dependency override file.
+Festapp resolves the published Dart packages `venue_seat_picker` and
+`venue_layout_core` through `pubspec.yaml` and `pubspec.lock`. The canonical
+source for both packages and the corresponding npm build is
+[festappnet/venue_seat_picker](https://github.com/festappnet/venue_seat_picker).
 
-Pub-selected means file selection by local `pub publish --dry-run`, not a prior
-publication to pub.dev. Import verified archives built directly from canonical
-source through `tool/archive_check.sh`; registry publication is a separate step.
+`manifest.json` and `archive-result.json` record the source and archive
+verification for the npm release selected by `web_client/pnpm-lock.yaml` and
+the paired Dart archives produced by the release gate. Pub.dev uses its own
+archive checksums, recorded in `pubspec.lock`.
 
-Only the npm archive selected by `web_client/package.json` and its lockfile is
-retained. Older host archives are recoverable from Git revision
-`a4296c57687294b34826e59c7b232eef582c9748`; they are not installation inputs.
+To import a verified npm archive and its receipt, run
+`automation/blueprint_vendor_artifacts.py` with the upstream archive gate
+output directory. Update the npm selection and lockfile together.

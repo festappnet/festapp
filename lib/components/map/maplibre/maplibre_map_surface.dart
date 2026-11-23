@@ -40,18 +40,18 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
   final MapLibreStyleLoadWatchdog _styleLoadWatchdog =
       MapLibreStyleLoadWatchdog();
   bool _isStyleReady = false;
+  Stream<ml.UserLocation>? _locations;
 
   @override
   void didUpdateWidget(covariant MapLibreMapSurface oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final styleChanged = reloadMapLibreStyleIfChanged(
-      previousStyle: oldWidget.style,
-      nextStyle: widget.style,
-      reload: (style) => _controller?.setStyle(style),
-    );
-    if (styleChanged) {
+    if (oldWidget.style != widget.style) {
       _isStyleReady = false;
+      _sceneController = null;
       _armStyleLoadWatchdog();
+    }
+    if (!widget.model.active || !widget.model.scene.showCurrentLocation) {
+      _locations = null;
     }
     if (!identical(oldWidget.model.viewport, widget.model.viewport) &&
         _viewportAdapter != null) {
@@ -107,12 +107,6 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
         final sceneController = MapLibreSceneController(style);
         _sceneController = sceneController;
         await sceneController.register(widget.model.scene);
-        startOptionalMapLibreSetup(
-          setup: _enableLocationIfAllowed,
-          onError: (error, stackTrace) => AppLogger.warning(
-            'MapLibre optional location setup failed: $error\n$stackTrace',
-          ),
-        );
       },
       onDecorationError: (error, stackTrace) => AppLogger.error(
         'MapLibre scene decoration failed: $error\n$stackTrace',
@@ -142,23 +136,21 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
     setState(() => _isStyleReady = true);
   }
 
-  Future<void> _enableLocationIfAllowed() async {
-    final controller = _controller;
-    if (!widget.model.scene.showCurrentLocation ||
-        controller == null ||
-        !ml.MapController.userLocationIsSupported) {
-      return;
-    }
-    if (await MapLocationAccuracy.ensurePermission()) {
-      // A continuously pulsing/animating puck requests frames even while the
-      // map itself is idle. A static location + accuracy indicator preserves
-      // the useful information without turning an idle map into a 60 FPS view.
-      await controller.enableLocation(
-        pulse: false,
-        pulseFade: false,
-        accuracyAnimation: false,
-        compassAnimation: false,
-        bearingRenderMode: ml.BearingRenderMode.none,
+  Stream<ml.UserLocation> _trackLocation() async* {
+    try {
+      await for (final position in MapLocationAccuracy.positionStream()) {
+        yield ml.UserLocation(
+          position: ml.Geographic(
+            lon: position.longitude,
+            lat: position.latitude,
+          ),
+          accuracy: position.accuracy > 0 ? position.accuracy : null,
+          timestamp: position.timestamp,
+        );
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warning(
+        'MapLibre location tracking failed: $error\n$stackTrace',
       );
     }
   }
@@ -219,9 +211,9 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
             final cacheKey = '${registration.rasterScale}\u0000$svg';
             final raster = rasterCache[cacheKey] ??=
                 await MapLibrePlaceIconRasterizer.rasterize(
-              svg,
-              pixelRatio: registration.rasterScale,
-            );
+                  svg,
+                  pixelRatio: registration.rasterScale,
+                );
             if (!mounted || !identical(_controller?.style, style)) return;
             await style.addImageFromWidget(
               id: icon.key,
@@ -255,13 +247,12 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
     ml.StyleController style,
     String id,
     _MapImageRegistration registration,
-  ) =>
-      style.addImageFromWidget(
-        id: id,
-        widget: registration.widget,
-        logicalSize: registration.size,
-        imageSize: registration.size * registration.rasterScale,
-      );
+  ) => style.addImageFromWidget(
+    id: id,
+    widget: registration.widget,
+    logicalSize: registration.size,
+    imageSize: registration.size * registration.rasterScale,
+  );
 
   double get _imageRasterScale => MediaQuery.devicePixelRatioOf(context);
 
@@ -273,25 +264,23 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
     await sceneController.update(widget.model.scene);
   }
 
-  void _onEvent(ml.MapEvent event) {
-    if (event is ml.MapEventMoveCamera || event is ml.MapEventCameraIdle) {
-      _viewportAdapter?.notifyCameraChanged();
-      widget.model.onCameraChanged?.call();
-    }
+  void _onCameraChanged() {
+    _viewportAdapter?.notifyCameraChanged();
+    widget.model.onCameraChanged?.call();
+  }
+
+  Future<void> _onMapInput(ml.MapEventUserInput event) async {
     final controller = _controller;
-    if (event is ml.MapEventCameraIdle && controller != null) {
-      widget.model.onZoomChanged?.call(controller.getCamera().zoom);
-    }
-    if (event is! ml.MapEventUserInput || controller == null) {
-      return;
-    }
-    if (event is! ml.MapEventClick && event is! ml.MapEventLongClick) {
-      return;
-    }
-    final features = controller.featuresAtPoint(
-      event.screenPoint,
+    if (controller == null || !widget.model.active) return;
+    final features = await controller.queryRenderedFeatures(
+      ml.QueryGeometry.point(event.screenPoint),
       layerIds: const [MapLibreSceneController.placeLayerId],
     );
+    if (!mounted ||
+        !identical(_controller, controller) ||
+        !widget.model.active) {
+      return;
+    }
     if (features.isNotEmpty) {
       final rawId = features.first.properties['place_id'];
       final placeId = rawId is num ? rawId.toInt() : int.tryParse('$rawId');
@@ -316,24 +305,35 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
       fit: StackFit.expand,
       children: [
         ml.MapLibreMap(
-          active: widget.model.active,
+          paused: !widget.model.active,
           options: ml.MapOptions(
-            initStyle: widget.style,
-            initCenter: ml.Geographic(
-              lon: widget.model.initialCenter.longitude,
-              lat: widget.model.initialCenter.latitude,
+            style: ml.MapStyle.json(widget.style),
+            initCamera: ml.CameraUpdate.position(
+              center: ml.Geographic(
+                lon: widget.model.initialCenter.longitude,
+                lat: widget.model.initialCenter.latitude,
+              ),
+              zoom: widget.model.initialZoom,
             ),
-            initZoom: widget.model.initialZoom,
             minZoom: 0,
             maxZoom: MapZoomLimits.interactionMaximum,
-            // The feasibility benchmark selected Hybrid Composition without the
-            // expensive texture mode. Keep this explicit; never inherit defaults.
-            androidTextureMode: false,
-            androidMode: ml.AndroidPlatformViewMode.hc,
           ),
           onMapCreated: _onMapCreated,
           onStyleLoaded: _onStyleLoaded,
-          onEvent: _onEvent,
+          onCameraMove: (_) => _onCameraChanged(),
+          onCameraMoveEnd: (event) {
+            _onCameraChanged();
+            widget.model.onZoomChanged?.call(event.camera.zoom);
+          },
+          onClick: _onMapInput,
+          onLongClick: _onMapInput,
+          children: [
+            if (widget.model.active && widget.model.scene.showCurrentLocation)
+              ml.UserLocationLayer(
+                locations: _locations ??= _trackLocation(),
+                style: const ml.UserLocationStyle(showHeading: false),
+              ),
+          ],
         ),
         IgnorePointer(
           child: AnimatedOpacity(
@@ -352,11 +352,7 @@ class _MapLibreMapSurfaceState extends State<MapLibreMapSurface> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.map_outlined,
-                      size: 42,
-                      color: colors.primary,
-                    ),
+                    Icon(Icons.map_outlined, size: 42, color: colors.primary),
                     const SizedBox(height: 14),
                     SizedBox(
                       width: 28,

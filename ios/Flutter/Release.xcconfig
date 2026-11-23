@@ -4,3 +4,5 @@
 // App Store archives must select the distribution identity embedded in the
 // manually pinned provisioning profile. Debug remains automatic/development.
 CODE_SIGN_IDENTITY = Apple Distribution
+
+EXCLUDED_ARCHS[sdk=iphonesimulator*] = $(inherited) x86_64

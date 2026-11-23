@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
+# Swift Package Manager reads these when evaluating the plugin manifests.
+export ONESIGNAL_DISABLE_LOCATION=true
+export BYPASS_PERMISSION_LOCATION_ALWAYS=1
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ENV_SCRIPT="$SCRIPT_DIR/.set_appstore_env.sh"

@@ -8,12 +8,22 @@ import subprocess
 import tempfile
 import time
 import uuid
+from urllib.parse import unquote, urljoin, urlsplit
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--evidence', type=Path, required=True)
 args = parser.parse_args()
 root = Path(__file__).resolve().parents[2]
 image = 'supabase/edge-runtime:v1.74.0@sha256:ac5a8314e0c45b0f65d091643c1d6f5293e3a38f31fd3d15186e04a9d5c91cb7'
+package_config = root / '.dart_tool/package_config.json'
+if not package_config.is_file():
+    raise SystemExit('Run fvm flutter pub get to resolve venue_seat_picker.')
+packages = json.loads(package_config.read_text())['packages']
+picker = next((package for package in packages if package['name'] == 'venue_seat_picker'), None)
+if picker is None:
+    raise SystemExit('Run fvm flutter pub get to resolve venue_seat_picker.')
+picker_uri = urljoin(package_config.as_uri(), picker['rootUri'])
+font = Path(unquote(urlsplit(picker_uri).path)) / 'assets/layout_fonts/Roboto-400-normal.ttf'
 evidence = args.evidence.resolve()
 evidence.mkdir(parents=True, exist_ok=False)
 name = 'festapp-blueprint-text-' + uuid.uuid4().hex[:10]
@@ -51,7 +61,7 @@ with tempfile.TemporaryDirectory(prefix='festapp-blueprint-text-', dir=root/'bui
     worker.mkdir()
     canary=(root/'automation/tickets/blueprint-text-runtime-canary.ts').read_text()
     (worker/'index.ts').write_text(canary.replace('../../supabase/functions/','../'))
-    shutil.copy(root/'vendor/blueprint/venue_seat_picker/assets/layout_fonts/Roboto-400-normal.ttf', worker/'Roboto.ttf')
+    shutil.copy(font, worker/'Roboto.ttf')
     (work/'main').mkdir()
     (work/'main/index.ts').write_text(main)
     try:

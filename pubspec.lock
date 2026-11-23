@@ -76,10 +76,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: a96e8b390886ee8abb49b7bd3ac8df6f451c621619f52a26e815fdcf568959ff
+      sha256: "2fda90592c0afd219c5e285618a98da835cd10df38372666093d25dfe457a2d0"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.9"
+    version: "4.7.1"
   args:
     dependency: transitive
     description:
@@ -702,12 +702,11 @@ packages:
   flutter_map_animations:
     dependency: "direct main"
     description:
-      path: "."
-      ref: "50188510c491f9b3636eda6359421ea1137dcbd4"
-      resolved-ref: "50188510c491f9b3636eda6359421ea1137dcbd4"
-      url: "https://github.com/TesteurManiak/flutter_map_animations.git"
-    source: git
-    version: "0.10.0"
+      name: flutter_map_animations
+      sha256: a524e59b077d24bbed2c76bfd12836f8915da0ecdba46b06459af824e72c8f17
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.11.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -943,13 +942,13 @@ packages:
     source: hosted
     version: "5.2.1"
   geolocator_apple:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: geolocator_apple
-      sha256: "853803d6bb1713c094e935b4a5ae5f19c0308acf81da13fa9ff84fb4c70c0b73"
+      sha256: a1e177f3081089724f2095856aeb96eb8d7d1c59e425aed8dd4de7aa2c11ab66
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.14"
+    version: "2.4.3"
   geolocator_linux:
     dependency: transitive
     description:
@@ -1145,10 +1144,10 @@ packages:
     dependency: transitive
     description:
       name: jni
-      sha256: f038e58b4dc2c9037f50e233175086337e0b305e356d28211bf55f21c504cbd3
+      sha256: "19764f78f6b9e0d40f6395b04649d1046eb57f5ccf05afce50cc63e5a82777b0"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.3"
+    version: "1.2.1"
   jni_flutter:
     dependency: transitive
     description:
@@ -1297,39 +1296,42 @@ packages:
     dependency: "direct main"
     description:
       name: maplibre
-      sha256: "2795a46511c4867de2f37072febde94053906ac8a30de7a4937f1547bcf18c9e"
+      sha256: "3508feeacae9a4e01ac5b23d2750f93e14321d99fb30838404aa490f0ddd1079"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.7"
-  maplibre_android:
-    dependency: "direct overridden"
+    version: "0.4.0"
+  maplibre_native:
+    dependency: transitive
     description:
-      path: "packages/maplibre_android"
-      relative: true
-    source: path
-    version: "0.3.7"
-  maplibre_ios:
-    dependency: "direct overridden"
+      name: maplibre_native
+      sha256: "5178073f1a096032a7ab3e26a5504181c3a0ff80ec3ac7c5ebd47fbf7ceb776e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0"
+  maplibre_native_ffi:
+    dependency: transitive
     description:
-      path: "packages/maplibre_ios"
-      relative: true
-    source: path
-    version: "0.3.7"
+      name: maplibre_native_ffi
+      sha256: "12f332177cbe874d9866d350b7ce9490af6e7845a68cbf21b7e1bd4b45fda0f8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.202611.0"
   maplibre_platform_interface:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "packages/maplibre_platform_interface"
-      relative: true
-    source: path
-    version: "0.3.7"
+      name: maplibre_platform_interface
+      sha256: fe306727e7f917d5ab2b3c6a7c87d17164ee0541aac87a39bce5c6fa25933bd7
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.0"
   maplibre_web:
     dependency: transitive
     description:
       name: maplibre_web
-      sha256: "503d5031a045fbc98bea63e033ca6837e09ae5307df54624e291415648139d11"
+      sha256: "04abbd58fc397b3d04811edf63b60391edccc6cc01fa18b5d7674bf88b11e9d0"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.7"
+    version: "0.4.0"
   markdown:
     dependency: transitive
     description:
@@ -1410,14 +1412,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.6.2"
-  native_toolchain_c:
-    dependency: transitive
-    description:
-      name: native_toolchain_c
-      sha256: "90eaad8059ebc2004a63810a4696ea9acdb02473e47ed3b6b3bafb100ac77e31"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.19.5"
   nested:
     dependency: transitive
     description:
@@ -1461,10 +1455,10 @@ packages:
     dependency: "direct main"
     description:
       name: onesignal_flutter
-      sha256: f11e6a592ad7402d85f1fd095d8617cabd29e1f5e2be065f37ce134e4048c1bd
+      sha256: "5fae7a73e185c6cdf6e79ef0824ba3b8aa858b23021f8ca685b68f48c0e7bf39"
       url: "https://pub.dev"
     source: hosted
-    version: "5.6.7"
+    version: "5.8.0"
   overlord:
     dependency: transitive
     description:
@@ -1573,10 +1567,10 @@ packages:
     dependency: transitive
     description:
       name: pdf
-      sha256: e47a275b267873d5944ad5f5ff0dcc7ac2e36c02b3046a0ffac9b72fd362c44b
+      sha256: "6e40827f370d196e97c6611724d923a3d86c431ce8e2ce1e59edd03a67a1a6e6"
       url: "https://pub.dev"
     source: hosted
-    version: "3.12.0"
+    version: "3.13.1"
   petitparser:
     dependency: transitive
     description:
@@ -1609,38 +1603,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
-  pointer_interceptor:
-    dependency: transitive
-    description:
-      name: pointer_interceptor
-      sha256: "57210410680379aea8b1b7ed6ae0c3ad349bfd56fe845b8ea934a53344b9d523"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.1+2"
-  pointer_interceptor_ios:
-    dependency: transitive
-    description:
-      name: pointer_interceptor_ios
-      sha256: "03c5fa5896080963ab4917eeffda8d28c90f22863a496fb5ba13bc10943e40e4"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.1+1"
-  pointer_interceptor_platform_interface:
-    dependency: transitive
-    description:
-      name: pointer_interceptor_platform_interface
-      sha256: "0597b0560e14354baeb23f8375cd612e8bd4841bf8306ecb71fcd0bb78552506"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.0+1"
-  pointer_interceptor_web:
-    dependency: transitive
-    description:
-      name: pointer_interceptor_web
-      sha256: "460b600e71de6fcea2b3d5f662c92293c049c4319e27f0829310e5a953b3ee2a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.3"
   pointycastle:
     dependency: transitive
     description:
@@ -1673,14 +1635,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.1"
-  process:
-    dependency: transitive
-    description:
-      name: process
-      sha256: "4242ba3508d37e01808bdf71ad1d5bb93a8d671bf2e7450e6b1b353fb0808891"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.6"
   proj4dart:
     dependency: transitive
     description:
@@ -2335,18 +2289,20 @@ packages:
     source: hosted
     version: "2.4.4"
   venue_layout_core:
-    dependency: "direct overridden"
+    dependency: "direct main"
     description:
-      path: "vendor/blueprint/venue_layout_core"
-      relative: true
-    source: path
+      name: venue_layout_core
+      sha256: "328955b5bf382a78c4abb2ac8ef561f2e300cb36dc3b2cdaeec8e323f4aefef4"
+      url: "https://pub.dev"
+    source: hosted
     version: "0.2.8"
   venue_seat_picker:
     dependency: "direct main"
     description:
-      path: "vendor/blueprint/venue_seat_picker"
-      relative: true
-    source: path
+      name: venue_seat_picker
+      sha256: b1de038ec272dc685841174013c86d7881f33826b69eb30e1bd114fbaa0e3b46
+      url: "https://pub.dev"
+    source: hosted
     version: "0.4.10"
   video_player:
     dependency: transitive
@@ -2527,10 +2483,10 @@ packages:
     dependency: transitive
     description:
       name: xml
-      sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
+      sha256: "67f0aff7be013d107995e9b75bf4e7f2c3ef2dfdb2c8e68024bba0a7fd5756a4"
       url: "https://pub.dev"
     source: hosted
-    version: "6.6.1"
+    version: "7.0.1"
   xxh3:
     dependency: transitive
     description:

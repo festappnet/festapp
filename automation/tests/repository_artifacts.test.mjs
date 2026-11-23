@@ -24,7 +24,7 @@ test('retired evidence stays outside the source tree and run folders are ignored
         execFileSync('git',['check-ignore','--quiet',`.codex-artifacts/${run}/run/probe.json`],{cwd:root});
 });
 
-test('Blueprint archive selection, lock and immutable snapshots agree',()=>{
+test('Blueprint npm archive, lock and verification receipt agree',()=>{
     const pkg=JSON.parse(read('web_client/package.json'));
     const selected=pkg.dependencies['@festapp/venue-layout'];
     assert.match(selected,/^file:vendor\/[^/]+\.tgz$/);
@@ -37,7 +37,6 @@ test('Blueprint archive selection, lock and immutable snapshots agree',()=>{
     assert.deepEqual(Object.keys(manifest.archives).filter(n=>n.endsWith('.tgz')),[name]);
     assert.equal(hash('web_client/vendor/'+name),manifest.archives[name]);
     assert.equal(hash('vendor/blueprint/archive-result.json'),manifest.archiveGateReceiptSha256);
-    for(const [path,digest] of Object.entries(manifest.files)) assert.equal(hash('vendor/blueprint/'+path),digest,path);
 });
 
 test('capture paths are explicit and missing replay inputs fail before database access',async()=>{

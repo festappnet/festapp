@@ -58,6 +58,17 @@ rejects an unexpected OneSignal Location framework, then runs the pinned
 `upload_build` lane. A build/upload receipt does not prove processing, review
 submission or public availability.
 
+For a local unsigned iOS build, use the same Swift package settings as the
+release scripts:
+
+```bash
+ONESIGNAL_DISABLE_LOCATION=true BYPASS_PERMISSION_LOCATION_ALWAYS=1 \
+  fvm flutter build ios --simulator
+```
+
+The app and notification service extension share the OneSignal Swift package.
+MapLibre supports the ARM64 iOS simulator. Its device build is also ARM64.
+
 ## Metadata, review and release
 
 Release notes come from the private listing metadata, not an interactive prompt.
