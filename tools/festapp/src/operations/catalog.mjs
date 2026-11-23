@@ -6,7 +6,7 @@ import { inventoryAssignmentDescriptors, inventoryAssignmentDataSchemas, invokeI
 import {lifecycleDescriptors,lifecycleDataSchemas,invokeLifecycleOperation} from './lifecycle.mjs';
 import {agendaDescriptors,agendaDataSchemas,invokeAgendaOperation} from './agenda.mjs';
 import {financeDescriptors,financeDataSchemas,invokeFinanceOperation} from './finance.mjs';
-import {reportingDescriptors,reportingDataSchemas,invokeReportingOperation,authorizeExportArtifact} from './reporting.mjs';
+import {reportingDescriptors,reportingDataSchemas,invokeReportingOperation,authorizeExportArtifact,publicExportDescriptor} from './reporting.mjs';
 import {programDescriptors,programDataSchemas,invokeProgramOperation} from './program.mjs';
 import {scannerDescriptors,scannerDataSchemas,invokeScannerOperation} from './scanner.mjs';
 import {blueprintDescriptors,blueprintDataSchemas,invokeBlueprintOperation} from './blueprints.mjs';
@@ -27,6 +27,7 @@ import { productScheduleDescriptors, productScheduleDataSchemas, invokeProductSc
 import { productDescriptors, productDataSchemas, invokeProductOperation } from './products.mjs';
 import { orderDataSchemas, orderDescriptors, invokeOrderOperation } from './orders.mjs';
 import { publicOrderPage, publicOrderSearch } from './public-orders.mjs';
+import { publicReadSummary } from './public-read.mjs';
 import { operatorAccess, accessProjection } from './access.mjs';
 import { occasionCreateInput, occasionCreateResult, createOccasion } from './occasion-create.mjs';
 import { randomUUID } from 'node:crypto';
@@ -276,7 +277,11 @@ export class Operations {
                 if (this.owner.orderSummaryOnly && descriptor.id === 'context.inspect')
                     return { ...descriptor, description: descriptor.description + ' Does not return the connected user identifier.',
                         output: resultSchema(descriptor.id, dataSchemas[descriptor.id].omit({ userId: true })) };
-                return { ...descriptor, output: resultSchema(descriptor.id) };
+                const summary = this.owner.orderSummaryOnly && publicReadSummary(descriptor.id);
+                if (summary)
+                    return { ...descriptor, description: summary.description, output: resultSchema(descriptor.id, summary.data) };
+                const projected = this.owner.orderSummaryOnly ? publicExportDescriptor(descriptor) : descriptor;
+                return { ...projected, output: resultSchema(projected.id) };
             });
     }
     setWriteReady(value) {
@@ -549,6 +554,8 @@ export class Operations {
                 const output = schema.safeParse(data);
                 if (!output.success) outputDiagnostic(id, output.error);
                 check(output.success);
+                const summary = this.owner.orderSummaryOnly && publicReadSummary(id);
+                if (summary) data = summary.data.parse(data);
                 if (this.owner.orderSummaryOnly && id === 'context.inspect') {
                     const { userId, ...publicContext } = data;
                     data = publicContext;

@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "vstupenky-online",
-  "version": "1.0.2",
-  "description": "Read selected vstupenky.online events, sales summaries and orders in ChatGPT.",
+  "version": "1.1.0",
+  "description": "Read events, sales, orders, forms, tickets and organizer operations from vstupenky.online in ChatGPT.",
   "author": {
     "name": "Festapp",
     "email": "info@festapp.net",
@@ -20,8 +20,8 @@
     "com.openai": {
       "interface": {
         "displayName": "vstupenky.online",
-        "shortDescription": "Přehled prodeje vstupenek",
-        "longDescription": "Pro pořadatele akcí na portálu vstupenky.online. Vyhledejte své zpřístupněné akce, načtěte prodejní souhrny, najděte objednávku podle symbolu a ověřte její stav. Vyberete konkrétní akce a přístup můžete kdykoliv odvolat. Konektor pouze čte data, neruší objednávky, nezpracovává platby a neodesílá vstupenky. vstupenky.online běží na společné platformě Festapp. Předává identifikátory, symboly, stavy, počty a částky objednávek. Jména, kontakty, poznámky a odpovědi z přihlášek z objednávek nepředává. Je určen pořadatelům, nikoli ke zpracování údajů dětí nebo dokladů. Do názvů akcí a podkladů vstupenek tyto údaje nevkládejte.",
+        "shortDescription": "Přehled akcí pro pořadatele",
+        "longDescription": "Pro pořadatele akcí na portálu vstupenky.online. Zkontrolujte prodej, objednávky, program, formuláře, vstupenky, kapacity a místa. Podle svých oprávnění můžete také zobrazit stav plateb, čekací listiny, historii a vybrané provozní přehledy. Vyberete konkrétní akce nebo pořadatele a přístup můžete kdykoliv odvolat. Plugin pouze čte data. Nemění objednávky, neprovádí platby ani neodesílá vstupenky. Přehledy a exporty mají omezený rozsah údajů. Jména, kontakty, odpovědi a poznámky z objednávek se nepředávají. Plugin je určen pořadatelům. Nevkládejte údaje dětí nebo čísla dokladů do názvů, šablon ani ostatních textů určených ke zpracování v pluginu. vstupenky.online běží na platformě Festapp.",
         "developerName": "Festapp",
         "category": "Productivity",
         "capabilities": [
@@ -31,7 +31,7 @@
         ],
         "websiteURL": "https://vstupenky.online",
         "supportURL": "https://vstupenky.online/support/",
-        "privacyPolicyURL": "https://vstupenky.online/privacy/",
+        "privacyPolicyURL": "https://mcp.vstupenky.online/cs/privacy",
         "termsOfServiceURL": "https://vstupenky.online/terms/",
         "defaultPrompt": [
           "Které mé akce jsou dostupné?",
@@ -58,13 +58,13 @@
               "description": "Read canonical sales totals and distinguish valid admissions, cancelled and waiting participants",
               "prompt": "Ukaž prodejní souhrn lednové demo akce 1072614. Odliš objednávky, platné vstupenky, čekající a přijaté platby.",
               "tools_triggered": "festapp_orders_report",
-              "expected_behavior": "Canonical report: 4 valid tickets in 2 valid orders; 4 orders and 6 ticket records overall; 1 cancelled and 1 waiting ticket. CZK received/net received 500.00, current_order_value 1250.00. Preserve the payment_total_without_ledger warning: imported synthetic paid total has no transaction ledger entry. Do not invent real sales or ledger transactions."
+              "expected_behavior": "Report 4 valid tickets in 2 valid orders, 4 orders and 6 ticket records overall, and 1 cancelled and 1 waiting ticket. The current order value is CZK 1250.00. Received and net received are both CZK 0.00. Explain the payment_total_without_ledger warning. A demo order has an imported paid total with no corresponding transaction in the ledger."
             },
             {
-              "description": "Bounded stored-state order listing",
-              "prompt": "Najdi nejvýše 5 objednávek ve stavu ordered v lednové demo akci 1072614. Nevypisuj osobní údaje.",
-              "tools_triggered": "festapp_orders_list",
-              "expected_behavior": "One result: order 6821, symbol 8M6K9Q6A3V, state ordered, 2 tickets, 500.00 CZK, paid 0.00; nextCursor null. Explain the stored state rather than assuming a bank transfer cannot exist."
+              "description": "Inspect the selected event form with the public result projection",
+              "prompt": "Ukaž formuláře lednové demo akce 1072614 a u prvního shrň dostupnost a typy polí. Nevypisuj přístupové údaje ani odpovědi kupujících.",
+              "tools_triggered": "festapp_forms_list, festapp_forms_inspect",
+              "expected_behavior": "Return only saved form summaries for occasion 1072614. Use a returned form ID to show availability and field types. Return no form access key, bank details, raw settings or submitted answers."
             },
             {
               "description": "Find the known synthetic order by its symbol",
@@ -105,7 +105,7 @@
         "countries": [
           "CZ"
         ],
-        "release_notes": "Canonical vstupenky.online ticket/V branding: light and dark listing logos, compact composer icons and brand colors. Read-only selected-event consent, tools, data profile and permissions are unchanged."
+        "release_notes": "Expanded read-only tools for organizer workflows with restricted outputs and existing event consent and role checks."
       }
     }
   }

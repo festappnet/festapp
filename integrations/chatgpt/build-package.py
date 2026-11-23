@@ -14,14 +14,16 @@ args = parser.parse_args()
 root = Path(__file__).parent
 plugin = json.loads((root/'plugin.json').read_text())
 mcp = json.loads((root/'mcp.json').read_text())
+policy = json.loads((root/'client-policy.json').read_text())
 interface = plugin['extensions']['com.openai']['interface']
 review = plugin['extensions']['com.openai']['review']
 assert plugin['name'] == 'vstupenky-online'
 assert interface['displayName'] == 'vstupenky.online'
 assert len(interface['displayName']) <= 30 and len(interface['shortDescription']) <= 30
 assert len(interface['longDescription']) <= 4000
-for key in ['websiteURL','supportURL','privacyPolicyURL','termsOfServiceURL']:
+for key in ['websiteURL','supportURL','termsOfServiceURL']:
     u = urlparse(interface[key]); assert u.scheme == 'https' and u.hostname == 'vstupenky.online' and not u.username
+assert interface['privacyPolicyURL'] == 'https://mcp.vstupenky.online/cs/privacy'
 assert len(review['test_cases']['positive']) == 5
 assert len(review['test_cases']['negative']) == 3
 assert set(mcp['mcpServers']) == {'festapp'}
@@ -29,8 +31,10 @@ server = mcp['mcpServers']['festapp']
 assert server['type'] == 'streamable-http' and server['url'] == 'https://mcp.vstupenky.online/mcp'
 assert 'headers' not in server
 auth = server['extensions']['com.openai']['auth']
-assert auth['client'] == {'mode':'provided','clientId':'festapp-chatgpt','tokenEndpointAuthMethod':'none'}
-assert auth['baseScopes'] == ['festapp:ticket-layouts:read','festapp:orders:read']
+assert auth['client'] == {'mode':'provided','clientId':policy['id'],'tokenEndpointAuthMethod':'none'}
+assert auth['baseScopes'] == policy['allowedScopes']
+assert auth['baseScopes'] and all(scope.endswith(':read') for scope in auth['baseScopes'])
+assert len(auth['baseScopes']) == len(set(auth['baseScopes']))
 assert not any(key in plugin for key in ['apps','hooks','skills'])
 # Package exports must stay byte-identical to the canonical brand masters.
 brand = root.parents[1] / 'assets/brand/vstupenky-online'

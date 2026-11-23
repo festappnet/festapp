@@ -103,8 +103,8 @@ storen, odesílání vstupenek, změn cen, ručních plateb a úprav přístupů
   Ověřte zamítnutí akce jiného pořadatele, zápisu po souhlasu ke čtení a
   přístupu po odvolání souhlasu. Účinky jako odeslání zprávy nebo platba
   ověřujte pouze v izolovaném prostředí.
-- Ověřte šest nástrojů veřejného klienta `festapp-chatgpt`, projekci objednávek
-  bez údajů kupujícího a odmítnutí zápisu.
+- Ověřte nabídku veřejného klienta `festapp-chatgpt` proti jeho registraci,
+  omezené výstupy objednávek, účastníků a exportů a odmítnutí zápisu.
 - U aktualizace obnovte nástroje v nastavení workspace a znovu projděte OAuth
   souhlas, pokud nové operace vyžadují další scopes.
 
