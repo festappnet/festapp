@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { paymentQrSize } from "../_shared/paymentQrArtwork.ts";
 import { previewPaymentQr } from "../_shared/qrCodePayment.ts";
 import type { AuthoringPaymentAccount } from "./authoringPaymentAccounts.ts";
 
@@ -89,7 +90,12 @@ export async function authoringContextResponse(
         variable_symbol: sample.reference,
         creditor_reference: sample.reference,
       }, sample.locale, sample.title);
-      if (!qr) return reply({ error: "Payment QR sample unavailable" }, 503);
+      const artworkWidth = qr && qr.png.byteLength >= 24
+        ? new DataView(qr.png.buffer, qr.png.byteOffset).getUint32(16)
+        : 0;
+      if (!qr || artworkWidth <= paymentQrSize) {
+        return reply({ error: "Payment QR sample unavailable" }, 503);
+      }
       return reply({ paymentQrPng: Buffer.from(qr.png).toString("base64") });
     }
     const senderAddress = dependencies.senderAddress.trim();

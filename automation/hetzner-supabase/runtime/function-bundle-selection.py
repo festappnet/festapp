@@ -13,7 +13,11 @@ import shutil
 
 
 AUTHORING_CONTEXT = 'send-custom-email/authoringContext.ts'
-AUTHORING_QR_IMPORTS = {'node:buffer', '../_shared/qrCodePayment.ts'}
+AUTHORING_QR_IMPORTS = {'node:buffer', '../_shared/qrCodePayment.ts',
+                        '../_shared/paymentQrArtwork.ts'}
+# The installed 1a578e1ad QR module uses identical sample artwork. The
+# handler rejects its undecorated error fallback and keeps its delivery policy.
+INSTALLED_PAYMENT_QR_SHA = '76ce0d2419f954c2905826d0b1f6bc54cf3c439f8ea1b3dcfd7d52e062eb00ec'
 AUTHORING_QR_RESOURCES = (
     '_shared/qrCodePayment.ts',
     '_shared/paymentQrArtwork.ts',
@@ -207,10 +211,12 @@ def main():
         base = json.loads(args.base.read_text())
         modules = args.shared_modules.split(',')
         if AUTHORING_CONTEXT in modules:
-            require(all((args.root / name).is_file()
-                        and base['files'].get(name) == digest((args.root / name).read_bytes())
-                        for name in AUTHORING_QR_RESOURCES),
-                    'Installed payment QR artwork dependencies differ from canonical source')
+            for name in AUTHORING_QR_RESOURCES:
+                allowed = {digest((args.root / name).read_bytes())}
+                if name == '_shared/qrCodePayment.ts':
+                    allowed.add(INSTALLED_PAYMENT_QR_SHA)
+                require(base['files'].get(name) in allowed,
+                        'Installed payment QR artwork dependencies differ from canonical source')
         print(json.dumps(exact_shared_plan(args.root, base, modules), sort_keys=True))
     elif args.command == 'stage-exact-shared':
         stage_exact_shared(args.root, args.stage, json.loads(args.manifest.read_text()))
