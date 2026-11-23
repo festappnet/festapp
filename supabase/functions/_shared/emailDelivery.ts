@@ -215,7 +215,6 @@ export async function renderEmail(
       }),
       attachments: [...prepared.attachments, {
         ...download,
-        filename: "qr-inline.png",
         disposition: "INLINE",
         contentId,
       }],

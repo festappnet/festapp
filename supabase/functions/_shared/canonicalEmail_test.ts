@@ -519,13 +519,19 @@ Deno.test("payment QR remains downloadable and only appears inline when enabled"
   const full = await render(true);
   const parts = sesBody(full, config, {}, false).Content.Simple.Attachments;
   assertEquals(parts.map(part => part.ContentDisposition), ["ATTACHMENT", "INLINE"]);
-  assertEquals(parts[0].FileName, "qr-payment-5W8H2U8I9W.png");
+  assertEquals(parts.map(part => part.FileName), [
+    "qr-payment-5W8H2U8I9W.png",
+    "qr-payment-5W8H2U8I9W.png",
+  ]);
   assertEquals(parts[0].RawContent, parts[1].RawContent);
   assert(parts[1].ContentId && full.html.includes(`src="cid:${parts[1].ContentId}"`));
   assert(full.html.includes('alt="Bank transfer QR code"'));
   assertMatch(full.html, /Pay with the QR code.*Scan it in your mobile banking app\..*<img/);
   const czech = await render(true, "cs");
-  assertEquals(czech.attachments[0].filename, "qr-platba-5W8H2U8I9W.png");
+  assertEquals(czech.attachments.map(part => part.filename), [
+    "qr-platba-5W8H2U8I9W.png",
+    "qr-platba-5W8H2U8I9W.png",
+  ]);
   assertMatch(czech.html, /Zaplaťte pomocí QR kódu.*Naskenujte ho v aplikaci mobilního bankovnictví\..*<img/);
 
   const downloadOnly = await render(false);
