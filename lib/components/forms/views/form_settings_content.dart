@@ -183,7 +183,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
-  bool _showPaymentQrInEmail = false;
+  bool _showPaymentQrInEmail = true;
   String _communicationTone = 'inherit';
 
   bool _measurementEnabled = false;
@@ -639,7 +639,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       FormDefinition.metaType: _paymentMessageType,
     };
 
-    if (_showPaymentQrInEmail ||
+    if (!_showPaymentQrInEmail ||
         metadata.containsKey(FormMetadata.metaShowPaymentQrInEmail)) {
       metadata[FormMetadata.metaShowPaymentQrInEmail] = _showPaymentQrInEmail;
     }

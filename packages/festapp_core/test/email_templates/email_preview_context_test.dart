@@ -17,6 +17,42 @@ void main() {
             EmailPreviewScenario.fromJson(Map<String, dynamic>.from(v as Map)),
       )
       .toList();
+  test('reminder preview reflects form cancellation and inline payment QR', () {
+    final reminder = records.firstWhere(
+      (r) => r.templateCode == 'TICKET_ORDER_REMINDER' && r.locale == 'cs',
+    );
+    const body = '{{balanceReasoning}}{{fullOrder}}<p>Podpis</p>';
+    const wrapper = '<main>{{content}}</main>';
+    final disabled = reminder.withContext(
+      const EmailPreviewContext(inlinePaymentQr: false),
+    );
+    expect(disabled.composeHtml(body), isNot(contains('požádat o storno')));
+    expect(disabled.composeHtml(body), isNot(contains(emailPreviewPaymentQrSource)));
+    expect(disabled.composeHtml('{{order_overview_button}}'), isNot(contains('požádat o storno')));
+    expect(disabled.composeHtml(body), contains('Zobrazit aktuální stav objednávky'));
+
+    final enabled = reminder.withContext(const EmailPreviewContext(
+      cancellationAvailable: true,
+    ));
+    final completed = enabled.composeHtml(body, wrapperHtml: wrapper);
+    expect(completed, contains('požádat o storno'));
+    expect(completed, contains('Zaplaťte pomocí QR kódu'));
+    expect(completed, contains(emailPreviewPaymentQrSource));
+    expect(
+      enabled.authoringCompletion(body, wrapperHtml: wrapper)
+          .forToken('balanceReasoning', 0),
+      contains(emailPreviewPaymentQrSource),
+    );
+    expect(enabled.authoringCompletion(body).trailingHtml, isEmpty);
+    expect(
+      enabled.composeHtml('<p>Podpis</p>', wrapperHtml: wrapper),
+      endsWith('${enabled.inlinePaymentQrHtml}</main>'),
+    );
+    final paid = records.firstWhere(
+      (r) => r.templateCode == 'TICKET_ORDER_UPDATE' && r.scenario == 'paid',
+    ).withContext(const EmailPreviewContext(inlinePaymentQr: true));
+    expect(paid.composeHtml(body), isNot(contains(emailPreviewPaymentQrSource)));
+  });
   test('single application waitlist examples offer exactly one place', () {
     for (final record in records.where(
       (r) => r.templateCode.startsWith('waitlist'),
@@ -226,6 +262,7 @@ void main() {
     'context binding preserves exact renderer HTML with original fixture data',
     () {
       const fixture = EmailPreviewContext(
+        cancellationAvailable: true,
         products: [
           EmailPreviewProduct(
             title: 'Dospělý vstup',

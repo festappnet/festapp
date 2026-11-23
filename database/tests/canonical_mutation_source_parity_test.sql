@@ -1230,8 +1230,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_usage_rows_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='291038acb196acd01ab30820015400bb'),'current SQL source parity: public.get_form_usage_rows_internal(bigint[])');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_waitlist_context(bigint,bigint,bigint,bigint,text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='0b1838964a37d49c04cfb9e4092230a9'),'current SQL source parity: public.get_form_waitlist_context(bigint,bigint,bigint,bigint,text,jsonb)');
--- supabase/migrations/20261121101000_order_catalog_counts.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_forms_by_link(text)') AND md5(btrim(prosrc,E' \n\r\t'))='1dd10444180eb92516c6bafc8f1a5858'),'current SQL source parity: public.get_forms_by_link(text)');
+-- supabase/migrations/20261123093000_email_preview_cancellation_availability.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_forms_by_link(text)') AND md5(btrim(prosrc,E' \n\r\t'))='ba1a8993da01c3ad1df7d3cb38598ba8'),'current SQL source parity: public.get_forms_by_link(text)');
 -- supabase/migrations/20261121101000_order_catalog_counts.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_forms_by_link(text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='db107296677e57819f1eabbfec3524ee'),'current SQL source parity: public.get_forms_by_link(text,text)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -1330,8 +1330,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e9c32c22047d627a5f8bd7712643c606'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint)');
 -- supabase/migrations/20261121143000_payment_qr_email_setting.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='c06c46b42e5776f8b0741318038d782f'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text)');
--- supabase/migrations/20261121143000_payment_qr_email_setting.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='916da3fd0301ffbdccce925801e0de4e'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)');
+-- supabase/migrations/20261123094000_payment_qr_email_default.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='c99340fa9b2cd820b8a62a2b0897f938'),'current SQL source parity: public.get_occasion_setup_email_preview(uuid,bigint,text,bigint,text,boolean)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_occasion_team_invitation(text)') AND md5(btrim(prosrc,E' \n\r\t'))='f45cad0bb2f2701ab104d17d7e535238'),'current SQL source parity: public.get_occasion_team_invitation(text)');
 -- supabase/baseline/20261107170000_schema.sql

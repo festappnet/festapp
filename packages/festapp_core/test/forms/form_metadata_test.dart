@@ -4,8 +4,11 @@ import 'package:festapp_core/forms.dart';
 void main() {
   test('payment QR setting is sent only when present', () {
     const key = FormMetadata.metaShowPaymentQrInEmail;
+    expect(FormMetadata.showPaymentQrInEmail(null), true);
+    expect(FormMetadata.showPaymentQrInEmail({}), true);
     expect(FormMetadata.authoringSettingsSnapshot({}), isNot(contains(key)));
     for (final value in [false, true]) {
+      expect(FormMetadata.showPaymentQrInEmail({key: value}), value);
       expect(FormMetadata.authoringSettingsSnapshot({key: value})[key], value);
     }
   });

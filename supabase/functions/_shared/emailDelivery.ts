@@ -6,6 +6,7 @@ import { assertCanonicalEmailTemplate } from "./emailVariables.ts";
 import { styleEmailPlainValues } from "./emailPlainValueStyles.ts";
 import {
   completeEmailContent,
+  paymentQrEmailHtml,
   type EmailPaymentQrBlock,
   type EmailRequiredLink,
 } from "./emailContentCompletion.ts";
@@ -204,21 +205,10 @@ export async function renderEmail(
     }
 
     const contentId = `festapp-payment-${crypto.randomUUID()}@festapp.net`;
-    const alt = cs
-      ? "QR kód pro platbu bankovním převodem"
-      : "Bank transfer QR code";
-    const title = cs ? "Zaplaťte pomocí QR kódu" : "Pay with the QR code";
-    const scanInstructions = cs
-      ? "Naskenujte ho v aplikaci mobilního bankovnictví."
-      : "Scan it in your mobile banking app.";
-    const hint = cs
-      ? "QR kód si můžete stáhnout z přílohy."
-      : "You can download the QR code from the attachment.";
     return {
       ...prepared,
       html: composeHtml({
-        html:
-          `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="cid:${contentId}" alt="${alt}" width="280" style="display:block;width:280px;max-width:100%;height:auto;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`,
+        html: paymentQrEmailHtml(cs, `cid:${contentId}`),
         paymentDetails: ["paymentDetails", "balanceReasoning"].map((key) =>
           String(paymentValues[key] ?? "")
         ),

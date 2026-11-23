@@ -51,7 +51,6 @@ function fixture() {
       return {
         payment_method: "bank",
         collectionAction: { method: "bank", purpose: "collect_payment", allowed: true },
-        show_payment_qr_in_email: true,
         account_number: "CZ6508000000192000145399",
         account_number_human_readable: "19-2000145399/0800",
         deadline: "2030-01-01T00:00:00Z",
@@ -138,6 +137,20 @@ Deno.test("preview uses all selected products and canonical production email ren
     "TICKET_ORDER_PAYMENT_DONE",
   ]);
 });
+Deno.test("explicit payment QR opt-out keeps only the downloadable attachment", async () => {
+  const f = fixture();
+  const loadPayment = f.deps.paymentInfo;
+  f.deps.paymentInfo = async (...args) => ({
+    ...await loadPayment(...args),
+    show_payment_qr_in_email: false,
+  });
+  const response = await setupPreviewResponse(input, "Bearer user", f.deps);
+  assertEquals(response.status, 200);
+  const [confirmation] = (await response.json()).messages;
+  assertEquals(confirmation.inlineImages.length, 0);
+  assertEquals(confirmation.attachments, [{ filename: "qr-platba-PREVIEW.png" }]);
+});
+
 Deno.test("preview rejects foreign products and uses production Czech fallback for unsupported email locales", async () => {
   const f = fixture();
   assertEquals(

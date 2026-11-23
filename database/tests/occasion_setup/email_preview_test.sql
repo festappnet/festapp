@@ -40,7 +40,7 @@ BEGIN
  result:=public.get_occasion_setup_email_preview(draft,1);
  PERFORM assert_eq((result->>'ticketsEnabled')::boolean,false,'No ticket is invented for a draft without admission fields');
  PERFORM assert_eq(result->'sampleProducts','[]'::jsonb,'No sample product is invented');
- PERFORM assert_eq(result#>'{paymentInfo,show_payment_qr_in_email}','false'::jsonb,'Inline payment QR defaults off');
+ PERFORM assert_eq(result#>'{paymentInfo,show_payment_qr_in_email}','true'::jsonb,'Inline payment QR defaults on');
  PERFORM assert_eq(result->>'tone','informal','Unit tone inherited');
  PERFORM assert_eq(result->>'replyTo','unit@example.invalid','Unit reply inherited');
  PERFORM assert_eq(result->'resolved'->'template'->>'subject','Unit subject','Destination template inherited');
@@ -49,11 +49,11 @@ BEGIN
  BEGIN PERFORM public.get_occasion_setup_email_preview(gen_random_uuid(),1); RAISE EXCEPTION 'Missing draft accepted'; EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN PERFORM public.get_occasion_setup_email_preview(draft,2); RAISE EXCEPTION 'Stale revision accepted'; EXCEPTION WHEN SQLSTATE 'PT409' THEN NULL; END;
  EXECUTE 'RESET ROLE';
- UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('bankAccountId',bank_id,'deadline','3','formDraft','{"data":{"show_payment_qr_in_email":true}}'::jsonb) WHERE id=draft;
+ UPDATE public.occasion_setup_drafts SET data=data||jsonb_build_object('bankAccountId',bank_id,'deadline','3','formDraft','{"data":{"show_payment_qr_in_email":false}}'::jsonb) WHERE id=draft;
  EXECUTE 'SET LOCAL ROLE authenticated';
  result:=public.get_occasion_setup_email_preview(draft,1);
  PERFORM assert_eq(result#>>'{paymentInfo,account_number}','CZ6508000000192000145399','Selected linked IBAN is displayed');
- PERFORM assert_eq(result#>'{paymentInfo,show_payment_qr_in_email}','true'::jsonb,'Draft preference reaches the email preview');
+ PERFORM assert_eq(result#>'{paymentInfo,show_payment_qr_in_email}','false'::jsonb,'Explicit QR opt-out reaches the email preview');
  PERFORM assert_eq(result#>>'{paymentInfo,account_number_human_readable}','19-2000145399/0800','Complete account and bank code is displayed');
  PERFORM assert_eq((result->>'deadlineDurationSeconds')::numeric,259200::numeric,'Configured payment deadline is projected');
  EXECUTE 'RESET ROLE';

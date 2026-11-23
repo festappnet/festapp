@@ -53,7 +53,7 @@ class EmailPreviewExamples {
           .firstOrNull;
       final effective =
           (context ?? const EmailPreviewContext()).withPaymentAccount(account);
-      return (context == null && account == null ? r : r.withContext(effective))
+      return r.withContext(effective)
           .restrictTo(codes);
     }).toList(growable: false);
   }

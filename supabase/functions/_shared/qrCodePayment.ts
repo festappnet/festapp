@@ -78,7 +78,7 @@ async function paymentQrPng(
 export function showPaymentQrInEmail(
   formData: Record<string, unknown> | null | undefined,
 ): boolean {
-  return formData?.show_payment_qr_in_email === true;
+  return formData?.show_payment_qr_in_email !== false;
 }
 
 function determinePaymentMessage(order: any, occasionTitle: string): string {

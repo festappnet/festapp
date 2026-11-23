@@ -158,6 +158,7 @@ class _OccasionSetupEmailTemplatesState
           context: EmailPreviewContext(
             occasionTitle: preview['title'],
             ticketsEnabled: preview['ticketsEnabled'],
+            inlinePaymentQr: widget.draft['paymentQrInEmail'] != false,
             deadline: deadline != null
                 ? DateFormat.yMd().format(deadline.toLocal())
                 : null,

@@ -72,3 +72,17 @@ export function completeEmailContent(
   }
   return html.replaceAll(ORDER_OVERVIEW_LINK_SLOT, "");
 }
+
+export function paymentQrEmailHtml(cs: boolean, source: string): string {
+  const alt = cs
+    ? "QR kód pro platbu bankovním převodem"
+    : "Bank transfer QR code";
+  const title = cs ? "Zaplaťte pomocí QR kódu" : "Pay with the QR code";
+  const scanInstructions = cs
+    ? "Naskenujte ho v aplikaci mobilního bankovnictví."
+    : "Scan it in your mobile banking app.";
+  const hint = cs
+    ? "QR kód si můžete stáhnout z přílohy."
+    : "You can download the QR code from the attachment.";
+  return `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="${escapeEmailHtml(source)}" alt="${alt}" width="280" style="display:block;width:280px;max-width:100%;height:auto;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`;
+}

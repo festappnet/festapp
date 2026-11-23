@@ -37,14 +37,17 @@ void initializeCommunicationDraft(
   bool reset = false,
 }) {
   // A generated starter form is not an explicit communication override.
+  final savedForm = (data['formDraft'] as Map?)?['data'] as Map?;
   final form = data['formDefaultsFollowEvent'] == true
       ? const <String, dynamic>{}
-      : (data['formDraft'] as Map?)?['data'] as Map? ?? {};
+      : savedForm ?? {};
+  // Rehydrate from persisted form metadata. Older drafts cached the former
+  // default in the top-level editor state even when no preference was saved.
+  data['paymentQrInEmail'] = FormMetadata.showPaymentQrInEmail(savedForm);
   final values = <String, dynamic>{
     'communicationTone':
         CommunicationTone.parse(form['communication_tone']) ??
         CommunicationTone.inherit,
-    'paymentQrInEmail': FormMetadata.showPaymentQrInEmail(form),
     'replyToMode': 'inherit',
     'replyToEmail': '',
     'remindersMode': form['is_reminder_enabled'] is bool
@@ -111,11 +114,11 @@ void serializeCommunicationDraft(Map<String, dynamic> data) {
   } else {
     meta.remove('reminder_interval_seconds');
   }
-  if (data['paymentQrInEmail'] == true ||
-      (data.containsKey('paymentQrInEmail') &&
+  final inlinePaymentQr = data['paymentQrInEmail'];
+  if (inlinePaymentQr is bool &&
+      (!inlinePaymentQr ||
           meta.containsKey(FormMetadata.metaShowPaymentQrInEmail))) {
-    meta[FormMetadata.metaShowPaymentQrInEmail] =
-        data['paymentQrInEmail'] == true;
+    meta[FormMetadata.metaShowPaymentQrInEmail] = inlinePaymentQr;
   }
   form['data'] = meta;
 }
@@ -325,7 +328,7 @@ class _OccasionSetupCommunicationState
                   .bankEnabled) ...[
             const SizedBox(height: 16),
             PaymentQrEmailSetting(
-              value: widget.data['paymentQrInEmail'] == true,
+              value: widget.data['paymentQrInEmail'] != false,
               onChanged: (value) =>
                   widget.onChanged({'paymentQrInEmail': value}),
             ),
