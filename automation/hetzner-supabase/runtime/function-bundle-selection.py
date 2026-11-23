@@ -12,6 +12,15 @@ import re
 import shutil
 
 
+AUTHORING_CONTEXT = 'send-custom-email/authoringContext.ts'
+AUTHORING_QR_IMPORTS = {'node:buffer', '../_shared/qrCodePayment.ts'}
+AUTHORING_QR_RESOURCES = (
+    '_shared/qrCodePayment.ts',
+    '_shared/paymentQrArtwork.ts',
+    '_shared/ticket-assets/roboto.ttf',
+)
+
+
 def require(value, message):
     if not value:
         raise ValueError(message)
@@ -134,11 +143,11 @@ def exact_shared_plan(source, base, modules):
     planned = {}
     for name in sorted(modules):
         path = source / name
-        require(re.fullmatch(
-                    r'_shared/(?:[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)|translations/translations\.[a-z]{2}\.ts)', name)
+        require((name == AUTHORING_CONTEXT or re.fullmatch(
+                    r'_shared/(?:[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)|translations/translations\.[a-z]{2}\.ts)', name))
                 and name in base['files'] and path.is_file()
                 and path.resolve() == source.resolve() / name,
-                'Exact replacement requires an existing shared code or locale module')
+                'Exact replacement requires an existing allowed code or locale module')
         value = digest(path.read_bytes())
         require(value != base['files'][name], 'Exact shared replacement must change each selected module')
         planned[name] = value
@@ -162,8 +171,15 @@ def stage_exact_shared(current, stage, manifest):
     for name in planned['shared_modules']:
         # The entire installed tree stays pinned. Compare direct imports only
         # for the replacement files and keep the existing dependency graph.
-        require(imports(stage / name) == imports(current / name),
-                'Exact shared replacement changes dependencies')
+        before = set(imports(current / name))
+        after = set(imports(stage / name))
+        if name == AUTHORING_CONTEXT:
+            # The installed tree digest also pins the QR renderer and its font.
+            require(before <= after and after - before <= AUTHORING_QR_IMPORTS
+                    and all(resource in base['files'] for resource in AUTHORING_QR_RESOURCES),
+                    'Exact authoring replacement changes dependencies')
+        else:
+            require(before == after, 'Exact shared replacement changes dependencies')
     replacements = {name: (stage / name).read_bytes() for name in planned['shared_modules']}
     shutil.copytree(current, stage, dirs_exist_ok=True)
     for name, content in replacements.items():
@@ -188,8 +204,14 @@ def main():
         print(json.dumps(selection(args.root, json.loads(args.base.read_text()), args.functions.split(','),
                                    args.shared_modules.split(',') if args.shared_modules else []), sort_keys=True))
     elif args.command == 'plan-exact-shared':
-        print(json.dumps(exact_shared_plan(args.root, json.loads(args.base.read_text()),
-                                           args.shared_modules.split(',')), sort_keys=True))
+        base = json.loads(args.base.read_text())
+        modules = args.shared_modules.split(',')
+        if AUTHORING_CONTEXT in modules:
+            require(all((args.root / name).is_file()
+                        and base['files'].get(name) == digest((args.root / name).read_bytes())
+                        for name in AUTHORING_QR_RESOURCES),
+                    'Installed payment QR artwork dependencies differ from canonical source')
+        print(json.dumps(exact_shared_plan(args.root, base, modules), sort_keys=True))
     elif args.command == 'stage-exact-shared':
         stage_exact_shared(args.root, args.stage, json.loads(args.manifest.read_text()))
     else:
