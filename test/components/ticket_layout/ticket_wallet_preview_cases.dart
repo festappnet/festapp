@@ -117,7 +117,14 @@ void main() {
       );
       expect(find.text('12'), findsOneWidget);
       expect(find.text('3'), findsOneWidget);
-      expect(find.text('Místo u stolu'), findsOneWidget);
+      expect(
+        find.text(
+          platform == TicketWalletPlatform.apple
+              ? 'Místo / Seat'
+              : 'Místo u stolu',
+        ),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       const path = String.fromEnvironment('UI_SCREENSHOT_DIR');
       if (path.isNotEmpty) {
@@ -192,6 +199,8 @@ void main() {
     final capture = GlobalKey();
     final feature = TicketFeature(
       code: 'ticket',
+      ticketBackground:
+          'https://img.festapp.net/ticket-presets/v1/club-panorama-v3.png',
       walletAppearance: {
         'logo': null,
         'hero_image': 'https://img.festapp.net/images/sample.png',
@@ -292,10 +301,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(feature.walletAppearance!['hero_image'], isNull);
     expect(find.byType(DropFile), findsNWidgets(2));
+
+    final apple = find.widgetWithText(ChoiceChip, 'Apple Wallet');
+    await tester.ensureVisible(apple);
+    await tester.tap(apple);
+    await tester.pumpAndSettle();
+    expect(find.byType(TicketWalletGalleryArtwork), findsNothing);
+
+    final inherit = find.widgetWithText(TextButton, 'Převzít vzhled vstupenky');
+    await tester.ensureVisible(inherit);
+    await tester.tap(inherit);
+    await tester.pumpAndSettle();
+    expect(find.byType(TicketWalletGalleryArtwork), findsNWidgets(2));
+    await tester.ensureVisible(remove);
+    await tester.tap(remove);
+    await tester.pumpAndSettle();
+    expect(feature.walletAppearance, containsPair('hero_image', null));
+    expect(find.byType(TicketWalletGalleryArtwork), findsNothing);
   });
 
   testWidgets(
-    'artwork uses a Google image and an Apple cropped primary strip',
+    'Apple puts the artwork beside the title and Google places it below the card',
     (tester) async {
       final environment = WidgetEnvironmentFixture(
         locale: const Locale('cs'),
@@ -368,16 +394,19 @@ void main() {
           );
           expect(imageY, greaterThanOrEqualTo(tester.getBottomLeft(body).dy));
           expect(
-            find.byKey(const ValueKey('apple-wallet-strip')),
+            find.byKey(const ValueKey('apple-wallet-thumbnail')),
             findsNothing,
           );
         } else {
           expect(image.fit, BoxFit.cover);
-          final strip = tester.widget<AspectRatio>(
-            find.byKey(const ValueKey('apple-wallet-strip')),
+          final thumbnail = find.byKey(
+            const ValueKey('apple-wallet-thumbnail'),
           );
-          expect(strip.aspectRatio, 375 / 98);
-          expect(titleY, greaterThanOrEqualTo(imageY));
+          expect(tester.getSize(thumbnail), const Size.square(76));
+          expect(
+            tester.getRect(find.text('Slavnostní večer')).right,
+            lessThan(tester.getRect(thumbnail).left),
+          );
           expect(
             tester.getBottomLeft(find.byType(Image)).dy,
             lessThan(tester.getTopLeft(find.byType(QrImageView)).dy),
@@ -415,12 +444,11 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          final stripRect = tester.getRect(
-            find.byKey(const ValueKey('apple-wallet-strip')),
+          final thumbnailRect = tester.getRect(
+            find.byKey(const ValueKey('apple-wallet-thumbnail')),
           );
           final titleRect = tester.getRect(find.text(longTitle));
-          expect(titleRect.top, greaterThanOrEqualTo(stripRect.top));
-          expect(titleRect.bottom, lessThanOrEqualTo(stripRect.bottom));
+          expect(titleRect.right, lessThan(thumbnailRect.left));
           expect(
             tester.widget<RawImage>(find.byType(RawImage)).image,
             isNotNull,

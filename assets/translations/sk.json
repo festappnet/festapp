@@ -3162,7 +3162,7 @@
     "walletLogo": "Logo",
     "walletLogoSize": "Použite štvorcové PNG aspoň 660 × 660 px. Okolo loga ponechajte 15 % voľného miesta.",
     "walletHero": "Obrázok karty",
-    "walletHeroHelp": "Google odporúča PNG 1032 × 812 px bez vloženého textu. Apple rovnaký obrázok oreže do horného pruhu za názvom akcie (375:98). Široká grafika PDF preto môže byť zle čitateľná.",
+    "walletHeroHelp": "Google odporúča PNG 1032 × 812 px. V Apple Wallet sa obrázok zobrazí ako malý náhľad vedľa názvu akcie. Použite grafiku bez vloženého textu.",
     "walletInherit": "Prevziať vzhľad vstupenky",
     "walletSampleCode": "UKÁŽKA - NEPLATÍ PRE VSTUP",
     "walletImageTooLarge": "Obrázok je príliš veľký (najviac 20 MB).",

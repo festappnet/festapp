@@ -12,6 +12,7 @@
     "npm:harfbuzzjs@1.6.3": "1.6.3",
     "npm:htmlparser2@12.0.0": "12.0.0",
     "npm:jose@6.1.3": "6.1.3",
+    "npm:jpeg-js@0.4.4": "0.4.4",
     "npm:linebreak@1.1.0": "1.1.0",
     "npm:node-forge@1.4.3": "1.4.3",
     "npm:passkit-generator@3.7.0": "3.7.0",
@@ -230,6 +231,9 @@
     },
     "jose@6.1.3": {
       "integrity": "sha512-0TpaTfihd4QMNwrz/ob2Bp7X04yuxJkjRGi4aKmOqwhov54i6u79oCv7T+C7lo70MKH6BesI3vscD1yb/yzKXQ=="
+    },
+    "jpeg-js@0.4.4": {
+      "integrity": "sha512-WZzeDOEtTOBK4Mdsar0IqEU5sMr3vSV2RqkAIzUEV2BHnUfKGyswWFPFwK5EeDo93K3FohSHbLAjj0s1Wzd+dg=="
     },
     "linebreak@1.1.0": {
       "integrity": "sha512-MHp03UImeVhB7XZtjd0E4n6+3xr5Dq/9xI/5FptGk5FrbDR3zagPa2DS6U8ks/3HjbKWG9Q1M2ufOzxV2qLYSQ==",

@@ -43,7 +43,7 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
   !Number.isFinite(Date.parse(occasion.start_time)) || !Number.isFinite(Date.parse(occasion.end_time))) throw new Error('wallet_metadata');
  const branding=parseOrganizationBranding(projection.branding);
  const normalized=normalizeTicketData(ticket,occasion,{});
- const appearance=googleWalletAppearance(occasion.ticketFeature,occasion.data);
+ const appearance=googleWalletAppearance(occasion.ticketFeature,occasion.data,'apple');
  const products=ticket.order_product_ticket??[];
  const seating=ticketSeating(ticket);
  const showSeat=ticketShowsSeat(occasion.ticketFeature);
@@ -52,7 +52,14 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
  const date=new Intl.DateTimeFormat('cs-CZ',{timeZone:zone,dateStyle:'medium',timeStyle:'short'}).format(new Date(occasion.start_time));
  const color=appearance.backgroundColor??'#ffffff';
  const rgb=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16));
- const foreground=rgb.reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0)>145?'rgb(0, 0, 0)':'rgb(255, 255, 255)';
+ const linearRgb=rgb.map(value=>{
+  const channel=value/255;
+  return channel<=0.04045?channel/12.92:((channel+0.055)/1.055)**2.4;
+ });
+ const luminance=0.2126*linearRgb[0]+0.7152*linearRgb[1]+0.0722*linearRgb[2];
+ const blackContrast=(luminance+0.05)/0.05;
+ const whiteContrast=1.05/(luminance+0.05);
+ const foreground=blackContrast>=whiteContrast?'rgb(0, 0, 0)':'rgb(255, 255, 255)';
  const field=(key:string,label:string,value:string)=>({key,label,value});
  return {
   formatVersion:1,passTypeIdentifier:credentials.passTypeIdentifier,teamIdentifier:credentials.teamIdentifier,serialNumber,
@@ -83,10 +90,12 @@ export class AppleWallet {
   const files:Record<string,Buffer>={'pass.json':Buffer.from(JSON.stringify(document))};
   for(const [name,bytes] of Object.entries(this.icons)) files[name]=Buffer.from(bytes);
   // Reuse the existing canonical public image policy; redirects and unbounded downloads are forbidden.
-  const appearance=googleWalletAppearance(projection.occasion.ticketFeature,projection.occasion.data);
+  const feature=projection.occasion.ticketFeature;
+  const appearance=googleWalletAppearance(feature,projection.occasion.data,'apple');
   const overrides=projection.occasion.ticketFeature?.wallet_appearance??{};
-  const logo=Object.hasOwn(overrides,'logo')?appearance.logo:walletPublicImage(projection.branding?.WALLET_LOGO_URL)??appearance.logo;
-  for(const [name,url] of [['logo.png',logo],['strip.png',appearance.heroImage]] as const) {
+  const logo=appearance.logo??(Object.hasOwn(overrides,'logo')?undefined:walletPublicImage(projection.branding?.WALLET_LOGO_URL));
+  // Wallet overlays the event title on a strip. A thumbnail keeps it on the solid pass background.
+  for(const [name,url] of [['logo.png',logo],['thumbnail.png',appearance.heroImage]] as const) {
    if(!url)continue;
    try {
     const res=await this.http(url,{redirect:'error',signal:AbortSignal.timeout(5000)});
@@ -97,8 +106,23 @@ export class AppleWallet {
      while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>2*1024*1024){await reader.cancel();throw new Error('wallet_image_size');}chunks.push(value);}
     }finally{reader.releaseLock();}
     const bytes=Buffer.concat(chunks.map(chunk=>Buffer.from(chunk)));
-    if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))files[name]=bytes;
+    if(!bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))continue;
+    if(name==='logo.png')files[name]=bytes;
+    else {
+     const {appleWalletPublicThumbnail}=await import('./appleWalletThumbnail.ts');
+     const thumbnail=appleWalletPublicThumbnail(bytes);
+     if(thumbnail)files[name]=thumbnail;
+    }
    }catch{/* Optional artwork must not prevent the original QR from being issued. */}
+  }
+  const inheritedArt=feature?.background;
+  if(!Object.hasOwn(overrides,'hero_image')&&typeof inheritedArt==='string'&&
+    inheritedArt.startsWith('https://img.festapp.net/ticket-presets/v1/')) {
+   try {
+    const {appleWalletGalleryThumbnail}=await import('./appleWalletThumbnail.ts');
+    const thumbnail=await appleWalletGalleryThumbnail(inheritedArt);
+    if(thumbnail)files['thumbnail.png']=thumbnail;
+   }catch{/* A pass can be issued even when optional artwork is unavailable. */}
   }
   const {signerCert,signerKey,wwdr,signerKeyPassphrase}=this.credentials;
   return new Uint8Array(new PKPass(files,{signerCert,signerKey,wwdr,...(signerKeyPassphrase?{signerKeyPassphrase}:{})}).getAsBuffer());

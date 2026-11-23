@@ -2898,7 +2898,7 @@
     "walletLogo": "Logo",
     "walletLogoSize": "Użyj kwadratowego PNG o wymiarach co najmniej 660 × 660 px, z 15% wolnego miejsca wokół logo.",
     "walletHero": "Obraz karty",
-    "walletHeroHelp": "Google zaleca PNG 1032 × 812 px bez osadzonego tekstu. Apple przycina ten sam obraz do górnego paska za tytułem wydarzenia (375:98). Szeroka grafika PDF może być trudna do odczytania.",
+    "walletHeroHelp": "Google zaleca PNG 1032 × 812 px. Apple Wallet wyświetla miniaturę obok nazwy wydarzenia. Użyj grafiki bez osadzonego tekstu.",
     "walletInherit": "Użyj wyglądu biletu",
     "walletSampleCode": "PRZYKŁAD - NIEWAŻNY PRZY WEJŚCIU",
     "walletImageTooLarge": "Obraz jest zbyt duży (maksymalnie 20 MB).",

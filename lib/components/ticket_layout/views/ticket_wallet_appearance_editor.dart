@@ -45,67 +45,84 @@ class _TicketWalletAppearanceEditorState
     final appearance = GoogleWalletAppearance.fromTicket(
       widget.feature.toJson(),
       Map<String, dynamic>.from(widget.occasion['data'] as Map? ?? {}),
+      platform == TicketWalletPlatform.apple,
     );
+    final ticketType = widget.feature.ticketType == 'named' ? 'named' : 'wide';
+    final template = widget.feature.layout?['templates']?[ticketType];
+    final showSeat = template?['spotGroupAppearance']?['showSeat'] == true;
     void change(String key, Object? value) =>
         widget.onChanged({...overrides, key: value});
     final uploadAllowed =
         !widget.readOnly &&
         (widget.occasionId != null || widget.unitId != null);
-    Widget image(String key, String? effective, String label, String help) =>
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            ImageArea(
-              imageUrl: overrides.containsKey(key)
-                  ? overrides[key] as String?
-                  : effective?.split('?').first,
-              enabled: uploadAllowed,
-              dropHeight: 96,
-              dropMargin: EdgeInsets.zero,
-              allowedExtensions: const ['png', 'jpg', 'jpeg'],
-              hint: help,
-              onFileSelected: (file) async {
-                if (await file.length() > ImageUploadLimits.maxInputBytes) {
+    Widget image(
+      String key,
+      String? effective,
+      String label,
+      String help, {
+      String? galleryArtwork,
+    }) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        ImageArea(
+          imageUrl: overrides.containsKey(key)
+              ? overrides[key] as String?
+              : effective?.split('?').first ?? galleryArtwork,
+          preview: galleryArtwork == null
+              ? null
+              : TicketWalletGalleryArtwork(
+                  key: ValueKey(galleryArtwork),
+                  url: galleryArtwork,
+                  height: 120,
+                  fit: BoxFit.contain,
+                ),
+          enabled: uploadAllowed,
+          dropHeight: 96,
+          dropMargin: EdgeInsets.zero,
+          allowedExtensions: const ['png', 'jpg', 'jpeg'],
+          hint: help,
+          onFileSelected: (file) async {
+            if (await file.length() > ImageUploadLimits.maxInputBytes) {
+              throw FormatException(t('walletImageTooLarge'));
+            }
+            final bytes = await file.readAsBytes();
+            final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+            try {
+              final descriptor = await ui.ImageDescriptor.encoded(buffer);
+              try {
+                if (descriptor.width * descriptor.height >
+                    ImageUploadLimits.maxPixels) {
                   throw FormatException(t('walletImageTooLarge'));
                 }
-                final bytes = await file.readAsBytes();
-                final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-                try {
-                  final descriptor = await ui.ImageDescriptor.encoded(buffer);
-                  try {
-                    if (descriptor.width * descriptor.height >
-                        ImageUploadLimits.maxPixels) {
-                      throw FormatException(t('walletImageTooLarge'));
-                    }
-                    if (key == 'logo' &&
-                        (descriptor.width < 660 ||
-                            descriptor.height < 660 ||
-                            descriptor.width != descriptor.height)) {
-                      throw FormatException(t('walletLogoSize'));
-                    }
-                  } finally {
-                    descriptor.dispose();
-                  }
-                } finally {
-                  buffer.dispose();
+                if (key == 'logo' &&
+                    (descriptor.width < 660 ||
+                        descriptor.height < 660 ||
+                        descriptor.width != descriptor.height)) {
+                  throw FormatException(t('walletLogoSize'));
                 }
-                final url = widget.uploadImage != null
-                    ? await widget.uploadImage!(bytes)
-                    : await DbImages.uploadImage(
-                        bytes,
-                        widget.occasionId,
-                        widget.occasionId == null ? widget.unitId : null,
-                      );
-                if (context.mounted) change(key, url);
-                return url;
-              },
-              onRemove: () => change(key, null),
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
+              } finally {
+                descriptor.dispose();
+              }
+            } finally {
+              buffer.dispose();
+            }
+            final url = widget.uploadImage != null
+                ? await widget.uploadImage!(bytes)
+                : await DbImages.uploadImage(
+                    bytes,
+                    widget.occasionId,
+                    widget.occasionId == null ? widget.unitId : null,
+                  );
+            if (context.mounted) change(key, url);
+            return url;
+          },
+          onRemove: () => change(key, null),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: ConstrainedBox(
@@ -134,7 +151,7 @@ class _TicketWalletAppearanceEditorState
             const SizedBox(height: 12),
             TicketWalletCardPreview(
               platform: platform,
-              showSeat: widget.feature.layout?['templates']?[widget.feature.ticketType == 'named' ? 'named' : 'wide']?['spotGroupAppearance']?['showSeat'] == true,
+              showSeat: showSeat,
               appearance: appearance,
               occasion: widget.occasion,
               previewLabel: t('walletPreview'),
@@ -146,7 +163,10 @@ class _TicketWalletAppearanceEditorState
             Text(t('walletAppearanceRules')),
             const SizedBox(height: 16),
             TextFormField(
-              key: ValueKey(overrides['background_color']),
+              key: ValueKey((
+                overrides['background_color'],
+                appearance.backgroundColor,
+              )),
               initialValue:
                   overrides['background_color'] as String? ??
                   appearance.backgroundColor,
@@ -186,6 +206,7 @@ class _TicketWalletAppearanceEditorState
               appearance.heroImage,
               t('walletHero'),
               t('walletHeroHelp'),
+              galleryArtwork: appearance.galleryArtwork,
             ),
             Align(
               alignment: AlignmentDirectional.centerStart,

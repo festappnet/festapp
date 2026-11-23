@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -9,6 +11,7 @@ import '../../../app_config.dart';
 import '../../../widgets/logo_widget.dart';
 import '../ticket_delivery_strings.dart';
 import '../ticket_layout_strings.dart';
+import '../ticket_preview_assets.dart';
 
 enum TicketWalletPlatform { google, apple }
 
@@ -45,14 +48,10 @@ class TicketWalletCardPreview extends StatelessWidget {
             0xff000000 |
                 int.parse(appearance.backgroundColor!.substring(1), radix: 16),
           );
-    // Apple uses this exact weighted RGB threshold in appleWalletDocument.
-    final rgb = background.toARGB32();
+    final luminance = background.computeLuminance();
     final bright = apple
-        ? ((rgb >> 16 & 255) * .2126 +
-                  (rgb >> 8 & 255) * .7152 +
-                  (rgb & 255) * .0722) >
-              145
-        : background.computeLuminance() > .4;
+        ? (luminance + .05) / .05 >= 1.05 / (luminance + .05)
+        : luminance > .4;
     final foreground = bright ? Colors.black : Colors.white;
     final instant = DateTime.tryParse('${occasion['start_time'] ?? ''}');
     final start = instant == null
@@ -65,6 +64,8 @@ class TicketWalletCardPreview extends StatelessWidget {
     final title = Text(
       '${occasion['title'] ?? ''}',
       textAlign: apple ? TextAlign.start : TextAlign.center,
+      maxLines: apple ? 2 : null,
+      overflow: apple ? TextOverflow.ellipsis : null,
       style: TextStyle(fontSize: apple ? 22 : 32, fontWeight: FontWeight.w600),
     );
     Widget inset(Widget child) => Padding(
@@ -100,7 +101,8 @@ class TicketWalletCardPreview extends StatelessWidget {
       ),
     );
     final showLogo = !appearance.logoOverridden || appearance.logo != null;
-    Widget logo(double size) => appearance.logoOverridden
+    Widget logo(double size) =>
+        (apple || appearance.logoOverridden) && appearance.logo != null
         ? Image.network(
             appearance.logo!,
             width: size,
@@ -140,6 +142,26 @@ class TicketWalletCardPreview extends StatelessWidget {
         ],
       ),
     );
+    final seating = inset(
+      Row(
+        children: [
+          Expanded(
+            child: field(
+              apple ? 'Stůl / Table' : TicketLayoutStrings.spotGroup,
+              '12',
+            ),
+          ),
+          if (showSeat)
+            Expanded(
+              child: field(
+                apple ? 'Místo / Seat' : TicketLayoutStrings.seat,
+                '3',
+                alignEnd: true,
+              ),
+            ),
+        ],
+      ),
+    );
     final card = Semantics(
       label: '$previewLabel. $sampleCodeLabel',
       child: Container(
@@ -165,69 +187,48 @@ class TicketWalletCardPreview extends StatelessWidget {
               apple ? appleHeader : googleHeader,
               const SizedBox(height: 20),
               if (apple) ...[
-                if (appearance.heroImage != null)
-                  AspectRatio(
-                    key: const ValueKey('apple-wallet-strip'),
-                    aspectRatio: 375 / 98,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          appearance.heroImage!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: LayoutBuilder(
-                              builder: (context, constraints) => FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: AlignmentDirectional.centerStart,
-                                child: SizedBox(
-                                  width: constraints.maxWidth,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Akce / Event',
-                                        style: TextStyle(fontSize: 11),
-                                      ),
-                                      Text(
-                                        '${occasion['title'] ?? ''}',
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                inset(
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Akce / Event',
+                              style: TextStyle(fontSize: 11),
                             ),
+                            title,
+                          ],
+                        ),
+                      ),
+                      if (appearance.heroImage case final url?)
+                        Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 12),
+                          child: Image.network(
+                            url,
+                            key: const ValueKey('apple-wallet-thumbnail'),
+                            width: 76,
+                            height: 76,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                          ),
+                        )
+                      else if (appearance.galleryArtwork case final url?)
+                        Padding(
+                          padding: const EdgeInsetsDirectional.only(start: 12),
+                          child: TicketWalletGalleryArtwork(
+                            key: ValueKey(url),
+                            url: url,
+                            width: 76,
+                            height: 76,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                      ],
-                    ),
-                  )
-                else
-                  inset(
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Akce / Event',
-                          style: TextStyle(fontSize: 11),
-                        ),
-                        title,
-                      ],
-                    ),
+                    ],
                   ),
+                ),
                 const SizedBox(height: 20),
                 inset(
                   Row(
@@ -242,11 +243,15 @@ class TicketWalletCardPreview extends StatelessWidget {
                         ),
                       if (place != null && '$place'.trim().isNotEmpty) ...[
                         const SizedBox(width: 12),
-                        Expanded(child: field('Místo konání / Venue', '$place')),
+                        Expanded(
+                          child: field('Místo konání / Venue', '$place'),
+                        ),
                       ],
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                seating,
                 const SizedBox(height: 24),
                 qr,
               ] else ...[
@@ -279,11 +284,8 @@ class TicketWalletCardPreview extends StatelessWidget {
                 // The adapter sends place as a text module, not class.venue.
                 // It therefore appears in details, rather than under the title.
               ],
-              const SizedBox(height: 16),
-              inset(Row(children: [
-                Expanded(child: field(TicketLayoutStrings.spotGroup, '12')),
-                if (showSeat) Expanded(child: field(TicketLayoutStrings.seat, '3', alignEnd: true)),
-              ])),
+              if (!apple) const SizedBox(height: 16),
+              if (!apple) seating,
               const SizedBox(height: 16),
             ],
           ),
@@ -309,4 +311,58 @@ class TicketWalletCardPreview extends StatelessWidget {
       ),
     );
   }
+}
+
+class TicketWalletGalleryArtwork extends StatefulWidget {
+  const TicketWalletGalleryArtwork({
+    required super.key,
+    required this.url,
+    this.width,
+    required this.height,
+    required this.fit,
+  });
+
+  final String url;
+  final double? width;
+  final double height;
+  final BoxFit fit;
+
+  @override
+  State<TicketWalletGalleryArtwork> createState() =>
+      _TicketWalletGalleryArtworkState();
+}
+
+class _TicketWalletGalleryArtworkState
+    extends State<TicketWalletGalleryArtwork> {
+  late final _bytes = _load();
+
+  Future<Uint8List?> _load() async {
+    final image = await TicketPreviewAssets.shared.image(
+      widget.url,
+      maxWidth: 540,
+    );
+    if (image == null) return null;
+    try {
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      return data?.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    } finally {
+      image.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Uint8List?>(
+    future: _bytes,
+    builder: (context, snapshot) {
+      final bytes = snapshot.data;
+      return bytes == null
+          ? const SizedBox.shrink()
+          : Image.memory(
+              bytes,
+              width: widget.width,
+              height: widget.height,
+              fit: widget.fit,
+            );
+    },
+  );
 }
