@@ -70,6 +70,7 @@ export function previewOrder(
       account_number: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number || defaults.iban : null,
       account_number_human_readable:
         isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? configuration?.paymentInfo?.account_number_human_readable || configuration?.paymentInfo?.account_number || defaults.accountNumber : null,
+      creditor_name: configuration?.paymentInfo?.creditor_name,
       variable_symbol: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? defaults.variableSymbol : null,
       creditor_reference: isBankPaymentInfo(configuration?.paymentInfo ?? {}) ? "RF18539007547034" : null,
     },
@@ -171,7 +172,7 @@ export async function renderDraftPreview(context: any) {
     attachments: delivery?.attachments,
     paymentQr: isTickets
       ? undefined
-      : await previewPaymentQr(order.payment_info, context.lang),
+      : await previewPaymentQr(order.payment_info, context.lang, order.occasion.title),
     ticketBlock: isTickets ? delivery?.html ?? "" : undefined,
     subjectSubstitutions: isTickets ? ticketSubs : undefined,
     substitutions: isTickets

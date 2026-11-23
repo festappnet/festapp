@@ -79,6 +79,7 @@ export async function getTicketOrderPaidTemplate(
         qrPaymentData,
         order.data,
         occasion.title,
+        lang,
       );
     } catch (error: any) {
       console.error(

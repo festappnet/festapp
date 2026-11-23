@@ -3,7 +3,10 @@ import { requireHostedPayment } from "../_shared/payments/contracts.ts";
 import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
-import { generateQrCode } from "../_shared/qrCodePayment.ts";
+import {
+  generatePlainPaymentQr,
+  generateQrCode,
+} from "../_shared/qrCodePayment.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { formatCurrency, formatDatetime } from "../_shared/utilities.ts";
@@ -164,14 +167,14 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
         paymentInfo.deposit_amount < paymentInfo.amount
       ? { ...paymentInfo, amount: Number(paymentInfo.deposit_amount) }
       : paymentInfo;
-    paymentQrPng = await generateQrCode(qrPaymentInfo, order, occasion.title);
+    paymentQrPng = await generateQrCode(qrPaymentInfo, order, occasion.title, lang);
     if (invoiceAttachment) {
       invoiceAttachment = {
         ...invoiceAttachment,
         content: await appendFakturoidPaymentPage(
           invoiceAttachment.content,
           qrPaymentInfo,
-          paymentQrPng,
+          await generatePlainPaymentQr(qrPaymentInfo, order, occasion.title),
           lang,
         ),
       };
