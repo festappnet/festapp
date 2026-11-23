@@ -73,7 +73,13 @@ export function completeEmailContent(
   return html.replaceAll(ORDER_OVERVIEW_LINK_SLOT, "");
 }
 
-export function paymentQrEmailHtml(cs: boolean, source: string): string {
+export function paymentQrEmailHtml(cs: boolean, source?: string): string {
+  if (source === undefined) {
+    const notice = cs
+      ? "Platební QR kód najdete v příloze."
+      : "The payment QR code is in the attachment.";
+    return `<p style="margin:16px 0">${notice}</p>`;
+  }
   const alt = cs
     ? "QR kód pro platbu bankovním převodem"
     : "Bank transfer QR code";

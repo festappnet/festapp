@@ -43,7 +43,9 @@ class _FormSettingsSectionState extends State<FormSettingsSection> {
       maintainState: true,
       expansionAnimationStyle: AnimationStyle.noAnimation,
       tilePadding: EdgeInsets.zero,
-      childrenPadding: const EdgeInsets.only(bottom: 16),
+      shape: const Border(),
+      collapsedShape: const Border(),
+      childrenPadding: const EdgeInsets.only(top: 12, bottom: 16),
       expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
       onExpansionChanged: widget.onExpansionChanged,
       title: Semantics(

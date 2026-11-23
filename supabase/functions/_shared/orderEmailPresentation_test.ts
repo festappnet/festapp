@@ -8,8 +8,8 @@ import * as presentation from "./orderEmailPresentation.ts";
 import { translations } from "./translations/translations.ts";
 import { formatCurrency } from "./utilities.ts";
 
-// Expected fixture was captured from the five literal producer text blocks
-// before extraction. Keep production wording/branch behavior stable.
+// Regenerate the payment presentation snapshot from these same fixtures when
+// payment wording intentionally changes.
 export function examples(p: typeof presentation) {
   const result: Record<string, unknown> = {};
   for (const lang of ["cs", "en"] as const) {
@@ -125,7 +125,7 @@ export function examples(p: typeof presentation) {
   return result;
 }
 
-Deno.test("payment presentation retains exact pre-extraction producer output", async () => {
+Deno.test("payment presentation matches the expected producer output", async () => {
   const expected = JSON.parse(
     await Deno.readTextFile(
       new URL("./testdata/orderEmailPresentation.json", import.meta.url),
