@@ -96,7 +96,7 @@
     "confirm": "Adresa je správna"
   },
   "FormsFeature": {
-    "saveConflict": "Formulár sa medzitým zmenil. Skopírujte si rozpracované zmeny, obnovte stránku a zadajte ich znova.",
+    "saveConflict": "Formulár sa medzitým zmenil. Vaše úpravy zostali v editore.",
     "savePaymentRequired": "Pred otvorením predaja nastavte aspoň jeden dostupný spôsob platby v nastaveniach formulára.",
     "selectionOptionsRequired": "Pridajte aspoň jednu neprázdnu možnosť alebo pole odstráňte.",
     "showDepositDescription": "Zobraziť popis zálohy a doplatku pri produktoch",

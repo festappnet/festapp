@@ -210,29 +210,31 @@ class _FormEditorContentState extends State<FormEditorContent>
       }
     }
 
-    form.relatedFields.sort(
-      (a, b) => (a.definition.order ?? 0).compareTo(b.definition.order ?? 0),
-    );
-    for (int i = 0; i < form.relatedFields.length; i++) {
-      form.relatedFields[i].definition = form.relatedFields[i].definition
-          .copyWith(order: i);
-    }
+    if (form.hasStructuralEdits) {
+      form.relatedFields.sort(
+        (a, b) => (a.definition.order ?? 0).compareTo(b.definition.order ?? 0),
+      );
+      for (int i = 0; i < form.relatedFields.length; i++) {
+        form.relatedFields[i].definition = form.relatedFields[i].definition
+            .copyWith(order: i);
+      }
 
-    for (final field in form.relatedFields) {
-      if (field.definition.isTicketField == true &&
-          field.definition.type == FormMetadata.fieldTypeProductType &&
-          field.definition.productType != null &&
-          field.definition.productType!.products != null) {
-        final products = [...field.definition.productType!.products!]
-          ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
-        field.definition = field.definition.copyWith(
-          productType: field.definition.productType!.copyWith(
-            products: [
-              for (var index = 0; index < products.length; index++)
-                products[index].copyWith(order: index),
-            ],
-          ),
-        );
+      for (final field in form.relatedFields) {
+        if (field.definition.isTicketField == true &&
+            field.definition.type == FormMetadata.fieldTypeProductType &&
+            field.definition.productType != null &&
+            field.definition.productType!.products != null) {
+          final products = [...field.definition.productType!.products!]
+            ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+          field.definition = field.definition.copyWith(
+            productType: field.definition.productType!.copyWith(
+              products: [
+                for (var index = 0; index < products.length; index++)
+                  products[index].copyWith(order: index),
+              ],
+            ),
+          );
+        }
       }
     }
 

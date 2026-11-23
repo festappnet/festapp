@@ -1,4 +1,5 @@
 import 'package:fstapp/components/blueprint/blueprint_layout_contract.dart';
+import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:festapp_core/forms.dart';
 import 'package:collection/collection.dart';
@@ -74,6 +75,8 @@ class FormEditBundle {
         );
       }
     }
+
+    form.acceptSaveBaseline();
 
     // 3. Create and return the final bundle.
     return FormEditBundle(
@@ -238,18 +241,44 @@ class DbForms {
     FormEditorDraft form, {
     bool paymentSelectionChanged = false,
   }) async {
-    final response = await _commands.save({
-      ...form.toEditedJson(),
-      if (paymentSelectionChanged) 'payment_selection_intent': 'replace',
-    });
-    final saved = FormEditBundle.fromSave(form, response).form;
-    // Receipt metadata is historical. Refresh only the read-only live policy,
-    // with current reader authorization, without changing acknowledged versions.
-    final current = await getFormForEdit(saved.definition.link!);
-    saved.paymentMethodPolicy = current?.form.paymentMethodPolicy;
-    saved.definition = saved.definition.copyWith(
-      measurementStatus: current?.form.definition.measurementStatus,
+    final commands = _commands;
+    final editorId = _supabase.auth.currentUser?.id;
+    final patch = form.savePatch(
+      replacePaymentSelection: paymentSelectionChanged,
     );
+    Map<String, dynamic> response;
+    try {
+      response = await commands.save(patch.request(form.aggregateVersion));
+    } on FormSaveConflict catch (conflict) {
+      final link = patch.originalLink;
+      if (!conflict.isFormRevision || link == null) rethrow;
+      final latest = (await getFormForEdit(link))?.form;
+      if (_supabase.auth.currentUser?.id != editorId) {
+        throw StateError('COMMAND_PRINCIPAL_CHANGED');
+      }
+      if (latest == null ||
+          latest.aggregateVersion <= form.aggregateVersion ||
+          !latest.accepts(patch)) {
+        rethrow;
+      }
+      response = await commands.save(patch.request(latest.aggregateVersion));
+    }
+    final saved = FormEditBundle.fromSave(form, response).form;
+    saved.paymentMethodPolicy = form.paymentMethodPolicy;
+    // The receipt owns the saved form. This read refreshes live policy only.
+    try {
+      final current = await getFormForEdit(saved.definition.link!);
+      if (current != null &&
+          current.form.definition.id == saved.definition.id) {
+        saved.paymentMethodPolicy = current.form.paymentMethodPolicy;
+        saved.definition = saved.definition.copyWith(
+          measurementStatus: current.form.definition.measurementStatus,
+        );
+      }
+    } catch (error) {
+      AppLogger.error('Could not refresh form policy after save: $error');
+    }
+    saved.acceptSaveBaseline();
     return saved;
   }
 

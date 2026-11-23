@@ -11,6 +11,8 @@ import 'package:fstapp/styles/styles_config.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
+import '../form_strings.dart';
+
 class FormDesignContent extends StatefulWidget {
   final String? formLink;
   final Future<FormEditBundle?> Function(String)? loadBundle;
@@ -100,7 +102,7 @@ class _FormDesignContentState extends State<FormDesignContent> {
       if (!mounted) return;
       ToastHelper.Show(
         context,
-        e.toString().replaceFirst("Exception: ", ""),
+        FormStrings.saveError(e),
         severity: ToastSeverity.NotOk,
       );
     }

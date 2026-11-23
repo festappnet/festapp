@@ -1,3 +1,10 @@
+class FormSaveConflict extends StateError {
+  FormSaveConflict({required this.isFormRevision})
+    : super('FORM_SAVE_CONFLICT');
+
+  final bool isFormRevision;
+}
+
 abstract interface class FormCommands {
   Future<Map<String, dynamic>> create({
     required String occasionLink,
