@@ -1,3 +1,19 @@
+import { isValidCreditorReference } from "../_shared/paymentPresentation.ts";
+
+export function fakturoidSepaReferenceLine(payment: {
+  creditor_reference?: string | null;
+  variable_symbol: string | number;
+}): string {
+  const reference = payment.creditor_reference?.trim().toUpperCase() ?? "";
+  if (
+    !isValidCreditorReference(reference) ||
+    reference.slice(4) !== String(payment.variable_symbol)
+  ) {
+    throw new Error("FAKTUROID_EUR_REFERENCE_INVALID");
+  }
+  return `SEPA reference: ${reference}`;
+}
+
 export function buildFakturoidInvoicePayload(
   order: any,
   unitName: string,
@@ -14,6 +30,7 @@ export function buildFakturoidInvoicePayload(
     issued_on: issuedOn,
     taxable_fulfillment_due: issuedOn,
     currency: order.payment_info.currency_code,
+    qr_payment: false,
     iban: order.payment_info.account_number,
     bank_account: order.payment_info.account_number_human_readable,
     lines: [{
@@ -40,11 +57,12 @@ export function buildFakturoidInvoicePayload(
       name: p.title, quantity: 1, unit_price: (minor(p.price) / 100n).toString() + "." + (minor(p.price) % 100n).toString().padStart(2, "0"), vat_rate: 0,
     }));
   }
-  // CZK follows Fakturoid numbering; EUR must preserve its RF-derived reference.
-  if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
-    body.variable_symbol = String(order.payment_info.variable_symbol);
-  }
   if (note) body.note = note;
+  if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
+    const referenceLine = fakturoidSepaReferenceLine(order.payment_info);
+    body.variable_symbol = String(order.payment_info.variable_symbol);
+    body.note = note ? `${referenceLine}\n\n${note}` : referenceLine;
+  }
   return body;
 }
 
