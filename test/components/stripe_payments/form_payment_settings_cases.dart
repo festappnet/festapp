@@ -597,7 +597,7 @@ void main() {
           findsOneWidget,
         );
         expect(
-          find.textContaining(FormStrings.paymentQrSummary(false)),
+          find.textContaining(FormStrings.paymentQrSummary(true)),
           findsOneWidget,
         );
         expect(find.byType(PaymentMethodCards), findsNothing);
