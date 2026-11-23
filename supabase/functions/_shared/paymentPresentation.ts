@@ -83,9 +83,11 @@ export function buildSpdPayload(payment: any, message = ""): string {
   }
   let payload = `SPD*1.0*ACC:${normalizeIban(payment.account_number)}` +
     `*AM:${amount.toFixed(2)}*CC:${currency}*X-VS:${variableSymbol}`;
-  if (message.trim()) {
-    payload += `*MSG:${encodeURIComponent(message.normalize("NFC"))}`;
-  }
+  // SPAYD limits the bank memo to 60 characters. The visible event title is independent.
+  const memo = Array.from(message.normalize("NFC").trim()).slice(0, 60).join(
+    "",
+  );
+  if (memo) payload += `*MSG:${encodeURIComponent(memo)}`;
   return payload;
 }
 
@@ -131,6 +133,10 @@ export function buildEpcSctPayload(payment: any): string {
   return payload;
 }
 
+export function formatCreditorReference(reference: string): string {
+  return reference.replace(/(.{4})(?=.)/g, "$1 ");
+}
+
 export function presentPayment(
   payment: any,
   message = "",
@@ -143,7 +149,7 @@ export function presentPayment(
     return {
       referenceKind: "RF",
       referenceRaw,
-      referenceDisplay: referenceRaw.replace(/(.{4})(?=.)/g, "$1 "),
+      referenceDisplay: formatCreditorReference(referenceRaw),
       qrFormat: "EPC_SCT",
       qrPayload: buildEpcSctPayload(payment),
       amount,

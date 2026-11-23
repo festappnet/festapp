@@ -3,6 +3,7 @@ import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
 import { previewHandler } from "./handler.ts";
 import defaults from "../_shared/emailPreviewDefaults.json" with {type:"json"};
+import { previewPaymentQr } from "../_shared/qrCodePayment.ts";
 import { qrPng } from "../_shared/ticketDelivery.ts";
 import { encodeAttachment } from "../_shared/emailDelivery.ts";
 
@@ -47,14 +48,13 @@ Deno.test('ticket email preview shows the real Wallet offer for every delivery m
 
 Deno.test("preview and sending use identical substitutions and inherited wrapper", async () => {
   const preview = await renderDraftPreview(context);
+  const order = previewOrder(context.title, context.tone, context);
   const sent = await renderEmail({
     context: { organization: 1 },
     to: "recipient@example.invalid",
-    substitutions: {...defaults, ...confirmationSubstitutions(
-      previewOrder(context.title, context.tone, context),
-    )},
+    substitutions: {...defaults, ...confirmationSubstitutions(order)},
     replyTo: context.replyTo,
-    paymentQr: { png: await qrPng("festapp-preview:payment"), lang: "cs", inline: true },
+    paymentQr: await previewPaymentQr(order.payment_info, "cs", order.occasion.title),
   }, () => Promise.resolve(resolved));
   const [inline] = preview.inlineImages;
   assert(inline && sent.attachments[1].contentId);
@@ -62,7 +62,8 @@ Deno.test("preview and sending use identical substitutions and inherited wrapper
     preview.html.replace(inline.contentId!, sent.attachments[1].contentId!) ===
       sent.html && preview.subject === sent.subject,
   );
-  assert(inline.content === encodeAttachment(await qrPng("festapp-preview:payment"), "binary"));
+  assert(inline.content === sent.attachments[0].content);
+  assert(sent.attachments[1].content === sent.attachments[0].content);
   assert(preview.attachments.length === 1 && preview.attachments[0].filename === "qr-platba-5W8H2U8I9W.png");
   assert(preview.replyTo === sent.replyTo);
   assert(preview.html.includes("<main><p>Vlastní text</p>"));

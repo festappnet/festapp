@@ -154,7 +154,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
         paymentInfo.deposit_amount < paymentInfo.amount
       ? { ...paymentInfo, amount: Number(paymentInfo.deposit_amount) }
       : paymentInfo;
-    paymentQrPng = await generateQrCode(qrPaymentInfo, order, occasion.title);
+    paymentQrPng = await generateQrCode(qrPaymentInfo, order, occasion.title, lang);
   }
   await addExternalAttachment(
     externalServices?.find((service: any) =>

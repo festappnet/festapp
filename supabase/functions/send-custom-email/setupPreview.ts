@@ -181,7 +181,7 @@ export async function setupPreviewResponse(
       templateCode: code,
       substitutions,
       paymentQr: code === "TICKET_ORDER_CONFIRMATION"
-        ? await previewPaymentQr(previewPaymentInfo, lang)
+        ? await previewPaymentQr(previewPaymentInfo, lang, d.title ?? "")
         : undefined,
     }, async (templateCode, ctx) => {
       const resolved = await deps.resolve(templateCode, ctx);

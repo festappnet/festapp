@@ -83,6 +83,7 @@ export async function getTicketOrderReminderTemplate(
         qrPaymentData,
         order.data,
         occasion.title,
+        lang,
       );
     } catch (error: any) {
       console.error(
@@ -161,6 +162,7 @@ export async function getTicketOrderReminderTemplate(
         qrPaymentData,
         order.data,
         occasion.title,
+        lang,
       );
     } catch (error: any) {
       console.error(
