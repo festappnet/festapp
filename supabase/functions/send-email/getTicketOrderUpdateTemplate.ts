@@ -64,6 +64,7 @@ export async function getTicketOrderUpdateTemplate(
         qrPaymentData,
         order.data,
         occasion.title,
+        lang,
       );
     } catch (error) {
       console.error(

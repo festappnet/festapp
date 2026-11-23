@@ -218,7 +218,7 @@ export async function renderEmail(
       ...prepared,
       html: composeHtml({
         html:
-          `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="cid:${contentId}" alt="${alt}" width="240" height="240" style="display:block;width:240px;max-width:100%;height:auto;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`,
+          `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="cid:${contentId}" alt="${alt}" width="280" style="display:block;width:280px;max-width:100%;height:auto;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`,
         paymentDetails: ["paymentDetails", "balanceReasoning"].map((key) =>
           String(paymentValues[key] ?? "")
         ),
