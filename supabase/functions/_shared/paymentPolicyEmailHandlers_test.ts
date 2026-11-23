@@ -1,4 +1,5 @@
-import {assert, assertEquals, assertStringIncludes} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import {assert, assertEquals, assertRejects, assertStringIncludes} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName } from "npm:pdf-lib";
 Deno.env.set("SUPABASE_URL","https://local-payment-test.invalid");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY","local-test-only");
 const {supabaseAdmin} = await import("./supabaseUtil.ts");
@@ -7,6 +8,7 @@ const {renderQueuedEmail} = await import("./emailRenderer.ts");
 const {generateQrCode} = await import("./qrCodePayment.ts");
 const {encodeAttachment} = await import("./emailDelivery.ts");
 const {getTicketOrderConfirmationTemplate} = await import("../send-email/getTicketOrderConfirmationTemplate.ts");
+const {fakturoidGateway} = await import("../send-ticket-order/fakturoid.ts");
 import type {PaymentMethodBinding, HostedPaymentDependencies} from "./payments/contracts.ts";
 
 // Exercise production handlers, completion and inherited wrapper; the only fake
@@ -14,6 +16,8 @@ import type {PaymentMethodBinding, HostedPaymentDependencies} from "./payments/c
 Deno.test("production payment emails honor method, current collection and inherited wrappers", async () => {
  const originalRpc=supabaseAdmin.rpc, originalResolve=paymentRegistry.resolve, originalHas=paymentRegistry.has;
  const originalFetch=globalThis.fetch; let sourceOpens=0, attachmentHooks=0;
+ const originalInvoiceAttachment = fakturoidGateway.getEmailAttachment;
+ let fakturoidEnabled = false;
  let method="bank", status="open", allowed=false, currency="CZK", price=100, paid=0, deposit=0;
  let showQrInEmail: boolean | undefined;
  const occasion={id:3,organization:1,unit:2,title:"Podzimní ples",features:[]};
@@ -32,7 +36,7 @@ Deno.test("production payment emails honor method, current collection and inheri
   else if(name==="is_demo_occasion")data=false;
   else if(name==="get_order_email_overview_source_v1")data=null;
   else if(name==="get_latest_order_history")data={price,currency_code:currency};
-  else if(name==="get_external_services"){attachmentHooks++;data=[];}
+  else if(name==="get_external_services"){attachmentHooks++;data=fakturoidEnabled ? [{type:"FAKTUROID", data:{}}] : [];}
   else if(name==="get_email_template_and_wrapper")data={template:{id:1,subject:"{{occasionTitle}}",html:"<p>{{balanceReasoning}}</p>{{paymentAction}}{{fullOrder}}"},wrapper:{html:"<main>{{content}}{{paymentAction}}</main>"}};
   else throw Error("Unexpected SQL call: "+name);
   return {data,error:null};
@@ -122,5 +126,73 @@ Deno.test("production payment emails honor method, current collection and inheri
    assertEquals(rendered.attachments.length,0);
    assert(!JSON.stringify(rendered.subs).includes(bank.account_number));
   }
- } finally {supabaseAdmin.rpc=originalRpc;paymentRegistry.resolve=originalResolve;paymentRegistry.has=originalHas;globalThis.fetch=originalFetch;}
+  fakturoidEnabled = true;
+  showQrInEmail = true;
+  allowed = true;
+  price = 100;
+  deposit = 30;
+  const originalInvoice = await PDFDocument.create();
+  originalInvoice.setTitle("Original document");
+  originalInvoice.addPage([400, 500]).drawText("First page");
+  originalInvoice.addPage([500, 600]).drawText("Second page");
+  await originalInvoice.attach(new Uint8Array([1, 2, 3]), "invoice.isdoc");
+  const originalInvoiceBytes = await originalInvoice.save();
+  for (const [invoiceCurrency, invoiceQrDisabled] of [
+    ["EUR", true], ["CZK", true], ["EUR", false], ["CZK", false],
+  ] as const) {
+   currency = invoiceCurrency;
+   fakturoidGateway.getEmailAttachment = async () => ({
+    variableSymbol: "12345",
+    invoiceQrDisabled,
+    attachment: {
+     filename: "proforma.pdf",
+     content: originalInvoiceBytes,
+     contentType: "application/pdf",
+     encoding: "binary",
+    },
+   });
+   const result = await renderQueuedEmail({
+    message_id:"fakturoid",message_kind:"order_confirmation",code:"TICKET_ORDER_CONFIRMATION",
+    data:{lang:"cs",command_id:"command",ticket_order:{order:details().order}},
+    recipient:"snapshot@example.invalid",organization:1,unit:2,occasion:3,order_id:4,
+    lease_token:"lease",attempt_id:"attempt",prepared:null,
+   });
+   assertEquals(result.prepared.attachments.map((part) => part.contentType),
+    invoiceQrDisabled ? ["application/pdf", "image/png", "image/png"] : ["application/pdf"]);
+   if (invoiceQrDisabled) {
+    const {order, payment_info} = details();
+    const expected = await generateQrCode(
+     {...payment_info, amount: deposit}, order, occasion.title,
+    );
+    assertEquals(result.prepared.attachments[1].content, encodeAttachment(expected, "binary"));
+    assertStringIncludes(result.prepared.html.replace(/<[^>]*>/g, ""),
+     currency === "EUR" ? payment_info.creditor_reference : String(payment_info.variable_symbol));
+    const bytes = Uint8Array.from(atob(result.prepared.attachments[0].content), (char) => char.charCodeAt(0));
+    const combined = await PDFDocument.load(bytes);
+    assertEquals(combined.getPageCount(), 3);
+    assertEquals(combined.getTitle(), "Original document");
+    assertEquals(combined.getPages().slice(0, 2).map((page) => page.getSize()), [
+     {width: 400, height: 500}, {width: 500, height: 600},
+    ]);
+    const names = combined.catalog.lookup(PDFName.of("Names"), PDFDict);
+    const embedded = names.lookup(PDFName.of("EmbeddedFiles"), PDFDict);
+    const files = embedded.lookup(PDFName.of("Names"), PDFArray);
+    assertEquals(files.lookup(0, PDFHexString).decodeText(), "invoice.isdoc");
+    const appendixResources = combined.getPage(2).node.Resources();
+    assertEquals(appendixResources?.lookup(PDFName.of("XObject"), PDFDict).keys().length, 1);
+   } else {
+    assertEquals(result.prepared.attachments[0].content, encodeAttachment(originalInvoiceBytes, "binary"));
+   }
+  }
+  fakturoidGateway.getEmailAttachment = async () => ({
+   variableSymbol: "12345", invoiceQrDisabled: true,
+  });
+  await assertRejects(
+   () => getTicketOrderConfirmationTemplate({data:{lang:"cs",command_id:"command",ticket_order:{order:details().order}}}),
+   Error, "FAKTUROID_INVOICE_PDF_NOT_READY",
+  );
+ } finally {
+  supabaseAdmin.rpc=originalRpc;paymentRegistry.resolve=originalResolve;paymentRegistry.has=originalHas;globalThis.fetch=originalFetch;
+  fakturoidGateway.getEmailAttachment = originalInvoiceAttachment;
+ }
 });

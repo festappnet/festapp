@@ -18,6 +18,14 @@ interface PaymentQrDetails {
   creditor_name?: string;
 }
 
+function encodePaymentQr(payload: string): Promise<Uint8Array> {
+  return QRCode.toBuffer(payload, {
+    width: paymentQrSize,
+    margin: 4,
+    errorCorrectionLevel: "M",
+  });
+}
+
 async function paymentQrPng(
   payload: string,
   payment: PaymentQrDetails,
@@ -29,11 +37,7 @@ async function paymentQrPng(
     reference: string;
   },
 ): Promise<Uint8Array> {
-  const png = await QRCode.toBuffer(payload, {
-    width: paymentQrSize,
-    margin: 4,
-    errorCorrectionLevel: "M",
-  });
+  const png = await encodePaymentQr(payload);
   const cs = resolveEmailLanguage(caption.lang) === "cs";
   const formattedAmount = formatDisplayNumber(
     caption.amount,
@@ -84,19 +88,39 @@ function determinePaymentMessage(order: any, occasionTitle: string): string {
   return `${order?.data?.name || ""} ${order?.data?.surname || ""}`.trim();
 }
 
+function paymentForQr(
+  paymentInfo: any,
+  order: any,
+  occasionTitle: string,
+) {
+  if (
+    !bankCollectionAllowed(paymentInfo) || !(Number(paymentInfo.amount) > 0) ||
+    !["CZK", "EUR"].includes(paymentInfo.currency_code)
+  ) throw new Error("payment_qr_action_forbidden");
+
+  return presentPayment(
+    paymentInfo,
+    determinePaymentMessage(order, occasionTitle),
+  );
+}
+
+export function generatePlainPaymentQr(
+  paymentInfo: any,
+  order: any,
+  occasionTitle: string,
+): Promise<Uint8Array> {
+  return encodePaymentQr(
+    paymentForQr(paymentInfo, order, occasionTitle).qrPayload,
+  );
+}
+
 export async function generateQrCode(
   paymentInfo: any,
   order: any,
   occasionTitle: string,
   lang: unknown = "cs",
 ): Promise<Uint8Array> {
-  if (
-    !bankCollectionAllowed(paymentInfo) || !(Number(paymentInfo.amount) > 0) ||
-    !["CZK", "EUR"].includes(paymentInfo.currency_code)
-  ) throw new Error("payment_qr_action_forbidden");
-
-  const message = determinePaymentMessage(order, occasionTitle);
-  const payment = presentPayment(paymentInfo, message);
+  const payment = paymentForQr(paymentInfo, order, occasionTitle);
   return await paymentQrPng(payment.qrPayload, paymentInfo, {
     title: occasionTitle,
     lang,

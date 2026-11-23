@@ -1,6 +1,7 @@
 import {
   assertFakturoidVariableSymbol,
   buildFakturoidInvoicePayload,
+  fakturoidSepaReferenceLine,
 } from "./fakturoidPayload.ts";
 
 export interface FakturoidConfig {
@@ -27,6 +28,7 @@ export interface FakturoidOrder {
     amount: number;
     currency_code: string;
     variable_symbol: string | number;
+    creditor_reference?: string | null;
     account_number: string;
     account_number_human_readable: string;
   };
@@ -39,7 +41,13 @@ export type FakturoidAttachment = {
   encoding: "binary";
 };
 
-type Invoice = { id: number; variable_symbol?: unknown; pdf_url?: string };
+type Invoice = {
+  id: number;
+  variable_symbol?: unknown;
+  pdf_url?: string;
+  note?: string | null;
+  qr_payment?: boolean;
+};
 type InvoiceRequest = {
   config: FakturoidConfig;
   order: FakturoidOrder;
@@ -133,6 +141,12 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
         beforeCreate?: () => Promise<void>;
       },
   ): Promise<string> {
+    const referenceLine =
+      String(order.payment_info.currency_code).toUpperCase() === "EUR"
+        ? fakturoidSepaReferenceLine(order.payment_info)
+        : undefined;
+    const hasReferenceLine = (document: Invoice, line: string) =>
+      document.note?.split(/\r?\n/).includes(line) === true;
     const { headers } = await access(config);
     let invoice = await findInvoice(config, commandId, headers);
     if (!invoice) {
@@ -163,8 +177,9 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
     const preparedSymbol = variableSymbol(invoice, order, true);
     const data = order.data ?? {};
     const clientName = `${data.name || ""} ${data.surname || ""}`.trim();
+    const patchBody: Record<string, unknown> = {};
     if (clientName) {
-      const patchBody: Record<string, unknown> = {
+      Object.assign(patchBody, {
         client_name: clientName,
         client_street: data.street,
         client_city: data.city,
@@ -172,10 +187,16 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
         client_country: data.country,
         client_has_delivery_address: false,
         client_phone: data.phone,
-      };
-      if (String(order.payment_info.currency_code).toUpperCase() === "EUR") {
-        patchBody.variable_symbol = String(order.payment_info.variable_symbol);
-      }
+      });
+      if (referenceLine) patchBody.variable_symbol = preparedSymbol;
+    }
+    if (referenceLine && !hasReferenceLine(invoice, referenceLine)) {
+      patchBody.note = invoice.note
+        ? `${referenceLine}\n\n${invoice.note}`
+        : referenceLine;
+    }
+    if (invoice.qr_payment !== false) patchBody.qr_payment = false;
+    if (Object.keys(patchBody).length) {
       const response = await request(
         `https://app.fakturoid.cz/api/v3/accounts/${config.slug}/invoices/${invoice.id}.json`,
         { method: "PUT", headers, body: JSON.stringify(patchBody) },
@@ -186,22 +207,32 @@ export function createFakturoidGateway(fetcher: typeof fetch = fetch) {
       invoice = await response.json();
     }
     if (!invoice) throw new Error("FAKTUROID_INVOICE_NOT_READY");
-    // A customer-only update must not renumber the invoice.
     assertFakturoidVariableSymbol(invoice, preparedSymbol);
+    if (invoice.qr_payment !== false) {
+      throw new Error("FAKTUROID_INVOICE_QR_NOT_DISABLED");
+    }
+    if (referenceLine && !hasReferenceLine(invoice, referenceLine)) {
+      throw new Error("FAKTUROID_EUR_INSTRUCTIONS_MISMATCH");
+    }
     return variableSymbol(invoice, order, true);
   }
 
   async function getEmailAttachment(
     { config, order, commandId }: InvoiceRequest,
-  ): Promise<{ variableSymbol: string; attachment?: FakturoidAttachment }> {
+  ): Promise<{
+    variableSymbol: string;
+    invoiceQrDisabled: boolean;
+    attachment?: FakturoidAttachment;
+  }> {
     const { headers, token } = await access(config);
     const invoice = await findInvoice(config, commandId, headers);
     if (!invoice) throw new Error("FAKTUROID_INVOICE_NOT_READY");
 
-    const result: { variableSymbol: string; attachment?: FakturoidAttachment } =
-      {
-        variableSymbol: variableSymbol(invoice, order),
-      };
+    const result = {
+      variableSymbol: variableSymbol(invoice, order),
+      invoiceQrDisabled: invoice.qr_payment === false,
+      attachment: undefined as FakturoidAttachment | undefined,
+    };
     if (invoice.pdf_url) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       let response = await request(invoice.pdf_url, {
