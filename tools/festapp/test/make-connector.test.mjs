@@ -64,7 +64,8 @@ test('universal Make requests use the regional origin and date reports use the S
     const request = JSON.parse(files.get('modules/apiCall/api.json'));
     const parameters = JSON.parse(files.get('modules/apiCall/expect.json'));
     assert.equal(request.url, 'https://api.vstupenky.online/{{parameters.url}}');
-    assert.equal(request.headers['{{...}}'], "{{toCollection(parameters.headers, 'key', 'value')}}");
+    assert.match(request.headers['{{...}}'], /^\{\{omit\(toCollection\(parameters\.headers, 'key', 'value'\), split\(/);
+    assert.match(request.headers['{{...}}'], /host\|authorization/);
     assert.equal(request.headers.host, 'api.vstupenky.online');
     assert.equal(request.headers.authorization, 'Bearer {{connection.accessToken}}');
     assert.equal(request.followRedirect, false);
@@ -75,10 +76,6 @@ test('universal Make requests use the regional origin and date reports use the S
     assert(validPath.test('/integrations/v1/operations/future.read'));
     assert(!validPath.test('https://example.invalid/path'));
     assert(!validPath.test('//example.invalid/path'));
-    const headerName = new RegExp(parameters.find(field => field.name === 'headers').spec[0].validate.pattern);
-    assert(headerName.test('X-Festapp-Request'));
-    assert(headerName.test('Content-Type'));
-    for (const reserved of ['Host', 'hOsT', 'AUTHORIZATION', 'aUtHoRiZaTiOn']) assert(!headerName.test(reserved));
     const report = JSON.parse(files.get('modules/salesReport/api.json'));
     assert.match(report.response.output, /parseDate\(body\.data\.report\.generated_at, 'YYYY-MM-DDTHH:mm:ss\.SSSSSSZ'\)/);
 });

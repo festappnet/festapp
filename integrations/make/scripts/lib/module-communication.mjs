@@ -1,4 +1,7 @@
 export function apiCallCommunication(origin) {
+    const userHeaders = "toCollection(parameters.headers, 'key', 'value')";
+    // HTTP field names cannot contain commas. Keep the original spelling for omit().
+    const reservedHeaderNames = `split(replace(join(keys(${userHeaders}), ','), '/(?:^|,)(?!(?:host|authorization)(?:,|$))[^,]+/gi', ''), ',')`;
     return {
         url: origin + '/{{parameters.url}}',
         method: "{{ifempty(parameters.method, 'POST')}}",
@@ -7,7 +10,7 @@ export function apiCallCommunication(origin) {
         followAllRedirect: false,
         headers: {
             'content-type': 'application/json',
-            '{{...}}': "{{toCollection(parameters.headers, 'key', 'value')}}",
+            '{{...}}': `{{omit(${userHeaders}, ${reservedHeaderNames})}}`,
             host: new URL(origin).host,
             authorization: 'Bearer {{connection.accessToken}}',
         },
@@ -23,12 +26,6 @@ export function apiCallCommunication(origin) {
 
 export function apiCallParameters(origin, example) {
     const pair = [{ name: 'key', label: 'Key', type: 'text' }, { name: 'value', label: 'Value', type: 'text' }];
-    const headerName = {
-        ...pair[0],
-        required: true,
-        validate: { pattern: "^(?!(?:[Hh][Oo][Ss][Tt]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn])$)[!#$%&'*+.^_`|~0-9A-Za-z-]+$" },
-        help: 'Enter a header name other than Host or Authorization.',
-    };
     return [
         { name: 'url', label: 'URL', type: 'text', required: true,
             validate: { pattern: '^/(?!/)[^\\s\\\\#]*$' },
@@ -36,7 +33,7 @@ export function apiCallParameters(origin, example) {
         { name: 'method', label: 'Method', type: 'select', required: true, default: 'POST',
             options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map(value => ({ label: value, value })),
             help: 'The documented read operations use POST.' },
-        { name: 'headers', label: 'Headers', type: 'array', spec: [headerName, pair[1]],
+        { name: 'headers', label: 'Headers', type: 'array', spec: pair,
             help: 'Additional request headers. Host and Authorization are supplied by Make.' },
         { name: 'qs', label: 'Query string', type: 'array', spec: pair },
         { name: 'body', label: 'Body', type: 'text', default: '{}',

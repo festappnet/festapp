@@ -55,12 +55,7 @@
       {
         "name": "key",
         "label": "Key",
-        "type": "text",
-        "required": true,
-        "validate": {
-          "pattern": "^(?!(?:[Hh][Oo][Ss][Tt]|[Aa][Uu][Tt][Hh][Oo][Rr][Ii][Zz][Aa][Tt][Ii][Oo][Nn])$)[!#$%&'*+.^_`|~0-9A-Za-z-]+$"
-        },
-        "help": "Enter a header name other than Host or Authorization."
+        "type": "text"
       },
       {
         "name": "value",

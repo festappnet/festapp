@@ -41,8 +41,8 @@ const apiContext={url:operationPath('context.inspect'),method:'POST',body:'{}'};
 const cases=[
  ['public_schema_without_operation_envelope','apiCall',{url:'/integrations/v1/profiles/order-summary/openapi.json',method:'GET'},null],
  ['custom_header','apiCall',{...apiContext,headers:[{key:'X-Festapp-Make-Qualification',value:'review'}]},null],
- ['reserved_authorization_header','apiCall',{...apiContext,headers:[{key:'aUtHoRiZaTiOn',value:'invalid'}]},/validation|pattern|does not match|invalid value/i],
- ['reserved_host_header','apiCall',{...apiContext,headers:[{key:'hOsT',value:'invalid'}]},/validation|pattern|does not match|invalid value/i],
+ ['reserved_authorization_header_ignored','apiCall',{...apiContext,headers:[{key:'aUtHoRiZaTiOn',value:'invalid'}]},null],
+ ['reserved_host_headers_ignored','apiCall',{...apiContext,headers:[{key:'hOsT',value:'invalid'},{key:'HOST',value:'invalid'},{key:'X-Festapp-Make-Qualification',value:'review'}]},null],
  ['unsupported_method','apiCall',{...apiContext,method:'PUT'},/405/],
  ['unknown_operation','apiCall',{...apiContext,url:operationPath('unknown')},/404|403/],
  ['write_operation_rejected','apiCall',{...apiContext,url:operationPath('orders.cancel')},/403/],
