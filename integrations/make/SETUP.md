@@ -72,7 +72,6 @@ An optional connection label helps distinguish connections to different accounts
 or events. Account identifiers and contacts are not exposed by the summary API.
 
 
-This source prepares the general API connection; it is not yet published. A new
-connection and reconsent are required at https://mcp.festapp.net for resource
-https://api.vstupenky.online/integrations. Existing regional MCP credentials
-cannot be reused. The new API currently limits consent to seven days.
+Connect through https://mcp.festapp.net and grant access to the regional API at
+https://api.vstupenky.online/integrations. If you used the previous connector,
+reauthorize the Make connection with Festapp and select the events it can read.
