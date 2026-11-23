@@ -1,4 +1,7 @@
 export function apiCallCommunication(origin) {
+    const userHeaders = "toCollection(parameters.headers, 'key', 'value')";
+    // HTTP field names cannot contain commas. Keep the original spelling for omit().
+    const reservedHeaderNames = `split(replace(join(keys(${userHeaders}), ','), '/(?:^|,)(?!(?:host|authorization)(?:,|$))[^,]+/gi', ''), ',')`;
     return {
         url: origin + '/{{parameters.url}}',
         method: "{{ifempty(parameters.method, 'POST')}}",
@@ -7,7 +10,7 @@ export function apiCallCommunication(origin) {
         followAllRedirect: false,
         headers: {
             'content-type': 'application/json',
-            '{{...}}': "{{toCollection(parameters.headers, 'key', 'value')}}",
+            '{{...}}': `{{omit(${userHeaders}, ${reservedHeaderNames})}}`,
             host: new URL(origin).host,
             authorization: 'Bearer {{connection.accessToken}}',
         },
@@ -31,7 +34,7 @@ export function apiCallParameters(origin, example) {
             options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map(value => ({ label: value, value })),
             help: 'The documented read operations use POST.' },
         { name: 'headers', label: 'Headers', type: 'array', spec: pair,
-            help: 'Additional request headers. Make supplies the host and the connection’s Authorization header.' },
+            help: 'Additional request headers. Host and Authorization are supplied by Make.' },
         { name: 'qs', label: 'Query string', type: 'array', spec: pair },
         { name: 'body', label: 'Body', type: 'text', default: '{}',
             help: 'Enter the request body as JSON for an operation that accepts it.' },

@@ -63,7 +63,7 @@
         "type": "text"
       }
     ],
-    "help": "Additional request headers. Make supplies the host and the connection’s Authorization header."
+    "help": "Additional request headers. Host and Authorization are supplied by Make."
   },
   {
     "name": "qs",

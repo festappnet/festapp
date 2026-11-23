@@ -17,7 +17,8 @@ record payments, send tickets or export buyer contacts.
   `https://api.vstupenky.online`. Enter a path such as
   `/integrations/v1/operations/context.inspect`, select POST and enter the JSON
   body for the operation. The module accepts additional headers and query
-  parameters and returns the response body, headers and status code. Your
+  parameters and returns the response body, headers and status code. Make
+  supplies the Host and Authorization headers. Your
   connection grants access to the documented read operations.
 
 ## Limits and reconnecting
