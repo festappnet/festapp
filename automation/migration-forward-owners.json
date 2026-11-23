@@ -975,7 +975,9 @@
         "eshop_bank_sync/bank_sync_existing_facts_match.sql",
         "eshop_bank_sync/bank_sync_email_confirmation.sql",
         "eshop_bank_sync/bank_sync_authority.sql",
-        "eshop_bank_sync/ingest_bank_sync_transaction.sql"
+        "eshop_bank_sync/ingest_bank_sync_transaction.sql",
+        "eshop_transactions/add_transaction_to_payment_info_ws.sql",
+        "eshop_transactions/remove_transaction_from_payment_info_ws.sql"
       ]
     }
   ]

@@ -1,12 +1,12 @@
 {
   "pins" : [
     {
-      "identity" : "maplibre-gl-native-distribution",
+      "identity" : "onesignal-xcframework",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/maplibre/maplibre-gl-native-distribution",
+      "location" : "https://github.com/OneSignal/OneSignal-XCFramework",
       "state" : {
-        "revision" : "40e1a0db6d055abf8a1b6e2f6127a8bb6e895cf8",
-        "version" : "6.25.1"
+        "revision" : "f49b88ed897d9eb884bd747b6a7c1fea40406692",
+        "version" : "5.8.1"
       }
     }
   ],

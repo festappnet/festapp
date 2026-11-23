@@ -1,4 +1,6 @@
+import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/email_preview_html.dart';
@@ -27,6 +29,19 @@ Future<Rect> _render(WidgetTester tester, String html, double width) async {
 }
 
 void main() {
+  testWidgets('synthetic payment QR is visible and fits a narrow preview',
+      (tester) async {
+    await _render(
+      tester,
+      '<img src="$emailPreviewPaymentQrSource" alt="QR platba">$_message',
+      180,
+    );
+    final qr = find.byType(QrImageView);
+    expect(qr, findsOneWidget);
+    expect(tester.getRect(qr).width, lessThanOrEqualTo(180));
+    expect(find.byIcon(Icons.image_outlined), findsNothing);
+  });
+
   testWidgets('explicit div padding preserves invisible content bounds',
       (tester) async {
     final text =

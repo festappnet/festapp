@@ -46,13 +46,18 @@ class FormBankAccountPicker extends StatelessWidget {
               currencies.every((c) => a.supportedCurrencies.contains(c.trim())),
         )
         .toList();
-    final current = [
-      for (final entry in formBankTransferAccounts(form, currencies).entries)
-        '${entry.key}: ${entry.value == null ? BankAccountStrings.formAccountNone : _label(entry.value!)}',
-    ];
     final unavailable =
         selected != null && !eligible.any((a) => a.id == selected);
+    final selectedAccount = accounts.firstWhereOrNull((a) => a.id == selected);
     // String values give the inherited NULL option a concrete dropdown value.
+    final labels = <String, String>{
+      'default': BankAccountStrings.formAccountDefaultPlain,
+      for (final account in eligible) account.id.toString(): _label(account),
+      if (unavailable)
+        selected.toString(): BankAccountStrings.formAccountUnavailable(
+          selectedAccount == null ? 'ID $selected' : _label(selectedAccount),
+        ),
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -60,40 +65,26 @@ class FormBankAccountPicker extends StatelessWidget {
           initialValue: selected?.toString() ?? 'default',
           isDense: false,
           isExpanded: true,
+          itemHeight: null,
           decoration: InputDecoration(
             labelText: BankAccountStrings.formAccountLabel,
             border: const OutlineInputBorder(),
           ),
+          selectedItemBuilder: (context) => [
+            for (final label in labels.values)
+              Tooltip(
+                message: label,
+                child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
+              ),
+          ],
           items: [
-            DropdownMenuItem(
-              value: 'default',
-              child: Text(
-                current.isEmpty
-                    ? BankAccountStrings.formAccountDefaultPlain
-                    : BankAccountStrings.formAccountDefault(current.join('; ')),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            for (final account in eligible)
+            for (final entry in labels.entries)
               DropdownMenuItem(
-                value: account.id.toString(),
-                child: Text(
-                  _label(account),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            if (unavailable)
-              DropdownMenuItem(
-                value: selected.toString(),
-                enabled: false,
-                child: Text(
-                  BankAccountStrings.formAccountUnavailable(
-                    accounts.any((a) => a.id == selected)
-                        ? _label(accounts.firstWhere((a) => a.id == selected))
-                        : 'ID $selected',
-                  ),
+                value: entry.key,
+                enabled: !unavailable || entry.key != selected.toString(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(entry.value),
                 ),
               ),
           ],
@@ -109,7 +100,10 @@ class FormBankAccountPicker extends StatelessWidget {
                   onChanged();
                 },
         ),
-        if (unavailable) Text(BankAccountStrings.formAccountUnavailableHelp),
+        if (unavailable) ...[
+          const SizedBox(height: 4),
+          Text(BankAccountStrings.formAccountUnavailableHelp),
+        ],
       ],
     );
   }

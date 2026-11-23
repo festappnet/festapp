@@ -111,25 +111,33 @@ void main() {
   });
 
   testWidgets(
-    'exact email duplicate offers dismissal without separate payment attestation',
+    'restricted possible duplicate stays reviewable without exposing bank details',
     (tester) async {
       await _pump(
         tester,
         BankSyncEmailQueue(
           loadPage: (_) async => {
             'items': [
-              {..._observation, 'exact_duplicate': true},
+              {
+                ..._observation,
+                'possible_duplicates': [
+                  {'restricted': true},
+                ],
+              },
             ],
             'next_cursor': null,
           },
           readOnly: false,
           confirm: (_, _, {bool notDuplicate = false}) async =>
-              throw StateError('Exact duplicate must not request confirmation'),
+              throw StateError('The payment has not been verified'),
           dismiss: (_, _) async {},
         ),
       );
-      expect(find.text(BankAccountStrings.emailExactDuplicate), findsOneWidget);
-      expect(find.text(BankAccountStrings.emailConfirm), findsNothing);
+      expect(
+        find.text(BankAccountStrings.emailDuplicateRestricted),
+        findsOneWidget,
+      );
+      expect(find.text(BankAccountStrings.emailConfirm), findsOneWidget);
       expect(find.text(BankAccountStrings.emailNotDuplicate), findsNothing);
       expect(find.text(BankAccountStrings.emailDismiss), findsOneWidget);
     },
@@ -425,56 +433,6 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(BankAccountStrings.emailQueueEmpty), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'duplicate_of outcome distinguishes paired vs unpaired existing transaction and never shows paired success',
-    (tester) async {
-      for (final existingPaired in [true, false]) {
-        var resolved = false;
-        await _pump(
-          tester,
-          BankSyncEmailQueue(
-            key: ValueKey('duplicate-$existingPaired'),
-            loadPage: (_) async => {
-              'items': resolved ? [] : [_observation],
-              'next_cursor': null,
-            },
-            readOnly: false,
-            confirm: (_, _, {bool notDuplicate = false}) async {
-              resolved = true;
-              return {
-                'action': 'duplicate_of',
-                'transaction_id': 77,
-                'transaction_paired': existingPaired,
-              };
-            },
-          ),
-        );
-        await tester.tap(find.text(BankAccountStrings.emailConfirm));
-        await tester.pumpAndSettle();
-        await tester.tap(find.byType(RadioListTile<int>));
-        await tester.tap(
-          find.byKey(const ValueKey('email-attestation-checkbox')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byType(FilledButton));
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text(BankAccountStrings.emailOutcomeConfirmed),
-          findsNothing,
-        );
-        expect(
-          find.text(
-            existingPaired
-                ? BankAccountStrings.emailOutcomeDuplicatePaired
-                : BankAccountStrings.emailOutcomeDuplicateUnpaired,
-          ),
-          findsOneWidget,
-        );
-      }
     },
   );
 

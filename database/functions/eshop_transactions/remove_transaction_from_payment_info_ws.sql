@@ -22,7 +22,13 @@ BEGIN
     RAISE insufficient_privilege USING MESSAGE='Source bank transaction write access denied'; END IF;
   PERFORM public.check_is_editor_order_on_occasion(v_occasion_id);
   PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.occasions oc WHERE oc.id=v_occasion_id;
-  IF NOT coalesce((SELECT public.payment_method_policy_enabled_internal(oc.unit,'bank') FROM public.occasions oc WHERE oc.id=v_occasion_id),false) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
+  -- Closing bank sales still allows correcting a previously verified receipt.
+  IF NOT coalesce((SELECT public.payment_method_policy_enabled_internal(oc.unit,'bank')
+      FROM public.occasions oc WHERE oc.id=v_occasion_id),false)
+    AND NOT EXISTS(SELECT FROM eshop.transactions t
+      WHERE t.id=p_transaction_id AND t.ingest_source='banksync_email_confirmed') THEN
+    RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED';
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM eshop.transactions t
     WHERE t.id = p_transaction_id AND t.payment_info = p_payment_info_id) THEN
     RAISE EXCEPTION 'TRANSACTION_PAIRING_MISMATCH';

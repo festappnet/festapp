@@ -74,7 +74,7 @@ The plan is the existing approved **`reference-lucerna`** gallery template,
 based on Lucerna's public organizer seating plans. It contains ground-floor
 seating, boxes, two balconies, a stage and a large dance floor. Its original
 seating geometry, colors and materials are preserved. See the
-[template reference notes](../../../vendor/blueprint/venue_seat_picker/doc/reference-templates.md).
+[template reference notes](https://github.com/festappnet/venue_seat_picker/blob/b08125653a8adf89ab2e99bf710d0e2563e5dab3/doc/reference-templates.md).
 
 The local fixture translates the plan labels into English before rendering.
 Longer ground-floor labels use a smaller font to fit their original boxes;

@@ -51,6 +51,28 @@ BEGIN
   expected_catalog:='{"total":1,"storno":0,"paid_or_sent":1,"ordered":0}';
   PERFORM assert_eq((SELECT f->'stats' FROM jsonb_array_elements(public.get_forms_by_link('report-metrics')) f
     WHERE f->>'id'=limited_form::text),expected_catalog,'form counts include a relational assignment without a JSON key');
+  SET LOCAL ROLE authenticated;
+  PERFORM assert_eq((SELECT f->'customer_cancellation_available'
+    FROM jsonb_array_elements(public.get_forms_by_link('report-metrics')) f
+    WHERE f->>'id'=limited_form::text),'false'::jsonb,'form catalog defaults to unavailable cancellation');
+  RESET ROLE;
+  UPDATE public.occasions SET features='[{"code":"customer_self_service","is_enabled":true}]' WHERE id=occ;
+  INSERT INTO eshop.customer_order_change_policies(form_id,revision,policy,updated_by)
+    VALUES(limited_form,1,jsonb_build_object('cancel',jsonb_build_object('enabled',true,
+      'allowed_until',now()+interval '1 day','mode','approval_required','reason_required',false,'refund_mode','none')),u);
+  SET LOCAL ROLE authenticated;
+  PERFORM assert_eq((SELECT f->'customer_cancellation_available'
+    FROM jsonb_array_elements(public.get_forms_by_link('report-metrics')) f
+    WHERE f->>'id'=limited_form::text),'true'::jsonb,'form catalog exposes available cancellation');
+  RESET ROLE;
+  UPDATE eshop.customer_order_change_policies
+    SET policy=jsonb_set(policy,'{cancel,allowed_until}',to_jsonb(now()-interval '1 day'))
+    WHERE form_id=limited_form;
+  SET LOCAL ROLE authenticated;
+  PERFORM assert_eq((SELECT f->'customer_cancellation_available'
+    FROM jsonb_array_elements(public.get_forms_by_link('report-metrics')) f
+    WHERE f->>'id'=limited_form::text),'false'::jsonb,'form catalog hides expired cancellation');
+  RESET ROLE;
   PERFORM assert_eq((SELECT f->'stats' FROM jsonb_array_elements(public.get_all_viewable_forms_for_copying()) f
     WHERE f->>'id'=limited_form::text),expected_catalog,'copy catalog uses the same form population');
   PERFORM assert_eq((SELECT f->>'response_count' FROM jsonb_array_elements(public.get_all_forms('report-metrics')->'data') f

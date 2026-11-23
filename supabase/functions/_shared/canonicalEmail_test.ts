@@ -507,26 +507,46 @@ Deno.test("legacy PDF and CID PNG snapshots roundtrip with backward compatible S
 
 Deno.test("payment QR remains downloadable and only appears inline when enabled", async () => {
   const template = { id: 1, subject: "Order", html: "<p>Order instructions</p>" };
-  const render = (inline: boolean, lang = "en") => renderEmail({
+  const wrapper = { html: "<main>{{content}}</main>" };
+  const render = (inline?: boolean, lang = "en", orderSymbol = "5W8H2U8I9W") => renderEmail({
     to: prepared.to,
     from: prepared.from,
     context: { organization: 1 },
     template,
-    substitutions: {},
-    paymentQr: { png: new Uint8Array(2048), lang, inline },
-  }, async () => ({ template }));
+    substitutions: { orderSymbol },
+    paymentQr: inline === undefined
+      ? undefined
+      : { png: new Uint8Array(2048), lang, inline },
+  }, async () => ({ template, wrapper }));
 
   const full = await render(true);
   const parts = sesBody(full, config, {}, false).Content.Simple.Attachments;
   assertEquals(parts.map(part => part.ContentDisposition), ["ATTACHMENT", "INLINE"]);
+  assertEquals(parts.map(part => part.FileName), [
+    "qr-payment-5W8H2U8I9W.png",
+    "qr-payment-5W8H2U8I9W.png",
+  ]);
   assertEquals(parts[0].RawContent, parts[1].RawContent);
   assert(parts[1].ContentId && full.html.includes(`src="cid:${parts[1].ContentId}"`));
   assert(full.html.includes('alt="Bank transfer QR code"'));
   assertMatch(full.html, /Pay with the QR code.*Scan it in your mobile banking app\..*<img/);
   const czech = await render(true, "cs");
+  assertEquals(czech.attachments.map(part => part.filename), [
+    "qr-platba-5W8H2U8I9W.png",
+    "qr-platba-5W8H2U8I9W.png",
+  ]);
   assertMatch(czech.html, /Zaplaťte pomocí QR kódu.*Naskenujte ho v aplikaci mobilního bankovnictví\..*<img/);
 
   const downloadOnly = await render(false);
   assertEquals(downloadOnly.attachments, [full.attachments[0]]);
-  assertEquals(downloadOnly.html, template.html);
+  assertMatch(downloadOnly.html, /The payment QR code is in the attachment\.<\/p><\/main>$/);
+  assert(!downloadOnly.html.includes("<img"));
+  assert(!full.html.includes("The payment QR code is in the attachment."));
+  const invalidSymbol = await render(false, "cs", "../unsafe");
+  assertEquals(invalidSymbol.attachments[0].filename, "qr-platba.png");
+  assert(invalidSymbol.html.includes("Platební QR kód najdete v příloze."));
+
+  const withoutQr = await render();
+  assertEquals(withoutQr.attachments, []);
+  assertEquals(withoutQr.html, "<main><p>Order instructions</p></main>");
 });

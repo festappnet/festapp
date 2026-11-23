@@ -178,16 +178,27 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.binding.platformDispatcher.clearTextScaleFactorTestValue);
-    final form = _load();
+    const longTitle =
+        'Second account for the association of local dance clubs and volunteers';
+    final form = _load()
+      ..availableBankAccounts = [
+        ..._accounts.where((account) => account.id != 3),
+        BankAccountModel(
+          id: 3,
+          title: longTitle,
+          supportedCurrencies: ['CZK', 'EUR'],
+        ),
+      ];
     await _pump(tester, form, currencies: {'CZK'});
     expect(_dropdown(tester).items!.map((i) => i.value), ['default', '1', '3']);
-    expect(
-      find.textContaining(
-        'By organization order (currently: CZK: Main account',
-      ),
-      findsOneWidget,
-    );
-    await _choose(tester, 'Second account');
+    expect(find.text(BankAccountStrings.formAccountDefaultPlain), findsOneWidget);
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    final option = find.textContaining(longTitle).last;
+    expect(tester.widget<Text>(option).maxLines, isNull);
+    expect(tester.getSize(option).height, greaterThan(kMinInteractiveDimension));
+    await tester.tap(option);
+    await tester.pumpAndSettle();
     expect(form.definition.bankAccountId, 3);
     expect(form.bankAccount?.id, 3);
     expect(_dropdown(tester).value, '3');

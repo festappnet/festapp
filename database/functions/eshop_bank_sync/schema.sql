@@ -96,7 +96,7 @@ ALTER TABLE eshop.bank_sync_connections ADD CONSTRAINT bank_sync_connections_pro
 
 -- Internal ingestion evidence is separate from the bounded BankSync receipt.
 ALTER TABLE eshop.bank_sync_inbox ADD COLUMN IF NOT EXISTS diagnostics jsonb;
-CREATE INDEX IF NOT EXISTS transactions_email_confirmed_adoption_idx
+CREATE INDEX IF NOT EXISTS transactions_email_confirmed_review_idx
  ON eshop.transactions(bank_account_id,amount,date) WHERE ingest_source='banksync_email_confirmed';
 CREATE INDEX IF NOT EXISTS transactions_bank_email_duplicate_idx
  ON eshop.transactions(bank_account_id,date)

@@ -3767,11 +3767,6 @@
       "authenticated": true,
       "service_role": false
     },
-    "public.bank_sync_email_transaction_matches(eshop.transactions,jsonb)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": false
-    },
     "public.bank_sync_counter_account_internal(text,text)": {
       "anon": false,
       "authenticated": false,
@@ -3783,11 +3778,6 @@
       "service_role": false
     },
     "public.bank_sync_email_duplicate_candidates_internal(bigint,jsonb,boolean)": {
-      "anon": false,
-      "authenticated": false,
-      "service_role": false
-    },
-    "public.bank_sync_email_duplicate_resolution_internal(bigint,uuid)": {
       "anon": false,
       "authenticated": false,
       "service_role": false
@@ -3820,7 +3810,7 @@
     "public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)": {
       "anon": false,
       "authenticated": false,
-      "service_role": true
+      "service_role": false
     },
     "public.bank_sync_email_possible_duplicates_view_internal(bigint[])": {
       "anon": false,

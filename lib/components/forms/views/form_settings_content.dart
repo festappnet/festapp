@@ -1,4 +1,6 @@
+import 'form_availability_status.dart';
 import 'form_bank_account_picker.dart';
+import 'form_settings_section.dart';
 import 'customer_self_service_settings.dart';
 
 import 'package:festapp_core/communication_tone.dart';
@@ -54,7 +56,7 @@ import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
 class FormSettingsContent extends StatefulWidget {
   final String? formLink;
   final List<PaymentEditorConnector>? paymentProviders;
-  // Preview fixtures can opt in; normal application builds keep the feature hidden.
+  // Preview fixtures can override the form’s online payment policy.
   final bool? showCardPayments;
   final Future<Map<String, dynamic>?> Function(int, int)? loadPaymentRecipient;
   final ValueListenable<({int accountId, int revision})>? bankConnectionChanges;
@@ -62,6 +64,7 @@ class FormSettingsContent extends StatefulWidget {
   final Future<void> Function(FormEditorDraft)? saveForm;
   final VoidCallback? onActionCompleted;
   final VoidCallback? onDataUpdated;
+  final VoidCallback? onOpenEditor;
   const FormSettingsContent({
     super.key,
     this.formLink,
@@ -71,6 +74,7 @@ class FormSettingsContent extends StatefulWidget {
     this.bankConnectionChanges,
     this.onActionCompleted,
     this.onDataUpdated,
+    this.onOpenEditor,
     this.loadBundle,
     this.saveForm,
   });
@@ -87,9 +91,16 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _providers.firstWhere((p) => p.connector.id == _providerId);
   String? _providerId;
   Map<String, dynamic> _savedPayments = {};
+  int? get _paymentUnitId =>
+      (_form?.paymentMethodPolicy?['unitId'] as num?)?.toInt();
   bool get _onlinePaymentsVisible =>
-      widget.showCardPayments ??
-      _providers.any((provider) => provider.visible());
+      _paymentUnitId != null &&
+      _form?.definition.occasionId != null &&
+      (widget.showCardPayments ??
+          (!RightsService.isDemoReadOnly &&
+              (_form?.paymentMethodPolicy?['methods']
+                      as Map?)?[_providerId]?['policyEnabled'] ==
+                  true));
   String _deadlineMode = 'inherit';
   bool _cashEnabled = false;
   bool _paymentSelectionChanged = false;
@@ -130,7 +141,31 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   final TextEditingController _deadlineDaysController = TextEditingController();
   final TextEditingController _startingNumberController =
       TextEditingController();
-  final ValueNotifier<String> _linkNotifier = ValueNotifier<String>("");
+  final _publicLinkSection = ExpansibleController();
+  final _paymentMethodSection = ExpansibleController();
+  final _transferSection = ExpansibleController();
+  final _customerEmailSection = ExpansibleController();
+  Iterable<ExpansibleController> get _sections => [
+    _publicLinkSection,
+    _paymentMethodSection,
+    _transferSection,
+    _customerEmailSection,
+  ];
+
+  final _transferDetailKey = GlobalKey();
+  final _paymentMethodKey = GlobalKey();
+  final _linkField = GlobalKey<FormFieldState<String>>();
+  final _deadlineField = GlobalKey<FormFieldState<String>>();
+  final _symbolPolicyField = GlobalKey<FormFieldState<String>>();
+  final _startingNumberField = GlobalKey<FormFieldState<String>>();
+  final _reminderField = GlobalKey<FormFieldState<String>>();
+  final _linkFocus = FocusNode();
+  final _deadlineFocus = FocusNode();
+  final _symbolPolicyFocus = FocusNode();
+  final _startingNumberFocus = FocusNode();
+  final _reminderFocus = FocusNode();
+  int _formReadGeneration = 0;
+  bool _saving = false;
 
   String _reminderMode = 'inherit';
   final _reminderDaysController = TextEditingController();
@@ -148,7 +183,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   String _variableSymbolType = 'random';
   String _paymentMessageType = 'name_surname';
-  bool _showPaymentQrInEmail = false;
+  bool _showPaymentQrInEmail = true;
   String _communicationTone = 'inherit';
 
   bool _measurementEnabled = false;
@@ -251,12 +286,28 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final newFormLink =
-        widget.formLink ?? context.routeData.params.getString("formLink");
-    if (newFormLink != _formLink) {
-      _formLink = newFormLink;
-      _loadData();
+    _updateFormIdentity();
+  }
+
+  @override
+  void didUpdateWidget(covariant FormSettingsContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.formLink != widget.formLink) _updateFormIdentity();
+  }
+
+  void _updateFormIdentity() {
+    final link =
+        widget.formLink ?? context.routeData.params.getString('formLink');
+    if (link == _formLink) return;
+    _formLink = link;
+    _paymentReadGeneration++;
+    _formReadGeneration++;
+    _form = null;
+    _isLoading = true;
+    for (final section in _sections) {
+      section.collapse();
     }
+    _loadData();
   }
 
   @override
@@ -264,18 +315,24 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     RightsService.occasionLinkModelNotifier.removeListener(_changed);
     _bankChanges.removeListener(_bankConnectionChanged);
     _titleController.dispose();
-    _linkController.removeListener(_updateLinkPreview);
     _linkController.dispose();
     _deadlineDaysController.dispose();
     _cashInstructionsController.dispose();
     _reminderDaysController.dispose();
     _startingNumberController.dispose();
-    _linkNotifier.dispose();
+    for (final section in _sections) {
+      section.dispose();
+    }
+    for (final focus in [
+      _linkFocus,
+      _deadlineFocus,
+      _symbolPolicyFocus,
+      _startingNumberFocus,
+      _reminderFocus,
+    ]) {
+      focus.dispose();
+    }
     super.dispose();
-  }
-
-  void _updateLinkPreview() {
-    _linkNotifier.value = _linkController.text;
   }
 
   bool _reviewingPaymentTemplates = false;
@@ -361,15 +418,17 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       setState(() => _isLoading = true);
     }
     final requestedLink = _formLink!;
+    final generation = ++_formReadGeneration;
     final bundle = await (widget.loadBundle ?? DbForms.getFormForEdit)(
       requestedLink,
     );
-    if (!mounted || requestedLink != _formLink) return;
+    if (!mounted || generation != _formReadGeneration) return;
 
     _acceptForm(bundle?.form);
   }
 
   void _acceptForm(FormEditorDraft? form) {
+    _paymentSelectionChanged = false;
     if (form != null) {
       _form = form;
       final payments = _form!.definition.data?['payments'];
@@ -399,7 +458,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentRecipientFailed = false;
       _paymentRecipientLoaded = false;
       _paymentRecipientLoading = false;
-      if (!_cashEnabled) _loadPaymentRecipient();
+      _loadRecipientIfNeeded();
 
       final analytics = _form!.definition.data?['analytics'];
       _measurementEnabled = analytics is Map && analytics['enabled'] == true;
@@ -410,9 +469,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _savedLink = _form!.definition.link;
       _titleController.text = _form!.definition.title ?? '';
       _linkController.text = _form!.definition.link ?? '';
-      _linkNotifier.value = _linkController.text;
-      _linkController.removeListener(_updateLinkPreview);
-      _linkController.addListener(_updateLinkPreview);
+      _linkError = null;
       final reminderOverride =
           _form!.definition.data?[FormDefinition.metaIsReminderEnabled]
               as bool?;
@@ -444,8 +501,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentMessageType =
           msgData?[FormDefinition.metaType] as String? ?? 'name_surname';
 
-      _showPaymentQrInEmail =
-          FormMetadata.showPaymentQrInEmail(_form!.definition.data);
+      _showPaymentQrInEmail = FormMetadata.showPaymentQrInEmail(
+        _form!.definition.data,
+      );
 
       final savedTone =
           _form!.definition.data?[FormMetadata.metaCommunicationTone];
@@ -466,22 +524,73 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     setState(() => _isLoading = false);
   }
 
-  void _validateLink(String? value) {
-    setState(() {
-      if (value == null || value.isEmpty) {
-        _linkError = FormStrings.validationLinkRequired;
-      } else if (value != _savedLink && !isValidPublicSlug(value)) {
-        _linkError = FormStrings.validationLinkInvalidChars;
-      } else {
-        _linkError = null;
+  String? _validateLink(String? value) {
+    if (value == null || value.isEmpty)
+      return FormStrings.validationLinkRequired;
+    if (value != _savedLink && !isValidPublicSlug(value)) {
+      return FormStrings.validationLinkInvalidChars;
+    }
+    return null;
+  }
+
+  String? _validateReminder(String? value) {
+    if (value == null || value.isEmpty) return null;
+    final days = DecimalInput.tryParse(value);
+    return days == null || !days.isFinite || days < 0
+        ? FormStrings.nonNegativeDays
+        : null;
+  }
+
+  void _revealSection(ExpansibleController section, GlobalKey target) {
+    section.expand();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final targetContext = target.currentContext;
+      if (mounted && targetContext != null) {
+        Scrollable.ensureVisible(targetContext, alignment: 0.1);
       }
     });
   }
 
+  void _revealField(
+    ExpansibleController section,
+    GlobalKey<FormFieldState<String>> key,
+    FocusNode focus,
+  ) {
+    section.expand();
+    final form = _form;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final fieldContext = key.currentContext;
+      if (!mounted || !identical(form, _form) || fieldContext == null) return;
+      focus.requestFocus();
+      Scrollable.ensureVisible(
+        fieldContext,
+        alignment: 0.25,
+        duration: const Duration(milliseconds: 250),
+      );
+    });
+  }
+
   Future<void> _saveChanges(BuildContext currentContext) async {
-    if (!_canEdit) return;
-    _validateLink(_linkController.text);
-    if (!_formKey.currentState!.validate() || _linkError != null) {
+    final form = _form;
+    if (!_canEdit || form == null || _saving) return;
+    final invalid = _formKey.currentState!.validateGranularly();
+    if (invalid.isNotEmpty) {
+      for (final (key, section, focus) in [
+        (_linkField, _publicLinkSection, _linkFocus),
+        (
+          _deadlineField,
+          _bankEnabled ? _transferSection : _paymentMethodSection,
+          _deadlineFocus,
+        ),
+        (_symbolPolicyField, _transferSection, _symbolPolicyFocus),
+        (_startingNumberField, _transferSection, _startingNumberFocus),
+        (_reminderField, _customerEmailSection, _reminderFocus),
+      ]) {
+        if (invalid.contains(key.currentState)) {
+          _revealField(section, key, focus);
+          break;
+        }
+      }
       ToastHelper.Show(
         currentContext,
         FormStrings.errorFixBeforeSave,
@@ -489,17 +598,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       );
       return;
     }
-    if (_form == null) return;
     final reminderDays = DecimalInput.tryParse(_reminderDaysController.text);
-    if (_reminderDaysController.text.isNotEmpty &&
-        (reminderDays == null || !reminderDays.isFinite || reminderDays < 0)) {
-      ToastHelper.Show(
-        currentContext,
-        FormStrings.nonNegativeDays,
-        severity: ToastSeverity.NotOk,
-      );
-      return;
-    }
+    final originalDefinition = form.definition;
+    final generation = _formReadGeneration;
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _saving = true);
 
     final trimmedTitle = _titleController.text.trim();
     _form!.definition = _form!.definition.copyWith(
@@ -536,10 +639,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       FormDefinition.metaType: _paymentMessageType,
     };
 
-    if (_showPaymentQrInEmail ||
+    if (!_showPaymentQrInEmail ||
         metadata.containsKey(FormMetadata.metaShowPaymentQrInEmail)) {
-      metadata[FormMetadata.metaShowPaymentQrInEmail] =
-          _showPaymentQrInEmail;
+      metadata[FormMetadata.metaShowPaymentQrInEmail] = _showPaymentQrInEmail;
     }
 
     if (metadata.containsKey('payments') ||
@@ -571,29 +673,29 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     metadata['payment_deadline'] = {
       'mode': _cashEnabled ? 'none' : _deadlineMode,
     };
-    final days = int.tryParse(_deadlineDaysController.text);
     _form!.definition = _form!.definition.copyWith(
       data: metadata,
-      deadlineDurationSeconds:
-          !_cashEnabled &&
-              _deadlineMode == 'custom' &&
-              days != null &&
-              days >= 0
-          ? days * 86400
+      deadlineDurationSeconds: !_cashEnabled && _deadlineMode == 'custom'
+          ? _customDeadlineSeconds ??
+                (!_bankEnabled && _cardConfigured
+                    ? originalDefinition.deadlineDurationSeconds
+                    : null)
           : null,
     );
 
     try {
+      var saved = form;
       if (widget.saveForm != null) {
-        await widget.saveForm!(_form!);
+        await widget.saveForm!(form);
       } else {
-        _form = await DbForms.updateForm(
-          _form!,
+        saved = await DbForms.updateForm(
+          form,
           paymentSelectionChanged: _paymentSelectionChanged,
         );
       }
-      _savedLink = _form!.definition.link;
-      if (!mounted) return;
+      if (!mounted || generation != _formReadGeneration) return;
+      _form = saved;
+      _savedLink = saved.definition.link;
       ToastHelper.Show(
         currentContext,
         "${CommonStrings.saved}: ${_form?.definition.title ?? ""}",
@@ -620,8 +722,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         widget.onDataUpdated?.call();
       }
     } catch (e) {
-      _form?.definition = _form!.definition.copyWith(link: _savedLink);
-      if (!mounted) return;
+      if (!mounted || generation != _formReadGeneration) return;
+      form.definition = originalDefinition;
       var errorMessage = FormStrings.saveError(e);
       if (errorMessage.endsWith('_RECIPIENT_UNAVAILABLE'))
         errorMessage = PaymentMethodStrings.reason('recipient_changed');
@@ -642,6 +744,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       }
       if (errorMessage.toLowerCase().contains("link")) {
         setState(() => _linkError = errorMessage);
+        _revealField(_publicLinkSection, _linkField, _linkFocus);
       } else {
         ToastHelper.Show(
           currentContext,
@@ -649,6 +752,8 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           severity: ToastSeverity.NotOk,
         );
       }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -706,139 +811,167 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
   }
 
-  Widget _buildUsedBankAccounts(BuildContext context) {
-    final form = _form;
-    if (form == null) return const SizedBox.shrink();
-
-    final usedCurrencies = formBankTransferCurrencies(form);
-    final receivingAccounts = formBankTransferAccounts(
+  Widget _buildBankSummary(BuildContext context) {
+    final form = _form!;
+    final accounts = formBankTransferAccounts(
       form,
-      usedCurrencies,
+      formBankTransferCurrencies(form),
       accountId: form.definition.bankAccountId,
     );
-    final usedAccounts = receivingAccounts.values
-        .whereType<BankAccountModel>()
-        .toSet();
-    final missingCurrencies = [
-      for (final entry in receivingAccounts.entries)
-        if (entry.value == null) entry.key,
-    ];
-    final unitId = RightsService.currentUnit()?.id;
-    final canManageAccounts =
-        unitId != null &&
-        RightsService.hasCapability(
-          AuthorizationCapabilities.bankAccountsUnitManage,
-        );
+    final currenciesByAccount = <BankAccountModel, List<String>>{};
+    final missingCurrencies = <String>[];
+    for (final entry in accounts.entries) {
+      if (entry.value case final account?) {
+        (currenciesByAccount[account] ??= []).add(entry.key);
+      } else {
+        missingCurrencies.add(entry.key);
+      }
+    }
 
-    return SelectionArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          FormBankAccountPicker(
-            form: form,
-            currencies: usedCurrencies,
-            canEdit: _canEdit,
-            onChanged: () => setState(() {}),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (accounts.isNotEmpty && form.definition.bankAccountId == null) ...[
+          Text(
+            BankAccountStrings.formAccountDefaultPlain,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 8),
-          if (missingCurrencies.isNotEmpty) ...[
-            Text(
-              BankAccountStrings.missingAccountForCurrencies(
-                missingCurrencies.join(', '),
-              ),
+          const SizedBox(height: 4),
+        ],
+        if (currenciesByAccount.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final entry in currenciesByAccount.entries)
+                _buildReceivingAccountCard(context, entry.key, entry.value),
+            ],
+          ),
+        if (missingCurrencies.isNotEmpty) ...[
+          if (currenciesByAccount.isNotEmpty) const SizedBox(height: 8),
+          Text(
+            BankAccountStrings.missingAccountForCurrencies(
+              missingCurrencies.join(', '),
             ),
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          TextButton(
+            onPressed: () =>
+                _revealSection(_transferSection, _transferDetailKey),
+            child: Text(BankAccountStrings.formAccountLabel),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReceivingAccountCard(
+    BuildContext context,
+    BankAccountModel account,
+    List<String> currencies,
+  ) => SizedBox(
+    width: 300,
+    child: Card(
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: ThemeConfig.grey300(context)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              account.title ?? BankAccountStrings.bankAccount,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            if (account.accountNumberHumanReadable ?? account.accountNumber
+                case final number?) ...[
+              const SizedBox(height: 2),
+              SelectableText(number, style: const TextStyle(fontSize: 13)),
+            ],
+            BankAccountSyncStatus(account: account),
             const SizedBox(height: 4),
-            Text(
-              canManageAccounts
-                  ? BankAccountStrings.addAccountForPayments
-                  : BankAccountStrings.askManagerForPaymentAccount,
-            ),
-          ],
-          if (canManageAccounts)
-            TextButton(
-              onPressed: () => pushRootPath(
-                context.router.root,
-                '/unit/$unitId/edit/bank-accounts',
-              ),
-              child: Text(BankAccountStrings.bankAccountSettingsTitle),
-            ),
-          if (usedAccounts.isNotEmpty) ...[
-            const SizedBox(height: 8),
             Wrap(
-              spacing: 8,
-              runSpacing: 4, // Added runSpacing for better multiline layout
-              children: usedAccounts.map((account) {
-                return SizedBox(
-                  width: 300,
-                  child: Card(
-                    elevation: 0,
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: ThemeConfig.grey300(context)),
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final currency in currencies)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            account.title ?? BankAccountStrings.bankAccount,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            account.accountNumberHumanReadable ??
-                                account.accountNumber ??
-                                '',
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                          BankAccountSyncStatus(account: account),
-                          if (account.supportedCurrencies.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Wrap(
-                              spacing: 4,
-                              runSpacing: 4,
-                              children: account.supportedCurrencies
-                                  .map(
-                                    (c) => Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                        vertical: 1,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: ThemeConfig.grey200(context),
-                                        borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(
-                                          color: Colors.grey.shade400,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        c,
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ],
-                        ],
+                    decoration: BoxDecoration(
+                      color: ThemeConfig.grey200(context),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.grey.shade400),
+                    ),
+                    child: Text(
+                      currency,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                );
-              }).toList(),
+              ],
             ),
           ],
-        ],
+        ),
       ),
-    );
+    ),
+  );
+
+  List<Widget> _bankAccountSettings(BuildContext context) {
+    final form = _form!;
+    final currencies = formBankTransferCurrencies(form);
+    final hasMissingAccount = formBankTransferAccounts(
+      form,
+      currencies,
+      accountId: form.definition.bankAccountId,
+    ).values.any((account) => account == null);
+    final unitId = RightsService.currentUnit()?.id;
+    final canManage =
+        unitId != null &&
+        unitId == _paymentUnitId &&
+        RightsService.hasCapability(
+          AuthorizationCapabilities.bankAccountsUnitManage,
+        );
+    return [
+      FormBankAccountPicker(
+        key: _transferDetailKey,
+        form: form,
+        currencies: currencies,
+        canEdit: _canEdit,
+        onChanged: _changed,
+      ),
+      if (hasMissingAccount)
+        Text(
+          canManage
+              ? BankAccountStrings.addAccountForPayments
+              : BankAccountStrings.askManagerForPaymentAccount,
+        ),
+      if (canManage)
+        TextButton(
+          onPressed: () => pushRootPath(
+            context.router.root,
+            '/unit/$unitId/edit/bank-accounts',
+          ),
+          child: Text(BankAccountStrings.bankAccountSettingsTitle),
+        ),
+    ];
+  }
+
+  bool get _cardConfigured => !_cashEnabled && _paymentConnectionId != null;
+
+  void _loadRecipientIfNeeded() {
+    if (_paymentRecipientLoaded || _cashEnabled) return;
+    if (_cardConfigured || _paymentMethodSection.isExpanded) {
+      _loadPaymentRecipient();
+    }
   }
 
   void _capturePaymentConfiguration() {
@@ -866,16 +999,22 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentRecipient = null;
       _paymentRecipientLoaded = false;
       _paymentRecipientFailed = false;
+      _paymentRecipientLoading = false;
+      _paymentReadGeneration++;
     });
-    _loadPaymentRecipient();
+    _loadRecipientIfNeeded();
   }
 
   Future<void> _loadPaymentRecipient() async {
-    if (!_onlinePaymentsVisible) return;
+    final unit = _paymentUnitId;
+    final occasion = _form?.definition.occasionId;
+    if (!_canEdit ||
+        unit == null ||
+        occasion == null ||
+        (!_onlinePaymentsVisible && !_cardConfigured) ||
+        _paymentRecipientLoading)
+      return;
     final generation = ++_paymentReadGeneration;
-    final unit = _form?.occasionModel?.unit,
-        occasion = _form?.definition.occasionId;
-    if (unit == null || occasion == null) return;
     setState(() => _paymentRecipientLoading = true);
     try {
       final value =
@@ -930,84 +1069,130 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     return null;
   }
 
-  Widget _buildPaymentMethods(BuildContext context) {
+  String? get _candidateConnectionId =>
+      switch (_paymentRecipient?['connectionId']) {
+        final String id => id,
+        _ => null,
+      };
+
+  bool get _canSelectRecipient =>
+      _onlinePaymentsVisible &&
+      _paymentRecipient?['modelVerified'] == true &&
+      {'connected', 'restricted'}.contains(_paymentRecipient?['state']) &&
+      _candidateConnectionId != null &&
+      _draftCardCompatibility == null;
+
+  FormPaymentMethod? get _paymentMethod => _cashEnabled
+      ? FormPaymentMethod.cash
+      : _cardConfigured
+      ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.online)
+      : (_bankEnabled ? FormPaymentMethod.bank : null);
+
+  Widget _buildRecipientStatus(
+    BuildContext context, {
+    required bool configured,
+  }) {
     final recipient = _paymentRecipient;
-    final String? candidate = recipient?['connectionId'] is String
-        ? recipient!['connectionId']
-        : null;
-    final unit = _form?.occasionModel?.unit;
+    final matches =
+        configured && _candidateConnectionId == _paymentConnectionId;
+    final compatibility = _draftCardCompatibility;
+    final diagnostics = <String>[
+      if (configured && !_onlinePaymentsVisible)
+        PaymentMethodStrings.reason('payments_disabled'),
+      if (_paymentRecipientFailed)
+        PaymentMethodStrings.reason('unavailable')
+      else if (configured && !_canEdit && _onlinePaymentsVisible)
+        FormStrings.cardUnverified
+      else if (_paymentRecipientLoaded && configured && !matches)
+        PaymentMethodStrings.text('configuredRecipientUnavailable')
+      else if (_paymentRecipientLoaded && recipient == null)
+        PaymentMethodStrings.reason('not_configured'),
+      if (recipient != null && (!configured || matches)) ...[
+        if (recipient['modelVerified'] != true)
+          PaymentMethodStrings.reason('model_unverified'),
+        if (recipient['paused'] == true)
+          PaymentMethodStrings.reason('paused')
+        else if (recipient['chargesEnabled'] != true ||
+            recipient['cardPaymentsActive'] != true ||
+            recipient['state'] != 'connected')
+          PaymentMethodStrings.reason(_provider.restrictedReason),
+      ],
+      if (compatibility != null) PaymentMethodStrings.reason(compatibility),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (recipient?['name'] case final String name)
+          Text(
+            matches
+                ? PaymentMethodStrings.recipient(name)
+                : '${PaymentMethodStrings.text('availableRecipient')} · $name',
+          ),
+        if (_paymentRecipientLoading)
+          const LinearProgressIndicator()
+        else if (matches && diagnostics.isEmpty)
+          Text(FormStrings.cardRecipientVerified),
+        for (final diagnostic in diagnostics) Text(diagnostic),
+        if (_paymentRecipientFailed)
+          TextButton(
+            onPressed: _paymentRecipientLoading ? null : _loadPaymentRecipient,
+            child: Text(PaymentMethodStrings.text('checkAccount')),
+          )
+        else if (configured &&
+            _canEdit &&
+            diagnostics.isNotEmpty &&
+            !_paymentMethodSection.isExpanded)
+          TextButton(
+            onPressed: () =>
+                _revealSection(_paymentMethodSection, _paymentMethodKey),
+            child: Text(FormStrings.resolvePaymentMethod),
+          ),
+      ],
+    );
+  }
+
+  List<Widget> _paymentMethodSettings(BuildContext context) {
+    final unit = _paymentUnitId;
     final canConnect =
         unit != null &&
         unit == RightsService.currentUnit()?.id &&
         _provider.canManage();
-    final cardEnabled = _onlinePaymentsVisible && _paymentConnectionId != null;
-    final compatibility = _draftCardCompatibility;
-    final canSelect =
-        recipient?['modelVerified'] == true &&
-        {'connected', 'restricted'}.contains(recipient?['state']) &&
-        candidate != null &&
-        compatibility == null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          PaymentMethodStrings.text('title'),
-          style: Theme.of(context).textTheme.titleMedium,
+    final cardEnabled = _onlinePaymentsVisible && _cardConfigured;
+    return [
+      if (_onlinePaymentsVisible && _providers.length > 1)
+        DropdownButton<String>(
+          value: _providerId,
+          items: [
+            for (final p in _providers)
+              DropdownMenuItem(
+                value: p.connector.id,
+                child: Text(PaymentMethodStrings.text(p.titleKey)),
+              ),
+          ],
+          onChanged: (id) {
+            if (id != null) _selectPaymentProvider(id);
+          },
         ),
-        const SizedBox(height: 12),
-        if (_onlinePaymentsVisible && _providers.length > 1)
-          DropdownButton<String>(
-            value: _providerId,
-            items: [
-              for (final p in _providers)
-                DropdownMenuItem(
-                  value: p.connector.id,
-                  child: Text(PaymentMethodStrings.text(p.titleKey)),
-                ),
-            ],
-            onChanged: (id) {
-              if (id != null) _selectPaymentProvider(id);
-            },
-          ),
-        if (_onlinePaymentsVisible && !_cashEnabled && _paymentRecipientLoading)
-          const LinearProgressIndicator(),
-        if (_onlinePaymentsVisible && !_cashEnabled && _paymentRecipientFailed)
-          Text(PaymentMethodStrings.reason('unavailable'))
-        else if (_onlinePaymentsVisible &&
-            !_cashEnabled &&
-            recipient == null &&
-            _paymentRecipientLoaded)
-          Text(PaymentMethodStrings.reason('not_configured')),
-        if (_onlinePaymentsVisible && !_cashEnabled && compatibility != null)
-          Text(PaymentMethodStrings.reason(compatibility)),
-        if (!_bankEnabled && cardEnabled)
-          TextButton.icon(
-            onPressed: _reviewingPaymentTemplates
-                ? null
-                : _reviewPaymentTemplates,
-            icon: const Icon(Icons.mark_email_read_outlined),
-            label: Text(PaymentMethodStrings.text('policyTemplateReview')),
-          ),
-        PaymentMethodCards(
-          showBank:
-              (_form?.paymentMethodPolicy?['methods']
-                  as Map?)?['bank']?['policyEnabled'] ==
-              true,
-          showCash:
-              (_form?.paymentMethodPolicy?['methods']
-                  as Map?)?['cash']?['policyEnabled'] ==
-              true,
-          showOnline: _onlinePaymentsVisible,
-          value: _cashEnabled
-              ? FormPaymentMethod.cash
-              : cardEnabled
-              ? (_bankEnabled
-                    ? FormPaymentMethod.both
-                    : FormPaymentMethod.online)
-              : (_bankEnabled ? FormPaymentMethod.bank : null),
-          canSelectOnline: cardEnabled || canSelect,
-          onlineTitle: PaymentMethodStrings.text(_provider.titleKey),
-          onChanged: (method) => setState(() {
+      PaymentMethodCards(
+        showBank:
+            (_form?.paymentMethodPolicy?['methods']
+                as Map?)?['bank']?['policyEnabled'] ==
+            true,
+        showCash:
+            (_form?.paymentMethodPolicy?['methods']
+                as Map?)?['cash']?['policyEnabled'] ==
+            true,
+        showOnline: _onlinePaymentsVisible,
+        value: _cashEnabled
+            ? FormPaymentMethod.cash
+            : cardEnabled
+            ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.online)
+            : (_bankEnabled ? FormPaymentMethod.bank : null),
+        canSelectOnline: _cardConfigured || _canSelectRecipient,
+        onlineTitle: PaymentMethodStrings.text(_provider.titleKey),
+        onChanged: (method) {
+          final leavingCash = _cashEnabled && method != FormPaymentMethod.cash;
+          setState(() {
             _paymentSelectionChanged = true;
             _cashEnabled = method == FormPaymentMethod.cash;
             _bankEnabled =
@@ -1023,108 +1208,185 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                 method == FormPaymentMethod.bank ||
                     method == FormPaymentMethod.cash
                 ? null
-                : (_paymentConnectionId ?? candidate);
-          }),
+                : (_paymentConnectionId ?? _candidateConnectionId);
+          });
+          if (leavingCash) _loadRecipientIfNeeded();
+        },
+      ),
+
+      if (_cashEnabled) ...[
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _cashInstructionsController,
+          onChanged: (_) => setState(() => _paymentSelectionChanged = true),
+          maxLength: 1000,
+          minLines: 2,
+          maxLines: 4,
+          decoration: InputDecoration(
+            labelText: PaymentMethodStrings.text('cashInstructions'),
+            hintText: PaymentMethodStrings.text('cashInstructionsDefault'),
+            floatingLabelBehavior: FloatingLabelBehavior.always,
+            alignLabelWithHint: true,
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.all(16),
+            helperText: PaymentMethodStrings.text('cashDeadlineHelp'),
+            helperMaxLines: 3,
+          ),
         ),
-        if (_cashEnabled) ...[
-          const SizedBox(height: 24),
-          TextFormField(
-            controller: _cashInstructionsController,
-            onChanged: (_) => setState(() => _paymentSelectionChanged = true),
-            maxLength: 1000,
-            minLines: 2,
-            maxLines: 4,
-            decoration: InputDecoration(
-              labelText: PaymentMethodStrings.text('cashInstructions'),
-              hintText: PaymentMethodStrings.text('cashInstructionsDefault'),
-              floatingLabelBehavior: FloatingLabelBehavior.always,
-              alignLabelWithHint: true,
-              border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.all(16),
-              helperText: PaymentMethodStrings.text('cashDeadlineHelp'),
-              helperMaxLines: 3,
-            ),
-          ),
-        ],
+      ],
+      if (!_cashEnabled && !_bankEnabled && !_cardConfigured) ...[
         const SizedBox(height: 16),
-        if (!_cashEnabled && !_bankEnabled && !cardEnabled)
-          Text(PaymentMethodStrings.text('noMethodSelected')),
-        if (_bankEnabled &&
-            (_form?.paymentMethodPolicy?['methods']
-                    as Map?)?['bank']?['policyEnabled'] ==
-                true) ...[
-          Text(
-            PaymentMethodStrings.text('bank'),
-            style: Theme.of(context).textTheme.titleSmall,
+        ..._deadlineSettings(),
+      ],
+      if ((_onlinePaymentsVisible || _cardConfigured) && !_cashEnabled) ...[
+        const SizedBox(height: 16),
+        if (!_cardConfigured || formBankTransferCurrencies(_form!).isEmpty)
+          _buildRecipientStatus(context, configured: _cardConfigured),
+        if (_cardConfigured &&
+            _candidateConnectionId != null &&
+            _candidateConnectionId != _paymentConnectionId) ...[
+          Text(PaymentMethodStrings.reason('recipient_changed')),
+          TextButton(
+            onPressed: _canSelectRecipient
+                ? () => setState(() {
+                    _paymentConnectionId = _candidateConnectionId;
+                    _paymentSelectionChanged = true;
+                  })
+                : null,
+            child: Text(PaymentMethodStrings.text('selectRecipient')),
           ),
-          const SizedBox(height: 8),
-          _buildUsedBankAccounts(context),
-          const SizedBox(height: 16),
         ],
-        if (_onlinePaymentsVisible && !_cashEnabled) ...[
-          Text(
-            PaymentMethodStrings.text(_provider.titleKey),
-            style: Theme.of(context).textTheme.titleSmall,
+        if (canConnect)
+          TextButton(
+            onPressed: () =>
+                pushRootPath(context.router.root, _provider.settingsPath(unit)),
+            child: Text(PaymentMethodStrings.text(_provider.setupKey)),
           ),
+      ],
+    ];
+  }
+
+  int? get _customDeadlineSeconds {
+    final days = int.tryParse(_deadlineDaysController.text);
+    if (days == null || days < 0) return null;
+    final savedDuration = _form!.definition.deadlineDurationSeconds;
+    if (savedDuration != null && (savedDuration / 86400).round() == days) {
+      return savedDuration;
+    }
+    return days * 86400;
+  }
+
+  String get _bankDeadlineSummary {
+    final customSeconds = _customDeadlineSeconds;
+    if (_deadlineMode == 'none' ||
+        (_deadlineMode == 'inherit' &&
+            _formFeature.paymentDeadlineMode == 'none')) {
+      return PaymentMethodStrings.text('deadlineNone');
+    }
+    if (_deadlineMode == 'custom') {
+      return customSeconds == null
+          ? FormStrings.invalidPaymentDeadline
+          : FormStrings.customPaymentDeadline(customSeconds / 86400);
+    }
+    return FormStrings.inheritedPaymentDeadline(
+      _form!.definition.effectiveDeadlineDurationSeconds(
+            occasionDefault: _formFeature.deadlineDurationSeconds,
+          ) /
+          86400,
+    );
+  }
+
+  Widget _buildPaymentSummary(BuildContext context) {
+    final currencies = formBankTransferCurrencies(_form!);
+    final hasPaidProducts = currencies.isNotEmpty;
+    final providerTitle = PaymentMethodStrings.text(_provider.titleKey);
+    final method = switch (_paymentMethod) {
+      FormPaymentMethod.bank => PaymentMethodStrings.text('bank'),
+      FormPaymentMethod.online => providerTitle,
+      FormPaymentMethod.both =>
+        '${PaymentMethodStrings.text('bank')} + $providerTitle',
+      FormPaymentMethod.cash => PaymentMethodStrings.text('cash'),
+      null =>
+        hasPaidProducts ? PaymentMethodStrings.text('noMethodSelected') : null,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          FormStrings.paymentDetailsTitle,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 4),
+        if (!hasPaidProducts) Text(FormStrings.noPaidProducts),
+        if (method != null)
+          Text(method, style: Theme.of(context).textTheme.titleMedium),
+        if (_cashEnabled)
+          Text(
+            _cashInstructionsController.text.trim().isEmpty
+                ? PaymentMethodStrings.text('cashInstructionsDefault')
+                : _cashInstructionsController.text.trim(),
+          ),
+        if (_cashEnabled)
+          Text(PaymentMethodStrings.text('cashDeadlineHelp'))
+        else if (_bankEnabled)
+          Text(_bankDeadlineSummary),
+        if (_bankEnabled && hasPaidProducts) ...[
+          if (!_methodAllowed('bank'))
+            Text(FormStrings.methodDisabled(PaymentMethodStrings.text('bank'))),
           const SizedBox(height: 8),
-          if (!_paymentRecipientLoaded || _paymentRecipientFailed)
-            TextButton(
-              onPressed: _paymentRecipientLoading
-                  ? null
-                  : _loadPaymentRecipient,
-              child: Text(PaymentMethodStrings.text('checkAccount')),
+          _buildBankSummary(context),
+        ],
+        if (_cashEnabled && hasPaidProducts && !_methodAllowed('cash'))
+          Text(FormStrings.methodDisabled(PaymentMethodStrings.text('cash'))),
+        if (_cardConfigured && hasPaidProducts) ...[
+          Text(FormStrings.cardPaymentAtCheckout),
+          if (_form!.definition.payments != null)
+            Text(
+              PaymentMethodStrings.reservation(
+                FormPaymentOptions.fromJson(_form!.definition.payments)
+                    .reservationSeconds,
+              ),
             ),
-          if (cardEnabled &&
-              _paymentRecipientLoaded &&
-              (recipient == null || candidate != _paymentConnectionId))
-            Text(PaymentMethodStrings.text('configuredRecipientUnavailable')),
-          if (recipient != null) ...[
-            if (recipient['modelVerified'] != true)
-              Text(PaymentMethodStrings.reason('model_unverified')),
-            if (recipient['name'] is String)
-              Text(
-                !cardEnabled || candidate != _paymentConnectionId
-                    ? '${PaymentMethodStrings.text('availableRecipient')}: ${recipient['name']}'
-                    : PaymentMethodStrings.recipient(recipient['name']),
-              ),
-            if (recipient['paused'] == true)
-              Text(PaymentMethodStrings.reason('paused')),
-            if (recipient['chargesEnabled'] != true ||
-                recipient['cardPaymentsActive'] != true)
-              Text(PaymentMethodStrings.reason(_provider.restrictedReason)),
-            if (cardEnabled && candidate != _paymentConnectionId) ...[
-              Text(PaymentMethodStrings.reason('recipient_changed')),
-              TextButton(
-                onPressed: canSelect
-                    ? () => setState(() => _paymentConnectionId = candidate)
-                    : null,
-                child: Text(PaymentMethodStrings.text('selectRecipient')),
-              ),
+          _buildRecipientStatus(context, configured: true),
+        ],
+        if (_canEdit && !_bankEnabled && _cardConfigured)
+          TextButton.icon(
+            onPressed: _reviewingPaymentTemplates
+                ? null
+                : _reviewPaymentTemplates,
+            icon: const Icon(Icons.mark_email_read_outlined),
+            label: Text(PaymentMethodStrings.text('policyTemplateReview')),
+          ),
+        if (_canEdit)
+          FormSettingsSection(
+            key: _paymentMethodKey,
+            title: FormStrings.changePaymentMethod,
+            controller: _paymentMethodSection,
+            onExpansionChanged: (expanded) {
+              _changed();
+              if (expanded) _loadRecipientIfNeeded();
+            },
+            children: _paymentMethodSettings(context),
+          ),
+        if (_bankEnabled)
+          FormSettingsSection(
+            title: FormStrings.transferDetails,
+            controller: _transferSection,
+            children: [
+              ..._bankAccountSettings(context),
+              const SizedBox(height: 16),
+              ..._deadlineSettings(),
+              const SizedBox(height: 16),
+              ..._transferReferenceSettings(),
             ],
-          ],
-          if (cardEnabled) ...[
-            Text(PaymentMethodStrings.text('fullAmount')),
-            if (_form!.definition.payments != null)
-              Text(
-                PaymentMethodStrings.reservation(
-                  FormPaymentOptions.fromJson(_form!.definition.payments)
-                      .reservationSeconds,
-                ),
-              ),
-          ],
-          if (canConnect)
-            TextButton(
-              onPressed: () => pushRootPath(
-                context.router.root,
-                _provider.settingsPath(unit),
-              ),
-              child: Text(PaymentMethodStrings.text(_provider.setupKey)),
-            ),
-        ],
-        const SizedBox(height: 16),
+          ),
       ],
     );
   }
+
+  bool _methodAllowed(String id) =>
+      (_form?.paymentMethodPolicy?['methods'] as Map?)?[id]?['policyEnabled'] ==
+      true;
 
   @override
   Widget build(BuildContext context) => NavigationDraftBoundary(
@@ -1132,541 +1394,468 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     child: _buildContent(context),
   );
 
-  Widget _buildContent(BuildContext context) {
-    final defaultReminders = _formFeature.reminderIsEnabled ?? true;
-    final remindersEnabled = _reminderMode == 'inherit'
-        ? defaultReminders
-        : _reminderMode == 'enabled';
+  Widget _buildFormIdentity(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      TextFormField(
+        enabled: _canEdit,
+        controller: _titleController,
+        minLines: 1,
+        maxLines: 2,
+        textInputAction: TextInputAction.done,
+        inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
+        decoration: InputDecoration(
+          labelText: FormStrings.labelFormTitle,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 12,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          FormAvailabilityStatus(form: _form!),
+          if (widget.onOpenEditor != null)
+            TextButton(
+              onPressed: widget.onOpenEditor,
+              child: Text(FormStrings.openFormTab),
+            ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      PublicLink(
+        link: _linkController.text,
+        savedLink: _savedLink,
+        showOpenAction: true,
+      ),
+      FormSettingsSection(
+        title: FormStrings.publicLinkSettings,
+        controller: _publicLinkSection,
+        children: [
+          if (_canEdit)
+            TextFormField(
+              key: _linkField,
+              focusNode: _linkFocus,
+              controller: _linkController,
+              validator: _validateLink,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              decoration: InputDecoration(
+                labelText: FormStrings.labelFormLink,
+                errorText: _linkError,
+                helperText: FormStrings.publicLinkHistoryHelp,
+                helperMaxLines: 6,
+                border: const OutlineInputBorder(),
+              ),
+              onChanged: (_) {
+                if (_linkError != null) setState(() => _linkError = null);
+              },
+            ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: FormEmbedAction(
+              savedLink: _savedLink,
+              onOpenAppearance: _savedLink == null
+                  ? null
+                  : () => context.tabsRouter.navigate(const FormDesignRoute()),
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
 
+  List<Widget> _deadlineSettings() => [
+    DropdownButtonFormField<String>(
+      key: const ValueKey('form-payment-deadline-mode'),
+      initialValue: _cashEnabled ? 'none' : _deadlineMode,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: FormStrings.paymentDeadlineLabel),
+      items: [
+        for (final mode in ['inherit', 'custom', 'none'])
+          DropdownMenuItem(
+            value: mode,
+            child: Text(
+              PaymentMethodStrings.text(
+                {
+                  'inherit': 'deadlineInherit',
+                  'custom': 'deadlineCustom',
+                  'none': 'deadlineNone',
+                }[mode]!,
+              ),
+            ),
+          ),
+      ],
+      onChanged: !_canEdit || _cashEnabled
+          ? null
+          : (mode) => setState(() {
+              _deadlineMode = mode!;
+              _paymentSelectionChanged = true;
+            }),
+    ),
+    if (!_cashEnabled && _deadlineMode == 'custom') ...[
+      const SizedBox(height: 16),
+      TextFormField(
+        key: _deadlineField,
+        focusNode: _deadlineFocus,
+        enabled: _canEdit,
+        controller: _deadlineDaysController,
+        onChanged: (_) => setState(() => _paymentSelectionChanged = true),
+        validator: (_) =>
+            _deadlineMode == 'custom' && _customDeadlineSeconds == null
+            ? CommonStrings.fieldCannotBeEmpty
+            : null,
+        decoration: InputDecoration(
+          labelText: FormStrings.labelDeadlineDays,
+          suffixIcon: IconButton(
+            tooltip: FormStrings.inheritDays(
+              (_formFeature.deadlineDurationSeconds ?? 604800) / 86400,
+            ),
+            icon: const Icon(Icons.restore),
+            onPressed: !_canEdit
+                ? null
+                : () => setState(() {
+                    _deadlineMode = 'inherit';
+                    _paymentSelectionChanged = true;
+                  }),
+          ),
+          border: const OutlineInputBorder(),
+          helperText: FormStrings.inheritDays(
+            (_formFeature.deadlineDurationSeconds ?? 604800) / 86400,
+          ),
+          helperMaxLines: 5,
+        ),
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      ),
+    ],
+  ];
+
+  List<Widget> _transferReferenceSettings() => [
+    FormVariableSymbolSettings(
+      policyKey: _symbolPolicyField,
+      startingNumberKey: _startingNumberField,
+      policyFocus: _symbolPolicyFocus,
+      startingNumberFocus: _startingNumberFocus,
+      value: {
+        FormDefinition.metaType: _variableSymbolType,
+        FormDefinition.metaStartingNumber: int.tryParse(
+          _startingNumberController.text,
+        ),
+      },
+      enabled: _canEdit,
+      onChanged: (value) => setState(() {
+        _variableSymbolType = value[FormDefinition.metaType] as String;
+        _startingNumberController.text =
+            '${value[FormDefinition.metaStartingNumber] ?? ''}';
+      }),
+    ),
+    const SizedBox(height: 16),
+    DropdownButtonFormField<String>(
+      isExpanded: true,
+      value: _paymentMessageType,
+      decoration: InputDecoration(
+        labelText: FormStrings.labelPaymentMessage,
+        border: const OutlineInputBorder(),
+      ),
+      items: [
+        DropdownMenuItem(
+          value: 'name_surname',
+          child: Text(FormStrings.msgTypeNameSurname),
+        ),
+        DropdownMenuItem(value: 'none', child: Text(FormStrings.msgTypeNone)),
+        DropdownMenuItem(
+          value: 'occasion_title',
+          child: Text(FormStrings.msgTypeOccasionTitle),
+        ),
+      ],
+      onChanged: _canEdit
+          ? (value) {
+              if (value != null) {
+                setState(() {
+                  _paymentMessageType = value;
+                });
+              }
+            }
+          : null,
+    ),
+  ];
+
+  bool get _defaultReminders => _formFeature.reminderIsEnabled ?? true;
+  bool get _remindersEnabled => _reminderMode == 'inherit'
+      ? _defaultReminders
+      : _reminderMode == 'enabled';
+
+  Widget _buildCustomerEmailSettings() {
+    final defaultReminders = _defaultReminders;
+    final reminderSummary = !_remindersEnabled
+        ? FormStrings.reminderSummaryOff
+        : _reminderMode == 'inherit'
+        ? FormStrings.reminderSummaryInherited
+        : FormStrings.reminderSummaryOn;
+    return FormSettingsSection(
+      title: FormStrings.customerEmails,
+      controller: _customerEmailSection,
+      summary: [
+        reminderSummary,
+        if (_bankEnabled) FormStrings.paymentQrSummary(_showPaymentQrInEmail),
+      ].join(' · '),
+      children: [
+        DropdownButtonFormField<String>(
+          value: _reminderMode,
+          isExpanded: true,
+          decoration: InputDecoration(
+            labelText: FormStrings.labelEnableReminders,
+            border: const OutlineInputBorder(),
+          ),
+          items: [
+            DropdownMenuItem(
+              value: 'inherit',
+              child: Text(FormStrings.inheritReminder(defaultReminders)),
+            ),
+            DropdownMenuItem(
+              value: 'enabled',
+              child: Text(FormStrings.remindersOn),
+            ),
+            DropdownMenuItem(
+              value: 'disabled',
+              child: Text(FormStrings.remindersOff),
+            ),
+          ],
+          onChanged: _canEdit
+              ? (value) => setState(() => _reminderMode = value!)
+              : null,
+        ),
+        if (_remindersEnabled ||
+            _validateReminder(_reminderDaysController.text) != null) ...[
+          const SizedBox(height: 24),
+          TextFormField(
+            key: _reminderField,
+            focusNode: _reminderFocus,
+            enabled: _canEdit,
+            controller: _reminderDaysController,
+            decoration: InputDecoration(
+              labelText: FormStrings.labelReminderInterval,
+              border: const OutlineInputBorder(),
+              helperText: FormStrings.inheritDays(
+                (_formFeature.reminderIntervalSeconds ?? 86400) / 86400,
+              ),
+              helperMaxLines: 4,
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: _validateReminder,
+          ),
+        ],
+
+        const SizedBox(height: 16),
+        Text(
+          FormStrings.helperCommunicationTone,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 24),
+        DropdownButtonFormField<String>(
+          isExpanded: true,
+          initialValue: _communicationTone,
+          decoration: InputDecoration(
+            labelText: FormStrings.labelCommunicationTone,
+            border: const OutlineInputBorder(),
+          ),
+          items: [
+            DropdownMenuItem(
+              value: 'inherit',
+              child: Text(
+                FormStrings.toneInherit(
+                  _unitTone == 'informal'
+                      ? FormStrings.toneInformal
+                      : FormStrings.toneFormal,
+                ),
+              ),
+            ),
+            DropdownMenuItem(
+              value: 'formal',
+              child: Text(FormStrings.toneFormal),
+            ),
+            DropdownMenuItem(
+              value: 'informal',
+              child: Text(FormStrings.toneInformal),
+            ),
+          ],
+          onChanged: _canEdit
+              ? (value) {
+                  if (value != null) {
+                    setState(() {
+                      _communicationTone = value;
+                    });
+                  }
+                }
+              : null,
+        ),
+
+        if (_bankEnabled) ...[
+          const SizedBox(height: 16),
+          PaymentQrEmailSetting(
+            value: _showPaymentQrInEmail,
+            onChanged: _canEdit
+                ? (value) => setState(() => _showPaymentQrInEmail = value)
+                : null,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMeasurementSettings(BuildContext context) => FormSettingsSection(
+    title: FormStrings.measurementTitle,
+    children: [
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(FormStrings.measurementEnabled),
+        subtitle: Text(FormStrings.measurementFormHelp),
+        value: _measurementEnabled,
+        onChanged: _canEdit && _canManageMeasurement
+            ? (value) => setState(() => _measurementEnabled = value)
+            : null,
+      ),
+      DropdownButtonFormField<String>(
+        initialValue: _paidPurchaseRequired ? 'paid' : _purchaseTiming,
+        decoration: InputDecoration(
+          labelText: FormStrings.purchaseTiming,
+          helperText: _paidPurchaseRequired
+              ? FormStrings.purchaseTimingCapi
+              : FormStrings.purchaseTimingHelp,
+          helperMaxLines: 4,
+        ),
+        items: [
+          DropdownMenuItem(
+            value: 'order',
+            child: Text(FormStrings.purchaseTimingOrder),
+          ),
+          DropdownMenuItem(
+            value: 'paid',
+            child: Text(FormStrings.purchaseTimingPaid),
+          ),
+        ],
+        onChanged: _canEdit && _canManageMeasurement && !_paidPurchaseRequired
+            ? (value) => setState(() => _purchaseTiming = value ?? 'order')
+            : null,
+      ),
+      const SizedBox(height: 16),
+      Text(
+        FormStrings.measurementBrowserChannel,
+        style: Theme.of(context).textTheme.titleSmall,
+      ),
+      for (final message in _measurementStatusMessages)
+        _measurementStatusRow(context, message),
+      if (_paidPurchaseRequired && _measurementEnabled)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(FormStrings.measurementMetaCapiHelp),
+        ),
+      const SizedBox(height: 8),
+      if (RightsService.currentUnit()?.id != null &&
+          RightsService.hasCapability(
+            AuthorizationCapabilities.unitSettingsWrite,
+          ))
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            icon: const Icon(Icons.tune, size: 18),
+            label: Text(FormStrings.measurementOpenUnitSettings),
+            onPressed: () => pushRootPath(
+              context.router.root,
+              '/unit/${RightsService.currentUnit()!.id}/edit/settings',
+            ),
+          ),
+        )
+      else
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            FormStrings.measurementAskUnitManager,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+    ],
+  );
+
+  Widget _buildContent(BuildContext context) {
+    final form = _form;
     return Scaffold(
-      body: Builder(
-        builder: (innerContext) {
-          return _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _form == null
-              ? Center(child: Text(FormStrings.formNotFound))
-              : Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: StylesConfig.formMaxWidth,
-                    ),
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            key: ObjectKey(_form),
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                FormStrings.formSettingsTitle,
-                                style: Theme.of(innerContext)
-                                    .textTheme
-                                    .headlineSmall,
-                              ),
-                              const SizedBox(height: 24),
-                              CustomerSelfServiceSettings(
-                                key: ObjectKey(_form),
-                                form: _form!,
-                                canEdit: _canEdit,
-                                onChanged: () => setState(() {}),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(FormStrings.formPaymentDefaultsHelp),
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                value: _reminderMode,
-                                isExpanded: true,
-                                decoration: InputDecoration(
-                                  labelText: FormStrings.labelEnableReminders,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                items: [
-                                  DropdownMenuItem(
-                                    value: 'inherit',
-                                    child: Text(
-                                      FormStrings.inheritReminder(
-                                        defaultReminders,
-                                      ),
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'enabled',
-                                    child: Text(FormStrings.remindersOn),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'disabled',
-                                    child: Text(FormStrings.remindersOff),
-                                  ),
-                                ],
-                                onChanged: _canEdit
-                                    ? (value) =>
-                                          setState(() => _reminderMode = value!)
-                                    : null,
-                              ),
-                              if (remindersEnabled) ...[
-                                const SizedBox(height: 24),
-                                TextFormField(
-                                  enabled: _canEdit,
-                                  controller: _reminderDaysController,
-                                  decoration: InputDecoration(
-                                    labelText:
-                                        FormStrings.labelReminderInterval,
-                                    border: const OutlineInputBorder(),
-                                    helperText: FormStrings.inheritDays(
-                                      (_formFeature.reminderIntervalSeconds ??
-                                              86400) /
-                                          86400,
-                                    ),
-                                    helperMaxLines: 4,
-                                  ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return null;
-                                    }
-                                    final days = DecimalInput.tryParse(value);
-                                    return days == null ||
-                                            !days.isFinite ||
-                                            days < 0
-                                        ? FormStrings.nonNegativeDays
-                                        : null;
-                                  },
-                                ),
-                              ],
-                              const SizedBox(height: 24),
-                              TextFormField(
-                                enabled: _canEdit,
-                                controller: _titleController,
-                                decoration: InputDecoration(
-                                  labelText: FormStrings.labelFormTitle,
-                                  border: const OutlineInputBorder(),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              TextFormField(
-                                enabled: _canEdit,
-                                controller: _linkController,
-                                decoration: InputDecoration(
-                                  labelText: FormStrings.labelFormLink,
-                                  border: const OutlineInputBorder(),
-                                  errorText: _linkError,
-                                  helperText: FormStrings.publicLinkHistoryHelp,
-                                ),
-                                onChanged: _canEdit
-                                    ? (value) {
-                                        _validateLink(value);
-                                      }
-                                    : null,
-                              ),
-                              const SizedBox(height: 16),
-                              ValueListenableBuilder<String>(
-                                valueListenable: _linkNotifier,
-                                builder: (context, formLink, child) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12.0,
-                                    ),
-                                    child: FormPublicLink(
-                                      link: formLink,
-                                      savedLink: _savedLink,
-                                      onOpenAppearance: _savedLink == null
-                                          ? null
-                                          : () {
-                                              context.router.navigate(
-                                                FormDetailRoute(
-                                                  formLink: _savedLink!,
-                                                  children: const [
-                                                    FormTabsRoute(
-                                                      children: [
-                                                        FormDesignRoute(),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                    ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 24),
-                              DropdownButtonFormField<String>(
-                                key: const ValueKey(
-                                  'form-payment-deadline-mode',
-                                ),
-                                initialValue: _cashEnabled
-                                    ? 'none'
-                                    : _deadlineMode,
-                                items: [
-                                  for (final mode in [
-                                    'inherit',
-                                    'custom',
-                                    'none',
-                                  ])
-                                    DropdownMenuItem(
-                                      value: mode,
-                                      child: Text(
-                                        PaymentMethodStrings.text(
-                                          {
-                                            'inherit': 'deadlineInherit',
-                                            'custom': 'deadlineCustom',
-                                            'none': 'deadlineNone',
-                                          }[mode]!,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                                onChanged: !_canEdit || _cashEnabled
-                                    ? null
-                                    : (mode) => setState(() {
-                                        _deadlineMode = mode!;
-                                        _paymentSelectionChanged = true;
-                                      }),
-                              ),
-                              if (!_cashEnabled &&
-                                  _deadlineMode == 'custom') ...[
-                                const SizedBox(height: 16),
-                                TextFormField(
-                                  enabled: _canEdit,
-                                  controller: _deadlineDaysController,
-                                  onChanged: (_) => setState(
-                                    () => _paymentSelectionChanged = true,
-                                  ),
-                                  validator: (value) =>
-                                      _deadlineMode == 'custom' &&
-                                          (int.tryParse(value ?? '') == null)
-                                      ? CommonStrings.fieldCannotBeEmpty
-                                      : null,
-                                  decoration: InputDecoration(
-                                    labelText: FormStrings.labelDeadlineDays,
-                                    suffixIcon: IconButton(
-                                      tooltip: FormStrings.inheritDays(
-                                        (_formFeature.deadlineDurationSeconds ??
-                                                604800) /
-                                            86400,
-                                      ),
-                                      icon: const Icon(Icons.restore),
-                                      onPressed: !_canEdit
-                                          ? null
-                                          : () => setState(() {
-                                              _deadlineMode = 'inherit';
-                                              _paymentSelectionChanged = true;
-                                            }),
-                                    ),
-                                    border: const OutlineInputBorder(),
-                                    helperText: FormStrings.inheritDays(
-                                      (_formFeature.deadlineDurationSeconds ??
-                                              604800) /
-                                          86400,
-                                    ),
-                                    helperMaxLines: 5,
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                ),
-                              ],
-                              const SizedBox(height: 24),
-                              if (_showMeasurement) ...[
-                                ExpansionTile(
-                                  initiallyExpanded: false,
-                                  tilePadding: EdgeInsets.zero,
-                                  expandedCrossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  title: Text(
-                                    FormStrings.measurementTitle,
-                                    style: Theme.of(innerContext)
-                                        .textTheme
-                                        .titleLarge,
-                                  ),
-                                  children: [
-                                    SwitchListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(
-                                        FormStrings.measurementEnabled,
-                                      ),
-                                      subtitle: Text(
-                                        FormStrings.measurementFormHelp,
-                                      ),
-                                      value: _measurementEnabled,
-                                      onChanged:
-                                          _canEdit && _canManageMeasurement
-                                          ? (value) => setState(
-                                              () => _measurementEnabled = value,
-                                            )
-                                          : null,
-                                    ),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: _paidPurchaseRequired
-                                          ? 'paid'
-                                          : _purchaseTiming,
-                                      decoration: InputDecoration(
-                                        labelText: FormStrings.purchaseTiming,
-                                        helperText: _paidPurchaseRequired
-                                            ? FormStrings.purchaseTimingCapi
-                                            : FormStrings.purchaseTimingHelp,
-                                        helperMaxLines: 4,
-                                      ),
-                                      items: [
-                                        DropdownMenuItem(
-                                          value: 'order',
-                                          child: Text(
-                                            FormStrings.purchaseTimingOrder,
-                                          ),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'paid',
-                                          child: Text(
-                                            FormStrings.purchaseTimingPaid,
-                                          ),
-                                        ),
-                                      ],
-                                      onChanged:
-                                          _canEdit &&
-                                              _canManageMeasurement &&
-                                              !_paidPurchaseRequired
-                                          ? (value) => setState(
-                                              () => _purchaseTiming =
-                                                  value ?? 'order',
-                                            )
-                                          : null,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      FormStrings.measurementBrowserChannel,
-                                      style: Theme.of(innerContext)
-                                          .textTheme
-                                          .titleSmall,
-                                    ),
-                                    for (final message
-                                        in _measurementStatusMessages)
-                                      _measurementStatusRow(
-                                        innerContext,
-                                        message,
-                                      ),
-                                    if (_paidPurchaseRequired &&
-                                        _measurementEnabled)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(
-                                          FormStrings.measurementMetaCapiHelp,
-                                        ),
-                                      ),
-                                    const SizedBox(height: 8),
-                                    if (RightsService.currentUnit()?.id !=
-                                            null &&
-                                        RightsService.hasCapability(
-                                          AuthorizationCapabilities
-                                              .unitSettingsWrite,
-                                        ))
-                                      Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: TextButton.icon(
-                                          icon: const Icon(
-                                            Icons.tune,
-                                            size: 18,
-                                          ),
-                                          label: Text(
-                                            FormStrings
-                                                .measurementOpenUnitSettings,
-                                          ),
-                                          onPressed: () => pushRootPath(
-                                            context.router.root,
-                                            '/unit/${RightsService.currentUnit()!.id}/edit/settings',
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: Text(
-                                          FormStrings.measurementAskUnitManager,
-                                          style: Theme.of(innerContext)
-                                              .textTheme
-                                              .bodySmall,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                                const Divider(),
-                                const SizedBox(height: 16),
-                              ],
-                              Text(
-                                FormStrings.paymentDetailsTitle,
-                                style: Theme.of(innerContext)
-                                    .textTheme
-                                    .titleLarge,
-                              ),
-                              const SizedBox(height: 24),
-                              _buildPaymentMethods(innerContext),
-                              const SizedBox(height: 16),
-                              FormVariableSymbolSettings(
-                                value: {
-                                  FormDefinition.metaType: _variableSymbolType,
-                                  FormDefinition.metaStartingNumber:
-                                      int.tryParse(
-                                        _startingNumberController.text,
-                                      ),
-                                },
-                                enabled: _canEdit,
-                                onChanged: (value) => setState(() {
-                                  _variableSymbolType =
-                                      value[FormDefinition.metaType] as String;
-                                  _startingNumberController.text =
-                                      '${value[FormDefinition.metaStartingNumber] ?? ''}';
-                                }),
-                              ),
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                isExpanded: true,
-                                value: _paymentMessageType,
-                                decoration: InputDecoration(
-                                  labelText: FormStrings.labelPaymentMessage,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                items: [
-                                  DropdownMenuItem(
-                                    value: 'name_surname',
-                                    child: Text(FormStrings.msgTypeNameSurname),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'none',
-                                    child: Text(FormStrings.msgTypeNone),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'occasion_title',
-                                    child: Text(
-                                      FormStrings.msgTypeOccasionTitle,
-                                    ),
-                                  ),
-                                ],
-                                onChanged: _canEdit
-                                    ? (value) {
-                                        if (value != null) {
-                                          setState(() {
-                                            _paymentMessageType = value;
-                                          });
-                                        }
-                                      }
-                                    : null,
-                              ),
-                              if (_bankEnabled) ...[
-                                const SizedBox(height: 16),
-                                PaymentQrEmailSetting(
-                                  value: _showPaymentQrInEmail,
-                                  onChanged: _canEdit
-                                      ? (value) => setState(() {
-                                            _showPaymentQrInEmail = value;
-                                          })
-                                      : null,
-                                ),
-                              ],
-                              const SizedBox(height: 24),
-                              const Divider(),
-                              const SizedBox(height: 16),
-                              Text(
-                                FormStrings.communicationToneTitle,
-                                style: Theme.of(innerContext)
-                                    .textTheme
-                                    .titleLarge,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                FormStrings.helperCommunicationTone,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              const SizedBox(height: 24),
-                              DropdownButtonFormField<String>(
-                                isExpanded: true,
-                                initialValue: _communicationTone,
-                                decoration: InputDecoration(
-                                  labelText: FormStrings.labelCommunicationTone,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                items: [
-                                  DropdownMenuItem(
-                                    value: 'inherit',
-                                    child: Text(
-                                      FormStrings.toneInherit(
-                                        _unitTone == 'informal'
-                                            ? FormStrings.toneInformal
-                                            : FormStrings.toneFormal,
-                                      ),
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'formal',
-                                    child: Text(FormStrings.toneFormal),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'informal',
-                                    child: Text(FormStrings.toneInformal),
-                                  ),
-                                ],
-                                onChanged: _canEdit
-                                    ? (value) {
-                                        if (value != null) {
-                                          setState(() {
-                                            _communicationTone = value;
-                                          });
-                                        }
-                                      }
-                                    : null,
-                              ),
-                              const SizedBox(height: 48),
-                              if (RightsService.hasCapability(
-                                AuthorizationCapabilities.formsWrite,
-                              ))
-                                Center(
-                                  child: Tooltip(
-                                    message:
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : form == null
+          ? Center(child: Text(FormStrings.formNotFound))
+          : Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: StylesConfig.formMaxWidth,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: AbsorbPointer(
+                    absorbing: _saving,
+                    child: ExcludeFocus(
+                      excluding: _saving,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          key: ObjectKey(form),
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildFormIdentity(context),
+                            const Divider(),
+                            const SizedBox(height: 12),
+                            _buildPaymentSummary(context),
+                            const Divider(),
+                            _buildCustomerEmailSettings(),
+                            CustomerSelfServiceSettings(
+                              form: form,
+                              canEdit: _canEdit,
+                              onChanged: _changed,
+                            ),
+                            if (_showMeasurement)
+                              _buildMeasurementSettings(context),
+                            const SizedBox(height: 24),
+                            if (RightsService.hasCapability(
+                              AuthorizationCapabilities.formsWrite,
+                            ))
+                              Center(
+                                child: Tooltip(
+                                  message: (_form?.definition.canDelete ?? true)
+                                      ? ""
+                                      : FormStrings
+                                            .cannotDeleteFormWithResponses,
+                                  child: TextButton(
+                                    onPressed:
                                         (_form?.definition.canDelete ?? true)
-                                        ? ""
-                                        : FormStrings
-                                              .cannotDeleteFormWithResponses,
-                                    child: TextButton(
-                                      onPressed:
-                                          (_form?.definition.canDelete ?? true)
-                                          ? () => _confirmDelete(innerContext)
-                                          : null,
-                                      child: Text(
-                                        FormStrings.deleteFormTitle,
-                                        style: TextStyle(
-                                          color:
-                                              (_form?.definition.canDelete ??
-                                                  true)
-                                              ? ThemeConfig.redColor(
-                                                  innerContext,
-                                                )
-                                              : Colors.grey,
-                                        ),
+                                        ? () => _confirmDelete(context)
+                                        : null,
+                                    child: Text(
+                                      FormStrings.deleteFormTitle,
+                                      style: TextStyle(
+                                        color:
+                                            (_form?.definition.canDelete ??
+                                                true)
+                                            ? ThemeConfig.redColor(context)
+                                            : Colors.grey,
                                       ),
                                     ),
                                   ),
                                 ),
-                              const SizedBox(height: 48),
-                            ],
-                          ),
+                              ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                );
-        },
-      ),
+                ),
+              ),
+            ),
       bottomNavigationBar: EditorActionBar(
-        hasChanges: !_isLoading && _form != null && _snapshot.differs(_draft),
-        enabled: RightsService.hasCapability(
-          AuthorizationCapabilities.formsWrite,
-        ),
+        hasChanges: _hasChanges,
+        enabled: _canEdit && !_saving,
         onDiscard: _cancelEdit,
         onSave: () => _saveChanges(context),
       ),

@@ -120,7 +120,10 @@ test('real SQL and the actual fulfillment gateway preserve a committed replaceme
  const args={client,gateway,order:structuredClone(s.done.data.order),commandId:s.command,unitName:'Local invoice fixture',replacement:true},before=await state(s);
  const first=await prepareFakturoidTicketOrder(args);assert.equal(first.ok,false);assert.equal(first.retrySameCommand,true);assert.equal(posts,1);assert.deepEqual(await state(s),before,'provider uncertainty cannot cancel the new allocation after old tickets were canceled');assert(!client.calls.includes('abort_fakturoid_ticket_order_v1'));
  const unknown=await prepareFakturoidTicketOrder(args);assert.equal(unknown.ok,false);assert.equal(posts,1,'a negative lookup never reopens uncertain invoice POST');assert.deepEqual(await state(s),before);
- assert.equal(Object.hasOwn(dispatched,'variable_symbol'),false,'CZK reference is assigned by Fakturoid');invoice={id:555,variable_symbol:'2026555'};const recovered=await prepareFakturoidTicketOrder(args);assert.equal(recovered.ok,true);assert.equal(posts,1);const after=await state(s);assert.equal(after.orders.find(o=>Number(o.id)===s.newOrder).state,'ordered');assert.equal(after.spots.filter(x=>x.order_product_ticket!==null).length,2);assert(!client.calls.includes('abort_fakturoid_ticket_order_v1'));
+ assert.equal(Object.hasOwn(dispatched,'variable_symbol'),false,'CZK reference is assigned by Fakturoid');
+ assert.equal(dispatched.qr_payment,false,'Festapp supplies the payment QR after recovery');
+ invoice={id:555,variable_symbol:'2026555',qr_payment:false};
+ const recovered=await prepareFakturoidTicketOrder(args);assert.equal(recovered.ok,true);assert.equal(posts,1);const after=await state(s);assert.equal(after.orders.find(o=>Number(o.id)===s.newOrder).state,'ordered');assert.equal(after.spots.filter(x=>x.order_product_ticket!==null).length,2);assert(!client.calls.includes('abort_fakturoid_ticket_order_v1'));
  const expected=structuredClone(s.done);expected.data.order.payment_info.variable_symbol=2026555;assert.deepEqual(await apply(s,s.p,s.input,s.command,true),expected,'receipt preserves the allocation and carries the recovered Fakturoid reference');
 });
 

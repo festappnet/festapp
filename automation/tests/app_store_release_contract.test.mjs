@@ -8,27 +8,32 @@ const root = path.resolve(import.meta.dirname, '../..');
 const fastfile = fs.readFileSync(
   path.join(root, 'automation/release/fastlane/Fastfile'), 'utf8');
 
-test('native notification privacy gate accepts the plugin SDK constraint and rejects unsafe pods', () => {
+test('native notification privacy gate requires shared SwiftPM and foreground-only builds', () => {
   const preflight = fs.readFileSync(
     path.join(root, 'automation/release/store_preflight.mjs'), 'utf8');
-  const start = preflight.indexOf('if (!/ENV');
+  const start = preflight.indexOf('const podfile =');
   const finish = preflight.indexOf('const notificationExtensionInfo', start);
   assert.ok(start >= 0 && finish > start, 'missing native notification privacy gate');
   const gate = preflight.slice(start, finish);
+  const project = fs.readFileSync(path.join(root, 'ios/Runner.xcodeproj/project.pbxproj'), 'utf8');
   const podfile = fs.readFileSync(path.join(root, 'ios/Podfile'), 'utf8');
-  const errorsFor = (source) => {
+  const errorsFor = ({ projectSource = project, podfileSource = podfile, mutateBuild = (s) => s } = {}) => {
     const errors = [];
-    vm.runInNewContext(gate, { podfile: source, fail: (error) => errors.push(error) });
+    const readFileSync = (file, ...args) => {
+      if (file.endsWith('/ios/Podfile')) return podfileSource;
+      return mutateBuild(fs.readFileSync(file, ...args));
+    };
+    vm.runInNewContext(gate, {
+      project: projectSource, path, root, fs: { readFileSync },
+      fail: (error) => errors.push(error),
+    });
     return errors;
   };
-  assert.deepEqual(errorsFor(podfile), []);
-  for (const unsafe of [
-    podfile.replace("ENV['ONESIGNAL_DISABLE_LOCATION'] = 'true'", "ENV['ONESIGNAL_DISABLE_LOCATION'] = 'false'"),
-    podfile.replace('onesignal_dependency.requirement.to_s', "'5.5.5'"),
-    podfile.replace("pod 'OneSignalXCFramework/OneSignal', onesignal_sdk_version", "pod 'OneSignalXCFramework', onesignal_sdk_version"),
-    podfile.replace("pod 'OneSignalXCFramework/OneSignalInAppMessages', onesignal_sdk_version", "pod 'OneSignalXCFramework/OneSignalInAppMessages', '5.5.5'"),
-  ]) {
-    assert.equal(errorsFor(unsafe).length, 1);
+  assert.deepEqual(errorsFor(), []);
+  assert.equal(errorsFor({ podfileSource: podfile + "\npod 'OneSignalXCFramework'" }).length, 1);
+  assert.equal(errorsFor({ projectSource: project.replaceAll('/* OneSignalExtension */', '') }).length, 1);
+  for (const flag of ['export ONESIGNAL_DISABLE_LOCATION=true', 'export BYPASS_PERMISSION_LOCATION_ALWAYS=1']) {
+    assert.ok(errorsFor({ mutateBuild: (s) => s.replace(flag, '') }).length > 0);
   }
 });
 

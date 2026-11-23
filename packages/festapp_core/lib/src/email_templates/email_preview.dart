@@ -3,16 +3,31 @@ import 'email_variables.dart';
 import 'email_preview_context.dart';
 
 class EmailRequiredLink {
-  final String url, html;
-  const EmailRequiredLink({required this.url, required this.html});
+  final String url, html, companionHtml, companionMarker;
+  const EmailRequiredLink({
+    required this.url,
+    required this.html,
+    this.companionHtml = '',
+    this.companionMarker = '',
+  });
   factory EmailRequiredLink.fromJson(Map<String, dynamic> json) =>
       EmailRequiredLink(
         url: json['url'] as String,
         html: json['html'] as String,
+        companionHtml: json['companionHtml'] as String? ?? '',
+        companionMarker: json['companionMarker'] as String? ?? '',
       );
 }
 
 const emailPaymentActionSlot = '<!--festapp-payment-action-->';
+const emailPreviewPaymentQrSource = 'cid:festapp-preview-payment';
+const _emailPaymentQrSlot = '<!--festapp-payment-qr-->';
+final _overviewChangesParagraph = RegExp(
+  r'<p data-festapp-order-changes="1"[^>]*>[^<]*</p>',
+);
+String _withoutOverviewChanges(String html) =>
+    html.replaceAll(_overviewChangesParagraph, '');
+
 const emailOverviewSlot = '<!-- customer-order-overview-link -->';
 String escapeEmailHtml(String value) => value
     .replaceAll('&', '&amp;')
@@ -43,6 +58,9 @@ String _completeEmailContent(
   List<EmailRequiredLink> links, {
   void Function(int offset, String html, int replacedLength)? onInsertion,
   String paymentAction = '',
+  String paymentQrHtml = '',
+  List<String> paymentDetails = const [],
+  void Function(int offset, String html)? onQrAfterDetails,
 }) {
   html = html.replaceAll('{{paymentAction}}', emailPaymentActionSlot);
   if (html.contains(emailPaymentActionSlot)) {
@@ -55,7 +73,40 @@ String _completeEmailContent(
       html = html.replaceFirst(emailPaymentActionSlot, '');
     }
   }
+  if (paymentQrHtml.isNotEmpty) {
+    final details = [paymentAction, ...paymentDetails]
+        .where((value) => value.isNotEmpty && html.contains(value))
+        .firstOrNull;
+    if (details != null) {
+      final offset = html.indexOf(details) + details.length;
+      onQrAfterDetails?.call(offset, paymentQrHtml);
+      html = html.replaceRange(offset, offset, paymentQrHtml);
+    } else {
+      final slot = html.indexOf(_emailPaymentQrSlot);
+      if (slot >= 0) {
+        onInsertion?.call(slot, paymentQrHtml, _emailPaymentQrSlot.length);
+        html = html.replaceRange(slot, slot + _emailPaymentQrSlot.length, paymentQrHtml);
+      } else {
+        onInsertion?.call(html.length, paymentQrHtml, 0);
+        html += paymentQrHtml;
+      }
+    }
+    while (html.contains(_emailPaymentQrSlot)) {
+      final slot = html.indexOf(_emailPaymentQrSlot);
+      onInsertion?.call(slot, '', _emailPaymentQrSlot.length);
+      html = html.replaceFirst(_emailPaymentQrSlot, '');
+    }
+  }
   for (final link in links) {
+    final anchor = html.indexOf('href="${escapeEmailHtml(link.url)}"');
+    if (anchor >= 0 && link.companionHtml.isNotEmpty &&
+        link.companionMarker.isNotEmpty && !html.contains(link.companionMarker)) {
+      final start = html.lastIndexOf('<a', anchor);
+      if (start >= 0) {
+        onInsertion?.call(start, link.companionHtml, 0);
+        html = html.replaceRange(start, start, link.companionHtml);
+      }
+    }
     if (!_missingRequiredLink(html, link)) continue;
     if (html.contains(emailOverviewSlot)) {
       onInsertion?.call(
@@ -97,9 +148,16 @@ class _AuthoringCompletionCapture {
   final spans = <_PreviewTokenSpan>[];
   final leading = StringBuffer(), trailing = StringBuffer();
   int bodyStart = 0;
-  void insert(int offset, String html, int replacedLength) {
+  void insert(
+    int offset,
+    String html,
+    int replacedLength, {
+    bool afterDetails = false,
+  }) {
     final owner = spans
-        .where((s) => offset >= s.start && offset < s.end)
+        .where((s) => afterDetails
+            ? offset > s.start && offset <= s.end
+            : offset >= s.start && offset < s.end)
         .firstOrNull;
     if (owner != null) {
       final local = offset - owner.start;
@@ -144,6 +202,7 @@ class EmailPreviewScenario {
   final Map<String, String> singleApplicationDefaults;
   final Map<String, String> contextDefaults;
   final List<EmailRequiredLink> requiredLinks;
+  final String inlinePaymentQrHtml;
   const EmailPreviewScenario({
     required this.templateCode,
     required this.scenario,
@@ -157,6 +216,7 @@ class EmailPreviewScenario {
     this.singleApplicationDefaults = const {},
     this.contextDefaults = const {},
     required this.requiredLinks,
+    this.inlinePaymentQrHtml = '',
   });
   factory EmailPreviewScenario.fromJson(Map<String, dynamic> json) =>
       EmailPreviewScenario(
@@ -181,6 +241,7 @@ class EmailPreviewScenario {
         tone: json['tone'] as String,
         values: Map<String, String>.from(json['values'] as Map),
         richCodes: Set<String>.from(json['richCodes'] as List),
+        inlinePaymentQrHtml: json['inlinePaymentQrHtml'] as String? ?? '',
         requiredLinks: (json['requiredLinks'] as List)
             .map(
               (v) => EmailRequiredLink.fromJson(
@@ -216,6 +277,7 @@ class EmailPreviewScenario {
         if (codes.contains(entry.key)) entry.key: entry.value,
     },
     requiredLinks: requiredLinks,
+    inlinePaymentQrHtml: inlinePaymentQrHtml,
   );
 
   EmailPreviewScenario withContext(EmailPreviewContext context) {
@@ -274,6 +336,12 @@ class EmailPreviewScenario {
               ? 'preview_deposit'
               : 'preview_total']!;
 
+    if (!context.cancellationAvailable) {
+      for (final code in richCodes) {
+        final value = result[code];
+        if (value != null) result[code] = _withoutOverviewChanges(value);
+      }
+    }
     return EmailPreviewScenario(
       templateCode: templateCode,
       scenario: scenario,
@@ -281,7 +349,19 @@ class EmailPreviewScenario {
       tone: tone,
       values: result,
       richCodes: richCodes,
-      requiredLinks: requiredLinks,
+      requiredLinks: context.cancellationAvailable
+          ? requiredLinks
+          : [
+              for (final link in requiredLinks)
+                EmailRequiredLink(
+                  url: link.url,
+                  html: _withoutOverviewChanges(link.html),
+                ),
+            ],
+      inlinePaymentQrHtml: context.inlinePaymentQr &&
+              const {'CZK', 'EUR'}.contains(bindings['preview_currency'])
+          ? inlinePaymentQrHtml
+          : '',
       contextTemplates: contextTemplates,
       applicationContextTemplates: applicationContextTemplates,
       singleApplicationTemplates: singleApplicationTemplates,
@@ -391,6 +471,7 @@ class EmailPreviewScenario {
         }
       }
     }
+    if (inlinePaymentQrHtml.isNotEmpty) out.write(_emailPaymentQrSlot);
     final content = out.toString();
     // Delivery substitutes the draft, wraps it once, then completes links.
     // Wrapper placeholders must never reprocess substituted customer text.
@@ -413,6 +494,17 @@ class EmailPreviewScenario {
       requiredLinks,
       onInsertion: capture?.insert,
       paymentAction: paymentAction,
+      paymentQrHtml: inlinePaymentQrHtml,
+      paymentDetails: [
+        for (final code in ['paymentDetails', 'balanceReasoning'])
+          if (values[code] case final value?)
+            separatePaymentAction && paymentAction.isNotEmpty
+                ? value.replaceAll(paymentAction, '')
+                : value,
+      ],
+      onQrAfterDetails: capture == null
+          ? null
+          : (offset, html) => capture.insert(offset, html, 0, afterDetails: true),
     );
   }
 }

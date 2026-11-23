@@ -5,7 +5,7 @@ RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions 
     JOIN eshop.bank_transaction_identities i ON i.transaction_id=t.id AND i.identity_kind='movement'
     JOIN eshop.bank_sync_connections c ON c.instance_id=i.instance_id AND c.provider=i.provider
       AND c.physical_account=i.physical_account AND c.bank_account_id=t.bank_account_id
-    WHERE t.id=p_transaction_id AND t.ingest_source IN ('banksync_api','banksync_email_confirmed') AND c.legacy_blocked_at IS NOT NULL
+    WHERE t.id=p_transaction_id AND t.ingest_source='banksync_api' AND c.legacy_blocked_at IS NOT NULL
       AND (p_target_account=c.bank_account_id OR p_target_account IN
         (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id))
   ) OR EXISTS (

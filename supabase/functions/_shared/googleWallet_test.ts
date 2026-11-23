@@ -71,7 +71,10 @@ Deno.test('lost lease aborts before transport, Google failure remains recoverabl
 Deno.test('Wallet appearance shares compatible colors and public images with the editor contract',async()=>{
  const {googleWalletAppearance}=await import('./googleWalletAppearance.ts');
  const cases=JSON.parse(await Deno.readTextFile(new URL('../../../packages/festapp_contracts/ticket-wallet-appearance-cases.json',import.meta.url)));
- for(const sample of cases)assertEquals(JSON.parse(JSON.stringify(googleWalletAppearance(sample.feature,sample.data))),sample.expected,sample.name);
+ for(const sample of cases){
+  assertEquals(JSON.parse(JSON.stringify(googleWalletAppearance(sample.feature,sample.data))),sample.expected,sample.name);
+  assertEquals(JSON.parse(JSON.stringify(googleWalletAppearance(sample.feature,sample.data,'apple'))),sample.appleExpected??sample.expected,sample.name);
+ }
  const docs=walletDocuments(await walletIds(identity),{...projection,occasion:{...projection.occasion,ticketFeature:cases[1].feature,data:{...projection.occasion.data,...cases[1].data}}});
  assertEquals(docs.classBody.hexBackgroundColor,'#123abc');assertEquals(docs.classBody.logo!.sourceUri.uri,cases[1].expected.logo);
 });

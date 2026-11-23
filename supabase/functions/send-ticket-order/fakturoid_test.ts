@@ -19,6 +19,7 @@ function order(currency: string, variableSymbol: string) {
       amount: 125.5,
       currency_code: currency,
       variable_symbol: variableSymbol,
+      creditor_reference: currency === "EUR" ? "RF572441" : undefined,
       account_number: "CZ0000000000000000000000",
       account_number_human_readable: "000000-0000000000/0000",
     },
@@ -34,13 +35,18 @@ function gateway(
   }) as typeof fetch);
 }
 
-Deno.test("EUR proforma carries the VS used to derive the RF reference", () => {
+Deno.test("EUR proforma prints the order RF and disables Fakturoid QR", () => {
   const payload = buildFakturoidInvoicePayload(
-    order("EUR", "123456"), "Hvezda morska", "command-1", 42,
+    order("EUR", "2441"), "Hvezda morska", "command-1", 42,
     "Tenant note", "2026-08-23",
   );
-  assertEquals(payload.variable_symbol, "123456");
-  assertEquals(payload.note, "Tenant note");
+  assertEquals(payload.variable_symbol, "2441");
+  assertEquals(payload.note, "SEPA reference: RF572441\n\nTenant note");
+  assertEquals(payload.qr_payment, false);
+  assertThrows(
+    () => buildFakturoidInvoicePayload(order("EUR", "42"), "Event", "cmd", 42),
+    Error, "FAKTUROID_EUR_REFERENCE_INVALID",
+  );
 });
 
 Deno.test("CZK proforma lets Fakturoid assign its variable symbol", () => {
@@ -49,6 +55,7 @@ Deno.test("CZK proforma lets Fakturoid assign its variable symbol", () => {
     undefined, "2026-08-23",
   );
   assertEquals(payload.variable_symbol, undefined);
+  assertEquals(payload.qr_payment, false);
   assertEquals(
     (payload.lines as Array<{ unit_name: string }>)[0].unit_name,
     "Long tenan",
@@ -69,7 +76,7 @@ Deno.test("checkout adopts the Fakturoid CZK VS without mutating its input", asy
     if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
     if (method === "GET") return Response.json([]);
     sent.push(body!);
-    return Response.json({ id: 55, variable_symbol: "20260950" });
+    return Response.json({ id: 55, variable_symbol: "20260950", qr_payment: false });
   });
   const input = order("CZK", "987654");
   const variableSymbol = await client.preparePayment({
@@ -79,6 +86,7 @@ Deno.test("checkout adopts the Fakturoid CZK VS without mutating its input", asy
   assertEquals(input.payment_info.variable_symbol, "987654");
   assertEquals(sent.length, 1);
   assertEquals(sent[0].variable_symbol, undefined);
+  assertEquals(sent[0].qr_payment, false);
 });
 
 Deno.test("email phase cannot create a second proforma", async () => {
@@ -97,7 +105,7 @@ Deno.test("checkout keeps Fakturoid client when the form has no name", async () 
     methods.push(method);
     return url.endsWith("/oauth/token")
       ? Response.json({ access_token: "token" })
-      : Response.json([{ id: 55, variable_symbol: "987654" }]);
+      : Response.json([{ id: 55, variable_symbol: "987654", qr_payment: false }]);
   });
   const result = await client.preparePayment({
     config, order: order("CZK", "987654"), unitName: "Test unit",
@@ -112,18 +120,40 @@ Deno.test("checkout completes the client update before accepting a named buyer",
   const client = gateway((url, method, body) => {
     requests.push({ method, body });
     if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
-    if (method === "GET") return Response.json([{ id: 55, variable_symbol: "123456" }]);
-    return Response.json({ id: 55, variable_symbol: "123456" });
+    if (method === "GET") return Response.json([{
+      id: 55, variable_symbol: "2441", note: "Existing note", qr_payment: true,
+    }]);
+    return Response.json({
+      id: 55, variable_symbol: "2441", note: body!.note, qr_payment: body!.qr_payment,
+    });
   });
-  const input = order("EUR", "123456");
+  const input = order("EUR", "2441");
   input.data = { name: "Eva", surname: "Nováková" };
   const result = await client.preparePayment({
     config, order: input, unitName: "Test unit", commandId: "command-1",
   });
-  assertEquals(result, "123456");
+  assertEquals(result, "2441");
   assertEquals(requests.map((item) => item.method), ["POST", "GET", "PUT"]);
   assertEquals(requests[2].body?.client_name, "Eva Nováková");
-  assertEquals(requests[2].body?.variable_symbol, "123456");
+  assertEquals(requests[2].body?.variable_symbol, "2441");
+  assertEquals(requests[2].body?.note, "SEPA reference: RF572441\n\nExisting note");
+  assertEquals(requests[2].body?.qr_payment, false);
+});
+
+Deno.test("EUR checkout rejects a proforma when Fakturoid keeps its QR enabled", async () => {
+  const client = gateway((url, method) => {
+    if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
+    if (method === "GET") return Response.json([]);
+    return Response.json({
+      id: 55, variable_symbol: "2441", note: "SEPA reference: RF572441", qr_payment: true,
+    });
+  });
+  await assertRejects(
+    () => client.preparePayment({
+      config, order: order("EUR", "2441"), unitName: "Test unit", commandId: "command-1",
+    }),
+    Error, "FAKTUROID_INVOICE_QR_NOT_DISABLED",
+  );
 });
 
 Deno.test("failed client update rejects checkout", async () => {
@@ -146,7 +176,7 @@ Deno.test("EUR invoice mismatch is rejected before any patch", async () => {
   const client = gateway((url, method) => url.endsWith("/oauth/token")
     ? Response.json({access_token:"token"}) : method === "GET"
     ? Response.json([{id:1,variable_symbol:"99"}]) : (()=>{throw Error("must not patch");})());
-  await assertRejects(()=>client.preparePayment({config,order:order("EUR","42"),unitName:"Test",commandId:"same"}),Error,"FAKTUROID_VARIABLE_SYMBOL_MISMATCH");
+  await assertRejects(()=>client.preparePayment({config,order:order("EUR","2441"),unitName:"Test",commandId:"same"}),Error,"FAKTUROID_VARIABLE_SYMBOL_MISMATCH");
 });
 Deno.test("ambiguous invoice lookup cannot select the first document or create another", async () => {
   const client=gateway(url=>url.endsWith("/oauth/token")?Response.json({access_token:"token"}):Response.json([{id:1},{id:2}]));
@@ -237,9 +267,9 @@ Deno.test("CZK customer update preserves the provider symbol and email requires 
   const patches: Record<string, unknown>[] = [];
   const client = gateway((url, method, body) => {
     if (url.endsWith("/oauth/token")) return Response.json({ access_token: "token" });
-    if (method === "GET") return Response.json([{ id: 55, variable_symbol: "20260950" }]);
+    if (method === "GET") return Response.json([{ id: 55, variable_symbol: "20260950", qr_payment: false }]);
     patches.push(body!);
-    return Response.json({ id: 55, variable_symbol: "20260950" });
+    return Response.json({ id: 55, variable_symbol: "20260950", qr_payment: false });
   });
   const input = { ...order("CZK", "4830"), data: { name: "Eva" } };
   assertEquals(await client.preparePayment({ config, order: input, commandId: "same", unitName: "Test" }), "20260950");

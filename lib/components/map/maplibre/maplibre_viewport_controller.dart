@@ -34,18 +34,19 @@ class MapLibreViewportController implements MapViewportController {
   Future<CameraApplyResult> applyCamera(CameraCommand command) async {
     var observedRevision = _cameraRevision;
     var attempts = 1;
-    // Required navigation replaces older cosmetic camera transitions and
-    // applies center and zoom as one command.
+    final update = ml.CameraUpdate.position(
+      center: _toGeographic(command.destination),
+      zoom: command.zoom,
+    );
     if (command.transition == CameraTransition.animated) {
       await controller.animateCamera(
-        center: _toGeographic(command.destination),
-        zoom: command.zoom,
+        update,
+        animation: const ml.CameraAnimation.ease(
+          duration: Duration(seconds: 2),
+        ),
       );
     } else {
-      await controller.moveCamera(
-        center: _toGeographic(command.destination),
-        zoom: command.zoom,
-      );
+      await controller.moveCamera(update);
     }
     var actual = camera;
     while (!_matches(command, actual) && !_invalidated && attempts < 3) {
@@ -54,10 +55,7 @@ class MapLibreViewportController implements MapViewportController {
       actual = camera;
       if (_matches(command, actual) || _invalidated) break;
       attempts++;
-      await controller.moveCamera(
-        center: _toGeographic(command.destination),
-        zoom: command.zoom,
-      );
+      await controller.moveCamera(update);
       actual = camera;
     }
     final applied = !_invalidated && _matches(command, actual);
@@ -69,13 +67,14 @@ class MapLibreViewportController implements MapViewportController {
       reason: applied
           ? null
           : _invalidated
-              ? 'surfaceInvalidated'
-              : 'actualCameraMismatch',
+          ? 'surfaceInvalidated'
+          : 'actualCameraMismatch',
     );
   }
 
   bool _matches(CameraCommand command, MapCameraState actual) {
-    final centerMatches = const Distance().as(
+    final centerMatches =
+        const Distance().as(
           LengthUnit.Meter,
           actual.center,
           command.destination,
@@ -124,12 +123,15 @@ class MapLibreViewportController implements MapViewportController {
     double? zoom,
     Curve curve = Curves.easeInOut,
     Duration? duration,
-  }) =>
-      controller.animateCamera(
-        center: _toGeographic(destination),
-        zoom: zoom,
-        nativeDuration: duration ?? const Duration(seconds: 2),
-      );
+  }) async {
+    await controller.animateCamera(
+      ml.CameraUpdate.position(center: _toGeographic(destination), zoom: zoom),
+      animation: ml.CameraAnimation.ease(
+        duration: duration ?? const Duration(seconds: 2),
+        curve: curve is Cubic ? curve : Curves.easeInOut,
+      ),
+    );
+  }
 
   @override
   Future<void> fitCoordinates(
@@ -138,11 +140,11 @@ class MapLibreViewportController implements MapViewportController {
     Curve curve = Curves.easeInOut,
   }) {
     if (coordinates.isEmpty) return Future.value();
-    return controller.fitBounds(
-      bounds: ml.LngLatBounds.fromPoints(
+    return controller.moveCamera(
+      ml.CameraUpdate.points(
         coordinates.map(_toGeographic).toList(growable: false),
+        padding: padding,
       ),
-      padding: padding,
     );
   }
 

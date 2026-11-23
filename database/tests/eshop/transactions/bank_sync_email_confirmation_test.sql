@@ -86,7 +86,6 @@ BEGIN
  UPDATE eshop.bank_account_users SET is_admin=true WHERE bank_account=bank AND "user"=actor;
  UPDATE eshop.organization_payment_method_policies SET enabled=false WHERE organization_id=(x->>'organization')::bigint AND method='bank';
  receipt:=public.confirm_bank_sync_email_observation(bank,delivery,pi,repeat('a',64),true);
- UPDATE eshop.organization_payment_method_policies SET enabled=true WHERE organization_id=(x->>'organization')::bigint AND method='bank';
  tx:=(receipt->>'transaction_id')::bigint;
  PERFORM assert_eq(receipt->>'actor_id',actor::text,'resolution actor');
  PERFORM assert_true((receipt->>'checked_internet_banking')::boolean,'attestation stored');
@@ -121,7 +120,7 @@ BEGIN
  PERFORM assert_false(public.form_paid_conversion_eligible_internal(oid),'unpaired before dispatch cannot qualify');
  PERFORM assert_true(EXISTS(SELECT FROM eshop.transaction_pairing_events WHERE transaction_id=tx
   AND action='unpaired' AND actor_id=actor),'unlink has actor and event timestamp');
- PERFORM assert_eq((SELECT resolution FROM eshop.bank_sync_inbox WHERE connection_id=conn AND delivery_id=delivery),receipt,'unlink preserves original confirmation audit');
+ PERFORM assert_eq((SELECT resolution-'possible_duplicate_transaction_ids' FROM eshop.bank_sync_inbox WHERE connection_id=conn AND delivery_id=delivery),receipt,'unlink preserves original confirmation audit');
  INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Reviewed account alias','FIO',ARRAY['CZK']) RETURNING id INTO alias_bank;
  INSERT INTO eshop.bank_sync_account_aliases(bank_account_id,connection_id) VALUES(alias_bank,conn);
  INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(alias_bank,actor,true);
@@ -140,15 +139,24 @@ BEGIN
  UPDATE eshop.bank_account_users SET is_admin=true WHERE bank_account=bank AND "user"=actor;
  PERFORM assert_true(public.bank_sync_accounts_match(tx,alias_bank),'confirmed provenance grants reviewed alias matching before API identity');
  PERFORM public.add_transaction_to_payment_info_ws(tx,pi2);
- PERFORM assert_eq((SELECT payment_info FROM eshop.transactions WHERE id=tx),pi2,'existing re-pair path works');
- -- Proven API movement adopts the existing credit, even after re-pairing.
+ PERFORM assert_eq((SELECT payment_info FROM eshop.transactions WHERE id=tx),pi2,'disabled bank sales allow verified transaction reassignment');
+ -- A distinct API movement with identical facts keeps its own identity.
  UPDATE eshop.bank_sync_connections SET mode='api' WHERE id=conn;
  event:=event||jsonb_build_object('delivery_id','01K00000000000000000000903','data',event->'data'||
   '{"id":"903","source":"fio_api","identity_kind":"movement","identity_provenance":"fio_api_column22","transaction_id":"1007903"}'::jsonb);
  repeated:=public.ingest_bank_sync_transaction('email-confirm','festapp',repeat('a',64),event);
- PERFORM assert_eq(repeated->>'outcome','already_ingested','API adopts confirmed credit');
- PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),1::bigint,'no double credit');
- PERFORM assert_eq((SELECT transaction_id FROM eshop.bank_transaction_identities WHERE instance_id='email-confirm' AND identity_kind='movement'),tx,'movement identity attached');
+ PERFORM assert_eq(repeated->>'outcome','unmatched','identical facts still require review');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),2::bigint,'API movement remains separate');
+ PERFORM assert_true((SELECT transaction_id<>tx FROM eshop.bank_transaction_identities
+  WHERE instance_id='email-confirm' AND identity_kind='movement'),'movement identity stays with the proven API row');
+ PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi2),100::numeric,'review holds the second credit');
+ BEGIN
+  PERFORM public.add_transaction_to_payment_info_ws(
+   (SELECT transaction_id FROM eshop.bank_transaction_identities WHERE instance_id='email-confirm' AND identity_kind='movement'),pi);
+  RAISE EXCEPTION 'Expected policy to reject the API transaction';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM<>'PAYMENT_METHOD_POLICY_DISABLED' THEN RAISE; END IF;
+ END;
  -- Multiple possible confirmed-email matches: store API movement unpaired so
  -- real money is never trapped and nothing double-credits.
  INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,vs,counter_account,ingest_source)
@@ -162,9 +170,9 @@ BEGIN
  PERFORM assert_eq((SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(repeated) k),ARRAY['delivery_id','ok','outcome','receipt_version','refund'],'receipt retains exactly the published keys');
  PERFORM assert_eq(repeated,public.ingest_bank_sync_transaction('email-confirm','festapp',repeat('a',64),event),'ingest replay preserves bounded receipt');
  PERFORM assert_eq(repeated->>'outcome','unmatched','multiple confirmations stored unpaired');
- PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),4::bigint,'API movement recorded in bank ledger');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),5::bigint,'API movement recorded in bank ledger');
  PERFORM assert_true((SELECT payment_info IS NULL FROM eshop.transactions WHERE id=(SELECT (diagnostics->>'transaction_id')::bigint FROM eshop.bank_sync_inbox WHERE delivery_id=event->>'delivery_id' AND connection_id=conn)),'ambiguous API movement is not auto-paired');
- PERFORM assert_eq((SELECT jsonb_array_length(diagnostics->'possible_duplicate_transaction_ids') FROM eshop.bank_sync_inbox WHERE delivery_id=event->>'delivery_id' AND connection_id=conn),2,'internal diagnostics record possible duplicate confirmed transactions');
+ PERFORM assert_eq((SELECT jsonb_array_length(diagnostics->'possible_duplicate_transaction_ids') FROM eshop.bank_sync_inbox WHERE delivery_id=event->>'delivery_id' AND connection_id=conn),3,'internal diagnostics record possible duplicate confirmed transactions');
 END $$;
 
 -- Small independently scoped cases: real ingest and confirmation, no network.
@@ -193,7 +201,7 @@ END $$;
 DO $$
 DECLARE x jsonb; bank bigint; pi bigint; tx bigint; event jsonb; receipt jsonb; scenario text; count_before bigint;
 BEGIN
- FOREACH scenario IN ARRAY ARRAY['padded_vs','whitespace_vs','split_counter','local_date','counter_conflict','date_conflict','two_candidates','rf','rf_message'] LOOP
+ FOREACH scenario IN ARRAY ARRAY['padded_vs','whitespace_vs','split_counter','local_date','counter_conflict','date_conflict','two_candidates','rf','rf_message','missing_email_vs','missing_api_vs'] LOOP
   x:=pg_temp.email_case();bank:=(x->>'bank')::bigint;pi:=(x->>'payment')::bigint;event:=x->'event';
   IF scenario IN ('rf','rf_message') THEN
    UPDATE eshop.bank_accounts SET supported_currencies=ARRAY['CZK','EUR'] WHERE id=bank;
@@ -207,11 +215,15 @@ BEGIN
    END IF;
    UPDATE eshop.bank_sync_inbox SET payload=event WHERE connection_id=(x->>'connection')::bigint;
   END IF;
+  IF scenario='missing_email_vs' THEN
+   UPDATE eshop.bank_sync_inbox SET payload=event #- '{data,raw_vs}' WHERE connection_id=(x->>'connection')::bigint;
+  END IF;
   receipt:=public.confirm_bank_sync_email_observation(bank,event->>'delivery_id',pi,repeat('a',64),true);
   tx:=(receipt->>'transaction_id')::bigint;
   event:=event||jsonb_build_object('delivery_id','01K00000000000000000000802','data',event->'data'||
    '{"id":"802","source":"fio_api","identity_kind":"movement","identity_provenance":"fio_api_column22","transaction_id":"1007802"}'::jsonb);
-  IF scenario='padded_vs' THEN event:=jsonb_set(event,'{data,raw_vs}','"00001007"');
+  IF scenario='missing_api_vs' THEN event:=event #- '{data,raw_vs}';
+  ELSIF scenario='padded_vs' THEN event:=jsonb_set(event,'{data,raw_vs}','"00001007"');
   ELSIF scenario='whitespace_vs' THEN event:=jsonb_set(event,'{data,raw_vs}','" 1007 "');
   ELSIF scenario='split_counter' THEN event:=jsonb_set(event,'{data}',event->'data'||'{"counter_account":" 2 2 2 ","bank_code":"2010"}');
   ELSIF scenario='local_date' THEN
@@ -228,35 +240,46 @@ BEGIN
   SELECT count(*) INTO count_before FROM eshop.transactions WHERE bank_account_id=bank;
   UPDATE eshop.bank_sync_connections SET mode='api' WHERE id=(x->>'connection')::bigint;
   receipt:=public.ingest_bank_sync_transaction('email-regression-'||bank,'festapp',repeat('b',64),event);
-  IF scenario IN ('counter_conflict','date_conflict','two_candidates') THEN
-   PERFORM assert_eq(receipt->>'outcome','unmatched','possible duplicate stored unpaired: '||scenario);
-   PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),count_before+1,'movement recorded in ledger: '||scenario);
-   PERFORM assert_true((SELECT payment_info IS NULL FROM eshop.transactions WHERE id=(SELECT (diagnostics->>'transaction_id')::bigint FROM eshop.bank_sync_inbox WHERE delivery_id=event->>'delivery_id' AND connection_id=(x->>'connection')::bigint)),'possible duplicate is not auto-paired: '||scenario);
-   PERFORM assert_true((SELECT jsonb_array_length(diagnostics->'possible_duplicate_transaction_ids')>=1 FROM eshop.bank_sync_inbox WHERE delivery_id=event->>'delivery_id' AND connection_id=(x->>'connection')::bigint),'possible duplicate ids recorded internally: '||scenario);
-  ELSE
-   PERFORM assert_eq(receipt->>'outcome','already_ingested','exact adoption: '||scenario);
-   PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),count_before,'no second transaction on adoption: '||scenario);
-  END IF;
+  PERFORM assert_eq(receipt->>'outcome','unmatched','possible duplicate stored unpaired: '||scenario);
+  PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),count_before+1,'movement recorded in ledger: '||scenario);
+  PERFORM assert_true((SELECT payment_info IS NULL FROM eshop.transactions WHERE id=(SELECT (diagnostics->>'transaction_id')::bigint FROM eshop.bank_sync_inbox WHERE delivery_id=event->>'delivery_id' AND connection_id=(x->>'connection')::bigint)),'possible duplicate is not auto-paired: '||scenario);
+  PERFORM assert_true((SELECT jsonb_array_length(diagnostics->'possible_duplicate_transaction_ids')>=1 FROM eshop.bank_sync_inbox WHERE delivery_id=event->>'delivery_id' AND connection_id=(x->>'connection')::bigint),'possible duplicate ids recorded internally: '||scenario);
   PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi),100::numeric,'no double credit on payment_info: '||scenario);
  END LOOP;
 END $$;
 
 DO $$
 DECLARE x jsonb:=pg_temp.email_case(); bank bigint:=(x->>'bank')::bigint; pi bigint:=(x->>'payment')::bigint;
- event jsonb:=x->'event'; receipt jsonb; old bigint;
+ conn bigint:=(x->>'connection')::bigint; event jsonb:=x->'event'; receipt jsonb; old bigint; alias_bank bigint;
 BEGIN
- -- Historical API-first import with legacy midnight offset and padded symbol.
+ -- A prior API movement can have the same facts as a separate email payment.
+ -- Scope the prior ledger row to an alias the current actor cannot read.
+ INSERT INTO eshop.bank_accounts(title,type,supported_currencies)
+ VALUES('Private alias','FIO',ARRAY['CZK']) RETURNING id INTO alias_bank;
+ INSERT INTO eshop.bank_sync_account_aliases(bank_account_id,connection_id) VALUES(alias_bank,conn);
  INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,vs,counter_account,bank_code,ingest_source)
- VALUES(bank,100,'CZK','2026-11-21 23:00',' 00001007 ','222','2010','fio_api') RETURNING id INTO old;
- UPDATE eshop.bank_sync_inbox SET payload=jsonb_set(payload,'{data,date_offset_min}','60') WHERE connection_id=(x->>'connection')::bigint;
- PERFORM assert_true((public.get_bank_sync_email_queue_page_v1(bank)#>>'{items,0,exact_duplicate}')::boolean,'API-first exact duplicate is classified before confirmation');
+ VALUES(alias_bank,100,'CZK','2026-11-21 23:00',' 00001007 ','222','2010','fio_api') RETURNING id INTO old;
+ event:=jsonb_set(event,'{data,date_offset_min}','60');
+ event:=event||jsonb_build_object('delivery_id','01K00000000000000000000802','data',event->'data'||'{"id":"802"}'::jsonb);
+ PERFORM public.ingest_bank_sync_transaction('email-regression-'||bank,'festapp',repeat('a',64),event);
+ PERFORM assert_eq(public.get_bank_sync_email_queue_page_v1(bank)#>'{items,1,possible_duplicates}',
+  '[{"restricted":true}]'::jsonb,'exact-looking API-first email stays in queue with redacted alias hint');
  receipt:=public.confirm_bank_sync_email_observation(bank,event->>'delivery_id',pi,repeat('a',64),true);
- PERFORM assert_eq(receipt->>'action','duplicate_of','API-first legacy offset duplicate resolved');
- PERFORM assert_eq((receipt->>'transaction_id')::bigint,old,'references imported API credit');
- PERFORM assert_false((receipt->>'transaction_paired')::boolean,'duplicate_of reports live unpaired status of existing API tx');
- PERFORM assert_eq((SELECT count(*) FROM eshop.transactions WHERE bank_account_id=bank),1::bigint,'API-first cannot double credit');
- PERFORM assert_true((SELECT resolved_at IS NOT NULL AND resolution->>'actor_id'=x->>'actor'
-  FROM eshop.bank_sync_inbox WHERE connection_id=(x->>'connection')::bigint),'duplicate audit actor/time');
+ PERFORM assert_eq(receipt->>'action','possible_duplicate','API-first data is a suggestion');
+ PERFORM assert_eq(receipt->'possible_duplicates','[{"restricted":true}]'::jsonb,'confirmation redacts alias facts too');
+ INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(alias_bank,(x->>'actor')::uuid,true);
+ PERFORM assert_eq((public.get_bank_sync_email_queue_page_v1(bank)#>>'{items,1,possible_duplicates,0,transaction_id}')::bigint,old,
+  'alias bank admin sees candidate details');
+ DELETE FROM eshop.bank_account_users WHERE bank_account=alias_bank;
+ receipt:=public.confirm_bank_sync_email_observation(bank,event->>'delivery_id',pi,repeat('a',64),true,true);
+ PERFORM assert_eq(receipt->>'action','confirmed','verified separate payment gets its own credit');
+ PERFORM assert_true((receipt->>'transaction_id')::bigint<>old,'separate receipts use separate ledger rows');
+ PERFORM assert_false(receipt ? 'possible_duplicate_transaction_ids','response omits private candidate IDs');
+ PERFORM assert_eq(public.confirm_bank_sync_email_observation(bank,event->>'delivery_id',pi,repeat('a',64),true),receipt,
+  'replay preserves response redaction');
+ PERFORM assert_eq((SELECT resolution->'possible_duplicate_transaction_ids'
+  FROM eshop.bank_sync_inbox WHERE connection_id=conn AND delivery_id=event->>'delivery_id'),jsonb_build_array(old),
+  'internal audit retains candidate identity');
 END $$;
 
 DO $$
@@ -442,7 +465,7 @@ END $$;
 
 -- N2: Missing signals are NOT a wildcard; no-VS payments with different VS or
 -- counter-account are distinct; same-counter-account no-VS flags possible_duplicate
--- and supports explicit p_not_duplicate=true attestation. Also verify N6 grants.
+-- and supports explicit p_not_duplicate=true attestation.
 DO $$
 DECLARE
  x jsonb:=pg_temp.email_case(); bank bigint:=(x->>'bank')::bigint; conn bigint:=(x->>'connection')::bigint;
@@ -491,9 +514,8 @@ BEGIN
  PERFORM assert_true(EXISTS(SELECT FROM eshop.transaction_pairing_events
   WHERE transaction_id=tx2 AND action='paired' AND details->>'not_duplicate'='true'),'pairing audit records not_duplicate');
 
- -- N6: service_role must be able to execute bank_sync_fact_dates_match_internal via bank_sync_existing_facts_match.
- PERFORM assert_true(has_function_privilege('service_role','public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)','EXECUTE'),
-  'service_role granted bank_sync_fact_dates_match_internal');
+ PERFORM assert_false(has_function_privilege('service_role','public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)','EXECUTE'),
+  'email date comparator stays private');
  PERFORM assert_true(has_function_privilege('service_role','public.bank_sync_existing_facts_match(eshop.transactions,jsonb)','EXECUTE'),
   'service_role granted bank_sync_existing_facts_match');
 END $$;
@@ -514,4 +536,28 @@ BEGIN
  FOR candidate IN SELECT value FROM jsonb_array_elements(public.find_bank_sync_email_targets_v1(bank,x#>'{event,data}','1007')) LOOP
   PERFORM assert_false((candidate->>'payment_info_id')::bigint=pi_b,'unit B order without editing permission excluded from lookup');
  END LOOP;
+END $$;
+
+
+DO $$
+DECLARE x jsonb:=pg_temp.email_case(); bank bigint:=(x->>'bank')::bigint; conn bigint:=(x->>'connection')::bigint;
+ pi bigint:=(x->>'payment')::bigint; order_id bigint:=(x->>'order')::bigint;
+ event jsonb:=x->'event'; receipt jsonb; state text;
+BEGIN
+ UPDATE eshop.payment_info SET amount=200,deposit_amount=100 WHERE id=pi;
+ UPDATE eshop.orders SET price=200 WHERE id=order_id;
+ receipt:=public.confirm_bank_sync_email_observation(bank,event->>'delivery_id',pi,repeat('a',64),true);
+ PERFORM assert_eq(receipt->>'action','confirmed','first email pays the deposit');
+ SELECT o.state INTO state FROM eshop.orders o WHERE id=order_id;
+ PERFORM assert_true(state IN ('paid','sent'),'deposit makes admission eligible');
+ event:=event||jsonb_build_object('delivery_id','01K00000000000000000000802','data',event->'data'||'{"id":"802"}'::jsonb);
+ PERFORM public.ingest_bank_sync_transaction('email-regression-'||bank,'festapp',repeat('b',64),event);
+ PERFORM assert_eq((public.get_bank_sync_email_queue_page_v1(bank)#>>'{items,0,candidates,0,remaining_due}')::numeric,
+  100::numeric,'queue suggests deposit order with balance');
+ PERFORM assert_eq((public.find_bank_sync_email_targets_v1(bank,event->'data','1007')#>>'{0,remaining_due}')::numeric,
+  100::numeric,'lookup finds remaining deposit balance');
+ receipt:=public.confirm_bank_sync_email_observation(bank,event->>'delivery_id',pi,repeat('b',64),true,true);
+ PERFORM assert_eq(receipt->>'action','confirmed','second distinct email movement settles the balance');
+ PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi),200::numeric,'deposit and balance credited once each');
+ PERFORM assert_eq(public.find_bank_sync_email_targets_v1(bank,event->'data','1007'),'[]'::jsonb,'settled order excluded');
 END $$;

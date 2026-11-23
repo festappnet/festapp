@@ -109,57 +109,31 @@ reference with runtime logs without logging the bank response.
 
 ## Email confirmation queue
 
-The old observations and list queue RPCs keep their contracts. The paged queue
-uses `(received_at, delivery_id)` as a cursor and fetches one extra row to detect
-the next page. Email identity quarantines can be confirmed or dismissed; possible
-conflicts are visible for review/dismissal, with no confirmation action.
+The paged queue uses `(received_at, delivery_id)` as its cursor. Administrators
+can confirm a positive email observation after checking their internet banking,
+or dismiss it with a reason. The queue remains available after switching to API
+mode and contains observations from email sources.
 
-Account authorization (selected account and canonical source for aliases)
-precedes inbox access, digest checks and replay. Confirmation additionally calls
-`check_is_editor_order_on_occasion` before inbox access, including receipt replay.
-The shared payable-target owner filters suggestions, VS/RF/public order-number
-lookup and writes to the same bank account, currency, actual unit link, live
-order-editor permission, positive amount due and created/ordered/expired states.
-Paid/sent and immutable orders are excluded. Customer identity, public order
-symbol/number, state and amount due are supplied by SQL. The UI displays SQL's
-amount-match result. New-sales bank policy does not block receipt recovery; the
-policy fence still precedes money locks.
+The selected account and the canonical source both require live bank management
+permissions. Confirmation and replay also require edit permission on the stored
+order and a payment on the selected account. Suggestions, lookup and confirmation
+share the same account, currency, unit link and outstanding-balance checks.
+Eligible paid or sent deposit orders can receive the balance. Confirmation
+rechecks eligibility under the existing order and payment locks.
 
-`bank_transaction_signals_internal` is the extraction owner shared with the
-existing automatic matcher: normalized numeric VS, valid RF, RF from messages,
-and message VS only when the explicit VS is absent. Normalized keys include RF,
-uppercase currency, counter-account whitespace/split bank code and bank-local
-Europe/Prague date. `bank_sync_fact_dates_match_internal` also owns legacy
-midnight-offset handling for the existing fact matcher.
+Possible duplicates are compared across the physical account and its aliases.
+Amount, currency, bank-local day and normalized references or counter-account
+details help locate candidates for review. Equal facts can describe distinct
+transfers. Email remains queued for a human decision. A proven API movement
+has its own ledger row and movement identity. If it resembles an already
+confirmed email, it is stored unpaired for review in the payment overview,
+with the standard `unmatched` receipt and separate inbox diagnostics.
+Administrators see candidate details only for bank accounts they may read.
+The response carries a generic hint when a related account is restricted.
 
-API adoption first checks all unadopted confirmed receipts with the same amount,
-currency, overlapping references (or missing references) and a bank-date window
-of one day. Exactly one candidate whose full normalized key agrees is adopted;
-a possible duplicate is stored as an unpaired API movement instead of falling
-through to automatic payment matching. The receipt keeps the published five keys
-and reports `unmatched`. Internal transaction ID, possible duplicate IDs and the
-`stored_unpaired_possible_duplicate` reason live in nullable inbox `diagnostics`,
-separate from `resolution` so unresolved email observations stay in the queue.
-Possible-duplicate confirmation responses do not mutate committed receipts or outcomes. The same comparison prevents API-first or repeated email credits.
-Recognized duplicates are resolved as `duplicate_of`, with actor kind, time,
-transaction ID and original confirmation delivery when available. A service
-resolution has no human actor; a confirmation resolution identifies its user.
-
-Confirmation uses delivery advisory -> connection -> inbox/new transaction ->
-existing order/payment pairing locks. Payability is checked again under those
-locks before pairing, so a concurrently paid order cannot receive a second
-confirmation. Inbox resolution records the immutable original confirmation and
-attestation. Current assignment belongs to `transactions.payment_info`; later
-unpair/re-pair actors and timestamps belong to existing pairing events. Retry
-returns the original resolution rather than reattaching an unpaired payment.
-Dismissal takes the same delivery/connection/inbox lock order, requires a short
-reason and records user/time/facts. Same-reason replay is stable; changing the
-reason or replacing another resolution is rejected. No persistent trigger or
-parallel pairing engine is introduced.
-
-Queue, confirmation and dismissal require an email payload source, independently
-of the connection's current mode. API-era quarantines cannot be confirmed after
-a mode switch. The page RPC marks exact API/legacy matches as `exact_duplicate`;
-the interface offers dismissal and recorded-movement information without asking
-for a separate-payment attestation. API-mode pending email access is hidden when
-the queue is empty. Only the page RPC is exposed; no compatibility list RPC remains.
+Repeated confirmation returns the original audit receipt with the current
+pairing status. The inbox preserves the original facts, actor, time, attestation
+and related candidate IDs internally. The existing pairing events record later
+corrections, and the existing paid transition owns ticket delivery and conversion
+eligibility. Administrators can unpair a confirmed email receipt or reassign it
+to an existing order with bank instructions even after new bank sales close.

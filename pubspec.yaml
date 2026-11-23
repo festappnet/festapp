@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.20.650+1199
+version: 0.20.650+1202
 
 environment:
   sdk: ^3.14.0
@@ -39,7 +39,7 @@ dependencies:
     sdk: flutter
   flutter_svg: "^2.2.3"
   fluttertoast: "^10.0.2"
-  maplibre: 0.3.7
+  maplibre: 0.4.0
   app_links: "^7.2.2"
   crypto: "^3.0.8"
   convert: "^3.1.2"
@@ -52,6 +52,7 @@ dependencies:
   badges: "^4.0.1"
   collection: "^1.18.0"
   geolocator: "^14.1.2"
+  geolocator_apple: 2.4.3
   flutter_widget_from_html: "^0.17.4"
   super_editor: 0.3.0-dev.52
   follow_the_leader: 0.5.3
@@ -66,7 +67,7 @@ dependencies:
   sembast: "^3.8.11"
   sembast_web: "^2.4.6"
   path_provider: "^2.1.5"
-  onesignal_flutter: "^5.3.5"
+  onesignal_flutter: 5.8.0
   package_info_plus: "^10.2.2"
   easy_localization: "^3.0.8"
   simple_shadow: "^0.3.1"
@@ -79,10 +80,7 @@ dependencies:
   qr_flutter: "^4.1.0"
   screenshot: "^3.0.0"
   mobile_scanner: "^7.5.0"
-  flutter_map_animations:
-    git:
-      url: https://github.com/TesteurManiak/flutter_map_animations.git
-      ref: 50188510c491f9b3636eda6359421ea1137dcbd4
+  flutter_map_animations: 0.11.0
   auto_route: "^11.2.0"
   adaptive_theme: 3.8.0
   connectivity_plus: "^7.3.2"
@@ -94,8 +92,8 @@ dependencies:
   flutter_colorpicker: "^1.1.0"
   google_fonts: "^9.0.0"
   file_picker: "^13.2.0"
-  venue_seat_picker:
-    path: vendor/blueprint/venue_seat_picker
+  venue_seat_picker: 0.4.10
+  venue_layout_core: 0.2.8
   cached_network_image: "^4.0.7"
   cached_network_image_platform_interface: "^5.0.4"
   # image 4.11 requires archive APIs outside the current pdf constraint.
@@ -131,14 +129,6 @@ dev_dependencies:
   file_picker_platform_interface: any
   easy_logger: any
 dependency_overrides:
-  venue_layout_core:
-    path: vendor/blueprint/venue_layout_core
-  maplibre_android:
-    path: packages/maplibre_android
-  maplibre_ios:
-    path: packages/maplibre_ios
-  maplibre_platform_interface:
-    path: packages/maplibre_platform_interface
   desktop_drop:
     path: packages/desktop_drop
   file_picker:
@@ -163,6 +153,8 @@ dependency_overrides:
     path: packages/irondash_engine_context
 
 flutter:
+  config:
+    enable-swift-package-manager: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

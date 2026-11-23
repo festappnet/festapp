@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:festapp_core/eshop.dart';
-import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/forms/models/form_bundle.dart';
 import 'package:festapp_core/email_templates.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,12 +35,14 @@ void main() {
           ),
           inheritedTone: 'informal',
           loadForms: (_) async => [
-            FormBundle(
-              definition: FormDefinition.fromJson({
-                'id': 1,
-                'data': {'communication_tone': formTone},
-              }),
-            ),
+            FormBundle.fromJson({
+              'id': 1,
+              'customer_cancellation_available': formTone == 'formal',
+              'data': {
+                'communication_tone': formTone,
+                if (formTone == 'formal') 'show_payment_qr_in_email': false,
+              },
+            }),
           ],
           loadProducts: (_) async => bundle([]),
         );
@@ -49,6 +50,8 @@ void main() {
           result.context.communicationTone,
           formTone == 'formal' ? 'formal' : 'informal',
         );
+        expect(result.context.cancellationAvailable, formTone == 'formal');
+        expect(result.context.inlinePaymentQr, formTone != 'formal');
         expect(result.context.singleApplication, true);
         expect(result.unavailable, false);
       }

@@ -18,8 +18,20 @@ nodes.push({id:'20000000-0000-4000-8000-000000000050',kind:'table',label:'Příl
 const preset={id:'20000000-0000-4000-8000-000000000060',title:'Admin only',document:{schemaVersion:2,symbolSetVersion:1,canvas:{x:0,y:0,width:1000,height:600,fill:'#ffffffff'},styles:{label:{fontFamilyId:roboto.id}},seatingDefaults:{},textPolicy:{language:'und',direction:'auto'},nodes:[{id:'20000000-0000-4000-8000-000000000061',kind:'text',text:'Private preset text',width:240,height:80,transform:{x:200,y:200,rotation:0}}]}};
 const document={schemaVersion:2,symbolSetVersion:1,canvas:{x:0,y:0,width:1400,height:800,fill:'#ffffffff'},styles:{},seatingDefaults:{},textPolicy:{language:'und',direction:'auto'},nodes,sections:[],selectionUnits:[],attachments:[],presets:[preset]};
 const input=new URL('supabase/.temp/blueprint-typography/canonical-request-input.json',root),output=new URL('supabase/.temp/blueprint-typography/canonical-request-output.json',root);
+const packageConfig = new URL('.dart_tool/package_config.json', root);
+const { packages } = JSON.parse(await Deno.readTextFile(packageConfig));
+const core = packages.find((pkg: { name: string }) => pkg.name === 'venue_layout_core');
+if (!core) throw Error('Run fvm flutter pub get to resolve venue_layout_core.');
+const coreDirectory = new URL(core.rootUri.replace(/\/?$/, '/'), packageConfig);
+const parityTool = new URL('tool/parity_fixture.dart', coreDirectory);
 await Deno.writeTextFile(input,JSON.stringify({document,families}));
-const result=await new Deno.Command('fvm',{cwd:root,args:['dart','run','vendor/blueprint/venue_layout_core/tool/parity_fixture.dart','--text-requests',input.pathname,output.pathname],stdout:'piped',stderr:'piped'}).output();
+const result = await new Deno.Command('fvm', {
+ cwd: root,
+ args: ['dart', '--packages=' + decodeURIComponent(packageConfig.pathname),
+  decodeURIComponent(parityTool.pathname), '--text-requests', input.pathname, output.pathname],
+ stdout: 'piped',
+ stderr: 'piped',
+}).output();
 if(!result.success)throw Error(new TextDecoder().decode(result.stderr));
 const batch=JSON.parse(await Deno.readTextFile(output));
 const resources=await prepareLayoutTextResources(batch,async id=>{

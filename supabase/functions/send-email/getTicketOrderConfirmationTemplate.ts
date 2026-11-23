@@ -3,15 +3,20 @@ import { requireHostedPayment } from "../_shared/payments/contracts.ts";
 import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
-import { generateQrCode } from "../_shared/qrCodePayment.ts";
+import {
+  generatePlainPaymentQr,
+  generateQrCode,
+} from "../_shared/qrCodePayment.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
 import { supabaseAdmin } from "../_shared/supabaseUtil.ts";
 import { formatCurrency, formatDatetime } from "../_shared/utilities.ts";
 import { fakturoidGateway } from "../send-ticket-order/fakturoid.ts";
 import { paymentRegistry } from "../_shared/payments/runtime.ts";
 import { paymentConfirmationBalance } from "../_shared/payments/email.ts";
+import { appendFakturoidPaymentPage } from "./fakturoidPaymentPage.ts";
 
 import type { EmailAttachment } from "../_shared/emailDelivery.ts";
+import type { FakturoidAttachment } from "../send-ticket-order/fakturoid.ts";
 
 async function addExternalAttachment(
   service: any,
@@ -136,6 +141,8 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
   const fakturoid = externalServices?.find((service: any) =>
     service.type === "FAKTUROID"
   );
+  let includePaymentQr = !fakturoid;
+  let invoiceAttachment: FakturoidAttachment | undefined;
   if (fakturoid) {
     const invoice = await fakturoidGateway.getEmailAttachment({
       config: {
@@ -148,14 +155,32 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
       order,
       commandId: String(task.data.command_id),
     });
-    if (invoice.attachment) attachments.push(invoice.attachment);
-  } else if (bankCollectionAllowed(paymentInfo) && ['CZK','EUR'].includes(paymentInfo.currency_code) && paymentInfo.amount > 0) {
+    invoiceAttachment = invoice.attachment;
+    // Already issued PDFs with a Fakturoid QR keep their original instructions on resend.
+    includePaymentQr = invoice.invoiceQrDisabled;
+    if (includePaymentQr && !invoiceAttachment) {
+      throw new Error("FAKTUROID_INVOICE_PDF_NOT_READY");
+    }
+  }
+  if (includePaymentQr && ['CZK','EUR'].includes(paymentInfo.currency_code) && paymentInfo.amount > 0) {
     const qrPaymentInfo = paymentInfo.deposit_amount &&
         paymentInfo.deposit_amount < paymentInfo.amount
       ? { ...paymentInfo, amount: Number(paymentInfo.deposit_amount) }
       : paymentInfo;
-    paymentQrPng = await generateQrCode(qrPaymentInfo, order, occasion.title);
+    paymentQrPng = await generateQrCode(qrPaymentInfo, order, occasion.title, lang);
+    if (invoiceAttachment) {
+      invoiceAttachment = {
+        ...invoiceAttachment,
+        content: await appendFakturoidPaymentPage(
+          invoiceAttachment.content,
+          qrPaymentInfo,
+          await generatePlainPaymentQr(qrPaymentInfo, order, occasion.title),
+          lang,
+        ),
+      };
+    }
   }
+  if (invoiceAttachment) attachments.push(invoiceAttachment);
   await addExternalAttachment(
     externalServices?.find((service: any) =>
       service.type === "SUPABASE_FUNCTION"

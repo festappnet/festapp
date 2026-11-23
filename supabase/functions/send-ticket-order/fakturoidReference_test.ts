@@ -20,8 +20,10 @@ for (const replacement of [false, true]) {
     const gateway = createFakturoidGateway((async (input, init) => {
       if (String(input).endsWith("/oauth/token")) return Response.json({ access_token: "token" });
       if (!init?.method) return Response.json([]);
-      assertEquals(JSON.parse(String(init.body)).variable_symbol, undefined);
-      return Response.json({ id: 55, variable_symbol: "20260950" });
+      const payload = JSON.parse(String(init.body));
+      assertEquals(payload.variable_symbol, undefined);
+      assertEquals(payload.qr_payment, false);
+      return Response.json({ id: 55, variable_symbol: "20260950", qr_payment: false });
     }) as typeof fetch);
     const completions: string[] = [];
     const client = { rpc: async (name: string, params: Record<string, unknown>) => {

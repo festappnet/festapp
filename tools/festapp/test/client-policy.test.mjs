@@ -210,12 +210,19 @@ test('ChatGPT operator and reader registrations preserve independent permission 
 
     const publicClient = clientPolicy(config, publicPolicy.id);
     assert.equal(publicClient.dataProfile, 'order-summary');
-    assert.deepEqual(publicClient.allowedScopes, [READ_SCOPE, 'festapp:orders:read']);
-    const publicIds = DELEGATED_OPERATIONS.filter(id => clientAllowsScopes(config, publicPolicy.id, scopesForOperation(id)));
-    assert.deepEqual(publicIds.sort(), [
-        'access.inspect', 'context.inspect', 'orders.inspect', 'orders.list',
-        'orders.report', 'ticket_layouts.inspect',
-    ]);
+    assert.deepEqual(publicClient.allowedScopes, privateReader.allowedScopes);
+    assert.deepEqual(publicClient.allowedOperations, privateReader.allowedOperations);
+    const packageConfig = await readPolicy('mcp.json');
+    const auth = packageConfig.mcpServers.festapp.extensions['com.openai'].auth;
+    assert.equal(auth.client.clientId, publicPolicy.id);
+    assert.deepEqual(auth.baseScopes, publicClient.allowedScopes);
+    for (const id of publicClient.allowedOperations)
+        assert(clientAllowsScopes(config, publicPolicy.id, scopesForOperation(id)), id);
+    const publicCatalog = new Operations({
+        root: '/catalog-only', allowedOperations: publicClient.allowedOperations, orderSummaryOnly: true,
+    });
+    assert.deepEqual(publicCatalog.catalog.map(tool => tool.id).sort(), publicClient.allowedOperations);
+    assert(publicCatalog.catalog.every(tool => tool.domainReadOnly));
 });
 
 test('Inspector origin must exactly match a literal loopback HTTP origin', () => {

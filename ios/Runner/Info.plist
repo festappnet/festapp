@@ -50,8 +50,6 @@
 	<string>Fotoaparát se používá pouze ke skenování QR kódů.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Poloha se používá pouze při otevřené mapě pro zobrazení vaší pozice a navigaci.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Přístup k poloze umožňuje zobrazit vaši pozici a navigaci na mapě; aplikace polohu nepoužívá k reklamě ani sledování.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
 	<dict>
 		<key>MapLocation</key>

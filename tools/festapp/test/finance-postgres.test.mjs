@@ -39,6 +39,15 @@ test('ordinary executor uses scoped bank boundary and rejects credential/schema 
  const op=financeDescriptors.find(x=>x.id==='banks.save');assert(!op.input.safeParse({...account,unitId:s.f.unit,commandId:randomUUID(),token:'secret'}).success);
  const input=op.input.parse({...account,unitId:s.f.unit,commandId:randomUUID()});const created=await invokeFinanceOperation(owner,s.client,op.id,input);assert(created.data.accountId);
  const listed=await invokeFinanceOperation(owner,s.client,'banks.list',{unitId:s.f.unit,limit:10});assert(listed.items.some(x=>x.id===created.data.accountId));assert(!JSON.stringify(listed).includes('pairing'));
+ const publicOps=new Operations({...owner,orderSummaryOnly:true,allowedOperations:['banks.list','banks.users']});
+ const publicAccounts=await publicOps.invoke('banks.list',{unitId:s.f.unit});
+ assert.equal(publicAccounts.ok,true,JSON.stringify(publicAccounts));
+ assert.equal(publicAccounts.data.items[0].title,account.title);
+ for(const key of ['accountNumber','displayNumber','creditorName'])assert(!Object.hasOwn(publicAccounts.data.items[0],key));
+ const publicUsers=await publicOps.invoke('banks.users',{unitId:s.f.unit,accountId:created.data.accountId});
+ assert.equal(publicUsers.ok,true,JSON.stringify(publicUsers));
+ assert.equal(publicUsers.data.items[0].user_id,s.f.actor);
+ for(const key of ['name','surname','email'])assert(!Object.hasOwn(publicUsers.data.items[0],key));
 });
 
 test('real card-provider fixtures preserve observed refunds and completed disconnect recovery',async t=>{

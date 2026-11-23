@@ -2,6 +2,7 @@ import 'package:festapp_core/forms.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:festapp_core/eshop.dart';
 
+import '../form_save_patch.dart';
 import 'form_field_draft.dart';
 import 'form_bundle.dart';
 
@@ -12,6 +13,47 @@ class FormEditorDraft {
   bool customerPolicyDirty = false;
   Map<String, dynamic>? paymentMethodPolicy;
   int aggregateVersion;
+  Map<String, dynamic>? _saveBaseline;
+
+  void acceptSaveBaseline() {
+    _saveBaseline = FormSavePatch.snapshot({
+      ...toEditedJson(),
+      'bank_account': definition.bankAccountId,
+    });
+  }
+
+  bool accepts(FormSavePatch patch) {
+    final baseline = _saveBaseline;
+    return baseline != null && patch.canApplyTo(baseline);
+  }
+
+  bool get hasHeaderEdit =>
+      _saveBaseline == null || definition.header != _saveBaseline!['header'];
+  bool get hasClosedHeaderEdit =>
+      _saveBaseline == null ||
+      definition.headerOff != _saveBaseline!['header_off'];
+  bool get hasCountdownTitleEdit =>
+      _saveBaseline == null ||
+      definition.countdownTitle !=
+          _saveBaseline!['settings']['schedule']?[FormDefinition
+              .metaCountdownTitle];
+
+  bool get hasStructuralEdits {
+    final baseline = _saveBaseline;
+    return baseline == null ||
+        FormSavePatch.structureChanged(baseline, toEditedJson());
+  }
+
+  FormSavePatch savePatch({required bool replacePaymentSelection}) {
+    final baseline = _saveBaseline;
+    if (baseline == null) throw StateError('Form editor snapshot required');
+    return FormSavePatch(
+      baseline,
+      toEditedJson(),
+      replacePaymentSelection: replacePaymentSelection,
+    );
+  }
+
   Map<String, int> _productVersions = {};
   Map<String, int> _productTypeVersions = {};
   void _captureProductVersions() => captureProductCatalog(

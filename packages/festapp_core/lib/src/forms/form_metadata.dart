@@ -41,7 +41,7 @@ abstract final class FormMetadata {
   static const String metaProducts = "products";
   static const String metaShowPaymentQrInEmail = 'show_payment_qr_in_email';
   static bool showPaymentQrInEmail(Map? data) =>
-      data?[metaShowPaymentQrInEmail] == true;
+      data?[metaShowPaymentQrInEmail] != false;
   static const String metaCommunicationTone = "communication_tone";
   static const String metaReplyTo = "reply_to";
   static const String metaDefaultValue = "default_value";

@@ -1,3 +1,4 @@
+import 'form_availability_status.dart';
 import 'form_editor_toolbar.dart';
 import 'form_editor_outline.dart';
 import '../widgets_editor/form_fields_navigation_controller.dart';
@@ -21,7 +22,6 @@ import 'package:fstapp/components/_shared/editor_action_bar.dart';
 import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/components/forms/form_html_content.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/router_service.dart';
 import 'package:fstapp/components/forms/models/form_field_draft.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -30,7 +30,6 @@ import 'package:fstapp/components/forms/views/form_page.dart';
 import 'package:fstapp/components/forms/widgets_view/form_helper.dart';
 import 'package:fstapp/services/toast_helper.dart';
 import 'package:fstapp/styles/styles_config.dart';
-import 'package:fstapp/theme_config.dart';
 import 'package:fstapp/components/html/rich_html_editor_controller.dart';
 import 'package:fstapp/components/html/editable_html_field.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -211,29 +210,31 @@ class _FormEditorContentState extends State<FormEditorContent>
       }
     }
 
-    form.relatedFields.sort(
-      (a, b) => (a.definition.order ?? 0).compareTo(b.definition.order ?? 0),
-    );
-    for (int i = 0; i < form.relatedFields.length; i++) {
-      form.relatedFields[i].definition = form.relatedFields[i].definition
-          .copyWith(order: i);
-    }
+    if (form.hasStructuralEdits) {
+      form.relatedFields.sort(
+        (a, b) => (a.definition.order ?? 0).compareTo(b.definition.order ?? 0),
+      );
+      for (int i = 0; i < form.relatedFields.length; i++) {
+        form.relatedFields[i].definition = form.relatedFields[i].definition
+            .copyWith(order: i);
+      }
 
-    for (final field in form.relatedFields) {
-      if (field.definition.isTicketField == true &&
-          field.definition.type == FormMetadata.fieldTypeProductType &&
-          field.definition.productType != null &&
-          field.definition.productType!.products != null) {
-        final products = [...field.definition.productType!.products!]
-          ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
-        field.definition = field.definition.copyWith(
-          productType: field.definition.productType!.copyWith(
-            products: [
-              for (var index = 0; index < products.length; index++)
-                products[index].copyWith(order: index),
-            ],
-          ),
-        );
+      for (final field in form.relatedFields) {
+        if (field.definition.isTicketField == true &&
+            field.definition.type == FormMetadata.fieldTypeProductType &&
+            field.definition.productType != null &&
+            field.definition.productType!.products != null) {
+          final products = [...field.definition.productType!.products!]
+            ..sort((a, b) => (a.order ?? 0).compareTo(b.order ?? 0));
+          field.definition = field.definition.copyWith(
+            productType: field.definition.productType!.copyWith(
+              products: [
+                for (var index = 0; index < products.length; index++)
+                  products[index].copyWith(order: index),
+              ],
+            ),
+          );
+        }
       }
     }
 
@@ -304,13 +305,10 @@ class _FormEditorContentState extends State<FormEditorContent>
     }).toList();
   }
 
-  DateTime? _defaultClosingTime(FormEditorDraft form) =>
-      (form.occasionEndTime ?? form.occasionModel?.endTime)?.toOccasionTime();
-
   Widget _buildFormOpenToggleAndOffTextEditor() {
     if (_bundle == null) return const SizedBox.shrink();
     final form = _bundle!.form;
-    final defaultClosingTime = _defaultClosingTime(form);
+    final defaultClosingTime = formDefaultClosingTime(form);
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -334,7 +332,9 @@ class _FormEditorContentState extends State<FormEditorContent>
                               .textTheme
                               .titleMedium
                               ?.copyWith(fontWeight: FontWeight.bold)),
-                      _buildAvailabilityStatusBanner(form),
+                      FormAvailabilityStatus(
+                        form: form, showWaitlist: !_prototype,
+                      ),
                       /*
                         (form.isOpen ?? true) ? FormStrings.formOpenMessage : FormStrings.formClosedMessage,
                         style: TextStyle(
@@ -540,38 +540,6 @@ class _FormEditorContentState extends State<FormEditorContent>
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildAvailabilityStatusBanner(FormEditorDraft form) {
-    String text;
-    Color color;
-    final now = DateTime.now();
-    final closingTime = form.definition.endTime ?? _defaultClosingTime(form);
-
-    if (!(form.definition.isOpen ?? true)) {
-      text = FormStrings.formClosedMessage;
-      color = ThemeConfig.redColor(context);
-    } else if (form.definition.startTime != null &&
-        now.isBefore(form.definition.startTime!)) {
-      text = FormStrings.scheduledWithTime(
-          DateFormat.Md().add_jm().format(form.definition.startTime!));
-      color = ThemeConfig.redColor(context);
-    } else if (closingTime != null && now.isAfter(closingTime)) {
-      text = FormStrings.endedWithTime(
-          DateFormat.Md().add_jm().format(closingTime));
-      color = ThemeConfig.redColor(context);
-    } else if (!_prototype && form.definition.isWaitlist) {
-      text = WaitlistStrings.formOpenWaitlistMessage;
-      color = ThemeConfig.warningColor(context);
-    } else {
-      text = FormStrings.formOpenMessage;
-      color = Theme.of(context).primaryColor;
-    }
-
-    return Text(
-      text,
-      style: TextStyle(color: color, fontWeight: FontWeight.bold),
     );
   }
 

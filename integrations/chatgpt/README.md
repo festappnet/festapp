@@ -10,27 +10,25 @@ approval. See [submission readiness](review/readiness.md) for actual gates.
 
 ## Connect privately
 
-Use the account's Add custom MCP form, name `vstupenky.online`, and the regional
-endpoint above. Select the provided public client `festapp-chatgpt`, no client
-secret (`tokenEndpointAuthMethod: none`), PKCE S256, and exactly these read scopes:
+The catalog package and a manual connection using the registered OAuth
+client `festapp-chatgpt` share [the public policy](client-policy.json).
+The candidate 1.1.0 policy includes the same 95 read operations as the
+private reader with public result limits. The [package](mcp.json) requests
+only the domain scopes assigned to these reads. The OAuth client uses PKCE
+S256 and has no client secret. Its registered callback is
+`https://chatgpt.com/connector_platform_oauth_redirect`.
 
-- `festapp:ticket-layouts:read`
-- `festapp:orders:read`
+Select individual events unless the task needs organizer-wide tools.
+Whole-organizer consent also includes future events. Access is revocable
+under [connected apps](https://vstupenky.online/settings/connections).
 
-Deselect other automatically discovered domain scopes. The verified callback is
-`https://chatgpt.com/connector_platform_oauth_redirect`. Dynamic registration
-is disabled. Select individual events on the first-party consent page; a whole
-organizer grant also includes future events. No API keys or refresh tokens are
-copied into ChatGPT. Access can be revoked at
-https://vstupenky.online/settings/connections.
-
-
-The protected registration explicitly uses `dataProfile: order-summary`. It
-returns order IDs/symbols, states, counts and amounts, withholding buyer names,
-contacts, notes and registration fields. IDs/symbols are pseudonymous, not
-anonymous. Organizer-authored event labels and template configuration must not
-contain children’s data or government identifiers. This connector targets
-organizers, not children.
+The public client returns operational summaries within consent and live
+roles. Order results omit names, contacts, notes, personal ticket content
+and registration answers. Public participant and bank reads and exports
+limit the returned fields. Internal identifiers can still be personal
+data when associated with a person. The plugin is intended for organizers.
+Keep children's data and government identifiers out of organizer-authored
+labels, templates and text used with the plugin.
 
 For a trusted private model or native tool, register a separate client with
 `dataProfile: operator`. Full data remains available subject to its own scope

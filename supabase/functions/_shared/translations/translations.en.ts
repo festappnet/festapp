@@ -25,8 +25,6 @@ export const enTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`Thank you for your payment of ${bold(paid)}. ${mainText} We will send a confirmation once the payment is received.`),
-      verticalSpacer('15px'),
-      styledParagraph(`A QR code is attached to simplify the payment.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remaining, lang: 'en' }),
     ].join('');
@@ -41,8 +39,6 @@ export const enTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`${mainText} We will send a confirmation once the payment is received.`),
-      verticalSpacer('15px'),
-      styledParagraph(`A QR code is attached to simplify the payment.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: total, lang: 'en' }),
     ].join('');
@@ -74,7 +70,7 @@ export const enTranslations = {
       verticalSpacer(spaceBeforeText),
       textBlock,
       verticalSpacer('15px'),
-      styledParagraph(`A QR code is attached to simplify the payment. We will send a confirmation once it's received.`),
+      styledParagraph(`We will send a confirmation once the payment is received.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remaining, lang: 'en' }),
     ].join('');
@@ -97,7 +93,7 @@ export const enTranslations = {
       verticalSpacer(spaceBeforeText),
       textBlock,
       verticalSpacer('15px'),
-      styledParagraph(`A QR code is attached to simplify the payment, and we will send a confirmation once it's received.`),
+      styledParagraph(`We will send a confirmation once the payment is received.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remaining, lang: 'en' }),
     ].join('');
@@ -124,8 +120,6 @@ export const enTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`To secure your spot, please pay a deposit of ${bold(depositAmount)}. ${deadlineText}.`),
-      verticalSpacer('15px'),
-      styledParagraph(`A QR code is attached to simplify the payment.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: depositAmount, lang: 'en' }),
     ].join('');
@@ -161,8 +155,6 @@ export const enTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`This is a reminder that your order has a remaining balance of ${bold(remainingAmount)}, due by ${bold(depositDeadline)}.`),
-      verticalSpacer('15px'),
-      styledParagraph(`A QR code is attached to simplify the payment.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remainingAmount, lang: 'en' }),
     ].join('');

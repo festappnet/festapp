@@ -22,6 +22,13 @@ Deno.test('Apple serial isolates backend, organization, event and ticket; QR and
  assertEquals(doc.eventTicket.auxiliaryFields.map(f=>f.value),['Stůl 4','12','Vstupné']);
  assert(doc.eventTicket.secondaryFields[0].value.includes('20:00')); // Prague DST offset.
  assertEquals(doc.voided,false);
+ for(const [background_color,foreground] of [['#222222','rgb(255, 255, 255)'],['#888888','rgb(0, 0, 0)']]) {
+  const colored=structuredClone(projection);
+  colored.occasion.ticketFeature.wallet_appearance={background_color};
+  const pass=appleWalletDocument(serial,colored,credentials);
+  assertEquals(pass.foregroundColor,foreground);
+  assertEquals(pass.labelColor,foreground);
+ }
  assertEquals(appleWalletDocument(serial,{...projection,state:'COMPLETED'},credentials).voided,true);
  for(const state of ['INACTIVE','EXPIRED'])assertEquals(appleWalletDocument(serial,{...projection,state} as any,credentials).voided,true);
 });
@@ -66,14 +73,47 @@ Deno.test('signed Apple ZIP has valid manifest hashes and independently verified
   assertThrows(()=>validateAppleCredentials({...creds,signerKey:creds.wwdr}));
   assertThrows(()=>validateAppleCredentials(creds,Date.now()+2*86400000));
   const icons:Record<string,Uint8Array>={};for(const name of ['icon.png','icon@2x.png','icon@3x.png'])icons[name]=await Deno.readFile(new URL('./ticket-assets/apple-wallet/'+name,import.meta.url));
-  const apple=new AppleWallet(creds,icons,()=>{throw new Error('unexpected external I/O');},'https://api.festapp.net/functions/v1/apple-wallet');
-  const files=unzipSync(await apple.issue(identity,projection,{authenticationToken:'e'.repeat(64)}));
+  const artworkUrl='https://img.festapp.net/images/winter-ball';
+  const whitePng=Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAADklEQVR4nGP4jwQYkDkANvEX6SAXxcIAAAAASUVORK5CYII='),c=>c.charCodeAt(0));
+  const requestedImages:string[]=[];
+  const apple=new AppleWallet(creds,icons,url=>{
+   requestedImages.push(String(url));
+   return Promise.resolve(new Response(whitePng,{headers:{'Content-Type':'image/png'}}));
+  },'https://api.festapp.net/functions/v1/apple-wallet');
+  const withArtwork=structuredClone(projection);
+  withArtwork.occasion.ticketFeature.wallet_appearance={hero_image:artworkUrl,background_color:'#ffffff'};
+  const eventLogo='https://img.festapp.net/images/event-logo';
+  withArtwork.occasion.data.logo=eventLogo;
+  withArtwork.branding.WALLET_LOGO_URL='https://img.festapp.net/assets/portal-logo';
+  const expectedRequests=[eventLogo+'?f=png',artworkUrl+'?f=png&w=300'];
+  const files=unzipSync(await apple.issue(identity,withArtwork,{authenticationToken:'e'.repeat(64)}));
   const decode=(v:Uint8Array)=>new TextDecoder().decode(v);
   const pass=JSON.parse(decode(files['pass.json']));assertEquals(pass.barcodes[0].message,projection.ticket.ticket_symbol);assertEquals(pass.serialNumber,await appleWalletSerial(identity));
+  assertEquals(requestedImages,expectedRequests);
+  assertEquals(files['logo.png'],whitePng);
+  assertEquals(files['strip.png'],undefined,'Wallet overlays the title on strip.png');
+  function thumbnailSize(file: Uint8Array | undefined) {
+   assert(file,'Missing thumbnail');
+   const dimensions=new DataView(file.buffer,file.byteOffset);
+   return [dimensions.getUint32(16),dimensions.getUint32(20)];
+  }
+  assertEquals(thumbnailSize(files['thumbnail.png']),[2,2]);
+  assertEquals(pass.eventTicket.primaryFields[0].value,projection.occasion.title);
+  assertEquals(pass.foregroundColor,'rgb(0, 0, 0)');
   assertEquals(pass.webServiceURL,apple.webServiceURL);assertEquals(pass.authenticationToken,'e'.repeat(64));
   const manifest=JSON.parse(decode(files['manifest.json']));
   for(const [name,hash] of Object.entries(manifest))assertEquals(Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1',files[name])),b=>b.toString(16).padStart(2,'0')).join(''),hash);
   assert(files['icon.png']&&files['icon@2x.png']&&files['icon@3x.png']);
+  const gallery=structuredClone(projection);
+  for(const name of ['silk-ivory-v1.jpg','palette-14284b-a87f28-gala_invitation-v2.png']){
+   gallery.occasion.ticketFeature.background='https://img.festapp.net/ticket-presets/v1/'+name;
+   const galleryFiles=unzipSync(await apple.issue(identity,gallery));
+   assertEquals(thumbnailSize(galleryFiles['thumbnail.png']),[270,270],name);
+   assertEquals(galleryFiles['strip.png'],undefined);
+  }
+  gallery.occasion.ticketFeature.wallet_appearance={hero_image:null};
+  assertEquals(unzipSync(await apple.issue(identity,gallery))['thumbnail.png'],undefined);
+  assertEquals(requestedImages,expectedRequests,'Bundled artwork is resolved locally');
   await Deno.writeFile(dir+'/signature',files.signature);await Deno.writeFile(dir+'/manifest.json',files['manifest.json']);
   await run(['cms','-verify','-binary','-inform','DER','-in','signature','-content','manifest.json','-noverify','-out','verified']);
  }finally{await Deno.remove(dir,{recursive:true});}

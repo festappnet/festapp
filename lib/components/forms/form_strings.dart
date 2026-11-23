@@ -1,5 +1,6 @@
 import 'package:fstapp/components/eshop/order_item_strings.dart';
 import 'package:festapp_core/forms.dart';
+import 'package:festapp_core/formatting.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 
@@ -306,6 +307,17 @@ class FormStrings {
   static String get embedTitle => 'FeatureFormSettings.embedTitle'.tr();
   static String get embedFallback => 'FeatureFormSettings.embedFallback'.tr();
   static String get embedHelp => 'FeatureFormSettings.embedHelp'.tr();
+  static String get embedDisplay => 'FeatureFormSettings.embedDisplay'.tr();
+  static String get embedScriptHint =>
+      'FeatureFormSettings.embedScriptHint'.tr();
+  static String get embedTracking => 'FeatureFormSettings.embedTracking'.tr();
+  static String get embedHostHint => 'FeatureFormSettings.embedHostHint'.tr();
+  static String get embedOrganizerHint =>
+      'FeatureFormSettings.embedOrganizerHint'.tr();
+  static String get embedConversionHint =>
+      'FeatureFormSettings.embedConversionHint'.tr();
+  static String get embedPreview => 'FeatureFormSettings.embedPreview'.tr();
+  static String get embedCopy => 'FeatureFormSettings.embedCopy'.tr();
   static String get embedSaveFirst => 'FeatureFormSettings.embedSaveFirst'.tr();
   static String get embedAutomatic => 'FeatureFormSettings.embedAutomatic'.tr();
   static String get embedFixed => 'FeatureFormSettings.embedFixed'.tr();
@@ -318,6 +330,55 @@ class FormStrings {
       'FeatureFormSettings.embedInheritStyle'.tr();
   static String get embedInheritStyleHelp =>
       'FeatureFormSettings.embedInheritStyleHelp'.tr();
+
+  static String get openPublicLink => 'FeatureFormSettings.openPublicLink'.tr();
+  static String get openFormTab => 'FeatureFormSettings.openFormTab'.tr();
+  static String get publicLinkSettings =>
+      'FeatureFormSettings.publicLinkSettings'.tr();
+  static String get resolvePaymentMethod =>
+      'FeatureFormSettings.resolvePaymentMethod'.tr();
+  static String get changePaymentMethod =>
+      'FeatureFormSettings.changePaymentMethod'.tr();
+  static String get transferDetails =>
+      'FeatureFormSettings.transferDetails'.tr();
+  static String get paymentDeadlineLabel =>
+      'FeatureFormSettings.paymentDeadlineLabel'.tr();
+  static String customPaymentDeadline(num days) =>
+      'FeatureFormSettings.customPaymentDeadline'.tr(
+        args: [formatDisplayNumber(days)],
+      );
+  static String inheritedPaymentDeadline(num days) =>
+      'FeatureFormSettings.inheritedPaymentDeadline'.tr(
+        args: [formatDisplayNumber(days)],
+      );
+  static String get invalidPaymentDeadline =>
+      'FeatureFormSettings.invalidPaymentDeadline'.tr();
+  static String methodDisabled(String method) =>
+      'FeatureFormSettings.methodDisabled'.tr(args: [method]);
+  static String get noPaidProducts => 'FeatureFormSettings.noPaidProducts'.tr();
+  static String get cardPaymentAtCheckout =>
+      'FeatureFormSettings.cardPaymentAtCheckout'.tr();
+  static String get cardRecipientVerified =>
+      'FeatureFormSettings.cardRecipientVerified'.tr();
+  static String get cardUnverified => 'FeatureFormSettings.cardUnverified'.tr();
+  static String get customerEmails => 'FeatureFormSettings.customerEmails'.tr();
+  static String get reminderSummaryOff =>
+      'FeatureFormSettings.reminderSummaryOff'.tr();
+  static String get reminderSummaryInherited =>
+      'FeatureFormSettings.reminderSummaryInherited'.tr();
+  static String get reminderSummaryOn =>
+      'FeatureFormSettings.reminderSummaryOn'.tr();
+  static String get orderCancellation =>
+      'FeatureFormSettings.orderCancellation'.tr();
+  static String get cancellationIncomplete =>
+      'FeatureFormSettings.cancellationIncomplete'.tr();
+  static String get cancellationEnded =>
+      'FeatureFormSettings.cancellationEnded'.tr();
+  static String paymentQrSummary(bool enabled) =>
+      (enabled
+              ? 'FeatureFormSettings.paymentQrSummaryOn'
+              : 'FeatureFormSettings.paymentQrSummaryOff')
+          .tr();
 
   static String get savedPublicLink =>
       'FeatureFormSettings.savedPublicLink'.tr();
@@ -549,8 +610,8 @@ class FormStrings {
       'FeatureFormSettings.endedWithTime'.tr(
         namedArgs: {'time': time},
       ); // "Ended (Closed: {time})"
-  static String get formOpenMessage => 'FeatureFormSettings.formOpenMessage'
-      .tr(); // "Form is OPEN & accepting responses."
+  static String get formOpenMessage =>
+      'FeatureFormSettings.formOpenMessage'.tr();
   static String get scheduleAndLimits =>
       'FeatureFormSettings.scheduleAndLimits'.tr(); // "Schedule & Limits"
   static String get autoOpenHelp =>

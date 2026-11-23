@@ -13,8 +13,8 @@ class BankAccountStrings {
   static String get emailDismiss => 'BankAccount.emailDismiss'.tr();
   static String get emailDismissReason => 'BankAccount.emailDismissReason'.tr();
   static String get emailLoadMore => 'BankAccount.emailLoadMore'.tr();
-  static String get emailExactDuplicate =>
-      'BankAccount.emailExactDuplicate'.tr();
+  static String get emailDuplicateRestricted =>
+      'BankAccount.emailDuplicateRestricted'.tr();
   static String get emailConflict => 'BankAccount.emailConflict'.tr();
   static String get emailPossibleDuplicates =>
       'BankAccount.emailPossibleDuplicates'.tr();
@@ -23,10 +23,6 @@ class BankAccountStrings {
       'BankAccount.emailOutcomeConfirmed'.tr();
   static String get emailOutcomePossibleDuplicate =>
       'BankAccount.emailOutcomePossibleDuplicate'.tr();
-  static String get emailOutcomeDuplicatePaired =>
-      'BankAccount.emailOutcomeDuplicatePaired'.tr();
-  static String get emailOutcomeDuplicateUnpaired =>
-      'BankAccount.emailOutcomeDuplicateUnpaired'.tr();
   static String emailDuplicatePaidOrder(String order) =>
       'BankAccount.emailDuplicatePaidOrder'.tr(namedArgs: {'order': order});
   static String get emailDuplicateUnpaired =>
@@ -52,9 +48,6 @@ class BankAccountStrings {
   static String get emailSender => 'BankAccount.emailSender'.tr();
 
   static String get formAccountLabel => 'BankAccount.formAccountLabel'.tr();
-  static String formAccountDefault(String account) =>
-      'BankAccount.formAccountDefault'.tr(namedArgs: {'account': account});
-  static String get formAccountNone => 'BankAccount.formAccountNone'.tr();
   static String formAccountUnavailable(String account) =>
       'BankAccount.formAccountUnavailable'.tr(namedArgs: {'account': account});
   static String get formAccountDefaultPlain =>

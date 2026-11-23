@@ -128,6 +128,14 @@ fi
 # 2. Run apply_config.sh in the temp tree.
 cd "$TMP_ROOT"
 chmod +x automation/apply_config.sh
+printf "environment:\n  sdk: ^3.14.0\n  flutter: '>=3.50.0'\n" > pubspec.yaml
+sed 's/^FLUTTER_VERSION=.*/FLUTTER_VERSION=3.47.2/' "$FIXTURE_CONF" > stale-flutter.conf
+if ./automation/apply_config.sh stale-flutter.conf > stale-flutter.log 2>&1; then
+    echo "apply_config.sh accepted Flutter 3.47.2 for a project requiring 3.50.0" >&2
+    exit 1
+fi
+grep -F 'FLUTTER_VERSION 3.47.2 is below the pubspec.yaml minimum 3.50.0' stale-flutter.log || { cat stale-flutter.log; exit 1; }
+unlink pubspec.yaml
 ./automation/apply_config.sh > apply_config.log 2>&1 || {
     echo "apply_config.sh exited non-zero. Log:"
     cat apply_config.log

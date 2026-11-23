@@ -29,7 +29,24 @@ BEGIN
 
     PERFORM public.check_is_editor_order_on_occasion(occasion_id);
   PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.occasions oc WHERE oc.id=occasion_id;
-  IF NOT coalesce((SELECT public.payment_method_policy_enabled_internal(oc.unit,'bank') FROM public.occasions oc WHERE oc.id=occasion_id),false) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
+  -- Recovery after closing bank sales applies only to an existing verified
+  -- receipt and bank instructions already issued on a linked account.
+  IF NOT coalesce((SELECT public.payment_method_policy_enabled_internal(oc.unit,'bank')
+      FROM public.occasions oc WHERE oc.id=occasion_id),false) THEN
+    IF NOT EXISTS(
+      SELECT FROM eshop.transactions t
+      JOIN eshop.payment_info pi ON pi.id=p_payment_info_id AND pi.payment_method='bank'
+      JOIN public.occasions oc ON oc.id=occasion_id
+      JOIN eshop.unit_bank_accounts link ON link.unit=oc.unit AND link.bank_account=pi.bank_account
+      WHERE t.id=p_transaction_id AND t.ingest_source='banksync_email_confirmed'
+    ) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
+    -- Reassignment mutates both orders. Hold the same transaction lock as pairing
+    -- before authorizing the current order so reassignment cannot change it first.
+    PERFORM 1 FROM eshop.transactions WHERE id=p_transaction_id FOR UPDATE;
+    PERFORM public.check_is_editor_order_on_occasion(o.occasion)
+      FROM eshop.transactions t JOIN eshop.orders o ON o.payment_info=t.payment_info
+      WHERE t.id=p_transaction_id AND o.payment_info<>p_payment_info_id;
+  END IF;
 
     PERFORM public.apply_transaction_pairing(
       p_transaction_id, p_payment_info_id, 'manual_attach', 'user'

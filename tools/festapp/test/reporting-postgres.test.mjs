@@ -32,6 +32,15 @@ test('CSV selects only requested columns, escapes hostile text, pages without re
  assert.equal(ids.size,3);
  const direct=csvPage(['note'],[{note:'=HYPERLINK("bad")'},{note:' \t=SUM(1,2)'},{note:'multi\nline, "quote"'}]);assert(direct.includes("'="));assert(direct.includes("' \t="));assert(direct.includes('""quote""'));
  await denied(s.db,'select get_authoring_export_page($1,$2,$3,$4,$5,null,10)',[s.f.occasion,s.f.org,s.f.unit,'people',JSON.stringify(['secret'])],'22023');
+ const publicOps=new Operations({...s.owner,orderSummaryOnly:true},{artifacts:s.artifacts});
+ const publicPage=await publicOps.invoke('exports.people',{occasionId:s.f.occasion});
+ assert.equal(publicPage.ok,true,JSON.stringify(publicPage));
+ assert.deepEqual(publicPage.data.columns,['userId','role','isVolunteer','isApproved']);
+ const publicCsv=content(await publicOps.readArtifact(publicPage.data.file.uri));
+ assert(!publicCsv.includes('HYPERLINK')&&!publicCsv.includes('must not be exported'));
+ const privateColumns=await publicOps.invoke('exports.people',{occasionId:s.f.occasion,columns:['email']});
+ assert.equal(privateColumns.error.code,'INVALID_INPUT');
+ await assert.rejects(publicOps.readArtifact(first.file.uri),e=>e.code==='FORBIDDEN');
  const other=new Operations({...s.owner,profile:{...s.owner.profile,binding:'different-connection'}},{artifacts:s.artifacts});await assert.rejects(other.readArtifact(first.file.uri),e=>e.code==='FORBIDDEN');
  await s.db.query('RESET ROLE');await s.db.query('update occasion_users set is_manager=false where occasion=$1 and "user"=$2',[s.f.occasion,s.f.actor]);await s.db.query('SET LOCAL ROLE authenticated');await assert.rejects(s.ops.readArtifact(first.file.uri),e=>e.code==='FORBIDDEN');
 });
@@ -58,6 +67,12 @@ test('activity uses the existing 31-day report and feedback uses the exact curre
  await s.db.query('insert into event_feedback(occasion,event,"user",rating,note) values($1,$2,$3,\'happy\',\'Good\')',[s.f.occasion,event,s.f.actor]);await s.db.query('SET LOCAL ROLE authenticated');
  const ordinary=(await s.db.query('select get_event_feedback_export_for_edit($1) value',[s.f.occasion])).rows[0].value;
  const page=await s.call('feedback.list',{limit:10});assert.deepEqual(page.items,ordinary.data);assert(!JSON.stringify(page).includes('client_id'));
+ const publicOps=new Operations({...s.owner,orderSummaryOnly:true},{artifacts:s.artifacts});
+ const publicPage=await publicOps.invoke('feedback.list',{occasionId:s.f.occasion});
+ assert.equal(publicPage.ok,true,JSON.stringify(publicPage));
+ assert.equal(publicPage.data.items[0].rating,'happy');
+ assert(!Object.hasOwn(publicPage.data.items[0],'note'));
+ assert(!Object.hasOwn(publicPage.data.items[0],'user_name'));
 });
 
 test('an oversized audit entry is rejected before an unbounded detail payload crosses RPC',async t=>{

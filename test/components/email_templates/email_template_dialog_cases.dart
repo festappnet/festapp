@@ -506,6 +506,7 @@ void main() {
             File('assets/email_templates/preview_examples.json')
                 .readAsStringSync(),
           ),
+          context: const EmailPreviewContext(inlinePaymentQr: false),
         ),
         authoringContextLoader: () => metadata.future,
       );
@@ -577,6 +578,7 @@ void main() {
           File('assets/email_templates/preview_examples.json')
               .readAsStringSync(),
         ),
+        context: const EmailPreviewContext(inlinePaymentQr: false),
       );
       final action = examples
           .scenariosFor('TICKET_ORDER_CONFIRMATION')
@@ -609,6 +611,7 @@ void main() {
             File('assets/email_templates/preview_examples.json')
                 .readAsStringSync(),
           ),
+          context: const EmailPreviewContext(inlinePaymentQr: false),
         );
         final scenario = examples
             .scenariosFor('TICKET_ORDER_CONFIRMATION')

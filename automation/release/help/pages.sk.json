@@ -157,10 +157,10 @@
     "id": "ai-agents",
     "category": "integrations",
     "slug": "ai-agenti",
-    "title": "Ako pripojiť AI agenta cez MCP",
-    "seoTitle": "Ako pripojiť AI agenta cez MCP",
-    "description": "Pripojte AI asistenta k vstupenky.online. Postup nastavenia MCP, oprávnenia a príklady práce s formulármi.",
-    "label": "AI agenti a MCP"
+    "title": "Ako pripojiť ChatGPT alebo iného AI asistenta",
+    "seoTitle": "Ako pripojiť ChatGPT alebo iného AI asistenta",
+    "description": "Pripojte doplnok vstupenky.online v ChatGPT na čítanie údajov o podujatiach. Pre ďalších AI asistentov nájdete postup nastavenia MCP a príklady práce s formulármi.",
+    "label": "ChatGPT a MCP"
   },
   {
     "id": "mcp-reference",

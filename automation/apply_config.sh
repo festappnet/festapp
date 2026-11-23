@@ -108,10 +108,20 @@ python3 - "$PROJECT_ROOT" "$FLUTTER_VERSION" <<'PY'
 from write_if_changed import write_text
 import json
 from pathlib import Path
+import re
 import sys
 
 root = Path(sys.argv[1])
 version = sys.argv[2]
+pubspec = root / 'pubspec.yaml'
+if pubspec.is_file():
+    environment = re.search(r'^environment:[ \t]*\n((?:[ \t]+[^\n]*\n)*)',
+                            pubspec.read_text(), re.MULTILINE)
+    if environment:
+        minimum = re.search(r'''^[ 	]+flutter:[ 	]*['"]?>=[ 	]*(\d+\.\d+\.\d+)(?=['"\s]|$)''',
+                            environment[1], re.MULTILINE)
+        if minimum and tuple(map(int, version.split('.'))) < tuple(map(int, minimum[1].split('.'))):
+            raise SystemExit(f'Error: FLUTTER_VERSION {version} is below the pubspec.yaml minimum {minimum[1]}')
 (root / '.fvm').mkdir(exist_ok=True)
 (root / '.vscode').mkdir(exist_ok=True)
 write_text(root / '.fvmrc', json.dumps({'flutter': version}, indent=2) + '\n')

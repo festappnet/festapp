@@ -81,11 +81,6 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
       if (action == 'confirmed' && paired) {
         _feedback = BankAccountStrings.emailOutcomeConfirmed;
         _feedbackIsNotice = false;
-      } else if (action == 'duplicate_of') {
-        _feedback = paired
-            ? BankAccountStrings.emailOutcomeDuplicatePaired
-            : BankAccountStrings.emailOutcomeDuplicateUnpaired;
-        _feedbackIsNotice = true;
       } else {
         _feedback = BankAccountStrings.emailConflict;
         _feedbackIsNotice = true;
@@ -147,16 +142,11 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
                       const SizedBox(height: 8),
                       BankEmailPossibleDuplicates(
                         duplicates: possibleDuplicates,
-                        showHeading: row['exact_duplicate'] != true,
                       ),
                     ],
-                    if (row['exact_duplicate'] == true)
-                      Text(BankAccountStrings.emailExactDuplicate),
                     if (row['confirmable'] == false)
                       Text(BankAccountStrings.emailConflict),
-                    if (!widget.readOnly &&
-                        row['confirmable'] != false &&
-                        row['exact_duplicate'] != true)
+                    if (!widget.readOnly && row['confirmable'] != false)
                       TextButton(
                         onPressed: () async {
                           final outcome =
@@ -206,12 +196,7 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
 }
 
 class BankEmailPossibleDuplicates extends StatelessWidget {
-  const BankEmailPossibleDuplicates({
-    super.key,
-    required this.duplicates,
-    this.showHeading = true,
-  });
-  final bool showHeading;
+  const BankEmailPossibleDuplicates({super.key, required this.duplicates});
   final List<Map<String, dynamic>> duplicates;
 
   @override
@@ -228,14 +213,10 @@ class BankEmailPossibleDuplicates extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showHeading)
-            Text(
-              BankAccountStrings.emailPossibleDuplicates,
-              style: TextStyle(
-                color: colors.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          Text(
+            BankAccountStrings.emailPossibleDuplicates,
+            style: TextStyle(color: colors.error, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 4),
           for (final item in duplicates) _buildDuplicateLine(context, item),
         ],
@@ -244,6 +225,9 @@ class BankEmailPossibleDuplicates extends StatelessWidget {
   }
 
   Widget _buildDuplicateLine(BuildContext context, Map<String, dynamic> item) {
+    if (item['restricted'] == true) {
+      return Text(BankAccountStrings.emailDuplicateRestricted);
+    }
     final facts = item['facts'] is Map
         ? Map<String, dynamic>.from(item['facts'] as Map)
         : const <String, dynamic>{};

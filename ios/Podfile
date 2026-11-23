@@ -3,9 +3,6 @@ platform :ios, '15.6'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-# The app never shares location with OneSignal. Resolve the modular SDK without
-# OneSignalLocation so App Store privacy analysis sees only our foreground map use.
-ENV['ONESIGNAL_DISABLE_LOCATION'] = 'true'
 
 project 'Runner', {
   'Debug' => :debug,
@@ -37,34 +34,8 @@ target 'Runner' do
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
 
-# Keep the notification extension on the same native SDK as the Flutter plugin.
-# Flutter's pod helper has created the plugin symlinks above.
-onesignal_spec = Pod::Specification.from_file(
-  File.join(__dir__, '.symlinks', 'plugins', 'onesignal_flutter', 'ios', 'onesignal_flutter.podspec')
-)
-onesignal_dependency = onesignal_spec.dependencies.find do |dependency|
-  dependency.name.split('/').first == 'OneSignalXCFramework'
-end
-raise 'onesignal_flutter must declare its OneSignalXCFramework version' unless onesignal_dependency
-onesignal_sdk_version = onesignal_dependency.requirement.to_s
-
-target 'OneSignalNotificationServiceExtension' do
-  use_frameworks!
-  pod 'OneSignalXCFramework/OneSignal', onesignal_sdk_version
-  pod 'OneSignalXCFramework/OneSignalInAppMessages', onesignal_sdk_version
-end
-
-
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-    next unless target.name == 'geolocator_apple'
-
-    target.build_configurations.each do |config|
-      definitions = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
-      definitions = [definitions] unless definitions.is_a?(Array)
-      definitions << 'BYPASS_PERMISSION_LOCATION_ALWAYS=1' unless definitions.include?('BYPASS_PERMISSION_LOCATION_ALWAYS=1')
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = definitions
-    end
   end
 end

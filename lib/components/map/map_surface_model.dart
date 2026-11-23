@@ -15,8 +15,7 @@ abstract final class MapZoomLimits {
 final class MapSurfaceModel {
   /// Whether the owning navigation tab is currently visible.
   ///
-  /// Native map views must not remain mounted behind an inactive tab: Android
-  /// platform views may continue producing frames even while offstage.
+  /// A retained native map pauses rendering and location updates when inactive.
   final bool active;
 
   final MapScene scene;
