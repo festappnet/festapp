@@ -673,6 +673,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     // private. Email seating inspection has one reviewed service SELECT.
     const forwardPrivateTables=[
       ['eshop','checkout_origin_signing_key'],['eshop','order_checkout_origins'],
+      ['eshop','bank_sync_review_signing_key'],
       ...['notification_center_read_batches','occasion_media_jobs',
       'sale_opening_campaigns','sale_opening_subscriptions','sale_opening_capabilities',
       'service_fee_agreements','service_fee_allocations','service_fee_customer_acquisitions','service_fee_settlements',
@@ -761,6 +762,9 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     expectedColumns.push(...before.columnGrants.filter(g=>g.table_schema==='public'&&g.table_name==='email_messages'&&g.column_name==='message_id').map(g=>({...g,column_name:'notification_dispatch_id'})));
     const bankColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='bank_sync_connections'&&g.column_name==='bank_account_id');
     for(const column_name of ['failure_observed_at','failure_since','observation_id','refund_rf_verified']) expectedColumns.push(...bankColumnTemplate.map(g=>({...g,column_name})));
+    const bankInboxColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='bank_sync_inbox'&&g.column_name==='resolution');
+    assert.equal(bankInboxColumnTemplate.length,8);
+    expectedColumns.push(...bankInboxColumnTemplate.map(g=>({...g,column_name:'diagnostics'})));
     // The exact Stripe/Barion payment_info columns inherit its unchanged table ACL.
     // API access to any other new column or any approved private-table column still fails.
     // Discount sale snapshots inherit exactly the existing line table ACL.
