@@ -6,9 +6,12 @@ CREATE FUNCTION pg_temp.fixture(cap integer DEFAULT 1) RETURNS jsonb LANGUAGE pl
 DECLARE org bigint; un bigint; oc bigint; f bigint; fk uuid; pt bigint; prod bigint; bank bigint; actor uuid; suffix text:=gen_random_uuid()::text;
 BEGIN
  INSERT INTO organizations(title) VALUES('Waitlist regression '||suffix) RETURNING id INTO org;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled) VALUES(org,'bank',true);
  INSERT INTO units(title,organization) VALUES('Waitlist regression',org) RETURNING id INTO un;
  INSERT INTO occasions(title,unit,organization,link,start_time,end_time) VALUES('Waitlist regression',un,org,suffix,now(),now()+interval '1 day') RETURNING id INTO oc;
- INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds) VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END) RETURNING id,key INTO f,fk;
+ INSERT INTO forms(occasion,link,participant_capacity,waitlist_enabled,waitlist_offer_duration_seconds,data)
+ VALUES(oc,suffix,cap,cap IS NOT NULL,CASE WHEN cap IS NOT NULL THEN 3600 END,'{"payments":{"bankEnabled":true}}')
+ RETURNING id,key INTO f,fk;
  INSERT INTO eshop.bank_accounts(title,type,supported_currencies) VALUES('Regression bank','FIO',ARRAY['CZK']) RETURNING id INTO bank;
  INSERT INTO eshop.unit_bank_accounts(unit,bank_account) VALUES(un,bank);
  INSERT INTO eshop.product_types(title,type,occasion) VALUES('spot','spot',oc) RETURNING id INTO pt;
@@ -63,7 +66,10 @@ $$;
 DO $$
 DECLARE x jsonb:=pg_temp.fixture(2); y jsonb; f bigint:=(x->>'form')::bigint; regular bigint; source bigint; r jsonb; w jsonb; person bigint; msg public.email_messages; lease uuid:=gen_random_uuid(); attempt uuid; token text:=repeat('1',64); manage text:=repeat('2',64); oid bigint; uid bigint; cid bigint;
 BEGIN
- FOR i IN 1..2 LOOP r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x)); END LOOP;
+ FOR i IN 1..2 LOOP
+  r:=public.create_ticket_order_internal_v1(pg_temp.checkout(x));
+  PERFORM assert_eq(r->>'code','200'::text,'regular checkout fills a place');
+ END LOOP;
  source:=(pg_temp.register(x,2,manage)->>'order')::bigint;
  FOR regular IN SELECT id FROM eshop.orders WHERE form=f AND state<>'waitlisted' LOOP PERFORM public.update_order_and_tickets_to_storno_221(regular); END LOOP;
  w:=pg_temp.offer(x,source,2,token);

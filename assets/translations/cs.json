@@ -5561,6 +5561,7 @@
     "chooseIncomingAccount": "Vyberte účet příchozí platby",
     "incomingAccountHint": "Z tohoto účtu přišla platba za objednávku. Údaje můžete upravit.",
     "manualAccountHint": "Účet příchozí platby není vybrán. Zadejte účet příjemce.",
+    "waitlistNoPayment": "Přihláška je na čekací listině. Platba zatím není potřeba.",
     "ledgerIncomplete": "Historie plateb není úplná. Finanční stav je potřeba ověřit.",
     "dispute": "Platební spor"
   },

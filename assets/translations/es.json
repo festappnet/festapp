@@ -5543,6 +5543,7 @@
     "chooseIncomingAccount": "Selecciona la cuenta de origen del pago recibido",
     "incomingAccountHint": "El pago del pedido procede de esta cuenta. Puedes editar estos datos.",
     "manualAccountHint": "No se ha seleccionado ninguna cuenta de origen del pago. Introduce la cuenta del destinatario.",
+    "waitlistNoPayment": "La inscripción está en lista de espera. Aún no es necesario pagar.",
     "ledgerIncomplete": "El historial de pagos está incompleto. Hay que verificar la situación financiera.",
     "dispute": "Disputa de pago"
   },

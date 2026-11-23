@@ -15,6 +15,11 @@ BEGIN
  PERFORM assert_true(NOT has_function_privilege('anon','public.generate_request_secret(integer)','EXECUTE'),'public cannot mint worker proof');
  PERFORM assert_true(NOT has_table_privilege('anon','public.request_secrets','SELECT'),'public cannot steal worker proof');
  PERFORM assert_true(NOT has_table_privilege('authenticated','public.email_messages','SELECT'),'queue bodies private');
+ -- Even an explicit engagement request must never wrap waitlist access links.
+ PERFORM public.enqueue_email('waitlist_confirmation',context,'waitlist@example.invalid','{}','waitlist-confirmation','waitlist_confirmation');
+ PERFORM public.enqueue_email('waitlist_offer',context||'{"tracking_policy":"engagement"}','waitlist@example.invalid','{}','waitlist-offer','waitlist_offer');
+ PERFORM assert_eq((SELECT tracking_policy FROM email_messages WHERE organization=org AND dedupe_key='waitlist-confirmation'),'open'::text,'waitlist confirmation tracks opens');
+ PERFORM assert_eq((SELECT tracking_policy FROM email_messages WHERE organization=org AND dedupe_key='waitlist-offer'),'open'::text,'waitlist offer tracks opens only');
  UPDATE public.email_messages SET workflow_state='cancelled' WHERE message_id<>(msg->>'message_id')::uuid;
  UPDATE public.email_capacity SET paused=false,quota_at=now(),max_rate=1,daily_quota=100,provider_sent_24h=0,shared_account=false,next_send_at=now(),worker_url=NULL;
  row:=public.claim_email();att:=(row->>'attempt_id')::uuid;token:=(row->>'lease_token')::uuid;
