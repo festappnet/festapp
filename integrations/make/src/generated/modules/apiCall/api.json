@@ -6,7 +6,7 @@
   "followAllRedirect": false,
   "headers": {
     "content-type": "application/json",
-    "{{...}}": "{{toCollection(parameters.headers, 'key', 'value')}}",
+    "{{...}}": "{{omit(toCollection(parameters.headers, 'key', 'value'), split(replace(join(keys(toCollection(parameters.headers, 'key', 'value')), ','), '/(?:^|,)(?!(?:host|authorization)(?:,|$))[^,]+/gi', ''), ','))}}",
     "host": "api.vstupenky.online",
     "authorization": "Bearer {{connection.accessToken}}"
   },

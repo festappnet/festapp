@@ -64,7 +64,8 @@ test('universal Make requests use the regional origin and date reports use the S
     const request = JSON.parse(files.get('modules/apiCall/api.json'));
     const parameters = JSON.parse(files.get('modules/apiCall/expect.json'));
     assert.equal(request.url, 'https://api.vstupenky.online/{{parameters.url}}');
-    assert.equal(request.headers['{{...}}'], "{{toCollection(parameters.headers, 'key', 'value')}}");
+    assert.match(request.headers['{{...}}'], /^\{\{omit\(toCollection\(parameters\.headers, 'key', 'value'\), split\(/);
+    assert.match(request.headers['{{...}}'], /host\|authorization/);
     assert.equal(request.headers.host, 'api.vstupenky.online');
     assert.equal(request.headers.authorization, 'Bearer {{connection.accessToken}}');
     assert.equal(request.followRedirect, false);
