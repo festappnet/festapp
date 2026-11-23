@@ -242,6 +242,15 @@ void main() {
       await tester.enterText(exportField, '{');
       await tester.pumpAndSettle();
       expect(find.text(FormStrings.cmsImportInvalid), findsOneWidget);
+      final tracking = find.text(FormStrings.embedTracking);
+      await tester.ensureVisible(tracking);
+      await tester.tap(tracking);
+      await tester.pumpAndSettle();
+      expect(exportField, findsNothing);
+      expect(find.text(FormStrings.cmsImportInvalid), findsOneWidget);
+      expect(tester.widget<FilledButton>(copyAction).onPressed, isNull);
+      await tester.tap(tracking);
+      await tester.pumpAndSettle();
       await tester.ensureVisible(importToggle);
       await tester.tap(importToggle);
       await tester.pumpAndSettle();

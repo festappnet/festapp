@@ -170,6 +170,7 @@ class _EmbedDialogState extends State<_EmbedDialog> {
   bool automatic = true;
   bool hostDataLayer = true;
   bool importEnabled = false;
+  bool trackingExpanded = false;
   final _consentExport = TextEditingController();
   @override
   void dispose() {
@@ -259,15 +260,18 @@ class _EmbedDialogState extends State<_EmbedDialog> {
                 key: const ValueKey('embed-tracking'),
                 tilePadding: EdgeInsets.zero,
                 title: Text(FormStrings.embedTracking),
+                subtitle: !valid && !trackingExpanded
+                    ? Text(
+                        FormStrings.cmsImportInvalid,
+                        style: TextStyle(color: theme.colorScheme.error),
+                      )
+                    : null,
+                onExpansionChanged: (expanded) =>
+                    setState(() => trackingExpanded = expanded),
                 children: [
                   CheckboxListTile(
                     key: const ValueKey('embed-host-datalayer'),
                     title: Text(FormStrings.embedHostDataLayer),
-                    subtitle: Text(
-                      hostDataLayer
-                          ? FormStrings.embedHostHint
-                          : FormStrings.embedOrganizerHint,
-                    ),
                     value: hostDataLayer,
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
@@ -275,6 +279,16 @@ class _EmbedDialogState extends State<_EmbedDialog> {
                       if (value != null) setState(() => hostDataLayer = value);
                     },
                   ),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      hostDataLayer
+                          ? FormStrings.embedHostHint
+                          : FormStrings.embedOrganizerHint,
+                      style: hintStyle,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(
