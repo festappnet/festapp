@@ -363,7 +363,8 @@ class FormSettingsPage extends StatelessWidget {
     return FormSettingsContent(
         formLink: scope.identity,
         onActionCompleted: scope.onDeleted,
-        onDataUpdated: scope.onUpdated);
+        onDataUpdated: scope.onUpdated,
+        onOpenEditor: () => context.tabsRouter.navigate(const FormEditorRoute()));
   }
 }
 

@@ -24,12 +24,14 @@ class PublicLink extends StatelessWidget {
   final String? savedLink;
   final bool isForm;
   final bool showCopyLabel;
+  final bool showOpenAction;
   const PublicLink({
     super.key,
     required this.link,
     this.savedLink,
     this.isForm = true,
     this.showCopyLabel = false,
+    this.showOpenAction = false,
   });
 
   @override
@@ -43,30 +45,52 @@ class PublicLink extends StatelessWidget {
             FormStrings.savedPublicLink,
             style: const TextStyle(fontSize: 12),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: Link(
+          if (showOpenAction) ...[
+            SelectableText(publicLinkUrl(saved, isForm: isForm)),
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Link(
                   uri: Uri.parse(publicLinkUrl(saved, isForm: isForm)),
                   target: LinkTarget.blank,
-                  builder: (context, followLink) => InkWell(
-                    onTap: followLink,
-                    child: Text(
-                      publicLinkUrl(saved, isForm: isForm),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        decoration: TextDecoration.underline,
+                  builder: (context, followLink) => TextButton.icon(
+                    onPressed: followLink,
+                    icon: const Icon(Icons.open_in_new),
+                    label: Text(FormStrings.openPublicLink),
+                  ),
+                ),
+                CopyButton(
+                  value: publicLinkUrl(saved, isForm: isForm),
+                  showLabel: true,
+                ),
+              ],
+            ),
+          ] else
+            Row(
+              children: [
+                Expanded(
+                  child: Link(
+                    uri: Uri.parse(publicLinkUrl(saved, isForm: isForm)),
+                    target: LinkTarget.blank,
+                    builder: (context, followLink) => InkWell(
+                      onTap: followLink,
+                      child: Text(
+                        publicLinkUrl(saved, isForm: isForm),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              CopyButton(
-                value: publicLinkUrl(saved, isForm: isForm),
-                showLabel: showCopyLabel,
-              ),
-            ],
-          ),
+                CopyButton(
+                  value: publicLinkUrl(saved, isForm: isForm),
+                  showLabel: showCopyLabel,
+                ),
+              ],
+            ),
         ],
         if (link != saved) ...[
           Text(
@@ -99,22 +123,35 @@ class FormPublicLink extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       PublicLink(link: link, savedLink: savedLink),
-      if (savedLink != null && savedLink!.isNotEmpty)
-        TextButton.icon(
-          icon: const Icon(Icons.code),
-          label: Text(FormStrings.embedAction),
-          onPressed: () => showDialog<void>(
-            context: context,
-            builder: (_) => _EmbedDialog(
-              savedLink: savedLink!,
-              onOpenAppearance: onOpenAppearance,
-            ),
-          ),
-        )
-      else
-        Text(FormStrings.embedSaveFirst),
+      FormEmbedAction(savedLink: savedLink, onOpenAppearance: onOpenAppearance),
     ],
   );
+}
+
+class FormEmbedAction extends StatelessWidget {
+  const FormEmbedAction({
+    super.key,
+    required this.savedLink,
+    this.onOpenAppearance,
+  });
+
+  final String? savedLink;
+  final VoidCallback? onOpenAppearance;
+
+  @override
+  Widget build(BuildContext context) {
+    final link = savedLink;
+    if (link == null || link.isEmpty) return Text(FormStrings.embedSaveFirst);
+    return TextButton.icon(
+      icon: const Icon(Icons.code),
+      label: Text(FormStrings.embedAction),
+      onPressed: () => showDialog<void>(
+        context: context,
+        builder: (_) =>
+            _EmbedDialog(savedLink: link, onOpenAppearance: onOpenAppearance),
+      ),
+    );
+  }
 }
 
 class _EmbedDialog extends StatefulWidget {

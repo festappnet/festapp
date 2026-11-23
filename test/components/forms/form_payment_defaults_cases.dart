@@ -462,8 +462,7 @@ void main() {
           link: 'test',
           title: 'Original',
           data: {
-            if (override != null)
-              FormDefinition.metaIsReminderEnabled: override,
+            if (override != null) FormDefinition.metaIsReminderEnabled: override,
           },
         );
         var saves = 0;
@@ -520,6 +519,14 @@ void main() {
           ),
           isFalse,
         );
+        final emailSettings = find.text(FormStrings.customerEmails);
+        await tester.ensureVisible(emailSettings);
+        await tester.tap(emailSettings);
+        await tester.pumpAndSettle();
+        final paymentSettings = find.text(FormStrings.changePaymentMethod);
+        await tester.ensureVisible(paymentSettings);
+        await tester.tap(paymentSettings);
+        await tester.pumpAndSettle();
         if (override != null) {
           final reminder = find.byWidgetPredicate(
             (w) =>
@@ -556,7 +563,9 @@ void main() {
           TextFormField,
           FormStrings.labelDeadlineDays,
         );
+        await tester.ensureVisible(interval);
         await tester.enterText(interval, '2');
+        await tester.ensureVisible(deadline);
         await tester.enterText(deadline, '4');
         await tester
             .widget<EditorActionBar>(find.byType(EditorActionBar))
@@ -573,6 +582,7 @@ void main() {
             .onSave();
         await tester.pumpAndSettle();
         expect(form.definition.deadlineDurationSeconds, 0);
+        await tester.ensureVisible(interval);
         await tester.enterText(interval, '');
         tester.widget<DropdownButtonFormField<String>>(deadlineMode).onChanged!(
           'none',

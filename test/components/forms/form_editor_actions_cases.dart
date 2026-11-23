@@ -584,6 +584,7 @@ void main() {
                       'payments': {'bankEnabled': true},
                     },
                   )..paymentMethodPolicy = {
+                    'unitId': 5,
                     'methods': {
                       'bank': {'policyEnabled': true},
                     },
@@ -596,14 +597,16 @@ void main() {
             ),
           );
           await tester.pumpAndSettle();
-          expect(
-            find.text(
-              BankAccountStrings.missingAccountForCurrencies(
-                hasCzkAccount ? 'EUR' : 'CZK, EUR',
-              ),
-            ),
-            findsOneWidget,
-          );
+          for (final currency in ['CZK', 'EUR']) {
+            expect(
+              find.text(BankAccountStrings.missingAccountForCurrencies(currency)),
+              currency == 'CZK' && hasCzkAccount ? findsNothing : findsOneWidget,
+            );
+          }
+          final details = find.text(FormStrings.transferDetails);
+          await tester.ensureVisible(details);
+          await tester.tap(details);
+          await tester.pumpAndSettle();
           expect(
             find.text(
               canManage
