@@ -1,6 +1,7 @@
 import 'package:festapp_core/email_templates.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/email_templates/email_preview_html.dart';
@@ -16,12 +17,20 @@ String _bannerWrapper({required bool inset}) =>
     '<div style="margin-top: 10px; margin-bottom: 10px;${inset ? ' padding-left: 24px; padding-right: 24px;' : ''}">'
     '$_message</div></div>';
 
-Future<Rect> _render(WidgetTester tester, String html, double width) async {
+Future<Rect> _render(
+  WidgetTester tester,
+  String html,
+  double width, {
+  Uint8List? Function(String)? imageBytesResolver,
+}) async {
   await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
           body: Align(
     alignment: Alignment.topLeft,
-    child: SizedBox(width: width, child: EmailPreviewHtml(html: html)),
+    child: SizedBox(
+      width: width,
+      child: EmailPreviewHtml(html: html, imageBytesResolver: imageBytesResolver),
+    ),
   ))));
   await tester.pumpAndSettle();
   expect(tester.takeException(), isNull);
@@ -29,16 +38,22 @@ Future<Rect> _render(WidgetTester tester, String html, double width) async {
 }
 
 void main() {
-  testWidgets('synthetic payment QR is visible and fits a narrow preview',
+  testWidgets('payment preview uses the resolved PNG and fits a narrow preview',
       (tester) async {
+    final png = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7QAAAABJRU5ErkJggg==',
+    );
     await _render(
       tester,
       '<img src="$emailPreviewPaymentQrSource" alt="QR platba">$_message',
       180,
+      imageBytesResolver: (source) =>
+          source == emailPreviewPaymentQrSource ? png : null,
     );
-    final qr = find.byType(QrImageView);
-    expect(qr, findsOneWidget);
-    expect(tester.getRect(qr).width, lessThanOrEqualTo(180));
+    final rendered = find.byType(Image);
+    expect(rendered, findsOneWidget);
+    expect(tester.widget<Image>(rendered).image, MemoryImage(png));
+    expect(tester.getRect(find.byType(FittedBox)).width, lessThanOrEqualTo(180));
     expect(find.byIcon(Icons.image_outlined), findsNothing);
   });
 
