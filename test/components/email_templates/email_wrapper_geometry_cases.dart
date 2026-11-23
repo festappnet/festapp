@@ -38,7 +38,7 @@ Future<Rect> _render(
 }
 
 void main() {
-  testWidgets('payment preview uses the resolved PNG and fits a narrow preview',
+  testWidgets('synthetic payment QR is visible and fits a narrow preview',
       (tester) async {
     final png = base64Decode(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7QAAAABJRU5ErkJggg==',
