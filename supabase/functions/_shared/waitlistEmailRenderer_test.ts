@@ -134,7 +134,7 @@ Deno.test("confirmation renders committed identity, safe text and inherited wrap
   assert.doesNotMatch(result.prepared.html, /<script>/);
   assert.match(result.prepared.html, /\?order_id=101&amp;token=/);
   assert.match(result.prepared.html, /referrerpolicy="no-referrer"/);
-  assert.deepEqual(result.postAction, { tracking_policy: "disabled" });
+  assert.deepEqual(result.postAction, {});
   assert.deepEqual(calls, ["context", "resolver"]);
 });
 
@@ -149,7 +149,6 @@ Deno.test("offer renders distinct manage capability and current pending places",
   assert.match(result.prepared.html, / 3 /);
   assert.match(result.prepared.html, / 1 <a /);
   assert.deepEqual(result.postAction, {
-    tracking_policy: "disabled",
     waitlist_pending_count: 1,
   });
 });
@@ -413,7 +412,6 @@ Deno.test("overview remains optional in inherited waitlist mail and explicit ins
       })),
     });
     assert.match(explicit.prepared.html, /\?order_id=101&amp;token=[a-f0-9]{64}/);
-    assert.equal(rendered.postAction.tracking_policy, "disabled");
   } finally {
     if (previous === undefined) Deno.env.delete("EMAIL_PAYLOAD_KEY"); else Deno.env.set("EMAIL_PAYLOAD_KEY", previous);
   }

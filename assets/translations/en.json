@@ -5535,6 +5535,7 @@
     "chooseIncomingAccount": "Select an incoming payment account",
     "incomingAccountHint": "The order payment came from this account. You can edit these details.",
     "manualAccountHint": "No incoming payment account is selected. Enter the recipient account.",
+    "waitlistNoPayment": "This registration is on the waitlist. No payment is due yet.",
     "ledgerIncomplete": "Payment history is incomplete. The financial state needs verification.",
     "dispute": "Payment dispute"
   },

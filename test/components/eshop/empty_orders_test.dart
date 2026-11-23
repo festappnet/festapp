@@ -188,6 +188,7 @@ void main() {
   var incidentEntry = false;
   var detailNavigation = false;
   var overduePayment = false;
+  var waitlistPayment = false;
   var bankDetails = false;
   var planPreview = false;
   var planRevision = 3;
@@ -356,8 +357,8 @@ void main() {
         if (request.url.path.endsWith('/get_transactions_for_order')) {
           return http.Response(
             jsonEncode({
-              'order_state': 'ordered',
-              'payment_info': {
+              'order_state': waitlistPayment ? 'waitlisted' : 'ordered',
+              if (!waitlistPayment) 'payment_info': {
                 'id': 7,
                 'variable_symbol': 270104,
                 'amount': 1350,
@@ -856,6 +857,32 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('waitlist shows why there is no payment history', (tester) async {
+    fail = false;
+    includeOrder = true;
+    detailNavigation = true;
+    waitlistPayment = true;
+    addTearDown(() {
+      includeOrder = false;
+      detailNavigation = false;
+      waitlistPayment = false;
+    });
+
+    await showOrders(tester, path: '/empty?orderId=4&orderTab=payments');
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Přihláška je na čekací listině. Platba zatím není potřeba.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text(PaymentOperationStrings.text('ledgerIncomplete')),
+      findsNothing,
+    );
+    expect(find.widgetWithText(ElevatedButton, 'Přidat platbu'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('Orders symbol cells omit copy while keeping their open action', (
     tester,

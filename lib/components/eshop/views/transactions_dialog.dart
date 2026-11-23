@@ -145,6 +145,21 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isLoading &&
+        _orderState == OrderModel.waitlistedState &&
+        _payment == null &&
+        _transactions.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text(
+            PaymentOperationStrings.text('waitlistNoPayment'),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
     return _isLoading
         ? SizedBox(
             height: 100,

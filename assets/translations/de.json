@@ -3453,6 +3453,7 @@
     "notApplied": "Die Anfrage wurde nicht ausgeführt. Ändern Sie die Angaben und versuchen Sie es erneut.",
     "prepareTransfer": "Überweisung vorbereiten",
     "bankManualPrepared": "Die Überweisungsdaten sind bereit. Für diese Währung ist kein QR verfügbar. Die Bank hat die Überweisung noch nicht bestätigt.",
+    "waitlistNoPayment": "Die Anmeldung steht auf der Warteliste. Eine Zahlung ist noch nicht erforderlich.",
     "ledgerIncomplete": "Der Zahlungsverlauf ist unvollständig. Der Finanzstatus muss geprüft werden.",
     "dispute": "Zahlungsstreit"
   },
