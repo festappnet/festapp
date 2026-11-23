@@ -1537,14 +1537,23 @@ for (const clientId of ['desktop-fixture', 'browser-fixture']) test(`connection 
     assert(f.audit.some(e => e.event === 'issued' && e.replaced));
 });
 
-for (const guide of ['automation/release/help/ai-agenti.html', 'automation/release/help/en/ai-agents.html'])
+for (const [guide, heading] of [
+    ['automation/release/help/ai-agenti.html', 'kratce'],
+    ['automation/release/help/sk/ai-agenti.html', 'kratce'],
+    ['automation/release/help/en/ai-agents.html', 'quick'],
+]) {
     test(`generic guide requests registered-client OAuth scopes: ${guide}`, async () => {
         const text = await readFile(new URL('../../../' + guide, import.meta.url), 'utf8');
-        assert.match(text, /offline_access/);
-        assert.match(text, /festapp:ticket-layouts:read/);
-        assert.match(text, /festapp:forms:read/);
-        assert.doesNotMatch(text, /codex mcp login|chatgpt/i);
+        const genericStart = text.indexOf(`<h2 id="${heading}">`);
+        assert.notEqual(genericStart, -1, 'generic MCP instructions must be present');
+        const generic = text.slice(genericStart);
+        assert.match(generic, /offline_access/);
+        assert.match(generic, /festapp:ticket-layouts:read/);
+        assert.match(generic, /festapp:forms:read/);
+        assert.doesNotMatch(text, /codex mcp login/i);
+        assert.doesNotMatch(generic, /chatgpt/i);
     });
+}
 
 test('replacement commit failure returns OAuth error without tokens', async t => {
     const f = await setup(t, { tenant: true, pilot: true, genericClients: true });
