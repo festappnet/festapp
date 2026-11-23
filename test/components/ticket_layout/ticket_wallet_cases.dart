@@ -68,14 +68,17 @@ void main() {
           .readAsStringSync(),
     ) as List;
     for (final sample in cases) {
-      expect(
-        GoogleWalletAppearance.fromTicket(
-          Map<String, dynamic>.from(sample['feature']),
-          Map<String, dynamic>.from(sample['data']),
-        ).toJson(),
-        sample['expected'],
-        reason: sample['name'],
-      );
+      for (final apple in [false, true]) {
+        expect(
+          GoogleWalletAppearance.fromTicket(
+            Map<String, dynamic>.from(sample['feature']),
+            Map<String, dynamic>.from(sample['data']),
+            apple,
+          ).toJson(),
+          (apple ? sample['appleExpected'] : null) ?? sample['expected'],
+          reason: sample['name'],
+        );
+      }
     }
     final feature = TicketFeature.fromJson({
       'code': 'ticket',

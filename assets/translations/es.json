@@ -4919,7 +4919,7 @@
     "walletLogo": "Logotipo",
     "walletLogoSize": "Usa un PNG cuadrado de al menos 660 × 660 px, con un 15 % de margen libre alrededor del logotipo.",
     "walletHero": "Imagen de la tarjeta",
-    "walletHeroHelp": "Google recomienda un PNG de 1032 × 812 px sin texto incrustado. Apple recorta la misma imagen en una franja superior detrás del título del evento (375:98). Por ello, los diseños anchos del PDF pueden resultar difíciles de leer.",
+    "walletHeroHelp": "Google recomienda un PNG de 1032 × 812 px. Apple Wallet muestra una miniatura junto al nombre del evento. Utilice una imagen sin texto incrustado.",
     "walletInherit": "Usar el aspecto de la entrada",
     "walletSampleCode": "MUESTRA - NO VÁLIDA PARA EL ACCESO",
     "walletImageTooLarge": "La imagen es demasiado grande (máximo 20 MB).",

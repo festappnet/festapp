@@ -24,6 +24,11 @@
       "backgroundColor": "#123abc",
       "logo": "https://a.img.festapp.net/images/logo.png?f=png",
       "heroImage": "https://img.festapp.net/images/art.png?f=png"
+    },
+    "appleExpected": {
+      "backgroundColor": "#123abc",
+      "logo": "https://a.img.festapp.net/images/logo.png?f=png",
+      "heroImage": "https://img.festapp.net/images/art.png?f=png&w=300"
     }
   },
   {
@@ -91,5 +96,64 @@
       "backgroundColor": "#216acf",
       "logo": "https://img.festapp.net/images/custom.png?f=png"
     }
+  },
+  {
+    "name": "Apple inherits the selected gradient stop",
+    "feature": {
+      "ticket_type": "named",
+      "layout": {
+        "templates": {
+          "wide": {
+            "canvasColor": "CCCCCC"
+          },
+          "named": {
+            "canvasColor": "FFFFFF",
+            "canvasGradient": [
+              "888888",
+              "222222"
+            ]
+          }
+        }
+      }
+    },
+    "data": {},
+    "expected": {
+      "backgroundColor": "#ffffff"
+    },
+    "appleExpected": {
+      "backgroundColor": "#888888"
+    }
+  },
+  {
+    "name": "transparent template falls back to legacy palette on Apple",
+    "feature": {
+      "lightColor": "884466",
+      "layout": {
+        "templates": {
+          "wide": {
+            "canvasColor": "ABCDEF",
+            "canvasOpacity": 0
+          }
+        }
+      }
+    },
+    "data": {},
+    "expected": {
+      "backgroundColor": "#abcdef"
+    },
+    "appleExpected": {
+      "backgroundColor": "#884466"
+    }
+  },
+  {
+    "name": "explicit Wallet color removal keeps native defaults",
+    "feature": {
+      "lightColor": "884466",
+      "wallet_appearance": {
+        "background_color": null
+      }
+    },
+    "data": {},
+    "expected": {}
   }
 ]
