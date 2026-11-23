@@ -59,8 +59,6 @@ class BankAccountConnectionTab extends StatefulWidget {
 
 class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   bool _isTokenVisible = false;
-  bool _showPendingEmailQueue = false;
-  Future<Map<String, dynamic>>? _pendingEmailPage;
   Timer? _relativeTimeRefresh;
 
   @override
@@ -71,18 +69,6 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
       setState(() {});
       if (!widget.isSaving) widget.onRefreshConnection?.call();
     });
-  }
-
-  @override
-  void didUpdateWidget(covariant BankAccountConnectionTab oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.account.id != widget.account.id ||
-        oldWidget.account.bankSync != widget.account.bankSync) {
-      _pendingEmailPage = null;
-      if (oldWidget.account.id != widget.account.id) {
-        _showPendingEmailQueue = false;
-      }
-    }
   }
 
   @override
@@ -97,13 +83,9 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
   DateTime? get _lastBankPull => widget.account.bankSync?.bankPullAt;
 
   Widget _buildEmailQueue() => BankSyncEmailQueue(
-    key: ValueKey(widget.account.id),
+    key: ValueKey((widget.account.id, widget.account.bankSync)),
     readOnly: widget.isReadOnly,
-    onEmpty: () {
-      if (mounted) {
-        setState(() => _pendingEmailPage = Future.value({'items': []}));
-      }
-    },
+    compact: widget.account.bankSync?.mode != 'email',
     loadPage: (cursor) =>
         DbBankAccounts.current.getEmailQueuePage(widget.account.id, cursor),
     lookup: (facts, query) => DbBankAccounts.current.findEmailTargets(
@@ -353,55 +335,13 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
               if (widget.account.bankSync!.mode == 'email') ...[
                 Text(BankAccountStrings.emailConfirmationRequired),
                 Text(BankAccountStrings.emailIdentityNotice),
-                if (!widget.isReadOnly &&
-                    RightsService.hasBankCapability(
-                      widget.account.id,
-                      AuthorizationCapabilities.bankSyncManage,
-                    ))
-                  _buildEmailQueue(),
-              ] else if (!widget.isReadOnly &&
+              ],
+              if (!widget.isReadOnly &&
                   RightsService.hasBankCapability(
                     widget.account.id,
                     AuthorizationCapabilities.bankSyncManage,
-                  )) ...[
-                FutureBuilder<Map<String, dynamic>>(
-                  future: _pendingEmailPage ??= DbBankAccounts.current
-                      .getEmailQueuePage(widget.account.id, null),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Wrap(
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(CommonStrings.unexpectedError),
-                          TextButton(
-                            onPressed: () =>
-                                setState(() => _pendingEmailPage = null),
-                            child: Text(CommonStrings.retry),
-                          ),
-                        ],
-                      );
-                    }
-                    final items = snapshot.data?['items'] as List?;
-                    if (items == null || items.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return ExpansionTile(
-                      key: const ValueKey('bank-pending-email-queue'),
-                      tilePadding: EdgeInsets.zero,
-                      title: Text(BankAccountStrings.emailPendingQueueExpand),
-                      initiallyExpanded: false,
-                      onExpansionChanged: (expanded) {
-                        if (expanded && !_showPendingEmailQueue) {
-                          setState(() => _showPendingEmailQueue = true);
-                        }
-                      },
-                      children: [
-                        if (_showPendingEmailQueue) _buildEmailQueue(),
-                      ],
-                    );
-                  },
-                ),
-              ],
+                  ))
+                _buildEmailQueue(),
               const SizedBox(height: 16),
             ],
             if (widget.isFio && !widget.isReadOnly)

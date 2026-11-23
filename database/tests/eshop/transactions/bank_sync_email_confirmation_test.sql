@@ -384,93 +384,39 @@ BEGIN
  PERFORM pg_temp.confirm_error(bank,x#>>'{event,delivery_id}',pi,'DEMO_OCCASION_READ_ONLY');
 END $$;
 
--- Differential contract against the pre-extraction matcher on real rows.
-CREATE FUNCTION pg_temp.original_bank_signals(p_vs text,p_reference text,p_message text,p_identification text,p_comment text)
-RETURNS TABLE(kind text,value text) LANGUAGE sql AS $$
-  WITH raw_signals(kind, value) AS (
-    SELECT 'vs', trim(p_vs)
-      WHERE trim(COALESCE(p_vs, '')) ~ '^[0-9]{1,10}$'
-    UNION ALL
-    SELECT 'rf', public.normalize_creditor_reference(p_reference)
-      WHERE p_reference IS NOT NULL
-        AND public.is_valid_creditor_reference(p_reference)
-    UNION ALL
-    SELECT 'rf', public.normalize_creditor_reference(m.captures[2])
-      FROM regexp_matches(
-        upper(concat_ws(E'\n', p_message,
-          p_identification, p_comment)),
-        '(^|[^A-Z0-9])(RF[0-9]{2}[A-Z0-9[:space:]]{1,25})([^A-Z0-9]|$)', 'g'
-      ) AS m(captures)
-      WHERE public.is_valid_creditor_reference(m.captures[2])
-    UNION ALL
-    SELECT 'vs', trim(p_message)
-      WHERE nullif(trim(COALESCE(p_vs, '')), '') IS NULL
-        AND trim(COALESCE(p_message, '')) ~ '^[0-9]{1,10}$'
-    UNION ALL
-    SELECT 'vs', substring(p_message
-      FROM '(?i)(?:VS|variabilní symbol)[[:space:]]*[:=-]?[[:space:]]*([0-9]{1,10})')
-      WHERE nullif(trim(COALESCE(p_vs, '')), '') IS NULL
-        AND substring(p_message
-          FROM '(?i)(?:VS|variabilní symbol)[[:space:]]*[:=-]?[[:space:]]*([0-9]{1,10})') IS NOT NULL
-  ), signals AS (
-    SELECT DISTINCT kind, value FROM raw_signals
-  ) SELECT * FROM signals;
-$$;
+-- Exercise the existing API matcher with persisted transactions and orders.
 DO $$
 DECLARE
  x jsonb:=pg_temp.email_case(); bank bigint:=(x->>'bank')::bigint; oc bigint:=(x->>'occasion')::bigint;
- pi_vs1 bigint; pi_vs2 bigint; pi_vs3 bigint; pi_rf1 bigint; pi_rf2 bigint; pi_amb1 bigint; pi_amb2 bigint;
  rf1 text:=public.generate_creditor_reference(1014); rf2 text:=public.generate_creditor_reference(1015);
- sample jsonb; tx_id bigint; expected_ids bigint[]; expected_verdict text; actual jsonb;
+ fixture record; sample record; pi bigint; targets jsonb:='{}'; tx_id bigint; expected_id bigint; actual jsonb;
 BEGIN
- INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code,payment_method) VALUES(bank,1011,100,'CZK','bank') RETURNING id INTO pi_vs1;
- INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"d1@example.invalid"}',100,'CZK',pi_vs1);
- INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code,payment_method) VALUES(bank,1012,100,'CZK','bank') RETURNING id INTO pi_vs2;
- INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"d2@example.invalid"}',100,'CZK',pi_vs2);
- INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code,payment_method) VALUES(bank,1013,100,'CZK','bank') RETURNING id INTO pi_vs3;
- INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"d3@example.invalid"}',100,'CZK',pi_vs3);
- INSERT INTO eshop.payment_info(bank_account,variable_symbol,creditor_reference,amount,currency_code,payment_method) VALUES(bank,1014,rf1,100,'CZK','bank') RETURNING id INTO pi_rf1;
- INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"d4@example.invalid"}',100,'CZK',pi_rf1);
- INSERT INTO eshop.payment_info(bank_account,variable_symbol,creditor_reference,amount,currency_code,payment_method) VALUES(bank,1015,rf2,100,'CZK','bank') RETURNING id INTO pi_rf2;
- INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"d5@example.invalid"}',100,'CZK',pi_rf2);
- INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code,payment_method) VALUES(bank,1016,100,'CZK','bank') RETURNING id INTO pi_amb1;
- INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"d6@example.invalid"}',100,'CZK',pi_amb1);
- INSERT INTO eshop.payment_info(bank_account,variable_symbol,amount,currency_code,payment_method) VALUES(bank,1016,100,'CZK','bank') RETURNING id INTO pi_amb2;
- INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info) VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{"email":"d7@example.invalid"}',100,'CZK',pi_amb2);
-
- FOR sample IN SELECT value FROM jsonb_array_elements(jsonb_build_array(
-  jsonb_build_object('label','exact_vs','vs','1011'),
-  jsonb_build_object('label','padded_vs','vs',' 00001012 '),
-  jsonb_build_object('label','message_vs','message','VS: 00001013'),
-  jsonb_build_object('label','invalid_vs_no_fallback','vs','invalid','message','VS: 1011'),
-  jsonb_build_object('label','rf_lower','ref',lower(rf1)),
-  jsonb_build_object('label','rf_message','message','Reference '||rf2),
-  jsonb_build_object('label','ambiguous_vs','vs','1016'),
-  jsonb_build_object('label','unmatched','message','No reference here')
- )) LOOP
-  INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,vs,payer_reference,message_for_recipient,user_identification,comment,ingest_source)
-  VALUES(bank,100,'CZK','2026-11-22 12:00',sample->>'vs',sample->>'ref',sample->>'message',sample->>'identification',sample->>'comment','banksync_api')
-  RETURNING id INTO tx_id;
-
-  SELECT array_agg(DISTINCT p.id ORDER BY p.id) INTO expected_ids
-  FROM pg_temp.original_bank_signals(sample->>'vs',sample->>'ref',sample->>'message',sample->>'identification',sample->>'comment') s
-  JOIN eshop.payment_info p
-    ON (s.kind='rf' AND p.creditor_reference=s.value)
-    OR (s.kind='vs' AND p.variable_symbol=CASE WHEN s.kind='vs' THEN s.value::bigint END)
-  WHERE p.bank_account=bank AND upper(trim(p.currency_code))='CZK';
-
-  expected_verdict:=CASE
-   WHEN expected_ids IS NULL OR cardinality(expected_ids)=0 THEN 'unmatched'
-   WHEN cardinality(expected_ids)=1 THEN 'paired'
-   ELSE 'ambiguous' END;
-
+ FOR fixture IN SELECT * FROM (VALUES (1011,NULL),(1012,NULL),(1013,NULL),(1014,rf1),
+   (1015,rf2),(1016,NULL),(1016,NULL)) AS cases(symbol,reference) LOOP
+  INSERT INTO eshop.payment_info(bank_account,variable_symbol,creditor_reference,amount,currency_code,payment_method)
+  VALUES(bank,fixture.symbol,fixture.reference,100,'CZK','bank') RETURNING id INTO pi;
+  INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info)
+  VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{}',100,'CZK',pi);
+  targets:=targets||jsonb_build_object(fixture.symbol::text,pi);
+ END LOOP;
+ FOR sample IN SELECT * FROM (VALUES
+  ('exact VS','1011',NULL,NULL,'paired',1011),
+  ('padded VS',' 00001012 ',NULL,NULL,'paired',1012),
+  ('message VS',NULL,NULL,'VS: 00001013','paired',1013),
+  ('invalid explicit VS','invalid',NULL,'VS: 1011','unmatched',NULL),
+  ('lowercase RF',NULL,lower(rf1),NULL,'paired',1014),
+  ('message RF',NULL,NULL,'Reference '||rf2,'paired',1015),
+  ('ambiguous VS','1016',NULL,NULL,'ambiguous',NULL),
+  ('no reference',NULL,NULL,'No reference here','unmatched',NULL)
+ ) AS cases(label,vs,reference,message,verdict,symbol) LOOP
+  INSERT INTO eshop.transactions(bank_account_id,amount,currency,date,vs,payer_reference,message_for_recipient,ingest_source)
+  VALUES(bank,100,'CZK','2026-11-22 12:00',sample.vs,sample.reference,sample.message,'banksync_api') RETURNING id INTO tx_id;
+  expected_id:=(targets->>sample.symbol::text)::bigint;
   actual:=public.match_bank_transaction(tx_id);
-  PERFORM assert_eq(actual->>'verdict',expected_verdict,'real match_bank_transaction verdict: '||(sample->>'label'));
-  IF expected_verdict='paired' THEN
-   PERFORM assert_eq((actual->>'payment_info_id')::bigint,expected_ids[1],'real match_bank_transaction target: '||(sample->>'label'));
-   PERFORM assert_eq((SELECT payment_info FROM eshop.transactions WHERE id=tx_id),expected_ids[1],'transaction row paired: '||(sample->>'label'));
-  ELSE
-   PERFORM assert_true((SELECT payment_info IS NULL FROM eshop.transactions WHERE id=tx_id),'unmatched/ambiguous stays unpaired: '||(sample->>'label'));
+  PERFORM assert_eq(actual->>'verdict',sample.verdict,sample.label);
+  PERFORM assert_true((SELECT payment_info FROM eshop.transactions WHERE id=tx_id) IS NOT DISTINCT FROM expected_id,sample.label);
+  IF expected_id IS NOT NULL THEN
+   PERFORM assert_eq((actual->>'payment_info_id')::bigint,expected_id,sample.label);
   END IF;
  END LOOP;
 END $$;
@@ -576,6 +522,12 @@ BEGIN
 END $$;
 
 
+CREATE FUNCTION pg_temp.fio_movement(event jsonb, extra jsonb DEFAULT '{}')
+RETURNS jsonb LANGUAGE sql AS $$
+ SELECT event||jsonb_build_object('delivery_id','01K00000000000000000000803','data',event->'data'||
+  '{"id":"803","source":"fio_api","identity_kind":"movement","identity_provenance":"fio_api_column22","transaction_id":"1007803"}'::jsonb||extra)
+$$;
+
 DO $$
 DECLARE x jsonb:=pg_temp.email_case(); bank bigint:=(x->>'bank')::bigint; conn bigint:=(x->>'connection')::bigint;
  pi bigint:=(x->>'payment')::bigint; oid bigint:=(x->>'order')::bigint; event jsonb:=x->'event';
@@ -593,8 +545,7 @@ BEGIN
  PERFORM assert_eq(replay,out,'same source observation reuses audited confirmation across delivery IDs');
  PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi),100::numeric,'repeat source observation cannot pay the balance');
 
- event:=event||jsonb_build_object('delivery_id','01K00000000000000000000803','data',event->'data'||
-  '{"id":"803","source":"fio_api","identity_kind":"movement","identity_provenance":"fio_api_column22","transaction_id":"1007803"}'::jsonb);
+ event:=pg_temp.fio_movement(event);
  out:=public.ingest_bank_sync_transaction('email-regression-'||bank,'festapp',repeat('c',64),event);
  PERFORM assert_eq(out->>'outcome','unmatched','later API candidate is held for review');
  SELECT transaction_id INTO api FROM eshop.bank_transaction_identities
@@ -660,8 +611,7 @@ BEGIN
  END;
  PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=pi),100::numeric,'original order credit retained');
 
- event:=event||jsonb_build_object('delivery_id','01K00000000000000000000803','data',event->'data'||
-  '{"id":"803","source":"fio_api","identity_kind":"movement","identity_provenance":"fio_api_column22","transaction_id":"1007803"}'::jsonb);
+ event:=pg_temp.fio_movement(event);
  PERFORM public.ingest_bank_sync_transaction('email-regression-'||bank,'festapp',repeat('b',64),event);
  SELECT transaction_id INTO api FROM eshop.bank_transaction_identities
  WHERE instance_id='email-regression-'||bank AND identity_kind='movement' AND identity_value='1007803';
@@ -699,8 +649,7 @@ BEGIN
  actions:=public.get_transactions_for_order(oid)->'actions';
  PERFORM assert_eq((actions->>'pairingAccountId')::bigint,bank,'expired order can find an available verified receipt');
 
- event:=event||jsonb_build_object('delivery_id','01K00000000000000000000803','data',event->'data'||
-  '{"id":"803","source":"fio_api","identity_kind":"movement","identity_provenance":"fio_api_column22","transaction_id":"1007803"}'::jsonb);
+ event:=pg_temp.fio_movement(event);
  receipt:=public.ingest_bank_sync_transaction('email-regression-'||bank,'festapp',repeat('b',64),event);
  PERFORM assert_eq(receipt->>'outcome','unmatched','later potential duplicate remains unpaired');
  SELECT transaction_id INTO STRICT api FROM eshop.bank_transaction_identities
@@ -747,8 +696,7 @@ BEGIN
  VALUES(bank,2008,100,'CZK','bank') RETURNING id INTO separate_payment;
  INSERT INTO eshop.orders(order_sequence,order_symbol,occasion,state,data,price,currency_code,payment_info)
  VALUES(public.next_order_sequence(oc),public.generate_order_symbol(),oc,'ordered','{}',100,'CZK',separate_payment);
- event:=event||jsonb_build_object('delivery_id','01K00000000000000000000803','data',event->'data'||
-  '{"id":"803","source":"fio_api","identity_kind":"movement","identity_provenance":"fio_api_column22","transaction_id":"1007803","raw_vs":"2008"}'::jsonb);
+ event:=pg_temp.fio_movement(event,'{"raw_vs":"2008"}');
  receipt:=public.ingest_bank_sync_transaction('email-regression-'||bank,'festapp',repeat('b',64),event);
  PERFORM assert_eq(receipt->>'outcome','paired','independent movement with a different VS keeps normal Fio matching');
  PERFORM assert_eq((SELECT paid FROM eshop.payment_info WHERE id=separate_payment),100::numeric,'ordinary Fio receipt credits the referenced order');

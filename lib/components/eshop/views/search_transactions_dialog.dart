@@ -188,20 +188,11 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
                     Text(label),
                   const SizedBox(height: 12),
                   Text(BankAccountStrings.apiDuplicateReviewInstruction),
-                  for (final candidate in candidates) ...[
-                    const SizedBox(height: 8),
-                    BankEmailPossibleDuplicates(duplicates: [candidate]),
-                    if (candidate['transaction_id'] case final int id)
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.of(context).pop((existingId: id)),
-                        child: Text(
-                          candidate['transaction_paired'] == true
-                              ? BankAccountStrings.apiDuplicateSame
-                              : BankAccountStrings.apiDuplicateSameAndPair,
-                        ),
-                      ),
-                  ],
+                  BankEmailPossibleDuplicates(
+                    duplicates: candidates,
+                    onMatch: (id) =>
+                        Navigator.of(context).pop((existingId: id)),
+                  ),
                 ],
               ),
             ),

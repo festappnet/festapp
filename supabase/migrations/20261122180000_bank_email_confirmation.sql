@@ -1,102 +1,6 @@
 -- Admin-confirmed email observations; no automatic email pairing.
 
--- SOURCE: eshop_bank_sync/schema.sql
--- Automatic import authority is connection-scoped. Alias membership is an
--- explicit reviewed decision, never inferred from VS or account titles.
-CREATE TABLE IF NOT EXISTS eshop.bank_sync_connections (
-  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  instance_id text NOT NULL,
-  consumer_app_id text NOT NULL CHECK (consumer_app_id = 'festapp'),
-  remote_bank_account_id text NOT NULL,
-  bank_account_id bigint NOT NULL UNIQUE REFERENCES eshop.bank_accounts(id),
-  physical_account text NOT NULL,
-  provider text NOT NULL CHECK(provider IN ('FIO','AIRBANK','CSOB','MONETA','CREDITAS','RAIFFEISENBANK','UNICREDIT','CSAS')),
-  mode text NOT NULL CHECK(mode IN ('api','email')),
-  state text NOT NULL CHECK(state IN ('provisioning','shadow','connected','degraded','suspended')),
-  pairing_code text CHECK(pairing_code ~ '^[0-9a-f]{10}$'),
-  pairing_history jsonb NOT NULL DEFAULT '[]',
-  legacy_blocked_at timestamptz,
-  epoch bigint NOT NULL DEFAULT 1,
-  manifest_sha256 text NOT NULL CHECK(manifest_sha256 ~ '^[0-9a-f]{64}$'),
-  token_expiry_at timestamptz,
-  bank_pull_at timestamptz,
-  receiver_commit_at timestamptz,
-  last_error text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(instance_id,consumer_app_id,remote_bank_account_id),
-  UNIQUE(instance_id,provider,physical_account)
-);
--- Continuous failed observations drive UI warnings independently of email incidents.
-ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_since timestamptz;
-ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS failure_observed_at timestamptz;
-
--- Tokens are issued before remote I/O, then accepted once in start order.
-CREATE SEQUENCE IF NOT EXISTS eshop.bank_sync_observation_ids;
-REVOKE ALL ON SEQUENCE eshop.bank_sync_observation_ids FROM PUBLIC,anon,authenticated,service_role;
-ALTER TABLE eshop.bank_sync_connections ADD COLUMN IF NOT EXISTS observation_id bigint NOT NULL DEFAULT 0;
-
-CREATE TABLE IF NOT EXISTS eshop.bank_sync_account_aliases (
-  bank_account_id bigint PRIMARY KEY REFERENCES eshop.bank_accounts(id),
-  connection_id bigint NOT NULL REFERENCES eshop.bank_sync_connections(id)
-);
-CREATE TABLE IF NOT EXISTS eshop.bank_sync_inbox (
-  instance_id text NOT NULL,
-  consumer_app_id text NOT NULL CHECK(consumer_app_id='festapp'),
-  delivery_id text NOT NULL,
-  body_sha256 text NOT NULL CHECK(body_sha256 ~ '^[0-9a-f]{64}$'),
-  event_version text NOT NULL CHECK(event_version='2'),
-  remote_transaction_id text NOT NULL,
-  connection_id bigint REFERENCES eshop.bank_sync_connections(id),
-  legacy_blocked_at timestamptz,
-  epoch bigint,
-  payload jsonb NOT NULL CHECK(octet_length(payload::text)<=65536),
-  outcome text,
-  resolution jsonb,
-  diagnostics jsonb,
-  resolved_at timestamptz,
-  receipt jsonb,
-  received_at timestamptz NOT NULL DEFAULT now(),
-  committed_at timestamptz,
-  PRIMARY KEY(instance_id,consumer_app_id,delivery_id)
-);
-CREATE TABLE IF NOT EXISTS eshop.bank_transaction_identities (
-  instance_id text NOT NULL,
-  provider text NOT NULL,
-  physical_account text NOT NULL,
-  identity_kind text NOT NULL CHECK(identity_kind IN ('movement','remote_transaction')),
-  identity_value text NOT NULL,
-  transaction_id bigint NOT NULL REFERENCES eshop.transactions(id),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY(instance_id,provider,physical_account,identity_kind,identity_value)
-);
-CREATE TABLE IF NOT EXISTS eshop.bank_sync_operations (
-  id uuid PRIMARY KEY,
-  bank_account_id bigint NOT NULL REFERENCES eshop.bank_accounts(id),
-  actor uuid NOT NULL REFERENCES public.user_info(id),
-  operation text NOT NULL CHECK(operation IN ('create','set_token','rotate_pairing','sync','suspend','resume','update_details')),
-  payload_sha256 text NOT NULL CHECK(payload_sha256 ~ '^[0-9a-f]{64}$'),
-  state text NOT NULL CHECK(state IN ('pending','running','uncertain','completed','failed')),
-  remote_reference text,
-  request jsonb CHECK (request IS NULL OR octet_length(request::text)<=8192),
-  token_cipher jsonb,
-  lease_token uuid,
-  result jsonb,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE UNIQUE INDEX IF NOT EXISTS bank_sync_operations_active_account_uidx ON eshop.bank_sync_operations(bank_account_id) WHERE state IN ('pending','running','uncertain');
-ALTER TABLE eshop.bank_sync_connections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE eshop.bank_sync_account_aliases ENABLE ROW LEVEL SECURITY;
-ALTER TABLE eshop.bank_sync_inbox ENABLE ROW LEVEL SECURITY;
-ALTER TABLE eshop.bank_transaction_identities ENABLE ROW LEVEL SECURITY;
-ALTER TABLE eshop.bank_sync_operations ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON eshop.bank_sync_connections,eshop.bank_sync_account_aliases,eshop.bank_sync_inbox,
-  eshop.bank_transaction_identities,eshop.bank_sync_operations FROM PUBLIC,anon,authenticated;
-
--- Supported notification providers; existing connection identities remain unchanged.
-ALTER TABLE eshop.bank_sync_connections DROP CONSTRAINT IF EXISTS bank_sync_connections_provider_check;
-ALTER TABLE eshop.bank_sync_connections ADD CONSTRAINT bank_sync_connections_provider_check CHECK(provider IN ('FIO','AIRBANK','CSOB','MONETA','CREDITAS','RAIFFEISENBANK','UNICREDIT','CSAS'));
-
+-- SOURCE: eshop_bank_sync/bank_sync_review_schema.sql
 -- Internal ingestion evidence is separate from the bounded BankSync receipt.
 ALTER TABLE eshop.bank_sync_inbox ADD COLUMN IF NOT EXISTS diagnostics jsonb;
 CREATE INDEX IF NOT EXISTS transactions_email_confirmed_review_idx
@@ -249,7 +153,7 @@ REVOKE ALL ON FUNCTION public.match_bank_transaction(bigint)
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.match_bank_transaction(bigint) TO service_role;
 
--- SOURCE: eshop_bank_sync/bank_sync_existing_facts_match.sql
+-- SOURCE: eshop_bank_sync/bank_sync_email_confirmation.sql
 -- Compare possible email duplicates by bank-local date.
 CREATE OR REPLACE FUNCTION public.bank_sync_fact_dates_match_internal(p_tx eshop.transactions,p_data jsonb,p_days integer)
 RETURNS boolean LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
@@ -272,30 +176,6 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer) FROM PUBLIC,anon,authenticated,service_role;
 
--- Legacy Fio stored offset midnight as UTC; BankSync date-only statements use
--- noon UTC to retain the original bank date. Compare historical facts in the
--- bank's supplied offset, without rewriting either representation.
-CREATE OR REPLACE FUNCTION public.bank_sync_existing_facts_match(p_tx eshop.transactions,p_data jsonb)
-RETURNS boolean LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
-DECLARE v_shift interval:=interval '0'; v_offset integer;
-BEGIN
-  IF p_tx.ingest_source IN ('legacy','legacy_api','fio_api')
-    AND p_data->>'date_offset_min' ~ '^-?[0-9]{1,3}$' THEN
-    v_offset:=(p_data->>'date_offset_min')::integer;
-    IF abs(v_offset)<=840 THEN v_shift:=make_interval(mins=>v_offset); END IF;
-  END IF;
-  RETURN p_tx.amount IS NOT DISTINCT FROM (p_data->>'amount_cents')::numeric/100
-    AND trim(p_tx.currency) IS NOT DISTINCT FROM p_data->>'currency'
-    AND (p_tx.date+v_shift)::date IS NOT DISTINCT FROM
-      (((p_data->>'date')::timestamptz AT TIME ZONE 'UTC')+v_shift)::date
-    AND nullif(trim(p_tx.vs),'') IS NOT DISTINCT FROM nullif(p_data->>'raw_vs','')
-    AND (p_tx.payer_reference IS NULL OR p_tx.payer_reference IS NOT DISTINCT FROM p_data->>'payer_reference');
-END;
-$$;
-REVOKE ALL ON FUNCTION public.bank_sync_existing_facts_match(eshop.transactions,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.bank_sync_existing_facts_match(eshop.transactions,jsonb) TO service_role;
-
--- SOURCE: eshop_bank_sync/bank_sync_email_confirmation.sql
 CREATE OR REPLACE FUNCTION public.bank_sync_counter_account_internal(p_account text,p_code text)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  WITH parts AS (
@@ -500,7 +380,7 @@ BEGIN
  v_connection:=public.bank_sync_email_authorized_connection_internal(p_bank_account_id);
  SELECT coalesce(jsonb_agg(item ORDER BY received_at,delivery_id),'[]') INTO v_result FROM (
   SELECT i.received_at,i.delivery_id,jsonb_build_object('delivery_id',i.delivery_id,'body_sha256',i.body_sha256,
-   'facts',i.payload->'data','received_at',i.received_at,'confirmable',true,
+   'facts',i.payload->'data','received_at',i.received_at,
    'possible_duplicates',public.bank_sync_email_possible_duplicates_view_internal(d.ids),
    'duplicate_review_token',CASE WHEN cardinality(d.ids)>0 THEN public.bank_sync_review_token_internal(i,d.ids) END,
    'candidates',public.bank_sync_email_candidates_internal(p_bank_account_id,i.payload->'data')) AS item
@@ -682,52 +562,6 @@ RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions 
         WHERE a.connection_id=c.id AND a.bank_account_id=p_target_account))
   );
 $$;
-REVOKE ALL ON FUNCTION public.bank_sync_accounts_match(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;
-
-CREATE OR REPLACE FUNCTION public.activate_bank_sync_connection(p_connection_id bigint,p_manifest_sha256 text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_connection eshop.bank_sync_connections%ROWTYPE;
-BEGIN
-  PERFORM public.require_service_role();
-  SELECT * INTO STRICT v_connection FROM eshop.bank_sync_connections WHERE id=p_connection_id;
-  IF v_connection.manifest_sha256 IS DISTINCT FROM p_manifest_sha256 OR v_connection.pairing_code IS NULL THEN
-    RAISE EXCEPTION 'BANK_SYNC_MANIFEST_OR_PAIRING_MISMATCH';
-  END IF;
-  IF EXISTS(SELECT 1 FROM eshop.bank_sync_account_aliases WHERE bank_account_id=v_connection.bank_account_id AND connection_id<>p_connection_id)
-    OR EXISTS(SELECT 1 FROM eshop.bank_sync_connections c JOIN eshop.bank_sync_account_aliases a ON a.bank_account_id=c.bank_account_id WHERE a.connection_id=p_connection_id AND c.id<>p_connection_id) THEN
-    RAISE EXCEPTION 'BANK_SYNC_ALIAS_AUTHORITY_CONFLICT';
-  END IF;
-  PERFORM 1 FROM eshop.bank_accounts WHERE id=v_connection.bank_account_id OR id IN
-    (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id)
-    ORDER BY id FOR UPDATE;
-  -- Adopt known bank movement IDs before the first replay. Historical ledger
-  -- rows and manual pairing decisions remain unchanged; the receiver compares
-  -- bank facts and quarantines a mismatch instead of crediting history twice.
-  IF v_connection.provider='FIO' THEN
-    INSERT INTO eshop.bank_transaction_identities(instance_id,provider,physical_account,identity_kind,identity_value,transaction_id)
-      SELECT v_connection.instance_id,'FIO',v_connection.physical_account,'movement',t.transaction_id::text,t.id
-      FROM eshop.transactions t
-      WHERE (t.bank_account_id=v_connection.bank_account_id OR t.bank_account_id IN
-        (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id))
-        AND t.ingest_source IN ('fio_api','legacy_api','legacy') AND t.transaction_id IS NOT NULL
-      ON CONFLICT(instance_id,provider,physical_account,identity_kind,identity_value) DO UPDATE
-        SET transaction_id=eshop.bank_transaction_identities.transaction_id
-        WHERE eshop.bank_transaction_identities.transaction_id=EXCLUDED.transaction_id;
-    IF EXISTS(SELECT 1 FROM eshop.transactions t JOIN eshop.bank_transaction_identities i
-      ON i.instance_id=v_connection.instance_id AND i.provider='FIO' AND i.physical_account=v_connection.physical_account
-        AND i.identity_kind='movement' AND i.identity_value=t.transaction_id::text
-      WHERE t.bank_account_id=v_connection.bank_account_id AND t.ingest_source IN ('fio_api','legacy_api','legacy')
-        AND i.transaction_id<>t.id) THEN RAISE EXCEPTION 'BANK_SYNC_HISTORICAL_IDENTITY_CONFLICT'; END IF;
-  END IF;
-  UPDATE eshop.bank_accounts SET is_fetch_enabled=false WHERE id=v_connection.bank_account_id OR id IN
-    (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=p_connection_id);
-  UPDATE eshop.bank_sync_connections SET state='connected',legacy_blocked_at=COALESCE(legacy_blocked_at,now())
-    WHERE id=p_connection_id AND manifest_sha256=p_manifest_sha256;
-  PERFORM public.notification_center_bank_incident_internal(p_connection_id);
-END;
-$$;
-REVOKE ALL ON FUNCTION public.activate_bank_sync_connection(bigint,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.activate_bank_sync_connection(bigint,text) TO service_role;
 
 -- SOURCE: eshop_bank_sync/bank_sync_api_review.sql
 -- A reviewed API movement retains its own ledger row and bank identity.

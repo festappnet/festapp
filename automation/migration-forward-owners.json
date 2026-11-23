@@ -972,9 +972,8 @@
       "active": true,
       "header": "-- Admin-confirmed email observations; no automatic email pairing.",
       "sources": [
-        "eshop_bank_sync/schema.sql",
+        "eshop_bank_sync/bank_sync_review_schema.sql",
         "eshop_transactions/match_bank_transaction.sql",
-        "eshop_bank_sync/bank_sync_existing_facts_match.sql",
         "eshop_bank_sync/bank_sync_email_confirmation.sql",
         "eshop_bank_sync/bank_sync_authority.sql",
         "eshop_bank_sync/bank_sync_api_review.sql",
@@ -985,7 +984,10 @@
         "eshop_transactions/get_transactions_for_order.sql",
         "eshop_transactions/get_transactions_for_order_all_available.sql",
         "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql"
-      ]
+      ],
+      "selectors": {
+        "eshop_bank_sync/bank_sync_authority.sql": ["bank_sync_accounts_match"]
+      }
     }
   ]
 }

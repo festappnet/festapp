@@ -1,3 +1,25 @@
+-- Compare possible email duplicates by bank-local date.
+CREATE OR REPLACE FUNCTION public.bank_sync_fact_dates_match_internal(p_tx eshop.transactions,p_data jsonb,p_days integer)
+RETURNS boolean LANGUAGE plpgsql IMMUTABLE SET search_path=public,extensions AS $$
+DECLARE tx_day date; incoming_day date; v_shift interval; v_offset integer;
+BEGIN
+ IF p_tx.ingest_source IN ('legacy','legacy_api','fio_api')
+   AND p_data->>'date_offset_min' ~ '^-?[0-9]{1,3}$' THEN
+  v_offset:=(p_data->>'date_offset_min')::integer;
+ END IF;
+ IF abs(v_offset)<=840 THEN
+  v_shift:=make_interval(mins=>v_offset);
+  tx_day:=(p_tx.date+v_shift)::date;
+  incoming_day:=(((p_data->>'date')::timestamptz AT TIME ZONE 'UTC')+v_shift)::date;
+ ELSE
+  tx_day:=((p_tx.date AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Prague')::date;
+  incoming_day:=((p_data->>'date')::timestamptz AT TIME ZONE 'Europe/Prague')::date;
+ END IF;
+ RETURN abs(tx_day-incoming_day)<=p_days;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.bank_sync_counter_account_internal(p_account text,p_code text)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  WITH parts AS (
@@ -202,7 +224,7 @@ BEGIN
  v_connection:=public.bank_sync_email_authorized_connection_internal(p_bank_account_id);
  SELECT coalesce(jsonb_agg(item ORDER BY received_at,delivery_id),'[]') INTO v_result FROM (
   SELECT i.received_at,i.delivery_id,jsonb_build_object('delivery_id',i.delivery_id,'body_sha256',i.body_sha256,
-   'facts',i.payload->'data','received_at',i.received_at,'confirmable',true,
+   'facts',i.payload->'data','received_at',i.received_at,
    'possible_duplicates',public.bank_sync_email_possible_duplicates_view_internal(d.ids),
    'duplicate_review_token',CASE WHEN cardinality(d.ids)>0 THEN public.bank_sync_review_token_internal(i,d.ids) END,
    'candidates',public.bank_sync_email_candidates_internal(p_bank_account_id,i.payload->'data')) AS item

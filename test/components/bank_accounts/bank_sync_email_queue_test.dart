@@ -72,6 +72,69 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pumpAndSettle();
 }
 
+Map<String, dynamic> _page(
+  List<Map<String, dynamic>> items, [
+  Map<String, dynamic>? cursor,
+]) => {'items': items, 'next_cursor': cursor};
+
+BankSyncEmailQueue _queue({
+  Map<String, dynamic>? observation,
+  bool readOnly = false,
+  bool compact = false,
+  Future<Map<String, dynamic>> Function(Map<String, dynamic>?)? loadPage,
+  ConfirmBankEmail? confirm,
+  Future<List<Map<String, dynamic>>> Function(Map<String, dynamic>, String)?
+  lookup,
+  Future<void> Function(Map<String, dynamic>, String)? dismiss,
+}) => BankSyncEmailQueue(
+  loadPage: loadPage ?? (_) async => _page([observation ?? _observation]),
+  confirm:
+      confirm ??
+      (_, _, {bool notDuplicate = false}) async =>
+          fail('unexpected confirmation'),
+  lookup: lookup,
+  dismiss: dismiss,
+  readOnly: readOnly,
+  compact: compact,
+);
+
+const _confirmed = {'action': 'confirmed', 'transaction_paired': true};
+final _candidate = find.byType(RadioListTile<int>);
+final _attestation = find.byKey(const ValueKey('email-attestation-checkbox'));
+final _separate = find.byKey(const ValueKey('email-not-duplicate-checkbox'));
+final _submit = find.byType(FilledButton);
+
+Future<void> _tap(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
+bool _canSubmit(WidgetTester tester) =>
+    tester.widget<FilledButton>(_submit).onPressed != null;
+
+Future<void> _connection(WidgetTester tester, String state) async {
+  final controller = TextEditingController();
+  addTearDown(controller.dispose);
+  await _pump(
+    tester,
+    BankAccountConnectionTab(
+      account: BankAccountModel.fromJson({
+        'id': 1,
+        'bank_sync': {'mode': 'email', 'state': state},
+      }),
+      isReadOnly: true,
+      isFio: false,
+      isSaving: false,
+      pairingCode: null,
+      onRegenerateToken: () {},
+      tokenController: controller,
+      expiryDate: null,
+      onExpiryDateChanged: (_) {},
+      onSaveToken: () {},
+    ),
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() {
@@ -82,26 +145,7 @@ void main() {
   testWidgets('email connection shows confirmation notice to readonly users', (
     tester,
   ) async {
-    final controller = TextEditingController();
-    addTearDown(controller.dispose);
-    await _pump(
-      tester,
-      BankAccountConnectionTab(
-        account: BankAccountModel.fromJson({
-          'id': 1,
-          'bank_sync': {'mode': 'email', 'state': 'connected'},
-        }),
-        isReadOnly: true,
-        isFio: false,
-        isSaving: false,
-        pairingCode: null,
-        onRegenerateToken: () {},
-        tokenController: controller,
-        expiryDate: null,
-        onExpiryDateChanged: (_) {},
-        onSaveToken: () {},
-      ),
-    );
+    await _connection(tester, 'connected');
     expect(find.text(BankAccountStrings.emailIdentityNotice), findsOneWidget);
     expect(
       find.text(BankAccountStrings.emailConfirmationRequired),
@@ -115,21 +159,13 @@ void main() {
     (tester) async {
       await _pump(
         tester,
-        BankSyncEmailQueue(
-          loadPage: (_) async => {
-            'items': [
-              {
-                ..._observation,
-                'possible_duplicates': [
-                  {'restricted': true},
-                ],
-              },
+        _queue(
+          observation: {
+            ..._observation,
+            'possible_duplicates': [
+              {'restricted': true},
             ],
-            'next_cursor': null,
           },
-          readOnly: false,
-          confirm: (_, _, {bool notDuplicate = false}) async =>
-              throw StateError('The payment has not been verified'),
           dismiss: (_, _) async {},
         ),
       );
@@ -146,23 +182,9 @@ void main() {
   testWidgets('email queue displays bank facts and candidate order', (
     tester,
   ) async {
-    await _pump(
-      tester,
-      BankSyncEmailQueue(
-        loadPage: (_) async => {
-          'items': [_observation],
-          'next_cursor': null,
-        },
-        confirm: (_, _, {bool notDuplicate = false}) async => {
-          'action': 'confirmed',
-          'transaction_paired': true,
-        },
-        readOnly: false,
-      ),
-    );
+    await _pump(tester, _queue());
     expect(find.textContaining('Jane Smith'), findsOneWidget);
-    await tester.tap(find.text(BankAccountStrings.emailConfirm));
-    await tester.pumpAndSettle();
+    await _tap(tester, find.text(BankAccountStrings.emailConfirm));
     expect(find.textContaining('42'), findsOneWidget);
     expect(
       find.textContaining(BankAccountStrings.emailOrderState('ordered')),
@@ -180,31 +202,21 @@ void main() {
     int? confirmed;
     await _pump(
       tester,
-      BankSyncEmailQueue(
-        loadPage: (_) async => {
-          'items': confirmed == null ? [_observation] : [],
-          'next_cursor': null,
-        },
+      _queue(
+        loadPage: (_) async => _page(confirmed == null ? [_observation] : []),
         confirm: (_, payment, {bool notDuplicate = false}) async {
           confirmed = payment;
-          return {'action': 'confirmed', 'transaction_paired': true};
+          return _confirmed;
         },
-        readOnly: false,
       ),
     );
-    await tester.tap(find.text(BankAccountStrings.emailConfirm));
-    await tester.pumpAndSettle();
-    FilledButton button() =>
-        tester.widget<FilledButton>(find.byType(FilledButton));
-    expect(button().onPressed, isNull);
-    await tester.tap(find.byType(RadioListTile<int>));
-    await tester.pumpAndSettle();
-    expect(button().onPressed, isNull);
-    await tester.tap(find.byType(CheckboxListTile));
-    await tester.pumpAndSettle();
-    expect(button().onPressed, isNotNull);
-    await tester.tap(find.byType(FilledButton));
-    await tester.pumpAndSettle();
+    await _tap(tester, find.text(BankAccountStrings.emailConfirm));
+    expect(_canSubmit(tester), isFalse);
+    await _tap(tester, _candidate);
+    expect(_canSubmit(tester), isFalse);
+    await _tap(tester, _attestation);
+    expect(_canSubmit(tester), isTrue);
+    await _tap(tester, _submit);
     expect(confirmed, 17);
     expect(find.text(BankAccountStrings.emailOutcomeConfirmed), findsOneWidget);
     expect(find.text(BankAccountStrings.emailQueueEmpty), findsOneWidget);
@@ -213,19 +225,7 @@ void main() {
   testWidgets('readonly email queue has no confirmation action', (
     tester,
   ) async {
-    await _pump(
-      tester,
-      BankSyncEmailQueue(
-        loadPage: (_) async => {
-          'items': [_observation],
-          'next_cursor': null,
-        },
-        confirm: (_, _, {bool notDuplicate = false}) async {
-          fail('readonly confirmation');
-        },
-        readOnly: true,
-      ),
-    );
+    await _pump(tester, _queue(readOnly: true));
     expect(find.textContaining('Jane Smith'), findsOneWidget);
     expect(find.text(BankAccountStrings.emailConfirm), findsNothing);
   });
@@ -236,17 +236,8 @@ void main() {
     String? searched;
     await _pump(
       tester,
-      BankSyncEmailQueue(
-        loadPage: (_) async => {
-          'items': [_observation],
-          'next_cursor': null,
-        },
-        readOnly: false,
-        confirm: (_, _, {bool notDuplicate = false}) async => {
-          'action': 'confirmed',
-          'transaction_paired': true,
-        },
-        lookup: (facts, query) async {
+      _queue(
+        lookup: (_, query) async {
           searched = query;
           return [
             {
@@ -263,11 +254,9 @@ void main() {
         },
       ),
     );
-    await tester.tap(find.text(BankAccountStrings.emailConfirm));
-    await tester.pumpAndSettle();
+    await _tap(tester, find.text(BankAccountStrings.emailConfirm));
     await tester.enterText(find.byType(TextField), 'RF18539007547034');
-    await tester.tap(find.text(BankAccountStrings.emailLookup));
-    await tester.pumpAndSettle();
+    await _tap(tester, find.text(BankAccountStrings.emailLookup));
     expect(searched, 'RF18539007547034');
     expect(find.textContaining('TICKETS73'), findsOneWidget);
     expect(find.textContaining('alice@example.invalid'), findsOneWidget);
@@ -280,72 +269,55 @@ void main() {
     String? reason;
     await _pump(
       tester,
-      BankSyncEmailQueue(
-        loadPage: (_) async => {
-          'items': reason == null ? [_observation] : [],
-          'next_cursor': null,
-        },
-        readOnly: false,
-        confirm: (_, _, {bool notDuplicate = false}) async => {
-          'action': 'confirmed',
-          'transaction_paired': true,
-        },
-        dismiss: (row, value) async => reason = value,
+      _queue(
+        loadPage: (_) async => _page(reason == null ? [_observation] : []),
+        dismiss: (_, value) async => reason = value,
       ),
     );
-    await tester.tap(find.text(BankAccountStrings.emailDismiss));
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-      isNull,
-    );
+    await _tap(tester, find.text(BankAccountStrings.emailDismiss));
+    expect(_canSubmit(tester), isFalse);
     await tester.enterText(
       find.byType(TextField),
       'No matching receipt in internet banking',
     );
     await tester.pump();
-    await tester.tap(find.byType(FilledButton));
-    await tester.pumpAndSettle();
+    await _tap(tester, _submit);
     expect(reason, 'No matching receipt in internet banking');
     expect(find.text(BankAccountStrings.emailQueueEmpty), findsOneWidget);
   });
 
   testWidgets('email queue load more uses the returned cursor', (tester) async {
     Map<String, dynamic>? requested;
-    final cursor = <String, dynamic>{
+    var loads = 0;
+    final cursor = {
       'received_at': '2026-11-22T00:00:00Z',
       'delivery_id': 'delivery',
     };
     await _pump(
       tester,
-      BankSyncEmailQueue(
-        readOnly: false,
-        confirm: (_, _, {bool notDuplicate = false}) async => {
-          'action': 'confirmed',
-          'transaction_paired': true,
-        },
+      _queue(
+        compact: true,
         loadPage: (after) async {
+          loads++;
           requested = after;
-          return {
-            'items': [
-              after == null
-                  ? _observation
-                  : {
-                      ..._observation,
-                      'delivery_id': 'second',
-                      'facts': {
-                        ...(_observation['facts'] as Map),
-                        'sender_name': 'Second sender',
-                      },
+          return after == null
+              ? _page([_observation], cursor)
+              : _page([
+                  {
+                    ..._observation,
+                    'delivery_id': 'second',
+                    'facts': {
+                      ...(_observation['facts'] as Map),
+                      'sender_name': 'Second sender',
                     },
-            ],
-            'next_cursor': after == null ? cursor : null,
-          };
+                  },
+                ]);
         },
       ),
     );
-    await tester.tap(find.text(BankAccountStrings.emailLoadMore));
-    await tester.pumpAndSettle();
+    await _tap(tester, find.byType(ExpansionTile));
+    expect(loads, 1);
+    await _tap(tester, find.text(BankAccountStrings.emailLoadMore));
     expect(requested, cursor);
     expect(find.textContaining('Second sender'), findsOneWidget);
     expect(find.text(BankAccountStrings.emailLoadMore), findsNothing);
@@ -356,51 +328,43 @@ void main() {
     (tester) async {
       final calls = <bool>[];
       var paired = false;
-      final duplicateRow = <String, dynamic>{
-        'transaction_id': 91,
-        'ingest_source': 'banksync_email_confirmed',
-        'transaction_paired': true,
-        'order_symbol': 'PAID91',
-        'facts': {
-          'amount_cents': 10000,
-          'currency': 'CZK',
-          'date': '2026-11-22T12:00:00Z',
-          'raw_vs': '1007',
-        },
-      };
       await _pump(
         tester,
-        BankSyncEmailQueue(
-          loadPage: (_) async => {
-            'items': paired ? [] : [_observation],
-            'next_cursor': null,
-          },
-          readOnly: false,
-          confirm: (_, _, {bool notDuplicate = false}) async {
+        _queue(
+          loadPage: (_) async => _page(paired ? [] : [_observation]),
+          confirm: (row, _, {bool notDuplicate = false}) async {
             calls.add(notDuplicate);
-            if (!notDuplicate) {
-              return {
-                'action': 'possible_duplicate',
-                'transaction_paired': false,
-                'possible_duplicates': [duplicateRow],
-              };
+            if (notDuplicate) {
+              expect(row['duplicate_review_token'], 'review-token');
+              paired = true;
+              return _confirmed;
             }
-            paired = true;
-            return {'action': 'confirmed', 'transaction_paired': true};
+            return {
+              'action': 'possible_duplicate',
+              'transaction_paired': false,
+              'duplicate_review_token': 'review-token',
+              'possible_duplicates': [
+                {
+                  'transaction_id': 91,
+                  'ingest_source': 'banksync_email_confirmed',
+                  'transaction_paired': true,
+                  'order_symbol': 'PAID91',
+                  'facts': {
+                    'amount_cents': 10000,
+                    'currency': 'CZK',
+                    'date': '2026-11-22T12:00:00Z',
+                    'raw_vs': '1007',
+                  },
+                },
+              ],
+            };
           },
         ),
       );
-      await tester.tap(find.text(BankAccountStrings.emailConfirm));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(RadioListTile<int>));
-      await tester.tap(
-        find.byKey(const ValueKey('email-attestation-checkbox')),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(FilledButton));
-      await tester.pumpAndSettle();
-
-      // Dialog stays open, never shows success, displays the related tx and new checkbox.
+      await _tap(tester, find.text(BankAccountStrings.emailConfirm));
+      await _tap(tester, _candidate);
+      await _tap(tester, _attestation);
+      await _tap(tester, _submit);
       expect(calls, [false]);
       expect(find.text(BankAccountStrings.emailOutcomeConfirmed), findsNothing);
       expect(
@@ -408,25 +372,11 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('PAID91'), findsOneWidget);
-      expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNull,
-      );
-
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('email-not-duplicate-checkbox')),
-      );
-      await tester.tap(
-        find.byKey(const ValueKey('email-not-duplicate-checkbox')),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNotNull,
-      );
-      await tester.tap(find.byType(FilledButton));
-      await tester.pumpAndSettle();
-
+      expect(_canSubmit(tester), isFalse);
+      await tester.ensureVisible(_separate);
+      await _tap(tester, _separate);
+      expect(_canSubmit(tester), isTrue);
+      await _tap(tester, _submit);
       expect(calls, [false, true]);
       expect(
         find.text(BankAccountStrings.emailOutcomeConfirmed),
@@ -439,26 +389,7 @@ void main() {
   testWidgets(
     'degraded email connection preserves status beside confirmation notice',
     (tester) async {
-      final controller = TextEditingController();
-      addTearDown(controller.dispose);
-      await _pump(
-        tester,
-        BankAccountConnectionTab(
-          account: BankAccountModel.fromJson({
-            'id': 1,
-            'bank_sync': {'mode': 'email', 'state': 'degraded'},
-          }),
-          isReadOnly: true,
-          isFio: false,
-          isSaving: false,
-          pairingCode: null,
-          onRegenerateToken: () {},
-          tokenController: controller,
-          expiryDate: null,
-          onExpiryDateChanged: (_) {},
-          onSaveToken: () {},
-        ),
-      );
+      await _connection(tester, 'degraded');
       expect(
         find.text(BankAccountStrings.connectionStatus('degraded')),
         findsOneWidget,

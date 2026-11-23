@@ -25,9 +25,9 @@ class BankSyncEmailQueue extends StatefulWidget {
     required this.readOnly,
     this.lookup,
     this.dismiss,
-    this.onEmpty,
+    this.compact = false,
   });
-  final VoidCallback? onEmpty;
+  final bool compact;
   final ConfirmBankEmail confirm;
   final bool readOnly;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>? cursor)
@@ -46,9 +46,8 @@ class BankSyncEmailQueue extends StatefulWidget {
 
 class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
   List<Map<String, dynamic>>? _rows;
-  bool _loading = false;
+  bool _loading = true;
   String? _feedback;
-  bool _feedbackIsNotice = false;
 
   Map<String, dynamic>? _cursor;
 
@@ -61,9 +60,7 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
     if (!mounted) return;
     setState(() {
       if (page != null) {
-        final rows = (page['items'] as List)
-            .map((row) => Map<String, dynamic>.from(row as Map))
-            .toList();
+        final rows = _mapList(page['items']);
         _rows = more ? [...?_rows, ...rows] : rows;
         _cursor = page['next_cursor'] == null
             ? null
@@ -71,22 +68,38 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
       }
       _loading = false;
     });
-    if (page != null && _rows?.isEmpty == true) widget.onEmpty?.call();
   }
 
-  Future<void> _handleConfirmOutcome(Map<String, dynamic> outcome) async {
-    final action = outcome['action']?.toString();
-    final paired = outcome['transaction_paired'] == true;
+  Future<void> _confirm(Map<String, dynamic> row) async {
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _BankEmailConfirmationDialog(
+        observation: row,
+        confirm: widget.confirm,
+        lookup: widget.lookup,
+      ),
+    );
+    if (!mounted || result == null) return;
     setState(() {
-      if (action == 'confirmed' && paired) {
-        _feedback = BankAccountStrings.emailOutcomeConfirmed;
-        _feedbackIsNotice = false;
-      } else {
-        _feedback = BankAccountStrings.emailConflict;
-        _feedbackIsNotice = true;
-      }
+      _feedback =
+          result['action'] == 'confirmed' &&
+              result['transaction_paired'] == true
+          ? BankAccountStrings.emailOutcomeConfirmed
+          : BankAccountStrings.emailConflict;
     });
     await _load();
+  }
+
+  Future<void> _dismiss(Map<String, dynamic> row) async {
+    final dismissed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _BankEmailDismissDialog(
+        dismiss: (reason) => widget.dismiss!(row, reason),
+      ),
+    );
+    if (mounted && dismissed == true) await _load();
   }
 
   @override
@@ -97,110 +110,95 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
+  Widget _observationCard(Map<String, dynamic> row) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(BankAccountStrings.emailQueue)),
-          IconButton(
-            onPressed: _loading ? null : () => _load(),
-            tooltip: CommonStrings.refresh,
-            icon: const Icon(Icons.refresh),
+          BankEmailFacts(facts: Map<String, dynamic>.from(row['facts'] as Map)),
+          BankEmailPossibleDuplicates(
+            duplicates: _mapList(row['possible_duplicates']),
           ),
+          if (!widget.readOnly)
+            TextButton(
+              onPressed: () => _confirm(row),
+              child: Text(BankAccountStrings.emailConfirm),
+            ),
+          if (!widget.readOnly && widget.dismiss != null)
+            TextButton(
+              onPressed: () => _dismiss(row),
+              child: Text(BankAccountStrings.emailDismiss),
+            ),
         ],
       ),
-      if (_loading) const LinearProgressIndicator(),
-      if (_feedback != null)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            _feedback!,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.compact &&
+        (_rows?.isEmpty == true || (_rows == null && _loading))) {
+      return const SizedBox.shrink();
+    }
+    if (_rows == null && !_loading) {
+      return TextButton(onPressed: _load, child: Text(CommonStrings.retry));
+    }
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(child: Text(BankAccountStrings.emailQueue)),
+            IconButton(
+              onPressed: _loading ? null : _load,
+              tooltip: CommonStrings.refresh,
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
+        ),
+        if (_loading) const LinearProgressIndicator(),
+        if (_feedback case final feedback?)
+          Text(
+            feedback,
             style: TextStyle(
-              color: _feedbackIsNotice
+              color: feedback == BankAccountStrings.emailConflict
                   ? Theme.of(context).colorScheme.error
                   : Theme.of(context).colorScheme.primary,
             ),
           ),
-        ),
-      if (_rows?.isEmpty == true) Text(BankAccountStrings.emailQueueEmpty),
-      for (final row in _rows ?? <Map<String, dynamic>>[])
-        Builder(
-          builder: (context) {
-            final possibleDuplicates = _mapList(row['possible_duplicates']);
-            return Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    BankEmailFacts(
-                      facts: Map<String, dynamic>.from(row['facts'] as Map),
-                    ),
-                    if (possibleDuplicates.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      BankEmailPossibleDuplicates(
-                        duplicates: possibleDuplicates,
-                      ),
-                    ],
-                    if (row['confirmable'] == false)
-                      Text(BankAccountStrings.emailConflict),
-                    if (!widget.readOnly && row['confirmable'] != false)
-                      TextButton(
-                        onPressed: () async {
-                          final outcome =
-                              await showDialog<Map<String, dynamic>>(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (_) => BankEmailConfirmationDialog(
-                                  observation: row,
-                                  confirm: widget.confirm,
-                                  lookup: widget.lookup,
-                                ),
-                              );
-                          if (outcome != null && mounted) {
-                            await _handleConfirmOutcome(outcome);
-                          }
-                        },
-                        child: Text(BankAccountStrings.emailConfirm),
-                      ),
-                    if (!widget.readOnly && widget.dismiss != null)
-                      TextButton(
-                        onPressed: () async {
-                          final done = await showDialog<bool>(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (context) => BankEmailDismissDialog(
-                              observation: row,
-                              dismiss: widget.dismiss!,
-                            ),
-                          );
-                          if (done == true && mounted) await _load();
-                        },
-                        child: Text(BankAccountStrings.emailDismiss),
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      if (_cursor != null)
-        TextButton(
-          onPressed: _loading ? null : () => _load(more: true),
-          child: Text(BankAccountStrings.emailLoadMore),
-        ),
-    ],
-  );
+        if (_rows?.isEmpty == true) Text(BankAccountStrings.emailQueueEmpty),
+        for (final row in _rows ?? []) _observationCard(row),
+        if (_cursor != null)
+          TextButton(
+            onPressed: _loading ? null : () => _load(more: true),
+            child: Text(BankAccountStrings.emailLoadMore),
+          ),
+      ],
+    );
+    return widget.compact
+        ? ExpansionTile(
+            key: const ValueKey('bank-pending-email-queue'),
+            tilePadding: EdgeInsets.zero,
+            title: Text(BankAccountStrings.emailPendingQueueExpand),
+            children: [content],
+          )
+        : content;
+  }
 }
 
 class BankEmailPossibleDuplicates extends StatelessWidget {
-  const BankEmailPossibleDuplicates({super.key, required this.duplicates});
+  const BankEmailPossibleDuplicates({
+    super.key,
+    required this.duplicates,
+    this.onMatch,
+  });
+  final void Function(int transactionId)? onMatch;
   final List<Map<String, dynamic>> duplicates;
 
   @override
   Widget build(BuildContext context) {
+    if (duplicates.isEmpty) return const SizedBox.shrink();
     final colors = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
@@ -218,7 +216,18 @@ class BankEmailPossibleDuplicates extends StatelessWidget {
             style: TextStyle(color: colors.error, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
-          for (final item in duplicates) _buildDuplicateLine(context, item),
+          for (final item in duplicates) ...[
+            _buildDuplicateLine(context, item),
+            if (onMatch != null && item['transaction_id'] is int)
+              TextButton(
+                onPressed: () => onMatch!(item['transaction_id'] as int),
+                child: Text(
+                  item['transaction_paired'] == true
+                      ? BankAccountStrings.apiDuplicateSame
+                      : BankAccountStrings.apiDuplicateSameAndPair,
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -297,45 +306,40 @@ class BankEmailFacts extends StatelessWidget {
   }
 }
 
-class BankEmailConfirmationDialog extends StatefulWidget {
-  const BankEmailConfirmationDialog({
-    super.key,
+class _BankEmailConfirmationDialog extends StatefulWidget {
+  const _BankEmailConfirmationDialog({
     required this.observation,
     required this.confirm,
     this.lookup,
   });
+
   final Map<String, dynamic> observation;
   final ConfirmBankEmail confirm;
   final Future<List<Map<String, dynamic>>> Function(
-    Map<String, dynamic> facts,
-    String query,
+    Map<String, dynamic>,
+    String,
   )?
   lookup;
+
   @override
-  State<BankEmailConfirmationDialog> createState() =>
-      _BankEmailConfirmationDialogState();
+  State<_BankEmailConfirmationDialog> createState() => _ConfirmationState();
 }
 
-class _BankEmailConfirmationDialogState
-    extends State<BankEmailConfirmationDialog> {
+enum _ConfirmationTask { search, save }
+
+class _ConfirmationState extends State<_BankEmailConfirmationDialog> {
+  final _query = TextEditingController();
+  late final _facts = Map<String, dynamic>.from(
+    widget.observation['facts'] as Map,
+  );
+  late var _review = widget.observation;
+  late var _candidates = _mapList(widget.observation['candidates']);
+  _ConfirmationTask? _task;
   int? _selected;
   bool _checked = false;
   bool _notDuplicate = false;
-  bool _saving = false;
-  bool _searching = false;
-  final _query = TextEditingController();
-  List<Map>? _results;
-  late List<Map<String, dynamic>> _possibleDuplicates;
-  String? _duplicateReviewToken;
-  String? _outcomeMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _possibleDuplicates = _mapList(widget.observation['possible_duplicates']);
-    _duplicateReviewToken =
-        widget.observation['duplicate_review_token'] as String?;
-  }
+  bool get _busy => _task != null;
+  bool get _saving => _task == _ConfirmationTask.save;
 
   @override
   void dispose() {
@@ -344,35 +348,79 @@ class _BankEmailConfirmationDialogState
   }
 
   Future<void> _search() async {
-    setState(() => _searching = true);
+    final query = _query.text.trim();
+    if (_busy || query.isEmpty) return;
+    setState(() => _task = _ConfirmationTask.search);
     final results = await ExceptionHandler.guard(
       context,
-      futureFunction: () => widget.lookup!(
-        Map<String, dynamic>.from(widget.observation['facts'] as Map),
-        _query.text.trim(),
+      futureFunction: () => widget.lookup!(_facts, query),
+    );
+    if (!mounted) return;
+    setState(() {
+      if (results != null) _candidates = results;
+      _selected = null;
+      _task = null;
+    });
+  }
+
+  Future<void> _submit() async {
+    setState(() => _task = _ConfirmationTask.save);
+    final result = await ExceptionHandler.guard(
+      context,
+      futureFunction: () => widget.confirm(
+        {
+          ...widget.observation,
+          'duplicate_review_token': _review['duplicate_review_token'],
+        },
+        _selected!,
+        notDuplicate: _notDuplicate,
       ),
     );
     if (!mounted) return;
     setState(() {
-      _results = results;
-      _selected = null;
-      _searching = false;
+      _task = null;
+      if (result?['action'] == 'possible_duplicate') {
+        _review = result!;
+        _notDuplicate = false;
+      }
     });
+    if (result != null && result['action'] != 'possible_duplicate') {
+      Navigator.of(context).pop(result);
+    }
+  }
+
+  Widget _candidate(Map<String, dynamic> entry) {
+    final order = entry['order_symbol'] ?? entry['order_number'] ?? '—';
+    final state = BankAccountStrings.emailOrderState(entry['state'] as String?);
+    final balance = Utilities.formatPrice(
+      context,
+      (entry['remaining_due'] as num).toDouble(),
+      currencyCode: _facts['currency'] as String,
+      decimalDigits: 2,
+    );
+    final match = entry['amount_matches'] == true
+        ? BankAccountStrings.emailAmountMatches
+        : BankAccountStrings.emailAmountDiffers;
+    return RadioListTile<int>(
+      value: (entry['payment_info_id'] as num).toInt(),
+      enabled: !_busy,
+      title: Text('${BankAccountStrings.emailOrder} $order · $state'),
+      subtitle: Text(
+        '${entry['customer_name'] ?? ''} ${entry['customer_email'] ?? ''}\n$balance · $match',
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final candidates =
-        _results ?? (widget.observation['candidates'] as List).cast<Map>();
-    final needsNotDuplicate = _possibleDuplicates.isNotEmpty;
+    final duplicates = _mapList(_review['possible_duplicates']);
     final canSubmit =
-        !_saving &&
-        !_searching &&
+        !_busy &&
         _checked &&
         _selected != null &&
-        (!needsNotDuplicate || _notDuplicate);
+        (duplicates.isEmpty || _notDuplicate);
     void close() {
-      if (!_saving) Navigator.of(context).pop(null);
+      if (!_saving) Navigator.of(context).pop();
     }
 
     return PopScope(
@@ -385,94 +433,58 @@ class _BankEmailConfirmationDialogState
           width: 480,
           child: SingleChildScrollView(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                BankEmailFacts(
-                  facts: Map<String, dynamic>.from(
-                    widget.observation['facts'] as Map,
-                  ),
-                ),
-                if (_outcomeMessage != null) ...[
-                  const SizedBox(height: 8),
+                BankEmailFacts(facts: _facts),
+                if (_review['action'] == 'possible_duplicate')
                   Text(
-                    _outcomeMessage!,
+                    BankAccountStrings.emailOutcomePossibleDuplicate,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                ],
-                if (_possibleDuplicates.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  BankEmailPossibleDuplicates(duplicates: _possibleDuplicates),
-                ],
+                BankEmailPossibleDuplicates(duplicates: duplicates),
                 const SizedBox(height: 8),
                 Text(BankAccountStrings.emailLookupPayableOnly),
                 if (widget.lookup != null) ...[
                   TextField(
                     controller: _query,
-                    enabled: !_saving && !_searching,
+                    enabled: !_busy,
                     decoration: InputDecoration(
                       labelText: BankAccountStrings.emailLookupHint,
                     ),
-                    onSubmitted: (_) {
-                      if (!_saving &&
-                          !_searching &&
-                          _query.text.trim().isNotEmpty) {
-                        _search();
-                      }
-                    },
+                    onSubmitted: (_) => _search(),
                   ),
                   TextButton(
-                    onPressed: _saving || _searching
-                        ? null
-                        : () {
-                            if (_query.text.trim().isNotEmpty) _search();
-                          },
+                    onPressed: _busy ? null : _search,
                     child: Text(BankAccountStrings.emailLookup),
                   ),
                 ],
-                if (_searching) const LinearProgressIndicator(),
-                if (candidates.isEmpty)
-                  Text(BankAccountStrings.emailNoCandidates),
-                if (candidates.isNotEmpty)
+                if (_task == _ConfirmationTask.search)
+                  const LinearProgressIndicator(),
+                if (_candidates.isEmpty)
+                  Text(BankAccountStrings.emailNoCandidates)
+                else
                   RadioGroup<int>(
                     groupValue: _selected,
-                    onChanged: (value) {
-                      if (_saving || _searching) return;
-                      setState(() => _selected = value);
-                    },
+                    onChanged: (value) => setState(() => _selected = value),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (final candidate in candidates)
-                          RadioListTile<int>(
-                            value: (candidate['payment_info_id'] as num)
-                                .toInt(),
-                            enabled: !_saving && !_searching,
-                            title: Text(
-                              '${BankAccountStrings.emailOrder} ${candidate['order_symbol'] ?? candidate['order_number'] ?? '—'} · ${BankAccountStrings.emailOrderState(candidate['state'] as String?)}',
-                            ),
-                            subtitle: Text(
-                              '${candidate['customer_name'] ?? ''} ${candidate['customer_email'] ?? ''}\n${Utilities.formatPrice(context, (candidate['remaining_due'] as num).toDouble(), currencyCode: (widget.observation['facts'] as Map)['currency'] as String, decimalDigits: 2)} · ${candidate['amount_matches'] == true ? BankAccountStrings.emailAmountMatches : BankAccountStrings.emailAmountDiffers}',
-                            ),
-                          ),
-                      ],
+                      children: _candidates.map(_candidate).toList(),
                     ),
                   ),
                 CheckboxListTile(
                   key: const ValueKey('email-attestation-checkbox'),
                   value: _checked,
-                  onChanged: _saving
+                  onChanged: _busy
                       ? null
                       : (v) => setState(() => _checked = v == true),
                   title: Text(BankAccountStrings.emailAttestation),
                 ),
-                if (needsNotDuplicate)
+                if (duplicates.isNotEmpty)
                   CheckboxListTile(
                     key: const ValueKey('email-not-duplicate-checkbox'),
                     value: _notDuplicate,
-                    onChanged: _saving
+                    onChanged: _busy
                         ? null
                         : (v) => setState(() => _notDuplicate = v == true),
                     title: Text(BankAccountStrings.emailNotDuplicate),
@@ -487,46 +499,7 @@ class _BankEmailConfirmationDialogState
             child: Text(CommonStrings.cancel),
           ),
           FilledButton(
-            onPressed: !canSubmit
-                ? null
-                : () async {
-                    setState(() {
-                      _saving = true;
-                      _outcomeMessage = null;
-                    });
-                    final result =
-                        await ExceptionHandler.guard<Map<String, dynamic>>(
-                          context,
-                          futureFunction: () => widget.confirm(
-                            {
-                              ...widget.observation,
-                              'duplicate_review_token': _duplicateReviewToken,
-                            },
-                            _selected!,
-                            notDuplicate: _notDuplicate,
-                          ),
-                        );
-                    if (!context.mounted) return;
-                    if (result == null) {
-                      setState(() => _saving = false);
-                      return;
-                    }
-                    if (result['action']?.toString() == 'possible_duplicate') {
-                      final returned = _mapList(result['possible_duplicates']);
-                      setState(() {
-                        _saving = false;
-                        _possibleDuplicates = returned;
-                        _duplicateReviewToken =
-                            result['duplicate_review_token'] as String?;
-                        _notDuplicate = false;
-                        _outcomeMessage =
-                            BankAccountStrings.emailOutcomePossibleDuplicate;
-                      });
-                      return;
-                    }
-                    setState(() => _saving = false);
-                    Navigator.of(context).pop(result);
-                  },
+            onPressed: canSubmit ? _submit : null,
             child: Text(BankAccountStrings.emailConfirm),
           ),
         ],
@@ -535,32 +508,36 @@ class _BankEmailConfirmationDialogState
   }
 }
 
-class BankEmailDismissDialog extends StatefulWidget {
-  const BankEmailDismissDialog({
-    super.key,
-    required this.observation,
-    required this.dismiss,
-  });
-  final Map<String, dynamic> observation;
-  final Future<void> Function(Map<String, dynamic> observation, String reason)
-  dismiss;
+class _BankEmailDismissDialog extends StatefulWidget {
+  const _BankEmailDismissDialog({required this.dismiss});
+  final Future<void> Function(String reason) dismiss;
+
   @override
-  State<BankEmailDismissDialog> createState() => _BankEmailDismissDialogState();
+  State<_BankEmailDismissDialog> createState() => _DismissState();
 }
 
-class _BankEmailDismissDialogState extends State<BankEmailDismissDialog> {
-  final _reason = TextEditingController();
+class _DismissState extends State<_BankEmailDismissDialog> {
+  String _reason = '';
   bool _saving = false;
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    final done = await ExceptionHandler.guard(
+      context,
+      futureFunction: () async {
+        await widget.dismiss(_reason.trim());
+        return true;
+      },
+    );
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (done == true) Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     void close() {
-      if (!_saving) Navigator.of(context).pop(false);
+      if (!_saving) Navigator.of(context).pop();
     }
 
     return PopScope(
@@ -570,10 +547,9 @@ class _BankEmailDismissDialogState extends State<BankEmailDismissDialog> {
         dismissible: !_saving,
         onClose: close,
         content: TextField(
-          controller: _reason,
           maxLength: 240,
           enabled: !_saving,
-          onChanged: (_) => setState(() {}),
+          onChanged: (value) => setState(() => _reason = value),
           decoration: InputDecoration(
             labelText: BankAccountStrings.emailDismissReason,
           ),
@@ -584,24 +560,7 @@ class _BankEmailDismissDialogState extends State<BankEmailDismissDialog> {
             child: Text(CommonStrings.cancel),
           ),
           FilledButton(
-            onPressed: _saving || _reason.text.trim().isEmpty
-                ? null
-                : () async {
-                    setState(() => _saving = true);
-                    final done = await ExceptionHandler.guard(
-                      context,
-                      futureFunction: () async {
-                        await widget.dismiss(
-                          widget.observation,
-                          _reason.text.trim(),
-                        );
-                        return true;
-                      },
-                    );
-                    if (!context.mounted) return;
-                    setState(() => _saving = false);
-                    if (done == true) Navigator.of(context).pop(true);
-                  },
+            onPressed: _saving || _reason.trim().isEmpty ? null : _save,
             child: Text(BankAccountStrings.emailDismiss),
           ),
         ],

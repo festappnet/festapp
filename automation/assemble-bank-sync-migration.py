@@ -7,12 +7,13 @@ parser.add_argument('--output',required=True,help='New migration path; existing 
 args=parser.parse_args()
 output=Path(args.output)
 if migration_inputs.exists(output): raise SystemExit('Refusing to overwrite an existing migration')
-files=['eshop_bank_sync/schema.sql','eshop_bank_sync/bank_sync_authority.sql','eshop_bank_sync/bank_sync_provider.sql','eshop_bank_sync/bank_sync_manage.sql','eshop_transactions/match_bank_transaction.sql','eshop_orders/recalculate_order_payment_status.sql','eshop_transactions/apply_transaction_pairing.sql','eshop_bank_sync/bank_sync_existing_facts_match.sql','eshop_bank_sync/bank_sync_email_confirmation.sql','eshop_bank_sync/bank_sync_api_review.sql','eshop_bank_sync/ingest_bank_sync_transaction.sql','eshop_bank_accounts/update_bank_account.sql','eshop_bank_accounts/get_my_admin_bank_accounts.sql','eshop_bank_accounts/get_bank_accounts_for_unit_management.sql']
+files=['eshop_bank_sync/schema.sql','eshop_bank_sync/bank_sync_review_schema.sql','eshop_bank_sync/bank_sync_authority.sql','eshop_bank_sync/bank_sync_provider.sql','eshop_bank_sync/bank_sync_manage.sql','eshop_transactions/match_bank_transaction.sql','eshop_orders/recalculate_order_payment_status.sql','eshop_transactions/apply_transaction_pairing.sql','eshop_bank_sync/bank_sync_existing_facts_match.sql','eshop_bank_sync/bank_sync_email_confirmation.sql','eshop_bank_sync/bank_sync_api_review.sql','eshop_bank_sync/ingest_bank_sync_transaction.sql','eshop_bank_accounts/update_bank_account.sql','eshop_bank_accounts/get_my_admin_bank_accounts.sql','eshop_bank_accounts/get_bank_accounts_for_unit_management.sql']
 migration_inputs.write_text(output, '-- Canonical sources: database/functions/eshop_bank_sync.\n'+''.join('\n-- SOURCE: '+f+'\n'+(r/'database/functions'/f).read_text()+'\n' for f in files))
 p=r/'database/tables/tables.sql';s=migration_inputs.read_text(p)
 start='\n-- BankSync canonical import authority and audit.\n'
 end='-- End BankSync canonical import authority and audit.\n'
-block=start+migration_inputs.read_text(r/'database/functions/eshop_bank_sync/schema.sql')+end
+schema_dir=r/'database/functions/eshop_bank_sync'
+block=start+''.join(migration_inputs.read_text(schema_dir/f) for f in ('schema.sql','bank_sync_review_schema.sql'))+end
 if start in s:
     before,tail=s.split(start,1)
     if end not in tail: raise ValueError('BankSync schema block end marker is missing')

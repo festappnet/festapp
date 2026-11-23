@@ -1103,29 +1103,11 @@ Explicit operator-owned application origins remain separately configured.
 
 ### Administrator-confirmed bank email payments
 
-Quarantined email notifications do not qualify as received payments. After an
-account administrator verifies internet banking and confirms and pairs a positive
-notification, `banksync_email_confirmed` contributes bank receipts through the
-existing financial totals. `form_paid_conversion_eligible_internal` still requires
-full net bank receipts, the order's paid/sent state and live measurement policy;
-cash and manual settlements remain excluded. Confirmation is not visitor consent
-and does not bypass the saved purchase cohort, connector, consent or age checks.
+An email counts toward paid conversion after an administrator confirms and pairs
+the receipt. The existing eligibility check still requires full net bank receipts,
+a paid or sent order, and live measurement policy. Purchase cohort, consent, age
+and connector checks still apply.
 
-The Meta worker rechecks live eligibility in `prepare_meta_purchase_delivery`.
-Unpairing before preparation makes the order ineligible unless other eligible
-receipts still fully cover it. Preparation is the existing last database check
-before the external request; unpairing after preparation can race an in-flight
-send. After a successful dispatch, the existing sent receipt remains; no event
-retraction or refund event is introduced. Browser facts likewise retain their
-existing immutable event identity.
-
-Each confirmed source observation contributes at most one email receipt. A
-later matching API movement retains its own verified bank identity and ledger
-row. If it resembles an email receipt, the payment overview requires an audited
-review before attachment. A decision that both records describe the same
-movement retains the existing credit or applies the original receipt once
-if it is still unassigned. A decision that they describe separate payments
-uses the standard pairing operation. Unpaired API movements can be reviewed
-again, with every authorized decision retained in the audit history. The current
-set of possible matches is bound to the administrator's decision. Confirming the remaining
-balance of a deposit order uses the same rules.
+The Meta worker rechecks eligibility in `prepare_meta_purchase_delivery`.
+Unpairing can make the order ineligible up to that check. A send already in
+flight can finish, and successful sends retain their existing event identity.

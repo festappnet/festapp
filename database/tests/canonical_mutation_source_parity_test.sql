@@ -22,7 +22,7 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.accept_waitlist_offer_internal(jsonb,uuid,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='ec158e951793281d890d623be93489e7'),'current SQL source parity: public.accept_waitlist_offer_internal(jsonb,uuid,uuid)');
 -- supabase/migrations/20261111010000_access_membership.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.access_invitation_valid_internal_v1(public.access_invitations)') AND md5(btrim(prosrc,E' \n\r\t'))='1e1f82e98b0b46d9dc0092b72eda250d'),'current SQL source parity: public.access_invitation_valid_internal_v1(public.access_invitations)');
--- supabase/migrations/20261122180000_bank_email_confirmation.sql
+-- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.activate_bank_sync_connection(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='9aa03054b2f7c30ac94004353f9cf79c'),'current SQL source parity: public.activate_bank_sync_connection(bigint,text)');
 -- supabase/migrations/20261115130000_customer_order_policy_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.activate_notification_center_emails(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='36b0b01d467ecdd2aa54d671b3aa62ed'),'current SQL source parity: public.activate_notification_center_emails(bigint)');
@@ -176,8 +176,6 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_possible_duplicates_view_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='c292b48ef565dfd2bc58ed5ca3fe0767'),'current SQL source parity: public.bank_sync_email_possible_duplicates_view_internal(bigint[])');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_source_row_internal(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='a3011b4a2c3cf618789c548a62c88dfd'),'current SQL source parity: public.bank_sync_email_source_row_internal(bigint,text)');
--- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_existing_facts_match(eshop.transactions,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='bc106e56ffc9db4f1bbaccb490c39372'),'current SQL source parity: public.bank_sync_existing_facts_match(eshop.transactions,jsonb)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='1a59dc721ceb9fd46b49991f9e7318f9'),'current SQL source parity: public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
@@ -1157,7 +1155,7 @@ DO $$ BEGIN
 -- absent from the effective release
  PERFORM assert_true(to_regprocedure('public.get_bank_sync_connections_for_unit(bigint)') IS NULL,'retired SQL identity remains absent: public.get_bank_sync_connections_for_unit(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_sync_email_queue_page_v1(bigint,integer,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='07b5895cf58c83d8d4829e8fd1f7ae40'),'current SQL source parity: public.get_bank_sync_email_queue_page_v1(bigint,integer,jsonb)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_sync_email_queue_page_v1(bigint,integer,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='3fb0f09786b077bc7154fe57e75c7eed'),'current SQL source parity: public.get_bank_sync_email_queue_page_v1(bigint,integer,jsonb)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_sync_health_targets(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5d8cda9980b50d854ee33302bc311cd5'),'current SQL source parity: public.get_bank_sync_health_targets(bigint)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql

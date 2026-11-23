@@ -109,43 +109,19 @@ reference with runtime logs without logging the bank response.
 
 ## Email confirmation queue
 
-The paged queue uses `(received_at, delivery_id)` as its cursor. Administrators
-can confirm a positive email observation after checking their internet banking,
-or dismiss it with a reason. The queue remains available after switching to API
-mode and contains observations from email sources. Transport retries with a new
-delivery ID use the result of the same BankSync source observation.
+The queue remains available in email and API mode. Account administrators can
+confirm a positive notification after checking internet banking, or dismiss it
+with an audited reason. Suggestions, lookup and confirmation share the same
+account, unit, currency and outstanding-balance rules, including deposit balances.
+Confirmation rechecks account and order permissions under the payment locks.
 
-The selected account and the canonical source both require live bank management
-permissions. Confirmation and replay also require edit permission on the stored
-order and a payment on the selected account. Suggestions, lookup and confirmation
-share the same account, currency, unit link and outstanding-balance checks.
-Eligible paid or sent deposit orders can receive the balance. Confirmation
-rechecks eligibility under the existing order and payment locks.
+Redelivery of an email observation reuses its recorded result. Each API movement
+keeps its own bank ID and ledger row. Similar movements across account aliases are
+held for review using amount, currency, bank-local date, references and normalized
+payer accounts. Review binds the decision to the current candidates and limits
+details to readable accounts. A same-movement decision credits the original
+verified receipt once. A separate movement uses standard pairing. Unpaired API
+movements can be reviewed again, with each decision audited.
 
-Possible duplicates are compared across the physical account and its aliases.
-Amount, currency, bank-local day and normalized references or counter-account
-details help locate candidates for review. The comparison shares Czech
-domestic-to-IBAN normalization with payment references. Different reference
-types can describe the same receipt. Equal facts can describe distinct
-transfers. Email remains queued for a human decision. A proven API movement
-has its own ledger row and movement identity. If it resembles an already
-confirmed email, it is stored unpaired for review in the payment overview,
-with the standard `unmatched` receipt and separate inbox diagnostics.
-The ordinary payment picker requires an explicit review before attaching a
-held movement. Choosing the original verified receipt records equivalence and
-retains its credit, or pairs that receipt once if it is still unassigned.
-Choosing a separate payment attaches the API movement through standard pairing.
-The picker shows the last decision and allows an authorized administrator to
-review it again while the API movement is unpaired. Each accepted decision has
-its own audit event. Review binds the decision to the current candidates and
-preserves the original bank movement IDs.
-Administrators see candidate details only for bank accounts they may read.
-The response carries a generic hint when a related account is restricted.
-
-Repeated confirmation returns the original audit receipt with the current
-pairing status. The inbox preserves the original facts, actor, time, attestation
-and related candidate IDs internally. The existing pairing events record later
-corrections, and the existing paid transition owns ticket delivery and conversion
-eligibility. Administrators can correct verified receipts on expired orders
-and after new bank sales close. The order overview and picker share the same
-recovery candidates.
+The payment overview allows corrections to verified receipts after bank sales
+close and on expired orders. Standard pairing owns payment totals and order state.
