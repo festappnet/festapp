@@ -12,17 +12,22 @@ Future<void> prepareFormHtml(
   final owner = HtmlMediaOwner.occasion(form.definition.occasionId);
   Future<String?> prepare(String? value) async =>
       value == null ? null : await coordinator.prepare(value, owner);
-  form.definition = form.definition.copyWith(
-    header: await prepare(form.definition.header),
-  );
-  form.definition = form.definition.copyWith(
-    headerOff: await prepare(form.definition.headerOff),
-  );
-  if (form.definition.countdownTitle != null) {
+  if (form.hasHeaderEdit) {
+    form.definition = form.definition.copyWith(
+      header: await prepare(form.definition.header),
+    );
+  }
+  if (form.hasClosedHeaderEdit) {
+    form.definition = form.definition.copyWith(
+      headerOff: await prepare(form.definition.headerOff),
+    );
+  }
+  if (form.hasCountdownTitleEdit && form.definition.countdownTitle != null) {
     form.definition = form.definition.withCountdownTitle(
       await prepare(form.definition.countdownTitle),
     );
   }
+  if (!form.hasStructuralEdits) return;
   for (final field in form.relatedFields) {
     field.definition = field.definition.copyWith(
       description: await prepare(field.definition.description),

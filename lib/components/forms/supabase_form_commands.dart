@@ -135,7 +135,9 @@ class SupabaseFormCommands implements FormCommands {
       if (functionName == 'update_form_client_sync_v1' &&
           response.status == 'conflict' &&
           message == null) {
-        throw StateError('FORM_SAVE_CONFLICT');
+        throw FormSaveConflict(
+          isFormRevision: response.data['entity_type'] == null,
+        );
       }
       throw StateError(message ?? 'Form rejected');
     }

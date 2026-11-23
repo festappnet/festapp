@@ -96,7 +96,7 @@
     "confirm": "Die Adresse ist korrekt"
   },
   "FormsFeature": {
-    "saveConflict": "Das Formular wurde zwischenzeitlich geändert. Kopieren Sie Ihre ungespeicherten Änderungen, laden Sie die Seite neu und übernehmen Sie sie erneut.",
+    "saveConflict": "Das Formular wurde zwischenzeitlich geändert. Ihre Änderungen bleiben im Editor erhalten.",
     "savePaymentRequired": "Richten Sie vor Verkaufsbeginn in den Formulareinstellungen mindestens eine verfügbare Zahlungsmethode ein.",
     "selectionOptionsRequired": "Fügen Sie mindestens eine nicht leere Option hinzu oder entfernen Sie dieses Feld."
   },

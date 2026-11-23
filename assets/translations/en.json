@@ -914,7 +914,7 @@
     "defaultProductSelected": "Default option for customers. Click to clear the default.",
     "setDefaultProduct": "Click to make this product the default option for customers.",
     "selectionOptionsRequired": "Add at least one non-empty option or remove this field.",
-    "saveConflict": "The form changed while you were editing. Copy your unsaved changes, reload the page, and reapply them.",
+    "saveConflict": "The form changed while you were editing. Your edits are still in the editor.",
     "savePaymentRequired": "Set up at least one available payment method in Form Settings before opening sales.",
     "previousSaveConfirmed": "The previous save was confirmed. Reload the form before making further changes.",
     "saveRecoveryExpired": "The previous save result is no longer available. Reload the form and check the saved values."
