@@ -20,6 +20,12 @@ class BankAccountStrings {
   static String get apiDuplicateSame => 'BankAccount.apiDuplicateSame'.tr();
   static String get apiDuplicateDistinct =>
       'BankAccount.apiDuplicateDistinct'.tr();
+  static String get apiDuplicateReviewedSame =>
+      'BankAccount.apiDuplicateReviewedSame'.tr();
+  static String get apiDuplicateReviewedDistinct =>
+      'BankAccount.apiDuplicateReviewedDistinct'.tr();
+  static String get apiDuplicateSameAndPair =>
+      'BankAccount.apiDuplicateSameAndPair'.tr();
   static String get apiDuplicateReviewChanged =>
       'BankAccount.apiDuplicateReviewChanged'.tr();
   static String get apiDuplicateResolved =>

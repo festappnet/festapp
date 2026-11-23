@@ -1123,7 +1123,9 @@ Each confirmed source observation contributes at most one email receipt. A
 later matching API movement retains its own verified bank identity and ledger
 row. If it resembles an email receipt, the payment overview requires an audited
 review before attachment. A decision that both records describe the same
-movement keeps the existing credit. A decision that they describe separate
-payments uses the standard pairing operation. The current set of possible
-matches is bound to the administrator's decision. Confirming the remaining
+movement retains the existing credit or applies the original receipt once
+if it is still unassigned. A decision that they describe separate payments
+uses the standard pairing operation. Unpaired API movements can be reviewed
+again, with every authorized decision retained in the audit history. The current
+set of possible matches is bound to the administrator's decision. Confirming the remaining
 balance of a deposit order uses the same rules.

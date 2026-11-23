@@ -125,6 +125,19 @@ INSERT INTO eshop.bank_sync_review_signing_key(singleton) VALUES(true) ON CONFLI
 ALTER TABLE eshop.bank_sync_review_signing_key ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON eshop.bank_sync_review_signing_key FROM PUBLIC,anon,authenticated,service_role;
 
+CREATE TABLE IF NOT EXISTS eshop.bank_sync_api_review_events (
+ instance_id text NOT NULL,
+ consumer_app_id text NOT NULL,
+ delivery_id text NOT NULL,
+ revision integer NOT NULL CHECK(revision>0),
+ decision jsonb NOT NULL,
+ PRIMARY KEY(instance_id,consumer_app_id,delivery_id,revision),
+ FOREIGN KEY(instance_id,consumer_app_id,delivery_id)
+   REFERENCES eshop.bank_sync_inbox(instance_id,consumer_app_id,delivery_id)
+);
+ALTER TABLE eshop.bank_sync_api_review_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON eshop.bank_sync_api_review_events FROM PUBLIC,anon,authenticated,service_role;
+
 -- SOURCE: eshop_transactions/match_bank_transaction.sql
 -- One extraction owner for automatic matching, email suggestions and identity checks.
 CREATE OR REPLACE FUNCTION public.bank_transaction_signals_internal(
@@ -285,10 +298,16 @@ GRANT EXECUTE ON FUNCTION public.bank_sync_existing_facts_match(eshop.transactio
 -- SOURCE: eshop_bank_sync/bank_sync_email_confirmation.sql
 CREATE OR REPLACE FUNCTION public.bank_sync_counter_account_internal(p_account text,p_code text)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- SELECT CASE WHEN nullif(a,'') IS NULL THEN NULL
-  WHEN a LIKE '%/%' OR a ~ '^[A-Z]{2}' OR nullif(c,'') IS NULL THEN a ELSE a||'/'||c END
- FROM (SELECT upper(regexp_replace(coalesce(p_account,''),'[[:space:]]','','g')) a,
-   regexp_replace(coalesce(p_code,''),'[[:space:]]','','g') c) x;
+ WITH parts AS (
+  SELECT nullif(upper(regexp_replace(coalesce(p_account,''),'[[:space:]]','','g')),'') AS account,
+    nullif(regexp_replace(coalesce(p_code,''),'[[:space:]]','','g'),'') AS code
+ ), formatted AS (
+  SELECT CASE WHEN code IS NULL OR account LIKE '%/%' OR account ~ '^[A-Z]{2}'
+    THEN account ELSE account||'/'||code END AS account
+  FROM parts
+ )
+ SELECT CASE WHEN account IS NOT NULL THEN coalesce(public.try_payment_reference_account_internal(account),account) END
+ FROM formatted;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_counter_account_internal(text,text) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -310,7 +329,7 @@ RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
   AND upper(trim(p_tx.currency)) IS NOT DISTINCT FROM upper(trim(p_data->>'currency'))
   AND public.bank_sync_fact_dates_match_internal(p_tx,p_data,1)
   AND (EXISTS(SELECT FROM stored_signals JOIN incoming_signals USING(kind,value))
-    OR ((NOT EXISTS(SELECT FROM stored_signals) OR NOT EXISTS(SELECT FROM incoming_signals))
+    OR (NOT EXISTS(SELECT FROM stored_signals JOIN incoming_signals USING(kind))
       AND (stored=incoming OR stored IS NULL OR incoming IS NULL)))
  FROM accounts;
 $$;
@@ -364,7 +383,7 @@ REVOKE ALL ON FUNCTION public.bank_sync_email_possible_duplicates_view_internal(
 CREATE OR REPLACE FUNCTION public.bank_sync_review_token_internal(p_inbox eshop.bank_sync_inbox,p_ids bigint[])
 RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT encode(extensions.hmac(convert_to(jsonb_build_array(auth.uid(),p_inbox.connection_id,
-   p_inbox.delivery_id,p_inbox.body_sha256,p_ids,
+   p_inbox.delivery_id,p_inbox.body_sha256,p_inbox.resolution,p_ids,
    (SELECT jsonb_agg(jsonb_build_array(t.id,t.payment_info) ORDER BY t.id)
     FROM eshop.transactions t WHERE t.id=ANY(p_ids)))::text,'UTF8'),secret,'sha256'),'hex')
  FROM eshop.bank_sync_review_signing_key WHERE singleton;
@@ -739,22 +758,58 @@ RETURNS boolean LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_recovery_receipt_internal(eshop.transactions) FROM PUBLIC,anon,authenticated,service_role;
 
+-- The same candidate set serves repair availability and the actual picker.
+CREATE OR REPLACE FUNCTION public.bank_sync_pairing_candidates_internal(p_account bigint,p_recovery_only boolean)
+RETURNS TABLE(movement eshop.transactions,review eshop.bank_sync_inbox)
+LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT t,r FROM eshop.transactions t
+ LEFT JOIN LATERAL public.bank_sync_api_review_row_internal(
+   CASE WHEN t.ingest_source='banksync_api' THEN t.id END) r ON true
+ WHERE t.bank_account_id IN (
+  SELECT p_account
+  UNION SELECT c.bank_account_id FROM eshop.bank_sync_connections c
+  JOIN eshop.bank_sync_account_aliases a ON a.connection_id=c.id
+  WHERE a.bank_account_id=p_account AND public.can_manage_bank_account(c.bank_account_id)
+ )
+ AND (t.bank_account_id=p_account OR public.bank_sync_accounts_match(t.id,p_account))
+ AND (NOT p_recovery_only OR t.ingest_source='banksync_email_confirmed' OR r.delivery_id IS NOT NULL)
+ AND t.payment_info IS NULL AND t.amount>0
+ AND NOT EXISTS(SELECT FROM eshop.refund_settlements s WHERE s.transaction_id=t.id);
+$$;
+REVOKE ALL ON FUNCTION public.bank_sync_pairing_candidates_internal(bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.bank_sync_api_review_candidates_internal(p_inbox eshop.bank_sync_inbox)
+RETURNS bigint[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT coalesce(array_agg(id ORDER BY id),'{}'::bigint[]) FROM (
+  SELECT unnest(public.bank_sync_email_duplicate_candidates_internal(
+    p_inbox.connection_id,p_inbox.payload->'data',true)) AS id
+  -- The current counterpart is unavailable to other API movements. It remains
+  -- selectable when reconsidering this movement's decision.
+  UNION SELECT (p_inbox.resolution->>'existing_transaction_id')::bigint
+   WHERE p_inbox.resolution->>'action'='api_same_movement'
+ ) candidates WHERE id IS NOT NULL;
+$$;
+REVOKE ALL ON FUNCTION public.bank_sync_api_review_candidates_internal(eshop.bank_sync_inbox) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.bank_sync_api_review_view_internal(p_inbox eshop.bank_sync_inbox)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT jsonb_build_object('review_token',public.bank_sync_review_token_internal(p_inbox,candidate_ids),
+  'previous_action',p_inbox.resolution->>'action',
   'possible_duplicates',public.bank_sync_email_possible_duplicates_view_internal(candidate_ids))
- FROM (SELECT public.bank_sync_email_duplicate_candidates_internal(
-   p_inbox.connection_id,p_inbox.payload->'data',true) AS candidate_ids) c;
+ FROM (SELECT public.bank_sync_api_review_candidates_internal(p_inbox) AS candidate_ids) c;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox) FROM PUBLIC,anon,authenticated,service_role;
 
--- A null related transaction declares a distinct payment. Selecting an
--- existing verified receipt resolves this API row without issuing a credit.
+-- Review an unpaired API movement. Keep the financial credit on its verified
+-- counterpart for a same-movement decision and use the API row for a separate
+-- payment. Corrections use the same command and append to the decision history.
 CREATE OR REPLACE FUNCTION public.resolve_bank_sync_api_duplicate_v1(
  p_transaction_id bigint,p_payment_info_id bigint,p_review_token text,p_existing_transaction_id bigint DEFAULT NULL
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE v_tx eshop.transactions; v_inbox eshop.bank_sync_inbox; v_target record;
- v_ids bigint[]; v_review jsonb; v_result jsonb;
+ v_ids bigint[]; v_review jsonb; v_result jsonb; v_counterpart eshop.transactions;
+ v_paired_now boolean:=false; v_revision integer;
+ v_request_hash text:=encode(extensions.digest(p_review_token,'sha256'),'hex');
 BEGIN
  SELECT pi.bank_account,pi.currency_code,oc.id AS occasion_id,oc.organization,oc.unit INTO v_target
  FROM eshop.payment_info pi JOIN eshop.orders o ON o.payment_info=pi.id
@@ -781,36 +836,50 @@ BEGIN
  THEN RAISE EXCEPTION 'BANK_SYNC_TARGET_MISMATCH'; END IF;
  v_inbox:=public.bank_sync_api_review_row_internal(v_tx.id);
  IF v_inbox.delivery_id IS NULL THEN RAISE EXCEPTION 'BANK_SYNC_REVIEW_NOT_FOUND'; END IF;
- IF v_inbox.resolution IS NOT NULL THEN
-  IF (v_inbox.resolution->>'payment_info_id')::bigint=p_payment_info_id
-    AND (v_inbox.resolution->>'existing_transaction_id')::bigint IS NOT DISTINCT FROM p_existing_transaction_id THEN
-   RETURN jsonb_build_object('action',v_inbox.resolution->>'action');
-  END IF;
-  RAISE EXCEPTION 'BANK_SYNC_ALREADY_RESOLVED';
+ -- A transport retry reuses the recorded outcome. A deliberate correction
+ -- supplies the current review token, which includes the last decision.
+ IF v_inbox.resolution->>'review_request_sha256'=v_request_hash
+  AND v_inbox.resolution->>'actor_id'=auth.uid()::text
+  AND (v_inbox.resolution->>'payment_info_id')::bigint=p_payment_info_id
+  AND (v_inbox.resolution->>'existing_transaction_id')::bigint IS NOT DISTINCT FROM p_existing_transaction_id THEN
+  RETURN jsonb_build_object('action',v_inbox.resolution->>'action',
+    'paired_now',coalesce((v_inbox.resolution->>'paired_now')::boolean,false));
  END IF;
  IF v_tx.payment_info IS NOT NULL THEN RAISE EXCEPTION 'BANK_SYNC_ALREADY_RESOLVED'; END IF;
 
- v_ids:=public.bank_sync_email_duplicate_candidates_internal(v_inbox.connection_id,v_inbox.payload->'data',true);
+ v_ids:=public.bank_sync_api_review_candidates_internal(v_inbox);
  PERFORM 1 FROM eshop.transactions WHERE id=ANY(v_ids) ORDER BY id FOR UPDATE;
  IF p_review_token IS NULL OR p_review_token IS DISTINCT FROM public.bank_sync_review_token_internal(v_inbox,v_ids) THEN
   v_review:=public.bank_sync_api_review_view_internal(v_inbox);
   RETURN v_review||jsonb_build_object('action','review_changed');
  END IF;
- IF p_existing_transaction_id IS NOT NULL AND NOT EXISTS(
-  SELECT FROM eshop.transactions t WHERE t.id=p_existing_transaction_id AND t.id=ANY(v_ids)
-   AND public.can_read_bank_transactions(t.bank_account_id)
- ) THEN RAISE EXCEPTION 'BANK_SYNC_REVIEW_CANDIDATE_INVALID'; END IF;
+ IF p_existing_transaction_id IS NOT NULL THEN
+  SELECT * INTO v_counterpart FROM eshop.transactions t
+  WHERE t.id=p_existing_transaction_id AND t.id=ANY(v_ids)
+   AND t.ingest_source='banksync_email_confirmed' AND public.can_read_bank_transactions(t.bank_account_id);
+  IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_REVIEW_CANDIDATE_INVALID'; END IF;
+  IF v_counterpart.payment_info IS NULL THEN
+   PERFORM public.add_transaction_to_payment_info_ws(v_counterpart.id,p_payment_info_id);
+   v_paired_now:=true;
+  END IF;
+ ELSE
+  v_paired_now:=true;
+ END IF;
 
+ v_revision:=coalesce((v_inbox.resolution->>'revision')::integer,0)+1;
  v_result:=jsonb_build_object(
    'action',CASE WHEN p_existing_transaction_id IS NULL THEN 'api_distinct' ELSE 'api_same_movement' END,
    'actor_id',auth.uid(),'resolved_at',now(),'payment_info_id',p_payment_info_id,
-   'existing_transaction_id',p_existing_transaction_id,'reviewed_transaction_ids',to_jsonb(v_ids));
+   'existing_transaction_id',p_existing_transaction_id,'reviewed_transaction_ids',to_jsonb(v_ids),
+   'revision',v_revision,'review_request_sha256',v_request_hash,'paired_now',v_paired_now);
+ INSERT INTO eshop.bank_sync_api_review_events(instance_id,consumer_app_id,delivery_id,revision,decision)
+ VALUES(v_inbox.instance_id,v_inbox.consumer_app_id,v_inbox.delivery_id,v_revision,v_result);
  UPDATE eshop.bank_sync_inbox SET resolution=v_result,resolved_at=now()
  WHERE instance_id=v_inbox.instance_id AND consumer_app_id=v_inbox.consumer_app_id AND delivery_id=v_inbox.delivery_id;
  IF p_existing_transaction_id IS NULL THEN
   PERFORM public.add_transaction_to_payment_info_ws(p_transaction_id,p_payment_info_id);
  END IF;
- RETURN jsonb_build_object('action',v_result->>'action');
+ RETURN jsonb_build_object('action',v_result->>'action','paired_now',v_paired_now);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint) FROM PUBLIC,anon,service_role;
@@ -1315,22 +1384,21 @@ BEGIN
         'showBankAccess',bank_allowed AND NOT public.can_manage_unit_bank_accounts(oc.unit),
         'bankState', CASE WHEN NOT bank_allowed THEN 'disabled' WHEN NOT public.can_read_unit_bank_accounts(oc.unit) THEN 'restricted'
           WHEN bank_configured THEN 'configured' ELSE 'absent' END,
-        'pairingAccountId', CASE WHEN (bank_allowed OR (
-          public.bank_sync_recovery_account_internal(pi.bank_account,oc.unit) AND EXISTS(
-            SELECT FROM eshop.transactions t WHERE t.payment_info IS NULL AND t.amount>0
-             AND upper(trim(t.currency))=upper(trim(pi.currency_code))
-             AND (t.bank_account_id=pi.bank_account OR public.bank_sync_accounts_match(t.id,pi.bank_account))
-             AND public.can_manage_bank_account(t.bank_account_id)
-             AND public.bank_sync_recovery_receipt_internal(t)
-             AND (public.bank_sync_api_review_row_internal(t.id)).resolution->>'action' IS DISTINCT FROM 'api_same_movement'
-             AND NOT EXISTS(SELECT FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
-          )))
-          AND pi.payment_method='bank' AND public.can_manage_bank_account(pi.bank_account)
-          AND public.can_write_orders(o.occasion) AND o.state IN ('created','ordered','paid','sent') THEN pi.bank_account END,
+        'pairingAccountId', CASE WHEN pi.payment_method='bank'
+          AND public.can_manage_bank_account(pi.bank_account) AND public.can_write_orders(o.occasion)
+          AND (
+            (bank_allowed AND o.state IN ('created','ordered','paid','sent'))
+            OR (o.state IN ('created','ordered','paid','sent','expired')
+             AND public.bank_sync_recovery_account_internal(pi.bank_account,oc.unit)
+             AND EXISTS(SELECT FROM public.bank_sync_pairing_candidates_internal(pi.bank_account,true) c
+              WHERE upper(trim((c.movement).currency))=upper(trim(pi.currency_code)))
+            )
+          ) THEN pi.bank_account END,
         'unitId', oc.unit,
         'removableTransactionIds', (SELECT coalesce(jsonb_agg(t.id),'[]')
           FROM eshop.transactions t JOIN eshop.bank_accounts b ON b.id=t.bank_account_id
-          WHERE t.payment_info=o.payment_info AND o.state IN ('created','ordered','paid','sent')
+          WHERE t.payment_info=o.payment_info AND (o.state IN ('created','ordered','paid','sent')
+            OR (o.state='expired' AND public.bank_sync_recovery_receipt_internal(t)))
           AND NOT public.payment_method_is_online_internal(pi.payment_method)
           AND NOT EXISTS(SELECT 1 FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
           AND NOT EXISTS(SELECT 1 FROM eshop.transaction_pairing_events e WHERE e.transaction_snapshot_id=t.id AND e.method='exact_cash_correction')
@@ -1376,9 +1444,10 @@ DECLARE
     bank_acc bigint;
     v_bank_sales boolean;
     v_unit bigint;
+    v_recovery_only boolean;
 BEGIN
-    SELECT pi.bank_account,public.payment_method_policy_enabled_internal(oc.unit,'bank'),oc.unit
-    INTO bank_acc,v_bank_sales,v_unit
+    SELECT pi.bank_account,public.payment_method_policy_enabled_internal(oc.unit,'bank'),oc.unit,o.state='expired'
+    INTO bank_acc,v_bank_sales,v_unit,v_recovery_only
     FROM eshop.payment_info pi JOIN eshop.orders o ON o.payment_info=pi.id
     JOIN public.occasions oc ON oc.id=o.occasion
     WHERE pi.id=payment_info_id AND pi.payment_method='bank' AND public.can_read_orders(oc.id);
@@ -1386,28 +1455,16 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.demo_occasions demo_bank WHERE demo_bank.bank_account=bank_acc AND public.can_read_orders(demo_bank.occasion)) THEN
         PERFORM public.check_is_admin_for_bank_account(bank_acc);
     END IF;
-    IF NOT v_bank_sales AND NOT public.bank_sync_recovery_account_internal(bank_acc,v_unit)
+    v_recovery_only:=v_recovery_only OR NOT v_bank_sales;
+    IF v_recovery_only AND NOT public.bank_sync_recovery_account_internal(bank_acc,v_unit)
     THEN RAISE insufficient_privilege; END IF;
 
     RETURN (
-        SELECT jsonb_agg(to_jsonb(t)||
-          CASE WHEN review.delivery_id IS NOT NULL AND review.resolution IS NULL
-          THEN jsonb_build_object('bankSyncReview',public.bank_sync_api_review_view_internal(review))
-          ELSE '{}'::jsonb END ORDER BY t.date DESC,t.id)
-        FROM eshop.transactions t
-        LEFT JOIN LATERAL public.bank_sync_api_review_row_internal(
-          CASE WHEN t.ingest_source='banksync_api' THEN t.id END) review ON true
-        WHERE t.bank_account_id IN (
-          SELECT bank_acc
-          UNION SELECT c.bank_account_id FROM eshop.bank_sync_connections c
-           JOIN eshop.bank_sync_account_aliases a ON a.connection_id=c.id
-           WHERE a.bank_account_id=bank_acc AND public.can_manage_bank_account(c.bank_account_id)
-        )
-        AND (t.bank_account_id=bank_acc OR public.bank_sync_accounts_match(t.id,bank_acc))
-        AND (v_bank_sales OR public.bank_sync_recovery_receipt_internal(t))
-        AND t.payment_info IS NULL AND t.amount>0
-        AND review.resolution->>'action' IS DISTINCT FROM 'api_same_movement'
-        AND NOT EXISTS(SELECT 1 FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
+        SELECT jsonb_agg(to_jsonb(c.movement)||
+          CASE WHEN (c.review).delivery_id IS NOT NULL
+          THEN jsonb_build_object('bankSyncReview',public.bank_sync_api_review_view_internal(c.review))
+          ELSE '{}'::jsonb END ORDER BY (c.movement).date DESC,(c.movement).id)
+        FROM public.bank_sync_pairing_candidates_internal(bank_acc,v_recovery_only) c
     );
 END;
 $$;
@@ -1420,8 +1477,13 @@ BEGIN
   OR NOT coalesce(public.payment_method_policy_enabled_internal(p_unit_id,'bank'),false)
   OR NOT EXISTS(SELECT 1 FROM eshop.unit_bank_accounts WHERE unit=p_unit_id AND bank_account=p_bank_account_id) THEN
   RAISE insufficient_privilege USING MESSAGE='Bank history access denied'; END IF;
- RETURN (SELECT coalesce(jsonb_agg(t ORDER BY t.date DESC,t.id),'[]') FROM eshop.transactions t
-  JOIN eshop.bank_accounts b ON b.id=t.bank_account_id WHERE b.id=p_bank_account_id AND upper(b.type)<>'CASH');
+ RETURN (SELECT coalesce(jsonb_agg(to_jsonb(t)||
+    CASE WHEN r.resolution IS NOT NULL THEN jsonb_build_object('bankSyncDecision',r.resolution->>'action')
+    ELSE '{}'::jsonb END ORDER BY t.date DESC,t.id),'[]')
+   FROM eshop.transactions t JOIN eshop.bank_accounts b ON b.id=t.bank_account_id
+   LEFT JOIN LATERAL public.bank_sync_api_review_row_internal(
+     CASE WHEN t.ingest_source='banksync_api' THEN t.id END) r ON true
+   WHERE b.id=p_bank_account_id AND upper(b.type)<>'CASH');
 END $$;
 REVOKE ALL ON FUNCTION public.get_bank_transaction_history(bigint,bigint) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION public.get_bank_transaction_history(bigint,bigint) TO authenticated;

@@ -673,7 +673,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     // private. Email seating inspection has one reviewed service SELECT.
     const forwardPrivateTables=[
       ['eshop','checkout_origin_signing_key'],['eshop','order_checkout_origins'],
-      ['eshop','bank_sync_review_signing_key'],
+      ['eshop','bank_sync_review_signing_key'],['eshop','bank_sync_api_review_events'],
       ...['notification_center_read_batches','occasion_media_jobs',
       'sale_opening_campaigns','sale_opening_subscriptions','sale_opening_capabilities',
       'service_fee_agreements','service_fee_allocations','service_fee_customer_acquisitions','service_fee_settlements',

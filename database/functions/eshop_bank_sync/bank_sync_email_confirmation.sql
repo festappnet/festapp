@@ -1,9 +1,15 @@
 CREATE OR REPLACE FUNCTION public.bank_sync_counter_account_internal(p_account text,p_code text)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
- SELECT CASE WHEN nullif(a,'') IS NULL THEN NULL
-  WHEN a LIKE '%/%' OR a ~ '^[A-Z]{2}' OR nullif(c,'') IS NULL THEN a ELSE a||'/'||c END
- FROM (SELECT upper(regexp_replace(coalesce(p_account,''),'[[:space:]]','','g')) a,
-   regexp_replace(coalesce(p_code,''),'[[:space:]]','','g') c) x;
+ WITH parts AS (
+  SELECT nullif(upper(regexp_replace(coalesce(p_account,''),'[[:space:]]','','g')),'') AS account,
+    nullif(regexp_replace(coalesce(p_code,''),'[[:space:]]','','g'),'') AS code
+ ), formatted AS (
+  SELECT CASE WHEN code IS NULL OR account LIKE '%/%' OR account ~ '^[A-Z]{2}'
+    THEN account ELSE account||'/'||code END AS account
+  FROM parts
+ )
+ SELECT CASE WHEN account IS NOT NULL THEN coalesce(public.try_payment_reference_account_internal(account),account) END
+ FROM formatted;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_counter_account_internal(text,text) FROM PUBLIC,anon,authenticated,service_role;
 
@@ -25,7 +31,7 @@ RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
   AND upper(trim(p_tx.currency)) IS NOT DISTINCT FROM upper(trim(p_data->>'currency'))
   AND public.bank_sync_fact_dates_match_internal(p_tx,p_data,1)
   AND (EXISTS(SELECT FROM stored_signals JOIN incoming_signals USING(kind,value))
-    OR ((NOT EXISTS(SELECT FROM stored_signals) OR NOT EXISTS(SELECT FROM incoming_signals))
+    OR (NOT EXISTS(SELECT FROM stored_signals JOIN incoming_signals USING(kind))
       AND (stored=incoming OR stored IS NULL OR incoming IS NULL)))
  FROM accounts;
 $$;
@@ -79,7 +85,7 @@ REVOKE ALL ON FUNCTION public.bank_sync_email_possible_duplicates_view_internal(
 CREATE OR REPLACE FUNCTION public.bank_sync_review_token_internal(p_inbox eshop.bank_sync_inbox,p_ids bigint[])
 RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT encode(extensions.hmac(convert_to(jsonb_build_array(auth.uid(),p_inbox.connection_id,
-   p_inbox.delivery_id,p_inbox.body_sha256,p_ids,
+   p_inbox.delivery_id,p_inbox.body_sha256,p_inbox.resolution,p_ids,
    (SELECT jsonb_agg(jsonb_build_array(t.id,t.payment_info) ORDER BY t.id)
     FROM eshop.transactions t WHERE t.id=ANY(p_ids)))::text,'UTF8'),secret,'sha256'),'hex')
  FROM eshop.bank_sync_review_signing_key WHERE singleton;

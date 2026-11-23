@@ -124,16 +124,21 @@ rechecks eligibility under the existing order and payment locks.
 
 Possible duplicates are compared across the physical account and its aliases.
 Amount, currency, bank-local day and normalized references or counter-account
-details help locate candidates for review. Equal facts can describe distinct
+details help locate candidates for review. The comparison shares Czech
+domestic-to-IBAN normalization with payment references. Different reference
+types can describe the same receipt. Equal facts can describe distinct
 transfers. Email remains queued for a human decision. A proven API movement
 has its own ledger row and movement identity. If it resembles an already
 confirmed email, it is stored unpaired for review in the payment overview,
 with the standard `unmatched` receipt and separate inbox diagnostics.
 The ordinary payment picker requires an explicit review before attaching a
 held movement. Choosing the original verified receipt records equivalence and
-preserves its credit. Choosing a separate payment attaches the API movement
-through standard pairing. Both review paths bind the administrator's decision
-to the current candidates and preserve the original bank movement IDs.
+retains its credit, or pairs that receipt once if it is still unassigned.
+Choosing a separate payment attaches the API movement through standard pairing.
+The picker shows the last decision and allows an authorized administrator to
+review it again while the API movement is unpaired. Each accepted decision has
+its own audit event. Review binds the decision to the current candidates and
+preserves the original bank movement IDs.
 Administrators see candidate details only for bank accounts they may read.
 The response carries a generic hint when a related account is restricted.
 
@@ -141,5 +146,6 @@ Repeated confirmation returns the original audit receipt with the current
 pairing status. The inbox preserves the original facts, actor, time, attestation
 and related candidate IDs internally. The existing pairing events record later
 corrections, and the existing paid transition owns ticket delivery and conversion
-eligibility. Administrators can unpair a confirmed email receipt or reassign it
-to an existing order with bank instructions even after new bank sales close.
+eligibility. Administrators can correct verified receipts on expired orders
+and after new bank sales close. The order overview and picker share the same
+recovery candidates.

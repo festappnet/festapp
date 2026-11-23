@@ -3862,6 +3862,16 @@
       "authenticated": false,
       "service_role": false
     },
+    "public.bank_sync_pairing_candidates_internal(bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_api_review_candidates_internal(eshop.bank_sync_inbox)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
     "public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox)": {
       "anon": false,
       "authenticated": false,

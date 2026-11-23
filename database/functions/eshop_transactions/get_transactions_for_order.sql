@@ -43,22 +43,21 @@ BEGIN
         'showBankAccess',bank_allowed AND NOT public.can_manage_unit_bank_accounts(oc.unit),
         'bankState', CASE WHEN NOT bank_allowed THEN 'disabled' WHEN NOT public.can_read_unit_bank_accounts(oc.unit) THEN 'restricted'
           WHEN bank_configured THEN 'configured' ELSE 'absent' END,
-        'pairingAccountId', CASE WHEN (bank_allowed OR (
-          public.bank_sync_recovery_account_internal(pi.bank_account,oc.unit) AND EXISTS(
-            SELECT FROM eshop.transactions t WHERE t.payment_info IS NULL AND t.amount>0
-             AND upper(trim(t.currency))=upper(trim(pi.currency_code))
-             AND (t.bank_account_id=pi.bank_account OR public.bank_sync_accounts_match(t.id,pi.bank_account))
-             AND public.can_manage_bank_account(t.bank_account_id)
-             AND public.bank_sync_recovery_receipt_internal(t)
-             AND (public.bank_sync_api_review_row_internal(t.id)).resolution->>'action' IS DISTINCT FROM 'api_same_movement'
-             AND NOT EXISTS(SELECT FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
-          )))
-          AND pi.payment_method='bank' AND public.can_manage_bank_account(pi.bank_account)
-          AND public.can_write_orders(o.occasion) AND o.state IN ('created','ordered','paid','sent') THEN pi.bank_account END,
+        'pairingAccountId', CASE WHEN pi.payment_method='bank'
+          AND public.can_manage_bank_account(pi.bank_account) AND public.can_write_orders(o.occasion)
+          AND (
+            (bank_allowed AND o.state IN ('created','ordered','paid','sent'))
+            OR (o.state IN ('created','ordered','paid','sent','expired')
+             AND public.bank_sync_recovery_account_internal(pi.bank_account,oc.unit)
+             AND EXISTS(SELECT FROM public.bank_sync_pairing_candidates_internal(pi.bank_account,true) c
+              WHERE upper(trim((c.movement).currency))=upper(trim(pi.currency_code)))
+            )
+          ) THEN pi.bank_account END,
         'unitId', oc.unit,
         'removableTransactionIds', (SELECT coalesce(jsonb_agg(t.id),'[]')
           FROM eshop.transactions t JOIN eshop.bank_accounts b ON b.id=t.bank_account_id
-          WHERE t.payment_info=o.payment_info AND o.state IN ('created','ordered','paid','sent')
+          WHERE t.payment_info=o.payment_info AND (o.state IN ('created','ordered','paid','sent')
+            OR (o.state='expired' AND public.bank_sync_recovery_receipt_internal(t)))
           AND NOT public.payment_method_is_online_internal(pi.payment_method)
           AND NOT EXISTS(SELECT 1 FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
           AND NOT EXISTS(SELECT 1 FROM eshop.transaction_pairing_events e WHERE e.transaction_snapshot_id=t.id AND e.method='exact_cash_correction')

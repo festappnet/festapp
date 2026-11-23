@@ -368,6 +368,19 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                   future: _pendingEmailPage ??= DbBankAccounts.current
                       .getEmailQueuePage(widget.account.id, null),
                   builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(CommonStrings.unexpectedError),
+                          TextButton(
+                            onPressed: () =>
+                                setState(() => _pendingEmailPage = null),
+                            child: Text(CommonStrings.retry),
+                          ),
+                        ],
+                      );
+                    }
                     final items = snapshot.data?['items'] as List?;
                     if (items == null || items.isEmpty) {
                       return const SizedBox.shrink();

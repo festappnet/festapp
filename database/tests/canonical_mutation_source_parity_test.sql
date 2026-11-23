@@ -153,11 +153,13 @@ DO $$ BEGIN
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_alert_ready(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='59def2b4f00c02a3229b42d4947bb930'),'current SQL source parity: public.bank_sync_alert_ready(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_api_review_candidates_internal(eshop.bank_sync_inbox)') AND md5(btrim(prosrc,E' \n\r\t'))='a03606ea8304719cfa479dcaf8f335c0'),'current SQL source parity: public.bank_sync_api_review_candidates_internal(eshop.bank_sync_inbox)');
+-- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_api_review_row_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a3f84650e226afc8358de6c9ca759301'),'current SQL source parity: public.bank_sync_api_review_row_internal(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox)') AND md5(btrim(prosrc,E' \n\r\t'))='a459b3571882e7897dd41fc2fe542634'),'current SQL source parity: public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox)') AND md5(btrim(prosrc,E' \n\r\t'))='64ca3db490990629f841e66f4838eaae'),'current SQL source parity: public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_counter_account_internal(text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='6bc354b979e26449421b73c9e9a09c15'),'current SQL source parity: public.bank_sync_counter_account_internal(text,text)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_counter_account_internal(text,text)') AND md5(btrim(prosrc,E' \n\r\t'))='be6b7de13e5daa9a1f02060c4abcfe40'),'current SQL source parity: public.bank_sync_counter_account_internal(text,text)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_authorized_connection_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='204ccc41a8c4bf8320ffefe3b9b66309'),'current SQL source parity: public.bank_sync_email_authorized_connection_internal(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
@@ -169,7 +171,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='612ef6864a91538c4e7e8e6ec0ac156d'),'current SQL source parity: public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[])');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_possible_duplicate_internal(eshop.transactions,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='8c1f2f857d00193c87e0aef60bd53530'),'current SQL source parity: public.bank_sync_email_possible_duplicate_internal(eshop.transactions,jsonb)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_possible_duplicate_internal(eshop.transactions,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='3cdcfd37ba1d661f18d013f00b5d7d77'),'current SQL source parity: public.bank_sync_email_possible_duplicate_internal(eshop.transactions,jsonb)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_possible_duplicates_view_internal(bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='c292b48ef565dfd2bc58ed5ca3fe0767'),'current SQL source parity: public.bank_sync_email_possible_duplicates_view_internal(bigint[])');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
@@ -178,6 +180,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_existing_facts_match(eshop.transactions,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='bc106e56ffc9db4f1bbaccb490c39372'),'current SQL source parity: public.bank_sync_existing_facts_match(eshop.transactions,jsonb)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='1a59dc721ceb9fd46b49991f9e7318f9'),'current SQL source parity: public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)');
+-- supabase/migrations/20261122180000_bank_email_confirmation.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_pairing_candidates_internal(bigint,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='b1910b4339f50e2df25c117843bf4863'),'current SQL source parity: public.bank_sync_pairing_candidates_internal(bigint,boolean)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_problem(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='bd09bd42e6f428591e2ba795e08d54b7'),'current SQL source parity: public.bank_sync_problem(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
@@ -187,7 +191,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_requires_action(text)') AND md5(btrim(prosrc,E' \n\r\t'))='7e6c04079464d5343496af772eae633a'),'current SQL source parity: public.bank_sync_requires_action(text)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_review_token_internal(eshop.bank_sync_inbox,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='5a2d675c005fb2c9e9a4bb52e244b94c'),'current SQL source parity: public.bank_sync_review_token_internal(eshop.bank_sync_inbox,bigint[])');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_review_token_internal(eshop.bank_sync_inbox,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='5863ced7fe71483de2aaf98e392ef348'),'current SQL source parity: public.bank_sync_review_token_internal(eshop.bank_sync_inbox,bigint[])');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_warning(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='97707aad1bc81ff2bba5f6e91d9a9652'),'current SQL source parity: public.bank_sync_warning(bigint)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
@@ -1161,7 +1165,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_transaction_history(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c5e5436ebc0b14dabe786e6c9a0d9c90'),'current SQL source parity: public.get_bank_transaction_history(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_transaction_history(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f9844dfdc915bb0c1ec8e37a6c427016'),'current SQL source parity: public.get_bank_transaction_history(bigint,bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_transaction_history(bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ff995298d834ff1d6008339c5c96f7fd'),'current SQL source parity: public.get_bank_transaction_history(bigint,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_blueprint(uuid,uuid,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='e21022a41a3f8057209d0540256c2e26'),'current SQL source parity: public.get_blueprint(uuid,uuid,bigint)');
 -- absent from the effective release
@@ -1523,9 +1527,9 @@ DO $$ BEGIN
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_tickets_with_details(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='363257b5ad3442b5407b4df5f1c7cd8d'),'current SQL source parity: public.get_tickets_with_details(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_transactions_for_order(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='8cd5650df0d99ee8cbe8c15e6c408957'),'current SQL source parity: public.get_transactions_for_order(bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_transactions_for_order(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5cf8b6c5e383cfefec89a883381891ae'),'current SQL source parity: public.get_transactions_for_order(bigint)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_transactions_for_order_all_available(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='37be32c5a9bba1ab8301f1c6fac2e6ab'),'current SQL source parity: public.get_transactions_for_order_all_available(bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_transactions_for_order_all_available(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='ba1b91aeb3f24352178c35b286865f16'),'current SQL source parity: public.get_transactions_for_order_all_available(bigint)');
 -- supabase/migrations/20261115120000_discount_codes.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_unit_abuse_policy_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='f7b00616f5f9beea5f25745075d80594'),'current SQL source parity: public.get_unit_abuse_policy_v1(bigint)');
 -- supabase/baseline/20261107170000_schema.sql
@@ -2319,7 +2323,7 @@ DO $$ BEGIN
 -- supabase/migrations/20261121150000_order_admission_editing.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)') AND md5(btrim(prosrc,E' \n\r\t'))='220d808b7cfbd34387ba317f139dd070'),'current SQL source parity: public.reset_password_and_enqueue_email(uuid,text,bigint,jsonb,text,text,timestamp with time zone)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='08bdab6abf200d1882e84f972629822a'),'current SQL source parity: public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='2897772b7239a8b27f3705f4e1065720'),'current SQL source parity: public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.resolve_cleaning_place(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='a191549954d169f806916ba9ab5f040d'),'current SQL source parity: public.resolve_cleaning_place(bigint)');
 -- supabase/baseline/20261107170000_schema.sql

@@ -121,3 +121,16 @@ CREATE TABLE IF NOT EXISTS eshop.bank_sync_review_signing_key (
 INSERT INTO eshop.bank_sync_review_signing_key(singleton) VALUES(true) ON CONFLICT DO NOTHING;
 ALTER TABLE eshop.bank_sync_review_signing_key ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON eshop.bank_sync_review_signing_key FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE TABLE IF NOT EXISTS eshop.bank_sync_api_review_events (
+ instance_id text NOT NULL,
+ consumer_app_id text NOT NULL,
+ delivery_id text NOT NULL,
+ revision integer NOT NULL CHECK(revision>0),
+ decision jsonb NOT NULL,
+ PRIMARY KEY(instance_id,consumer_app_id,delivery_id,revision),
+ FOREIGN KEY(instance_id,consumer_app_id,delivery_id)
+   REFERENCES eshop.bank_sync_inbox(instance_id,consumer_app_id,delivery_id)
+);
+ALTER TABLE eshop.bank_sync_api_review_events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON eshop.bank_sync_api_review_events FROM PUBLIC,anon,authenticated,service_role;
