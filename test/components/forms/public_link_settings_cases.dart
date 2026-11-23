@@ -369,13 +369,15 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.text(FormStrings.publicLinkSettings));
+      await tester.pumpAndSettle();
       final field = find.widgetWithText(
         TextFormField,
         FormStrings.labelFormLink,
       );
       await tester.enterText(field, 'new-address');
       expect(
-        tester.widget<FormPublicLink>(find.byType(FormPublicLink)).savedLink,
+        tester.widget<PublicLink>(find.byType(PublicLink)).savedLink,
         'Legacy_address',
       );
       await tester
@@ -384,7 +386,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(saves, 1);
       expect(
-        tester.widget<FormPublicLink>(find.byType(FormPublicLink)).savedLink,
+        tester.widget<PublicLink>(find.byType(PublicLink)).savedLink,
         'Legacy_address',
       );
       await tester
