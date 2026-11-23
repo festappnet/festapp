@@ -4,7 +4,7 @@ import { Buffer } from "node:buffer";
 import { buildSpdPayload } from "./paymentPresentation.ts";
 import { generatePaymentDetails } from "./translations/payment-details.helpers.ts";
 import assert from "node:assert/strict";
-import { generateQrCode } from "./qrCodePayment.ts";
+import { generatePlainPaymentQr, generateQrCode } from "./qrCodePayment.ts";
 Deno.test("direct collection QR owner refuses missing purpose, disabled and gateway sources before rendering", async () => {
   const bank = {
     payment_method: "bank",
@@ -105,6 +105,11 @@ Deno.test("a 500-character title wraps outside an unchanged QR and uses a valid 
       errorCorrectionLevel: "M",
     }),
   );
+  const plain = PNG.sync.read(
+    Buffer.from(await generatePlainPaymentQr(payment, order, title)),
+  );
+  assert.equal(plain.width, plain.height);
+  assert.deepEqual(plain.data, original.data);
   const large = PNG.sync.read(
     Buffer.from(await generateQrCode(payment, order, title)),
   );
