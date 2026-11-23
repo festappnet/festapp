@@ -387,6 +387,8 @@ for (const record of records) {
     preview_price_0: formatCurrency(450),
     preview_price_1: formatCurrency(350),
     preview_total: formatCurrency(800),
+    preview_total_number: "800",
+    preview_deposit_number: "300",
     preview_deposit: formatCurrency(300),
     preview_remaining: formatCurrency(500),
     preview_previous_price: formatCurrency(250),
@@ -432,6 +434,7 @@ for (const record of records) {
   });
   record.singleApplicationDefaults = {
     preview_total: formatCurrency(zero ? 0 : 450),
+    preview_total_number: zero ? "0" : "450",
     preview_remaining: formatCurrency(zero ? 0 : 150),
     preview_reference_total: formatCurrency(zero ? 0 : 250),
   };

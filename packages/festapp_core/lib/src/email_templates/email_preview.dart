@@ -203,6 +203,7 @@ class EmailPreviewScenario {
   final Map<String, String> contextDefaults;
   final List<EmailRequiredLink> requiredLinks;
   final String inlinePaymentQrHtml;
+  final Map<String, Object>? paymentQrSample;
   const EmailPreviewScenario({
     required this.templateCode,
     required this.scenario,
@@ -217,6 +218,7 @@ class EmailPreviewScenario {
     this.contextDefaults = const {},
     required this.requiredLinks,
     this.inlinePaymentQrHtml = '',
+    this.paymentQrSample,
   });
   factory EmailPreviewScenario.fromJson(Map<String, dynamic> json) =>
       EmailPreviewScenario(
@@ -278,6 +280,7 @@ class EmailPreviewScenario {
     },
     requiredLinks: requiredLinks,
     inlinePaymentQrHtml: inlinePaymentQrHtml,
+    paymentQrSample: paymentQrSample,
   );
 
   EmailPreviewScenario withContext(EmailPreviewContext context) {
@@ -342,6 +345,18 @@ class EmailPreviewScenario {
         if (value != null) result[code] = _withoutOverviewChanges(value);
       }
     }
+    final currency = bindings['preview_currency'];
+    final showQr = inlinePaymentQrHtml.isNotEmpty &&
+        context.inlinePaymentQr &&
+        const {'CZK', 'EUR'}.contains(currency);
+    final total = double.tryParse(bindings['preview_total_number'] ?? '');
+    final deposit = double.tryParse(bindings['preview_deposit_number'] ?? '');
+    final amount = switch ((templateCode, scenario)) {
+      ('TICKET_ORDER_CONFIRMATION', 'deposit') => deposit,
+      ('TICKET_ORDER_PAYMENT_DONE', 'deposit') =>
+        total == null || deposit == null ? null : total - deposit,
+      _ => total,
+    };
     return EmailPreviewScenario(
       templateCode: templateCode,
       scenario: scenario,
@@ -358,10 +373,18 @@ class EmailPreviewScenario {
                   html: _withoutOverviewChanges(link.html),
                 ),
             ],
-      inlinePaymentQrHtml: context.inlinePaymentQr &&
-              const {'CZK', 'EUR'}.contains(bindings['preview_currency'])
-          ? inlinePaymentQrHtml
-          : '',
+      inlinePaymentQrHtml: showQr ? inlinePaymentQrHtml : '',
+      paymentQrSample: showQr && amount != null && amount > 0
+          ? {
+              'title': bindings['preview_occasion'] ?? '',
+              'amount': amount,
+              'currency': currency!,
+              'locale': locale,
+              'accountNumber': bindings['preview_account_number'] ?? '',
+              'iban': bindings['preview_iban'] ?? '',
+              'reference': result['variableSymbol'] ?? '',
+            }
+          : null,
       contextTemplates: contextTemplates,
       applicationContextTemplates: applicationContextTemplates,
       singleApplicationTemplates: singleApplicationTemplates,
