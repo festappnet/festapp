@@ -77,11 +77,12 @@ Deno.test("production payment emails honor method, current collection and inheri
   }
   method="bank";status="open";allowed=true;price=100;paid=20;
   deposit=30;
-  const legacy = await renderQueuedEmail({message_id:"legacy",message_kind:"order_confirmation",code:"TICKET_ORDER_CONFIRMATION",
+  showQrInEmail=false;
+  const optedOut = await renderQueuedEmail({message_id:"opt-out",message_kind:"order_confirmation",code:"TICKET_ORDER_CONFIRMATION",
     data:{lang:"cs",ticket_order:{order:details().order}},recipient:"snapshot@example.invalid",organization:1,unit:2,occasion:3,order_id:4,lease_token:"lease",attempt_id:"attempt",prepared:null});
-  assertEquals(legacy.prepared.attachments.map(part=>part.disposition),["ATTACHMENT"]);
-  assert(!legacy.prepared.html.includes("cid:festapp-payment-"));
-  showQrInEmail=true;
+  assertEquals(optedOut.prepared.attachments.map(part=>part.disposition),["ATTACHMENT"]);
+  assert(!optedOut.prepared.html.includes("cid:festapp-payment-"));
+  showQrInEmail=undefined;
   for(currency of ["CZK","EUR","USD"]) {
    const cases = [
      ["order_confirmation", "TICKET_ORDER_CONFIRMATION", deposit, false],

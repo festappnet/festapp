@@ -7,6 +7,7 @@ class FormBundle {
   FormBundle(
       {required this.definition,
       this.aggregateVersion = 0,
+      this.customerCancellationAvailable = false,
       this.occasion,
       this.bankAccount,
       this.organizationIdentity,
@@ -17,6 +18,7 @@ class FormBundle {
   final FormDefinition definition;
   bool get demoSimulation => definition.demoSimulation;
   final int aggregateVersion;
+  final bool customerCancellationAvailable;
   final VerifiedOrganizationIdentity? organizationIdentity;
   final OccasionModel? occasion;
   final BankAccountModel? bankAccount;
@@ -28,12 +30,14 @@ class FormBundle {
   FormBundle withDefinition(FormDefinition value) => FormBundle(
       definition: value,
       aggregateVersion: aggregateVersion,
+      customerCancellationAvailable: customerCancellationAvailable,
       organizationIdentity: organizationIdentity,
       occasion: occasion,
       bankAccount: bankAccount,
       availableBankAccounts: availableBankAccounts);
   factory FormBundle.fromJson(Map<String, dynamic> json) => FormBundle(
       definition: FormDefinition.fromJson(json),
+      customerCancellationAvailable: json['customer_cancellation_available'] == true,
       aggregateVersion: (json['aggregate_version'] as num?)?.toInt() ?? 0,
       organizationIdentity:
           VerifiedOrganizationIdentity.tryParse(json['organizationIdentity']),

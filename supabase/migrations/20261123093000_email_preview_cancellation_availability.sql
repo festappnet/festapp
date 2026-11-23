@@ -1,0 +1,74 @@
+-- SOURCE: eshop_forms/get_forms_by_link.sql
+CREATE OR REPLACE FUNCTION public.get_forms_by_link(
+    occasion_link TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    v_occasion_id BIGINT;
+    forms_data JSONB;
+BEGIN
+    -- Step 1: Resolve the occasion ID from the provided link.
+    SELECT id
+    INTO v_occasion_id
+    FROM public.occasions
+    WHERE id = public.resolve_occasion_link_internal(occasion_link)
+      AND organization = (SELECT ui.organization FROM public.user_info ui WHERE ui.id = auth.uid());
+
+    -- Step 2: If no occasion is found, throw a 'no_data_found' exception.
+    IF v_occasion_id IS NULL THEN
+        RAISE EXCEPTION 'Occasion not found for link: %', occasion_link USING ERRCODE = 'PGRST001'; -- Custom error for PostgREST
+    END IF;
+
+    -- Step 3: Verify if the user has editor rights for this occasion.
+    -- If not, throw an 'insufficient_privilege' exception.
+    IF NOT public.can_read_form_catalog(v_occasion_id) THEN
+        RAISE EXCEPTION 'User is not authorized to view forms for this occasion.' USING ERRCODE = '42501'; -- insufficient_privilege
+    END IF;
+
+    -- Step 4: Aggregate forms for the occasion into a JSONB array.
+    -- The order statistics are nested within a 'stats' JSON object.
+    SELECT jsonb_agg(
+        jsonb_build_object(
+            'id', f.id,
+            'customer_cancellation_available', public.customer_order_operation_enabled_internal(f.id, 'cancel'),
+            'participant_capacity',f.participant_capacity,'waitlist_enabled',f.waitlist_enabled,
+            'show_remaining_capacity',f.show_remaining_capacity,'waitlist_offer_duration_seconds',f.waitlist_offer_duration_seconds,
+            'capacity',public.get_form_capacity_snapshot_internal(f.id),'registrationMode',public.get_form_registration_mode_internal(f.id),
+            'created_at', f.created_at,
+            'title', f.title,
+            'data', f.data,
+            'key', f.key,
+            'occasion', f.occasion,
+            'type', f.type,
+            'is_open', f.is_open,
+            'link', f.link,
+            'blueprint', f.blueprint,
+            'updated_at', f.updated_at,
+            'stats', jsonb_build_object(
+                'total', COALESCE(order_stats.total, 0),
+                'storno', COALESCE(order_stats.storno, 0),
+                'paid_or_sent', COALESCE(order_stats.paid_or_sent, 0),
+                'ordered', COALESCE(order_stats.ordered, 0)
+            )
+        ) ORDER BY f.created_at
+    )
+    INTO forms_data
+    FROM public.forms f
+    LEFT JOIN public.get_order_catalog_counts_internal(
+      ARRAY[v_occasion_id], ARRAY(SELECT id FROM public.forms WHERE occasion=v_occasion_id)
+    ) AS order_stats ON f.id=order_stats.form_id
+    WHERE f.occasion = v_occasion_id;
+
+    -- Step 5: If no forms were found, ensure an empty JSON array is returned.
+    IF forms_data IS NULL THEN
+        forms_data := '[]'::jsonb;
+    END IF;
+
+    -- Step 6: Return the data directly.
+    RETURN forms_data;
+END;
+$$;

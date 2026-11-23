@@ -18,7 +18,7 @@ import {
   overviewRequiredLinks,
   waitlistActionLink,
 } from "../supabase/functions/_shared/emailActionLink.ts";
-import { completeEmailContent } from "../supabase/functions/_shared/emailContentCompletion.ts";
+import { completeEmailContent, paymentQrEmailHtml } from "../supabase/functions/_shared/emailContentCompletion.ts";
 import { translatePlatformLinks } from "../supabase/functions/_shared/translatePlatformLinks.ts";
 import {
   formatCurrency,
@@ -162,6 +162,9 @@ for (const locale of ["cs", "en"] as const) {
           templateCode,
           scenario,
           paymentMethod: 'bank', collectionAllowed: total > amountPaid,
+          ...(templateCode !== "TICKET_ORDER_STORNO" && total > amountPaid
+            ? { inlinePaymentQrHtml: paymentQrEmailHtml(locale === "cs", "cid:festapp-preview-payment") }
+            : {}),
           locale,
           tone,
           values: {

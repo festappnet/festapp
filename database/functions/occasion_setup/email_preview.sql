@@ -97,7 +97,7 @@ BEGIN
  WHERE u.unit=d.unit AND b.id::text=d.data->>'bankAccountId' AND b.type<>'CASH' AND payment_method='bank' AND public.payment_method_policy_enabled_internal(d.unit,'bank');
  payment_info:=coalesce(payment_info,'{}')||jsonb_build_object('payment_method',payment_method,
    'collectionAction',jsonb_build_object('method',payment_method,'purpose','collect_payment','allowed',payment_method='bank' AND payment_metadata#>'{payments,bankEnabled}'='true'::jsonb AND payment_info IS NOT NULL AND public.payment_method_policy_enabled_internal(d.unit,'bank')),
-   'show_payment_qr_in_email',coalesce(payment_metadata->'show_payment_qr_in_email'='true'::jsonb,false),
+   'show_payment_qr_in_email',(payment_metadata->'show_payment_qr_in_email') IS DISTINCT FROM 'false'::jsonb,
    'data',jsonb_build_object('payment_policy',payment_policy-'durationSeconds'),
    'deadline',CASE WHEN payment_policy->>'mode'='custom' THEN statement_timestamp()+make_interval(secs=>(payment_policy->>'durationSeconds')::bigint) END);
  RETURN jsonb_build_object('messageType',p_message_type,'deliveryMode',coalesce(p_delivery_mode,public.ticket_delivery_mode(feature)),
