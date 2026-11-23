@@ -41,6 +41,7 @@ for (const [kind, keys, identity] of [['rpcs',manifest.rpcs,'rpc'],['modules',ma
         for (const section of sections) await request(prefix + '/' + kind + '/' + key + '/' + section, 'PUT', await read(path + section + '.json'));
     }
 }
+await request(prefix + '/readme', 'PUT', await readFile(new URL('SETUP.md',root), 'utf8'), {markdown:true});
 process.stdout.write('Synced five modules, groups, one RPC and one OAuth connection to the existing unapproved app; no Publish or new review request.\n');
 
 await save({status:'applied',published:false,reviewRequested:false,reviewStateBefore:{approved:existing.approved,public:existing.public,inReview:existing.inReview??null}});

@@ -26,16 +26,17 @@ export function createSdk(app, token, { fetchImpl = fetch, paceMs = 2200, timeou
     assert.equal(app.organizationId, 9450617);
     assert.equal(app.teamId, 3387186);
     let lastRequest = 0, queue = Promise.resolve();
-    return (path, method = 'GET', body, { binary = false } = {}) => {
+    return (path, method = 'GET', body, { binary = false, markdown = false } = {}) => {
         assert(path.startsWith('/') && !path.startsWith('//') && !/[\r\n#\\]/.test(path), 'Relative SDK path required');
+        if (markdown) assert(path.endsWith('/readme') && method === 'PUT' && typeof body === 'string');
         const task = queue.then(async () => {
             await sleep(Math.max(0, lastRequest + paceMs - Date.now())); lastRequest = Date.now();
             let response;
             try {
                 response = await fetchImpl('https://eu1.make.com/api/v2' + path, {
                     method, redirect: 'error', signal: AbortSignal.timeout(timeoutMs),
-                    headers: { authorization: 'Token ' + token, 'content-type': 'application/json' },
-                    body: body === undefined ? undefined : JSON.stringify(body),
+                    headers: { authorization: 'Token ' + token, 'content-type': markdown ? 'text/markdown' : 'application/json' },
+                    body: markdown ? body : body === undefined ? undefined : JSON.stringify(body),
                 });
             } catch { throw new Error('Make SDK '+method+' transport failed; outcome unknown for mutations'); }
             assert(response.ok, 'Make SDK '+method+' HTTP '+response.status);
@@ -91,6 +92,11 @@ export async function assertReviewerContext(request, app, context) {
     assert.equal(connection.teamId, app.teamId);
     assert.equal(connection.organizationId, app.organizationId);
     assert.equal(connection.authorId, context.ownerId);
+    assert.equal(connection.accountName, 'app#'+app.name);
+    assert.equal(connection.accountType, 'oauth');
+    assert(Date.parse(connection.expire) > Date.now(), 'The reviewer OAuth connection must be reauthorized');
+    const verification = await request('/connections/'+context.connectionId+'/test', 'POST', {});
+    assert.equal(verification.verified, true, 'The reviewer OAuth connection did not pass Make verification');
     for (const id of [context.positiveScenarioId, context.guardrailsScenarioId]) {
         const scenario = (await request('/scenarios/'+id)).scenario;
         assert.equal(scenario.teamId, app.teamId);
