@@ -7,6 +7,7 @@ import '../../support/fixtures/local_app_storage_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:festapp_core/email_templates.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -110,10 +111,10 @@ void main() {
         authoringContextLoader: () async =>
             const EmailAuthoringContext(senderAddress: 'sender@organizer.test'),
       );
-      expect(
+      final automaticQr = tester.widget<EmailPreviewHtml>(
         find.byKey(const ValueKey('email-automatic-completion')),
-        findsNothing,
       );
+      expect(automaticQr.html, contains(emailPreviewPaymentQrSource));
       final editors = tester
           .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
           .toList();
