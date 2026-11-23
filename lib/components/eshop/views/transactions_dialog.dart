@@ -93,7 +93,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   Future<void> _paymentOperation({bool refund = false}) async {
     if (!(refund
         ? (_operations.canRefund || _operations.canViewHistory)
-        : _operations.canRecord))
+        : (_operations.canRecord || _actions.pairingAccountId != null)))
       return;
     final changed = await showOrderPaymentOperationDialog(
       context,
@@ -178,7 +178,9 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                     runSpacing: 10,
                     children: [
                       ElevatedButton(
-                        onPressed: _operations.canRecord
+                        onPressed:
+                            (_operations.canRecord ||
+                                _actions.pairingAccountId != null)
                             ? () => _paymentOperation()
                             : null,
                         style: ElevatedButton.styleFrom(

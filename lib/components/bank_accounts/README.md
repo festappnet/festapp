@@ -112,7 +112,8 @@ reference with runtime logs without logging the bank response.
 The paged queue uses `(received_at, delivery_id)` as its cursor. Administrators
 can confirm a positive email observation after checking their internet banking,
 or dismiss it with a reason. The queue remains available after switching to API
-mode and contains observations from email sources.
+mode and contains observations from email sources. Transport retries with a new
+delivery ID use the result of the same BankSync source observation.
 
 The selected account and the canonical source both require live bank management
 permissions. Confirmation and replay also require edit permission on the stored
@@ -128,6 +129,11 @@ transfers. Email remains queued for a human decision. A proven API movement
 has its own ledger row and movement identity. If it resembles an already
 confirmed email, it is stored unpaired for review in the payment overview,
 with the standard `unmatched` receipt and separate inbox diagnostics.
+The ordinary payment picker requires an explicit review before attaching a
+held movement. Choosing the original verified receipt records equivalence and
+preserves its credit. Choosing a separate payment attaches the API movement
+through standard pairing. Both review paths bind the administrator's decision
+to the current candidates and preserve the original bank movement IDs.
 Administrators see candidate details only for bank accounts they may read.
 The response carries a generic hint when a related account is restricted.
 

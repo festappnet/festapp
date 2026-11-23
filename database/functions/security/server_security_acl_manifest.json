@@ -3762,11 +3762,6 @@
       "authenticated": true,
       "service_role": false
     },
-    "public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean)": {
-      "anon": false,
-      "authenticated": true,
-      "service_role": false
-    },
     "public.bank_sync_counter_account_internal(text,text)": {
       "anon": false,
       "authenticated": false,
@@ -3828,6 +3823,46 @@
       "service_role": false
     },
     "public.bank_transaction_signals_internal(text,text,text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.bank_sync_review_token_internal(eshop.bank_sync_inbox,bigint[])": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_source_row_internal(bigint,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_api_review_row_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_recovery_account_internal(bigint,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_recovery_receipt_internal(eshop.transactions)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox)": {
       "anon": false,
       "authenticated": false,
       "service_role": false

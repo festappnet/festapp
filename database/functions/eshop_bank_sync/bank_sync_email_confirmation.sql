@@ -44,6 +44,9 @@ RETURNS bigint[] LANGUAGE sql STABLE SET search_path=public,extensions AS $$
                   AND ((p_data->>'date')::timestamptz AT TIME ZONE 'UTC')+interval '2 days'
    AND upper(trim(t.currency))=upper(trim(p_data->>'currency'))
    AND CASE WHEN p_confirmed_only THEN t.ingest_source='banksync_email_confirmed'
+      AND NOT EXISTS(SELECT FROM eshop.bank_sync_inbox r
+       WHERE r.resolution->>'action'='api_same_movement'
+         AND (r.resolution->>'existing_transaction_id')::bigint=t.id)
      ELSE t.ingest_source IN ('banksync_email_confirmed','banksync_api','fio_api','legacy_api','legacy') END
  )
  SELECT coalesce(array_agg((fact).id::bigint ORDER BY (fact).id),'{}'::bigint[]) FROM prefiltered
@@ -71,6 +74,29 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  FROM candidates t LEFT JOIN eshop.orders o ON o.payment_info=t.payment_info WHERE t.can_read;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_email_possible_duplicates_view_internal(bigint[]) FROM PUBLIC,anon,authenticated,service_role;
+
+-- Bind decisions to the current candidates without exposing restricted IDs.
+CREATE OR REPLACE FUNCTION public.bank_sync_review_token_internal(p_inbox eshop.bank_sync_inbox,p_ids bigint[])
+RETURNS text LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT encode(extensions.hmac(convert_to(jsonb_build_array(auth.uid(),p_inbox.connection_id,
+   p_inbox.delivery_id,p_inbox.body_sha256,p_ids,
+   (SELECT jsonb_agg(jsonb_build_array(t.id,t.payment_info) ORDER BY t.id)
+    FROM eshop.transactions t WHERE t.id=ANY(p_ids)))::text,'UTF8'),secret,'sha256'),'hex')
+ FROM eshop.bank_sync_review_signing_key WHERE singleton;
+$$;
+REVOKE ALL ON FUNCTION public.bank_sync_review_token_internal(eshop.bank_sync_inbox,bigint[]) FROM PUBLIC,anon,authenticated,service_role;
+
+-- A BankSync observation can have more than one transport delivery.
+CREATE OR REPLACE FUNCTION public.bank_sync_email_source_row_internal(p_connection bigint,p_remote_id text)
+RETURNS eshop.bank_sync_inbox LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ SELECT i FROM eshop.bank_sync_inbox i
+ WHERE i.connection_id=p_connection AND i.remote_transaction_id=p_remote_id
+  AND i.payload->'data'->>'source' ~ '(^|_)email$'
+  AND i.outcome IN ('quarantined_identity','quarantined_conflict')
+  AND (i.payload->'data'->>'amount_cents')::numeric>0
+ ORDER BY (i.resolution IS NULL),i.received_at,i.delivery_id LIMIT 1;
+$$;
+REVOKE ALL ON FUNCTION public.bank_sync_email_source_row_internal(bigint,text) FROM PUBLIC,anon,authenticated,service_role;
 
 -- Account authorization is completed before callers read any inbox facts,
 -- digests or resolutions. In particular an alias alone grants no source access.
@@ -108,7 +134,7 @@ LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  )
  SELECT e.id::bigint,e.order_id::bigint,e.occasion::bigint,jsonb_build_object(
   'payment_info_id',e.id,'order_id',e.order_id,'order_symbol',e.order_symbol,'order_number',e.order_sequence,
-  'state',e.state,'customer_name',coalesce(e.data->>'name',concat_ws(' ',e.data->>'first_name',e.data->>'last_name')),
+  'state',e.state,'customer_name',concat_ws(' ',coalesce(e.data->>'name',e.data->>'first_name'),coalesce(e.data->>'surname',e.data->>'last_name')),
   'customer_email',e.data->>'email','remaining_due',greatest(e.amount-t.available,0),'currency',upper(trim(e.currency_code)))
  FROM eligible e JOIN totals t ON t.payment_id=e.id WHERE e.amount>t.available;
 $$;
@@ -171,8 +197,8 @@ BEGIN
  SELECT coalesce(jsonb_agg(item ORDER BY received_at,delivery_id),'[]') INTO v_result FROM (
   SELECT i.received_at,i.delivery_id,jsonb_build_object('delivery_id',i.delivery_id,'body_sha256',i.body_sha256,
    'facts',i.payload->'data','received_at',i.received_at,'confirmable',true,
-   'possible_duplicates',public.bank_sync_email_possible_duplicates_view_internal(
-      d.ids),
+   'possible_duplicates',public.bank_sync_email_possible_duplicates_view_internal(d.ids),
+   'duplicate_review_token',CASE WHEN cardinality(d.ids)>0 THEN public.bank_sync_review_token_internal(i,d.ids) END,
    'candidates',public.bank_sync_email_candidates_internal(p_bank_account_id,i.payload->'data')) AS item
   FROM eshop.bank_sync_inbox i
   CROSS JOIN LATERAL (SELECT public.bank_sync_email_duplicate_candidates_internal(
@@ -181,6 +207,7 @@ BEGIN
    AND (i.payload->'data'->>'source' ~ '(^|_)email$')
    AND i.outcome IN ('quarantined_identity','quarantined_conflict') AND i.resolution IS NULL
    AND (i.payload->'data'->>'amount_cents')::numeric>0
+   AND i.delivery_id=(public.bank_sync_email_source_row_internal(i.connection_id,i.remote_transaction_id)).delivery_id
    AND (p_cursor IS NULL OR (i.received_at,i.delivery_id)>
      ((p_cursor->>'received_at')::timestamptz,p_cursor->>'delivery_id'))
   ORDER BY i.received_at,i.delivery_id LIMIT v_limit+1
@@ -196,10 +223,12 @@ GRANT EXECUTE ON FUNCTION public.get_bank_sync_email_queue_page_v1(bigint,intege
 
 CREATE OR REPLACE FUNCTION public.confirm_bank_sync_email_observation(
  p_bank_account_id bigint,p_delivery_id text,p_payment_info_id bigint,
- p_expected_body_sha256 text,p_checked_internet_banking boolean,p_not_duplicate boolean DEFAULT false
+ p_expected_body_sha256 text,p_checked_internet_banking boolean,p_not_duplicate boolean DEFAULT false,
+ p_duplicate_review_token text DEFAULT NULL
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE
  v_connection eshop.bank_sync_connections; v_inbox eshop.bank_sync_inbox; v_payment eshop.payment_info;
+ v_source eshop.bank_sync_inbox; v_review_token text;
  v_data jsonb; v_transaction_id bigint; v_result jsonb; v_organization bigint; v_unit bigint; v_occasion bigint; v_order bigint; v_ids bigint[];
 BEGIN
  v_connection:=public.bank_sync_email_authorized_connection_internal(p_bank_account_id);
@@ -223,6 +252,12 @@ BEGIN
  IF v_inbox.body_sha256 IS DISTINCT FROM p_expected_body_sha256 THEN RAISE EXCEPTION 'BANK_SYNC_DELIVERY_CONFLICT'; END IF;
  IF (v_inbox.payload->'data'->>'source' ~ '(^|_)email$') IS DISTINCT FROM true THEN
   RAISE EXCEPTION 'BANK_SYNC_NOT_CONFIRMABLE'; END IF;
+ v_source:=public.bank_sync_email_source_row_internal(v_inbox.connection_id,v_inbox.remote_transaction_id);
+ IF v_source.delivery_id IS NULL THEN RAISE EXCEPTION 'BANK_SYNC_NOT_CONFIRMABLE'; END IF;
+ IF v_source.payload->'data' IS DISTINCT FROM v_inbox.payload->'data' THEN
+  RAISE EXCEPTION 'BANK_SYNC_OBSERVATION_CONFLICT';
+ END IF;
+ v_inbox:=v_source;
  IF v_inbox.resolution IS NOT NULL THEN
   IF v_inbox.resolution->>'action'='confirmed' AND (v_inbox.resolution->>'payment_info_id')::bigint=p_payment_info_id THEN
    RETURN (v_inbox.resolution-'possible_duplicate_transaction_ids')||jsonb_build_object('transaction_paired',coalesce((SELECT t.payment_info IS NOT NULL
@@ -240,9 +275,14 @@ BEGIN
    OR upper(trim(v_payment.currency_code)) IS DISTINCT FROM upper(trim(v_data->>'currency')) THEN
   RAISE EXCEPTION 'BANK_SYNC_TARGET_MISMATCH'; END IF;
  v_ids:=public.bank_sync_email_duplicate_candidates_internal(v_connection.id,v_data,false);
- IF cardinality(v_ids)>0 AND p_not_duplicate IS DISTINCT FROM true THEN
-  RETURN jsonb_build_object('action','possible_duplicate','transaction_paired',false,
-    'possible_duplicates',public.bank_sync_email_possible_duplicates_view_internal(v_ids));
+ IF cardinality(v_ids)>0 OR p_not_duplicate IS TRUE THEN
+  PERFORM 1 FROM eshop.transactions WHERE id=ANY(v_ids) ORDER BY id FOR UPDATE;
+  v_review_token:=public.bank_sync_review_token_internal(v_inbox,v_ids);
+  IF p_not_duplicate IS DISTINCT FROM true OR p_duplicate_review_token IS DISTINCT FROM v_review_token THEN
+   RETURN jsonb_build_object('action','possible_duplicate','transaction_paired',false,
+     'duplicate_review_token',v_review_token,
+     'possible_duplicates',public.bank_sync_email_possible_duplicates_view_internal(v_ids));
+  END IF;
  END IF;
  IF NOT EXISTS(SELECT FROM public.bank_sync_email_payable_targets_for_ids_internal(p_bank_account_id,v_data->>'currency',ARRAY[p_payment_info_id])
    WHERE payment_info_id=p_payment_info_id AND occasion_id=v_occasion) THEN RAISE EXCEPTION 'BANK_SYNC_TARGET_MISMATCH'; END IF;
@@ -277,12 +317,12 @@ BEGIN
  RETURN v_result-'possible_duplicate_transaction_ids';
 END;
 $$;
-REVOKE ALL ON FUNCTION public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean) FROM PUBLIC,anon,service_role;
-GRANT EXECUTE ON FUNCTION public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean) TO authenticated;
+REVOKE ALL ON FUNCTION public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean,text) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.dismiss_bank_sync_email_observation(p_bank_account_id bigint,p_delivery_id text,p_expected_body_sha256 text,p_reason text)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
-DECLARE v_connection eshop.bank_sync_connections; v_inbox eshop.bank_sync_inbox; v_result jsonb;
+DECLARE v_connection eshop.bank_sync_connections; v_inbox eshop.bank_sync_inbox; v_source eshop.bank_sync_inbox; v_result jsonb;
 BEGIN
  v_connection:=public.bank_sync_email_authorized_connection_internal(p_bank_account_id);
  IF length(trim(p_reason)) NOT BETWEEN 1 AND 240 OR p_reason IS NULL THEN RAISE EXCEPTION 'BANK_SYNC_DISMISS_REASON_REQUIRED'; END IF;
@@ -295,6 +335,13 @@ BEGIN
  IF v_inbox.body_sha256 IS DISTINCT FROM p_expected_body_sha256 THEN RAISE EXCEPTION 'BANK_SYNC_DELIVERY_CONFLICT'; END IF;
  IF (v_inbox.payload->'data'->>'source' ~ '(^|_)email$') IS DISTINCT FROM true THEN
   RAISE EXCEPTION 'BANK_SYNC_NOT_CONFIRMABLE'; END IF;
+ -- Dismiss the same source observation for all of its transport deliveries.
+ v_source:=public.bank_sync_email_source_row_internal(v_inbox.connection_id,v_inbox.remote_transaction_id);
+ IF v_source.delivery_id IS NULL THEN RAISE EXCEPTION 'BANK_SYNC_NOT_CONFIRMABLE'; END IF;
+ IF v_source.payload->'data' IS DISTINCT FROM v_inbox.payload->'data' THEN
+  RAISE EXCEPTION 'BANK_SYNC_OBSERVATION_CONFLICT';
+ END IF;
+ v_inbox:=v_source;
  IF v_inbox.resolution IS NOT NULL THEN
   IF v_inbox.resolution->>'action'='dismissed' AND v_inbox.resolution->>'reason'=trim(p_reason) THEN RETURN v_inbox.resolution; END IF;
   RAISE EXCEPTION 'BANK_SYNC_ALREADY_RESOLVED';

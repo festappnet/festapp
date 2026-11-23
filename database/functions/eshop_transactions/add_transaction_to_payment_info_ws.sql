@@ -8,6 +8,7 @@ AS $$
 DECLARE
     bank_acc bigint;
     occasion_id bigint;
+    v_transaction eshop.transactions;
 BEGIN
     -- Retrieve the associated order_id from payment_info
     SELECT pi.bank_account INTO bank_acc
@@ -18,7 +19,8 @@ BEGIN
     IF NOT public.can_manage_bank_account(bank_acc) THEN
     RAISE insufficient_privilege USING MESSAGE='Bank transaction write access denied'; END IF;
 
-    IF NOT public.can_manage_bank_account((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id)) THEN
+    SELECT * INTO v_transaction FROM eshop.transactions WHERE id=p_transaction_id;
+    IF NOT public.can_manage_bank_account(v_transaction.bank_account_id) THEN
       RAISE insufficient_privilege USING MESSAGE='Source bank transaction write access denied'; END IF;
 
     SELECT o.occasion
@@ -29,23 +31,22 @@ BEGIN
 
     PERFORM public.check_is_editor_order_on_occasion(occasion_id);
   PERFORM public.payment_policy_fence_internal(oc.organization) FROM public.occasions oc WHERE oc.id=occasion_id;
+  -- Stabilize the existing receipt before applying the recovery policy.
+  SELECT * INTO v_transaction FROM eshop.transactions WHERE id=p_transaction_id FOR UPDATE;
+  IF NOT public.can_manage_bank_account(v_transaction.bank_account_id) THEN
+    RAISE insufficient_privilege USING MESSAGE='Source bank transaction write access denied';
+  END IF;
   -- Recovery after closing bank sales applies only to an existing verified
   -- receipt and bank instructions already issued on a linked account.
   IF NOT coalesce((SELECT public.payment_method_policy_enabled_internal(oc.unit,'bank')
       FROM public.occasions oc WHERE oc.id=occasion_id),false) THEN
     IF NOT EXISTS(
-      SELECT FROM eshop.transactions t
-      JOIN eshop.payment_info pi ON pi.id=p_payment_info_id AND pi.payment_method='bank'
+      SELECT FROM eshop.payment_info pi
       JOIN public.occasions oc ON oc.id=occasion_id
       JOIN eshop.unit_bank_accounts link ON link.unit=oc.unit AND link.bank_account=pi.bank_account
-      WHERE t.id=p_transaction_id AND t.ingest_source='banksync_email_confirmed'
+      WHERE pi.id=p_payment_info_id AND pi.payment_method='bank'
+       AND public.bank_sync_recovery_receipt_internal(v_transaction)
     ) THEN RAISE EXCEPTION 'PAYMENT_METHOD_POLICY_DISABLED'; END IF;
-    -- Reassignment mutates both orders. Hold the same transaction lock as pairing
-    -- before authorizing the current order so reassignment cannot change it first.
-    PERFORM 1 FROM eshop.transactions WHERE id=p_transaction_id FOR UPDATE;
-    PERFORM public.check_is_editor_order_on_occasion(o.occasion)
-      FROM eshop.transactions t JOIN eshop.orders o ON o.payment_info=t.payment_info
-      WHERE t.id=p_transaction_id AND o.payment_info<>p_payment_info_id;
   END IF;
 
     PERFORM public.apply_transaction_pairing(

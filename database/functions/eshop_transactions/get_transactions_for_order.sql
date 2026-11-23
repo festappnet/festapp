@@ -43,7 +43,17 @@ BEGIN
         'showBankAccess',bank_allowed AND NOT public.can_manage_unit_bank_accounts(oc.unit),
         'bankState', CASE WHEN NOT bank_allowed THEN 'disabled' WHEN NOT public.can_read_unit_bank_accounts(oc.unit) THEN 'restricted'
           WHEN bank_configured THEN 'configured' ELSE 'absent' END,
-        'pairingAccountId', CASE WHEN bank_allowed AND pi.payment_method='bank' AND public.can_manage_bank_account(pi.bank_account)
+        'pairingAccountId', CASE WHEN (bank_allowed OR (
+          public.bank_sync_recovery_account_internal(pi.bank_account,oc.unit) AND EXISTS(
+            SELECT FROM eshop.transactions t WHERE t.payment_info IS NULL AND t.amount>0
+             AND upper(trim(t.currency))=upper(trim(pi.currency_code))
+             AND (t.bank_account_id=pi.bank_account OR public.bank_sync_accounts_match(t.id,pi.bank_account))
+             AND public.can_manage_bank_account(t.bank_account_id)
+             AND public.bank_sync_recovery_receipt_internal(t)
+             AND (public.bank_sync_api_review_row_internal(t.id)).resolution->>'action' IS DISTINCT FROM 'api_same_movement'
+             AND NOT EXISTS(SELECT FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
+          )))
+          AND pi.payment_method='bank' AND public.can_manage_bank_account(pi.bank_account)
           AND public.can_write_orders(o.occasion) AND o.state IN ('created','ordered','paid','sent') THEN pi.bank_account END,
         'unitId', oc.unit,
         'removableTransactionIds', (SELECT coalesce(jsonb_agg(t.id),'[]')
@@ -55,7 +65,9 @@ BEGIN
           AND CASE WHEN t.transaction_type='manual' THEN upper(b.type)='CASH'
             AND public.can_manage_unit_bank_accounts(oc.unit) AND EXISTS(
               SELECT 1 FROM eshop.unit_bank_accounts l WHERE l.unit=oc.unit AND l.bank_account=b.id)
-            ELSE bank_allowed AND public.can_write_orders(o.occasion) AND public.can_manage_bank_account(b.id) END)
+            ELSE (bank_allowed OR public.bank_sync_recovery_receipt_internal(t))
+            AND public.can_write_orders(o.occasion) AND public.can_manage_bank_account(b.id)
+            AND public.can_manage_bank_account(pi.bank_account) END)
       ),
       'payment_info', (
         SELECT to_jsonb(pi)

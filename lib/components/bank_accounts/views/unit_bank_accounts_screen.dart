@@ -475,6 +475,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canConfigure = RightsService.canConfigureUnitBankAccounts();
     return Scaffold(
       appBar: AppBar(
         title: Text(BankAccountStrings.bankAccountsTitle),
@@ -509,7 +510,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: FilledButton.icon(
-                          onPressed: _isReordering ? null : () => _addOrEditAccount(),
+                          onPressed: _isReordering || !canConfigure ? null : () => _addOrEditAccount(),
                           icon: const Icon(Icons.add),
                           label: Text(BankAccountStrings.addBankAccount),
                         ),
@@ -519,7 +520,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                       child: ReorderableListView.builder(
                         buildDefaultDragHandles: false,
                         itemCount: _unitAccounts.length,
-                        onReorder: _onReorder,
+                        onReorder: canConfigure ? _onReorder : (_, _) {},
                         itemBuilder: (context, index) {
                           final account = _unitAccounts[index];
                           final higherPriorityCurrencies = _unitAccounts
@@ -529,7 +530,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                           return UnitBankAccountCard(
                             key: ValueKey(account.id),
                             account: account,
-                            onHistory: account.isAdmin == true ? () => showDialog<void>(context: context, builder: (_) => SearchTransactionsDialog(paymentInfoId: null, bankAccount: account.id, unitId: widget.unitId, readOnly: true)) : null,
+                            onHistory: canConfigure && account.isAdmin == true ? () => showDialog<void>(context: context, builder: (_) => SearchTransactionsDialog(paymentInfoId: null, bankAccount: account.id, unitId: widget.unitId, readOnly: true)) : null,
                             primaryCurrencies: account.supportedCurrencies
                                 .where((currency) => !higherPriorityCurrencies
                                     .contains(currency))
@@ -543,7 +544,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                                 ? () => _onReorder(index, index + 2)
                                 : null,
                             onOpen: () => _addOrEditAccount(account),
-                            onUnlink: _isReordering
+                            onUnlink: _isReordering || !canConfigure
                                 ? null
                                 : () => _unlinkAccount(account),
                           );

@@ -71,6 +71,9 @@ class SupabaseBankAccounts {
         'p_expected_body_sha256': row['body_sha256'],
         'p_checked_internet_banking': true,
         'p_not_duplicate': notDuplicate,
+        'p_duplicate_review_token': notDuplicate
+            ? row['duplicate_review_token']
+            : null,
       },
     ) as Map,
   );

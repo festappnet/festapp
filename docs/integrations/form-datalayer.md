@@ -1117,25 +1117,13 @@ receipts still fully cover it. Preparation is the existing last database check
 before the external request; unpairing after preparation can race an in-flight
 send. After a successful dispatch, the existing sent receipt remains; no event
 retraction or refund event is introduced. Browser facts likewise retain their
-existing immutable event identity. A later matching API movement adopts the confirmed transaction without another
-paid event only when the normalised reference signals (VS/RF), counter-account
-and bank-local date agree uniquely. Two facts are treated as a possible
-duplicate only when amount and currency match within a ±1 bank-day window and
-either a normalised VS/RF signal overlaps or both lack VS/RF signals while
-having the same normalised non-empty counter-account; missing signals are not a
-wildcard. On the API ingest path, a possible duplicate that is not a unique full
-match is still stored in `eshop.transactions` without running automatic pairing
-(`stored_unpaired_possible_duplicate`, with the related confirmed transaction
-IDs recorded in the inbox receipt) so real funds are never trapped and nothing
-double-credits; an administrator can pair it manually if it is a separate
-payment. On the email path, exact duplicates of an API or legacy movement are
-auto-resolved as `duplicate_of` (reporting live paired status), whereas possible
-duplicates — including duplicates of another confirmed email — stay visible in
-the queue with the related transactions so the administrator can either dismiss
-the observation (audited) or explicitly attest `p_not_duplicate = true` to
-confirm it as a separate payment (audited). VS/RF extraction is shared with the
-automatic matcher; currency and account notation are normalised. Bank dates use
-Europe/Prague and the shared legacy midnight-offset comparison. Confirmation
-also requires event order-editing permission and accepts only editable unpaid
-non-demo orders on the selected account and currency. These restrictions apply
-equally to suggestions, manual lookup and the confirming mutation.
+existing immutable event identity.
+
+Each confirmed source observation contributes at most one email receipt. A
+later matching API movement retains its own verified bank identity and ledger
+row. If it resembles an email receipt, the payment overview requires an audited
+review before attachment. A decision that both records describe the same
+movement keeps the existing credit. A decision that they describe separate
+payments uses the standard pairing operation. The current set of possible
+matches is bound to the administrator's decision. Confirming the remaining
+balance of a deposit order uses the same rules.

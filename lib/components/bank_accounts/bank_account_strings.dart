@@ -13,6 +13,17 @@ class BankAccountStrings {
   static String get emailDismiss => 'BankAccount.emailDismiss'.tr();
   static String get emailDismissReason => 'BankAccount.emailDismissReason'.tr();
   static String get emailLoadMore => 'BankAccount.emailLoadMore'.tr();
+  static String get apiDuplicateReviewTitle =>
+      'BankAccount.apiDuplicateReviewTitle'.tr();
+  static String get apiDuplicateReviewInstruction =>
+      'BankAccount.apiDuplicateReviewInstruction'.tr();
+  static String get apiDuplicateSame => 'BankAccount.apiDuplicateSame'.tr();
+  static String get apiDuplicateDistinct =>
+      'BankAccount.apiDuplicateDistinct'.tr();
+  static String get apiDuplicateReviewChanged =>
+      'BankAccount.apiDuplicateReviewChanged'.tr();
+  static String get apiDuplicateResolved =>
+      'BankAccount.apiDuplicateResolved'.tr();
   static String get emailDuplicateRestricted =>
       'BankAccount.emailDuplicateRestricted'.tr();
   static String get emailConflict => 'BankAccount.emailConflict'.tr();

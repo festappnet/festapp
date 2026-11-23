@@ -23,7 +23,12 @@
     "eshop_bank_sync/bank_sync_authority.sql",
     "eshop_bank_sync/ingest_bank_sync_transaction.sql",
     "eshop_transactions/add_transaction_to_payment_info_ws.sql",
-    "eshop_transactions/remove_transaction_from_payment_info_ws.sql"
+    "eshop_transactions/remove_transaction_from_payment_info_ws.sql",
+    "eshop_bank_sync/bank_sync_api_review.sql",
+    "eshop_transactions/apply_transaction_pairing.sql",
+    "eshop_transactions/get_transactions_for_order.sql",
+    "eshop_transactions/get_transactions_for_order_all_available.sql",
+    "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql"
   ],
   "retainedSignatures": [
     "public.uses_ticket_terminology_internal(jsonb)",

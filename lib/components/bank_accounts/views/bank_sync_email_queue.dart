@@ -257,6 +257,8 @@ class BankEmailPossibleDuplicates extends StatelessWidget {
           decimalDigits: 2,
         ),
       '$referenceLabel: ${vs ?? '—'}',
+      if (facts['counter_account'] != null)
+        '${facts['counter_account']} ${facts['bank_code'] ?? ''}'.trim(),
       status,
     ];
     return Padding(
@@ -324,12 +326,15 @@ class _BankEmailConfirmationDialogState
   final _query = TextEditingController();
   List<Map>? _results;
   late List<Map<String, dynamic>> _possibleDuplicates;
+  String? _duplicateReviewToken;
   String? _outcomeMessage;
 
   @override
   void initState() {
     super.initState();
     _possibleDuplicates = _mapList(widget.observation['possible_duplicates']);
+    _duplicateReviewToken =
+        widget.observation['duplicate_review_token'] as String?;
   }
 
   @override
@@ -493,7 +498,10 @@ class _BankEmailConfirmationDialogState
                         await ExceptionHandler.guard<Map<String, dynamic>>(
                           context,
                           futureFunction: () => widget.confirm(
-                            widget.observation,
+                            {
+                              ...widget.observation,
+                              'duplicate_review_token': _duplicateReviewToken,
+                            },
                             _selected!,
                             notDuplicate: _notDuplicate,
                           ),
@@ -507,9 +515,9 @@ class _BankEmailConfirmationDialogState
                       final returned = _mapList(result['possible_duplicates']);
                       setState(() {
                         _saving = false;
-                        if (returned.isNotEmpty) {
-                          _possibleDuplicates = returned;
-                        }
+                        _possibleDuplicates = returned;
+                        _duplicateReviewToken =
+                            result['duplicate_review_token'] as String?;
                         _notDuplicate = false;
                         _outcomeMessage =
                             BankAccountStrings.emailOutcomePossibleDuplicate;
