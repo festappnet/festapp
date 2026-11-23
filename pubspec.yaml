@@ -161,12 +161,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   fonts:
-    - family: Futura
+    - family: Gill Sans
       fonts:
-        - asset: fonts/Futura PT Book.ttf
+        - asset: fonts/Gill Sans Regular.ttf
           weight: 400
-        - asset: fonts/Futura PT Medium.ttf
-          weight: 500
         - asset: fonts/Gill Sans Bold.otf
           weight: 700
     - family: WalletPreviewSans

@@ -1,4 +1,4 @@
-package fstapp.fstapp
+package fstapp.jm2025
 
 import io.flutter.embedding.android.FlutterActivity
 
