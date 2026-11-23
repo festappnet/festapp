@@ -9,11 +9,19 @@ class FormVariableSymbolSettings extends StatelessWidget {
   final Map<String, dynamic> value;
   final ValueChanged<Map<String, dynamic>> onChanged;
   final bool enabled;
+  final GlobalKey<FormFieldState<String>>? policyKey;
+  final GlobalKey<FormFieldState<String>>? startingNumberKey;
+  final FocusNode? policyFocus;
+  final FocusNode? startingNumberFocus;
   const FormVariableSymbolSettings({
     super.key,
     required this.value,
     required this.onChanged,
     this.enabled = true,
+    this.policyKey,
+    this.startingNumberKey,
+    this.policyFocus,
+    this.startingNumberFocus,
   });
   @override
   Widget build(BuildContext context) {
@@ -22,6 +30,8 @@ class FormVariableSymbolSettings extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<String>(
+          key: policyKey,
+          focusNode: policyFocus,
           initialValue: const ['random', 'sequence'].contains(type)
               ? type
               : null,
@@ -55,6 +65,8 @@ class FormVariableSymbolSettings extends StatelessWidget {
         if (type == 'sequence') ...[
           const SizedBox(height: 16),
           TextFormField(
+            key: startingNumberKey,
+            focusNode: startingNumberFocus,
             initialValue: '${value[FormDefinition.metaStartingNumber] ?? ''}',
             enabled: enabled,
             decoration: InputDecoration(

@@ -8,6 +8,7 @@ import 'package:fstapp/components/features/feature.dart';
 import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_settings_editor.dart';
 import 'package:fstapp/components/forms/customer_order_changes.dart';
+import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/components/forms/views/customer_self_service_settings.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -112,7 +113,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text('Customer self-service'), findsOneWidget);
+        expect(find.text(FormStrings.orderCancellation), findsOneWidget);
         expect(
           find.text(customerChangeText(enabled ? 'notConfigured' : 'offHelp')),
           findsOneWidget,
@@ -122,10 +123,9 @@ void main() {
         expect(find.text('CustomerSelfService.move'), findsNothing);
         expect(find.text('CustomerSelfService.termHelp'), findsNothing);
         expect(find.byType(TimeDatePicker), findsNothing);
-        if (!enabled) {
-          await tester.tap(find.text('Customer self-service'));
-          await tester.pumpAndSettle();
-        }
+        expect(find.byType(SwitchListTile), findsNothing);
+        await tester.tap(find.text(FormStrings.orderCancellation));
+        await tester.pumpAndSettle();
         final cancellation = find.widgetWithText(
           SwitchListTile,
           customerChangeText('cancel'),
@@ -155,7 +155,7 @@ void main() {
           expect(deadline.dateLabel, customerChangeText('deadlineDate'));
           expect(deadline.timeLabel, customerChangeText('deadlineTime'));
           expect(
-            find.text(customerChangeText('configuredHelp')),
+            find.text(FormStrings.cancellationIncomplete),
             findsOneWidget,
           );
         } else {

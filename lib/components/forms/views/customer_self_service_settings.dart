@@ -8,7 +8,10 @@ import '../models/form_editor_draft.dart';
 import '../customer_order_changes.dart';
 import '../../features/feature_service.dart';
 import '../../features/feature_constants.dart';
-import '../../features/features_strings.dart';
+import '../form_strings.dart';
+import 'form_settings_section.dart';
+
+import 'package:fstapp/data_services/rights_service.dart';
 
 /// An owned editor draft. Only the surrounding form Save persists these rules.
 class CustomerSelfServiceSettings extends StatefulWidget {
@@ -215,18 +218,27 @@ class _CustomerSelfServiceSettingsState
     );
   }
 
+  String get _summary {
+    if (!_enabled) return customerChangeText('offHelp');
+    if (_cancel['enabled'] != true) return customerChangeText('notConfigured');
+
+    final savedDeadline = _cancel['allowed_until'];
+    final occasion =
+        widget.form.occasionModel ?? RightsService.currentOccasion();
+    final deadline = savedDeadline == null
+        ? occasion?.startTime
+        : DateTime.tryParse(savedDeadline.toString());
+    if (deadline == null || _error != null) {
+      return FormStrings.cancellationIncomplete;
+    }
+    if (!deadline.isAfter(DateTime.now())) return FormStrings.cancellationEnded;
+    return customerChangeText('configuredHelp');
+  }
+
   @override
-  Widget build(BuildContext context) => ExpansionTile(
-    key: ValueKey(_enabled),
-    initiallyExpanded: _enabled,
-    title: Text(FeaturesStrings.customerSelfServiceTitle),
-    subtitle: Text(
-      !_enabled
-          ? customerChangeText('offHelp')
-          : _cancel['enabled'] == true
-          ? customerChangeText('configuredHelp')
-          : customerChangeText('notConfigured'),
-    ),
+  Widget build(BuildContext context) => FormSettingsSection(
+    title: FormStrings.orderCancellation,
+    summary: _summary,
     children: [
       customerChangesHelp(context),
       Padding(
