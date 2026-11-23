@@ -8,6 +8,15 @@ RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=public,extensions 
     WHERE t.id=p_transaction_id AND t.ingest_source='banksync_api' AND c.legacy_blocked_at IS NOT NULL
       AND (p_target_account=c.bank_account_id OR p_target_account IN
         (SELECT bank_account_id FROM eshop.bank_sync_account_aliases WHERE connection_id=c.id))
+  ) OR EXISTS (
+    SELECT 1 FROM eshop.transactions t
+    JOIN eshop.bank_sync_inbox i ON (i.resolution->>'transaction_id')::bigint=t.id
+      AND i.resolution->>'action'='confirmed'
+    JOIN eshop.bank_sync_connections c ON c.id=i.connection_id AND c.bank_account_id=t.bank_account_id
+    WHERE t.id=p_transaction_id AND t.ingest_source='banksync_email_confirmed'
+      AND c.legacy_blocked_at IS NOT NULL
+      AND (p_target_account=c.bank_account_id OR EXISTS(SELECT 1 FROM eshop.bank_sync_account_aliases a
+        WHERE a.connection_id=c.id AND a.bank_account_id=p_target_account))
   );
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_accounts_match(bigint,bigint) FROM PUBLIC,anon,authenticated,service_role;

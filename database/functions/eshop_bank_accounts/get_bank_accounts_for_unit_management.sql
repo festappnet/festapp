@@ -19,13 +19,17 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
-DECLARE v_unit_manager boolean;
+DECLARE v_unit_manager boolean; v_bank_sales boolean;
 BEGIN
-    IF NOT coalesce(public.payment_method_policy_enabled_internal(p_unit_id,'bank'),false) THEN RAISE insufficient_privilege USING MESSAGE='PAYMENT_METHOD_POLICY_DISABLED'; END IF;
+    v_bank_sales := coalesce(public.payment_method_policy_enabled_internal(p_unit_id,'bank'),false);
     v_unit_manager := public.can_manage_unit_bank_accounts(p_unit_id);
     IF NOT public.can_read_unit_bank_accounts(p_unit_id) THEN
       RAISE insufficient_privilege USING MESSAGE='User is not manager.';
     END IF;
+    IF NOT v_bank_sales AND NOT EXISTS(
+      SELECT FROM eshop.unit_bank_accounts l WHERE l.unit=p_unit_id
+        AND public.bank_sync_recovery_account_internal(l.bank_account,p_unit_id)
+    ) THEN RAISE insufficient_privilege USING MESSAGE='PAYMENT_METHOD_POLICY_DISABLED'; END IF;
     RETURN QUERY
     SELECT
         ba.id,
@@ -57,6 +61,7 @@ BEGIN
     ) membership ON membership.bank_account=ba.id
     LEFT JOIN (SELECT DISTINCT bank_account FROM public.demo_occasions) protected ON protected.bank_account=ba.id
     WHERE uba.unit = p_unit_id
+      AND (v_bank_sales OR public.bank_sync_recovery_account_internal(ba.id,p_unit_id))
     AND ba.type != 'CASH'
     -- The entry guard admits a manager or a listed demo reader. Managers are
     -- always outside demo units; demo readers retain the account-level fence.

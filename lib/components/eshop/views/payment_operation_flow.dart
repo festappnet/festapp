@@ -67,7 +67,8 @@ class _PaymentOperationFlowState extends State<_PaymentOperationFlow> {
           (refund
                   ? ((data?.paymentOperations.canRefund ?? false) ||
                         (data?.paymentOperations.canViewHistory ?? false))
-                  : data?.paymentOperations.canRecord) ==
+                  : ((data?.paymentOperations.canRecord ?? false) ||
+                        data?.actions.pairingAccountId != null)) ==
               true;
       setState(() {
         _refund = refund;

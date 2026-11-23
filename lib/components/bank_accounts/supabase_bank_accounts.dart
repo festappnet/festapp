@@ -17,6 +17,67 @@ class SupabaseBankAccounts {
   final SupabaseClient _supabase;
   final Map<int, int> _accountUnitContexts = {};
 
+  Future<Map<String, dynamic>> getEmailQueuePage(
+    int accountId,
+    Map<String, dynamic>? cursor,
+  ) async => Map<String, dynamic>.from(
+    await _rpc(
+      'get_bank_sync_email_queue_page_v1',
+      params: {'p_bank_account_id': accountId, 'p_cursor': cursor},
+    ) as Map,
+  );
+
+  Future<List<Map<String, dynamic>>> findEmailTargets(
+    int accountId,
+    Map<String, dynamic> facts,
+    String query,
+  ) async => (await _rpc(
+    'find_bank_sync_email_targets_v1',
+    params: {
+      'p_bank_account_id': accountId,
+      'p_facts': facts,
+      'p_query': query,
+    },
+  ) as List).map((row) => Map<String, dynamic>.from(row as Map)).toList();
+
+  Future<void> dismissEmail(
+    int accountId,
+    Map<String, dynamic> row,
+    String reason,
+  ) async {
+    await _rpc(
+      'dismiss_bank_sync_email_observation',
+      params: {
+        'p_bank_account_id': accountId,
+        'p_delivery_id': row['delivery_id'],
+        'p_expected_body_sha256': row['body_sha256'],
+        'p_reason': reason,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> confirmEmail(
+    int accountId,
+    Map<String, dynamic> row,
+    int paymentInfoId, {
+    bool notDuplicate = false,
+  }) async => Map<String, dynamic>.from(
+    await _rpc(
+      'confirm_bank_sync_email_observation',
+      params: {
+        'p_bank_account_id': accountId,
+        'p_delivery_id': row['delivery_id'],
+        'p_payment_info_id': paymentInfoId,
+        'p_expected_body_sha256': row['body_sha256'],
+        'p_checked_internet_banking': true,
+        'p_not_duplicate': notDuplicate,
+        'p_duplicate_review_token': notDuplicate
+            ? row['duplicate_review_token']
+            : null,
+      },
+    ) as Map,
+  );
+
   Future<Map<String, dynamic>> _bankCommand(
     String action,
     Map<String, dynamic> payload, {
@@ -155,13 +216,12 @@ class SupabaseBankAccounts {
       'get_bank_accounts_for_unit_management',
       params: {'p_unit_id': unitId},
     );
-    final accounts = (response as List)
-        .map((e) => BankAccountModel.fromJson(e))
-        .toList()
-      ..sort((first, second) {
-        final priority = first.priority.compareTo(second.priority);
-        return priority == 0 ? first.id.compareTo(second.id) : priority;
-      });
+    final accounts =
+        (response as List).map((e) => BankAccountModel.fromJson(e)).toList()
+          ..sort((first, second) {
+            final priority = first.priority.compareTo(second.priority);
+            return priority == 0 ? first.id.compareTo(second.id) : priority;
+          });
     for (final account in accounts) {
       _accountUnitContexts[account.id] = unitId;
     }
@@ -237,7 +297,10 @@ class SupabaseBankAccounts {
   }
 
   Future<List<BankAccountModel>> getLinkableBankAccounts(int unitId) async {
-    final response = await _rpc('get_linkable_bank_accounts', params: {'p_unit_id': unitId});
+    final response = await _rpc(
+      'get_linkable_bank_accounts',
+      params: {'p_unit_id': unitId},
+    );
     return (response as List).map((e) => BankAccountModel.fromJson(e)).toList();
   }
 

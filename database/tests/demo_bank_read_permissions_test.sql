@@ -8,15 +8,20 @@ BEGIN
  UPDATE public.user_info SET organization=1 WHERE id=actor;
  SELECT occasion,bank_account INTO STRICT oc,bank FROM public.demo_occasions
   WHERE organization=1 AND fixture_version='2026-10-14.3' AND demo_key='ball';
- SELECT payment_info INTO STRICT pay FROM eshop.orders WHERE occasion=oc AND payment_info IS NOT NULL LIMIT 1;
- SELECT unit INTO demo_unit FROM public.occasions WHERE id=oc;
+ SELECT pi.id INTO STRICT pay FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info
+  WHERE o.occasion=oc AND pi.payment_method='bank' AND pi.bank_account=bank ORDER BY o.id LIMIT 1;
+ SELECT unit INTO STRICT demo_unit FROM public.occasions WHERE id=oc;
+ INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled)
+  VALUES(1,'bank',true) ON CONFLICT(organization_id,method) DO UPDATE SET enabled=excluded.enabled;
+ INSERT INTO eshop.unit_payment_method_policies(unit_id,method,mode)
+  VALUES(demo_unit,'bank','enabled') ON CONFLICT(unit_id,method) DO UPDATE SET mode=excluded.mode;
  UPDATE public.demo_occasions SET is_listed=true WHERE occasion=oc;
  PERFORM set_config('request.jwt.claim.sub',actor::text,true);
  PERFORM set_config('request.jwt.claim.role','authenticated',true);
  SET LOCAL ROLE authenticated;
  PERFORM assert_eq((SELECT count(*) FROM eshop.bank_accounts WHERE id=bank),1::bigint,'demo account readable without bank admin');
  PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.transactions WHERE bank_account_id=bank AND payment_info IS NULL),'unmatched demo movement readable');
- PERFORM assert_true(jsonb_array_length(public.get_transactions_for_order_all_available(pay))>0,'existing transaction reader works');
+ PERFORM assert_true((jsonb_array_length(public.get_transactions_for_order_all_available(pay))>0) IS TRUE,'existing transaction reader works');
  BEGIN
   PERFORM public.update_bank_account(bank,'123/0100','Unauthorized change');
   RAISE EXCEPTION 'bank write accepted';

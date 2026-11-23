@@ -617,6 +617,16 @@
       "source": "database/functions/eshop_forms/meta_purchase_settings.sql",
       "authorization": "Organization admin and non-demo unit on every RPC; platform approval required except disconnect cleanup; private Vault write only",
       "evidence": "database/tests/eshop_forms/meta_purchase_consent_test.sql"
+    },
+    "bank_email_confirmation": {
+      "rpc": "public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean,text)",
+      "authorization": "Selected and canonical account management before inbox access or replay; target event order editing before confirmation access and replay",
+      "boundary": "Shared payable-target set, policy fence, delivery/connection/inbox/ledger/order/payment locks, normalized fail-closed possible-duplicate guard",
+      "api_review": "public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint); order/account authority, candidate-bound decision and original movement identity",
+      "queue": "public.get_bank_sync_email_queue_page_v1(bigint,integer,jsonb); keyset cursor, bounded to 100 items",
+      "lookup": "public.find_bank_sync_email_targets_v1(bigint,jsonb,text); same editable payable account/currency scope",
+      "dismiss": "public.dismiss_bank_sync_email_observation(bigint,text,text,text); required reason, immutable audited resolution, same account authorization",
+      "evidence": "database/tests/eshop/transactions/bank_sync_email_confirmation_test.sql"
     }
   }
 }

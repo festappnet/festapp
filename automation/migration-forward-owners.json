@@ -158,7 +158,8 @@
       "sources": [
         "eshop_transactions/get_transactions_for_order.sql"
       ],
-      "active": true
+      "sha256": "d539763706c4e1af14fa65c321b2602604add6b64a9bd3f24a1d44a6ac950f0d",
+      "checkSources": true
     },
     {
       "migration": "20261112233000_ticket_wallet_branding.sql",
@@ -801,7 +802,6 @@
     },
     {
       "migration": "20261121100000_form_measurement_publisher.sql",
-      "active": true,
       "header": "-- Keep existing conversion facts and deliveries in place as writer ownership changes.\nDROP FUNCTION public.record_form_conversion_internal(bigint);\nDROP FUNCTION public.record_form_conversion_internal(bigint,boolean);\nDROP FUNCTION public.record_form_paid_conversion_internal(bigint);",
       "sources": [
         "eshop_forms/form_measurement_subscriptions.sql",
@@ -812,7 +812,9 @@
         "eshop_waitlist/commands.sql",
         "eshop_transactions/apply_transaction_pairing.sql",
         "payment_providers/effects.sql"
-      ]
+      ],
+      "sha256": "3bff942689c3e185ed200f17261eaa053ef0e0c6df1723e2061b6e32dfee7f74",
+      "checkSources": true
     },
     {
       "migration": "20261121101000_order_catalog_counts.sql",
@@ -963,6 +965,28 @@
         "notification_center/prepared_worker.sql": [
           "prepare_notification_center"
         ]
+      }
+    },
+    {
+      "migration": "20261122180000_bank_email_confirmation.sql",
+      "active": true,
+      "header": "-- Admin-confirmed email observations; no automatic email pairing.",
+      "sources": [
+        "eshop_bank_sync/bank_sync_review_schema.sql",
+        "eshop_transactions/match_bank_transaction.sql",
+        "eshop_bank_sync/bank_sync_email_confirmation.sql",
+        "eshop_bank_sync/bank_sync_authority.sql",
+        "eshop_bank_sync/bank_sync_api_review.sql",
+        "eshop_bank_sync/ingest_bank_sync_transaction.sql",
+        "eshop_transactions/add_transaction_to_payment_info_ws.sql",
+        "eshop_transactions/remove_transaction_from_payment_info_ws.sql",
+        "eshop_transactions/apply_transaction_pairing.sql",
+        "eshop_transactions/get_transactions_for_order.sql",
+        "eshop_transactions/get_transactions_for_order_all_available.sql",
+        "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql"
+      ],
+      "selectors": {
+        "eshop_bank_sync/bank_sync_authority.sql": ["bank_sync_accounts_match"]
       }
     }
   ]

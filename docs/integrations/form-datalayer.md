@@ -1100,3 +1100,14 @@ visitor consent. The existing organization/Unit/form switches, privacy notice,
 runtime and consent checks remain. No additional domain-approval request is sent.
 Removing a saved website withdraws its self-service grant on policy renewal.
 Explicit operator-owned application origins remain separately configured.
+
+### Administrator-confirmed bank email payments
+
+An email counts toward paid conversion after an administrator confirms and pairs
+the receipt. The existing eligibility check still requires full net bank receipts,
+a paid or sent order, and live measurement policy. Purchase cohort, consent, age
+and connector checks still apply.
+
+The Meta worker rechecks eligibility in `prepare_meta_purchase_delivery`.
+Unpairing can make the order ineligible up to that check. A send already in
+flight can finish, and successful sends retain their existing event identity.

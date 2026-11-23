@@ -3761,6 +3761,121 @@
       "anon": false,
       "authenticated": true,
       "service_role": false
+    },
+    "public.bank_sync_counter_account_internal(text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_possible_duplicate_internal(eshop.transactions,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_duplicate_candidates_internal(bigint,jsonb,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_authorized_connection_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_candidates_internal(bigint,jsonb,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.find_bank_sync_email_targets_v1(bigint,jsonb,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.get_bank_sync_email_queue_page_v1(bigint,integer,jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.dismiss_bank_sync_email_observation(bigint,text,text,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.bank_sync_fact_dates_match_internal(eshop.transactions,jsonb,integer)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_possible_duplicates_view_internal(bigint[])": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[])": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_lookup_signals_internal(text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_transaction_signals_internal(text,text,text,text,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean,text)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint)": {
+      "anon": false,
+      "authenticated": true,
+      "service_role": false
+    },
+    "public.bank_sync_review_token_internal(eshop.bank_sync_inbox,bigint[])": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_email_source_row_internal(bigint,text)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_api_review_row_internal(bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_recovery_account_internal(bigint,bigint)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_recovery_receipt_internal(eshop.transactions)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_pairing_candidates_internal(bigint,boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_api_review_candidates_internal(eshop.bank_sync_inbox)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
+    "public.bank_sync_api_review_view_internal(eshop.bank_sync_inbox)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
     }
   },
   "extension_client_execute": {
@@ -3830,7 +3945,8 @@
     "database/functions/user_permissions/account_passkey_sign_in.sql",
     "database/functions/user_permissions/account_mfa_recovery.sql",
     "database/functions/user_permissions/account_private_image_grants.sql",
-    "database/functions/user_permissions/public_auth_operation_policy.sql"
+    "database/functions/user_permissions/public_auth_operation_policy.sql",
+    "database/functions/eshop_bank_sync/bank_sync_email_confirmation.sql"
   ],
   "monitor": "public.get_festapp_monitoring_health_v1(text)",
   "monitor_credential_table": "public.festapp_monitoring_credentials",

@@ -123,8 +123,12 @@ BEGIN
  PERFORM assert_eq(public.create_ticket_order_client_sync_v1(checkout,command_id,client_id)#>>'{data,analytics,event_id}',
   paid_id::text,'authorized replay exposes general paid purchase before CAPI send');
  PERFORM assert_true(public.get_customer_order_overview_internal(repeat('b',64),v_order_id)->>'code'<>'200','invalid capability cannot read purchase');
- PERFORM public.apply_transaction_pairing(balance_id,NULL,'manual_unlink','user');
- PERFORM public.apply_transaction_pairing(balance_id,payment_id,'manual_attach','user');
+ INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin) VALUES(bank_id,(fixture->>'actor')::uuid,true);
+ INSERT INTO public.unit_users(unit,"user",is_manager) VALUES(connector_unit,(fixture->>'actor')::uuid,true);
+ PERFORM set_config('request.jwt.claim.sub',fixture->>'actor',true);
+ PERFORM public.remove_transaction_from_payment_info_ws(balance_id,payment_id);
+ PERFORM public.add_transaction_to_payment_info_ws(balance_id,payment_id);
+ PERFORM set_config('request.jwt.claim.sub','',true);
  PERFORM assert_eq((SELECT event_id FROM analytics.conversion_facts WHERE "order"=v_order_id AND kind='order_fully_paid'),
   paid_id,'unlink and re-pair preserve the original event ID');
 

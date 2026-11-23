@@ -48,11 +48,11 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   bool _ledgerComplete = false;
   String? _orderState;
   OrderPaymentActions _actions = const OrderPaymentActions();
-  bool get _canEdit =>
+  bool _canRemoveTransaction(TransactionModel transaction) =>
       !RightsService.isDemoReadOnly &&
       !_isLoading &&
       _payment?.isProvider != true &&
-      OrderModel.canChangePaymentInState(_orderState);
+      _actions.removableTransactionIds.contains(transaction.id);
 
   @override
   void initState() {
@@ -93,7 +93,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   Future<void> _paymentOperation({bool refund = false}) async {
     if (!(refund
         ? (_operations.canRefund || _operations.canViewHistory)
-        : _operations.canRecord))
+        : (_operations.canRecord || _actions.pairingAccountId != null)))
       return;
     final changed = await showOrderPaymentOperationDialog(
       context,
@@ -108,7 +108,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
   }
 
   void _removeTransaction(TransactionModel transaction) async {
-    if (!_canEdit) return;
+    if (!_canRemoveTransaction(transaction)) return;
     final isManual = transaction.transactionType == 'manual';
     final confirmMessage = isManual
         ? OrdersStrings.deleteCashTransactionConfirmation
@@ -178,7 +178,9 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                     runSpacing: 10,
                     children: [
                       ElevatedButton(
-                        onPressed: _operations.canRecord
+                        onPressed:
+                            (_operations.canRecord ||
+                                _actions.pairingAccountId != null)
                             ? () => _paymentOperation()
                             : null,
                         style: ElevatedButton.styleFrom(
@@ -482,7 +484,10 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                                             icon: Icon(Icons.delete),
                                             tooltip: OrdersStrings
                                                 .removeTransactionTooltip,
-                                            onPressed: !_canEdit
+                                            onPressed:
+                                                !_canRemoveTransaction(
+                                                  transaction,
+                                                )
                                                 ? null
                                                 : () => _removeTransaction(
                                                     transaction,

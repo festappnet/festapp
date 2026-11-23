@@ -291,6 +291,26 @@
       "evidence": "database/tests/eshop_forms/meta_purchase_consent_test.sql",
       "owner": "Festapp backend maintainers",
       "reviewBy": "2026-12-19"
+    },
+    {
+      "operation": "bank.email_confirmation",
+      "budget": "bounded-existing-inbox-once",
+      "source": "database/functions/eshop_bank_sync/bank_sync_email_confirmation.sql",
+      "admission": "check_is_admin_for_bank_account",
+      "evidence": "database/tests/eshop/transactions/bank_sync_email_confirmation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "reason": "Account and order authorization; bounded keyset queue; once-only confirmation, duplicate and dismissal resolutions."
+    },
+    {
+      "operation": "bank.email_dismissal",
+      "budget": "bounded-existing-inbox-once",
+      "source": "database/functions/eshop_bank_sync/bank_sync_email_confirmation.sql",
+      "admission": "bank_sync_email_authorized_connection_internal",
+      "evidence": "database/tests/eshop/transactions/bank_sync_email_confirmation_test.sql",
+      "owner": "Festapp backend maintainers",
+      "reviewBy": "2026-12-19",
+      "reason": "Existing inbox row only, bounded required reason, audited immutable resolution and authenticated selected/canonical bank-account scope."
     }
   ],
   "edgeFunctions": [

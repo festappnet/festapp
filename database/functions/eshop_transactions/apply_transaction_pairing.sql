@@ -18,6 +18,7 @@ DECLARE
   v_order_ids bigint[];
   v_order_bindings jsonb;
   v_locked_order_bindings jsonb;
+  v_api_review eshop.bank_sync_inbox;
 BEGIN
   PERFORM public.check_bank_account_writable((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id));
   PERFORM public.check_bank_account_writable((SELECT bank_account FROM eshop.payment_info WHERE id=p_payment_info_id));
@@ -34,6 +35,14 @@ BEGIN
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_TRANSACTION_NOT_FOUND'; END IF;
   v_old_payment_info_id := v_transaction.payment_info;
+
+  IF p_payment_info_id IS NOT NULL AND v_transaction.ingest_source='banksync_api' THEN
+    v_api_review:=public.bank_sync_api_review_row_internal(p_transaction_id);
+    IF v_api_review.delivery_id IS NOT NULL AND
+      v_api_review.resolution->>'action' IS DISTINCT FROM 'api_distinct' THEN
+      RAISE EXCEPTION 'BANK_SYNC_API_DUPLICATE_REVIEW_REQUIRED';
+    END IF;
+  END IF;
 
   -- The transaction row stabilizes the old target (also held by ingest/matcher).
   -- Acquire every stored old/new form and order before either payment row,
@@ -72,6 +81,14 @@ BEGIN
   END IF;
 
   IF p_actor_kind='user' THEN
+    -- The manual bank commands mutate the current and requested bindings.
+    -- Authorize the stored orders and their payment accounts under their locks.
+    IF v_old_payment_info_id IS NOT NULL AND p_method IN ('manual_attach','manual_unlink') THEN
+      PERFORM public.check_is_admin_for_bank_account(pi.bank_account)
+      FROM eshop.payment_info pi WHERE pi.id IN (v_old_payment_info_id,p_payment_info_id);
+      PERFORM public.check_is_editor_order_on_occasion(o.occasion)
+      FROM eshop.orders o WHERE o.payment_info IN (v_old_payment_info_id,p_payment_info_id);
+    END IF;
     FOR v_order_id IN SELECT id FROM eshop.orders
       WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id) ORDER BY id LOOP
       PERFORM public.check_order_is_mutable(v_order_id);

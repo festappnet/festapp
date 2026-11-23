@@ -285,10 +285,12 @@ class RightsService {
 
   static bool hasCapability(String id) {
     if (!_privateContextAvailable) return false;
-    if (id == AuthorizationCapabilities.bankAccountsUnitManage &&
-        (currentUnit()?.paymentMethodPolicy?['methods'] as Map?)?['bank']?['policyEnabled'] != true) return false;
     return occasionLinkModel?.capabilities[id] == true;
   }
+
+  static bool canConfigureUnitBankAccounts() =>
+      hasCapability(AuthorizationCapabilities.bankAccountsUnitManage) &&
+      (currentUnit()?.paymentMethodPolicy?['methods'] as Map?)?['bank']?['policyEnabled'] == true;
 
   static bool canUpdateUsers() =>
       hasCapability(AuthorizationCapabilities.usersWrite);

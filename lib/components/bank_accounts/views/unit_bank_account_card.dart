@@ -39,9 +39,7 @@ class UnitBankAccountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final canReorder = selection == null && RightsService.hasCapability(
-      AuthorizationCapabilities.bankAccountsUnitManage,
-    );
+    final canReorder = selection == null && RightsService.canConfigureUnitBankAccounts();
     final localizations = MaterialLocalizations.of(context);
     final actions = Wrap(
       alignment: WrapAlignment.end,

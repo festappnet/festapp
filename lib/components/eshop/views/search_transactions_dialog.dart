@@ -12,6 +12,9 @@ import 'package:fstapp/components/eshop/orders_strings.dart';
 import 'dart:async';
 
 import '../../forms/payment_method_strings.dart';
+import '../../bank_accounts/bank_account_strings.dart';
+import '../../bank_accounts/views/bank_sync_email_queue.dart';
+import '../../../services/exception_handler.dart';
 
 class SearchTransactionsDialog extends StatefulWidget {
   final int? paymentInfoId;
@@ -37,6 +40,7 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
   List<TransactionModel> _filteredTransactions = [];
   bool _isLoading = true;
   bool _loadFailed = false;
+  bool _reviewing = false;
   Timer? _debounce;
   final _searchController = TextEditingController();
 
@@ -140,7 +144,110 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
     });
   }
 
+  String? _bankReviewLabel(String? decision) => switch (decision) {
+    'api_same_movement' => BankAccountStrings.apiDuplicateReviewedSame,
+    'api_distinct' => BankAccountStrings.apiDuplicateReviewedDistinct,
+    _ => null,
+  };
+
+  Future<void> _reviewBankSyncTransaction(
+    TransactionModel transaction,
+    Map<String, dynamic> review,
+  ) async {
+    setState(() => _reviewing = true);
+    try {
+      while (mounted) {
+        final candidates = (review['possible_duplicates'] as List)
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
+        final decision = await showDialog<({int? existingId})>(
+          context: context,
+          builder: (context) => AppAlertDialog(
+            onClose: () => Navigator.of(context).pop(),
+            title: Text(BankAccountStrings.apiDuplicateReviewTitle),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  BankEmailFacts(
+                    facts: {
+                      'amount_cents': (transaction.amount! * 100).round(),
+                      'currency': transaction.currency,
+                      'raw_vs': transaction.vs,
+                      'payer_reference': transaction.payerReference,
+                      'counter_account': transaction.counterAccount,
+                      'bank_code': transaction.bankCode,
+                      'sender_name': transaction.counterAccountName,
+                      'date': transaction.date?.toIso8601String(),
+                    },
+                  ),
+                  if (transaction.transactionId case final int id) Text('#$id'),
+                  if (_bankReviewLabel(review['previous_action'] as String?)
+                      case final label?)
+                    Text(label),
+                  const SizedBox(height: 12),
+                  Text(BankAccountStrings.apiDuplicateReviewInstruction),
+                  BankEmailPossibleDuplicates(
+                    duplicates: candidates,
+                    onMatch: (id) =>
+                        Navigator.of(context).pop((existingId: id)),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(CommonStrings.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop((existingId: null)),
+                child: Text(BankAccountStrings.apiDuplicateDistinct),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || decision == null) return;
+        final result = await ExceptionHandler.guard<Map<String, dynamic>>(
+          context,
+          futureFunction: () => DbEshop.resolveBankSyncApiDuplicate(
+            transactionId: transaction.id!,
+            paymentInfoId: widget.paymentInfoId!,
+            reviewToken: review['review_token'] as String,
+            existingTransactionId: decision.existingId,
+          ),
+        );
+        if (!mounted || result == null) return;
+        if (result['action'] == 'review_changed') {
+          review = result;
+          ToastHelper.Show(
+            context,
+            BankAccountStrings.apiDuplicateReviewChanged,
+          );
+          continue;
+        }
+        if (result['action'] == 'api_same_movement' &&
+            result['paired_now'] != true) {
+          ToastHelper.Show(context, BankAccountStrings.apiDuplicateResolved);
+          await _fetchAvailableTransactions();
+        } else {
+          ToastHelper.Show(context, OrdersStrings.transactionAddedSuccess);
+          Navigator.of(context).pop(true);
+        }
+        return;
+      }
+    } finally {
+      if (mounted) setState(() => _reviewing = false);
+    }
+  }
+
   void _selectTransaction(TransactionModel transaction) async {
+    if (_reviewing) return;
+    if (transaction.bankSyncReview case final review?) {
+      await _reviewBankSyncTransaction(transaction, review);
+      return;
+    }
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AppAlertDialog(
@@ -230,6 +337,11 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
                         itemCount: _filteredTransactions.length,
                         itemBuilder: (context, index) {
                           final transaction = _filteredTransactions[index];
+                          final reviewLabel = _bankReviewLabel(
+                            transaction.bankSyncReview?['previous_action']
+                                    as String? ??
+                                transaction.bankSyncDecision,
+                          );
                           final counterAccountName =
                               transaction.counterAccountName ??
                               transaction.performedBy ??
@@ -251,6 +363,13 @@ class _SearchTransactionsDialogState extends State<SearchTransactionsDialog> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    if (reviewLabel != null)
+                                      Text(reviewLabel)
+                                    else if (transaction.bankSyncReview != null)
+                                      Text(
+                                        BankAccountStrings
+                                            .apiDuplicateReviewTitle,
+                                      ),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,

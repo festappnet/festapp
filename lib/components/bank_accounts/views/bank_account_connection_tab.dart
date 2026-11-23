@@ -1,19 +1,20 @@
-import 'package:fstapp/services/locale_date_time.dart';
-import 'package:fstapp/components/_shared/copy_button.dart';
-import 'package:fstapp/data_services/authorization_capabilities.dart';
-import 'package:fstapp/data_services/rights_service.dart';
-
-import 'bank_account_dialog_scope.dart';
-
 import 'dart:async';
 
-import 'package:material_ui/material_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:festapp_core/eshop.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
+import 'package:fstapp/components/_shared/copy_button.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
+import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/services/locale_date_time.dart';
 import 'package:fstapp/services/toast_helper.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:timeago/timeago.dart' as timeago;
+
+import '../db_bank_accounts.dart';
+import 'bank_account_dialog_scope.dart';
+import 'bank_sync_email_queue.dart';
 
 class BankAccountConnectionTab extends StatefulWidget {
   final BankAccountModel account;
@@ -80,6 +81,28 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
       ? widget.account.bankSync!.tokenMasked
       : widget.account.tokenMasked;
   DateTime? get _lastBankPull => widget.account.bankSync?.bankPullAt;
+
+  Widget _buildEmailQueue() => BankSyncEmailQueue(
+    key: ValueKey((widget.account.id, widget.account.bankSync)),
+    readOnly: widget.isReadOnly,
+    compact: widget.account.bankSync?.mode != 'email',
+    loadPage: (cursor) =>
+        DbBankAccounts.current.getEmailQueuePage(widget.account.id, cursor),
+    lookup: (facts, query) => DbBankAccounts.current.findEmailTargets(
+      widget.account.id,
+      facts,
+      query,
+    ),
+    dismiss: (row, reason) =>
+        DbBankAccounts.current.dismissEmail(widget.account.id, row, reason),
+    confirm: (row, payment, {bool notDuplicate = false}) =>
+        DbBankAccounts.current.confirmEmail(
+          widget.account.id,
+          row,
+          payment,
+          notDuplicate: notDuplicate,
+        ),
+  );
 
   Widget _buildLastFailure(BuildContext context, BankSyncFailure failure) {
     final sync = widget.account.bankSync!;
@@ -309,8 +332,16 @@ class _BankAccountConnectionTabState extends State<BankAccountConnectionTab> {
                   context,
                   widget.account.bankSync!.lastFailure!,
                 ),
-              if (widget.account.bankSync!.mode == 'email')
+              if (widget.account.bankSync!.mode == 'email') ...[
+                Text(BankAccountStrings.emailConfirmationRequired),
                 Text(BankAccountStrings.emailIdentityNotice),
+              ],
+              if (!widget.isReadOnly &&
+                  RightsService.hasBankCapability(
+                    widget.account.id,
+                    AuthorizationCapabilities.bankSyncManage,
+                  ))
+                _buildEmailQueue(),
               const SizedBox(height: 16),
             ],
             if (widget.isFio && !widget.isReadOnly)

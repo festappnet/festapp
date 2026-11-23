@@ -33,6 +33,8 @@ BEGIN
     -- Create Org & Unit
     INSERT INTO public.organizations (title) VALUES ('Test Org') RETURNING id INTO v_org_id;
     INSERT INTO public.organization_users (organization, "user", is_admin) VALUES (v_org_id, v_user_manager, true);
+    INSERT INTO eshop.organization_payment_method_policies(organization_id,method,enabled)
+      VALUES(v_org_id,'bank',true);
     
     INSERT INTO public.units (title, organization) VALUES ('Test Unit', v_org_id) RETURNING id INTO v_unit_id;
     INSERT INTO public.unit_users (unit, "user", is_manager) VALUES (v_unit_id, v_user_manager, true);
@@ -86,9 +88,9 @@ BEGIN
     
     -- Manager without bank admin rights sees only connection health.
     INSERT INTO eshop.bank_sync_connections(instance_id,consumer_app_id,remote_bank_account_id,
-      bank_account_id,physical_account,provider,mode,state,pairing_code,manifest_sha256)
+      bank_account_id,physical_account,provider,mode,state,pairing_code,manifest_sha256,legacy_blocked_at)
     VALUES('management-test','festapp','management-test',v_acc_fio,'123/2010',
-      'FIO','api','connected','abcdef0123',repeat('a',64));
+      'FIO','api','connected','abcdef0123',repeat('a',64),now());
     SELECT * INTO v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id);
     IF v_fio_rec.is_admin IS DISTINCT FROM false OR
        v_fio_rec.bank_sync IS DISTINCT FROM '{"state":"connected","mode":"api"}'::jsonb THEN
@@ -102,6 +104,22 @@ BEGIN
       RAISE EXCEPTION 'Bank admin must receive authorized connection details';
     END IF;
     
+    -- Closing sales keeps the recovery view available only to the bank administrator.
+    UPDATE eshop.organization_payment_method_policies SET enabled=false
+      WHERE organization_id=v_org_id AND method='bank';
+    SELECT * INTO STRICT v_fio_rec FROM public.get_bank_accounts_for_unit_management(v_unit_id);
+    PERFORM assert_eq(v_fio_rec.id,v_acc_fio,'activated bank stays available for recovery with sales closed');
+    UPDATE eshop.bank_account_users SET is_admin=false WHERE bank_account=v_acc_fio AND "user"=v_user_manager;
+    BEGIN
+      PERFORM public.get_bank_accounts_for_unit_management(v_unit_id);
+      RAISE EXCEPTION 'Manager without bank administration must not have recovery access';
+    EXCEPTION WHEN insufficient_privilege THEN
+      IF SQLERRM <> 'PAYMENT_METHOD_POLICY_DISABLED' THEN RAISE; END IF;
+    END;
+    UPDATE eshop.bank_account_users SET is_admin=true WHERE bank_account=v_acc_fio AND "user"=v_user_manager;
+    UPDATE eshop.organization_payment_method_policies SET enabled=true
+      WHERE organization_id=v_org_id AND method='bank';
+
     -- Historical imports can leave several memberships for the same user.
     -- Effective roles are existential and each linked account appears once.
     INSERT INTO eshop.bank_account_users(bank_account,"user",is_admin,is_support)

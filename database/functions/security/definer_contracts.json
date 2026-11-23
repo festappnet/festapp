@@ -3522,6 +3522,26 @@
     "10f791ffe7d7f37568ab215473d0baf7244f4f4ff183f426070686ecbb9f3dc6": {
       "signature": "public.can_update_public_auth_account_v1()",
       "source": "database/functions/user_permissions/public_auth_operation_policy.sql"
+    },
+    "3cfa10402bcb14681e9bab0fbeaaea7644118b3d5127eb52cfe20570f694be05": {
+      "signature": "public.find_bank_sync_email_targets_v1(bigint,jsonb,text)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_email_confirmation.sql"
+    },
+    "ffec945a6cb8511129ba9fc7792fc55196eb08dd9dda2f49095902336632aeef": {
+      "signature": "public.get_bank_sync_email_queue_page_v1(bigint,integer,jsonb)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_email_confirmation.sql"
+    },
+    "bce16df9d92aa704343a78ac246371c3c4d2a683a37614dc7255cac363adbd45": {
+      "signature": "public.dismiss_bank_sync_email_observation(bigint,text,text,text)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_email_confirmation.sql"
+    },
+    "5a8147c93d1896c0f9c4cf73809851853d2b99c36f266f36389bf764fafbca46": {
+      "signature": "public.confirm_bank_sync_email_observation(bigint,text,bigint,text,boolean,boolean,text)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_email_confirmation.sql"
+    },
+    "3bb860e63ab6dd05ea999ef5908b238e1a47045aefea6cbcd3578fc188c0b3bb": {
+      "signature": "public.resolve_bank_sync_api_duplicate_v1(bigint,bigint,text,bigint)",
+      "source": "database/functions/eshop_bank_sync/bank_sync_api_review.sql"
     }
   }
 }

@@ -18,6 +18,8 @@ DECLARE
   v_source_id bigint;
   v_command_id bigint;
   v_refund jsonb;
+  v_possible_duplicate_ids bigint[];
+  v_skip_matching boolean:=false;
 BEGIN
   PERFORM public.require_service_role();
   IF p_consumer_app_id IS DISTINCT FROM 'festapp' OR nullif(p_instance_id,'') IS NULL
@@ -63,6 +65,9 @@ BEGIN
     OR v_data->>'source' IS DISTINCT FROM 'fio_api'
     OR v_connection.provider<>'FIO' OR nullif(v_identity,'') IS NULL THEN
     v_outcome:='quarantined_identity';
+    IF (v_data->>'source' ~ '(^|_)email$') AND v_amount>0 THEN
+      v_possible_duplicate_ids:=public.bank_sync_email_duplicate_candidates_internal(v_connection.id,v_data,false);
+    END IF;
   ELSE
     SELECT t.* INTO v_tx FROM eshop.bank_transaction_identities i
       JOIN eshop.transactions t ON t.id=i.transaction_id
@@ -78,6 +83,12 @@ BEGIN
       IF cardinality(v_ids)>1 THEN v_outcome:='quarantined_conflict';
       ELSIF cardinality(v_ids)=1 THEN SELECT * INTO v_tx FROM eshop.transactions WHERE id=v_ids[1] FOR UPDATE;
       END IF;
+    END IF;
+    -- Keep each proven API movement and its own identity. If a manually
+    -- confirmed email might describe it, leave the new credit for review.
+    IF v_outcome IS NULL AND v_tx.id IS NULL AND v_amount>0 THEN
+      v_possible_duplicate_ids:=public.bank_sync_email_duplicate_candidates_internal(v_connection.id,v_data,true);
+      v_skip_matching:=cardinality(v_possible_duplicate_ids)>0;
     END IF;
     IF v_outcome IS NULL AND v_tx.id IS NOT NULL THEN
       IF NOT public.bank_sync_existing_facts_match(v_tx,v_data) THEN
@@ -101,6 +112,7 @@ BEGIN
         VALUES(p_instance_id,v_connection.provider,v_connection.physical_account,'movement',v_identity,v_tx.id);
       IF v_amount<0 THEN v_outcome:='stored_outgoing';
       ELSIF v_amount=0 THEN v_outcome:='stored_zero';
+      ELSIF v_skip_matching THEN v_outcome:='unmatched';
       ELSE
         v_match:=public.payment_provider_call_internal('bank','observe_payment',jsonb_build_object('transactionId',v_tx.id));
         v_outcome:=v_match->>'verdict';
@@ -129,7 +141,10 @@ BEGIN
     v_refund:=public.payment_provider_call_internal('bank','observe_refund',jsonb_build_object('transactionId',v_tx.id));
   END IF;
   v_receipt:=jsonb_build_object('ok',true,'receipt_version',1,'delivery_id',v_delivery,'outcome',v_outcome,'refund',v_refund);
-  UPDATE eshop.bank_sync_inbox SET outcome=v_outcome,receipt=v_receipt,committed_at=now()
+  UPDATE eshop.bank_sync_inbox SET outcome=v_outcome,receipt=v_receipt,committed_at=now(),
+    diagnostics=jsonb_build_object('transaction_id',v_tx.id,
+      'possible_duplicate_transaction_ids',coalesce(to_jsonb(v_possible_duplicate_ids),'[]'),
+      'reason',CASE WHEN v_skip_matching THEN 'stored_unpaired_possible_duplicate' END)
     WHERE instance_id=p_instance_id AND consumer_app_id=p_consumer_app_id AND delivery_id=v_delivery;
   UPDATE eshop.bank_sync_connections SET receiver_commit_at=now(),
     last_error=CASE WHEN v_outcome LIKE 'quarantined_%' THEN v_outcome ELSE last_error END WHERE id=v_connection.id;

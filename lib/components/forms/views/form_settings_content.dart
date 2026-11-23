@@ -937,9 +937,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     final canManage =
         unitId != null &&
         unitId == _paymentUnitId &&
-        RightsService.hasCapability(
-          AuthorizationCapabilities.bankAccountsUnitManage,
-        );
+        RightsService.canConfigureUnitBankAccounts();
     return [
       FormBankAccountPicker(
         key: _transferDetailKey,

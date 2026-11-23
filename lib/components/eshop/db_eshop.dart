@@ -113,6 +113,24 @@ class DbEshop {
     return null;
   }
 
+  static Future<Map<String, dynamic>> resolveBankSyncApiDuplicate({
+    required int transactionId,
+    required int paymentInfoId,
+    required String reviewToken,
+    required int? existingTransactionId,
+  }) async {
+    final response = await _supabase.rpc(
+      'resolve_bank_sync_api_duplicate_v1',
+      params: {
+        'p_transaction_id': transactionId,
+        'p_payment_info_id': paymentInfoId,
+        'p_review_token': reviewToken,
+        'p_existing_transaction_id': existingTransactionId,
+      },
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
   /// Adds a transaction to payment_info with security checks using RPC.
   static Future<void> addTransactionToPaymentInfoWithSecurity(
     BuildContext context,
@@ -517,7 +535,8 @@ class TicketDetailsBundle {
 
   factory TicketDetailsBundle.fromJson(Map<String, dynamic> json) {
     var bundle = TicketDetailsBundle(
-      admission: (json['admission'] as Map?)?.cast<String, dynamic>() ?? const {},
+      admission:
+          (json['admission'] as Map?)?.cast<String, dynamic>() ?? const {},
       canEditProducts: json['canEdit'] == true,
       changes: OrderChangeSummary.fromJson(
         Map<String, dynamic>.from(json['order_changes']),

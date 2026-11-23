@@ -106,3 +106,22 @@ production, and historical response metadata cannot be reconstructed retroactive
 The same safe UUID and metadata are emitted in the structured
 `bank_api_fetch_failure` log after persistence, so operators can correlate the UI
 reference with runtime logs without logging the bank response.
+
+## Email confirmation queue
+
+The queue remains available in email and API mode. Account administrators can
+confirm a positive notification after checking internet banking, or dismiss it
+with an audited reason. Suggestions, lookup and confirmation share the same
+account, unit, currency and outstanding-balance rules, including deposit balances.
+Confirmation rechecks account and order permissions under the payment locks.
+
+Redelivery of an email observation reuses its recorded result. Each API movement
+keeps its own bank ID and ledger row. Similar movements across account aliases are
+held for review using amount, currency, bank-local date, references and normalized
+payer accounts. Review binds the decision to the current candidates and limits
+details to readable accounts. A same-movement decision credits the original
+verified receipt once. A separate movement uses standard pairing. Unpaired API
+movements can be reviewed again, with each decision audited.
+
+The payment overview allows corrections to verified receipts after bank sales
+close and on expired orders. Standard pairing owns payment totals and order state.

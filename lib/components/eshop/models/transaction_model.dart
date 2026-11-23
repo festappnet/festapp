@@ -38,6 +38,8 @@ class TransactionModel extends ITrinaRowModel {
   String? counterAccountName;
   String? payerReference;
   String? ingestSource;
+  Map<String, dynamic>? bankSyncReview;
+  String? bankSyncDecision;
   String? createdById;
   String? createdByName;
   UserInfoModel? createdBy;
@@ -82,6 +84,8 @@ class TransactionModel extends ITrinaRowModel {
     this.counterAccountName,
     this.payerReference,
     this.ingestSource,
+    this.bankSyncReview,
+    this.bankSyncDecision,
     this.createdById,
     this.createdByName,
     this.createdBy,
@@ -127,6 +131,8 @@ class TransactionModel extends ITrinaRowModel {
       counterAccountName: json[TbEshop.transactions.counter_account_name],
       payerReference: json[TbEshop.transactions.payer_reference],
       ingestSource: json[TbEshop.transactions.ingest_source],
+      bankSyncReview: json['bankSyncReview'] as Map<String, dynamic>?,
+      bankSyncDecision: json['bankSyncDecision'] as String?,
       createdById: json['created_by'],
       createdByName: json['createdByName'],
       // relatedBankAccount: json[TbEshop.transactions.bank_account_id] != null
@@ -246,6 +252,8 @@ class TransactionModel extends ITrinaRowModel {
       counterAccountName: json[TbEshop.transactions.counter_account_name],
       payerReference: json[TbEshop.transactions.payer_reference],
       ingestSource: json[TbEshop.transactions.ingest_source],
+      bankSyncReview: json['bankSyncReview'] as Map<String, dynamic>?,
+      bankSyncDecision: json['bankSyncDecision'] as String?,
       // relatedBankAccount: json[TbEshop.transactions.bank_account_id] != null
       //     ? BankAccountModel.fromJson(jsonRelatedBankAccount)
       //     : null,
