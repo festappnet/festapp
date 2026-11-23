@@ -58,21 +58,15 @@ async function paymentQrPng(
     ? formatIBAN(payment.account_number)
     : payment.account_number_human_readable ||
       formatIBAN(payment.account_number);
-  try {
-    return await decoratePaymentQr(png, {
-      title: normalizeEpcCreditorName(caption.title),
-      recipient: normalizeEpcCreditorName(payment.creditor_name) ||
-        normalizeEpcCreditorName(account),
-      amount: formattedAmount,
-      reference: caption.reference
-        ? `${referenceLabel} ${caption.reference}`
-        : "",
-    });
-  } catch {
-    // A presentation failure must not prevent the buyer from receiving the valid QR.
-    console.error("payment_qr_artwork_failed");
-    return png;
-  }
+  return await decoratePaymentQr(png, {
+    title: normalizeEpcCreditorName(caption.title),
+    recipient: normalizeEpcCreditorName(payment.creditor_name) ||
+      normalizeEpcCreditorName(account),
+    amount: formattedAmount,
+    reference: caption.reference
+      ? `${referenceLabel} ${caption.reference}`
+      : "",
+  });
 }
 
 export function showPaymentQrInEmail(
