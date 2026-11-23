@@ -1,6 +1,9 @@
+import { Buffer } from "node:buffer";
+import { paymentQrSize } from "../_shared/paymentQrArtwork.ts";
+import { previewPaymentQr } from "../_shared/qrCodePayment.ts";
 import type { AuthoringPaymentAccount } from "./authoringPaymentAccounts.ts";
 
-/** Read-only authoring metadata. No rendering, customer lookup or queue access. */
+/** Read-only authoring metadata and nonpayable sample artwork. */
 export interface AuthoringContextDependencies {
   senderAddress: string;
   paymentAccounts?: (
@@ -60,6 +63,40 @@ export async function authoringContextResponse(
       !Object.values(context).every((id) => Number.isSafeInteger(id) && id > 0)
     ) {
       return reply({ error: "Invalid email hierarchy" }, 503);
+    }
+    if (input.paymentQrSample !== undefined) {
+      const sample = input.paymentQrSample;
+      const boundedText = (value: unknown, maxLength: number) =>
+        typeof value === "string" && value.length <= maxLength;
+      if (
+        !["TICKET_ORDER_CONFIRMATION", "TICKET_ORDER_UPDATE",
+          "TICKET_ORDER_PAYMENT_DONE", "TICKET_ORDER_REMINDER"].includes(templateCode) ||
+        !sample || !Number.isFinite(sample.amount) || sample.amount <= 0 ||
+        !["CZK", "EUR"].includes(sample.currency) ||
+        !["cs", "en"].includes(sample.locale) ||
+        !boundedText(sample.title, 1000) ||
+        !boundedText(sample.accountNumber, 80) ||
+        !boundedText(sample.iban, 80) ||
+        !boundedText(sample.reference, 80)
+      ) return reply({ error: "Invalid payment QR sample" }, 400);
+
+      const qr = await previewPaymentQr({
+        payment_method: "bank",
+        collectionAction: { method: "bank", purpose: "collect_payment", allowed: true },
+        amount: sample.amount,
+        currency_code: sample.currency,
+        account_number: sample.iban,
+        account_number_human_readable: sample.accountNumber,
+        variable_symbol: sample.reference,
+        creditor_reference: sample.reference,
+      }, sample.locale, sample.title);
+      const artworkWidth = qr && qr.png.byteLength >= 24
+        ? new DataView(qr.png.buffer, qr.png.byteOffset).getUint32(16)
+        : 0;
+      if (!qr || artworkWidth <= paymentQrSize) {
+        return reply({ error: "Payment QR sample unavailable" }, 503);
+      }
+      return reply({ paymentQrPng: Buffer.from(qr.png).toString("base64") });
     }
     const senderAddress = dependencies.senderAddress.trim();
     if (!/^[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+$/.test(senderAddress)) {

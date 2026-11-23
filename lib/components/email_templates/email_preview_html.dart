@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import '../html/html_embedded_block.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/email_templates.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/parser.dart' as parser;
 import 'email_templates_strings.dart';
@@ -139,20 +138,6 @@ class EmailPreviewHtml extends StatelessWidget {
               }
               if (element.localName != 'img') return null;
               final source = element.attributes['src'] ?? '';
-              if (source == emailPreviewPaymentQrSource) {
-                return FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: QrImageView(
-                    data: 'festapp-preview:payment',
-                    size: 280,
-                    padding: const EdgeInsets.all(24),
-                    errorCorrectionLevel: QrErrorCorrectLevel.M,
-                    backgroundColor: Colors.white,
-                    semanticsLabel: element.attributes['alt'] ?? '',
-                  ),
-                );
-              }
               final fallback = Semantics(
                   label: element.attributes['alt'] ?? '',
                   child: const SizedBox(
@@ -162,9 +147,17 @@ class EmailPreviewHtml extends StatelessWidget {
                               Icon(Icons.image_outlined, color: Colors.grey))));
               final bytes = imageBytesResolver?.call(source);
               if (bytes != null) {
-                return Image.memory(bytes,
+                final image = Image.memory(bytes,
+                    width: source == emailPreviewPaymentQrSource ? 280 : null,
                     fit: BoxFit.contain,
                     semanticLabel: element.attributes['alt']);
+                return source == emailPreviewPaymentQrSource
+                    ? FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: image,
+                      )
+                    : image;
               }
               if (source.isNotEmpty &&
                   allowedRemoteImageSources.contains(source)) {

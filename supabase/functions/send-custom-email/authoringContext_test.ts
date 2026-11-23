@@ -180,3 +180,27 @@ Deno.test("bank metadata failure retains sender and wrapper without invented acc
     assertEquals(result.paymentAccounts, []);
   }
 });
+
+Deno.test("authorized template authoring returns the canonical artwork for a payment sample", async () => {
+  const { dependencies, calls } = fixture();
+  const response = await authoringContextResponse({
+    ...input,
+    paymentQrSample: {
+      title: "Podzimní ples",
+      amount: 900,
+      currency: "CZK",
+      locale: "cs",
+      accountNumber: "13200132/2010",
+      iban: "CZ22 2010 0000 0000 1320 0132",
+      reference: "20261030",
+    },
+  }, "Bearer caller", dependencies);
+  assertEquals(response.status, 200);
+  const { paymentQrPng } = await response.json();
+  const bytes = Uint8Array.from(atob(paymentQrPng), (char) => char.charCodeAt(0));
+  assertEquals(Array.from(bytes.slice(0, 8)), [137, 80, 78, 71, 13, 10, 26, 10]);
+  const header = new DataView(bytes.buffer);
+  assertEquals(header.getUint32(16), 480);
+  assertEquals(header.getUint32(20) > 384, true);
+  assertEquals(calls, [["catalog", "Bearer caller", "occasion", 42]]);
+});
