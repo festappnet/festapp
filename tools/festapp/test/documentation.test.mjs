@@ -12,7 +12,10 @@ test('committed MCP documentation matches the actual registry, schemas, scope de
   const reference=readMcpReference(root);
   const publicTools=reference.publicChatgpt.tools;
   assert.equal(publicTools.some(t=>!t.readOnly),false);
-  assert.equal(publicTools.some(t=>t.id.startsWith('forms.')),false);
+  assert.equal(publicTools.some(t=>t.id==='forms.inspect'),true);
+  assert.equal(publicTools.some(t=>t.id==='forms.save'),false);
+  const publicPeopleExport=publicTools.find(t=>t.id==='exports.people').inputSchema;
+  assert.deepEqual(publicPeopleExport.properties.columns.items.enum,['userId','role','isVolunteer','isApproved']);
   const operatorSearch=reference.tools.find(t=>t.id==='orders.list').inputSchema;
   const publicSearch=publicTools.find(t=>t.id==='orders.list').inputSchema;
   assert.equal(operatorSearch.properties.search.pattern,undefined);

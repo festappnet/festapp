@@ -26,7 +26,7 @@ const result = {
     return [locale,translations[locale][p.label]];
   })),operations:p.operations,requires:p.requires})),
   tools:descriptors.map(tool).sort((a,b)=>a.id.localeCompare(b.id,'en')),
-  publicChatgpt:{...policy,tools:catalog(ids.filter(id=>clientAllowsScopes({clients:[policy]},policy.id,scopesForOperation(id))),policy.dataProfile==='order-summary').map(tool)},
+  publicChatgpt:{...policy,tools:catalog(ids.filter(id=>(!policy.allowedOperations||policy.allowedOperations.includes(id))&&clientAllowsScopes({clients:[policy]},policy.id,scopesForOperation(id))),policy.dataProfile==='order-summary').map(tool)},
 };
 const text=JSON.stringify(result,null,2)+'\n';
 const target=path.join(root,'automation/release/help/mcp-reference.json');

@@ -450,7 +450,10 @@ of OAuth scopes, model vendor, client name, and event consent:
   totals, withholding buyer contacts, notes, answers, field definitions and
   ticket/product free text. It also omits the connected user ID from context and
   permits only exact-symbol order search. Bounded incomplete search returns an
-  explicit error rather than a false empty result.
+  explicit error rather than a false empty result. The catalog reader's
+  additional operations limit participant, finance and waitlist details and
+  restrict the columns of CSV export tools. Resource readback checks the same
+  projection as export creation.
 
 The public `festapp-chatgpt` registration must explicitly select `order-summary`
 (as recorded in `integrations/chatgpt/client-policy.json`). A request, prompt or

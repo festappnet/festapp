@@ -1,6 +1,7 @@
 import test from'node:test';import assert from'node:assert/strict';import{randomUUID}from'node:crypto';
 import{options,formPatch,save,denied}from'./form-fixtures.mjs';
 import{fixture,executor,input}from'./form-completion-fixtures.mjs';
+import {Operations} from '../src/operations/catalog.mjs';
 
 test('explicit public link intent uses canonical reservations, frozen retries and current author authority without exposing keys in generic reads',options,async t=>{
  const s=await fixture(t),{db,f,made}=s;await db.query('SET LOCAL ROLE authenticated');const ops=executor(s),base={occasionId:f.occasion,formId:made.formId};
@@ -14,6 +15,12 @@ test('explicit public link intent uses canonical reservations, frozen retries an
 test('inline products and field edits use one form save, return generated IDs, reject stale children and roll back a bad child',options,async t=>{
  const s=await fixture(t),{db,f,made}=s;await db.query('SET LOCAL ROLE authenticated');const ops=executor(s);const field={title:'New merchandise',description:null,type:'product_type',is_required:false,is_hidden:false,is_ticket_field:false,order:20,product_type:{title:'Merchandise',description:null,type:'other',data:{short_title:'M'},products:[{title:'Shirt',description:null,price:'12.50',currency_code:'CZK',data:null,is_hidden:false,order:0,maximum:null}]}};
  const args={occasionId:f.occasion,form:formPatch(made.authoring,{title:'Combined save',form_fields:[field]}),commandId:randomUUID()};const done=await ops.invoke('forms.save',args);assert.equal(done.ok,true,JSON.stringify(done));const state=done.data.authoring,newField=state.fields.find(x=>x.title==='New merchandise');assert(newField.id);const type=state.productTypes.find(x=>x.title==='Merchandise'),product=state.products.find(x=>x.title==='Shirt');assert(type.id&&product.id);assert.equal((await ops.invoke('forms.save',args)).data.authoring.fields.length,state.fields.length);
+ const publicOps=new Operations({...ops.owner,orderSummaryOnly:true});
+ const publicForm=await publicOps.invoke('forms.inspect',{occasionId:f.occasion,formId:made.formId});
+ assert.equal(publicForm.ok,true,JSON.stringify(publicForm));
+ assert(publicForm.data.authoring.fields.some(field=>field.id===newField.id));
+ assert(publicForm.data.authoring.products.some(product=>product.title==='Shirt'));
+ assert(!Object.hasOwn(publicForm.data.authoring.form,'data'));
  const changed={...field,id:newField.id,product_type:{...field.product_type,id:type.id,products:[{...field.product_type.products[0],id:product.id,price:'13.00'}]}};
  const saved=await ops.invoke('forms.save',{...args,commandId:randomUUID(),form:formPatch(state,{form_fields:[changed]})});assert.equal(saved.ok,true,JSON.stringify(saved));
  const stale=await ops.invoke('forms.save',{...args,commandId:randomUUID(),form:{...formPatch(saved.data.authoring,{form_fields:[changed]}),expected_product_versions:state.productVersions,expected_product_type_versions:state.productTypeVersions}});assert.equal(stale.error.code,'FORM_CHANGED_RELOAD_REQUIRED');
@@ -40,6 +47,13 @@ test('waitlist proposal/send/cancel/withdraw traverse the shared UI Edge coordin
  const proposal=await ops.invoke('waitlist.proposal',scope);assert.equal(proposal.ok,true,JSON.stringify(proposal));assert.equal(proposal.data.proposal.recipients[0].waitingCount,2);
  const send={...scope,revision:proposal.data.proposal.revision,expiresAt:new Date(Date.parse(proposal.data.proposal.serverTime)+3600000).toISOString(),recipients:[{orderId,count:1}],commandId:randomUUID()};s.dropResponseOnce=true;const lost=await ops.invoke('waitlist.send',send);assert.equal(lost.error.retryable,true,JSON.stringify(lost));const sent=await ops.invoke('waitlist.send',send);assert.equal(sent.ok,true,JSON.stringify(sent));const offerId=sent.data.offers[0].offerId;assert.equal((await ops.invoke('waitlist.send',send)).data.offers[0].offerId,offerId);
  const detail=await ops.invoke('waitlist.detail',{...scope,orderId});assert.equal(detail.ok,true,JSON.stringify(detail));const tickets=detail.data.detail.tickets.map(t=>t.id);const offered=detail.data.detail.offers.find(o=>o.id===offerId).slots[0].ticketId;
+ const publicOps=new Operations({...ops.owner,orderSummaryOnly:true});
+ const publicDetail=await publicOps.invoke('waitlist.detail',{...scope,orderId});
+ assert.equal(publicDetail.ok,true,JSON.stringify(publicDetail));
+ assert.deepEqual(publicDetail.data.detail.tickets.map(ticket=>ticket.id),tickets);
+ assert.equal(publicDetail.data.detail.offers[0].slots[0].ticketId,offered);
+ assert(!Object.hasOwn(publicDetail.data.detail.tickets[0],'answers'));
+ assert(!Object.hasOwn(publicDetail.data.detail.tickets[0],'displayName'));
  const cancel={...scope,offerId,ticketIds:[offered],commandId:randomUUID()};assert.equal((await ops.invoke('waitlist.cancel',cancel)).ok,true);assert.equal((await ops.invoke('waitlist.cancel',cancel)).ok,true);
  const withdrawn=await ops.invoke('waitlist.withdraw',{...scope,orderId,ticketIds:[tickets.find(id=>id!==offered)],commandId:randomUUID()});assert.equal(withdrawn.ok,true,JSON.stringify(withdrawn));
  const final=await ops.invoke('waitlist.detail',{...scope,orderId});assert.deepEqual(final.data.detail.tickets.map(t=>t.id),tickets);assert.equal(final.data.detail.tickets.find(t=>t.id!==offered).lifecycle,'withdrawn');
