@@ -186,7 +186,17 @@ void main() {
           find.text(BankAccountStrings.missingAccountForCurrencies('CZK')),
           currencies.contains('CZK') ? findsNothing : findsOneWidget,
         );
-        if (!currencies.contains('CZK')) {
+        if (currencies.contains('CZK')) {
+          final accountCard = find.ancestor(
+            of: find.text('Účet pořadatele'),
+            matching: find.byType(Card),
+          );
+          expect(accountCard, findsOneWidget);
+          expect(
+            find.descendant(of: accountCard, matching: find.text('CZK')),
+            findsOneWidget,
+          );
+        } else {
           await _openSection(tester, FormStrings.transferDetails);
           expect(
             find.text(BankAccountStrings.askManagerForPaymentAccount),

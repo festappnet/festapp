@@ -599,8 +599,7 @@ class FormStrings {
       'FeatureFormSettings.endedWithTime'.tr(
         namedArgs: {'time': time},
       ); // "Ended (Closed: {time})"
-  static String get formOpenMessage => 'FeatureFormSettings.formOpenMessage'
-      .tr(); // "Form is OPEN & accepting responses."
+  static String get formOpenMessage => 'FeatureFormSettings.formOpenMessage'.tr();
   static String get scheduleAndLimits =>
       'FeatureFormSettings.scheduleAndLimits'.tr(); // "Schedule & Limits"
   static String get autoOpenHelp =>

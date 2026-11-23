@@ -818,44 +818,112 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       formBankTransferCurrencies(form),
       accountId: form.definition.bankAccountId,
     );
-    final missing = accounts.values.any((account) => account == null);
+    final currenciesByAccount = <BankAccountModel, List<String>>{};
+    final missingCurrencies = <String>[];
+    for (final entry in accounts.entries) {
+      if (entry.value case final account?) {
+        (currenciesByAccount[account] ??= []).add(entry.key);
+      } else {
+        missingCurrencies.add(entry.key);
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (accounts.isNotEmpty && form.definition.bankAccountId == null)
-          Text(BankAccountStrings.formAccountDefaultPlain),
-        for (final entry in accounts.entries)
-          if (entry.value case final account?)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${entry.key} · ${account.title ?? BankAccountStrings.bankAccount}',
-                  ),
-                  if (account.accountNumberHumanReadable ??
-                          account.accountNumber
-                      case final number?)
-                    SelectableText(number),
-                  BankAccountSyncStatus(account: account),
-                ],
-              ),
-            )
-          else
-            Text(
-              BankAccountStrings.missingAccountForCurrencies(entry.key),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+        if (accounts.isNotEmpty && form.definition.bankAccountId == null) ...[
+          Text(
+            BankAccountStrings.formAccountDefaultPlain,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+        ],
+        if (currenciesByAccount.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (final entry in currenciesByAccount.entries)
+                _buildReceivingAccountCard(context, entry.key, entry.value),
+            ],
+          ),
+        if (missingCurrencies.isNotEmpty) ...[
+          if (currenciesByAccount.isNotEmpty) const SizedBox(height: 8),
+          Text(
+            BankAccountStrings.missingAccountForCurrencies(
+              missingCurrencies.join(', '),
             ),
-        if (missing)
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
           TextButton(
             onPressed: () =>
                 _revealSection(_transferSection, _transferDetailKey),
             child: Text(BankAccountStrings.formAccountLabel),
           ),
+        ],
       ],
     );
   }
+
+  Widget _buildReceivingAccountCard(
+    BuildContext context,
+    BankAccountModel account,
+    List<String> currencies,
+  ) => SizedBox(
+    width: 300,
+    child: Card(
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: ThemeConfig.grey300(context)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              account.title ?? BankAccountStrings.bankAccount,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            if (account.accountNumberHumanReadable ?? account.accountNumber
+                case final number?) ...[
+              const SizedBox(height: 2),
+              SelectableText(number, style: const TextStyle(fontSize: 13)),
+            ],
+            BankAccountSyncStatus(account: account),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                for (final currency in currencies)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: ThemeConfig.grey200(context),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.grey.shade400),
+                    ),
+                    child: Text(
+                      currency,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   List<Widget> _bankAccountSettings(BuildContext context) {
     final form = _form!;
@@ -1248,6 +1316,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           FormStrings.paymentDetailsTitle,
           style: Theme.of(context).textTheme.titleLarge,
         ),
+        const SizedBox(height: 4),
         if (!hasPaidProducts) Text(FormStrings.noPaidProducts),
         if (method != null)
           Text(method, style: Theme.of(context).textTheme.titleMedium),
@@ -1264,6 +1333,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         if (_bankEnabled && hasPaidProducts) ...[
           if (!_methodAllowed('bank'))
             Text(FormStrings.methodDisabled(PaymentMethodStrings.text('bank'))),
+          const SizedBox(height: 8),
           _buildBankSummary(context),
         ],
         if (_cashEnabled && hasPaidProducts && !_methodAllowed('cash'))
@@ -1330,6 +1400,10 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       TextFormField(
         enabled: _canEdit,
         controller: _titleController,
+        minLines: 1,
+        maxLines: 2,
+        textInputAction: TextInputAction.done,
+        inputFormatters: [FilteringTextInputFormatter.singleLineFormatter],
         decoration: InputDecoration(
           labelText: FormStrings.labelFormTitle,
           border: const OutlineInputBorder(),
@@ -1376,11 +1450,15 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                 if (_linkError != null) setState(() => _linkError = null);
               },
             ),
-          FormEmbedAction(
-            savedLink: _savedLink,
-            onOpenAppearance: _savedLink == null
-                ? null
-                : () => context.tabsRouter.navigate(const FormDesignRoute()),
+          const SizedBox(height: 8),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: FormEmbedAction(
+              savedLink: _savedLink,
+              onOpenAppearance: _savedLink == null
+                  ? null
+                  : () => context.tabsRouter.navigate(const FormDesignRoute()),
+            ),
           ),
         ],
       ),

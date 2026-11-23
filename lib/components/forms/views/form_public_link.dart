@@ -37,16 +37,16 @@ class PublicLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final saved = savedLink;
+    final labelStyle = Theme.of(context).textTheme.labelMedium;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (saved != null && saved.isNotEmpty) ...[
-          Text(
-            FormStrings.savedPublicLink,
-            style: const TextStyle(fontSize: 12),
-          ),
+          Text(FormStrings.savedPublicLink, style: labelStyle),
+          const SizedBox(height: 4),
           if (showOpenAction) ...[
             SelectableText(publicLinkUrl(saved, isForm: isForm)),
+            const SizedBox(height: 4),
             Wrap(
               spacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -93,14 +93,17 @@ class PublicLink extends StatelessWidget {
             ),
         ],
         if (link != saved) ...[
+          if (saved != null && saved.isNotEmpty) const SizedBox(height: 8),
           Text(
             link.isEmpty
                 ? FormStrings.automaticPublicLink
                 : FormStrings.publicLinkPreview,
-            style: const TextStyle(fontSize: 12),
+            style: labelStyle,
           ),
-          if (link.isNotEmpty)
+          if (link.isNotEmpty) ...[
+            const SizedBox(height: 4),
             SelectableText(publicLinkUrl(link, isForm: isForm)),
+          ],
         ],
       ],
     );

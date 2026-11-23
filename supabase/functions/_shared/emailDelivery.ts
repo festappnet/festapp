@@ -199,26 +199,19 @@ export async function renderEmail(
       disposition: "ATTACHMENT",
     } as const;
     prepared.attachments.push(download);
-    if (!input.paymentQr.inline) {
-      prepared.html = composeHtml();
-      return prepared;
+    const contentId = input.paymentQr.inline
+      ? `festapp-payment-${crypto.randomUUID()}@festapp.net`
+      : undefined;
+    prepared.html = composeHtml({
+      html: paymentQrEmailHtml(cs, contentId ? `cid:${contentId}` : undefined),
+      paymentDetails: ["paymentDetails", "balanceReasoning"].map((key) =>
+        String(paymentValues[key] ?? "")
+      ),
+    });
+    if (contentId) {
+      prepared.attachments.push({ ...download, disposition: "INLINE", contentId });
     }
-
-    const contentId = `festapp-payment-${crypto.randomUUID()}@festapp.net`;
-    return {
-      ...prepared,
-      html: composeHtml({
-        html: paymentQrEmailHtml(cs, `cid:${contentId}`),
-        paymentDetails: ["paymentDetails", "balanceReasoning"].map((key) =>
-          String(paymentValues[key] ?? "")
-        ),
-      }),
-      attachments: [...prepared.attachments, {
-        ...download,
-        disposition: "INLINE",
-        contentId,
-      }],
-    };
+    return prepared;
   }
   prepared.html = composeHtml();
   return prepared;

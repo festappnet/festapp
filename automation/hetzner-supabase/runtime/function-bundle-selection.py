@@ -134,9 +134,11 @@ def exact_shared_plan(source, base, modules):
     planned = {}
     for name in sorted(modules):
         path = source / name
-        require(re.fullmatch(r'_shared/[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)', name)
-                and name in base['files'] and path.is_file() and not path.is_symlink(),
-                'Exact replacement requires an existing direct shared code module')
+        require(re.fullmatch(
+                    r'_shared/(?:[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)|translations/translations\.[a-z]{2}\.ts)', name)
+                and name in base['files'] and path.is_file()
+                and path.resolve() == source.resolve() / name,
+                'Exact replacement requires an existing shared code or locale module')
         value = digest(path.read_bytes())
         require(value != base['files'][name], 'Exact shared replacement must change each selected module')
         planned[name] = value
@@ -148,12 +150,15 @@ def stage_exact_shared(current, stage, manifest):
     base = inventory(current)
     require(base['tree_sha256'] == planned['base_runtime_sha256'],
             'Installed Function tree changed since selection')
-    require(inventory(stage)['files'] == planned['shared_modules']
-            and {p.name for p in stage.iterdir()} == {'_shared'}
-            and all(p.is_file() for p in (stage / '_shared').iterdir()),
+    modules = planned['shared_modules']
+    require(inventory(stage)['files'] == modules,
             'Exact shared archive contains unexpected bytes or paths')
-    require(exact_shared_plan(stage, base, list(planned['shared_modules'])) == planned,
+    require(exact_shared_plan(stage, base, list(modules)) == planned,
             'Exact shared plan does not match the extracted source')
+    directories = {stage / parent for name in modules for parent in Path(name).parents
+                   if parent != Path('.')}
+    require(set(stage.rglob('*')) == directories | {stage / name for name in modules},
+            'Exact shared archive contains unexpected paths')
     for name in planned['shared_modules']:
         # The entire installed tree stays pinned. Compare direct imports only
         # for the replacement files and keep the existing dependency graph.

@@ -33,8 +33,6 @@ export const csTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`Děkujeme za ${tone === 'formal' ? 'Vaši' : 'Tvou'} platbu ve výši ${bold(paid)}. ${tone === 'formal' ? formalMainText : informalMainText} Jakmile platbu obdržíme, pošleme ${tone === 'formal' ? 'Vám' : 'Ti'} potvrzení.`),
-      verticalSpacer('15px'),
-      styledParagraph(`Pro zjednodušení platby přikládáme QR kód.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remaining, lang: 'cs' }),
     ].join('');
@@ -53,8 +51,6 @@ export const csTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`Zbývá uhradit celkovou částku ${bold(total)}. ${tone === 'formal' ? formalMainText : informalMainText} Jakmile platbu obdržíme, pošleme ${tone === 'formal' ? 'Vám' : 'Ti'} potvrzení.`),
-      verticalSpacer('15px'),
-      styledParagraph(`Pro zjednodušení platby přikládáme QR kód.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: total, lang: 'cs' }),
     ].join('');
@@ -87,7 +83,7 @@ export const csTranslations = {
       verticalSpacer(spaceBeforeText),
       textBlock,
       verticalSpacer('15px'),
-      styledParagraph(`Pro zjednodušení platby přikládáme QR kód. Jakmile ji obdržíme, pošleme ${tone === 'formal' ? 'Vám' : 'Ti'} potvrzení.`),
+      styledParagraph(`Jakmile platbu obdržíme, pošleme ${tone === 'formal' ? 'Vám' : 'Ti'} potvrzení.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remaining, lang: 'cs' }),
     ].join('');
@@ -110,7 +106,7 @@ export const csTranslations = {
       verticalSpacer(spaceBeforeText),
       textBlock,
       verticalSpacer('15px'),
-      styledParagraph(`Pro zjednodušení platby přikládáme QR kód a jakmile ji obdržíme, pošleme ${tone === 'formal' ? 'Vám' : 'Ti'} potvrzení.`),
+      styledParagraph(`Jakmile platbu obdržíme, pošleme ${tone === 'formal' ? 'Vám' : 'Ti'} potvrzení.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remaining, lang: 'cs' }),
     ].join('');
@@ -137,8 +133,6 @@ export const csTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`Pro zajištění místa ${tone === 'formal' ? 'uhraďte, prosíme, zálohu' : 'uhraď zálohu'} ve výši ${bold(depositAmount)}. Poté ${deadlineText}.`),
-      verticalSpacer('15px'),
-      styledParagraph(`Pro zjednodušení platby přikládáme QR kód.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: depositAmount, lang: 'cs' }),
     ].join('');
@@ -174,8 +168,6 @@ export const csTranslations = {
     return [
       verticalSpacer(spaceBeforeText),
       styledParagraph(`Připomínáme, že ${tone === 'formal' ? 'Vaše' : 'Tvá'} objednávka má doplatek ve výši ${bold(remainingAmount)}, který je třeba uhradit do ${bold(depositDeadline)}.`),
-      verticalSpacer('15px'),
-      styledParagraph(`Pro zjednodušení platby přikládáme QR kód.`),
       verticalSpacer(spaceAfterText),
       generatePaymentDetails({ accountNumber, iban, variableSymbol, amount: remainingAmount, lang: 'cs' }),
     ].join('');
