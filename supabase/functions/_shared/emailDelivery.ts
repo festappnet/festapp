@@ -184,8 +184,14 @@ export async function renderEmail(
   };
   if (input.paymentQr) {
     const cs = resolveEmailLanguage(input.paymentQr.lang) === "cs";
+    const basename = cs ? "qr-platba" : "qr-payment";
+    const orderSymbol = input.substitutions.orderSymbol;
+    const suffix = typeof orderSymbol === "string" &&
+        /^[A-Z0-9]+$/.test(orderSymbol)
+      ? `-${orderSymbol}`
+      : "";
     const download = {
-      filename: cs ? "qr-platba.png" : "qr-payment.png",
+      filename: `${basename}${suffix}.png`,
       content: encodeAttachment(input.paymentQr.png, "binary"),
       contentType: "image/png",
       encoding: "base64",

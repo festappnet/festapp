@@ -63,7 +63,7 @@ Deno.test("preview and sending use identical substitutions and inherited wrapper
       sent.html && preview.subject === sent.subject,
   );
   assert(inline.content === encodeAttachment(await qrPng("festapp-preview:payment"), "binary"));
-  assert(preview.attachments.length === 1 && preview.attachments[0].filename === "qr-platba.png");
+  assert(preview.attachments.length === 1 && preview.attachments[0].filename === "qr-platba-5W8H2U8I9W.png");
   assert(preview.replyTo === sent.replyTo);
   assert(preview.html.includes("<main><p>Vlastní text</p>"));
   assert(!preview.html.includes("recipient@example.invalid"));

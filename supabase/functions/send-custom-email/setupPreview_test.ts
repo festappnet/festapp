@@ -125,7 +125,7 @@ Deno.test("preview uses all selected products and canonical production email ren
   assertEquals(confirmation.inlineImages.length, 1);
   assert(confirmation.html.includes(`src="cid:${confirmation.inlineImages[0].contentId}"`));
   assertEquals(paid.inlineImages.length, 0);
-  assertEquals(confirmation.attachments, [{ filename: "qr-platba.png" }]);
+  assertEquals(confirmation.attachments, [{ filename: "qr-platba-PREVIEW.png" }]);
   assert(result.messages[0].html.includes("Dospělý"));
   assert(result.messages[0].html.includes("Student"));
   assert(result.messages[0].html.includes("preview@example.invalid"));
