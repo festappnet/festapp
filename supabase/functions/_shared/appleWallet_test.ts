@@ -20,6 +20,8 @@ Deno.test('Apple serial isolates backend, organization, event and ticket; QR and
  const doc=appleWalletDocument(serial,projection,credentials);
  assertEquals(doc.barcodes[0].message,'EXACT-QR-č');assertEquals(doc.passTypeIdentifier,credentials.passTypeIdentifier);
  assertEquals(doc.eventTicket.auxiliaryFields.map(f=>f.value),['Stůl 4','12','Vstupné']);
+ assertEquals(doc.eventTicket.auxiliaryFields.slice(0,2).map(f=>f.label),
+  ['Stůl (skupina) / Table (group)','Místo / Seat']);
  assert(doc.eventTicket.secondaryFields[0].value.includes('20:00')); // Prague DST offset.
  assertEquals(doc.voided,false);
  for(const [background_color,foreground] of [['#222222','rgb(255, 255, 255)'],['#888888','rgb(0, 0, 0)']]) {

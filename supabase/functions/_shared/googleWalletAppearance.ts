@@ -1,4 +1,6 @@
 /** Native Wallet appearance: a compatible subset of the saved ticket design. */
+import type { Buffer } from 'node:buffer';
+
 export function walletPublicImage(value:unknown):string|undefined {
  if(typeof value!=='string')return;
  try {
@@ -27,3 +29,25 @@ export function googleWalletAppearance(feature:any,occasionData:any={},platform:
  return {backgroundColor,logo:walletPublicImage(Object.hasOwn(overrides,'logo')?overrides.logo:occasionData?.logo),
   heroImage:platform==='apple'&&heroImage?heroImage+'&w=300':heroImage};
 }
+
+// Wallet overlays the event title on a strip. A thumbnail keeps it on the solid pass background.
+export const appleWalletArtwork = {
+ foreground(rgb: number[]) {
+  const linearRgb=rgb.map(value=>{
+   const channel=value/255;
+   return channel<=0.04045?channel/12.92:((channel+0.055)/1.055)**2.4;
+  });
+  const luminance=0.2126*linearRgb[0]+0.7152*linearRgb[1]+0.0722*linearRgb[2];
+  const blackContrast=(luminance+0.05)/0.05;
+  const whiteContrast=1.05/(luminance+0.05);
+  return blackContrast>=whiteContrast?'rgb(0, 0, 0)':'rgb(255, 255, 255)';
+ },
+ async publicThumbnail(bytes: Buffer) {
+  const {appleWalletPublicThumbnail}=await import('./appleWalletThumbnail.ts');
+  return appleWalletPublicThumbnail(bytes);
+ },
+ async galleryThumbnail(url: string) {
+  const {appleWalletGalleryThumbnail}=await import('./appleWalletThumbnail.ts');
+  return appleWalletGalleryThumbnail(url);
+ },
+};
