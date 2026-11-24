@@ -1572,8 +1572,8 @@
       "accountDeletionComplete_description": "Wird nach Abschluss der Kontolöschung gesendet.",
       "ticketOrderConfirmation_description": "Wird nach Annahme einer neuen Bestellung gesendet. Bestätigt die Bestellung auch dann, wenn sie noch nicht bezahlt ist.",
       "ticketOrderUpdate_description": "Wird gesendet, wenn ein Administrator nach einer Änderung eine Bestellaktualisierung verschickt. Zeigt Änderungen und Zahlungsstatus.",
-      "ticketOrderPaymentDone_description": "Wird nach Bestätigung der Anzahlung oder Restzahlung einer Anzahlungsbestellung gesendet. Tickets werden separat verschickt.",
-      "ticketOrderPaymentReminder_description": "Wird vor Fälligkeit eines offenen Betrags gesendet, sofern Erinnerungen aktiviert sind. Den Zeitpunkt bestimmen die Formular- oder Veranstaltungseinstellungen.",
+      "ticketOrderPaymentDone_description": "Diese Vorlage bestätigt eine Anzahlung oder Restzahlung und wird nach vollständiger Zahlung für den Ticketversand verwendet.",
+      "ticketOrderPaymentReminder_description": "Wird bei ausstehender Überweisung gesendet, wenn Erinnerungen aktiviert sind. Den Zeitpunkt bestimmen die Formular- oder Veranstaltungseinstellungen.",
       "ticketOrderStorno_description": "Wird bei Stornierung einer Bestellung gesendet, wenn der Administrator die Benachrichtigung des Kunden auswählt.",
       "teamInvitation_title": "Einladung zum Team",
       "teamInvitation_description": "Die eingeladene Person erhält einen Link zur Annahme einer Teamrolle.",
@@ -3705,7 +3705,7 @@
     },
     "EmailTemplates": {
       "usage": {
-        "ticketOrderPaymentDone_description": "Wird nach Bestätigung der Anzahlung oder Restzahlung einer Anzahlungsbestellung gesendet. Anmeldungen werden separat verschickt."
+        "ticketOrderPaymentDone_description": "Diese Vorlage bestätigt eine Anzahlung, Restzahlung oder bezahlte Anmeldung."
       }
     },
     "FeatureBlueprint": {

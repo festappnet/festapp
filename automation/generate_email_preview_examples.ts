@@ -130,8 +130,11 @@ for (const locale of ["cs", "en"] as const) {
         const total = zero ? 0 : 800;
         const amountPaid = paid ? total
           : templateCode === "TICKET_ORDER_PAYMENT_DONE" && deposit ? 300 : 0;
+        const cancelled = templateCode === "TICKET_ORDER_STORNO";
+        const collectionAllowed = !cancelled && total > amountPaid;
+        const overviewActions = cancelled ? [] : fixture.overviewActions;
         const payment = {
-          payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: true},
+          payment_method: 'bank', collectionAction: {method: 'bank', purpose: 'collect_payment', allowed: collectionAllowed},
           amount: total, paid: amountPaid, deposit_amount: deposit ? 300 : 0,
           currency_code: "CZK", account_number: fixture.iban,
           account_number_human_readable: fixture.accountNumber,
@@ -158,26 +161,43 @@ for (const locale of ["cs", "en"] as const) {
               5 * 86400000, 5, total - amountPaid, amountPaid, "CZK", payment, payment, locale, tone);
             break;
         }
+        const amountDue = templateCode === "TICKET_ORDER_CONFIRMATION" && deposit
+          ? payment.deposit_amount : total - amountPaid;
+        const paymentDetails = collectionAllowed ? generatePaymentDetails({
+          accountNumber: fixture.accountNumber,
+          iban: formatIBAN(fixture.iban),
+          variableSymbol: fixture.variableSymbol,
+          amount: formatCurrency(amountDue, payment.currency_code),
+          lang: locale,
+        }) : "";
+        if (templateCode === "TICKET_ORDER_PAYMENT_DONE") {
+          balanceReasoning += paymentDetails;
+        }
         records.push({
           templateCode,
           scenario,
-          paymentMethod: 'bank', collectionAllowed: total > amountPaid,
-          ...(templateCode !== "TICKET_ORDER_STORNO" && total > amountPaid
+          paymentMethod: 'bank', collectionAllowed,
+          ...(collectionAllowed
             ? { inlinePaymentQrHtml: paymentQrEmailHtml(locale === "cs", "cid:festapp-preview-payment") }
             : {}),
           locale,
           tone,
           values: {
             ...scalar,
-            accountNumber: total > amountPaid ? fixture.accountNumber : '', iban: total > amountPaid ? formatIBAN(fixture.iban) : '', variableSymbol: total > amountPaid ? fixture.variableSymbol : '',
-            paymentAction: total > amountPaid ? balanceReasoning : '', paymentMethodName: locale === 'cs' ? 'Bankovní převod' : 'Bank transfer',
+            accountNumber: collectionAllowed ? fixture.accountNumber : '',
+            iban: collectionAllowed ? formatIBAN(fixture.iban) : '',
+            variableSymbol: collectionAllowed ? fixture.variableSymbol : '',
+            paymentAction: collectionAllowed
+              ? ["TICKET_ORDER_PAYMENT_DONE", "TICKET_ORDER_REMINDER"].includes(templateCode)
+                ? paymentDetails : balanceReasoning
+              : '', paymentMethodName: locale === 'cs' ? 'Bankovní převod' : 'Bank transfer',
             ...orderTemplateValues(templateCode, fixture.occasionTitle, fixture.orderSymbol, tone, locale, total),
             // Delivery is optional; absent ticket content renders as an empty block.
             tickets: "",
             deadline: formatDatetime(payment.deadline, locale),
             amount,
             remainingTime: tr.days_remaining(5),
-            ...overviewEmailSubstitutions(fixture.overviewUrl, locale, fixture.overviewActions),
+            ...overviewEmailSubstitutions(fixture.overviewUrl, locale, overviewActions),
             order_overview_url: fixture.overviewUrl,
             // Raw scalar URL: composer escapes once according to context.
             fullOrder: generateFullOrder(
@@ -199,15 +219,9 @@ for (const locale of ["cs", "en"] as const) {
                 : fixture.changes,
               locale,
             ),
-            paymentDetails: total > amountPaid ? generatePaymentDetails({
-              accountNumber: fixture.accountNumber,
-              iban: formatIBAN(fixture.iban),
-              variableSymbol: fixture.variableSymbol,
-              amount,
-              lang: locale,
-            }) : "",
+            paymentDetails,
           },
-          requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale, fixture.overviewActions),
+          requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale, overviewActions),
         });
       }
     }
@@ -286,17 +300,69 @@ for (const locale of ['cs','en'] as const) {
  for (const [method,name] of [['stripe','Stripe'],['barion','Barion'],['orchard','Orchard Pay'],['unknown','Unknown provider']]) {
   for (const status of ['open','paid','partially_refunded','refunded','disputed','action_required','expired','pending']) {
    for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE','TICKET_ORDER_STORNO']) {
-    const payment={payment_method:method,providerPayment:{status},collectionAction:{allowed:method!=='unknown'&&status==='open'}};
-    const substitutions=providerPaymentSubstitutions(payment,name,locale,overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions).order_overview_button);
-    records.push({templateCode,scenario:method+'-'+status,locale,tone:'formal',paymentMethod:method,collectionAllowed:payment.collectionAction.allowed,
-     values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),...substitutions,amount:formatCurrency(800,'CZK'),...orderTemplateValues(templateCode,fixture.occasionTitle,fixture.orderSymbol,'formal',locale,800),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol)},requiredLinks:overviewRequiredLinks(fixture.overviewUrl,locale,fixture.overviewActions)});
+    if (templateCode === "TICKET_ORDER_PAYMENT_DONE" && status !== "paid") continue;
+    const cancelled = templateCode === "TICKET_ORDER_STORNO";
+    if (cancelled && status !== "open") continue;
+    const overviewActions = cancelled ? [] : fixture.overviewActions;
+    const overview = overviewEmailSubstitutions(fixture.overviewUrl, locale, overviewActions);
+    const collectionAllowed = !cancelled && method !== "unknown" && status === "open";
+    const payment = { payment_method: method, providerPayment: { status }, collectionAction: { allowed: collectionAllowed } };
+    const substitutions = cancelled
+      ? { paymentMethodName: name, paymentAction: "" }
+      : providerPaymentSubstitutions(payment, name, locale, overview.order_overview_button);
+    records.push({
+      templateCode, scenario: method + (cancelled ? "-cancelled" : "-" + status),
+      locale, tone: "formal", paymentMethod: method, collectionAllowed,
+      values: {
+        ...scalar, ...overview, ...substitutions, amount: formatCurrency(800, "CZK"),
+        ...orderTemplateValues(templateCode, fixture.occasionTitle, fixture.orderSymbol, "formal", locale, 800),
+        fullOrder: generateFullOrder(fixture.orderData, fixture.tickets, fixture.features, locale, fixture.orderSymbol),
+      },
+      requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale, overviewActions),
+    });
    }
   }
  }
- for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE']) {
-  const payment={payment_method:'cash',amount:800,paid:0,currency_code:'CZK',data:{payment_policy:{cashInstructions:locale==='cs'?'U vstupu.':'At the entrance.'}},collectionAction:{allowed:true}};
-  records.push({templateCode,scenario:'cash-unpaid',locale,tone:'formal',paymentMethod:'cash',collectionAllowed:true,values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),
-   ...confirmationPaymentSubstitutions(payment,[],locale,'formal'),...orderTemplateValues(templateCode,fixture.occasionTitle,fixture.orderSymbol,'formal',locale,800),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol),accountNumber:'',iban:'',variableSymbol:'',paymentAction:'',paymentMethodName:locale==='cs'?'Hotovost':'Cash'},requiredLinks:[]});
+ for (const templateCode of [
+   "TICKET_ORDER_CONFIRMATION", "TICKET_ORDER_UPDATE", "TICKET_ORDER_PAYMENT_DONE",
+   "TICKET_ORDER_STORNO",
+ ]) {
+   const total = 800;
+   const currency = "CZK";
+   const paid = templateCode === "TICKET_ORDER_PAYMENT_DONE" ? total : 0;
+   const cancelled = templateCode === "TICKET_ORDER_STORNO";
+   const overviewActions = cancelled ? [] : fixture.overviewActions;
+   const payment = {
+     payment_method: "cash", amount: total, paid, currency_code: currency,
+     data: { payment_policy: { cashInstructions: locale === "cs" ? "U vstupu." : "At the entrance." } },
+     collectionAction: { allowed: !cancelled && paid < total },
+   };
+   const presentation = cancelled
+     ? { amount: formatCurrency(total, currency) }
+     : templateCode === "TICKET_ORDER_PAYMENT_DONE"
+     ? paidPaymentSubstitutions(total, paid, currency, [], locale, "formal", payment)
+     : templateCode === "TICKET_ORDER_UPDATE"
+     ? {
+       amount: formatCurrency(total, currency),
+       balanceReasoning: updateBalanceReasoning(total, paid, currency, {}, payment, locale, "formal"),
+     }
+     : confirmationPaymentSubstitutions(payment, [], locale, "formal");
+   records.push({
+     templateCode,
+     scenario: cancelled ? "cash-cancelled" : paid === total ? "cash-paid" : "cash-unpaid",
+     locale, tone: "formal", paymentMethod: "cash",
+     collectionAllowed: payment.collectionAction.allowed,
+     values: {
+       ...scalar,
+       ...overviewEmailSubstitutions(fixture.overviewUrl, locale, overviewActions),
+       ...presentation,
+       ...orderTemplateValues(templateCode, fixture.occasionTitle, fixture.orderSymbol, "formal", locale, total),
+       fullOrder: generateFullOrder(fixture.orderData, fixture.tickets, fixture.features, locale, fixture.orderSymbol),
+       accountNumber: "", iban: "", variableSymbol: "", paymentAction: "",
+       paymentMethodName: locale === "cs" ? "Hotovost" : "Cash",
+     },
+     requiredLinks: overviewRequiredLinks(fixture.overviewUrl, locale, overviewActions),
+   });
  }
 }
 const moneySlots: Record<string, string> = {

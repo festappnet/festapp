@@ -1837,8 +1837,8 @@
       "accountDeletionComplete_description": "Používateľ ju dostane po dokončení zmazania účtu.",
       "ticketOrderConfirmation_description": "Zákazník ju dostane po prijatí novej objednávky. Potvrdzuje vytvorenie objednávky, aj keď ešte nie je zaplatená.",
       "ticketOrderUpdate_description": "Zákazník ju dostane, keď mu správca po úprave objednávky odošle aktualizáciu. Ukazuje zmeny a aktuálny stav platby.",
-      "ticketOrderPaymentDone_description": "Zákazník ju dostane po potvrdení prijatej zálohy alebo doplatku zálohovej objednávky. Vstupenky sa odosielajú samostatne.",
-      "ticketOrderPaymentReminder_description": "Zákazník ju dostane pred splatnosťou neuhradenej sumy, ak sú zapnuté pripomienky. Čas odoslania určuje nastavenie formulára alebo akcie.",
+      "ticketOrderPaymentDone_description": "Šablóna sa používa na potvrdenie zálohy či doplatku zálohovej objednávky a na doručenie vstupeniek po úplnej úhrade.",
+      "ticketOrderPaymentReminder_description": "Pripomenutie sa odosiela pri neuhradenej objednávke s platbou prevodom, ak sú pripomenutia zapnuté. Čas odoslania určuje nastavenie formulára alebo podujatia.",
       "ticketOrderStorno_description": "Zákazník ju dostane pri zrušení objednávky, ak správca zvolí odoslanie oznámenia.",
       "teamInvitation_title": "Pozvánka do tímu",
       "teamInvitation_description": "Pozvaný dostane odkaz na prijatie roly v tíme podujatia.",
@@ -3971,7 +3971,7 @@
     },
     "EmailTemplates": {
       "usage": {
-        "ticketOrderPaymentDone_description": "Zákazník ju dostane po potvrdení prijatej zálohy alebo doplatku zálohovej objednávky. Prihlášky sa odosielajú samostatne."
+        "ticketOrderPaymentDone_description": "Šablóna sa používa na potvrdenie zálohy či doplatku zálohovej objednávky a na potvrdenie uhradenej prihlášky."
       }
     },
     "FeatureBlueprint": {

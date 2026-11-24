@@ -63,6 +63,10 @@ Deno.test("production payment emails honor method, current collection and inheri
      assertEquals(result.prepared.attachments.length,0,method+"/"+status+"/"+kind);
      assert(!result.prepared.html.includes(bank.account_number),method+" must not leak stale bank data");
      assert(!result.prepared.html.includes("#pay="));
+     if (method === "cash" && status === "paid" && kind === "order_payment_notice") {
+      assertStringIncludes(result.prepared.html, "Objednávka je plně uhrazena.");
+      assert(!result.prepared.html.includes("K úhradě na místě"));
+     }
     }
     assertEquals(attachmentHooks,before,"disabled/non-bank paths never consult external attachment or invoice hooks");
    }

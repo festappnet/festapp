@@ -286,9 +286,11 @@ class EmailPreviewScenario {
   EmailPreviewScenario withContext(EmailPreviewContext context) {
     final method = contextDefaults['preview_payment_method'];
     final collectsPayment = contextDefaults['preview_collection_allowed'] == 'true';
-    final incompatibleCollection =
-        context.cashOnly && method != null && method != 'cash' && collectsPayment;
-    final bankCollection = method == 'bank' && collectsPayment && !context.cashOnly;
+    final configuredMethod = context.paymentMethod;
+    final incompatibleCollection = collectsPayment &&
+        configuredMethod != null && method != configuredMethod;
+    final bankCollection =
+        method == 'bank' && collectsPayment && !incompatibleCollection;
     final bindings = {
       ...contextDefaults,
       if (context.singleApplication) ...singleApplicationDefaults,

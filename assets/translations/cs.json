@@ -1302,9 +1302,9 @@
       "ticketOrderUpdate_title": "Změna objednávky",
       "ticketOrderUpdate_description": "Zákazník dostane e-mail, když mu správce po úpravě objednávky odešle její aktualizaci. Ukazuje změny a aktuální stav platby.",
       "ticketOrderPaymentDone_title": "Objednávka zaplacena",
-      "ticketOrderPaymentDone_description": "Zákazník dostane e-mail po potvrzení přijaté zálohy nebo doplatku zálohové objednávky. Vstupenky se odesílají samostatně.",
+      "ticketOrderPaymentDone_description": "Šablona se používá pro potvrzení zálohy či doplatku zálohové objednávky a pro doručení vstupenek po úplné úhradě.",
       "ticketOrderPaymentReminder_title": "Připomenutí platby objednávky",
-      "ticketOrderPaymentReminder_description": "Zákazník dostane e-mail před splatností neuhrazené částky, pokud jsou zapnuté upomínky. Čas odeslání určuje nastavení formuláře nebo akce.",
+      "ticketOrderPaymentReminder_description": "Připomenutí se odesílá u neuhrazené objednávky s platbou převodem, pokud jsou upomínky zapnuté. Čas odeslání určuje nastavení formuláře nebo akce.",
       "ticketOrderStorno_title": "Storno objednávky",
       "ticketOrderStorno_description": "Zákazník dostane e-mail při stornování objednávky, pokud správce zvolí odeslání oznámení.",
       "waitlistConfirmation_title": "Potvrzení náhradníka",
@@ -5814,7 +5814,7 @@
     },
     "EmailTemplates": {
       "usage": {
-        "ticketOrderPaymentDone_description": "Zákazník dostane e-mail po potvrzení přijaté zálohy nebo doplatku zálohové objednávky. Přihlášky se odesílají samostatně."
+        "ticketOrderPaymentDone_description": "Šablona se používá pro potvrzení zálohy či doplatku zálohové objednávky a pro potvrzení uhrazené přihlášky."
       }
     },
     "FeatureBlueprint": {
