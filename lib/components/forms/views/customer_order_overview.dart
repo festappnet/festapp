@@ -10,6 +10,7 @@ import '../payment_method_strings.dart';
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import '../order_overview_strings.dart';
+import '../order_item_seating.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/forms.dart';
@@ -168,26 +169,10 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                           paragraph(
                             '${item['title'] ?? ''}: ${order['discount'] != null ? formatDiscountPrice(context, (item['basePrice'] ?? item['price']) as num, item['currency'] ?? order['currency']) : money(item['price'], item['currency'])}',
                           ),
-                          if ([item['spotGroupTitle'], item['spotTitle']].any(
-                            (value) =>
-                                value != null &&
-                                value.toString().trim().isNotEmpty,
-                          ))
+                          if (orderItemSeatingText(item)
+                              case final String seating)
                             Text(
-                              [
-                                if (item['spotGroupTitle']
-                                        ?.toString()
-                                        .trim()
-                                        .isNotEmpty ==
-                                    true)
-                                  '${text('table')}: ${item['spotGroupTitle']}',
-                                if (item['spotTitle']
-                                        ?.toString()
-                                        .trim()
-                                        .isNotEmpty ==
-                                    true)
-                                  '${text('seat')}: ${item['spotTitle']}',
-                              ].join(' · '),
+                              seating,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),

@@ -2,33 +2,62 @@ import { formatTicketCurrency } from './numberFormatting.ts';
 import { getMinimalisticDateRange } from './ticketDate.ts';
 import type { Template } from './ticketLayout.ts';
 // BEGIN GENERATED SEATING LABELS
-const seatText: Record<string, { group: string; seat: string }> = {
+type SeatingLabels = Record<"table" | "group" | "couch" | "row" | "standingPlace" | "seat", string>;
+const seatText: Record<string, SeatingLabels> = {
   "cs": {
-    "group": "Stůl (skupina)",
+    "table": "Stůl",
+    "group": "Skupina",
+    "couch": "Gauč",
+    "row": "Řada",
+    "standingPlace": "Místo na stání",
     "seat": "Místo"
   },
   "de": {
-    "group": "Tisch (Gruppe)",
+    "table": "Tisch",
+    "group": "Gruppe",
+    "couch": "Sofa",
+    "row": "Reihe",
+    "standingPlace": "Stehplatz",
     "seat": "Sitzplatz"
   },
   "en": {
-    "group": "Table (group)",
+    "table": "Table",
+    "group": "Group",
+    "couch": "Couch",
+    "row": "Row",
+    "standingPlace": "Standing place",
     "seat": "Seat"
   },
   "es": {
-    "group": "Mesa (grupo)",
+    "table": "Mesa",
+    "group": "Grupo",
+    "couch": "Sofá",
+    "row": "Fila",
+    "standingPlace": "Lugar de pie",
     "seat": "Asiento"
   },
   "pl": {
-    "group": "Stół (grupa)",
+    "table": "Stół",
+    "group": "Grupa",
+    "couch": "Kanapa",
+    "row": "Rząd",
+    "standingPlace": "Miejsce stojące",
     "seat": "Miejsce"
   },
   "sk": {
-    "group": "Stôl (skupina)",
+    "table": "Stôl",
+    "group": "Skupina",
+    "couch": "Gauč",
+    "row": "Rad",
+    "standingPlace": "Miesto na státie",
     "seat": "Miesto"
   },
   "uk": {
-    "group": "Стіл (група)",
+    "table": "Стіл",
+    "group": "Група",
+    "couch": "Диван",
+    "row": "Ряд",
+    "standingPlace": "Стояче місце",
     "seat": "Місце"
   }
 };
@@ -38,7 +67,11 @@ export function seatingLabels(locale: string) {
 }
 
 export const walletSeatingLabels = {
-  "group": "Stůl (skupina) / Table (group)",
+  "table": "Stůl / Table",
+  "group": "Skupina / Group",
+  "couch": "Gauč / Couch",
+  "row": "Řada / Row",
+  "standingPlace": "Místo na stání / Standing place",
   "seat": "Místo / Seat"
 };
 // END GENERATED SEATING LABELS
@@ -77,10 +110,47 @@ export function validateProductReferences(t:Template,c:ProductCatalog) {
   for(const e of t.elements)if(e.binding==='productType'&&!c.types.has(e.productTypeId!))throw new Error('ticket_product_type_missing:'+e.id);
 }
 /** One deterministic seating selection for PDF, native Wallet passes and email. */
-export function ticketSeating(ticket:any):{table:string|null;seat:string|null} {
- const selected=[...(ticket.order_product_ticket??[])].sort((a,b)=>Number(a.id??0)-Number(b.id??0)).find(p=>text(p.spot_group_title)||text(p.spot_title));
- return {table:text(selected?.spot_group_title),seat:text(selected?.spot_title)};
+export type SeatingPlacement = {
+  labelKey?: keyof SeatingLabels;
+  value?: string;
+  separator?: string;
+};
+
+export type TicketSeating = {
+  placement: SeatingPlacement | null;
+  seat: string | null;
+};
+
+export function readSeatingPlacement(placement: SeatingPlacement | null | undefined, legacyTitle: unknown): SeatingPlacement | null {
+  const title = text(legacyTitle);
+  return placement ?? (title ? { value: title } : null);
 }
+
+export function ticketSeating(ticket: any): TicketSeating {
+  const selected = [...(ticket.order_product_ticket ?? [])]
+    .sort((a,b) => Number(a.id ?? 0) - Number(b.id ?? 0))
+    .find(p => p.placement || text(p.spot_group_title) || text(p.spot_title));
+  return {
+    placement: readSeatingPlacement(selected?.placement, selected?.spot_group_title),
+    seat: text(selected?.spot_title),
+  };
+}
+
+export function seatingPlacementText(placement: SeatingPlacement | null, locale: string): string | null {
+  if (!placement) return null;
+  const label = placement.labelKey ? seatingLabels(locale)[placement.labelKey] : null;
+  return [label, placement.value].filter(Boolean).join(placement.separator ?? ' ') || null;
+}
+
+export function walletSeatingGroup(seating: TicketSeating): { label: string; value: string } | null {
+  const placement = seating.placement;
+  if (!placement) return null;
+  const label = placement.labelKey ? walletSeatingLabels[placement.labelKey] : undefined;
+  if (label && placement.value) return { label, value: placement.value };
+  const heading = placement.value ?? label;
+  return heading ? { label: 'Místo / Location', value: heading } : null;
+}
+
 export function ticketShowsSeat(feature:any):boolean {
  const type=feature?.ticket_type==='named'?'named':'wide';
  return feature?.layout?.templates?.[type]?.spotGroupAppearance?.showSeat===true;
@@ -113,8 +183,8 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog
     try {startTime=new Intl.DateTimeFormat(locale,options).format(new Date(occasion.start_time));}
     catch {startTime=new Intl.DateTimeFormat(locale,{...options,timeZone:'Europe/Prague'}).format(new Date(occasion.start_time));}
   }
-  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:seating.table?`${labels.group}: ${seating.table}`:null,note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatTicketCurrency(ticket.price,ticket.currency_code||'CZK',locale)}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
-  d.spotGroupWithSeat=d.spotGroup&&seating.seat?`${d.spotGroup}, ${labels.seat}: ${seating.seat}`:d.spotGroup;
+  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:seatingPlacementText(seating.placement,locale),note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatTicketCurrency(ticket.price,ticket.currency_code||'CZK',locale)}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
+  d.spotGroupWithSeat=seating.seat?[d.spotGroup,`${labels.seat}: ${seating.seat}`].filter(Boolean).join(', '):d.spotGroup;
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
   return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,matches.get(e.productTypeId!)??null):e.binding==='spotGroup'&&template.spotGroupAppearance?.showSeat?d.spotGroupWithSeat:d[e.binding]]));
@@ -128,7 +198,7 @@ export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatal
   d.qr='festapp-preview:'+d.ticketSymbol;
   const en = occasion?.locale === 'en';
   const labels=seatingLabels(occasion?.locale || 'cs');
-  d.spotGroup=`${labels.group}: 12`;
+  d.spotGroup=seatingPlacementText({labelKey:'table',value:'12'},occasion?.locale || 'cs');
   d.spotGroupWithSeat=`${d.spotGroup}, ${labels.seat}: 3`;
   if(en) { d.orderName='Alex Morgan'; if(!occasion?.title)d.occasionTitle='Evening under the stars'; }
   if(scenario==='long') {d.note=en?'Note: '+('A long guest note with anExtraLongWordWithoutSpaces ').repeat(8):'Poznámka: '+('Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer ').repeat(8);d.orderName=en?'Alexandra Morgan Taylor':'Kateřina Šťastná Nováková';}

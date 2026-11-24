@@ -40,6 +40,7 @@ Map<String, dynamic> fixture({String ticketState = 'unused'}) => {
           'price': 450,
           'currency': 'CZK',
           'spotGroupTitle': '7',
+          'placement': {'labelKey': 'group', 'value': '7'},
           'spotTitle': '3',
         },
       ],
@@ -150,7 +151,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('CHILD'), findsOneWidget);
       expect(
-        find.text('OrderOverview.table: 7 · OrderOverview.seat: 3'),
+        find.text('OrderOverview.group 7 · OrderOverview.seat: 3'),
         findsOneWidget,
       );
       expect(find.textContaining('300 CZK'), findsOneWidget);

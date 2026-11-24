@@ -189,6 +189,10 @@ symlinks, changed unselected dependencies and changed locks are rejected. The
 installer verifies the exact shared-file set and hashes, then proves every other
 installed byte unchanged against the pinned base before activation. This permits
 an isolated renderer correction without replacing schema-dependent workers.
+Exact replacements for the order and change overview renderers may add
+the ticket-rendering import when that existing module is selected in the same
+bundle. The generated email preview fixture can also be selected by its exact
+path, with its existing and replacement bytes pinned.
 
 The ordinary installer rechecks the complete installed tree digest under its
 existing runtime upgrade lock, recomputes the selected source's closure and

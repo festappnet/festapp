@@ -121,5 +121,8 @@ Deno.test('native Wallet follows the selected template seat setting and retains 
   value.ticket.order_product_ticket=[{id:1,spot_group_title:'Terasa'}];
   const tableOnly=walletDocuments({classId:'123.test',objectId:'123.ticket'},value).objectBody;
   assertEquals(tableOnly.textModulesData.find((f:any)=>f.id==='table')?.body,'Terasa');assertEquals(tableOnly.seatInfo,undefined);
+  value.ticket.order_product_ticket=[{id:1,placement:{labelKey:'couch',value:'2'}}];
+  const couch=walletDocuments({classId:'123.test',objectId:'123.ticket'},value).objectBody;
+  assertEquals(couch.textModulesData.find((f:any)=>f.id==='table'),{id:'table',header:'Gauč / Couch',body:'2'});
  }
 });

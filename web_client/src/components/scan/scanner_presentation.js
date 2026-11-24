@@ -1,3 +1,4 @@
+import { seatingPlacementText } from '../../services/seating_labels.js';
 import {tr as scanText,escape as e} from './scan_strings.js';
 const tr = scanText;
 import { LocalizationService } from '../../services/localization_service.js';
@@ -27,10 +28,10 @@ export function scannerSearchPreview(ticket,hasTickets=true) {
     const status=scannerTicketStatus(ticket);
     const holder=ticket.holder_name && ticket.holder_name!==ticket.symbol?ticket.holder_name:null;
     const heading=holder || ticket.purchaser_name || tr('ticket_label');
-    const table=ticket.spot_group?.title;
+    const group=seatingPlacementText(ticket.spot_group?.placement,ticket.spot_group?.title);
     const products=(ticket.products||[]).filter(product=>!(ticket.spot && product.type==='spot' && scannerProductTitle(product).trim().toLocaleLowerCase()===product.type_title?.trim().toLocaleLowerCase()));
     return `<span class="scan-search-heading"><strong>${e(heading)}</strong>${ticket.state?`<span class="scan-ticket-status ${status.tone}" ${status.key==='already_used'?`data-scan-used-at="${e(ticket.updated_at || '')}"`: ""}>${e(status.key==='already_used'?scannerUsedText(ticket.updated_at,Date.now(),hasTickets):tr(status.key))}</span>`:''}</span>
-    ${table || ticket.spot?`<span class="scan-search-seat">${table?`${/^\d+$/.test(table)?tr('table')+' ':''}${e(table)}`:''}${table && ticket.spot?' · ':''}${ticket.spot?`${tr('spot')} ${e(ticket.spot)}`:''}</span>`:''}
+    ${group || ticket.spot?`<span class="scan-search-seat">${e(group)}${group && ticket.spot?' · ':''}${ticket.spot?`${tr('spot')} ${e(ticket.spot)}`:''}</span>`:''}
     ${ticket.purchaser_name && ticket.purchaser_name!==heading?`<span class="scan-search-customer">${tr('purchaser')}: ${e(ticket.purchaser_name)}</span>`:''}
     ${ticket.purchaser_email?`<span class="scan-search-customer">${e(ticket.purchaser_email)}</span>`:''}
     ${products.length?`<span class="scan-search-products">${products.map(product=>`<span>${e(scannerProductCaption(product))}</span>`).join('')}</span>`:''}
