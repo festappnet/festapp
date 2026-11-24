@@ -17,7 +17,8 @@ export function renderOverviewProducts(host, items, currency, money, {originalPr
             item.isStanding ? 'standing' : item.spotGroupKind,
             item.isStanding ? item.standingAreaTitle : item.spotGroupTitle,
         );
-        const seat = !item.isStanding && item.spotTitle?.trim() ? `${tr('seat')}: ${item.spotTitle}` : '';
+        const seatTitle = String(item.spotTitle ?? '').trim();
+        const seat = !item.isStanding && seatTitle ? `${tr('seat')}: ${seatTitle}` : '';
         const seating = [group, seat].filter(Boolean).join(' · ');
         if (seating) node(label, 'span', seating, 'overview-product-seating');
         node(row, 'strong', money(originalPrices ? item.basePrice ?? item.price : item.price, item.currency || currency), 'overview-product-price');

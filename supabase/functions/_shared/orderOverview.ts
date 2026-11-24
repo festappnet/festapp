@@ -141,8 +141,9 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             const group = formatSeatingGroup(seatLabels,
               product.is_standing ? 'standing' : product.spot_group_kind,
               product.is_standing ? product.standing_area_title : product.spot_group_title);
-            const seat = !product.is_standing && product.spot_title?.trim()
-                ? `${seatLabels.seat}: ${product.spot_title}` : null;
+            const seatTitle = String(product.spot_title ?? '').trim();
+            const seat = !product.is_standing && seatTitle
+                ? `${seatLabels.seat}: ${seatTitle}` : null;
             const admission = [group, seat].filter(Boolean).map(escapeEmailHtml).join(' · ');
             const seatingHtml = admission ? `<div style="margin-top: 4px; font-weight: 600;">${admission}</div>` : '';
 
