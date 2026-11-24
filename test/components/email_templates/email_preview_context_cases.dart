@@ -93,7 +93,16 @@ void main() {
     expect(confirmation.values['accountNumber'], isEmpty);
     expect(confirmation.paymentQrSample, isNull);
     expect(confirmation.composeHtml('{{balanceReasoning}}'), contains('K úhradě na místě'));
-    for (final code in ['TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_REMINDER']) {
+    final paid = examples.scenariosFor('TICKET_ORDER_PAYMENT_DONE')
+        .firstWhere((sample) => sample.locale == 'cs');
+    final paidHtml = paid.composeHtml('{{balanceReasoning}}');
+    expect(paid.scenario, 'cash-paid');
+    expect(paidHtml, contains('Objednávka je plně uhrazena.'));
+    expect(paidHtml, isNot(contains('K úhradě na místě')));
+    expect(paidHtml, isNot(contains('U vstupu.')));
+    for (final code in [
+      'TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_PAYMENT_DONE', 'TICKET_ORDER_REMINDER',
+    ]) {
       for (final sample in examples.scenariosFor(code)) {
         expect(sample.paymentQrSample, isNull);
         expect(

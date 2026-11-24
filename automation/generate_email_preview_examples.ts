@@ -293,10 +293,40 @@ for (const locale of ['cs','en'] as const) {
    }
   }
  }
- for (const templateCode of ['TICKET_ORDER_CONFIRMATION','TICKET_ORDER_UPDATE','TICKET_ORDER_PAYMENT_DONE']) {
-  const payment={payment_method:'cash',amount:800,paid:0,currency_code:'CZK',data:{payment_policy:{cashInstructions:locale==='cs'?'U vstupu.':'At the entrance.'}},collectionAction:{allowed:true}};
-  records.push({templateCode,scenario:'cash-unpaid',locale,tone:'formal',paymentMethod:'cash',collectionAllowed:true,values:{...scalar,...overviewEmailSubstitutions(fixture.overviewUrl,locale,fixture.overviewActions),
-   ...confirmationPaymentSubstitutions(payment,[],locale,'formal'),...orderTemplateValues(templateCode,fixture.occasionTitle,fixture.orderSymbol,'formal',locale,800),fullOrder:generateFullOrder(fixture.orderData,fixture.tickets,fixture.features,locale,fixture.orderSymbol),accountNumber:'',iban:'',variableSymbol:'',paymentAction:'',paymentMethodName:locale==='cs'?'Hotovost':'Cash'},requiredLinks:[]});
+ for (const templateCode of [
+   "TICKET_ORDER_CONFIRMATION", "TICKET_ORDER_UPDATE", "TICKET_ORDER_PAYMENT_DONE",
+ ]) {
+   const total = 800;
+   const currency = "CZK";
+   const paid = templateCode === "TICKET_ORDER_PAYMENT_DONE" ? total : 0;
+   const payment = {
+     payment_method: "cash", amount: total, paid, currency_code: currency,
+     data: { payment_policy: { cashInstructions: locale === "cs" ? "U vstupu." : "At the entrance." } },
+     collectionAction: { allowed: paid < total },
+   };
+   const presentation = templateCode === "TICKET_ORDER_PAYMENT_DONE"
+     ? paidPaymentSubstitutions(total, paid, currency, [], locale, "formal", payment)
+     : templateCode === "TICKET_ORDER_UPDATE"
+     ? {
+       amount: formatCurrency(total, currency),
+       balanceReasoning: updateBalanceReasoning(total, paid, currency, {}, payment, locale, "formal"),
+     }
+     : confirmationPaymentSubstitutions(payment, [], locale, "formal");
+   records.push({
+     templateCode, scenario: paid === total ? "cash-paid" : "cash-unpaid",
+     locale, tone: "formal", paymentMethod: "cash",
+     collectionAllowed: payment.collectionAction.allowed,
+     values: {
+       ...scalar,
+       ...overviewEmailSubstitutions(fixture.overviewUrl, locale, fixture.overviewActions),
+       ...presentation,
+       ...orderTemplateValues(templateCode, fixture.occasionTitle, fixture.orderSymbol, "formal", locale, total),
+       fullOrder: generateFullOrder(fixture.orderData, fixture.tickets, fixture.features, locale, fixture.orderSymbol),
+       accountNumber: "", iban: "", variableSymbol: "", paymentAction: "",
+       paymentMethodName: locale === "cs" ? "Hotovost" : "Cash",
+     },
+     requiredLinks: [],
+   });
  }
 }
 const moneySlots: Record<string, string> = {
