@@ -3224,7 +3224,6 @@
     "properties": "Propiedades",
     "qr": "Código QR",
     "ticketSymbol": "Código de la entrada",
-    "spotGroup": "Mesa",
     "food": "Cena",
     "note": "Nota",
     "price": "Precio",
@@ -3883,7 +3882,7 @@
     "weekend": "Escapada de fin de semana"
   },
   "OrderOverview": {
-    "table": "Mesa",
+    "table": "Mesa (grupo)",
     "seat": "Asiento",
     "unavailableTitle": "Pedido no disponible",
     "unavailable": "Es posible que el pedido se haya eliminado o que el enlace ya no sea válido. Si necesita ayuda, contacte con la organización del evento.",
@@ -4027,7 +4026,6 @@
     "dinner": "Cena",
     "purchaser": "Comprado por",
     "ticket_label": "Entrada",
-    "table": "Mesa",
     "shared_order": "Mismo pedido",
     "ticket_group": "Entradas escaneadas",
     "group_hint": "Cada entrada se comprueba por separado. Selecciona una para ver sus detalles.",

@@ -11,7 +11,7 @@ Deno.test('ticket rendering preserves product and seat selection across SQL resu
  ];
  const ticket={occasion:7,ticket_symbol:'test-order-independent',state:'paid',price:123,currency_code:'CZK',note:'Public note',order_product_ticket:opts};
  const expected=normalizeTicketData(ticket,{id:7},{},catalog,template);
- assertEquals(expected.spotGroup,'Stůl: First group');
+ assertEquals(expected.spotGroup,'Stůl (skupina): First group');
  assertEquals(expected.vip,'VIP menu: Skrytá historická večeře');
  for(const indexes of [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]]) {
   const reordered={...ticket,order_product_ticket:indexes.map(i=>opts[i])};
@@ -141,7 +141,7 @@ Deno.test('English ticket retains admission QR, exact amount and event civil tim
  {id:7,locale:'en',title:'Starlight Ball',start_time:'2026-10-31T23:30:00Z',end_time:'2026-11-01T01:00:00Z',data:{timezone:'Europe/Prague'}},
  {name:'Alex',surname:'Morgan'});
  assertEquals(d.qr,'ADMISSION-123');
- assertEquals(d.spotGroup,'Table: A');
+ assertEquals(d.spotGroup,'Table (group): A');
  assertEquals(d.note,'Note: Vegetarian');
  assertEquals(d.price,'Price: €12.34');
  assertEquals(d.occasionStartTime,'00:30');
@@ -157,14 +157,14 @@ Deno.test('English date range keeps month before both days', () => {
 Deno.test('table appearance renders the selected seat, preserves defaults and handles missing data',()=>{
  const template=preset('wide');
  const ticket={ticket_symbol:'X3827K6M8R',order_product_ticket:[{id:2,spot_group_title:'Other',spot_title:'9'},{id:1,spot_group_title:'Terasa',spot_title:'3'}]};
- assertEquals(normalizeTicketData(ticket,{id:7},{},undefined,template).spotGroup,'Stůl: Terasa');
+ assertEquals(normalizeTicketData(ticket,{id:7},{},undefined,template).spotGroup,'Stůl (skupina): Terasa');
  template.spotGroupAppearance={showSeat:true};
  validateLayout({schemaVersion:3,templates:{wide:template}});
- assertEquals(normalizeTicketData(ticket,{id:7},{},undefined,template).spotGroup,'Stůl: Terasa, Místo: 3');
- assertEquals(normalizeTicketData(ticket,{id:7,locale:'en'},{},undefined,template).spotGroup,'Table: Terasa, Seat: 3');
- assertEquals(normalizeTicketData({...ticket,order_product_ticket:[{id:1,spot_group_title:'Terasa'}]},{id:7},{},undefined,template).spotGroup,'Stůl: Terasa');
+ assertEquals(normalizeTicketData(ticket,{id:7},{},undefined,template).spotGroup,'Stůl (skupina): Terasa, Místo: 3');
+ assertEquals(normalizeTicketData(ticket,{id:7,locale:'en'},{},undefined,template).spotGroup,'Table (group): Terasa, Seat: 3');
+ assertEquals(normalizeTicketData({...ticket,order_product_ticket:[{id:1,spot_group_title:'Terasa'}]},{id:7},{},undefined,template).spotGroup,'Stůl (skupina): Terasa');
  assertEquals(normalizeTicketData({...ticket,order_product_ticket:[]},{id:7},{},undefined,template).spotGroup,null);
- assertEquals(sampleData('normal',{id:7},undefined,template).spotGroup,'Stůl: 12, Místo: 3');
+ assertEquals(sampleData('normal',{id:7},undefined,template).spotGroup,'Stůl (skupina): 12, Místo: 3');
  assertEquals(sampleData('missing',{id:7},undefined,template).spotGroup,null);
  for(const bad of [null,[],{},true,{showSeat:'true'},{showSeat:true,extra:1}]) {
   const layout:any={schemaVersion:3,templates:{wide:{...template,spotGroupAppearance:bad}}};
@@ -181,7 +181,7 @@ Deno.test('production PDF encodes the saved table and seat choice in its printed
  const font=await Deno.readFile('supabase/functions/_shared/ticket-assets/font.ttf');
  const metrics=fontMetrics(font),encodingDoc=await PDFDocument.create();encodingDoc.registerFontkit(fontkit);
  const embedded=await encodingDoc.embedFont(font);
- const alphabet=new Map(Array.from('Stůl: Terasa, Místo: 3X3827K6M8R').map(c=>[embedded.encodeText(c).toString().slice(1,-1).toUpperCase(),c]));
+ const alphabet=new Map(Array.from('Stůl (skupina): Terasa, Místo: 3X3827K6M8R').map(c=>[embedded.encodeText(c).toString().slice(1,-1).toUpperCase(),c]));
  for(const showSeat of [false,true]) {
   const template=preset('wide');template.spotGroupAppearance={showSeat};
   const render=await prepareTicketRenderer({id:7,features:[{code:'ticket',layout:{schemaVersion:3,templates:{wide:template}}}]},{},{},{
@@ -190,7 +190,7 @@ Deno.test('production PDF encodes the saved table and seat choice in its printed
   const result=await render({ticket_symbol:'X3827K6M8R',order_product_ticket:[{id:1,product:1,spot_group_title:'Terasa',spot_title:'3'}]});
   const pdf=await PDFDocument.load(result.bytes);
   const printed=pdf.context.enumerateIndirectObjects().flatMap(([,o])=>o instanceof PDFRawStream?Array.from(new TextDecoder().decode(inflateSync(o.getContents())).matchAll(/<([A-Fa-f0-9]+)>\s*Tj/g),m=>alphabet.get(m[1].toUpperCase())??'?'):[]).join('');
-  assertEquals(printed.includes(showSeat?'Stůl: Terasa, Místo: 3':'Stůl: Terasa'),true);
+  assertEquals(printed.includes(showSeat?'Stůl (skupina): Terasa, Místo: 3':'Stůl (skupina): Terasa'),true);
   assertEquals(printed.includes('Místo: 3'),showSeat);
  }
 });

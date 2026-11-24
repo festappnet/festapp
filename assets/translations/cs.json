@@ -3240,7 +3240,6 @@
     "properties": "Vlastnosti",
     "qr": "QR kód",
     "ticketSymbol": "Kód vstupenky",
-    "spotGroup": "Stůl",
     "food": "Večeře",
     "note": "Poznámka",
     "price": "Cena",
@@ -3899,7 +3898,7 @@
     "weekend": "Víkendovka"
   },
   "OrderOverview": {
-    "table": "Stůl",
+    "table": "Stůl (skupina)",
     "seat": "Místo",
     "unavailableTitle": "Objednávka není dostupná",
     "unavailable": "Objednávka mohla být smazána nebo odkaz již není platný. Pokud potřebujete pomoc, kontaktujte pořadatele akce.",
@@ -4043,7 +4042,6 @@
     "dinner": "Večeře",
     "purchaser": "Objednatel",
     "ticket_label": "Vstupenka",
-    "table": "Stůl",
     "shared_order": "Společná objednávka",
     "ticket_group": "Načtené vstupenky",
     "group_hint": "Každá vstupenka se ověřuje samostatně. Klepnutím zobrazíte detail.",

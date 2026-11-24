@@ -1651,7 +1651,7 @@
     "back": "Powrót do własnych wydarzeń"
   },
   "OrderOverview": {
-    "table": "Stół",
+    "table": "Stół (grupa)",
     "seat": "Miejsce",
     "unavailableTitle": "Zamówienie jest niedostępne",
     "unavailable": "Zamówienie mogło zostać usunięte lub link jest już nieważny. Jeśli potrzebujesz pomocy, skontaktuj się z organizatorem wydarzenia.",
@@ -2112,7 +2112,6 @@
     "dinner": "Kolacja",
     "purchaser": "Zamawiający",
     "ticket_label": "Bilet",
-    "table": "Stół",
     "shared_order": "Wspólne zamówienie",
     "ticket_group": "Scanned tickets",
     "group_hint": "Each ticket is checked separately. Select one to see its details.",

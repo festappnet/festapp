@@ -3,6 +3,7 @@ import {walletEmailProviders} from './wallet/emailProviders.ts';
 import {prepareWalletEmail,ticketWalletEnabled,walletEmailCopy,walletEmailTicket,walletEmailSection,walletTicketLabel,googleWalletBadgeUrl} from './ticketWalletEmail.ts';
 import {prepareTicketDelivery} from './ticketDelivery.ts';
 import {renderEmail} from './emailDelivery.ts';
+import {seatingLabels,walletSeatingLabels} from './ticketRenderData.ts';
 Deno.test('email worker offers Wallet without access to the isolated signing credential',async()=>{
  const previousKey=Deno.env.get('EMAIL_PAYLOAD_KEY');
  const previousSigning=Deno.env.get('GOOGLE_WALLET_SERVICE_ACCOUNT');
@@ -15,7 +16,15 @@ Deno.test('email worker offers Wallet without access to the isolated signing cre
    if(p.p_hash)source={sealed:p.p_sealed,tokenHash:p.p_hash};
    return {providers:{google:true,apple:false},organization:3,occasion:7,webOrigin:'https://vstupenky.online',badgeUrls:{cs:'https://img.festapp.net/assets/google-wallet/v1/cs.png'},source};
   };
-  const html=await prepareWalletEmail({message_id:'message',data:{lang:'cs'}},[{id:1,ticket_symbol:'SAMPLE'}],{is_enabled:true},rpc);
+  const tickets = [{id:1,ticket_symbol:'SAMPLE',order_product_ticket:[{id:1,spot_group_title:'4',spot_title:'7'}]}];
+  const row = {message_id:'message',data:{lang:'cs'}};
+  const html=await prepareWalletEmail(row,tickets,{is_enabled:true},rpc);
+  assert(html.includes('>Vstupenka - Stůl (skupina): 4<'));
+  assert(!html.includes('Místo: 7'));
+  const withSeat = await prepareWalletEmail(row,tickets,{
+   is_enabled:true,layout:{templates:{wide:{spotGroupAppearance:{showSeat:true}}}},
+  },rpc);
+  assert(withSeat.includes('>Vstupenka - Stůl (skupina): 4 - Místo: 7<'));
   assert(html.includes('https://vstupenky.online/wallet?provider=google&amp;lang=cs#'));
   assert(html.includes('Přidat do Peněženky Google'));
   assertEquals(Deno.env.get('GOOGLE_WALLET_SERVICE_ACCOUNT'),undefined);
@@ -23,6 +32,19 @@ Deno.test('email worker offers Wallet without access to the isolated signing cre
   if(previousKey===undefined)Deno.env.delete('EMAIL_PAYLOAD_KEY');else Deno.env.set('EMAIL_PAYLOAD_KEY',previousKey);
   if(previousSigning===undefined)Deno.env.delete('GOOGLE_WALLET_SERVICE_ACCOUNT');else Deno.env.set('GOOGLE_WALLET_SERVICE_ACCOUNT',previousSigning);
  }
+});
+Deno.test('renderers share the application seating labels', async () => {
+  for (const lang of ['cs', 'de', 'en', 'es', 'pl', 'sk', 'uk']) {
+    const { OrderOverview } = JSON.parse(await Deno.readTextFile(
+      new URL(`../../../assets/translations/${lang}.json`, import.meta.url),
+    ));
+    assertEquals(seatingLabels(lang), { group: OrderOverview.table, seat: OrderOverview.seat });
+  }
+  const dart = await Deno.readTextFile(new URL(
+    '../../../packages/festapp_core/lib/wallet_seating_labels.dart', import.meta.url,
+  ));
+  assert(dart.includes(`walletSeatGroupLabel = ${JSON.stringify(walletSeatingLabels.group)};`));
+  assert(dart.includes(`walletSeatLabel = ${JSON.stringify(walletSeatingLabels.seat)};`));
 });
 Deno.test('Wallet preference defaults true, rejects invalid values, and false/readiness skip issuance',async()=>{
  assertEquals(ticketWalletEnabled({}),true);assertEquals(ticketWalletEnabled({wallet_enabled:false}),false);
@@ -103,7 +125,8 @@ Deno.test('Google stays localized; Apple uses its installed official English art
 });
 
 Deno.test('multiple providers share one ticket heading and actions have no repeated visible label',()=>{
- const label='Vstupenka 1 z 3 - Stůl 4 - Místo 7';
+ const label=walletTicketLabel(1,3,'cs',{table:'4',seat:'7'});
+ assertEquals(label,'Vstupenka 1 z 3 - Stůl (skupina): 4 - Místo: 7');
  const html=walletEmailTicket(label,[{provider:'google',badge:googleWalletBadgeUrl('cs')},{provider:'apple'}],'cs');
  assertEquals((html.match(/Vstupenka 1 z 3/g)??[]).length,1);
  assertEquals((html.match(/Přidat do Peněženky Apple/g)??[]).length,1);

@@ -6,7 +6,7 @@ import {parseOrganizationBranding} from './organizationBranding.ts';
 import { googleWalletAppearance, walletPublicImage } from './googleWalletAppearance.ts';
 import {walletHash} from './wallet/identity.ts';
 import type {WalletProjection} from './wallet/contracts.ts';
-import { normalizeTicketData, ticketSeating, ticketShowsSeat } from './ticketRenderData.ts';
+import { normalizeTicketData, ticketSeating, ticketShowsSeat, walletSeatingLabels } from './ticketRenderData.ts';
 
 export type AppleWalletCredentials = {
  passTypeIdentifier: string; teamIdentifier: string;
@@ -71,7 +71,7 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
   eventTicket:{
    primaryFields:[field('event','Akce / Event',occasion.title)],
    secondaryFields:[field('date','Datum / Date',date),...(normalized.occasionPlace?[field('venue','Místo konání / Venue',normalized.occasionPlace)]:[])],
-   auxiliaryFields:[...(seating.table?[field('table','Stůl / Table',seating.table)]:[]),...(showSeat&&seating.seat?[field('seat','Místo / Seat',seating.seat)]:[]),...(types?[field('admission','Vstup / Admission',types)]:[])],
+   auxiliaryFields:[...(seating.table?[field('table',walletSeatingLabels.group,seating.table)]:[]),...(showSeat&&seating.seat?[field('seat',walletSeatingLabels.seat,seating.seat)]:[]),...(types?[field('admission','Vstup / Admission',types)]:[])],
    backFields:[field('number','Vstupenka / Ticket',ticket.ticket_symbol),...(state==='COMPLETED'?[field('status','Stav / Status','Vstupenka již byla použita. / This ticket has already been used.')]:[])],
   },
  };

@@ -3238,7 +3238,6 @@
     "properties": "Properties",
     "qr": "QR code",
     "ticketSymbol": "Ticket code",
-    "spotGroup": "Table",
     "food": "Dinner",
     "note": "Note",
     "price": "Price",
@@ -3897,7 +3896,7 @@
     "weekend": "Weekend"
   },
   "OrderOverview": {
-    "table": "Table",
+    "table": "Table (group)",
     "seat": "Seat",
     "unavailableTitle": "Order unavailable",
     "unavailable": "The order may have been deleted or the link is no longer valid. If you need help, contact the event organizer.",
@@ -4041,7 +4040,6 @@
     "dinner": "Dinner",
     "purchaser": "Ordered by",
     "ticket_label": "Ticket",
-    "table": "Table",
     "shared_order": "Same order",
     "ticket_group": "Scanned tickets",
     "group_hint": "Each ticket is checked separately. Select one to see its details.",
