@@ -993,11 +993,12 @@
     {
       "migration": "20261124100000_ticket_gallery_email_banner.sql",
       "active": true,
-      "header": "-- Repair persisted wrappers generated with the old banner markup.\n-- The anchored pattern leaves custom wrappers and explicit no-image wrappers intact.\nWITH replacement AS (\n  SELECT id, html AS previous_html, regexp_replace(\n    html,\n    $legacy$^(<div style=\"font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;\">)<div style=\"text-align: center;\"><img (src=\"[^\"]*\" alt=\"[^\"]*\") style=\"width: 100%; height: auto; display: block;\"></div>(<div style=\"margin-top: 10px; margin-bottom: 10px; padding: 0 24px;\">[{][{]content[}][}]</div></div>)$$legacy$,\n    $responsive$\\1<table role=\"presentation\" width=\"100%\" cellspacing=\"0\" cellpadding=\"0\" border=\"0\" style=\"width: 100%; table-layout: fixed;\"><tr><td align=\"center\" style=\"padding: 0 24px;\"><img \\2 width=\"632\" style=\"display: block; width: 100%; max-width: 632px; height: auto; margin: 0 auto;\"></td></tr></table>\\3$responsive$\n  ) AS html\n  FROM public.email_wrappers\n  WHERE html LIKE '<div style=\"font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;\"><div style=\"text-align: center;\"><img %'\n)\nUPDATE public.email_wrappers AS wrapper\nSET html = replacement.html\nFROM replacement\nWHERE wrapper.id = replacement.id AND wrapper.html = replacement.previous_html\n  AND wrapper.html IS DISTINCT FROM replacement.html;",
+      "header": "-- Accept bundled ticket artwork and render responsive banners without rewriting tenant data.",
       "sources": [
         "others/ticket_layout.sql",
         "others/get_ticket_layout_write_contract_v1.sql",
-        "others/update_entity_email_banner.sql"
+        "others/update_entity_email_banner.sql",
+        "others/get_email_template_and_wrapper.sql"
       ],
       "selectors": {
         "others/ticket_layout.sql": [

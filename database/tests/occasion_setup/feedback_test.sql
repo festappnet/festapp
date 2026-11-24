@@ -1,5 +1,5 @@
 DO $$
-DECLARE actor uuid; org bigint; un bigint; draft uuid; d jsonb; payload jsonb; result jsonb; event_id bigint; visible boolean; expected_wrapper text;
+DECLARE actor uuid; org bigint; un bigint; draft uuid; d jsonb; payload jsonb; result jsonb; event_id bigint; visible boolean; expected_wrapper text; legacy_wrapper text;
 BEGIN
  PERFORM create_user_for_test('setup_feedback_manager','setup-feedback@test.local');
  actor:=get_user_id('setup_feedback_manager');
@@ -39,6 +39,13 @@ BEGIN
    public.email_banner_wrapper_internal('https://img.festapp.net/banner.webp','Ples')
      LIKE '%<table role="presentation" width="100%"%<td align="center" style="padding: 0 24px;">%width: 100%; max-width: 632px; height: auto; margin: 0 auto;%',
    'Banner remains centered with equal insets at narrow and wide widths');
+ legacy_wrapper:='<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;"><div style="text-align: center;"><img src="https://img.festapp.net/banner.webp" alt="Ples &quot;A&amp;B&quot;" style="width: 100%; height: auto; display: block;"></div><div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">{{content}}</div></div>';
+ UPDATE public.email_wrappers SET html=legacy_wrapper WHERE occasion=event_id;
+ PERFORM assert_eq(
+   public.get_email_template_and_wrapper('TICKET_ORDER_CONFIRMATION',jsonb_build_object('occasion',event_id))#>>'{wrapper,html}',
+   public.email_banner_wrapper_internal('https://img.festapp.net/banner.webp','Ples "A&B"'),
+   'A stored legacy banner resolves to responsive markup');
+ PERFORM assert_eq((SELECT html FROM public.email_wrappers WHERE occasion=event_id),legacy_wrapper,'Rendering preserves stored HTML');
  PERFORM assert_true(public.email_banner_wrapper_internal(NULL,'Ples') IS NULL,'Inherited banner does not replace its wrapper');
  PERFORM assert_false(has_function_privilege('authenticated','public.email_banner_wrapper_internal(text,text)','EXECUTE'),'Wrapper owner is internal');
  PERFORM assert_true(public.occasion_setup_font_id_internal('Manrope') IS NOT NULL,'Custom picker font has a canonical PDF identity');

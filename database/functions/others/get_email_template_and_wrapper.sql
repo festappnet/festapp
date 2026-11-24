@@ -65,6 +65,18 @@ BEGIN
     LIMIT 1
   ) t;
 
+  -- Adapt only the exact legacy generated wrapper at read time. Custom
+  -- templates and explicit banner suppression keep their authored markup.
+  IF email_wrapper->>'html' LIKE
+    '<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;"><div style="text-align: center;"><img %'
+  THEN
+    email_wrapper := jsonb_set(email_wrapper, '{html}', to_jsonb(regexp_replace(
+      email_wrapper->>'html',
+      $legacy$^(<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;">)<div style="text-align: center;"><img (src="[^"]*" alt="[^"]*") style="width: 100%; height: auto; display: block;"></div>(<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">[{][{]content[}][}]</div></div>)\Z$legacy$,
+      $responsive$\1<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; table-layout: fixed;"><tr><td align="center" style="padding: 0 24px;"><img \2 width="632" style="display: block; width: 100%; max-width: 632px; height: auto; margin: 0 auto;"></td></tr></table>\3$responsive$
+    )));
+  END IF;
+
   -- Build the final result object, ensuring JSON nulls are used for missing records.
   result := jsonb_build_object(
               'template', COALESCE(email_template, 'null'::jsonb),
