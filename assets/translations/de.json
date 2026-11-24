@@ -694,7 +694,7 @@
     "appearanceDark": "Dunkel",
     "embedAction": "Auf eigener Website einbetten",
     "embedTitle": "Bestellformular",
-    "embedFallback": "Bestellung in neuem Tab öffnen",
+    "embedFallback": "In neuem Tab bestellen",
     "embedHelp": "Kopieren Sie den Code in das HTML Ihrer Website.",
     "embedDisplay": "Höhe und Darstellung",
     "embedScriptHint": "Automatische Höhe und Website-Design benötigen ein externes Skript. Blockiert Ihre Website es, wählen Sie eine feste Höhe und das Formulardesign.",

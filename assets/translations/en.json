@@ -663,7 +663,7 @@
     "fontLoadFailed": "Could not load fonts. Please try again.",
     "embedAction": "Embed on your website",
     "embedTitle": "Order form",
-    "embedFallback": "Open order in a new tab",
+    "embedFallback": "Order in a new tab",
     "embedHelp": "Copy the code and paste it into your website’s HTML.",
     "embedDisplay": "Height and appearance",
     "embedScriptHint": "Automatic height and website styling need an external script. If your site blocks it, choose fixed height and the form’s own style.",
