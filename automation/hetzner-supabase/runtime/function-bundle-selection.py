@@ -13,6 +13,15 @@ import shutil
 
 
 AUTHORING_CONTEXT = 'send-custom-email/authoringContext.ts'
+APPLE_WALLET_MODULE = '_shared/appleWallet.ts'
+APPLE_ICON_ASSETS = tuple(
+    f'_shared/ticket-assets/apple-wallet/{name}'
+    for name in ('icon.png', 'icon@2x.png', 'icon@3x.png')
+)
+APPLE_ICON_LOADER = (
+    "for(const name of ['icon.png','icon@2x.png','icon@3x.png'])"
+    "icons[name]=await Deno.readFile(new URL('./ticket-assets/apple-wallet/'+name,import.meta.url));"
+)
 AUTHORING_QR_IMPORTS = {'node:buffer', '../_shared/qrCodePayment.ts',
                         '../_shared/paymentQrArtwork.ts'}
 # The installed 1a578e1ad QR module uses identical sample artwork. The
@@ -34,10 +43,14 @@ def digest(value):
     return hashlib.sha256(value).hexdigest()
 
 
-def imports(path):
+def imports(path, *, pinned_apple_icons=False):
     if path.suffix not in ('.ts', '.js', '.mjs'):
         return []
     text = path.read_text()
+    if pinned_apple_icons:
+        require(text.splitlines().count('  ' + APPLE_ICON_LOADER) == 1,
+                'Exact Apple Wallet replacement must retain the pinned icon loader')
+        text = text.replace('  ' + APPLE_ICON_LOADER, '', 1)
     require(not re.search(r'\b(?:import|require)\s*\(\s*[^\s\"\']', text),
             'Non-literal module dependency requires a full release')
     require(not re.search(r'\b(?:readFile(?:Sync)?|readTextFile(?:Sync)?|readDir(?:Sync)?|createWorker|Worker)\s*\(', text),
@@ -152,6 +165,9 @@ def exact_shared_plan(source, base, modules):
                 and name in base['files'] and path.is_file()
                 and path.resolve() == source.resolve() / name,
                 'Exact replacement requires an existing allowed code or locale module')
+        if name == APPLE_WALLET_MODULE:
+            require(all(asset in base['files'] for asset in APPLE_ICON_ASSETS),
+                    'Exact Apple Wallet replacement requires installed icons')
         value = digest(path.read_bytes())
         require(value != base['files'][name], 'Exact shared replacement must change each selected module')
         planned[name] = value
@@ -175,8 +191,9 @@ def stage_exact_shared(current, stage, manifest):
     for name in planned['shared_modules']:
         # Keep the installed tree pinned. Dropping imports from a replacement
         # leaves the remaining dependency files and their pinned bytes intact.
-        before = set(imports(current / name))
-        after = set(imports(stage / name))
+        pinned_apple_icons = name == APPLE_WALLET_MODULE
+        before = set(imports(current / name, pinned_apple_icons=pinned_apple_icons))
+        after = set(imports(stage / name, pinned_apple_icons=pinned_apple_icons))
         if name == AUTHORING_CONTEXT:
             # The installed tree digest also pins the QR renderer and its font.
             require(before <= after and after - before <= AUTHORING_QR_IMPORTS
