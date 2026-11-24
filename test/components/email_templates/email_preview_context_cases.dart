@@ -139,6 +139,7 @@ void main() {
       expect(paid.values['balanceReasoning'], isNot(contains('K úhradě na místě')));
       final cancelled = samples.scenariosFor('TICKET_ORDER_STORNO');
       for (final sample in cancelled) {
+        expect(sample.contextDefaults['preview_payment_method'], method);
         expect(sample.contextDefaults['preview_collection_allowed'], 'false');
         expect(sample.values['paymentAction'], isEmpty);
         expect(sample.paymentQrSample, isNull);
