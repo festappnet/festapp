@@ -172,10 +172,10 @@
     "id": "ai-agents",
     "category": "integrations",
     "slug": "ai-agenti",
-    "title": "Jak připojit ChatGPT nebo jiného AI asistenta",
-    "seoTitle": "Jak připojit ChatGPT nebo jiného AI asistenta",
-    "description": "Připojte plugin vstupenky.online v ChatGPT pro čtení dat o akcích. Pro další AI asistenty najdete postup nastavení MCP a příklady práce s formuláři.",
-    "label": "ChatGPT a MCP",
+    "title": "Jak připojit ChatGPT, jiného AI asistenta nebo Make",
+    "seoTitle": "Jak připojit ChatGPT, jiného AI asistenta nebo Make",
+    "description": "Připojte ChatGPT nebo jiného AI asistenta přes MCP, případně použijte Make pro pravidelné přehledy prodeje a objednávek.",
+    "label": "ChatGPT, MCP a Make",
     "preview": "cs/ai-agenti/login"
   },
   {

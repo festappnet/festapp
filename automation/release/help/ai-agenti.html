@@ -3,6 +3,15 @@
 <p>Otevřete <a href="https://chatgpt.com/plugins/plugin_asdk_app_6ae002a14394819189521c68175a53d5">vstupenky.online v ChatGPT</a>, přidejte plugin a přihlaste se na vstupenky.online. Vyberte akce nebo pořadatele a potvrďte požadovaná oprávnění.</p>
 <p><strong>Plugin je pouze pro čtení.</strong> Podle schváleného přístupu zobrazí například přehled prodeje, objednávek, formulářů, vstupenek nebo kapacit. Z objednávek nepředává jména kupujících, kontakty, poznámky ani odpovědi z formulářů.</p>
 <div class="help-code-example" data-code-example><pre><code tabindex="0">Ukaž mi přehled prodeje vstupenek na Slavnostní ples U Lípy.</code></pre><button class="button primary" type="button" data-copy-code>Kopírovat</button><p role="status" aria-live="polite"></p></div>
+<h2 id="make">Automatizace v Make</h2>
+<p>Konektor vstupenky.online v <a href="https://www.make.com/">Make</a> umí číst přehled prodeje a stav objednávek. Můžete si tak třeba pravidelně aktualizovat přehled prodeje v tabulce.</p>
+<ol>
+  <li>V editoru scénáře Make vyhledejte <strong>vstupenky.online</strong> a přidejte modul <strong>List accessible events</strong>.</li>
+  <li>V poli <strong>Connection</strong> klikněte na <strong>Add</strong>. Přihlaste se na vstupenky.online, vyberte akce a potvrďte přístup.</li>
+  <li>Spusťte scénář a ověřte seznam dostupných akcí. Pro přehled prodeje použijte modul <strong>Get an event sales summary</strong> a vyberte konkrétní akci.</li>
+</ol>
+<p>Konektor nepotřebuje API klíč. Čte jen schválené akce, nevrací kontaktní údaje kupujících a nemůže měnit objednávky. Po vypršení sedmidenního souhlasu připojení znovu autorizujte.</p>
+<p>Pro modul <strong>Make an API call</strong> použijte <a href="https://api.vstupenky.online/integrations/v1/profiles/order-summary/docs/">referenci API pro souhrny prodeje a objednávek</a>.</p>
 <h2 id="kratce">Vlastní MCP připojení</h2>
 <div class="help-code-example" data-code-example><pre><code tabindex="0">Připoj se k https://mcp.vstupenky.online/mcp a ukaž moje akce.</code></pre><button class="button primary" type="button" data-copy-code>Kopírovat</button><p role="status" aria-live="polite"></p></div>
 
