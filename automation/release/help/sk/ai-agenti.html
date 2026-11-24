@@ -3,6 +3,15 @@
 <p>Otvorte <a href="https://chatgpt.com/plugins/plugin_asdk_app_6ae002a14394819189521c68175a53d5">vstupenky.online v ChatGPT</a>, pridajte doplnok a prihláste sa na vstupenky.online. Vyberte podujatia alebo organizátora a potvrďte požadované oprávnenia.</p>
 <p><strong>Doplnok je iba na čítanie.</strong> Podľa schváleného prístupu zobrazí napríklad prehľad predaja, objednávok, formulárov, vstupeniek alebo kapacít. Z objednávok neposkytuje mená kupujúcich, kontakty, poznámky ani odpovede z formulárov.</p>
 <div class="help-code-example" data-code-example><pre><code tabindex="0">Ukáž mi prehľad predaja vstupeniek na Slávnostný ples U Lipy.</code></pre><button class="button primary" type="button" data-copy-code>Kopírovať</button><p role="status" aria-live="polite"></p></div>
+<h2 id="make">Automatizácia v Make</h2>
+<p>Konektor vstupenky.online v <a href="https://www.make.com/">Make</a> umožňuje čítať prehľad predaja a stav objednávok. Môžete si tak napríklad pravidelne aktualizovať prehľad predaja v tabuľke.</p>
+<ol>
+  <li>V editore scenára Make vyhľadajte <strong>vstupenky.online</strong> a pridajte modul <strong>List accessible events</strong>.</li>
+  <li>V poli <strong>Connection</strong> kliknite na <strong>Add</strong>. Prihláste sa na vstupenky.online, vyberte podujatia a potvrďte prístup.</li>
+  <li>Spustite scenár a overte zoznam dostupných podujatí. Na prehľad predaja použite modul <strong>Get an event sales summary</strong> a vyberte konkrétne podujatie.</li>
+</ol>
+<p>Konektor nevyžaduje kľúč API. Číta iba schválené podujatia, neposkytuje kontaktné údaje kupujúcich a nemôže meniť objednávky. Po uplynutí sedemdňového súhlasu pripojenie znova autorizujte.</p>
+<p>Pre modul <strong>Make an API call</strong> použite <a href="https://api.vstupenky.online/integrations/v1/profiles/order-summary/docs/">referenciu API pre súhrny predaja a objednávok</a>.</p>
 <h2 id="kratce">Vlastné MCP pripojenie</h2>
 <div class="help-code-example" data-code-example><pre><code tabindex="0">Pripoj sa k https://mcp.vstupenky.online/mcp a ukáž moje podujatia.</code></pre><button class="button primary" type="button" data-copy-code>Kopírovať</button><p role="status" aria-live="polite"></p></div>
 <p>Pri nastavenom pripojení stačí toto zadanie. Na prvé pripojenie potrebujete podporu vzdialeného MCP a OAuth, registráciu klienta a prihlásenie. Heslo zadávajte iba na prihlasovacej stránke vstupenky.online.</p>
