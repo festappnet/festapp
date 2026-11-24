@@ -35,6 +35,10 @@ BEGIN
   PERFORM assert_true((SELECT html NOT LIKE '%<img%' AND html LIKE '%{{content}}%' FROM public.email_wrappers WHERE occasion=event_id),'Removed banner creates a valid wrapper without an image');
  END LOOP;
  PERFORM assert_true(public.email_banner_wrapper_internal('https://img.festapp.net/banner.webp','Ples "A&B"') LIKE '%alt="Ples &quot;A&amp;B&quot;"%','Banner title is escaped at its owner');
+ PERFORM assert_true(
+   public.email_banner_wrapper_internal('https://img.festapp.net/banner.webp','Ples')
+     LIKE '%<table role="presentation" width="100%"%<td align="center" style="padding: 0 24px;">%width: 100%; max-width: 632px; height: auto; margin: 0 auto;%',
+   'Banner remains centered with equal insets at narrow and wide widths');
  PERFORM assert_true(public.email_banner_wrapper_internal(NULL,'Ples') IS NULL,'Inherited banner does not replace its wrapper');
  PERFORM assert_false(has_function_privilege('authenticated','public.email_banner_wrapper_internal(text,text)','EXECUTE'),'Wrapper owner is internal');
  PERFORM assert_true(public.occasion_setup_font_id_internal('Manrope') IS NOT NULL,'Custom picker font has a canonical PDF identity');

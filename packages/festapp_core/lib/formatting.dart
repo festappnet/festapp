@@ -46,6 +46,24 @@ String formatDisplayCurrency(
   );
 }
 
+const _ticketCurrencyFractionDigits = {'CZK': 0};
+
+String formatTicketCurrency(
+  num value, {
+  required String currency,
+  String? locale,
+  String? symbol,
+}) {
+  final code = currency.toUpperCase();
+  return formatDisplayCurrency(
+    value,
+    locale: locale,
+    name: code,
+    symbol: symbol,
+    decimalDigits: _ticketCurrencyFractionDigits[code],
+  );
+}
+
 /// Retains exact server decimal strings, including values beyond double precision.
 String formatExactDisplayNumber(String value, {String? locale}) {
   if (!RegExp(r'^-?\d+(\.\d+)?$').hasMatch(value)) return value;
