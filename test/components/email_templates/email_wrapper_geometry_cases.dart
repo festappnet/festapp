@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:fstapp/components/email_templates/email_preview_html.dart';
 
 const _message = '<p style="margin:0">Message content</p>';
@@ -22,6 +23,7 @@ Future<Rect> _render(
   String html,
   double width, {
   Uint8List? Function(String)? imageBytesResolver,
+  Map<String, Object>? paymentQrSample,
 }) async {
   await tester.pumpWidget(MaterialApp(builder: DependencyMaterialBridge.builder,
       home: Scaffold(
@@ -29,7 +31,11 @@ Future<Rect> _render(
     alignment: Alignment.topLeft,
     child: SizedBox(
       width: width,
-      child: EmailPreviewHtml(html: html, imageBytesResolver: imageBytesResolver),
+      child: EmailPreviewHtml(
+        html: html,
+        imageBytesResolver: imageBytesResolver,
+        paymentQrSample: paymentQrSample,
+      ),
     ),
   ))));
   await tester.pumpAndSettle();
@@ -54,6 +60,30 @@ void main() {
     expect(rendered, findsOneWidget);
     expect(tester.widget<Image>(rendered).image, MemoryImage(png));
     expect(tester.getRect(find.byType(FittedBox)).width, lessThanOrEqualTo(180));
+    expect(find.byIcon(Icons.image_outlined), findsNothing);
+  });
+
+  testWidgets('missing artwork still shows a nonpayable sample QR and captions',
+      (tester) async {
+    await _render(
+      tester,
+      '<img src="$emailPreviewPaymentQrSource" alt="QR platba">$_message',
+      180,
+      paymentQrSample: {
+        'title': 'Podzimní ples',
+        'accountNumber': '13200132/2010',
+        'iban': 'CZ22 2010 0000 0000 1320 0132',
+        'currency': 'CZK',
+        'locale': 'cs',
+        'amount': 900,
+        'reference': '20261030',
+      },
+    );
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.text('Podzimní ples'), findsOneWidget);
+    expect(find.text('13200132/2010'), findsOneWidget);
+    expect(find.textContaining('900'), findsOneWidget);
+    expect(find.textContaining('VS 20261030'), findsOneWidget);
     expect(find.byIcon(Icons.image_outlined), findsNothing);
   });
 

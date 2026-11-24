@@ -429,9 +429,11 @@ void main() {
     final logs = LocalizationLogFixture.install(expectedMissingCatalog: true);
     addTearDown(logs.dispose);
   });
-  for (final metadataFirst in [true, false]) {
+  for (final (metadataFirst, artworkAvailable) in [
+    (true, true), (false, true), (false, false),
+  ]) {
     testWidgets(
-      'bank metadata updates authoring examples independent of load order $metadataFirst',
+      'bank sample survives load order $metadataFirst and artwork availability $artworkAvailable',
       (tester) async {
         final metadata = Completer<EmailAuthoringContext>();
         final examples = Completer<EmailPreviewExamples>();
@@ -457,7 +459,7 @@ void main() {
             paymentAccounts: const [account],
             loadPaymentQr: (sample) async {
               qrSamples.add(sample);
-              return png;
+              return artworkAvailable ? png : null;
             },
           ),
         );
@@ -481,7 +483,7 @@ void main() {
           completeMetadata();
         }
         await tester.pumpAndSettle();
-        expect(find.text(account.accountNumber), findsOneWidget);
+        expect(find.text(account.accountNumber), findsNWidgets(artworkAvailable ? 1 : 2));
         expect(find.text(account.iban), findsOneWidget);
         final preview = tester.widget<EmailPreviewHtml>(
           find.byType(EmailPreviewHtml),
@@ -489,7 +491,11 @@ void main() {
         expect(preview.html, contains(account.iban));
         expect(qrSamples.single['accountNumber'], account.accountNumber);
         expect(qrSamples.single['amount'], 800);
-        expect(preview.imageBytesResolver!(emailPreviewPaymentQrSource), png);
+        expect(
+          preview.imageBytesResolver!(emailPreviewPaymentQrSource),
+          artworkAvailable ? png : null,
+        );
+        expect(preview.paymentQrSample?['amount'], 800);
         final body = tester
             .widgetList<RichHtmlEditor>(find.byType(RichHtmlEditor))
             .last

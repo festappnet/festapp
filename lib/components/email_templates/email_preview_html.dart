@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import '../html/html_embedded_block.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/email_templates.dart';
+import 'package:festapp_core/formatting.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/parser.dart' as parser;
 import 'email_templates_strings.dart';
@@ -49,6 +51,7 @@ class EmailPreviewHtml extends StatelessWidget {
   const EmailPreviewHtml(
       {required this.html,
       this.imageBytesResolver,
+      this.paymentQrSample,
       this.embeddedBlock,
       this.allowedRemoteImageSources = const {},
       super.key});
@@ -56,6 +59,7 @@ class EmailPreviewHtml extends StatelessWidget {
   final HtmlEmbeddedBlock? embeddedBlock;
   final Set<String> allowedRemoteImageSources;
   final Uint8List? Function(String)? imageBytesResolver;
+  final Map<String, Object>? paymentQrSample;
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -159,6 +163,10 @@ class EmailPreviewHtml extends StatelessWidget {
                       )
                     : image;
               }
+              final sample = paymentQrSample;
+              if (source == emailPreviewPaymentQrSource && sample != null) {
+                return _SamplePaymentQr(sample);
+              }
               if (source.isNotEmpty &&
                   allowedRemoteImageSources.contains(source)) {
                 return Semantics(
@@ -179,6 +187,73 @@ class EmailPreviewHtml extends StatelessWidget {
   }
 }
 
+/// Keep the sample visible when the preview renderer cannot supply its artwork.
+class _SamplePaymentQr extends StatelessWidget {
+  const _SamplePaymentQr(this.sample);
+
+  final Map<String, Object> sample;
+
+  @override
+  Widget build(BuildContext context) {
+    final currency = sample['currency'] as String;
+    final czech = sample['locale'] == 'cs';
+    final sampleAmount = sample['amount'] as num;
+    final amount = formatDisplayCurrency(
+      sampleAmount,
+      name: currency,
+      simple: true,
+      locale: czech ? 'cs_CZ' : 'en_GB',
+      decimalDigits: sampleAmount == sampleAmount.round() ? 0 : 2,
+    );
+    final referenceLabel = currency == 'EUR'
+        ? 'Reference'
+        : (czech ? 'VS' : 'Variable symbol');
+    final reference = sample['reference'] as String;
+    final title = sample['title'] as String;
+    final account = sample[currency == 'EUR' ? 'iban' : 'accountNumber'] as String;
+    final details = [amount, if (reference.isNotEmpty) '$referenceLabel $reference'];
+    const captionStyle = TextStyle(color: Color(0xff171f2c));
+
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        width: 280,
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 16),
+        color: Colors.white,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // An inert sample, matching the server's preview payload.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: QrImageView(
+                data: 'festapp-preview:payment',
+                size: 224,
+                errorCorrectionLevel: QrErrorCorrectLevel.M,
+                semanticsLabel: EmailTemplatesStrings.sampleData,
+              ),
+            ),
+            if (title.isNotEmpty)
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: captionStyle.copyWith(fontWeight: FontWeight.bold),
+              ),
+            if (account.isNotEmpty)
+              Text(account, textAlign: TextAlign.center, style: captionStyle),
+            const SizedBox(height: 6),
+            Text(
+              details.join('  ·  '),
+              textAlign: TextAlign.center,
+              style: captionStyle,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// A received-message surface with phone-width content, shared with the editor's
 /// inert HTML renderer. The sender comes from authoritative delivery metadata;
 /// the recipient is a synthetic preview identity.
@@ -187,6 +262,7 @@ class EmailReceivedMessage extends StatelessWidget {
     required this.subject,
     required this.html,
     this.imageBytesResolver,
+    this.paymentQrSample,
     this.embeddedBlock,
     this.senderAddress,
     this.recipientLabel,
@@ -200,6 +276,7 @@ class EmailReceivedMessage extends StatelessWidget {
   final HtmlEmbeddedBlock? embeddedBlock;
   final Set<String> allowedRemoteImageSources;
   final Uint8List? Function(String)? imageBytesResolver;
+  final Map<String, Object>? paymentQrSample;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -260,6 +337,7 @@ class EmailReceivedMessage extends StatelessWidget {
               html: html,
               embeddedBlock: embeddedBlock,
               imageBytesResolver: imageBytesResolver,
+              paymentQrSample: paymentQrSample,
               allowedRemoteImageSources: allowedRemoteImageSources,
             ),
           ],

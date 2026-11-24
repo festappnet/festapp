@@ -208,6 +208,7 @@ class EmailAuthoringProvider extends TemplateAuthoringProvider {
           ? Text(EmailTemplatesStrings.previewUnavailable)
           : EmailPreviewHtml(
               imageBytesResolver: imageBytesResolver,
+              paymentQrSample: scenario?.paymentQrSample,
               html:
                   scenario?.richCodes.contains(code) == false &&
                       wrapHtml != null
