@@ -432,6 +432,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                       TicketEmailPreview(
                         senderAddress: _authoringContext!.senderAddress,
                         imageBytesResolver: _previewImageBytes,
+                        paymentQrSample: _scenario?.paymentQrSample,
                         sampleCount: _bodyProvider.inlineTicketsEnabled ? 1 : 0,
                         includesPdf: _ticketMode?.includesPdf == true,
                         preview: {
@@ -469,6 +470,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
                           _bodyDraft?.html ?? _htmlContent ?? '',
                         ),
                         imageBytesResolver: _previewImageBytes,
+                        paymentQrSample: _scenario?.paymentQrSample,
                       ),
                 ],
               ),
@@ -574,6 +576,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
               child: EmailPreviewHtml(
                 key: const ValueKey('email-automatic-leading'),
                 imageBytesResolver: _previewImageBytes,
+                paymentQrSample: _scenario?.paymentQrSample,
                 html: html,
               ),
             );
@@ -605,6 +608,7 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             child: EmailPreviewHtml(
               key: const ValueKey('email-automatic-completion'),
               imageBytesResolver: _previewImageBytes,
+              paymentQrSample: _scenario?.paymentQrSample,
               html: automatic,
             ),
           ),

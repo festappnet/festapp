@@ -25,6 +25,7 @@ class TicketEmailPreview extends StatelessWidget {
     this.sampleCount = 0,
     this.senderAddress,
     this.imageBytesResolver,
+    this.paymentQrSample,
     this.includesPdf = false,
   });
   final Map<String, dynamic> preview;
@@ -32,6 +33,7 @@ class TicketEmailPreview extends StatelessWidget {
   final bool includesPdf;
   final String? senderAddress;
   final Uint8List? Function(String)? imageBytesResolver;
+  final Map<String, Object>? paymentQrSample;
 
   static Widget inlineSample({required int count, bool includesPdf = false}) =>
       Column(
@@ -305,6 +307,7 @@ class TicketEmailPreview extends StatelessWidget {
           subject: '${preview['subject'] ?? ''}',
           senderAddress: senderAddress,
           imageBytesResolver: imageBytesResolver,
+          paymentQrSample: paymentQrSample,
           html: body,
           embeddedBlock: tickets,
           allowedRemoteImageSources: EmailAuthoringContext(
