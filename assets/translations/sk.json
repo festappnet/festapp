@@ -1915,7 +1915,11 @@
     "back": "Späť k vlastným akciám"
   },
   "OrderOverview": {
-    "table": "Stôl (skupina)",
+    "table": "Stôl",
+    "group": "Skupina",
+    "couch": "Gauč",
+    "row": "Rad",
+    "standingPlace": "Miesto na státie",
     "seat": "Miesto",
     "unavailableTitle": "Objednávka nie je dostupná",
     "unavailable": "Objednávka mohla byť vymazaná alebo odkaz už nie je platný. Ak potrebujete pomoc, kontaktujte organizátora podujatia.",

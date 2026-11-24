@@ -1,4 +1,4 @@
-import {seatingLabels,ticketSeating,ticketShowsSeat} from './ticketRenderData.ts';
+import {seatingGroupText,seatingLabels,ticketSeating,ticketShowsSeat,type TicketSeating} from './ticketRenderData.ts';
 import { escapeTicketText } from './ticketDelivery.ts';
 import { openEmail, sealEmail } from './emailPayload.ts';
 import { walletHash } from './wallet/identity.ts';
@@ -29,7 +29,7 @@ export function walletTicketLabel(
   index: number,
   count: number,
   lang: string,
-  seating?: { table: string | null; seat: string | null },
+  seating?: TicketSeating,
 ) {
   const single: Record<string, string> = {
     cs: 'Vstupenka', sk: 'Vstupenka', en: 'Ticket', de: 'Ticket', pl: 'Bilet', uk: 'Квиток',
@@ -41,7 +41,7 @@ export function walletTicketLabel(
   const labels = seatingLabels(lang);
   return [
     ticket,
-    seating?.table && `${labels.group}: ${seating.table}`,
+    seating && seatingGroupText(seating, lang),
     seating?.seat && `${labels.seat}: ${seating.seat}`,
   ].filter(Boolean).join(' - ');
 }
@@ -122,7 +122,7 @@ export async function prepareWalletEmail(row:any,tickets:any[],feature:any,rpc:W
   const url=walletEmailUrl(context,source.token,lang);
   const seating=ticketSeating(ticket);
   const description = walletTicketLabel(index + 1, tickets.length, lang, {
-    table: seating.table,
+    ...seating,
     seat: ticketShowsSeat(feature) ? seating.seat : null,
   });
   const actions=walletActions(context,url,lang,ready);

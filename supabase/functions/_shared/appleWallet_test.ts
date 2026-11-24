@@ -10,7 +10,7 @@ import {reconcileAppleTicketWallet} from './appleWalletUpdates.ts';
 import type {GoogleWallet} from './googleWallet.ts';
 const credentials={passTypeIdentifier:'pass.net.festapp.test',teamIdentifier:'TESTTEAM01'} as AppleWalletCredentials;
 const identity={environment:'test',organization:1,occasion:2,ticketId:3};
-const projection:any={branding:{APP_NAME:'Ukázkový portál',DEFAULT_URL:'https://tenant.invalid'},state:'ACTIVE',ticket:{ticket_symbol:'EXACT-QR-č',order_product_ticket:[{spot_title:'12',spot_group_title:'Stůl 4',product:{title:'Vstupné'}}]},occasion:{ticketFeature:{layout:{templates:{wide:{spotGroupAppearance:{showSeat:true}}}}},title:'Večer hudby',start_time:'2027-03-28T18:00:00Z',end_time:'2027-03-28T22:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
+const projection:any={branding:{APP_NAME:'Ukázkový portál',DEFAULT_URL:'https://tenant.invalid'},state:'ACTIVE',ticket:{ticket_symbol:'EXACT-QR-č',order_product_ticket:[{spot_title:'12',spot_group_title:'Stůl 4',spot_group_kind:'table',product:{title:'Vstupné'}}]},occasion:{ticketFeature:{layout:{templates:{wide:{spotGroupAppearance:{showSeat:true}}}}},title:'Večer hudby',start_time:'2027-03-28T18:00:00Z',end_time:'2027-03-28T22:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
 const resolved={...identity,webOrigin:'https://tenant.invalid',providers:{google:false,apple:true},applePassTypeIdentifier:credentials.passTypeIdentifier,appleTeamIdentifier:credentials.teamIdentifier,projection};
 
 Deno.test('Apple serial isolates backend, organization, event and ticket; QR and native fields retain canonical values',async()=>{
@@ -19,9 +19,9 @@ Deno.test('Apple serial isolates backend, organization, event and ticket; QR and
  assertEquals(await appleWalletSerial({...identity}),serial);
  const doc=appleWalletDocument(serial,projection,credentials);
  assertEquals(doc.barcodes[0].message,'EXACT-QR-č');assertEquals(doc.passTypeIdentifier,credentials.passTypeIdentifier);
- assertEquals(doc.eventTicket.auxiliaryFields.map(f=>f.value),['Stůl 4','12','Vstupné']);
+ assertEquals(doc.eventTicket.auxiliaryFields.map(f=>f.value),['4','12','Vstupné']);
  assertEquals(doc.eventTicket.auxiliaryFields.slice(0,2).map(f=>f.label),
-  ['Stůl (skupina) / Table (group)','Místo / Seat']);
+  ['Stůl / Table','Místo / Seat']);
  assert(doc.eventTicket.secondaryFields[0].value.includes('20:00')); // Prague DST offset.
  assertEquals(doc.voided,false);
  for(const [background_color,foreground] of [['#222222','rgb(255, 255, 255)'],['#888888','rgb(0, 0, 0)']]) {
@@ -31,6 +31,10 @@ Deno.test('Apple serial isolates backend, organization, event and ticket; QR and
   assertEquals(pass.foregroundColor,foreground);
   assertEquals(pass.labelColor,foreground);
  }
+ const standing=structuredClone(projection);
+ standing.ticket.order_product_ticket=[{id:1,is_standing:true,standing_area_title:'Parket VIP'}];
+ assertEquals(appleWalletDocument(serial,standing,credentials).eventTicket.auxiliaryFields,
+  [{key:'table',label:'Místo na stání / Standing place',value:'Parket VIP'}]);
  assertEquals(appleWalletDocument(serial,{...projection,state:'COMPLETED'},credentials).voided,true);
  for(const state of ['INACTIVE','EXPIRED'])assertEquals(appleWalletDocument(serial,{...projection,state} as any,credentials).voided,true);
 });

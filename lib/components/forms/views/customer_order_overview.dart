@@ -69,6 +69,29 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
     }
   }
 
+  String? seatingText(Map item) {
+    final standing = item['isStanding'] == true;
+    final kind = standing ? 'standing' : item['spotGroupKind'];
+    final raw = standing ? item['standingAreaTitle'] : item['spotGroupTitle'];
+    final title = raw is String ? raw.trim() : '';
+    final key = switch (kind) {
+      'standing' => 'standingPlace',
+      'table' => 'table',
+      'couch' => 'couch',
+      'row' => 'row',
+      _ => RegExp(r'^\d+$').hasMatch(title) ? 'group' : null,
+    };
+    final label = key == null ? '' : text(key);
+    final normalized = title.toLowerCase();
+    final prefix = label.toLowerCase();
+    final group = title.isEmpty ? label : label.isEmpty || normalized == prefix ||
+        normalized.startsWith('$prefix ') || normalized.startsWith('$prefix:')
+        ? title : '$label $title';
+    final seat = standing ? '' : item['spotTitle']?.toString().trim() ?? '';
+    final parts = [if (group.isNotEmpty) group, if (seat.isNotEmpty) '${text('seat')}: $seat'];
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
   String text(String key) => OrderOverviewStrings.text(
     key,
     hasTickets: _data?.root['hasTickets'] == true,
@@ -168,26 +191,9 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                           paragraph(
                             '${item['title'] ?? ''}: ${order['discount'] != null ? formatDiscountPrice(context, (item['basePrice'] ?? item['price']) as num, item['currency'] ?? order['currency']) : money(item['price'], item['currency'])}',
                           ),
-                          if ([item['spotGroupTitle'], item['spotTitle']].any(
-                            (value) =>
-                                value != null &&
-                                value.toString().trim().isNotEmpty,
-                          ))
+                          if (seatingText(item) case final String seating)
                             Text(
-                              [
-                                if (item['spotGroupTitle']
-                                        ?.toString()
-                                        .trim()
-                                        .isNotEmpty ==
-                                    true)
-                                  '${text('table')}: ${item['spotGroupTitle']}',
-                                if (item['spotTitle']
-                                        ?.toString()
-                                        .trim()
-                                        .isNotEmpty ==
-                                    true)
-                                  '${text('seat')}: ${item['spotTitle']}',
-                              ].join(' · '),
+                              seating,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),

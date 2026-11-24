@@ -1,3 +1,50 @@
+-- Resolve the physical assembly even when its commercial group is a wrapper.
+CREATE OR REPLACE FUNCTION public.order_seating_kind_internal(p_nodes jsonb,p_seat text,p_group text)
+RETURNS text LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ WITH RECURSIVE ancestors AS (
+  SELECT p_nodes->p_seat node,ARRAY[p_seat] seen,0 depth
+  UNION ALL
+  SELECT p_nodes->(a.node->>'parentId'),a.seen||(a.node->>'parentId'),a.depth+1
+  FROM ancestors a WHERE p_nodes ? (a.node->>'parentId')
+    AND NOT (a.node->>'parentId')=ANY(a.seen)
+ ), kinds AS (
+  SELECT node,depth FROM ancestors
+  UNION ALL SELECT p_nodes->p_group,2147483647
+ )
+ SELECT CASE WHEN node->>'kind'='table' THEN 'table'
+             WHEN node->>'furniture'='couch' THEN 'couch' ELSE 'row' END
+ FROM kinds WHERE node->>'kind'='table'
+    OR (node->>'kind'='furniture' AND node->>'furniture'='couch')
+    OR (node->>'kind'='group' AND node#>>'{assembly,kind}'='rows' AND node#>>'{assembly,rows}'='1')
+ ORDER BY depth LIMIT 1;
+$$;
+REVOKE ALL ON FUNCTION public.order_seating_kind_internal(jsonb,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.order_seating_kind_internal(jsonb,text,text) TO service_role;
+
+-- Standing inventory is identified by its purchased capacity area, not a title.
+CREATE OR REPLACE FUNCTION public.order_standing_spot_metadata_internal(p_spot bigint)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT jsonb_build_object('is_standing',true,'standing_area_title',area.node->>'label')
+ FROM eshop.spots s
+ JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
+ JOIN eshop.orders o ON o.id=x."order" AND o.occasion=s.occasion
+ LEFT JOIN public.forms f ON f.id=o.form AND f.occasion=o.occasion
+ JOIN eshop.blueprint_area_bindings ab ON ab.blueprint=coalesce(f.blueprint,(
+   SELECT min(candidate.blueprint) FROM eshop.blueprint_area_bindings candidate
+   JOIN eshop.blueprints target ON target.id=candidate.blueprint
+   WHERE candidate.inventory_context=s.inventory_context
+     AND candidate.product=x.product AND target.occasion=o.occasion
+   HAVING count(DISTINCT candidate.blueprint)=1))
+   AND ab.inventory_context=s.inventory_context AND ab.product=x.product
+ JOIN eshop.blueprints b ON b.id=ab.blueprint AND b.occasion=o.occasion
+ CROSS JOIN LATERAL jsonb_array_elements(coalesce(b.layout->'nodes','[]')) area(node)
+ WHERE s.id=p_spot AND s.blueprint IS NULL
+   AND area.node->>'id'=ab.node_id::text AND area.node->>'kind'='capacityArea'
+ LIMIT 1;
+$$;
+REVOKE ALL ON FUNCTION public.order_standing_spot_metadata_internal(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.order_standing_spot_metadata_internal(bigint) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.order_spot_metadata_bulk_internal(p_spots bigint[])
 RETURNS TABLE(spot_id bigint,metadata jsonb)
 LANGUAGE plpgsql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
@@ -14,15 +61,22 @@ BEGIN
  ), first_nodes AS (
   SELECT DISTINCT ON (n.blueprint,n.occasion,n.node->>'id') n.blueprint,n.occasion,n.node
   FROM nodes n WHERE n.node->>'id' IS NOT NULL ORDER BY n.blueprint,n.occasion,n.node->>'id',n.ordinal
- ), plan_labels AS MATERIALIZED (
-  SELECT n.blueprint,n.occasion,jsonb_object_agg(n.node->>'id',n.node->'label') labels
+ ), plan_nodes AS MATERIALIZED (
+  SELECT n.blueprint,n.occasion,jsonb_object_agg(n.node->>'id',n.node) nodes
   FROM first_nodes n GROUP BY n.blueprint,n.occasion
  )
- SELECT s.id::bigint,jsonb_build_object('spot_title',s.title,'spot_group_title',(
-  SELECT p.labels->>binding.group_node::text FROM eshop.blueprint_seat_bindings binding
-  JOIN plan_labels p ON p.blueprint=binding.blueprint AND p.occasion=s.occasion
-  WHERE binding.spot=s.id AND binding.blueprint=s.blueprint LIMIT 1))
- FROM spots s;
+ SELECT s.id::bigint,jsonb_build_object('spot_title',s.title,
+     'spot_group_title',info.nodes->info.group_node::text->>'label',
+     'spot_group_kind',public.order_seating_kind_internal(info.nodes,info.node_id::text,info.group_node::text))
+   || coalesce(CASE WHEN s.blueprint IS NULL
+      THEN public.order_standing_spot_metadata_internal(s.id) END,'{}')
+ FROM spots s
+ LEFT JOIN LATERAL (
+   SELECT p.nodes,binding.node_id,binding.group_node
+   FROM eshop.blueprint_seat_bindings binding
+   JOIN plan_nodes p ON p.blueprint=binding.blueprint AND p.occasion=s.occasion
+   WHERE binding.spot=s.id AND binding.blueprint=s.blueprint LIMIT 1
+ ) info ON true;
 END;
 $$;
 REVOKE ALL ON FUNCTION public.order_spot_metadata_bulk_internal(bigint[]) FROM PUBLIC,anon,authenticated;
@@ -88,13 +142,7 @@ GRANT EXECUTE ON FUNCTION public.order_tickets_with_seating_bulk_internal(jsonb)
 -- Presentation metadata only. Callers retain their existing order access checks.
 CREATE OR REPLACE FUNCTION public.order_spot_metadata_internal(p_spot bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT jsonb_build_object('spot_title',s.title,'spot_group_title',(
-   SELECT n->>'label' FROM eshop.blueprint_seat_bindings binding
-   CROSS JOIN LATERAL jsonb_array_elements(coalesce(b.layout->'nodes','[]')) n
-   WHERE binding.spot=s.id AND binding.blueprint=b.id AND n->>'id'=binding.group_node::text LIMIT 1
-))
- FROM eshop.spots s LEFT JOIN eshop.blueprints b ON b.id=s.blueprint AND b.occasion=s.occasion
- WHERE s.id=p_spot;
+ SELECT metadata FROM public.order_spot_metadata_bulk_internal(ARRAY[p_spot]);
 $$;
 REVOKE ALL ON FUNCTION public.order_spot_metadata_internal(bigint) FROM PUBLIC,anon,authenticated;
 

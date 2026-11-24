@@ -150,7 +150,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('CHILD'), findsOneWidget);
       expect(
-        find.text('OrderOverview.table: 7 · OrderOverview.seat: 3'),
+        find.text('OrderOverview.group 7 · OrderOverview.seat: 3'),
         findsOneWidget,
       );
       expect(find.textContaining('300 CZK'), findsOneWidget);

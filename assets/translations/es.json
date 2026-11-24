@@ -3882,7 +3882,11 @@
     "weekend": "Escapada de fin de semana"
   },
   "OrderOverview": {
-    "table": "Mesa (grupo)",
+    "table": "Mesa",
+    "group": "Grupo",
+    "couch": "Sofá",
+    "row": "Fila",
+    "standingPlace": "Lugar de pie",
     "seat": "Asiento",
     "unavailableTitle": "Pedido no disponible",
     "unavailable": "Es posible que el pedido se haya eliminado o que el enlace ya no sea válido. Si necesita ayuda, contacte con la organización del evento.",

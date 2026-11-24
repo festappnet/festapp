@@ -1,3 +1,4 @@
+import { seatingGroupText } from '../../services/seating_labels.js';
 import {scannerProductCaption,scannerProductTitle,scannerNotes,scannerTicketStatus,scannerUsedText} from './scanner_presentation.js';
 import { AppConfig } from '../../app_config.js';
 import { icon } from './scan_icons.js';
@@ -6,6 +7,7 @@ export function scanResult(c, storageAvailable, hasTickets = true) {
     const tr = (key, args) => scanText(key, args, hasTickets);
     const reasonText = reason => tr(`reason_${reason}`);
     const t = c.ticket, state = c.state;
+    const group = seatingGroupText(t?.spot_group?.kind, t?.spot_group?.title);
     if (state === 'ready') return `<div class="scan-empty"><h2>${tr('ready')}</h2><p>${tr('choose_input')}</p></div>`;
     if (state === 'looking_up') return `<div class="scan-lookup" role="status"><span class="scan-spinner" aria-hidden="true"></span><h2>${tr('looking_up')}</h2></div>`;
     let message, tone = 'blocked';
@@ -30,7 +32,7 @@ export function scanResult(c, storageAvailable, hasTickets = true) {
     const canConfirm = state === 'result' && t?.admission_allowed && storageAvailable && !(t.online_required && (!globalThis.navigator?.onLine || t.source === 'offline')) && !(t.source === 'offline' && t.requires_unpaid_confirmation);
     return `<div class="scan-result ${tone}"><div class="scan-result-status"><span class="scan-result-icon">${icon(tone==='allowed'||tone==='complete'?'check':tone==='pending'?'clock':tone==='used'?'ticket':'alert')}</span><h2 tabindex="-1" data-result-title ${tone==='used' && t?.state==='used'?`data-scan-used-at="${e(t.updated_at || '')}"`:''}>${e(message)}</h2></div>
     ${!t && c.scanSymbol ? `<p class="scan-ticket-code">${e(c.scanSymbol)}</p>` : ''}
-    ${t ? `${t.source==='offline'?`<p class="scan-origin">${tr('source_offline')}</p>`:''}<h3>${e(heading)}</h3>${t.spot || t.spot_group?.title ? `<p class="scan-seat"><strong>${t.spot_group?.title?`${tr('table')} ${e(t.spot_group.title)}${t.spot?' · ':''}`:''}${t.spot?`${tr('spot')} ${e(t.spot)}`:''}</strong></p>` : ''}${t.purchaser_name && t.purchaser_name!==heading?`<p class="scan-purchaser">${tr('purchaser')}: <strong>${e(t.purchaser_name)}</strong></p>`:''}${t.symbol?`<p class="scan-ticket-code">${icon('ticket')}${e(t.symbol)}</p>`:''}
+    ${t ? `${t.source==='offline'?`<p class="scan-origin">${tr('source_offline')}</p>`:''}<h3>${e(heading)}</h3>${t.spot || group ? `<p class="scan-seat"><strong>${e(group)}${group && t.spot ? ' · ' : ''}${t.spot?`${tr('spot')} ${e(t.spot)}`:''}</strong></p>` : ''}${t.purchaser_name && t.purchaser_name!==heading?`<p class="scan-purchaser">${tr('purchaser')}: <strong>${e(t.purchaser_name)}</strong></p>`:''}${t.symbol?`<p class="scan-ticket-code">${icon('ticket')}${e(t.symbol)}</p>`:''}
     ${t.requires_unpaid_confirmation ? `<p class="scan-payment"><strong>${tr('unpaid')}</strong>${t.remaining_amount != null ? `: ${e(t.remaining_amount)}` : ''}</p>` : ''}
     ${products.length?`<ul class="scan-products">${products.map(p => `<li>${e(scannerProductCaption(p))}</li>`).join('')}</ul>`:''}
     ${scannerNotes(t,{hasTickets})}

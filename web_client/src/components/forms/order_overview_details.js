@@ -1,3 +1,4 @@
+import { seatingGroupText } from '../../services/seating_labels.js';
 import { FieldPreviewFactory } from './previews/field_preview_factory.js';
 import { formFieldTitle } from './form_field_labels.js';
 import { LocalizationService } from '../../services/localization_service.js';
@@ -12,11 +13,13 @@ export function renderOverviewProducts(host, items, currency, money, {originalPr
     for (const item of items) {
         const row = node(list, 'li', '');
         const label = node(row, 'span', item.title || '');
-        const seating = [[tr('table'), item.spotGroupTitle], [tr('seat'), item.spotTitle]]
-            .filter(([, value]) => value != null && String(value).trim() !== '')
-            .map(([title, value]) => `${title}: ${value}`).join(' · ');
-        const standing = item.isStanding ? [tr('standing'), item.standingAreaTitle].filter(value => value != null && String(value).trim()).join(': ') : '';
-        if (standing || seating) node(label, 'span', standing || seating, 'overview-product-seating');
+        const group = seatingGroupText(
+            item.isStanding ? 'standing' : item.spotGroupKind,
+            item.isStanding ? item.standingAreaTitle : item.spotGroupTitle,
+        );
+        const seat = !item.isStanding && item.spotTitle?.trim() ? `${tr('seat')}: ${item.spotTitle}` : '';
+        const seating = [group, seat].filter(Boolean).join(' · ');
+        if (seating) node(label, 'span', seating, 'overview-product-seating');
         node(row, 'strong', money(originalPrices ? item.basePrice ?? item.price : item.price, item.currency || currency), 'overview-product-price');
     }
 }

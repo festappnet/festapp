@@ -29,7 +29,10 @@ BEGIN
                                 s.title AS spot_title,
                                 p.data->>'short_title' AS short_title,
                                 p.title AS product_title,
-                                public.order_spot_metadata_internal(s.id)->>'spot_group_title' AS spot_group_title
+                                seat.metadata->>'spot_group_title' AS spot_group_title,
+                                seat.metadata->>'spot_group_kind' AS spot_group_kind,
+                                COALESCE((seat.metadata->>'is_standing')::boolean,false) AS is_standing,
+                                seat.metadata->>'standing_area_title' AS standing_area_title
                             FROM eshop.order_product_ticket opt2
                             LEFT JOIN eshop.spots s
                                 ON s.order_product_ticket = opt2.id
@@ -39,8 +42,10 @@ BEGIN
                                 ON pt.id = p.product_type
                             LEFT JOIN eshop.blueprints bp
                                 ON bp.id = s.blueprint
+                            LEFT JOIN LATERAL (SELECT public.order_spot_metadata_internal(s.id) metadata) seat ON true
                             WHERE opt2.ticket = t.id
-                              AND NOT (pt.type = 'spot' AND s.title IS NULL)
+                              AND NOT (pt.type = 'spot' AND s.title IS NULL
+                                AND seat.metadata->>'is_standing' IS DISTINCT FROM 'true')
                         ) ticket_prod
                     ) AS order_product_ticket,
 

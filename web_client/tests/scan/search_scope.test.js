@@ -75,14 +75,14 @@ test('search previews show customer, seat, products and actual status with one s
   page.row={session:{title:'Skautský ples',capabilities:{search_tickets:true},settings:{fields:[]}}};
   let selected,navigations=0;
   page.controller={state:'ready',loadTicket:row=>{selected=row;page.controller.state='result';}};
-  page.searchResults=[{ticket_id:1,symbol:'AB123',holder_name:'AB123',purchaser_name:'Jana Nováková',state:'sent',admission_allowed:true,spot:'4B',spot_group:{title:'4'},products:[{title:'Guláš',type:'food',type_title:'Večeře'}]},
+  page.searchResults=[{ticket_id:1,symbol:'AB123',holder_name:'AB123',purchaser_name:'Jana Nováková',state:'sent',admission_allowed:true,spot:'4B',spot_group:{kind:'table',title:'4'},products:[{title:'Guláš',type:'food',type_title:'Večeře'}]},
    {ticket_id:2,symbol:null,holder_name:null,purchaser_name:'Petr Novák',state:'storno',products:[]},
    {ticket_id:3,symbol:null,purchaser_name:'Eva Nováková',state:'waitlisted',products:[]}];
   page.render();
   page.host.querySelector('.scan-layout').scrollIntoView=()=>{navigations++;};
   const rows=[...page.host.querySelectorAll('[data-search-ticket]')];
   assert.equal(rows.length,3);assert.equal(rows[0].textContent.match(/AB123/g).length,1);
-  assert.match(rows[0].textContent,/Jana Nováková/);assert.match(rows[0].textContent,/table 4/);assert.match(rows[0].textContent,/4B/);assert.match(rows[0].textContent,/Večeře: Guláš/);
+  assert.match(rows[0].textContent,/Jana Nováková/);assert.match(rows[0].textContent,/OrderOverview\.table 4/);assert.match(rows[0].textContent,/4B/);assert.match(rows[0].textContent,/Večeře: Guláš/);
   assert.match(rows[1].textContent,/ticket_cancelled/);assert.match(rows[2].textContent,/ticket_waitlisted/);
   assert.doesNotMatch(rows[1].textContent,/null|no_products/);
   assert.match(page.host.querySelector('.scan-search-context').textContent,/Skautský ples/);

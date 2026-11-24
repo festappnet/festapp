@@ -3896,7 +3896,11 @@
     "weekend": "Weekend"
   },
   "OrderOverview": {
-    "table": "Table (group)",
+    "table": "Table",
+    "group": "Group",
+    "couch": "Couch",
+    "row": "Row",
+    "standingPlace": "Standing place",
     "seat": "Seat",
     "unavailableTitle": "Order unavailable",
     "unavailable": "The order may have been deleted or the link is no longer valid. If you need help, contact the event organizer.",

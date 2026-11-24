@@ -6,7 +6,7 @@ import {parseOrganizationBranding} from './organizationBranding.ts';
 import * as walletAppearance from './googleWalletAppearance.ts';
 import {walletHash} from './wallet/identity.ts';
 import type {WalletProjection} from './wallet/contracts.ts';
-import { normalizeTicketData, ticketSeating, ticketShowsSeat, walletSeatingLabels } from './ticketRenderData.ts';
+import { normalizeTicketData, ticketSeating, ticketShowsSeat, walletSeatingGroup, walletSeatingLabels } from './ticketRenderData.ts';
 
 const { googleWalletAppearance, walletPublicImage } = walletAppearance;
 // An Edge release can update pass text before the artwork dependencies are installed.
@@ -57,6 +57,7 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
  const appearance=appleAppearance(occasion.ticketFeature,occasion.data);
  const products=ticket.order_product_ticket??[];
  const seating=ticketSeating(ticket);
+ const group=walletSeatingGroup(seating);
  const showSeat=ticketShowsSeat(occasion.ticketFeature);
  const types=[...new Set(products.map((p:any)=>p.product?.title).filter(Boolean))].join(', ');
  const zone=occasion.data?.timezone||'Europe/Prague';
@@ -76,7 +77,7 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
   eventTicket:{
    primaryFields:[field('event','Akce / Event',occasion.title)],
    secondaryFields:[field('date','Datum / Date',date),...(normalized.occasionPlace?[field('venue','Místo konání / Venue',normalized.occasionPlace)]:[])],
-   auxiliaryFields:[...(seating.table?[field('table',walletSeatingLabels.group,seating.table)]:[]),...(showSeat&&seating.seat?[field('seat',walletSeatingLabels.seat,seating.seat)]:[]),...(types?[field('admission','Vstup / Admission',types)]:[])],
+   auxiliaryFields:[...(group?[field('table',group.label,group.value)]:[]),...(showSeat&&seating.seat?[field('seat',walletSeatingLabels.seat,seating.seat)]:[]),...(types?[field('admission','Vstup / Admission',types)]:[])],
    backFields:[field('number','Vstupenka / Ticket',ticket.ticket_symbol),...(state==='COMPLETED'?[field('status','Stav / Status','Vstupenka již byla použita. / This ticket has already been used.')]:[])],
   },
  };

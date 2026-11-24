@@ -1,7 +1,7 @@
 /** Google Event Tickets only. No ticket/admission decisions live in this adapter. */
 import { googleWalletAppearance, walletPublicImage } from './googleWalletAppearance.ts';
 import { parseOrganizationBranding } from './organizationBranding.ts';
-import { normalizeTicketData, ticketSeating, ticketShowsSeat, walletSeatingLabels } from './ticketRenderData.ts';
+import { normalizeTicketData, ticketSeating, ticketShowsSeat, walletSeatingGroup } from './ticketRenderData.ts';
 import type {WalletProjection} from './wallet/contracts.ts';
 import {walletHash} from './wallet/identity.ts';
 export type WalletIdentity = { issuer: string; environment: string; organization: number; occasion: number; ticketId: number };
@@ -40,12 +40,13 @@ export function walletDocuments(ids:{classId:string;objectId:string},projection:
  textModulesData:normalized.occasionPlace?[{id:'place',header:'Místo konání / Venue',body:normalized.occasionPlace}]:[]};
  const products=ticket.order_product_ticket??[];
  const seating=ticketSeating(ticket);
+ const group=walletSeatingGroup(seating);
  const showSeat=ticketShowsSeat(occasion.ticketFeature);
  const types=[...new Set(products.map((p:any)=>p.product?.title).filter(Boolean))];
  const objectBody:any={id:ids.objectId,classId:ids.classId,state,ticketNumber:ticket.ticket_symbol,
  barcode:{type:'QR_CODE',value:ticket.ticket_symbol},
  validTimeInterval:{start:{date:new Date(occasion.start_time).toISOString()},end:{date:new Date(occasion.end_time).toISOString()}},
- textModulesData:[...(seating.table?[{id:'table',header:walletSeatingLabels.group,body:seating.table}]:[]),
+ textModulesData:[...(group?[{id:'table',header:group.label,body:group.value}]:[]),
  ...(types.length?[{id:'type',header:'Vstup / Admission',body:types.join(', ')}]:[])],
  // Full object updates remove a previously assigned seat for standing admission.
  ...(showSeat&&seating.seat?{seatInfo:{seat:localized(seating.seat)}}:{})};

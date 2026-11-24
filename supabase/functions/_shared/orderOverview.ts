@@ -10,16 +10,39 @@ import {
 } from "./metaSurcharge.ts";
 
 // BEGIN GENERATED SEATING LABELS
+type SeatingLabels = Record<"table" | "group" | "couch" | "row" | "standingPlace" | "seat", string>;
 const overviewSeatingLabels = {
   "cs": {
-    "group": "Stůl (skupina)",
+    "table": "Stůl",
+    "group": "Skupina",
+    "couch": "Gauč",
+    "row": "Řada",
+    "standingPlace": "Místo na stání",
     "seat": "Místo"
   },
   "en": {
-    "group": "Table (group)",
+    "table": "Table",
+    "group": "Group",
+    "couch": "Couch",
+    "row": "Row",
+    "standingPlace": "Standing place",
     "seat": "Seat"
   }
 };
+
+function formatSeatingGroup(labels: SeatingLabels, kind: unknown, value: unknown): string | null {
+  const name = typeof value === "string" ? value.trim() : "";
+  const label = kind === "standing" ? labels.standingPlace
+    : kind === "table" ? labels.table : kind === "couch" ? labels.couch
+    : kind === "row" ? labels.row : /^\d+$/u.test(name) ? labels.group : null;
+  if (!name) return label;
+  if (!label) return name;
+  const normalized = name.toLocaleLowerCase();
+  const prefix = label.toLocaleLowerCase();
+  if (normalized === prefix || normalized.startsWith(prefix + " ") ||
+      normalized.startsWith(prefix + ":")) return name;
+  return `${label} ${name}`;
+}
 // END GENERATED SEATING LABELS
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
@@ -115,10 +138,12 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             const formattedPrice = currencyFormat(displayedPrice, product.currency_code || currencyCode);
 
             const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escapeEmailHtml).join(': ');
-            const seating = [[seatLabels.group, product.spot_group_title], [seatLabels.seat, product.spot_title]]
-                .filter(([, value]) => value != null && String(value).trim() !== '')
-                .map(([label, value]) => `${label}: ${escapeEmailHtml(value)}`).join(' · ');
-            const admission = product.is_standing ? [tr.standing, product.standing_area_title].filter(value => value != null && String(value).trim()).map(escapeEmailHtml).join(': ') : seating;
+            const group = formatSeatingGroup(seatLabels,
+              product.is_standing ? 'standing' : product.spot_group_kind,
+              product.is_standing ? product.standing_area_title : product.spot_group_title);
+            const seat = !product.is_standing && product.spot_title?.trim()
+                ? `${seatLabels.seat}: ${product.spot_title}` : null;
+            const admission = [group, seat].filter(Boolean).map(escapeEmailHtml).join(' · ');
             const seatingHtml = admission ? `<div style="margin-top: 4px; font-weight: 600;">${admission}</div>` : '';
 
             const rowStyle = 'style="border-bottom: 1px solid #e2e8f0;"';

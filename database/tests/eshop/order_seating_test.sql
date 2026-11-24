@@ -11,7 +11,7 @@ BEGIN
 END;
 $checked$;
 DO $$
-DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; unrelated_bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); view_token text:=encode(extensions.gen_random_bytes(32),'hex');
+DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; unrelated_bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); physical_node uuid:=gen_random_uuid(); view_token text:=encode(extensions.gen_random_bytes(32),'hex');
 BEGIN
  INSERT INTO public.organizations(title) VALUES('Seating test') RETURNING id INTO org;
  INSERT INTO public.units(title,organization) VALUES('Unit',org) RETURNING id INTO unit_id;
@@ -41,6 +41,18 @@ BEGIN
  UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes,0,label}','"B12"'::jsonb) WHERE id=bp;
  PERFORM assert_eq(pg_temp.checked_order_seating(ord,result)#>>'{0,products,0,spot_group_title}','B12','Saved canonical table label is used');
  PERFORM assert_eq(public.get_tickets_with_details(ord)#>>'{0,order_product_ticket,0,spot_group_title}','B12','Email ticket delivery resolves saved canonical table names');
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes,0,kind}','"table"') WHERE id=bp;
+ PERFORM assert_eq(pg_temp.checked_order_seating(ord,original)#>>'{0,products,0,spot_group_kind}','table','A table is classified from the layout');
+ PERFORM assert_eq(public.get_tickets_with_details(ord)#>>'{0,order_product_ticket,0,spot_group_kind}','table','Wallet and ticket delivery receive the physical kind');
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes,0}',(layout#>'{nodes,0}')||'{"kind":"furniture","furniture":"couch"}') WHERE id=bp;
+ PERFORM assert_eq(pg_temp.checked_order_seating(ord,original)#>>'{0,products,0,spot_group_kind}','couch','Couch remains distinct from a table');
+ PERFORM assert_eq(public.get_ticket_details_for_generating(ticket)#>>'{ticket,order_product_ticket,0,spot_group_kind}','couch','PDF receives the couch category');
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes}',
+   jsonb_build_array((layout#>'{nodes,0}')||'{"kind":"group"}',
+     (layout#>'{nodes,1}')||jsonb_build_object('parentId',physical_node),
+     jsonb_build_object('id',physical_node,'kind','table','parentId',group_node))) WHERE id=bp;
+ PERFORM assert_eq(pg_temp.checked_order_seating(ord,original)#>>'{0,products,0,spot_group_kind}','table',
+   'Physical table is detected inside the named commercial group');
  UPDATE eshop.blueprint_seat_bindings SET group_node=NULL WHERE spot=seat;
  PERFORM assert_true(pg_temp.checked_order_seating(ord,result)#>>'{0,products,0,spot_group_title}' IS NULL,'Ungrouped assignment clears stale table');
  UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=seat;
@@ -58,6 +70,8 @@ BEGIN
  result:=pg_temp.checked_order_seating(ord,original);
  PERFORM assert_eq(result#>>'{0,products,0,standing_area_title}','Parket VIP','Allocated standing resolves its actual area name');
  PERFORM assert_eq(result#>>'{0,products,0,is_standing}','true','Standing classification is explicit');
+ PERFORM assert_eq(public.get_tickets_with_details(ord)#>>'{0,order_product_ticket,0,standing_area_title}','Parket VIP','Standing area reaches Wallet and ticket delivery');
+ PERFORM assert_eq(public.get_ticket_details_for_generating(ticket)#>>'{ticket,order_product_ticket,0,is_standing}','true','Standing admission stays present on the PDF');
  PERFORM assert_true(result#>>'{0,products,0,spot_title}' IS NULL,'Standing must not invent a seat number');
  PERFORM assert_eq(result#>>'{0,products,0,title}','Místo','Product title is preserved');
  PERFORM assert_eq(result#>>'{0,products,0,price}','450','Standing price is preserved');
