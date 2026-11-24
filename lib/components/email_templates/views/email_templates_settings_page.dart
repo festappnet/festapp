@@ -177,6 +177,9 @@ class _EmailTemplateSettingsPageState extends State<EmailTemplateSettingsPage> {
             )
             .firstOrNull ??
         _scenarios
+            .where((s) => s.locale == _authoringContext?.language)
+            .firstOrNull ??
+        _scenarios
             .where((s) => s.tone == examples.context?.communicationTone)
             .firstOrNull ??
         _scenarios.firstOrNull;

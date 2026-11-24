@@ -284,12 +284,17 @@ class EmailPreviewScenario {
   );
 
   EmailPreviewScenario withContext(EmailPreviewContext context) {
+    final method = contextDefaults['preview_payment_method'];
+    final collectsPayment = contextDefaults['preview_collection_allowed'] == 'true';
+    final incompatibleCollection =
+        context.cashOnly && method != null && method != 'cash' && collectsPayment;
+    final bankCollection = method == 'bank' && collectsPayment && !context.cashOnly;
     final bindings = {
       ...contextDefaults,
       if (context.singleApplication) ...singleApplicationDefaults,
       ...context.bindings(zero: scenario == 'zero'),
-      if (contextDefaults['preview_payment_method'] != 'bank' || contextDefaults['preview_collection_allowed'] != 'true') 'preview_account_number': '',
-      if (contextDefaults['preview_payment_method'] != 'bank' || contextDefaults['preview_collection_allowed'] != 'true') 'preview_iban': '',
+      if (!bankCollection) 'preview_account_number': '',
+      if (!bankCollection) 'preview_iban': '',
     };
     final result = Map<String, String>.from(values);
     if (result.containsKey('occasionTitle') &&
@@ -297,7 +302,7 @@ class EmailPreviewScenario {
       result['occasionTitle'] = context.occasionTitle!;
     }
 
-    if (context.paymentAccount != null && contextDefaults['preview_payment_method'] == 'bank' && contextDefaults['preview_collection_allowed'] == 'true') {
+    if (context.paymentAccount != null && bankCollection) {
       if (result.containsKey('accountNumber'))
         result['accountNumber'] = context.paymentAccount!.accountNumber;
       if (result.containsKey('iban'))
@@ -346,9 +351,6 @@ class EmailPreviewScenario {
       }
     }
     final currency = bindings['preview_currency'];
-    final showQr = inlinePaymentQrHtml.isNotEmpty &&
-        context.inlinePaymentQr &&
-        const {'CZK', 'EUR'}.contains(currency);
     final total = double.tryParse(bindings['preview_total_number'] ?? '');
     final deposit = double.tryParse(bindings['preview_deposit_number'] ?? '');
     final amount = switch ((templateCode, scenario)) {
@@ -357,6 +359,20 @@ class EmailPreviewScenario {
         total == null || deposit == null ? null : total - deposit,
       _ => total,
     };
+    final showQr = bankCollection &&
+        inlinePaymentQrHtml.isNotEmpty &&
+        context.inlinePaymentQr &&
+        const {'CZK', 'EUR'}.contains(currency) &&
+        amount != null && amount > 0;
+    if (incompatibleCollection) {
+      for (final code in [
+        'paymentAction', 'balanceReasoning', 'paymentDetails', 'paymentMethodName',
+        'accountNumber', 'iban', 'bankCode', 'bankName', 'variableSymbol',
+        'specificSymbol', 'constantSymbol',
+      ]) {
+        if (result.containsKey(code)) result[code] = '';
+      }
+    }
     return EmailPreviewScenario(
       templateCode: templateCode,
       scenario: scenario,
@@ -374,10 +390,10 @@ class EmailPreviewScenario {
                 ),
             ],
       inlinePaymentQrHtml: showQr ? inlinePaymentQrHtml : '',
-      paymentQrSample: showQr && amount != null && amount > 0
+      paymentQrSample: showQr
           ? {
               'title': bindings['preview_occasion'] ?? '',
-              'amount': amount,
+              'amount': amount!,
               'currency': currency!,
               'locale': locale,
               'accountNumber': bindings['preview_account_number'] ?? '',
@@ -389,7 +405,10 @@ class EmailPreviewScenario {
       applicationContextTemplates: applicationContextTemplates,
       singleApplicationTemplates: singleApplicationTemplates,
       singleApplicationDefaults: singleApplicationDefaults,
-      contextDefaults: contextDefaults,
+      contextDefaults: {
+        ...contextDefaults,
+        if (incompatibleCollection) 'preview_collection_allowed': 'false',
+      },
     );
   }
 

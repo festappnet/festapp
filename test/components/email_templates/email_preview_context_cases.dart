@@ -57,6 +57,48 @@ void main() {
       }
     },
   );
+  test('cash-only previews use the open form and omit bank collection', () async {
+    final result = await loadEmailPreviewContext(
+      OccasionModel(
+        id: 3, title: 'Hasičský ples', link: 'ples', isOpen: true,
+        isHidden: false, isPromoted: false,
+      ),
+      loadForms: (_) async => [
+        FormBundle.fromJson({
+          'id': 1, 'is_open': false,
+          'data': {'payments': {'bankEnabled': true}},
+        }),
+        FormBundle.fromJson({
+          'id': 2, 'is_open': true,
+          'data': {
+            'payments': {'cashEnabled': true},
+            'show_payment_qr_in_email': true,
+          },
+        }),
+      ],
+      loadProducts: (_) async => bundle([]),
+    );
+    expect(result.context.cashOnly, isTrue);
+    final examples = EmailPreviewExamples.fromJson(
+      jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()),
+      context: result.context,
+    );
+    final confirmation = examples.scenariosFor('TICKET_ORDER_CONFIRMATION')
+        .firstWhere((sample) => sample.locale == 'cs');
+    expect(confirmation.scenario, 'cash-unpaid');
+    expect(confirmation.values['accountNumber'], isEmpty);
+    expect(confirmation.paymentQrSample, isNull);
+    expect(confirmation.composeHtml('{{balanceReasoning}}'), contains('K úhradě na místě'));
+    for (final code in ['TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_REMINDER']) {
+      for (final sample in examples.scenariosFor(code)) {
+        expect(sample.paymentQrSample, isNull);
+        expect(
+          sample.composeHtml('{{balanceReasoning}}'),
+          isNot(contains(emailPreviewPaymentQrSource)),
+        );
+      }
+    }
+  });
   for (final blueprintEnabled in [false, true]) {
     test(
       'application examples respect blueprint multiplicity $blueprintEnabled with and without a catalog',
