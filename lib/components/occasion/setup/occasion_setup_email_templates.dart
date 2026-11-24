@@ -10,6 +10,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:festapp_core/email_templates.dart';
+import 'package:festapp_core/payments.dart';
 
 import '../../email_templates/db_email_templates.dart';
 import '../../email_templates/email_preview_examples.dart';
@@ -159,6 +160,9 @@ class _OccasionSetupEmailTemplatesState
             occasionTitle: preview['title'],
             ticketsEnabled: preview['ticketsEnabled'],
             inlinePaymentQr: widget.draft['paymentQrInEmail'] != false,
+            paymentMethod: EmailPreviewContext.samplePaymentMethod(
+              FormPaymentConfiguration.fromJson(widget.draft['payments'] as Map?),
+            ),
             deadline: deadline != null
                 ? DateFormat.yMd().format(deadline.toLocal())
                 : null,
