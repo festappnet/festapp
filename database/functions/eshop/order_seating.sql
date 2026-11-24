@@ -25,7 +25,8 @@ GRANT EXECUTE ON FUNCTION public.order_seating_assembly_internal(jsonb,text,text
 -- Standing inventory is identified by its purchased capacity area, not a title.
 CREATE OR REPLACE FUNCTION public.order_standing_spot_metadata_internal(p_spot bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT jsonb_build_object('is_standing',true,'standing_area_title',area.node->>'label')
+ SELECT jsonb_build_object('spot_title',NULL,'spot_group_title',NULL,'spot_group_kind',NULL,
+   'is_standing',true,'standing_area_title',area.node->>'label')
  FROM eshop.spots s
  JOIN eshop.order_product_ticket x ON x.id=s.order_product_ticket
  JOIN eshop.orders o ON o.id=x."order" AND o.occasion=s.occasion
@@ -94,7 +95,9 @@ BEGIN
   SELECT s.order_id,s.key,t,ti FROM snapshots s
   CROSS JOIN LATERAL jsonb_array_elements(s.value) WITH ORDINALITY ticket(t,ti)
  ), products AS MATERIALIZED (
-  SELECT t.order_id,t.key,t.ti,p,pi,(t.t->>'id')::bigint ticket_id,(p->>'id')::bigint product_id
+  SELECT t.order_id,t.key,t.ti,p,pi,
+   CASE WHEN t.order_id IS NOT NULL THEN (t.t->>'id')::bigint END ticket_id,
+   CASE WHEN t.order_id IS NOT NULL THEN (p->>'id')::bigint END product_id
   FROM tickets t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t.t->'products','[]')) WITH ORDINALITY product(p,pi)
  ), selected_items AS MATERIALIZED (
   SELECT DISTINCT p.order_id,p.ticket_id,p.product_id FROM products p
@@ -109,21 +112,14 @@ BEGIN
   SELECT DISTINCT ON (x."order",x.ticket,x.product) x."order" order_id,x.ticket,x.product,
    CASE WHEN s.blueprint IS NOT NULL THEN sm.metadata ||
     jsonb_build_object('is_standing',false,'standing_area_title',NULL)
-   ELSE jsonb_build_object('spot_title',NULL,'spot_group_title',NULL,
-    'is_standing',true,'standing_area_title',area.node->>'label') END metadata
+   ELSE standing.metadata END metadata
   FROM selected_items item JOIN eshop.order_product_ticket x ON x."order"=item.order_id AND x.ticket=item.ticket_id AND x.product=item.product_id
   JOIN eshop.spots s ON s.order_product_ticket=x.id
-  LEFT JOIN seated_metadata sm ON sm.spot_id=s.id
   JOIN eshop.orders o ON o.id=x."order" AND o.occasion=s.occasion
-  LEFT JOIN public.forms f ON f.id=o.form AND f.occasion=o.occasion
-  LEFT JOIN eshop.blueprint_area_bindings ab ON ab.blueprint=coalesce(f.blueprint,(SELECT min(candidate.blueprint) FROM eshop.blueprint_area_bindings candidate
-       JOIN eshop.blueprints target ON target.id=candidate.blueprint WHERE candidate.inventory_context=s.inventory_context
-         AND candidate.product=x.product AND target.occasion=o.occasion HAVING count(DISTINCT candidate.blueprint)=1))
-   AND ab.inventory_context=s.inventory_context AND ab.product=x.product
-  LEFT JOIN eshop.blueprints b ON b.id=ab.blueprint AND b.occasion=o.occasion
-  LEFT JOIN LATERAL (SELECT n AS node FROM jsonb_array_elements(coalesce(b.layout->'nodes','[]')) n
-   WHERE n->>'id'=ab.node_id::text AND n->>'kind'='capacityArea') area ON true
-  WHERE s.blueprint IS NOT NULL OR area.node IS NOT NULL
+  LEFT JOIN seated_metadata sm ON sm.spot_id=s.id
+  LEFT JOIN LATERAL (SELECT CASE WHEN s.blueprint IS NULL
+    THEN public.order_standing_spot_metadata_internal(s.id) END AS metadata) standing ON true
+  WHERE s.blueprint IS NOT NULL OR standing.metadata IS NOT NULL
   ORDER BY x."order",x.ticket,x.product,(s.blueprint IS NOT NULL) DESC,x.id,s.id
  ), ticket_products AS MATERIALIZED (
   SELECT p.key,p.ti,jsonb_agg(public.order_present_seating_internal(p.p||coalesce(a.metadata,'{}')) ORDER BY p.pi) products
@@ -151,28 +147,9 @@ REVOKE ALL ON FUNCTION public.order_spot_metadata_internal(bigint) FROM PUBLIC,a
 -- Read enrichment also repairs old snapshots without rewriting historical orders.
 CREATE OR REPLACE FUNCTION public.order_tickets_with_seating_internal(p_order bigint,p_tickets jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT coalesce(jsonb_agg(t || jsonb_build_object('products',(
-   SELECT coalesce(jsonb_agg(public.order_present_seating_internal(p || coalesce((
-     SELECT CASE WHEN s.blueprint IS NOT NULL THEN public.order_spot_metadata_internal(s.id) ||
-       jsonb_build_object('is_standing',false,'standing_area_title',NULL)
-       ELSE jsonb_build_object('spot_title',NULL,'spot_group_title',NULL,
-         'is_standing',true,'standing_area_title',area.node->>'label') END
-     FROM eshop.order_product_ticket x JOIN eshop.spots s ON s.order_product_ticket=x.id
-     JOIN eshop.orders o ON o.id=x."order" AND o.occasion=s.occasion
-     LEFT JOIN public.forms f ON f.id=o.form AND f.occasion=o.occasion
-     LEFT JOIN eshop.blueprint_area_bindings ab ON ab.blueprint=coalesce(f.blueprint,(SELECT min(candidate.blueprint) FROM eshop.blueprint_area_bindings candidate
-       JOIN eshop.blueprints target ON target.id=candidate.blueprint WHERE candidate.inventory_context=s.inventory_context
-         AND candidate.product=x.product AND target.occasion=o.occasion HAVING count(DISTINCT candidate.blueprint)=1))
-       AND ab.inventory_context=s.inventory_context AND ab.product=x.product
-     LEFT JOIN eshop.blueprints b ON b.id=ab.blueprint AND b.occasion=o.occasion
-     LEFT JOIN LATERAL (SELECT n AS node FROM jsonb_array_elements(coalesce(b.layout->'nodes','[]')) n
-       WHERE n->>'id'=ab.node_id::text AND n->>'kind'='capacityArea') area ON true
-     WHERE x."order"=p_order AND x.ticket=(t->>'id')::bigint AND x.product=(p->>'id')::bigint
-       AND (s.blueprint IS NOT NULL OR area.node IS NOT NULL)
-     ORDER BY (s.blueprint IS NOT NULL) DESC,x.id,s.id LIMIT 1),'{}')) ORDER BY pi),'[]')
-   FROM jsonb_array_elements(coalesce(t->'products','[]')) WITH ORDINALITY products(p,pi)
- )) ORDER BY ti),'[]')
- FROM jsonb_array_elements(coalesce(p_tickets,'[]')) WITH ORDINALITY tickets(t,ti);
+ SELECT public.order_tickets_with_seating_bulk_internal(
+   jsonb_build_object(coalesce(p_order::text,''),coalesce(p_tickets,'[]'))
+ )->coalesce(p_order::text,'');
 $$;
 REVOKE ALL ON FUNCTION public.order_tickets_with_seating_internal(bigint,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.order_spot_metadata_internal(bigint), public.order_tickets_with_seating_internal(bigint,jsonb) TO service_role;
