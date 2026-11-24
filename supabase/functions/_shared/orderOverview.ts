@@ -1,3 +1,4 @@
+import { readSeatingPlacement, seatingLabels, seatingPlacementText } from './ticketRenderData.ts';
 import { formatDisplayNumber } from "./numberFormatting.ts";
 import { escapeEmailHtml } from "./emailActionLink.ts";
 import { usesTicketTerminology } from "./orderItemTerminology.ts";
@@ -9,41 +10,7 @@ import {
   type MetaSurchargeAmount,
 } from "./metaSurcharge.ts";
 
-// BEGIN GENERATED SEATING LABELS
-type SeatingLabels = Record<"table" | "group" | "couch" | "row" | "standingPlace" | "seat", string>;
-const overviewSeatingLabels = {
-  "cs": {
-    "table": "Stůl",
-    "group": "Skupina",
-    "couch": "Gauč",
-    "row": "Řada",
-    "standingPlace": "Místo na stání",
-    "seat": "Místo"
-  },
-  "en": {
-    "table": "Table",
-    "group": "Group",
-    "couch": "Couch",
-    "row": "Row",
-    "standingPlace": "Standing place",
-    "seat": "Seat"
-  }
-};
 
-function formatSeatingGroup(labels: SeatingLabels, kind: unknown, value: unknown): string | null {
-  const name = typeof value === "string" ? value.trim() : "";
-  const label = kind === "standing" ? labels.standingPlace
-    : kind === "table" ? labels.table : kind === "couch" ? labels.couch
-    : kind === "row" ? labels.row : /^\d+$/u.test(name) ? labels.group : null;
-  if (!name) return label;
-  if (!label) return name;
-  const normalized = name.toLocaleLowerCase();
-  const prefix = label.toLocaleLowerCase();
-  if (normalized === prefix || normalized.startsWith(prefix + " ") ||
-      normalized.startsWith(prefix + ":")) return name;
-  return `${label} ${name}`;
-}
-// END GENERATED SEATING LABELS
 
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
 export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
@@ -51,7 +18,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
         ? formatDisplayNumber(amount, lang === 'cs' ? 'cs-CZ' : 'en', {style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2})
         : formatCurrency(amount, currency, decimalDigits);
     const { name, surname, email, phone, note } = orderData;
-    const seatLabels = overviewSeatingLabels[lang];
+    const seatLabels = seatingLabels(lang);
 
     const tr = {
         cs: {
@@ -138,9 +105,9 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             const formattedPrice = currencyFormat(displayedPrice, product.currency_code || currencyCode);
 
             const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escapeEmailHtml).join(': ');
-            const group = formatSeatingGroup(seatLabels,
-              product.is_standing ? 'standing' : product.spot_group_kind,
-              product.is_standing ? product.standing_area_title : product.spot_group_title);
+            const group = seatingPlacementText(readSeatingPlacement(
+                product.placement, product.is_standing ? product.standing_area_title : product.spot_group_title,
+            ), lang);
             const seatTitle = String(product.spot_title ?? '').trim();
             const seat = !product.is_standing && seatTitle
                 ? `${seatLabels.seat}: ${seatTitle}` : null;

@@ -22,8 +22,8 @@ BEGIN
   SELECT * INTO v_reference FROM eshop.orders_history WHERE "order"=p_order_id
   ORDER BY created_at ASC,id ASC LIMIT 1;
  END IF;
- v_ref_tickets:=coalesce(v_reference.data->'tickets','[]');
- v_cur_tickets:=coalesce(v_current->'tickets','[]');
+ v_ref_tickets:=public.order_tickets_with_seating_internal(NULL,coalesce(v_reference.data->'tickets','[]'));
+ v_cur_tickets:=public.order_tickets_with_seating_internal(NULL,coalesce(v_current->'tickets','[]'));
  SELECT coalesce(sum(coalesce((p->>'price')::numeric,0)),0) INTO v_old_total
  FROM jsonb_array_elements(v_ref_tickets) t,jsonb_array_elements(coalesce(t->'products','[]')) p;
  SELECT coalesce(sum(coalesce((p->>'price')::numeric,0)),0) INTO v_new_total

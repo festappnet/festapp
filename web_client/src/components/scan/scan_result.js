@@ -1,4 +1,4 @@
-import { seatingGroupText } from '../../services/seating_labels.js';
+import { seatingPlacementText } from '../../services/seating_labels.js';
 import {scannerProductCaption,scannerProductTitle,scannerNotes,scannerTicketStatus,scannerUsedText} from './scanner_presentation.js';
 import { AppConfig } from '../../app_config.js';
 import { icon } from './scan_icons.js';
@@ -7,7 +7,7 @@ export function scanResult(c, storageAvailable, hasTickets = true) {
     const tr = (key, args) => scanText(key, args, hasTickets);
     const reasonText = reason => tr(`reason_${reason}`);
     const t = c.ticket, state = c.state;
-    const group = seatingGroupText(t?.spot_group?.kind, t?.spot_group?.title);
+    const group = seatingPlacementText(t?.spot_group?.placement, t?.spot_group?.title);
     if (state === 'ready') return `<div class="scan-empty"><h2>${tr('ready')}</h2><p>${tr('choose_input')}</p></div>`;
     if (state === 'looking_up') return `<div class="scan-lookup" role="status"><span class="scan-spinner" aria-hidden="true"></span><h2>${tr('looking_up')}</h2></div>`;
     let message, tone = 'blocked';

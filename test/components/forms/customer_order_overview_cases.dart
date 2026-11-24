@@ -40,6 +40,7 @@ Map<String, dynamic> fixture({String ticketState = 'unused'}) => {
           'price': 450,
           'currency': 'CZK',
           'spotGroupTitle': '7',
+          'placement': {'labelKey': 'group', 'value': '7'},
           'spotTitle': '3',
         },
       ],

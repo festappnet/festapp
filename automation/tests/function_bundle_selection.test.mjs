@@ -332,3 +332,37 @@ test('exact Apple Wallet replacement permits only the unchanged installed icon l
             readFileSync(join(name === module ? f.source : f.base, name)), name);
     }
 });
+
+test('exact order overview import requires a selected ticket renderer and pins preview data', t => {
+    const f = fixture(t);
+    const overview = '_shared/orderOverview.ts';
+    const renderer = '_shared/ticketRenderData.ts';
+    const preview = '_shared/emailPreviewScenarios.json';
+    const unrelated = '_shared/unrelated.json';
+    const oldFiles = {[overview]: 'export const old = true;', [renderer]: 'export const old = true;',
+        [preview]: '{}', [unrelated]: '{}'};
+    for (const [name, content] of Object.entries(oldFiles)) writeFileSync(join(f.base, name), content);
+    const installed = f.run('inventory', []);
+    assert.equal(installed.status, 0, installed.stderr);
+    const basePath = join(f.root, 'selection-base.json');
+    writeFileSync(basePath, installed.stdout);
+    const replacements = {[overview]: 'import "./ticketRenderData.ts";',
+        [renderer]: 'export const newValue = true;', [preview]: '{"examples":[]}', [unrelated]: '[]'};
+    let attempt = 0;
+    const stage = (names) => {
+        const patch = join(f.root, 'exact-' + ++attempt);
+        mkdirSync(join(patch, '_shared'), {recursive:true});
+        for (const name of names) writeFileSync(join(patch, name), replacements[name]);
+        const plan = spawnSync('python3', [script, 'plan-exact-shared', '--root', patch,
+            '--base', basePath, '--shared-modules', names.join(',')], {encoding:'utf8'});
+        if (plan.status !== 0) return plan;
+        writeFileSync(f.manifest, JSON.stringify({exact_shared_replacement: JSON.parse(plan.stdout)}));
+        return f.run('stage-exact-shared', ['--stage', patch, '--manifest', f.manifest]);
+    };
+    assert.match(stage([overview]).stderr, /changes dependencies/);
+    assert.match(stage([unrelated]).stderr, /existing allowed runtime file/);
+    const valid = stage([overview, renderer, preview]);
+    assert.equal(valid.status, 0, valid.stderr);
+    replacements[overview] += 'import "./unrelated.ts";';
+    assert.match(stage([overview, renderer]).stderr, /changes dependencies/);
+});

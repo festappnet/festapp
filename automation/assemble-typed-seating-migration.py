@@ -6,9 +6,11 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCES = {
+    'eshop/seating_labels.sql': None,
     'eshop/order_seating.sql': None,
     'eshop/get_tickets_with_details.sql': None,
     'eshop/get_ticket_details_for_generating.sql': None,
+    'eshop_orders/get_order_change_summary_v1.sql': None,
     'eshop_waitlist/order_overview.sql': 'get_customer_order_overview_internal',
     'scanning/projection.sql': None,
 }

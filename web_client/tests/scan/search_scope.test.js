@@ -75,7 +75,7 @@ test('search previews show customer, seat, products and actual status with one s
   page.row={session:{title:'Skautský ples',capabilities:{search_tickets:true},settings:{fields:[]}}};
   let selected,navigations=0;
   page.controller={state:'ready',loadTicket:row=>{selected=row;page.controller.state='result';}};
-  page.searchResults=[{ticket_id:1,symbol:'AB123',holder_name:'AB123',purchaser_name:'Jana Nováková',state:'sent',admission_allowed:true,spot:'4B',spot_group:{kind:'table',title:'4'},products:[{title:'Guláš',type:'food',type_title:'Večeře'}]},
+  page.searchResults=[{ticket_id:1,symbol:'AB123',holder_name:'AB123',purchaser_name:'Jana Nováková',state:'sent',admission_allowed:true,spot:'4B',spot_group:{placement:{labelKey:'table',value:'4'},title:'4'},products:[{title:'Guláš',type:'food',type_title:'Večeře'}]},
    {ticket_id:2,symbol:null,holder_name:null,purchaser_name:'Petr Novák',state:'storno',products:[]},
    {ticket_id:3,symbol:null,purchaser_name:'Eva Nováková',state:'waitlisted',products:[]}];
   page.render();

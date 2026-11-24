@@ -1,4 +1,4 @@
-import {seatingGroupText,seatingLabels,ticketSeating,ticketShowsSeat,type TicketSeating} from './ticketRenderData.ts';
+import {seatingPlacementText,seatingLabels,ticketSeating,ticketShowsSeat,type TicketSeating} from './ticketRenderData.ts';
 import { escapeTicketText } from './ticketDelivery.ts';
 import { openEmail, sealEmail } from './emailPayload.ts';
 import { walletHash } from './wallet/identity.ts';
@@ -41,7 +41,7 @@ export function walletTicketLabel(
   const labels = seatingLabels(lang);
   return [
     ticket,
-    seating && seatingGroupText(seating, lang),
+    seating && seatingPlacementText(seating.placement, lang),
     seating?.seat && `${labels.seat}: ${seating.seat}`,
   ].filter(Boolean).join(' - ');
 }

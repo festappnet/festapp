@@ -1,5 +1,50 @@
 -- Carry typed seating metadata through existing authorized readers.
 
+-- SOURCE: eshop/seating_labels.sql
+-- The single presentation policy for a purchased seat or standing allocation.
+CREATE OR REPLACE FUNCTION public.order_seating_placement_internal(p_kind text,p_title text)
+RETURNS jsonb LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+DECLARE catalog jsonb;
+ label_key text;
+ title text:=nullif(trim(p_title),'');
+ prefix text;
+BEGIN
+  -- BEGIN GENERATED SEATING LABELS
+  catalog:=$labels${"cs":{"table":"Stůl","group":"Skupina","couch":"Gauč","row":"Řada","standingPlace":"Místo na stání","seat":"Místo"},"de":{"table":"Tisch","group":"Gruppe","couch":"Sofa","row":"Reihe","standingPlace":"Stehplatz","seat":"Sitzplatz"},"en":{"table":"Table","group":"Group","couch":"Couch","row":"Row","standingPlace":"Standing place","seat":"Seat"},"es":{"table":"Mesa","group":"Grupo","couch":"Sofá","row":"Fila","standingPlace":"Lugar de pie","seat":"Asiento"},"pl":{"table":"Stół","group":"Grupa","couch":"Kanapa","row":"Rząd","standingPlace":"Miejsce stojące","seat":"Miejsce"},"sk":{"table":"Stôl","group":"Skupina","couch":"Gauč","row":"Rad","standingPlace":"Miesto na státie","seat":"Miesto"},"uk":{"table":"Стіл","group":"Група","couch":"Диван","row":"Ряд","standingPlace":"Стояче місце","seat":"Місце"}}$labels$::jsonb;
+  -- END GENERATED SEATING LABELS
+ label_key:=CASE p_kind WHEN 'standing' THEN 'standingPlace'
+  WHEN 'table' THEN 'table' WHEN 'couch' THEN 'couch' WHEN 'row' THEN 'row'
+  ELSE CASE WHEN title ~ '^[0-9]+$' THEN 'group' END END;
+ IF label_key IS NULL AND title IS NULL THEN RETURN NULL; END IF;
+ IF label_key IS NOT NULL AND title IS NOT NULL THEN
+  SELECT variants.prefix INTO prefix
+  FROM jsonb_each(catalog) locale
+  CROSS JOIN LATERAL (SELECT locale.value->>label_key AS prefix) variants
+  WHERE lower(title)=lower(variants.prefix)
+     OR starts_with(lower(title),lower(variants.prefix)||' ')
+     OR starts_with(lower(title),lower(variants.prefix)||':')
+  ORDER BY length(variants.prefix) DESC LIMIT 1;
+  IF prefix IS NOT NULL THEN
+   title:=nullif(ltrim(substr(title,length(prefix)+1),' :'),'');
+  END IF;
+ END IF;
+ RETURN jsonb_strip_nulls(jsonb_build_object('labelKey',label_key,'value',title,
+   'separator',CASE WHEN label_key='standingPlace' THEN ': ' END));
+END $$;
+REVOKE ALL ON FUNCTION public.order_seating_placement_internal(text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.order_seating_placement_internal(text,text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.order_present_seating_internal(p_item jsonb)
+RETURNS jsonb LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+ SELECT (p_item-'placement') || CASE WHEN placement IS NULL THEN '{}'::jsonb
+   ELSE jsonb_build_object('placement',placement) END
+ FROM (SELECT CASE WHEN p_item->'is_standing'='true'::jsonb
+    THEN public.order_seating_placement_internal('standing',p_item->>'standing_area_title')
+    ELSE public.order_seating_placement_internal(p_item->>'spot_group_kind',p_item->>'spot_group_title') END AS placement) formatted;
+$$;
+REVOKE ALL ON FUNCTION public.order_present_seating_internal(jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.order_present_seating_internal(jsonb) TO service_role;
+
 -- SOURCE: eshop/order_seating.sql
 -- Resolve the physical assembly even when its commercial group is a wrapper.
 CREATE OR REPLACE FUNCTION public.order_seating_assembly_internal(p_nodes jsonb,p_seat text,p_group text)
@@ -129,7 +174,7 @@ BEGIN
   WHERE s.blueprint IS NOT NULL OR area.node IS NOT NULL
   ORDER BY x."order",x.ticket,x.product,(s.blueprint IS NOT NULL) DESC,x.id,s.id
  ), ticket_products AS MATERIALIZED (
-  SELECT p.key,p.ti,jsonb_agg(p.p||coalesce(a.metadata,'{}') ORDER BY p.pi) products
+  SELECT p.key,p.ti,jsonb_agg(public.order_present_seating_internal(p.p||coalesce(a.metadata,'{}')) ORDER BY p.pi) products
   FROM products p LEFT JOIN assignments a ON a.order_id=p.order_id AND a.ticket=p.ticket_id AND a.product=p.product_id
   GROUP BY p.key,p.ti
  ), enriched AS (
@@ -147,7 +192,7 @@ GRANT EXECUTE ON FUNCTION public.order_tickets_with_seating_bulk_internal(jsonb)
 -- Presentation metadata only. Callers retain their existing order access checks.
 CREATE OR REPLACE FUNCTION public.order_spot_metadata_internal(p_spot bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT metadata FROM public.order_spot_metadata_bulk_internal(ARRAY[p_spot]);
+ SELECT public.order_present_seating_internal(metadata) FROM public.order_spot_metadata_bulk_internal(ARRAY[p_spot]);
 $$;
 REVOKE ALL ON FUNCTION public.order_spot_metadata_internal(bigint) FROM PUBLIC,anon,authenticated;
 
@@ -155,7 +200,7 @@ REVOKE ALL ON FUNCTION public.order_spot_metadata_internal(bigint) FROM PUBLIC,a
 CREATE OR REPLACE FUNCTION public.order_tickets_with_seating_internal(p_order bigint,p_tickets jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT coalesce(jsonb_agg(t || jsonb_build_object('products',(
-   SELECT coalesce(jsonb_agg(p || coalesce((
+   SELECT coalesce(jsonb_agg(public.order_present_seating_internal(p || coalesce((
      SELECT CASE WHEN s.blueprint IS NOT NULL THEN public.order_spot_metadata_internal(s.id) ||
        jsonb_build_object('is_standing',false,'standing_area_title',NULL)
        ELSE jsonb_build_object('spot_title',NULL,'spot_group_title',NULL,
@@ -172,7 +217,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
        WHERE n->>'id'=ab.node_id::text AND n->>'kind'='capacityArea') area ON true
      WHERE x."order"=p_order AND x.ticket=(t->>'id')::bigint AND x.product=(p->>'id')::bigint
        AND (s.blueprint IS NOT NULL OR area.node IS NOT NULL)
-     ORDER BY (s.blueprint IS NOT NULL) DESC,x.id,s.id LIMIT 1),'{}') ORDER BY pi),'[]')
+     ORDER BY (s.blueprint IS NOT NULL) DESC,x.id,s.id LIMIT 1),'{}')) ORDER BY pi),'[]')
    FROM jsonb_array_elements(coalesce(t->'products','[]')) WITH ORDINALITY products(p,pi)
  )) ORDER BY ti),'[]')
  FROM jsonb_array_elements(coalesce(p_tickets,'[]')) WITH ORDINALITY tickets(t,ti);
@@ -209,7 +254,8 @@ BEGIN
                         seat.metadata->>'spot_group_title' AS spot_group_title,
                         seat.metadata->>'spot_group_kind' AS spot_group_kind,
                         COALESCE((seat.metadata->>'is_standing')::boolean,false) AS is_standing,
-                        seat.metadata->>'standing_area_title' AS standing_area_title
+                        seat.metadata->>'standing_area_title' AS standing_area_title,
+                        seat.metadata->'placement' AS placement
                     FROM eshop.order_product_ticket opt2
                     LEFT JOIN eshop.spots s
                         ON s.order_product_ticket = opt2.id
@@ -284,7 +330,8 @@ BEGIN
                                 seat.metadata->>'spot_group_title' AS spot_group_title,
                                 seat.metadata->>'spot_group_kind' AS spot_group_kind,
                                 COALESCE((seat.metadata->>'is_standing')::boolean,false) AS is_standing,
-                                seat.metadata->>'standing_area_title' AS standing_area_title
+                                seat.metadata->>'standing_area_title' AS standing_area_title,
+                                seat.metadata->'placement' AS placement
                             FROM eshop.order_product_ticket opt2
                             LEFT JOIN eshop.spots s
                                 ON s.order_product_ticket = opt2.id
@@ -343,6 +390,108 @@ BEGIN
     RETURN result;
 END;
 $$;
+
+-- SOURCE: eshop_orders/get_order_change_summary_v1.sql
+-- Internal read model shared by the editor preview and email preparation.
+CREATE OR REPLACE FUNCTION public.get_order_change_summary_v1(p_order_id bigint)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
+SET search_path = public, extensions AS $$
+DECLARE
+ v_current jsonb; v_currency text; v_current_price numeric; v_reference eshop.orders_history; v_latest bigint;
+ v_sent_at timestamptz; v_ref_tickets jsonb; v_cur_tickets jsonb;
+ v_ref jsonb; v_cur jsonb; v_ticket jsonb; v_symbol text; v_state text;
+ v_before jsonb; v_after jsonb; v_added jsonb; v_removed jsonb; v_changed jsonb;
+ v_cancelled jsonb:='[]'; v_removed_tickets jsonb:='[]'; v_added_tickets jsonb:='[]';
+ v_product_changes jsonb:='[]'; v_old_total numeric:=0; v_new_total numeric:=0;
+ i integer; j integer; v_has_changes boolean;
+BEGIN
+ SELECT data,currency_code,price INTO v_current,v_currency,v_current_price FROM eshop.orders WHERE id=p_order_id;
+ IF NOT FOUND THEN RAISE EXCEPTION 'order_not_found'; END IF;
+ SELECT id INTO v_latest FROM eshop.orders_history WHERE "order"=p_order_id
+ ORDER BY created_at DESC,id DESC LIMIT 1;
+ SELECT * INTO v_reference FROM eshop.orders_history WHERE "order"=p_order_id
+ AND data->>'is_sent_to_customer'='true' ORDER BY created_at DESC,id DESC LIMIT 1;
+ IF FOUND THEN v_sent_at:=v_reference.created_at;
+ ELSE
+  SELECT * INTO v_reference FROM eshop.orders_history WHERE "order"=p_order_id
+  ORDER BY created_at ASC,id ASC LIMIT 1;
+ END IF;
+ v_ref_tickets:=public.order_tickets_with_seating_internal(NULL,coalesce(v_reference.data->'tickets','[]'));
+ v_cur_tickets:=public.order_tickets_with_seating_internal(NULL,coalesce(v_current->'tickets','[]'));
+ SELECT coalesce(sum(coalesce((p->>'price')::numeric,0)),0) INTO v_old_total
+ FROM jsonb_array_elements(v_ref_tickets) t,jsonb_array_elements(coalesce(t->'products','[]')) p;
+ SELECT coalesce(sum(coalesce((p->>'price')::numeric,0)),0) INTO v_new_total
+ FROM jsonb_array_elements(v_cur_tickets) t,jsonb_array_elements(coalesce(t->'products','[]')) p;
+ v_old_total:=coalesce(v_reference.price,v_old_total);
+ v_new_total:=coalesce(v_current_price,v_new_total);
+ -- Without history there is no evidence from which to invent a change.
+ IF v_reference.id IS NOT NULL THEN
+  FOR v_ref IN SELECT value FROM jsonb_array_elements(v_ref_tickets) LOOP
+   SELECT value INTO v_cur FROM jsonb_array_elements(v_cur_tickets)
+   WHERE (v_ref->>'id' IS NOT NULL AND value->>'id'=v_ref->>'id')
+      OR (v_ref->>'id' IS NULL AND value=v_ref) LIMIT 1;
+   v_symbol:=NULL; v_state:=NULL;
+   -- Order membership prevents historical/foreign IDs leaking ticket metadata.
+   SELECT t.ticket_symbol,t.state INTO v_symbol,v_state FROM eshop.tickets t
+   WHERE t.id::text=v_ref->>'id' AND EXISTS(SELECT 1 FROM eshop.order_product_ticket opt
+      WHERE opt.ticket=t.id AND opt."order"=p_order_id);
+   v_ticket:=jsonb_build_object('id',v_ref->'id','ticket_symbol',
+     coalesce(nullif(v_ref->>'ticket_symbol',''),v_symbol),'products',coalesce(v_ref->'products','[]'));
+   IF v_cur IS NULL THEN
+    IF v_state='storno' THEN v_cancelled:=v_cancelled||jsonb_build_array(v_ticket);
+    ELSE v_removed_tickets:=v_removed_tickets||jsonb_build_array(v_ticket); END IF;
+    CONTINUE;
+   END IF;
+   v_before:=coalesce(v_ref->'products','[]'); v_after:=coalesce(v_cur->'products','[]');
+   v_added:='[]'; v_removed:='[]'; v_changed:='[]';
+   -- Preserve duplicate instances; never pair products across different tickets.
+   IF jsonb_array_length(v_after)>0 THEN
+    FOR i IN REVERSE jsonb_array_length(v_after)-1..0 LOOP
+     SELECT ordinality::integer-1 INTO j FROM jsonb_array_elements(v_before) WITH ORDINALITY
+     WHERE value->>'id' IS NOT DISTINCT FROM v_after->i->>'id'
+       AND value->>'title' IS NOT DISTINCT FROM v_after->i->>'title'
+       AND value->>'currency_code' IS NOT DISTINCT FROM v_after->i->>'currency_code'
+       AND nullif(value->>'spot_title', '') IS NOT DISTINCT FROM nullif(v_after->i->>'spot_title', '')
+       -- A missing historical group was never captured, so enrichment cannot prove a change.
+       AND (NOT (value ? 'spot_group_title')
+         OR nullif(value->>'spot_group_title', '') IS NOT DISTINCT FROM nullif(v_after->i->>'spot_group_title', ''))
+       AND abs(coalesce((value->>'price')::numeric,0)-coalesce((v_after->i->>'price')::numeric,0))<0.001
+     ORDER BY ordinality LIMIT 1;
+     IF j IS NOT NULL THEN v_before:=v_before-j; v_after:=v_after-i; END IF;
+    END LOOP;
+   END IF;
+   IF jsonb_array_length(v_after)>0 THEN
+    FOR i IN REVERSE jsonb_array_length(v_after)-1..0 LOOP
+     SELECT ordinality::integer-1 INTO j FROM jsonb_array_elements(v_before) WITH ORDINALITY
+     WHERE value->>'id' IS NOT DISTINCT FROM v_after->i->>'id' ORDER BY ordinality LIMIT 1;
+     IF j IS NOT NULL THEN
+      v_changed:=v_changed||jsonb_build_array(jsonb_build_object('from',v_before->j,'to',v_after->i));
+      v_before:=v_before-j; v_after:=v_after-i;
+     END IF;
+    END LOOP;
+   END IF;
+   v_added:=v_after; v_removed:=v_before;
+   IF jsonb_array_length(v_added)+jsonb_array_length(v_removed)+jsonb_array_length(v_changed)>0 THEN
+    v_product_changes:=v_product_changes||jsonb_build_array(v_ticket||jsonb_build_object(
+     'added',v_added,'removed',v_removed,'changed',v_changed));
+   END IF;
+  END LOOP;
+  FOR v_cur IN SELECT value FROM jsonb_array_elements(v_cur_tickets) LOOP
+   IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(v_ref_tickets) r
+     WHERE (v_cur->>'id' IS NOT NULL AND r->>'id'=v_cur->>'id') OR (v_cur->>'id' IS NULL AND r=v_cur)) THEN
+    v_added_tickets:=v_added_tickets||jsonb_build_array(v_cur);
+   END IF;
+  END LOOP;
+ END IF;
+ v_has_changes:=v_reference.id IS NOT NULL AND (jsonb_array_length(v_cancelled)+jsonb_array_length(v_removed_tickets)
+   +jsonb_array_length(v_added_tickets)+jsonb_array_length(v_product_changes)>0 OR v_old_total<>v_new_total);
+ RETURN jsonb_build_object('version',1,'cancelledTickets',v_cancelled,'removedTickets',v_removed_tickets,
+   'addedTickets',v_added_tickets,'productChanges',v_product_changes,'referenceTotal',v_old_total,
+   'currentTotal',v_new_total,'currencyCode',coalesce(v_currency,'CZK'),'hasChanges',v_has_changes,'referenceOrder',to_jsonb(v_reference),
+   'referenceHistoryId',v_reference.id,'latestHistoryId',v_latest,'latestSentAt',v_sent_at);
+END $$;
+REVOKE ALL ON FUNCTION public.get_order_change_summary_v1(bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_order_change_summary_v1(bigint) TO service_role;
 
 -- SOURCE: eshop_waitlist/order_overview.sql
 CREATE OR REPLACE FUNCTION public.get_customer_order_overview_internal(p_token text,p_order_id bigint)
@@ -434,7 +583,7 @@ BEGIN
   'answers',public.customer_order_answers_internal(f.id,o.data,false),
   'ticketIds',(SELECT coalesce(jsonb_agg(t.id ORDER BY t.id),'[]') FROM public.get_order_tickets_internal(o.id) t),
   'items',CASE WHEN o.state='preparing_payment' THEN '[]'::jsonb ELSE (SELECT coalesce(jsonb_agg(jsonb_build_object(
-   'ticketId',t->'id','id',p->'id','title',p->>'title','spotTitle',p->>'spot_title','spotGroupTitle',p->>'spot_group_title','spotGroupKind',p->>'spot_group_kind','isStanding',coalesce((p->>'is_standing')::boolean,false),'standingAreaTitle',p->>'standing_area_title','price',p->'price','basePrice',p->'base_price','discountAmount',p->'discount_amount','currency',p->>'currency_code') ORDER BY (t->>'id')::bigint,
+   'ticketId',t->'id','id',p->'id','title',p->>'title','spotTitle',p->>'spot_title','spotGroupTitle',p->>'spot_group_title','spotGroupKind',p->>'spot_group_kind','placement',p->'placement','isStanding',coalesce((p->>'is_standing')::boolean,false),'standingAreaTitle',p->>'standing_area_title','price',p->'price','basePrice',p->'base_price','discountAmount',p->'discount_amount','currency',p->>'currency_code') ORDER BY (t->>'id')::bigint,
     (SELECT min(coalesce(ff."order",0)) FROM public.form_fields ff WHERE ff.form=f.id AND ff.product_type=product.product_type) NULLS LAST,
     coalesce(product."order",0),product.id),'[]')
    FROM jsonb_array_elements(public.order_tickets_with_seating_internal(o.id,o.data->'tickets')) t CROSS JOIN LATERAL jsonb_array_elements(coalesce(t->'products','[]')) p
@@ -504,7 +653,9 @@ RETURNS TABLE(ticket_id bigint,dto jsonb) LANGUAGE sql STABLE SET search_path=pu
  AND ((p_config#>>'{products,mode}')='all' OR ((p_config#>>'{products,mode}')='selected' AND (p_config#>'{products,ids}') @> to_jsonb(ARRAY[p.id])))),'[]'::jsonb),
  'spot',(SELECT s.title FROM eshop.spots s JOIN eshop.order_product_ticket z ON z.id=s.order_product_ticket WHERE z.ticket=b.id ORDER BY s.id LIMIT 1),
  'spot_group',coalesce((SELECT jsonb_build_object('blueprint_id',bp.id,'id',coalesce(g->>'id',assembly->>'id'),
-    'title',coalesce(nullif(trim(g->>'label'),''),assembly->>'title'),'kind',assembly->>'kind')
+    'title',coalesce(nullif(trim(g->>'label'),''),assembly->>'title'),'kind',assembly->>'kind',
+    'placement',public.order_seating_placement_internal(assembly->>'kind',
+      coalesce(nullif(trim(g->>'label'),''),assembly->>'title')))
  FROM eshop.spots sp JOIN eshop.order_product_ticket z ON z.id=sp.order_product_ticket
  JOIN eshop.blueprints bp ON bp.id=sp.blueprint
  JOIN eshop.blueprint_seat_bindings sb ON sb.blueprint=bp.id AND sb.spot=sp.id
@@ -514,7 +665,8 @@ RETURNS TABLE(ticket_id bigint,dto jsonb) LANGUAGE sql STABLE SET search_path=pu
  WHERE z.ticket=b.id AND sp.occasion=p_occasion
  AND (g->>'kind' IN ('group','table','furniture') OR assembly IS NOT NULL)
  AND bp.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion) ORDER BY sp.id LIMIT 1),
- (SELECT jsonb_build_object('kind','standing','title',standing.metadata->>'standing_area_title')
+ (SELECT jsonb_build_object('kind','standing','title',standing.metadata->>'standing_area_title',
+    'placement',public.order_seating_placement_internal('standing',standing.metadata->>'standing_area_title'))
   FROM eshop.spots sp JOIN eshop.order_product_ticket z ON z.id=sp.order_product_ticket
   CROSS JOIN LATERAL (SELECT public.order_standing_spot_metadata_internal(sp.id) AS metadata) standing
   WHERE z.ticket=b.id AND sp.occasion=p_occasion AND sp.blueprint IS NULL

@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:festapp_core/forms.dart';
 
 import 'customer_order_changes_client.dart';
+import 'order_item_seating.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -571,8 +572,7 @@ class _CustomerOrderChangesState extends State<CustomerOrderChanges> {
       ...items.map(
         (i) => [
           i['title'],
-          i['spotGroupTitle'],
-          i['spotTitle'],
+          orderItemSeatingText(i),
         ].whereType<String>().where((v) => v.isNotEmpty).join(' / '),
       ),
     ].join(' - ');

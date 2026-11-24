@@ -74,20 +74,6 @@ export const walletSeatingLabels = {
   "standingPlace": "Místo na stání / Standing place",
   "seat": "Místo / Seat"
 };
-
-function formatSeatingGroup(labels: SeatingLabels, kind: unknown, value: unknown): string | null {
-  const name = typeof value === "string" ? value.trim() : "";
-  const label = kind === "standing" ? labels.standingPlace
-    : kind === "table" ? labels.table : kind === "couch" ? labels.couch
-    : kind === "row" ? labels.row : /^\d+$/u.test(name) ? labels.group : null;
-  if (!name) return label;
-  if (!label) return name;
-  const normalized = name.toLocaleLowerCase();
-  const prefix = label.toLocaleLowerCase();
-  if (normalized === prefix || normalized.startsWith(prefix + " ") ||
-      normalized.startsWith(prefix + ":")) return name;
-  return `${label} ${name}`;
-}
 // END GENERATED SEATING LABELS
 
 export type RenderData = Record<string,string|null>;
@@ -124,50 +110,45 @@ export function validateProductReferences(t:Template,c:ProductCatalog) {
   for(const e of t.elements)if(e.binding==='productType'&&!c.types.has(e.productTypeId!))throw new Error('ticket_product_type_missing:'+e.id);
 }
 /** One deterministic seating selection for PDF, native Wallet passes and email. */
-export type TicketSeating = {
-  table: string | null;
-  seat: string | null;
-  kind?: 'table' | 'couch' | 'row' | 'standing';
+export type SeatingPlacement = {
+  labelKey?: keyof SeatingLabels;
+  value?: string;
+  separator?: string;
 };
+
+export type TicketSeating = {
+  placement: SeatingPlacement | null;
+  seat: string | null;
+};
+
+export function readSeatingPlacement(placement: SeatingPlacement | null | undefined, legacyTitle: unknown): SeatingPlacement | null {
+  const title = text(legacyTitle);
+  return placement ?? (title ? { value: title } : null);
+}
 
 export function ticketSeating(ticket: any): TicketSeating {
   const selected = [...(ticket.order_product_ticket ?? [])]
     .sort((a,b) => Number(a.id ?? 0) - Number(b.id ?? 0))
-    .find(p => p.is_standing === true || text(p.spot_group_title) || text(p.spot_title) ||
-      ['table', 'couch', 'row'].includes(p.spot_group_kind));
-  if (selected?.is_standing === true) {
-    return { table: text(selected.standing_area_title), seat: null, kind: 'standing' };
-  }
-  const kind = selected?.spot_group_kind;
+    .find(p => p.placement || text(p.spot_group_title) || text(p.spot_title));
   return {
-    table: text(selected?.spot_group_title), seat: text(selected?.spot_title),
-    ...(['table', 'couch', 'row'].includes(kind) ? { kind } : {}),
+    placement: readSeatingPlacement(selected?.placement, selected?.spot_group_title),
+    seat: text(selected?.spot_title),
   };
 }
 
-export function seatingGroupText(seating: TicketSeating, locale: string): string | null {
-  return formatSeatingGroup(seatingLabels(locale), seating.kind, seating.table);
+export function seatingPlacementText(placement: SeatingPlacement | null, locale: string): string | null {
+  if (!placement) return null;
+  const label = placement.labelKey ? seatingLabels(locale)[placement.labelKey] : null;
+  return [label, placement.value].filter(Boolean).join(placement.separator ?? ' ') || null;
 }
 
 export function walletSeatingGroup(seating: TicketSeating): { label: string; value: string } | null {
-  const key = seating.kind === 'standing' ? 'standingPlace' : seating.kind ?? 'group';
-  const label = walletSeatingLabels[key];
-  if (!seating.table) {
-    return seating.kind ? { label: 'Místo / Location', value: label } : null;
-  }
-  for (const locale of ['cs', 'en']) {
-    const prefix = seatingLabels(locale)[key];
-    const value = seating.table;
-    if (value.toLocaleLowerCase() === prefix.toLocaleLowerCase()) {
-      return { label: 'Místo / Location', value: label };
-    }
-    if (value.toLocaleLowerCase().startsWith(prefix.toLocaleLowerCase() + ' ') ||
-        value.toLocaleLowerCase().startsWith(prefix.toLocaleLowerCase() + ':')) {
-      const remainder = value.slice(prefix.length).replace(/^:?\s*/u, '');
-      return remainder ? { label, value: remainder } : { label: 'Místo / Location', value: label };
-    }
-  }
-  return { label, value: seating.table };
+  const placement = seating.placement;
+  if (!placement) return null;
+  const label = placement.labelKey ? walletSeatingLabels[placement.labelKey] : undefined;
+  if (label && placement.value) return { label, value: placement.value };
+  const heading = placement.value ?? label;
+  return heading ? { label: 'Místo / Location', value: heading } : null;
 }
 
 export function ticketShowsSeat(feature:any):boolean {
@@ -202,7 +183,7 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog
     try {startTime=new Intl.DateTimeFormat(locale,options).format(new Date(occasion.start_time));}
     catch {startTime=new Intl.DateTimeFormat(locale,{...options,timeZone:'Europe/Prague'}).format(new Date(occasion.start_time));}
   }
-  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:seatingGroupText(seating,locale),note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatTicketCurrency(ticket.price,ticket.currency_code||'CZK',locale)}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
+  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:seatingPlacementText(seating.placement,locale),note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatTicketCurrency(ticket.price,ticket.currency_code||'CZK',locale)}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
   d.spotGroupWithSeat=seating.seat?[d.spotGroup,`${labels.seat}: ${seating.seat}`].filter(Boolean).join(', '):d.spotGroup;
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
@@ -217,7 +198,7 @@ export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatal
   d.qr='festapp-preview:'+d.ticketSymbol;
   const en = occasion?.locale === 'en';
   const labels=seatingLabels(occasion?.locale || 'cs');
-  d.spotGroup=seatingGroupText({kind:'table',table:'12',seat:null},occasion?.locale || 'cs');
+  d.spotGroup=seatingPlacementText({labelKey:'table',value:'12'},occasion?.locale || 'cs');
   d.spotGroupWithSeat=`${d.spotGroup}, ${labels.seat}: 3`;
   if(en) { d.orderName='Alex Morgan'; if(!occasion?.title)d.occasionTitle='Evening under the stars'; }
   if(scenario==='long') {d.note=en?'Note: '+('A long guest note with anExtraLongWordWithoutSpaces ').repeat(8):'Poznámka: '+('Dlouhý český text s diakritikou a velmiDlouhýmSlovemBezMezer ').repeat(8);d.orderName=en?'Alexandra Morgan Taylor':'Kateřina Šťastná Nováková';}

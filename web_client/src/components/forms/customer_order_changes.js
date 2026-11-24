@@ -1,3 +1,4 @@
+import { orderItemSeatingText } from "../../services/seating_labels.js";
 import { LocalizationService } from "../../services/localization_service.js";
 const text = (key) => LocalizationService.tr(`CustomerSelfService.${key}`);
 const node = (host, tag, value = "", attrs = {}) => {
@@ -58,7 +59,7 @@ export function renderCustomerOrderChanges(
     return [
       person?.label || `${text("ticket")} ${id}`,
       ...items.map((i) =>
-        [i.title, i.spotGroupTitle, i.spotTitle].filter(Boolean).join(" / ")
+        [i.title, orderItemSeatingText(i)].filter(Boolean).join(" / ")
       ),
     ].join(" - ");
   };

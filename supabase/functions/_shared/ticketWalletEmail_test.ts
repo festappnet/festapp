@@ -16,7 +16,7 @@ Deno.test('email worker offers Wallet without access to the isolated signing cre
    if(p.p_hash)source={sealed:p.p_sealed,tokenHash:p.p_hash};
    return {providers:{google:true,apple:false},organization:3,occasion:7,webOrigin:'https://vstupenky.online',badgeUrls:{cs:'https://img.festapp.net/assets/google-wallet/v1/cs.png'},source};
   };
-  const tickets = [{id:1,ticket_symbol:'SAMPLE',order_product_ticket:[{id:1,spot_group_title:'4',spot_group_kind:'table',spot_title:'7'}]}];
+  const tickets = [{id:1,ticket_symbol:'SAMPLE',order_product_ticket:[{id:1,placement:{labelKey:'table',value:'4'},spot_title:'7'}]}];
   const row = {message_id:'message',data:{lang:'cs'}};
   const html=await prepareWalletEmail(row,tickets,{is_enabled:true},rpc);
   assert(html.includes('>Vstupenka - Stůl 4<'));
@@ -127,7 +127,7 @@ Deno.test('Google stays localized; Apple uses its installed official English art
 });
 
 Deno.test('multiple providers share one ticket heading and actions have no repeated visible label',()=>{
- const label=walletTicketLabel(1,3,'cs',{table:'4',seat:'7',kind:'table'});
+ const label=walletTicketLabel(1,3,'cs',{placement:{labelKey:'table',value:'4'},seat:'7'});
  assertEquals(label,'Vstupenka 1 z 3 - Stůl 4 - Místo: 7');
  const html=walletEmailTicket(label,[{provider:'google',badge:googleWalletBadgeUrl('cs')},{provider:'apple'}],'cs');
  assertEquals((html.match(/Vstupenka 1 z 3/g)??[]).length,1);

@@ -10,6 +10,17 @@ BEGIN
  RETURN actual;
 END;
 $checked$;
+SELECT assert_eq(public.order_seating_placement_internal('table','Stůl 4'),
+ '{"labelKey":"table","value":"4"}'::jsonb,'Use a localized table heading once');
+SELECT assert_eq(public.order_seating_placement_internal('couch','Couch 2'),
+ '{"labelKey":"couch","value":"2"}'::jsonb,'Use the physical couch kind');
+SELECT assert_eq(public.order_seating_placement_internal('standing','Parket VIP'),
+ '{"labelKey":"standingPlace","value":"Parket VIP","separator":": "}'::jsonb,'Label purchased standing area');
+SELECT assert_eq(public.order_seating_placement_internal(NULL,'4'),
+ '{"labelKey":"group","value":"4"}'::jsonb,'Unknown numeric group stays neutral');
+SELECT assert_eq(public.order_seating_placement_internal(NULL,'Terasa'),
+ '{"value":"Terasa"}'::jsonb,'Keep a custom name for unspecified legacy groups');
+
 DO $$
 DECLARE org bigint; unit_id bigint; occ bigint; bp bigint; unrelated_bp bigint; ord bigint; other_ord bigint; typ bigint; prod bigint; ticket bigint; opt bigint; seat bigint; original jsonb; result jsonb; pool_id bigint; context_id bigint; fid bigint; area_id uuid:=gen_random_uuid(); overview jsonb; group_node uuid:=gen_random_uuid(); seat_node uuid:=gen_random_uuid(); physical_node uuid:=gen_random_uuid(); view_token text:=encode(extensions.gen_random_bytes(32),'hex');
 BEGIN

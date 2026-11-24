@@ -10,7 +10,7 @@ import {reconcileAppleTicketWallet} from './appleWalletUpdates.ts';
 import type {GoogleWallet} from './googleWallet.ts';
 const credentials={passTypeIdentifier:'pass.net.festapp.test',teamIdentifier:'TESTTEAM01'} as AppleWalletCredentials;
 const identity={environment:'test',organization:1,occasion:2,ticketId:3};
-const projection:any={branding:{APP_NAME:'Ukázkový portál',DEFAULT_URL:'https://tenant.invalid'},state:'ACTIVE',ticket:{ticket_symbol:'EXACT-QR-č',order_product_ticket:[{spot_title:'12',spot_group_title:'Stůl 4',spot_group_kind:'table',product:{title:'Vstupné'}}]},occasion:{ticketFeature:{layout:{templates:{wide:{spotGroupAppearance:{showSeat:true}}}}},title:'Večer hudby',start_time:'2027-03-28T18:00:00Z',end_time:'2027-03-28T22:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
+const projection:any={branding:{APP_NAME:'Ukázkový portál',DEFAULT_URL:'https://tenant.invalid'},state:'ACTIVE',ticket:{ticket_symbol:'EXACT-QR-č',order_product_ticket:[{spot_title:'12',placement:{labelKey:'table',value:'4'},product:{title:'Vstupné'}}]},occasion:{ticketFeature:{layout:{templates:{wide:{spotGroupAppearance:{showSeat:true}}}}},title:'Večer hudby',start_time:'2027-03-28T18:00:00Z',end_time:'2027-03-28T22:00:00Z',data:{timezone:'Europe/Prague',place_name:'Kulturní dům'}}};
 const resolved={...identity,webOrigin:'https://tenant.invalid',providers:{google:false,apple:true},applePassTypeIdentifier:credentials.passTypeIdentifier,appleTeamIdentifier:credentials.teamIdentifier,projection};
 
 Deno.test('Apple serial isolates backend, organization, event and ticket; QR and native fields retain canonical values',async()=>{
@@ -32,7 +32,7 @@ Deno.test('Apple serial isolates backend, organization, event and ticket; QR and
   assertEquals(pass.labelColor,foreground);
  }
  const standing=structuredClone(projection);
- standing.ticket.order_product_ticket=[{id:1,is_standing:true,standing_area_title:'Parket VIP'}];
+ standing.ticket.order_product_ticket=[{id:1,placement:{labelKey:'standingPlace',separator:': ',value:'Parket VIP'}}];
  assertEquals(appleWalletDocument(serial,standing,credentials).eventTicket.auxiliaryFields,
   [{key:'table',label:'Místo na stání / Standing place',value:'Parket VIP'}]);
  assertEquals(appleWalletDocument(serial,{...projection,state:'COMPLETED'},credentials).voided,true);

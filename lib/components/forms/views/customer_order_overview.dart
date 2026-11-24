@@ -10,6 +10,7 @@ import '../payment_method_strings.dart';
 import '../models/verified_organization_identity.dart';
 import '../widgets_view/organization_identity_footer.dart';
 import '../order_overview_strings.dart';
+import '../order_item_seating.dart';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:festapp_core/forms.dart';
@@ -67,29 +68,6 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
     } finally {
       if (mounted && generation == _generation) setState(() => _busy = false);
     }
-  }
-
-  String? seatingText(Map item) {
-    final standing = item['isStanding'] == true;
-    final kind = standing ? 'standing' : item['spotGroupKind'];
-    final raw = standing ? item['standingAreaTitle'] : item['spotGroupTitle'];
-    final title = raw is String ? raw.trim() : '';
-    final key = switch (kind) {
-      'standing' => 'standingPlace',
-      'table' => 'table',
-      'couch' => 'couch',
-      'row' => 'row',
-      _ => RegExp(r'^\d+$').hasMatch(title) ? 'group' : null,
-    };
-    final label = key == null ? '' : text(key);
-    final normalized = title.toLowerCase();
-    final prefix = label.toLowerCase();
-    final group = title.isEmpty ? label : label.isEmpty || normalized == prefix ||
-        normalized.startsWith('$prefix ') || normalized.startsWith('$prefix:')
-        ? title : '$label $title';
-    final seat = standing ? '' : item['spotTitle']?.toString().trim() ?? '';
-    final parts = [if (group.isNotEmpty) group, if (seat.isNotEmpty) '${text('seat')}: $seat'];
-    return parts.isEmpty ? null : parts.join(' · ');
   }
 
   String text(String key) => OrderOverviewStrings.text(
@@ -191,7 +169,8 @@ class _CustomerOrderOverviewViewState extends State<CustomerOrderOverviewView> {
                           paragraph(
                             '${item['title'] ?? ''}: ${order['discount'] != null ? formatDiscountPrice(context, (item['basePrice'] ?? item['price']) as num, item['currency'] ?? order['currency']) : money(item['price'], item['currency'])}',
                           ),
-                          if (seatingText(item) case final String seating)
+                          if (orderItemSeatingText(item)
+                              case final String seating)
                             Text(
                               seating,
                               style: Theme.of(context).textTheme.bodyMedium

@@ -23,13 +23,13 @@ Deno.test('printed seating uses purchased kind and preserves custom names', () =
  const render = (product: Record<string, unknown>) => normalizeTicketData(
   { order_product_ticket: [product] }, { id: 7 },
  );
- assertEquals(render({spot_group_kind:'table',spot_group_title:'4'}).spotGroup, 'Stůl 4');
- assertEquals(render({spot_group_kind:'table',spot_group_title:'Stůl 4'}).spotGroup, 'Stůl 4');
- assertEquals(render({spot_group_kind:'couch',spot_group_title:'2',spot_title:'B'}).spotGroupWithSeat, 'Gauč 2, Místo: B');
- assertEquals(render({is_standing:true,standing_area_title:'Parket VIP'}).spotGroup, 'Místo na stání Parket VIP');
- assertEquals(render({is_standing:true}).spotGroup, 'Místo na stání');
+ assertEquals(render({placement:{labelKey:'table',value:'4'}}).spotGroup, 'Stůl 4');
+ assertEquals(render({placement:{labelKey:'table',value:'4'},spot_group_title:'Stůl 4'}).spotGroup, 'Stůl 4');
+ assertEquals(render({placement:{labelKey:'couch',value:'2'},spot_title:'B'}).spotGroupWithSeat, 'Gauč 2, Místo: B');
+ assertEquals(render({placement:{labelKey:'standingPlace',separator:': ',value:'Parket VIP'}}).spotGroup, 'Místo na stání: Parket VIP');
+ assertEquals(render({placement:{labelKey:'standingPlace'}}).spotGroup, 'Místo na stání');
  assertEquals(render({spot_group_title:'Terasa'}).spotGroup, 'Terasa');
- assertEquals(render({spot_group_title:'4'}).spotGroup, 'Skupina 4');
+ assertEquals(render({placement:{labelKey:'group',value:'4'}}).spotGroup, 'Skupina 4');
 });
 Deno.test('ID contract preserves deterministic historical selection and hides private notes',()=>{
  const catalog=indexProductCatalog(rawCatalog,7),t=productTemplate();

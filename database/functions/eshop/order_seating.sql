@@ -126,7 +126,7 @@ BEGIN
   WHERE s.blueprint IS NOT NULL OR area.node IS NOT NULL
   ORDER BY x."order",x.ticket,x.product,(s.blueprint IS NOT NULL) DESC,x.id,s.id
  ), ticket_products AS MATERIALIZED (
-  SELECT p.key,p.ti,jsonb_agg(p.p||coalesce(a.metadata,'{}') ORDER BY p.pi) products
+  SELECT p.key,p.ti,jsonb_agg(public.order_present_seating_internal(p.p||coalesce(a.metadata,'{}')) ORDER BY p.pi) products
   FROM products p LEFT JOIN assignments a ON a.order_id=p.order_id AND a.ticket=p.ticket_id AND a.product=p.product_id
   GROUP BY p.key,p.ti
  ), enriched AS (
@@ -144,7 +144,7 @@ GRANT EXECUTE ON FUNCTION public.order_tickets_with_seating_bulk_internal(jsonb)
 -- Presentation metadata only. Callers retain their existing order access checks.
 CREATE OR REPLACE FUNCTION public.order_spot_metadata_internal(p_spot bigint)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
- SELECT metadata FROM public.order_spot_metadata_bulk_internal(ARRAY[p_spot]);
+ SELECT public.order_present_seating_internal(metadata) FROM public.order_spot_metadata_bulk_internal(ARRAY[p_spot]);
 $$;
 REVOKE ALL ON FUNCTION public.order_spot_metadata_internal(bigint) FROM PUBLIC,anon,authenticated;
 
@@ -152,7 +152,7 @@ REVOKE ALL ON FUNCTION public.order_spot_metadata_internal(bigint) FROM PUBLIC,a
 CREATE OR REPLACE FUNCTION public.order_tickets_with_seating_internal(p_order bigint,p_tickets jsonb)
 RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  SELECT coalesce(jsonb_agg(t || jsonb_build_object('products',(
-   SELECT coalesce(jsonb_agg(p || coalesce((
+   SELECT coalesce(jsonb_agg(public.order_present_seating_internal(p || coalesce((
      SELECT CASE WHEN s.blueprint IS NOT NULL THEN public.order_spot_metadata_internal(s.id) ||
        jsonb_build_object('is_standing',false,'standing_area_title',NULL)
        ELSE jsonb_build_object('spot_title',NULL,'spot_group_title',NULL,
@@ -169,7 +169,7 @@ RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=public,extens
        WHERE n->>'id'=ab.node_id::text AND n->>'kind'='capacityArea') area ON true
      WHERE x."order"=p_order AND x.ticket=(t->>'id')::bigint AND x.product=(p->>'id')::bigint
        AND (s.blueprint IS NOT NULL OR area.node IS NOT NULL)
-     ORDER BY (s.blueprint IS NOT NULL) DESC,x.id,s.id LIMIT 1),'{}') ORDER BY pi),'[]')
+     ORDER BY (s.blueprint IS NOT NULL) DESC,x.id,s.id LIMIT 1),'{}')) ORDER BY pi),'[]')
    FROM jsonb_array_elements(coalesce(t->'products','[]')) WITH ORDINALITY products(p,pi)
  )) ORDER BY ti),'[]')
  FROM jsonb_array_elements(coalesce(p_tickets,'[]')) WITH ORDINALITY tickets(t,ti);

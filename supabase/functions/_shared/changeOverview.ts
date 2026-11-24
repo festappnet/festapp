@@ -1,3 +1,4 @@
+import { readSeatingPlacement, seatingPlacementText, type SeatingPlacement } from "./ticketRenderData.ts";
 import { formatCurrency } from "./utilities.ts";
 
 interface Product {
@@ -7,6 +8,9 @@ interface Product {
   currency_code?: string;
   spot_title?: string;
   spot_group_title?: string;
+  placement?: SeatingPlacement;
+  is_standing?: boolean;
+  standing_area_title?: string;
 }
 interface TicketChange {
   id?: number;
@@ -85,7 +89,13 @@ export function generateChangeOverview(
       ),
     );
   const label = (product: Product) =>
-    [product.title, product.spot_group_title, product.spot_title]
+    [
+      product.title,
+      seatingPlacementText(readSeatingPlacement(
+        product.placement, product.is_standing ? product.standing_area_title : product.spot_group_title,
+      ), lang),
+      product.spot_title,
+    ]
       .filter((part) => part != null && part !== "").map(escape).join(" - ");
   const products = (items: Product[], color: string, prefix: string) =>
     items.map((p) => `

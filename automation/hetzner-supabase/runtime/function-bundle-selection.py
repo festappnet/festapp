@@ -14,6 +14,9 @@ import shutil
 
 AUTHORING_CONTEXT = 'send-custom-email/authoringContext.ts'
 APPLE_WALLET_MODULE = '_shared/appleWallet.ts'
+ORDER_SEATING_CONSUMERS = {'_shared/orderOverview.ts', '_shared/changeOverview.ts'}
+TICKET_RENDER_MODULE = '_shared/ticketRenderData.ts'
+EMAIL_PREVIEW_FIXTURE = '_shared/emailPreviewScenarios.json'
 APPLE_ICON_ASSETS = tuple(
     f'_shared/ticket-assets/apple-wallet/{name}'
     for name in ('icon.png', 'icon@2x.png', 'icon@3x.png')
@@ -160,11 +163,11 @@ def exact_shared_plan(source, base, modules):
     planned = {}
     for name in sorted(modules):
         path = source / name
-        require((name == AUTHORING_CONTEXT or re.fullmatch(
+        require((name in {AUTHORING_CONTEXT, EMAIL_PREVIEW_FIXTURE} or re.fullmatch(
                     r'_shared/(?:[A-Za-z][A-Za-z0-9_.-]*\.(?:ts|js|mjs)|translations/translations\.[a-z]{2}\.ts)', name))
                 and name in base['files'] and path.is_file()
                 and path.resolve() == source.resolve() / name,
-                'Exact replacement requires an existing allowed code or locale module')
+                'Exact replacement requires an existing allowed runtime file')
         if name == APPLE_WALLET_MODULE:
             require(all(asset in base['files'] for asset in APPLE_ICON_ASSETS),
                     'Exact Apple Wallet replacement requires installed icons')
@@ -199,6 +202,9 @@ def stage_exact_shared(current, stage, manifest):
             require(before <= after and after - before <= AUTHORING_QR_IMPORTS
                     and all(resource in base['files'] for resource in AUTHORING_QR_RESOURCES),
                     'Exact authoring replacement changes dependencies')
+        elif name in ORDER_SEATING_CONSUMERS and TICKET_RENDER_MODULE in modules:
+            require(after - before <= {'./ticketRenderData.ts'},
+                    'Exact order overview replacement changes dependencies')
         else:
             require(after <= before, 'Exact shared replacement changes dependencies')
     replacements = {name: (stage / name).read_bytes() for name in planned['shared_modules']}

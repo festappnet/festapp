@@ -26,7 +26,8 @@ BEGIN
                         seat.metadata->>'spot_group_title' AS spot_group_title,
                         seat.metadata->>'spot_group_kind' AS spot_group_kind,
                         COALESCE((seat.metadata->>'is_standing')::boolean,false) AS is_standing,
-                        seat.metadata->>'standing_area_title' AS standing_area_title
+                        seat.metadata->>'standing_area_title' AS standing_area_title,
+                        seat.metadata->'placement' AS placement
                     FROM eshop.order_product_ticket opt2
                     LEFT JOIN eshop.spots s
                         ON s.order_product_ticket = opt2.id
