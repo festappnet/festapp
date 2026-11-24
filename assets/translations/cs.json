@@ -663,7 +663,7 @@
     "fontLoadFailed": "Písma se nepodařilo načíst. Zkuste to prosím znovu.",
     "embedAction": "Vložit na vlastní web",
     "embedTitle": "Objednávkový formulář",
-    "embedFallback": "Otevřít objednávku v nové záložce",
+    "embedFallback": "Objednat v nové záložce",
     "embedHelp": "Zkopírujte kód a vložte ho do HTML svého webu.",
     "embedDisplay": "Výška a vzhled",
     "embedScriptHint": "Automatická výška a vzhled podle webu vyžadují externí skript. Pokud ho web blokuje, zvolte pevnou výšku a vlastní vzhled.",
