@@ -205,6 +205,10 @@ A bounded authoring release can set
 This replaces the existing handler while pinning the complete installed tree. Exact shared
 module replacements can remove imports while remaining bound to the installed
 bytes of every retained dependency.
+For `_shared/appleWallet.ts`, exact replacements can retain the existing
+pass-icon loader. The three icon paths must be pinned in the installed tree, and
+the loader must match in the installed and replacement modules. Other filesystem
+dependencies still require a full release.
 The builder checks that the installed payment QR renderer, artwork module and
 Roboto font match canonical source, allowing the pinned earlier QR module
 whose sample artwork uses the same renderer. Staging permits the handler to

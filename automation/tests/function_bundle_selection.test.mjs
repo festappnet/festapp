@@ -282,3 +282,53 @@ test('exact authoring update requires installed canonical artwork and preserves 
             readFileSync(join(name === module ? f.source : f.base, name)), name);
     }
 });
+
+test('exact Apple Wallet replacement permits only the unchanged installed icon loader', t => {
+    const f = fixture(t);
+    const module = '_shared/appleWallet.ts';
+    const iconDirectory = '_shared/ticket-assets/apple-wallet';
+    const iconNames = ['icon.png', 'icon@2x.png', 'icon@3x.png'];
+    const iconLoader = "  for(const name of ['icon.png','icon@2x.png','icon@3x.png'])" +
+        "icons[name]=await Deno.readFile(new URL('./ticket-assets/apple-wallet/'+name,import.meta.url));";
+    const installed = 'import "./common.ts";\n' + iconLoader + '\nexport const label = "old";';
+    const replacement = installed.replace('"old"', '"group"');
+    const inventoryPath = join(f.root, 'base.json');
+    mkdirSync(join(f.base, iconDirectory), { recursive: true });
+    for (const name of iconNames) writeFileSync(join(f.base, iconDirectory, name), name);
+    writeFileSync(join(f.base, module), installed);
+    const patch = join(f.root, 'apple-patch');
+    mkdirSync(join(patch, '_shared'), { recursive: true });
+    const snapshot = () => {
+        const current = f.run('inventory', []);
+        assert.equal(current.status, 0, current.stderr);
+        writeFileSync(inventoryPath, current.stdout);
+        return JSON.parse(current.stdout);
+    };
+    snapshot();
+    const plan = content => {
+        writeFileSync(join(f.source, module), content);
+        writeFileSync(join(patch, module), content);
+        return spawnSync('python3', [script, 'plan-exact-shared', '--root', f.source,
+            '--base', inventoryPath, '--shared-modules', module], { encoding: 'utf8' });
+    };
+    const stage = content => {
+        const planned = plan(content);
+        assert.equal(planned.status, 0, planned.stderr);
+        writeFileSync(f.manifest, JSON.stringify({ exact_shared_replacement: JSON.parse(planned.stdout) }));
+        return f.run('stage-exact-shared', ['--stage', patch, '--manifest', f.manifest]);
+    };
+    assert.match(stage(replacement.replace('icon@3x.png', 'private.png')).stderr, /retain the pinned icon loader/);
+    assert.match(stage(replacement + '\nawait Deno.readFile("/private.txt");').stderr, /Filesystem\/worker dependency/);
+    assert.match(stage(replacement + '\nimport "./unrelated.ts";').stderr, /changes dependencies/);
+    rmSync(join(f.base, iconDirectory, iconNames[0]));
+    snapshot();
+    assert.match(plan(replacement).stderr, /requires installed icons/);
+    writeFileSync(join(f.base, iconDirectory, iconNames[0]), iconNames[0]);
+    const expected = snapshot();
+    const staged = stage(replacement);
+    assert.equal(staged.status, 0, staged.stderr);
+    for (const name of Object.keys(expected.files)) {
+        assert.deepEqual(readFileSync(join(patch, name)),
+            readFileSync(join(name === module ? f.source : f.base, name)), name);
+    }
+});
