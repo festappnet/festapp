@@ -32,6 +32,9 @@ export function googleWalletAppearance(feature:any,occasionData:any={},platform:
 
 // Wallet overlays the event title on a strip. A thumbnail keeps it on the solid pass background.
 export const appleWalletArtwork = {
+ appearance(feature: unknown, occasionData: unknown) {
+  return googleWalletAppearance(feature,occasionData,'apple');
+ },
  foreground(rgb: number[]) {
   const linearRgb=rgb.map(value=>{
    const channel=value/255;

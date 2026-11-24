@@ -10,8 +10,14 @@ import { normalizeTicketData, ticketSeating, ticketShowsSeat, walletSeatingLabel
 
 const { googleWalletAppearance, walletPublicImage } = walletAppearance;
 // An Edge release can update pass text before the artwork dependencies are installed.
-const artwork: typeof walletAppearance.appleWalletArtwork | undefined =
- (walletAppearance as Partial<typeof walletAppearance>).appleWalletArtwork;
+type AppleWalletArtwork = {
+ appearance: typeof googleWalletAppearance;
+ foreground: (rgb: number[]) => string;
+ publicThumbnail: (bytes: Buffer) => Promise<Buffer | undefined>;
+ galleryThumbnail: (url: string) => Promise<Buffer | undefined>;
+};
+const artwork=(walletAppearance as {appleWalletArtwork?: AppleWalletArtwork}).appleWalletArtwork;
+const appleAppearance=artwork?.appearance??googleWalletAppearance;
 
 export type AppleWalletCredentials = {
  passTypeIdentifier: string; teamIdentifier: string;
@@ -48,7 +54,7 @@ export function appleWalletDocument(serialNumber:string, projection:WalletProjec
   !Number.isFinite(Date.parse(occasion.start_time)) || !Number.isFinite(Date.parse(occasion.end_time))) throw new Error('wallet_metadata');
  const branding=parseOrganizationBranding(projection.branding);
  const normalized=normalizeTicketData(ticket,occasion,{});
- const appearance=googleWalletAppearance(occasion.ticketFeature,occasion.data,'apple');
+ const appearance=appleAppearance(occasion.ticketFeature,occasion.data);
  const products=ticket.order_product_ticket??[];
  const seating=ticketSeating(ticket);
  const showSeat=ticketShowsSeat(occasion.ticketFeature);
@@ -90,7 +96,7 @@ export class AppleWallet {
   for(const [name,bytes] of Object.entries(this.icons)) files[name]=Buffer.from(bytes);
   // Reuse the existing canonical public image policy; redirects and unbounded downloads are forbidden.
   const feature=projection.occasion.ticketFeature;
-  const appearance=googleWalletAppearance(feature,projection.occasion.data,'apple');
+  const appearance=appleAppearance(feature,projection.occasion.data);
   const overrides=projection.occasion.ticketFeature?.wallet_appearance??{};
   const brandingLogo=walletPublicImage(projection.branding?.WALLET_LOGO_URL);
   const logo=Object.hasOwn(overrides,'logo')?appearance.logo:
