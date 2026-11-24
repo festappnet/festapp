@@ -870,7 +870,7 @@
     "appearanceDark": "Tmavý",
     "embedAction": "Vložiť na vlastný web",
     "embedTitle": "Objednávkový formulár",
-    "embedFallback": "Otvoriť objednávku na novej karte",
+    "embedFallback": "Objednať na novej karte",
     "embedHelp": "Skopírujte kód a vložte ho do HTML svojho webu.",
     "embedDisplay": "Výška a vzhľad",
     "embedScriptHint": "Automatická výška a vzhľad podľa webu vyžadujú externý skript. Ak ho web blokuje, zvoľte pevnú výšku a vlastný vzhľad.",

@@ -696,7 +696,7 @@
     "appearanceDark": "Ciemny",
     "embedAction": "Osadź na swojej stronie",
     "embedTitle": "Formularz zamówienia",
-    "embedFallback": "Otwórz zamówienie w nowej karcie",
+    "embedFallback": "Zamów w nowej karcie",
     "embedHelp": "Skopiuj kod i wklej go do kodu HTML swojej strony.",
     "embedDisplay": "Wysokość i wygląd",
     "embedScriptHint": "Automatyczna wysokość i styl strony wymagają zewnętrznego skryptu. Jeśli strona go blokuje, wybierz stałą wysokość i własny styl formularza.",
