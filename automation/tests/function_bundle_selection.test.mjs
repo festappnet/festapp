@@ -200,7 +200,7 @@ for (const exact of [false, true]) test(
   assert.equal(readFileSync(join(extracted,name),'utf8'),readFileSync(join(f.base,name),'utf8'));
 });
 
-test('exact shared update preserves worker-only dependencies and every unselected byte', t => {
+test('exact shared update can remove an import while preserving every unselected byte', t => {
     const f = fixture(t);
     const module = '_shared/common.ts';
     const dependency = 'import "./assets.ts"; ';
@@ -233,6 +233,7 @@ test('exact shared update preserves worker-only dependencies and every unselecte
     writeFileSync(join(f.base, 'main/index.ts'), 'export const router = "newer";');
     assert.match(stageExact().stderr, /tree changed/);
     writeFileSync(join(f.base, 'main/index.ts'), 'export const router = "installed";');
+    writePatch('export const value = 2;');
     const staged = stageExact();
     assert.equal(staged.status, 0, staged.stderr);
     for (const [name] of Object.entries(JSON.parse(inventory.stdout).files)) {

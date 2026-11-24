@@ -202,7 +202,9 @@ pause/drain, existing-container reload and health probes.
 
 A bounded authoring release can set
 `FESTAPP_FUNCTION_BUNDLE_EXACT_SHARED_MODULES=send-custom-email/authoringContext.ts`.
-This replaces the existing handler while pinning the complete installed tree.
+This replaces the existing handler while pinning the complete installed tree. Exact shared
+module replacements can remove imports while remaining bound to the installed
+bytes of every retained dependency.
 The builder checks that the installed payment QR renderer, artwork module and
 Roboto font match canonical source, allowing the pinned earlier QR module
 whose sample artwork uses the same renderer. Staging permits the handler to
