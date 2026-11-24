@@ -83,7 +83,7 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
       (f) => f.code == FeatureConstants.blueprint && f.isEnabled,
     ),
     deadline: DateFormat.yMd().format(deadline),
-    cashOnly: payments.cashEnabled && !payments.bankEnabled && payments.connections.isEmpty,
+    cashOnly: payments.cashEnabled && !payments.bankEnabled,
     cancellationAvailable: sampleForm?.customerCancellationAvailable == true,
     inlinePaymentQr: FormMetadata.showPaymentQrInEmail(
       sampleForm?.definition.data,

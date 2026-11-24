@@ -71,7 +71,11 @@ void main() {
         FormBundle.fromJson({
           'id': 2, 'is_open': true,
           'data': {
-            'payments': {'cashEnabled': true},
+            'payments': {
+              'cashEnabled': true,
+              'bankEnabled': false,
+              'providerConnections': {'stripe': 'previous-recipient'},
+            },
             'show_payment_qr_in_email': true,
           },
         }),
