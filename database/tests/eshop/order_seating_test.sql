@@ -50,9 +50,13 @@ BEGIN
  UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes}',
    jsonb_build_array((layout#>'{nodes,0}')||'{"kind":"group"}',
      (layout#>'{nodes,1}')||jsonb_build_object('parentId',physical_node),
-     jsonb_build_object('id',physical_node,'kind','table','parentId',group_node))) WHERE id=bp;
+     jsonb_build_object('id',physical_node,'kind','table','parentId',group_node,'label','4'))) WHERE id=bp;
  PERFORM assert_eq(pg_temp.checked_order_seating(ord,original)#>>'{0,products,0,spot_group_kind}','table',
    'Physical table is detected inside the named commercial group');
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes,0,label}','""') WHERE id=bp;
+ PERFORM assert_eq(pg_temp.checked_order_seating(ord,original)#>>'{0,products,0,spot_group_title}','4',
+   'A physical assembly supplies its name when the commercial group is unnamed');
+ UPDATE eshop.blueprints SET layout=jsonb_set(layout,'{nodes,1}',(layout#>'{nodes,1}')-'parentId') WHERE id=bp;
  UPDATE eshop.blueprint_seat_bindings SET group_node=NULL WHERE spot=seat;
  PERFORM assert_true(pg_temp.checked_order_seating(ord,result)#>>'{0,products,0,spot_group_title}' IS NULL,'Ungrouped assignment clears stale table');
  UPDATE eshop.spots SET order_product_ticket=NULL WHERE id=seat;

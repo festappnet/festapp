@@ -2,8 +2,8 @@
 
 -- SOURCE: eshop/order_seating.sql
 -- Resolve the physical assembly even when its commercial group is a wrapper.
-CREATE OR REPLACE FUNCTION public.order_seating_kind_internal(p_nodes jsonb,p_seat text,p_group text)
-RETURNS text LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
+CREATE OR REPLACE FUNCTION public.order_seating_assembly_internal(p_nodes jsonb,p_seat text,p_group text)
+RETURNS jsonb LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,extensions AS $$
  WITH RECURSIVE ancestors AS (
   SELECT p_nodes->p_seat node,ARRAY[p_seat] seen,0 depth
   UNION ALL
@@ -14,15 +14,16 @@ RETURNS text LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path=public,exte
   SELECT node,depth FROM ancestors
   UNION ALL SELECT p_nodes->p_group,2147483647
  )
- SELECT CASE WHEN node->>'kind'='table' THEN 'table'
-             WHEN node->>'furniture'='couch' THEN 'couch' ELSE 'row' END
+ SELECT jsonb_build_object('kind',CASE WHEN node->>'kind'='table' THEN 'table'
+             WHEN node->>'furniture'='couch' THEN 'couch' ELSE 'row' END,
+             'title',node->>'label','id',node->>'id')
  FROM kinds WHERE node->>'kind'='table'
     OR (node->>'kind'='furniture' AND node->>'furniture'='couch')
     OR (node->>'kind'='group' AND node#>>'{assembly,kind}'='rows' AND node#>>'{assembly,rows}'='1')
  ORDER BY depth LIMIT 1;
 $$;
-REVOKE ALL ON FUNCTION public.order_seating_kind_internal(jsonb,text,text) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.order_seating_kind_internal(jsonb,text,text) TO service_role;
+REVOKE ALL ON FUNCTION public.order_seating_assembly_internal(jsonb,text,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.order_seating_assembly_internal(jsonb,text,text) TO service_role;
 
 -- Standing inventory is identified by its purchased capacity area, not a title.
 CREATE OR REPLACE FUNCTION public.order_standing_spot_metadata_internal(p_spot bigint)
@@ -69,13 +70,14 @@ BEGIN
   FROM first_nodes n GROUP BY n.blueprint,n.occasion
  )
  SELECT s.id::bigint,jsonb_build_object('spot_title',s.title,
-     'spot_group_title',info.nodes->info.group_node::text->>'label',
-     'spot_group_kind',public.order_seating_kind_internal(info.nodes,info.node_id::text,info.group_node::text))
+     'spot_group_title',coalesce(nullif(trim(info.group_title),''),info.assembly->>'title'),
+     'spot_group_kind',info.assembly->>'kind')
    || coalesce(CASE WHEN s.blueprint IS NULL
       THEN public.order_standing_spot_metadata_internal(s.id) END,'{}')
  FROM spots s
  LEFT JOIN LATERAL (
-   SELECT p.nodes,binding.node_id,binding.group_node
+   SELECT p.nodes->binding.group_node::text->>'label' group_title,
+    public.order_seating_assembly_internal(p.nodes,binding.node_id::text,binding.group_node::text) assembly
    FROM eshop.blueprint_seat_bindings binding
    JOIN plan_nodes p ON p.blueprint=binding.blueprint AND p.occasion=s.occasion
    WHERE binding.spot=s.id AND binding.blueprint=s.blueprint LIMIT 1
@@ -501,15 +503,16 @@ RETURNS TABLE(ticket_id bigint,dto jsonb) LANGUAGE sql STABLE SET search_path=pu
  FROM eshop.products p LEFT JOIN eshop.product_types pt ON pt.id=p.product_type WHERE p.occasion=p_occasion AND EXISTS(SELECT 1 FROM eshop.order_product_ticket z WHERE z.ticket=b.id AND z.product=p.id)
  AND ((p_config#>>'{products,mode}')='all' OR ((p_config#>>'{products,mode}')='selected' AND (p_config#>'{products,ids}') @> to_jsonb(ARRAY[p.id])))),'[]'::jsonb),
  'spot',(SELECT s.title FROM eshop.spots s JOIN eshop.order_product_ticket z ON z.id=s.order_product_ticket WHERE z.ticket=b.id ORDER BY s.id LIMIT 1),
- 'spot_group',coalesce((SELECT jsonb_build_object('blueprint_id',bp.id,'id',g->>'id','title',g->>'label',
-    'kind',public.order_seating_kind_internal(pn.nodes,sb.node_id::text,sb.group_node::text))
+ 'spot_group',coalesce((SELECT jsonb_build_object('blueprint_id',bp.id,'id',coalesce(g->>'id',assembly->>'id'),
+    'title',coalesce(nullif(trim(g->>'label'),''),assembly->>'title'),'kind',assembly->>'kind')
  FROM eshop.spots sp JOIN eshop.order_product_ticket z ON z.id=sp.order_product_ticket
  JOIN eshop.blueprints bp ON bp.id=sp.blueprint
  JOIN eshop.blueprint_seat_bindings sb ON sb.blueprint=bp.id AND sb.spot=sp.id
  JOIN plan_nodes pn ON pn.blueprint=bp.id
- CROSS JOIN LATERAL (SELECT pn.nodes->sb.group_node::text AS g) group_node
+ CROSS JOIN LATERAL (SELECT pn.nodes->sb.group_node::text AS g,
+   public.order_seating_assembly_internal(pn.nodes,sb.node_id::text,sb.group_node::text) AS assembly) group_node
  WHERE z.ticket=b.id AND sp.occasion=p_occasion
- AND g->>'kind' IN ('group','table','furniture')
+ AND (g->>'kind' IN ('group','table','furniture') OR assembly IS NOT NULL)
  AND bp.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion) ORDER BY sp.id LIMIT 1),
  (SELECT jsonb_build_object('kind','standing','title',standing.metadata->>'standing_area_title')
   FROM eshop.spots sp JOIN eshop.order_product_ticket z ON z.id=sp.order_product_ticket

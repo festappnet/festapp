@@ -2471,7 +2471,7 @@ DO $$ BEGIN
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_settings_rule(boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='2b1717b65933cede78c39b44f5d6230d'),'current SQL source parity: public.scanner_settings_rule(boolean,boolean,boolean)');
 -- supabase/migrations/20261124163000_typed_seating_labels.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_ticket_projection_internal(bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='5e098b49f2b730cda03e4fcd62b27859'),'current SQL source parity: public.scanner_ticket_projection_internal(bigint,jsonb,bigint)');
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.scanner_ticket_projection_internal(bigint,jsonb,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c2129dd1ef5d5f44c7f0ef84953a397d'),'current SQL source parity: public.scanner_ticket_projection_internal(bigint,jsonb,bigint)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.schedule_entry_navigation_rule(boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='f0258b7a3cc8e3a024dee1a96d34d407'),'current SQL source parity: public.schedule_entry_navigation_rule(boolean)');
 -- supabase/baseline/20261107170000_schema.sql

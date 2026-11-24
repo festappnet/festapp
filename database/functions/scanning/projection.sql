@@ -46,15 +46,16 @@ RETURNS TABLE(ticket_id bigint,dto jsonb) LANGUAGE sql STABLE SET search_path=pu
  FROM eshop.products p LEFT JOIN eshop.product_types pt ON pt.id=p.product_type WHERE p.occasion=p_occasion AND EXISTS(SELECT 1 FROM eshop.order_product_ticket z WHERE z.ticket=b.id AND z.product=p.id)
  AND ((p_config#>>'{products,mode}')='all' OR ((p_config#>>'{products,mode}')='selected' AND (p_config#>'{products,ids}') @> to_jsonb(ARRAY[p.id])))),'[]'::jsonb),
  'spot',(SELECT s.title FROM eshop.spots s JOIN eshop.order_product_ticket z ON z.id=s.order_product_ticket WHERE z.ticket=b.id ORDER BY s.id LIMIT 1),
- 'spot_group',coalesce((SELECT jsonb_build_object('blueprint_id',bp.id,'id',g->>'id','title',g->>'label',
-    'kind',public.order_seating_kind_internal(pn.nodes,sb.node_id::text,sb.group_node::text))
+ 'spot_group',coalesce((SELECT jsonb_build_object('blueprint_id',bp.id,'id',coalesce(g->>'id',assembly->>'id'),
+    'title',coalesce(nullif(trim(g->>'label'),''),assembly->>'title'),'kind',assembly->>'kind')
  FROM eshop.spots sp JOIN eshop.order_product_ticket z ON z.id=sp.order_product_ticket
  JOIN eshop.blueprints bp ON bp.id=sp.blueprint
  JOIN eshop.blueprint_seat_bindings sb ON sb.blueprint=bp.id AND sb.spot=sp.id
  JOIN plan_nodes pn ON pn.blueprint=bp.id
- CROSS JOIN LATERAL (SELECT pn.nodes->sb.group_node::text AS g) group_node
+ CROSS JOIN LATERAL (SELECT pn.nodes->sb.group_node::text AS g,
+   public.order_seating_assembly_internal(pn.nodes,sb.node_id::text,sb.group_node::text) AS assembly) group_node
  WHERE z.ticket=b.id AND sp.occasion=p_occasion
- AND g->>'kind' IN ('group','table','furniture')
+ AND (g->>'kind' IN ('group','table','furniture') OR assembly IS NOT NULL)
  AND bp.organization=(SELECT organization FROM public.occasions WHERE id=p_occasion) ORDER BY sp.id LIMIT 1),
  (SELECT jsonb_build_object('kind','standing','title',standing.metadata->>'standing_area_title')
   FROM eshop.spots sp JOIN eshop.order_product_ticket z ON z.id=sp.order_product_ticket
