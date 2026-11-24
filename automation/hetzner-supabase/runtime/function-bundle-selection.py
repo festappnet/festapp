@@ -173,8 +173,8 @@ def stage_exact_shared(current, stage, manifest):
     require(set(stage.rglob('*')) == directories | {stage / name for name in modules},
             'Exact shared archive contains unexpected paths')
     for name in planned['shared_modules']:
-        # The entire installed tree stays pinned. Compare direct imports only
-        # for the replacement files and keep the existing dependency graph.
+        # Keep the installed tree pinned. Dropping imports from a replacement
+        # leaves the remaining dependency files and their pinned bytes intact.
         before = set(imports(current / name))
         after = set(imports(stage / name))
         if name == AUTHORING_CONTEXT:
@@ -183,7 +183,7 @@ def stage_exact_shared(current, stage, manifest):
                     and all(resource in base['files'] for resource in AUTHORING_QR_RESOURCES),
                     'Exact authoring replacement changes dependencies')
         else:
-            require(before == after, 'Exact shared replacement changes dependencies')
+            require(after <= before, 'Exact shared replacement changes dependencies')
     replacements = {name: (stage / name).read_bytes() for name in planned['shared_modules']}
     shutil.copytree(current, stage, dirs_exist_ok=True)
     for name, content in replacements.items():
