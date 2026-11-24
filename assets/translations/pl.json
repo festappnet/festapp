@@ -1574,8 +1574,8 @@
       "accountDeletionComplete_description": "Wysyłana po zakończeniu usuwania konta.",
       "ticketOrderConfirmation_description": "Wysyłana po przyjęciu nowego zamówienia. Potwierdza jego utworzenie, nawet jeśli nie zostało jeszcze opłacone.",
       "ticketOrderUpdate_description": "Wysyłana, gdy administrator po edycji zamówienia wysyła aktualizację. Pokazuje zmiany i bieżący stan płatności.",
-      "ticketOrderPaymentDone_description": "Wysyłana po potwierdzeniu zaliczki lub dopłaty do zamówienia z zaliczką. Bilety są wysyłane osobno.",
-      "ticketOrderPaymentReminder_description": "Wysyłana przed terminem niezapłaconej kwoty, jeśli przypomnienia są włączone. Termin wysyłki określają ustawienia formularza lub wydarzenia.",
+      "ticketOrderPaymentDone_description": "Szablon służy do potwierdzenia zaliczki lub dopłaty oraz do wysyłki biletów po pełnej wpłacie.",
+      "ticketOrderPaymentReminder_description": "Wysyłane, gdy płatność przelewem jest nadal nieuregulowana i włączono przypomnienia. Termin wysyłki zależy od ustawień formularza lub wydarzenia.",
       "ticketOrderStorno_description": "Wysyłana przy anulowaniu zamówienia, jeśli administrator wybierze powiadomienie klienta.",
       "teamInvitation_title": "Zaproszenie do zespołu",
       "teamInvitation_description": "Zaproszona osoba otrzymuje link do przyjęcia roli w zespole wydarzenia.",
@@ -3703,7 +3703,7 @@
     },
     "EmailTemplates": {
       "usage": {
-        "ticketOrderPaymentDone_description": "Wysyłana po potwierdzeniu zaliczki lub dopłaty do zamówienia z zaliczką. Zgłoszenia są wysyłane osobno."
+        "ticketOrderPaymentDone_description": "Szablon służy do potwierdzenia zaliczki, dopłaty lub opłaconego zgłoszenia."
       }
     },
     "FeatureBlueprint": {

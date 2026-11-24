@@ -1,5 +1,7 @@
 import 'package:festapp_core/formatting.dart';
 
+import '../payments/configuration.dart';
+
 /// Display-only inputs. These never create an order or enter template storage.
 class EmailPreviewProduct {
   final String title, typeTitle, currency;
@@ -24,11 +26,11 @@ class EmailPreviewPaymentAccount {
 }
 
 class EmailPreviewContext {
-  final String? occasionTitle, deadline, communicationTone;
+  final String? occasionTitle, deadline, communicationTone, paymentMethod;
   final EmailPreviewPaymentAccount? paymentAccount;
   final bool? ticketsEnabled;
   final bool? blueprintEnabled;
-  final bool cancellationAvailable, inlinePaymentQr, cashOnly;
+  final bool cancellationAvailable, inlinePaymentQr;
   bool get singleApplication =>
       ticketsEnabled == false && blueprintEnabled != true;
   final List<EmailPreviewProduct> products;
@@ -40,10 +42,16 @@ class EmailPreviewContext {
     this.blueprintEnabled,
     this.cancellationAvailable = false,
     this.inlinePaymentQr = true,
-    this.cashOnly = false,
+    this.paymentMethod,
     this.paymentAccount,
     this.products = const [],
   });
+
+  static String? samplePaymentMethod(FormPaymentConfiguration payments) {
+    if (payments.cashEnabled) return 'cash';
+    if (payments.bankEnabled) return 'bank';
+    return payments.connections.keys.firstOrNull;
+  }
 
   EmailPreviewContext withPaymentAccount(EmailPreviewPaymentAccount? account) =>
       EmailPreviewContext(
@@ -54,7 +62,7 @@ class EmailPreviewContext {
         blueprintEnabled: blueprintEnabled,
         cancellationAvailable: cancellationAvailable,
         inlinePaymentQr: inlinePaymentQr,
-        cashOnly: cashOnly,
+        paymentMethod: paymentMethod,
         products: products,
         paymentAccount: account ?? paymentAccount,
       );

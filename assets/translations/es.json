@@ -1295,9 +1295,9 @@
       "ticketOrderUpdate_title": "Actualización del pedido",
       "ticketOrderUpdate_description": "Se envía cuando un administrador envía una actualización tras editar un pedido. Muestra los cambios y el estado actual del pago.",
       "ticketOrderPaymentDone_title": "Pedido pagado",
-      "ticketOrderPaymentDone_description": "Se envía cuando se confirma el pago de un anticipo o del importe restante de un pedido con anticipo. Las entradas se envían por separado.",
+      "ticketOrderPaymentDone_description": "Se usa para confirmar un anticipo o el pago del saldo y para enviar las entradas una vez abonado el importe total.",
       "ticketOrderPaymentReminder_title": "Recordatorio de pago del pedido",
-      "ticketOrderPaymentReminder_description": "Se envía antes del vencimiento de un pago pendiente, si los recordatorios están activados. Los ajustes del formulario o del evento determinan cuándo se envía.",
+      "ticketOrderPaymentReminder_description": "Se envía si hay una transferencia pendiente y los recordatorios están activados. Los ajustes del formulario o del evento determinan cuándo se envía.",
       "ticketOrderStorno_title": "Anulación del pedido",
       "ticketOrderStorno_description": "Se envía cuando se anula un pedido y el administrador decide notificarlo al cliente.",
       "waitlistConfirmation_title": "Confirmación de lista de espera",
@@ -5794,7 +5794,7 @@
     },
     "EmailTemplates": {
       "usage": {
-        "ticketOrderPaymentDone_description": "Se envía cuando se confirma el pago de un anticipo o del importe restante de un pedido con anticipo. Las solicitudes se envían por separado."
+        "ticketOrderPaymentDone_description": "Se usa para confirmar un anticipo, el pago del saldo o una inscripción pagada."
       }
     },
     "FeatureBlueprint": {

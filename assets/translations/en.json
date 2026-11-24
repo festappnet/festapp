@@ -1302,9 +1302,9 @@
       "ticketOrderUpdate_title": "Order Update",
       "ticketOrderUpdate_description": "Sent when an administrator sends an update after editing an order. Shows the changes and current payment status.",
       "ticketOrderPaymentDone_title": "Order Payment Done",
-      "ticketOrderPaymentDone_description": "Sent after a deposit or the remaining balance of a deposit order is confirmed as paid. Tickets are sent separately.",
+      "ticketOrderPaymentDone_description": "Used to confirm a deposit or its remaining balance, and to deliver tickets after full payment.",
       "ticketOrderPaymentReminder_title": "Order Payment Reminder",
-      "ticketOrderPaymentReminder_description": "Sent before an outstanding payment is due, if reminders are enabled. The form or event settings determine when it is sent.",
+      "ticketOrderPaymentReminder_description": "Sent for an unpaid bank transfer if reminders are enabled. The form or event settings determine when it is sent.",
       "ticketOrderStorno_title": "Order Cancellation",
       "ticketOrderStorno_description": "Sent when an order is cancelled and the administrator chooses to notify the customer.",
       "waitlistConfirmation_title": "Waitlist confirmation",
@@ -5808,7 +5808,7 @@
     },
     "EmailTemplates": {
       "usage": {
-        "ticketOrderPaymentDone_description": "Sent after a deposit or the remaining balance of a deposit order is confirmed as paid. Applications are sent separately."
+        "ticketOrderPaymentDone_description": "Used to confirm a deposit or its remaining balance, and to confirm a paid registration."
       }
     },
     "FeatureBlueprint": {

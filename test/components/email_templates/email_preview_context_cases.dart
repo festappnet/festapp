@@ -82,7 +82,7 @@ void main() {
       ],
       loadProducts: (_) async => bundle([]),
     );
-    expect(result.context.cashOnly, isTrue);
+    expect(result.context.paymentMethod, 'cash');
     final examples = EmailPreviewExamples.fromJson(
       jsonDecode(File('assets/email_templates/preview_examples.json').readAsStringSync()),
       context: result.context,
@@ -101,7 +101,8 @@ void main() {
     expect(paidHtml, isNot(contains('K úhradě na místě')));
     expect(paidHtml, isNot(contains('U vstupu.')));
     for (final code in [
-      'TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_PAYMENT_DONE', 'TICKET_ORDER_REMINDER',
+      'TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_UPDATE', 'TICKET_ORDER_PAYMENT_DONE',
+      'TICKET_ORDER_REMINDER', 'TICKET_ORDER_STORNO',
     ]) {
       for (final sample in examples.scenariosFor(code)) {
         expect(sample.paymentQrSample, isNull);
@@ -111,6 +112,45 @@ void main() {
         );
       }
     }
+  });
+  test('each order preview matches collection eligibility and payment state', () {
+    final fixture = jsonDecode(
+      File('assets/email_templates/preview_examples.json').readAsStringSync(),
+    );
+    EmailPreviewExamples examples(String method) => EmailPreviewExamples.fromJson(
+      fixture,
+      context: EmailPreviewContext(paymentMethod: method, cancellationAvailable: true),
+    );
+    const collectable = [
+      'TICKET_ORDER_CONFIRMATION', 'TICKET_ORDER_UPDATE', 'TICKET_ORDER_REMINDER',
+    ];
+    for (final method in ['bank', 'cash', 'stripe']) {
+      final samples = examples(method);
+      for (final code in collectable) {
+        final example = samples.scenariosFor(code)
+            .firstWhere((sample) => sample.locale == 'cs');
+        expect(example.paymentQrSample != null, method == 'bank');
+      }
+      final paid = samples.scenariosFor('TICKET_ORDER_PAYMENT_DONE')
+          .firstWhere((sample) => sample.locale == 'cs');
+      expect(paid.scenario, endsWith('paid'));
+      expect(paid.values['paymentAction'], isEmpty);
+      expect(paid.paymentQrSample, isNull);
+      expect(paid.values['balanceReasoning'], isNot(contains('K úhradě na místě')));
+      final cancelled = samples.scenariosFor('TICKET_ORDER_STORNO');
+      for (final sample in cancelled) {
+        expect(sample.contextDefaults['preview_collection_allowed'], 'false');
+        expect(sample.values['paymentAction'], isEmpty);
+        expect(sample.paymentQrSample, isNull);
+        expect(sample.requiredLinks.every((link) => link.companionHtml.isEmpty), isTrue);
+      }
+    }
+    final deposit = examples('bank').scenariosFor('TICKET_ORDER_PAYMENT_DONE')
+        .firstWhere((sample) => sample.scenario == 'deposit' && sample.locale == 'cs');
+    expect(deposit.values['amount'], contains('300'));
+    expect(deposit.values['paymentAction'], contains('500'));
+    expect(deposit.values['paymentAction'], isNot(contains('300')));
+    expect(deposit.paymentQrSample?['amount'], 500);
   });
   for (final blueprintEnabled in [false, true]) {
     test(

@@ -45,11 +45,12 @@ class EmailPreviewExamples {
         .map((entry) => entry.code)
         .toSet();
     final matching = records.where((r) => r.templateCode == templateCode);
-    final cash = matching.where(
-      (r) => r.contextDefaults['preview_payment_method'] == 'cash',
+    final paymentMethod = context?.paymentMethod;
+    final matchingPayment = matching.where(
+      (r) => r.contextDefaults['preview_payment_method'] == paymentMethod,
     );
-    final scenarios = context?.cashOnly == true && cash.isNotEmpty
-        ? cash
+    final scenarios = paymentMethod != null && matchingPayment.isNotEmpty
+        ? matchingPayment
         : matching;
     return scenarios.map((r) {
       final currency = context?.products.firstOrNull?.currency ??
