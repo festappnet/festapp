@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:fstapp/components/unit/unit_model.dart';
 import 'package:fstapp/components/unit/unit_strings.dart';
+import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 
 Future<UnitModel?> showOccasionCopyTargetDialog(
@@ -11,6 +12,12 @@ Future<UnitModel?> showOccasionCopyTargetDialog(
   final units = {for (final unit in destinations) unit.id!: unit};
   var selected =
       units.containsKey(sourceUnitId) ? sourceUnitId! : units.keys.first;
+  final favoriteIds =
+      RightsService.currentUser()?.favoriteUnitIds ?? const <int>{};
+  final orderedUnits = [
+    ...units.values.where((unit) => favoriteIds.contains(unit.id)),
+    ...units.values.where((unit) => !favoriteIds.contains(unit.id)),
+  ];
   return showDialog<UnitModel>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -31,12 +38,31 @@ Future<UnitModel?> showOccasionCopyTargetDialog(
                                 isExpanded: true,
                                 decoration: InputDecoration(
                                     labelText: UnitStrings.copyTargetUnit),
-                                items: units.values
-                                    .map((unit) => DropdownMenuItem(
-                                        value: unit.id!,
-                                        child: Text(
-                                            unit.title ?? unit.id.toString())))
-                                    .toList(),
+                                items: [
+                                  for (final unit in orderedUnits)
+                                    DropdownMenuItem(
+                                      value: unit.id!,
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              unit.title ?? unit.id.toString(),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (favoriteIds.contains(unit.id)) ...[
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              Icons.star,
+                                              size: 18,
+                                              color: Theme.of(dialogContext)
+                                                  .primaryColor,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                ],
                                 onChanged: (id) {
                                   if (id != null)
                                     setDialogState(() => selected = id);
