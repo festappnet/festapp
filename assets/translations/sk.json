@@ -1915,7 +1915,7 @@
     "back": "Späť k vlastným akciám"
   },
   "OrderOverview": {
-    "table": "Stôl",
+    "table": "Stôl (skupina)",
     "seat": "Miesto",
     "unavailableTitle": "Objednávka nie je dostupná",
     "unavailable": "Objednávka mohla byť vymazaná alebo odkaz už nie je platný. Ak potrebujete pomoc, kontaktujte organizátora podujatia.",
@@ -2376,7 +2376,6 @@
     "dinner": "Večera",
     "purchaser": "Objednávateľ",
     "ticket_label": "Vstupenka",
-    "table": "Stôl",
     "shared_order": "Spoločná objednávka",
     "ticket_group": "Scanned tickets",
     "group_hint": "Each ticket is checked separately. Select one to see its details.",

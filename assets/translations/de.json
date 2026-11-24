@@ -1649,7 +1649,7 @@
     "back": "Zurück zu Ihren Veranstaltungen"
   },
   "OrderOverview": {
-    "table": "Tisch",
+    "table": "Tisch (Gruppe)",
     "seat": "Sitzplatz",
     "unavailableTitle": "Bestellung nicht verfügbar",
     "unavailable": "Die Bestellung wurde möglicherweise gelöscht oder der Link ist nicht mehr gültig. Wenn Sie Hilfe benötigen, wenden Sie sich an den Veranstalter.",
@@ -2110,7 +2110,6 @@
     "dinner": "Abendessen",
     "purchaser": "Bestellt von",
     "ticket_label": "Eintrittskarte",
-    "table": "Tisch",
     "shared_order": "Gemeinsame Bestellung",
     "ticket_group": "Scanned tickets",
     "group_hint": "Each ticket is checked separately. Select one to see its details.",

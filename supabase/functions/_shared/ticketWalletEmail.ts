@@ -1,4 +1,4 @@
-import {ticketSeating,ticketShowsSeat} from './ticketRenderData.ts';
+import {seatingLabels,ticketSeating,ticketShowsSeat} from './ticketRenderData.ts';
 import { escapeTicketText } from './ticketDelivery.ts';
 import { openEmail, sealEmail } from './emailPayload.ts';
 import { walletHash } from './wallet/identity.ts';
@@ -25,9 +25,25 @@ const walletEmailSingular:Record<string,{title:string;help:string}>={
  pl:{title:'Bilet w telefonie',help:'Zapisz bilet w portfelu w telefonie. Przy wejściu wystarczy pokazać jego kod QR.'},
  uk:{title:'Квиток у телефоні',help:'Збережіть квиток у гаманці на телефоні. На вході достатньо показати його QR-код.'},
 };
-export function walletTicketLabel(index:number,count:number,lang:string) {
- if(count===1)return ({cs:'Vstupenka',sk:'Vstupenka',en:'Ticket',de:'Ticket',pl:'Bilet',uk:'Квиток'} as Record<string,string>)[lang]??'Ticket';
- return (walletEmailCopy[lang]??walletEmailCopy.en).ticket.replace('{n}',String(index)).replace('{count}',String(count));
+export function walletTicketLabel(
+  index: number,
+  count: number,
+  lang: string,
+  seating?: { table: string | null; seat: string | null },
+) {
+  const single: Record<string, string> = {
+    cs: 'Vstupenka', sk: 'Vstupenka', en: 'Ticket', de: 'Ticket', pl: 'Bilet', uk: 'Квиток',
+  };
+  const ticket = count === 1
+    ? single[lang] ?? single.en
+    : (walletEmailCopy[lang] ?? walletEmailCopy.en).ticket
+      .replace('{n}', String(index)).replace('{count}', String(count));
+  const labels = seatingLabels(lang);
+  return [
+    ticket,
+    seating?.table && `${labels.group}: ${seating.table}`,
+    seating?.seat && `${labels.seat}: ${seating.seat}`,
+  ].filter(Boolean).join(' - ');
 }
 export function googleWalletBadgeUrl(lang:string) {
  return `https://img.festapp.net/assets/google-wallet/v1/${Object.hasOwn(walletEmailProviders.google.labels,lang)?lang:'en'}.png`;
@@ -105,7 +121,10 @@ export async function prepareWalletEmail(row:any,tickets:any[],feature:any,rpc:W
   if(source.purpose!=='ticket_wallet'||source.ticketId!==ticket.id||source.organization!==context.organization||source.occasion!==context.occasion||await walletHash(source.token)!==context.source.tokenHash)throw new Error('wallet_source');
   const url=walletEmailUrl(context,source.token,lang);
   const seating=ticketSeating(ticket);
-  const description=[walletTicketLabel(index+1,tickets.length,lang),ticketShowsSeat(feature)?seating.seat:null,seating.table].filter(Boolean).join(' - ');
+  const description = walletTicketLabel(index + 1, tickets.length, lang, {
+    table: seating.table,
+    seat: ticketShowsSeat(feature) ? seating.seat : null,
+  });
   const actions=walletActions(context,url,lang,ready);
   if(actions.length)prepared.push({ticketId:ticket.id,context,url,description,actions});
  }

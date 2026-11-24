@@ -170,7 +170,7 @@ class TicketLayoutStrings {
   static String get ticketSymbol => 'TicketLayout.ticketSymbol'.tr();
   static String get seat => 'TicketLayout.seat'.tr();
   static String get showSeat => 'TicketLayout.showSeat'.tr();
-  static String get spotGroup => 'TicketLayout.spotGroup'.tr();
+  static String get spotGroup => 'OrderOverview.table'.tr();
   static String get note => 'TicketLayout.note'.tr();
   static String get price => 'TicketLayout.price'.tr();
   static String get occasionTitle => 'TicketLayout.occasionTitle'.tr();
@@ -178,6 +178,7 @@ class TicketLayoutStrings {
   static String get orderName => 'TicketLayout.orderName'.tr();
   static String get logo => 'TicketLayout.logo'.tr();
   static String get footer => 'TicketLayout.footer'.tr();
-  static String binding(String value) =>
-      'TicketLayout.${value == 'footer' ? 'text' : value}'.tr();
+  static String binding(String value) => value == 'spotGroup'
+      ? spotGroup
+      : 'TicketLayout.${value == 'footer' ? 'text' : value}'.tr();
 }

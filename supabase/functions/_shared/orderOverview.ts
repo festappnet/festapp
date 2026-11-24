@@ -9,12 +9,26 @@ import {
   type MetaSurchargeAmount,
 } from "./metaSurcharge.ts";
 
+// BEGIN GENERATED SEATING LABELS
+const overviewSeatingLabels = {
+  "cs": {
+    "group": "Stůl (skupina)",
+    "seat": "Místo"
+  },
+  "en": {
+    "group": "Table (group)",
+    "seat": "Seat"
+  }
+};
+// END GENERATED SEATING LABELS
+
 export const ORDER_OVERVIEW_LINK_SLOT = '<!-- customer-order-overview-link -->';
 export function generateFullOrder(orderData: any, tickets: any[], occasionFeatures: any[], lang: 'cs' | 'en' = 'cs', orderSymbol?: string, decimalDigits = 0): string {
     const currencyFormat = (amount: number, currency: string) => orderData.discount
         ? formatDisplayNumber(amount, lang === 'cs' ? 'cs-CZ' : 'en', {style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2})
         : formatCurrency(amount, currency, decimalDigits);
     const { name, surname, email, phone, note } = orderData;
+    const seatLabels = overviewSeatingLabels[lang];
 
     const tr = {
         cs: {
@@ -26,8 +40,6 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             ticket: "Vstupenka",
             application: "Přihláška",
             itemNote: "Poznámka",
-            table: "Stůl",
-            seat: "Místo",
             standing: "Stání",
             totalPrice: "Celková cena",
         },
@@ -40,8 +52,6 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             ticket: "Ticket",
             application: "Application",
             itemNote: "Note",
-            table: "Table",
-            seat: "Seat",
             standing: "Standing",
             totalPrice: "Total Price",
         }
@@ -105,7 +115,7 @@ export function generateFullOrder(orderData: any, tickets: any[], occasionFeatur
             const formattedPrice = currencyFormat(displayedPrice, product.currency_code || currencyCode);
 
             const title = [product.type_title, product.title].filter((value, index, values) => value && values.indexOf(value) === index).map(escapeEmailHtml).join(': ');
-            const seating = [[tr.table, product.spot_group_title], [tr.seat, product.spot_title]]
+            const seating = [[seatLabels.group, product.spot_group_title], [seatLabels.seat, product.spot_title]]
                 .filter(([, value]) => value != null && String(value).trim() !== '')
                 .map(([label, value]) => `${label}: ${escapeEmailHtml(value)}`).join(' · ');
             const admission = product.is_standing ? [tr.standing, product.standing_area_title].filter(value => value != null && String(value).trim()).map(escapeEmailHtml).join(': ') : seating;

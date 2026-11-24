@@ -1,3 +1,4 @@
+import 'package:festapp_core/wallet_seating_labels.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -147,14 +148,14 @@ class TicketWalletCardPreview extends StatelessWidget {
         children: [
           Expanded(
             child: field(
-              apple ? 'Stůl / Table' : TicketLayoutStrings.spotGroup,
+              apple ? walletSeatGroupLabel : TicketLayoutStrings.spotGroup,
               '12',
             ),
           ),
           if (showSeat)
             Expanded(
               child: field(
-                apple ? 'Místo / Seat' : TicketLayoutStrings.seat,
+                apple ? walletSeatLabel : TicketLayoutStrings.seat,
                 '3',
                 alignEnd: true,
               ),
