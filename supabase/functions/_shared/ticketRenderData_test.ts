@@ -37,6 +37,7 @@ Deno.test('ticket price follows currency display precision', () => {
  const price = (amount: number, currency_code: string) =>
   normalizeTicketData({price: amount, currency_code}, {}, {}).price?.replaceAll('\u00a0', ' ');
  assertEquals(price(0, 'CZK'), 'Cena: 0 Kč');
+ assertEquals(price(0, 'EUR'), 'Cena: 0 €');
  assertEquals(price(380, 'CZK'), 'Cena: 380 Kč');
  assertEquals(price(12.50, 'EUR'), 'Cena: 12,50 €');
  assertEquals(price(200, 'JPY'), 'Cena: 200 JP¥');

@@ -20,3 +20,10 @@ test('web, email and PDF share the number policy', async () => {
     assert.equal(formatDisplayNumber(10000, 'en-US'), '10,000');
     assert.equal(formatDisplayNumber(1350.5, 'de-DE'), '1350,5');
 });
+
+test('zero currency omits decimals with any display precision', async () => {
+    const { formatCurrency } = await import('../../../supabase/functions/_shared/utilities.ts');
+    assert.equal(normalized(formatCurrency(0, 'EUR', 2)), '0 €');
+    assert.equal(formatPrice(-0, 'USD', 2, 'en-US'), '$0');
+    assert.equal(normalized(formatCurrency(0.01, 'EUR', 2)), '0,01 €');
+});

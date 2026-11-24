@@ -6,10 +6,12 @@ export function formatDisplayNumber(
   locale: string = 'cs-CZ',
   options: Intl.NumberFormatOptions = {},
 ): string {
+  const zeroCurrency = options.style === 'currency' && value === 0;
   return new Intl.NumberFormat(locale, {
     ...options,
+    ...(zeroCurrency && { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
     useGrouping: Math.abs(value) >= numberGroupingThreshold,
-  }).format(value);
+  }).format(zeroCurrency ? 0 : value);
 }
 
 // Ticket display can override the currency's ISO fraction digits without

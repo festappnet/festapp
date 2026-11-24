@@ -29,20 +29,21 @@ String formatDisplayCurrency(
   int? decimalDigits,
   bool simple = false,
 }) {
+  final digits = value == 0 ? 0 : decimalDigits;
   return _format(
     simple
         ? NumberFormat.simpleCurrency(
             locale: locale,
             name: name,
-            decimalDigits: decimalDigits,
+            decimalDigits: digits,
           )
         : NumberFormat.currency(
             locale: locale,
             name: name,
             symbol: symbol,
-            decimalDigits: decimalDigits,
+            decimalDigits: digits,
           ),
-    value,
+    value == 0 ? 0 : value,
   );
 }
 
