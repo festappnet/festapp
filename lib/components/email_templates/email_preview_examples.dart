@@ -44,7 +44,14 @@ class EmailPreviewExamples {
             const <EmailTemplateSub>[])
         .map((entry) => entry.code)
         .toSet();
-    return records.where((r) => r.templateCode == templateCode).map((r) {
+    final matching = records.where((r) => r.templateCode == templateCode);
+    final cash = matching.where(
+      (r) => r.contextDefaults['preview_payment_method'] == 'cash',
+    );
+    final scenarios = context?.cashOnly == true && cash.isNotEmpty
+        ? cash
+        : matching;
+    return scenarios.map((r) {
       final currency = context?.products.firstOrNull?.currency ??
           r.contextDefaults['preview_currency'] ??
           'CZK';

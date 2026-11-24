@@ -1,5 +1,6 @@
 import 'package:festapp_core/communication_tone.dart';
 import 'package:festapp_core/forms.dart';
+import 'package:festapp_core/payments.dart';
 
 import '../forms/db_forms.dart';
 import '../forms/models/form_bundle.dart';
@@ -54,12 +55,18 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
       : null;
   var unavailable = false;
   FormBundle? sampleForm;
+  var payments = const FormPaymentConfiguration();
   if (link != null && link.isNotEmpty) {
     try {
       final forms = await (loadForms ?? DbForms.getAllFormsByOccasionLink)(
         link,
       );
-      sampleForm = forms.firstOrNull;
+      sampleForm = forms.where((form) => form.definition.isOpen == true).firstOrNull ??
+          forms.firstOrNull;
+      final savedPayments = sampleForm?.definition.data?['payments'];
+      payments = FormPaymentConfiguration.fromJson(
+        savedPayments is Map ? savedPayments : null,
+      );
       tone = CommunicationTone.resolve(
         sampleForm?.definition.data?['communication_tone'],
         inheritedTone,
@@ -76,6 +83,7 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
       (f) => f.code == FeatureConstants.blueprint && f.isEnabled,
     ),
     deadline: DateFormat.yMd().format(deadline),
+    cashOnly: payments.cashEnabled && !payments.bankEnabled,
     cancellationAvailable: sampleForm?.customerCancellationAvailable == true,
     inlinePaymentQr: FormMetadata.showPaymentQrInEmail(
       sampleForm?.definition.data,
@@ -117,6 +125,7 @@ Future<EmailPreviewContextResult> loadEmailPreviewContext(
         blueprintEnabled: base.blueprintEnabled,
         cancellationAvailable: base.cancellationAvailable,
         inlinePaymentQr: base.inlinePaymentQr,
+        cashOnly: base.cashOnly,
         products: selected
             .map(
               (p) => EmailPreviewProduct(

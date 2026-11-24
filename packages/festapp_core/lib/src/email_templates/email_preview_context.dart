@@ -28,7 +28,7 @@ class EmailPreviewContext {
   final EmailPreviewPaymentAccount? paymentAccount;
   final bool? ticketsEnabled;
   final bool? blueprintEnabled;
-  final bool cancellationAvailable, inlinePaymentQr;
+  final bool cancellationAvailable, inlinePaymentQr, cashOnly;
   bool get singleApplication =>
       ticketsEnabled == false && blueprintEnabled != true;
   final List<EmailPreviewProduct> products;
@@ -40,6 +40,7 @@ class EmailPreviewContext {
     this.blueprintEnabled,
     this.cancellationAvailable = false,
     this.inlinePaymentQr = true,
+    this.cashOnly = false,
     this.paymentAccount,
     this.products = const [],
   });
@@ -53,6 +54,7 @@ class EmailPreviewContext {
         blueprintEnabled: blueprintEnabled,
         cancellationAvailable: cancellationAvailable,
         inlinePaymentQr: inlinePaymentQr,
+        cashOnly: cashOnly,
         products: products,
         paymentAccount: account ?? paymentAccount,
       );
