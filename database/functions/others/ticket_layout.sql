@@ -252,10 +252,19 @@ REVOKE ALL ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) FRO
 GRANT EXECUTE ON FUNCTION public.ticket_layout_uses_product_type(bigint,bigint) TO service_role;
 
 -- Only appearance fields may be copied from the ticket editor. Owned image metadata
--- is the authority for new backgrounds; no network resource is fetched by SQL.
+-- is the authority for uploads. The bundled gallery also has immutable artwork IDs.
 CREATE OR REPLACE FUNCTION public.merge_ticket_appearance_internal_v1(p_occasion bigint,p_features jsonb,p_appearance jsonb)
 RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path=public,extensions AS $$
-DECLARE result jsonb:='[]'; feature jsonb; background text; old_background text;
+DECLARE
+ result jsonb:='[]'; feature jsonb; background text; old_background text;
+ -- Keep these filename families aligned with backgroundFiles and galleryBackground in ticketGallery.ts.
+ themed_artwork constant text := 'concert-stub|festival-poster|club-panorama|theatre-program|gallery-square|gala-invitation|boarding-pass|cinema-strip|sports-arena|festival-badge|workshop-card';
+ gallery_pattern constant text := '^https://img[.]festapp[.]net/ticket-presets/v1/('
+  || '(aurora|midnight|coral)-v1[.]png|silk-ivory-v1[.]jpg|style-silk(-dark)?-v2[.]png|'
+  || '(concert-stub|festival-poster|club-panorama|theatre-program|gallery-square|boarding-pass)-v2[.]png|'
+  || '(' || themed_artwork || ')-v3[.]png|'
+  || 'theme-((clean|gala|energy|nature|soft|contrast)-(' || themed_artwork || ')-v1|soft-(' || themed_artwork || ')-v2)[.]png|'
+  || 'palette-[A-Fa-f0-9]{6}-[A-Fa-f0-9]{6}-(' || replace(themed_artwork,'-','_') || ')-v[12][.]png)$';
 BEGIN
  IF p_appearance IS NULL THEN RETURN p_features; END IF;
  IF jsonb_typeof(p_appearance) IS DISTINCT FROM 'object'
@@ -265,8 +274,13 @@ BEGIN
   RAISE invalid_parameter_value USING MESSAGE='invalid ticket appearance'; END IF;
  PERFORM public.validate_ticket_wallet_appearance(p_appearance);
  SELECT f->>'background' INTO old_background FROM jsonb_array_elements(p_features) f WHERE f->>'code'='ticket';
- background:=p_appearance->>'background';
- IF background IS NOT NULL AND background IS DISTINCT FROM old_background AND NOT EXISTS(
+ background:=nullif(p_appearance->>'background','');
+ IF p_appearance ? 'background' THEN
+  p_appearance:=p_appearance||jsonb_build_object('background',background);
+ END IF;
+ IF background IS NOT NULL AND background IS DISTINCT FROM old_background
+  AND background !~ gallery_pattern
+  AND NOT EXISTS(
   SELECT 1 FROM public.images i JOIN public.occasions o ON o.id=p_occasion
   WHERE i.link=background AND (i.occasion=o.id OR i.unit=o.unit)) THEN
   RAISE insufficient_privilege USING MESSAGE='ticket background must belong to this occasion or unit'; END IF;

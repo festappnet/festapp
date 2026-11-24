@@ -233,12 +233,11 @@ class TicketLayoutResources {
           100;
       final currency = currencies.single as String;
       base['price'] = 'Cena: ' +
-          formatDisplayCurrency(
+          formatTicketCurrency(
             total,
             locale: 'cs_CZ',
-            name: currency,
+            currency: currency,
             symbol: selected.values.first['currency_symbol'] as String,
-            decimalDigits: 0,
           );
     }
     return base;

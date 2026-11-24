@@ -574,7 +574,8 @@
     },
     {
       "migration": "20261119120000_default_form_close_at_occasion_end.sql",
-      "active": true,
+      "sha256": "919c76295d75e5e2ca69023e9d93ea6035209cbe96e04cc70cf0e75c7f2be54d",
+      "checkSources": true,
       "header": "-- Inherit the current occasion end for forms without a custom closing instant.",
       "sources": [
         "eshop_forms/get_effective_form_data.sql",
@@ -987,6 +988,25 @@
       ],
       "selectors": {
         "eshop_bank_sync/bank_sync_authority.sql": ["bank_sync_accounts_match"]
+      }
+    },
+    {
+      "migration": "20261124100000_ticket_gallery_email_banner.sql",
+      "active": true,
+      "header": "-- Accept bundled ticket artwork and render responsive banners without rewriting tenant data.",
+      "sources": [
+        "others/ticket_layout.sql",
+        "others/get_ticket_layout_write_contract_v1.sql",
+        "others/update_entity_email_banner.sql",
+        "others/get_email_template_and_wrapper.sql"
+      ],
+      "selectors": {
+        "others/ticket_layout.sql": [
+          "merge_ticket_appearance_internal_v1"
+        ],
+        "others/update_entity_email_banner.sql": [
+          "email_banner_wrapper_internal"
+        ]
       }
     }
   ]

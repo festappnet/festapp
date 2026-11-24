@@ -29,20 +29,39 @@ String formatDisplayCurrency(
   int? decimalDigits,
   bool simple = false,
 }) {
+  final digits = value == 0 ? 0 : decimalDigits;
   return _format(
     simple
         ? NumberFormat.simpleCurrency(
             locale: locale,
             name: name,
-            decimalDigits: decimalDigits,
+            decimalDigits: digits,
           )
         : NumberFormat.currency(
             locale: locale,
             name: name,
             symbol: symbol,
-            decimalDigits: decimalDigits,
+            decimalDigits: digits,
           ),
+    value == 0 ? 0 : value,
+  );
+}
+
+const _ticketCurrencyFractionDigits = {'CZK': 0};
+
+String formatTicketCurrency(
+  num value, {
+  required String currency,
+  String? locale,
+  String? symbol,
+}) {
+  final code = currency.toUpperCase();
+  return formatDisplayCurrency(
     value,
+    locale: locale,
+    name: code,
+    symbol: symbol,
+    decimalDigits: _ticketCurrencyFractionDigits[code],
   );
 }
 

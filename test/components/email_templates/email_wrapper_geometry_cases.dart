@@ -8,7 +8,7 @@ import 'package:fstapp/components/email_templates/email_preview_html.dart';
 
 const _message = '<p style="margin:0">Message content</p>';
 
-// Exact banner producer structure, including its intentionally full-width image.
+// Historical banner structure with its full-width image.
 String _bannerWrapper({required bool inset}) =>
     '<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;">'
     '<div style="text-align: center;">'
@@ -78,6 +78,25 @@ void main() {
   });
 
   for (final width in [320.0, 800.0]) {
+    testWidgets('responsive banner has equal insets at $width', (tester) async {
+      final text = await _render(
+        tester,
+        '<div style="max-width: 680px; margin: 0 auto;">'
+        '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" '
+        'style="width: 100%; table-layout: fixed;"><tr>'
+        '<td align="center" style="padding: 0 24px;"><img src="cid:fixture-banner" alt="Banner" '
+        'width="632" style="display: block; width: 100%; max-width: 632px; height: auto; margin: 0 auto;">'
+        '</td></tr></table>'
+        '<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">$_message</div></div>',
+        width,
+      );
+      final banner = tester.getRect(find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.label == 'Banner',
+      ));
+      expect(banner.center.dx, closeTo(width / 2, 0.1));
+      expect(banner.left, closeTo(text.left, 0.1));
+      expect(banner.right, closeTo(text.right, 0.1));
+    });
     for (final inset in [false, true]) {
       testWidgets(
           '${inset ? 'corrected' : 'original'} banner wrapper at $width respects source bounds',

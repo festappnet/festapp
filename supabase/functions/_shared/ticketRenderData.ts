@@ -1,7 +1,6 @@
-import { formatDisplayNumber } from './numberFormatting.ts';
+import { formatTicketCurrency } from './numberFormatting.ts';
 import { getMinimalisticDateRange } from './ticketDate.ts';
 import type { Template } from './ticketLayout.ts';
-import { formatCurrency } from './utilities.ts';
 export type RenderData = Record<string,string|null>;
 export interface PreviewProduct {
   id:number; product_type:number; title:string; short_title?:string|null;
@@ -71,7 +70,7 @@ export function normalizeTicketData(ticket:any,occasion:any,order:any={},catalog
     try {startTime=new Intl.DateTimeFormat(locale,options).format(new Date(occasion.start_time));}
     catch {startTime=new Intl.DateTimeFormat(locale,{...options,timeZone:'Europe/Prague'}).format(new Date(occasion.start_time));}
   }
-  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:seating.table?`${en ? 'Table' : 'Stůl'}: ${seating.table}`:null,note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatDisplayNumber(ticket.price,locale,{style:'currency',currency:ticket.currency_code||'CZK'})}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
+  const d:RenderData={qr:ticket.ticket_symbol,ticketSymbol:ticket.ticket_symbol,spotGroup:seating.table?`${en ? 'Table' : 'Stůl'}: ${seating.table}`:null,note:text(ticket.note)?`${en ? 'Note' : 'Poznámka'}: ${text(ticket.note)}`:null,price:ticket.price!=null?`${en ? 'Price' : 'Cena'}: ${formatTicketCurrency(ticket.price,ticket.currency_code||'CZK',locale)}`:null,occasionTitle:text(occasion.title),occasionStartTime:startTime,occasionPlace:text(occasion.data?.place_name),occasionDatePlace:text([date,occasion.data?.place_name].filter(Boolean).join(', ')),orderName:text([text(order.name),text(order.surname)].filter(Boolean).join(' ')),logo:null,footer:`${occasion.demo_read_only===true?(en?'DEMO - NOT VALID FOR ADMISSION • ':'UKÁZKA - NEPLATÍ PRO VSTUP • '):''}${en?'This ticket is non-transferable':'Vstupenka je nepřenosná'}${occasion.data?.link?' • '+occasion.data.link:''}`};
   d.spotGroupWithSeat=d.spotGroup&&seating.seat?`${d.spotGroup}, ${en?'Seat':'Místo'}: ${seating.seat}`:d.spotGroup;
   if(!template)return d;
   if(catalog)validateProductReferences(template,catalog);
@@ -101,6 +100,6 @@ export function sampleData(scenario='normal',occasion?:any,catalog?:ProductCatal
   }
   const examples=[...selected.values()].filter((e):e is NonNullable<CatalogType['example']>=>!!e);
   const currencies=new Set(examples.map(e=>e.currency_code));
-  if(examples.length&&currencies.size===1&&examples.every(e=>e.price!=null&&e.currency_code!=null))d.price=(en?'Price: ':'Cena: ')+formatCurrency(examples.reduce((sum,e)=>sum+Math.round(e.price!*100),0)/100,examples[0].currency_code!);
+  if(examples.length&&currencies.size===1&&examples.every(e=>e.price!=null&&e.currency_code!=null))d.price=(en?'Price: ':'Cena: ')+formatTicketCurrency(examples.reduce((sum,e)=>sum+Math.round(e.price!*100),0)/100,examples[0].currency_code!,en?'en':'cs-CZ');
   return Object.fromEntries(template.elements.map(e=>[e.id,e.binding==='text'?e.text!:e.binding==='productType'?formatProduct(e.label!,scenario==='missing'?null:catalog?.types.get(e.productTypeId!)?.example?.value??null):e.binding==='spotGroup'&&template.spotGroupAppearance?.showSeat?d.spotGroupWithSeat:d[e.binding]]));
 }

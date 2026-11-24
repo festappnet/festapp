@@ -68,6 +68,27 @@ BEGIN
   SELECT public.duplicate_occasion(v_oc) INTO v_copy;
   PERFORM public.validate_ticket_layout_references(v_copy,(SELECT features#>'{0,layout}' FROM public.occasions WHERE id=v_copy));
   PERFORM assert_true(NOT public.ticket_layout_uses_product_type(v_copy,123),'copy has only new type IDs');
+  SELECT features INTO v_features FROM public.occasions WHERE id=v_copy;
+  SELECT coalesce((SELECT version FROM public.client_aggregate_versions
+    WHERE aggregate_type='occasion' AND scope_type='occasion' AND scope_id=v_copy AND aggregate_id=v_copy::text),0)
+    INTO v_baseline;
+  SELECT f->'layout' INTO layout FROM jsonb_array_elements(v_features) f WHERE f->>'code'='ticket';
+  config := jsonb_build_object('id',v_copy,'ticket_layout_change',jsonb_build_object(
+    'expected',layout,'next',layout,'appearance',jsonb_build_object(
+    'background','https://img.festapp.net/ticket-presets/v1/palette-E4F359-203B2F-festival_poster-v2.png')));
+  response := public.save_occasion_client_sync_v1(v_copy,gen_random_uuid(),v_baseline,config);
+  PERFORM assert_eq(response->>'status','applied','copied occasion saves bundled gallery artwork');
+  SELECT features INTO v_features FROM public.occasions WHERE id=v_copy;
+  PERFORM assert_eq((SELECT f->>'background' FROM jsonb_array_elements(v_features) f WHERE f->>'code'='ticket'),
+    'https://img.festapp.net/ticket-presets/v1/palette-E4F359-203B2F-festival_poster-v2.png','gallery artwork persists');
+  PERFORM assert_true((SELECT f->>'background' IS NULL FROM
+    jsonb_array_elements(public.merge_ticket_appearance_internal_v1(v_copy,v_features,'{"background":""}')) f
+    WHERE f->>'code'='ticket'),'empty background clears inherited artwork');
+  BEGIN
+    PERFORM public.merge_ticket_appearance_internal_v1(v_copy,v_features,
+      '{"background":"https://img.festapp.net/ticket-presets/v1/unregistered.png"}');
+    RAISE EXCEPTION 'unregistered artwork accepted';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
   BEGIN
     PERFORM public.validate_ticket_layout(jsonb_set(changed,'{schemaVersion}','2'));
     RAISE EXCEPTION 'legacy schema accepted';

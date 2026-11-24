@@ -33,6 +33,15 @@ Deno.test('ID contract preserves deterministic historical selection and hides pr
  assertThrows(()=>normalizeTicketData({order_product_ticket:[{id:1,product:999}]},{id:7},{},catalog,t));
  assertThrows(()=>indexProductCatalog({...rawCatalog,product_types:[{id:123,occasion:8}]},7));
 });
+Deno.test('ticket price follows currency display precision', () => {
+ const price = (amount: number, currency_code: string) =>
+  normalizeTicketData({price: amount, currency_code}, {}, {}).price?.replaceAll('\u00a0', ' ');
+ assertEquals(price(0, 'CZK'), 'Cena: 0 Kč');
+ assertEquals(price(0, 'EUR'), 'Cena: 0 €');
+ assertEquals(price(380, 'CZK'), 'Cena: 380 Kč');
+ assertEquals(price(12.50, 'EUR'), 'Cena: 12,50 €');
+ assertEquals(price(200, 'JPY'), 'Cena: 200 JP¥');
+});
 Deno.test('legacy metadata, duplicate IDs and invalid flow are rejected',()=>{
  const original={schemaVersion:3,templates:{wide:productTemplate()}};
  const mutations=[(v:any)=>v.schemaVersion=2,(v:any)=>v.schemaVersion=1,(v:any)=>v.templates.wide.elements.at(-1).productTypeId=123,(v:any)=>v.templates.wide.elements.at(-1).productTypeId=1.5,(v:any)=>v.templates.wide.elements.at(-1).productTypeId=9007199254740992,(v:any)=>v.templates.wide.elements.at(-1).binding='food',(v:any)=>v.templates.wide.elements.at(-1).legacyTypes=['food'],(v:any)=>v.templates.wide.flow=['qr'],(v:any)=>v.templates.wide.flow=['missing'],(v:any)=>v.templates.wide.flow=['vip','vip']];

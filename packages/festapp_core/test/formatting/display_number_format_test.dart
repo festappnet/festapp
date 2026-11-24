@@ -59,6 +59,23 @@ void main() {
     },
   );
 
+  test('zero currency omits decimals even with explicit precision', () {
+    expect(
+      formatDisplayCurrency(0, locale: 'cs', name: 'EUR', symbol: '€'),
+      '0\u00a0€',
+    );
+    expect(
+      formatDisplayCurrency(
+        -0.0,
+        locale: 'en',
+        name: 'USD',
+        simple: true,
+        decimalDigits: 2,
+      ),
+      r'$0',
+    );
+  });
+
   test(
     'exact numbers retain all cents, large integers and unparseable input',
     () {

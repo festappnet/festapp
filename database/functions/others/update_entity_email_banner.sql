@@ -3,10 +3,10 @@ CREATE OR REPLACE FUNCTION public.email_banner_wrapper_internal(p_banner_url tex
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,extensions AS $$
  SELECT CASE WHEN p_banner_url IS NULL THEN NULL ELSE
   '<div style="font-family: Arial, sans-serif; font-size: 16px; max-width: 680px; margin: 0 auto;">'
-  ||CASE WHEN p_banner_url='' THEN '' ELSE '<div style="text-align: center;"><img src="'
+  ||CASE WHEN p_banner_url='' THEN '' ELSE '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; table-layout: fixed;"><tr><td align="center" style="padding: 0 24px;"><img src="'
     ||replace(replace(replace(replace(p_banner_url,'&','&amp;'),'<','&lt;'),'>','&gt;'),'"','&quot;')
     ||'" alt="'||replace(replace(replace(replace(coalesce(p_title,'Banner'),'&','&amp;'),'<','&lt;'),'>','&gt;'),'"','&quot;')
-    ||'" style="width: 100%; height: auto; display: block;"></div>' END
+    ||'" width="632" style="display: block; width: 100%; max-width: 632px; height: auto; margin: 0 auto;"></td></tr></table>' END
   ||'<div style="margin-top: 10px; margin-bottom: 10px; padding: 0 24px;">{{content}}</div></div>' END;
 $$;
 REVOKE ALL ON FUNCTION public.email_banner_wrapper_internal(text,text) FROM PUBLIC,anon,authenticated,service_role;
