@@ -32,6 +32,11 @@ void main() {
                     onSetAppLanding: () => called = true,
                   )))));
       expect(find.byIcon(Icons.home), selected ? findsOneWidget : findsNothing);
+      if (selected) {
+        final home = tester.getRect(find.byIcon(Icons.home));
+        final chevron = tester.getRect(find.byIcon(Icons.chevron_right));
+        expect(chevron.left - home.right, greaterThanOrEqualTo(4));
+      }
       await tester.tap(find.byIcon(Icons.more_vert));
       await tester.pumpAndSettle();
       await tester.tap(find.text(

@@ -383,7 +383,8 @@ class _OccasionEditCardState extends State<OccasionEditCard> {
                         color: theme.colorScheme.primary,
                       ),
                     ),
-                  const SizedBox(width: 8),
+                  // Reserve space and a gap for the navigation chevron.
+                  const SizedBox(width: 32),
                 ],
               ),
             ),
