@@ -2879,6 +2879,14 @@
       "signature": "public.barion_runtime_internal(text,jsonb)",
       "source": "database/functions/eshop_barion/runtime.sql"
     },
+    "7424ee1a396c8c9dffb856ec9357a2716d62b055e241f46c89e43533a295bc18": {
+      "signature": "public.configure_gopay_sandbox_connection_internal(bigint,bigint,text,text,text,bigint[],boolean)",
+      "source": "database/functions/eshop_gopay/connections.sql"
+    },
+    "2277b70a27ee1f55f180c002987958ead56451317f837c878b4488beb68954d0": {
+      "signature": "public.gopay_runtime_internal(text,jsonb)",
+      "source": "database/functions/eshop_gopay/runtime.sql"
+    },
     "67825c8f41c4a673c20b3f730763a57523e3f8c478e4decb6b0c72fd59cf73c5": {
       "signature": "public.defer_stripe_recovery_internal(uuid,uuid,integer)",
       "source": "database/functions/eshop_stripe/reconciliation.sql"

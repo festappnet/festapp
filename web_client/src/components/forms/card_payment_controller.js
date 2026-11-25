@@ -15,7 +15,7 @@ export class CardPaymentController {
             return new CardPaymentController(token,url,result.payment,options);
         }catch{return null;}
     }
-    constructor(token,url,payment,{invoke,onPayment=()=>{},navigate=url=>window.location.assign(url),remember,registry=paymentConnectors}={}) {
+    constructor(token,url,payment,{invoke,onPayment=()=>{},navigate,remember,registry=paymentConnectors}={}) {
         Object.assign(this,{token,url,payment,onPayment,navigate,remember,busy:false,disposed:false});
         this.connector=registry.get(payment?.method);
         if(!this.connector?.hostedCheckout)throw new Error('payment_connector_unavailable');
@@ -50,7 +50,16 @@ export class CardPaymentController {
         else if(this.url.origin===window.location.origin){
             window.history.replaceState({...window.history.state,[this.connector.historyKey]:{provider:this.connector.id,kind:'pay',token:this.token}},'',this.url.pathname);
         }
-        this.navigate(target);
+        if(this.navigate) {
+            this.navigate(target);
+        } else if(this.connector.checkoutReferrerPolicy) {
+            const link=document.createElement('a');
+            link.href=target;
+            link.referrerPolicy=this.connector.checkoutReferrerPolicy;
+            link.click();
+        } else {
+            window.location.assign(target);
+        }
     }
     dispose(){this.disposed=true;this.token=null;if(typeof window!=='undefined')window.removeEventListener('pageshow',this.resume);if(typeof document!=='undefined')document.removeEventListener('visibilitychange',this.resume);}
 }

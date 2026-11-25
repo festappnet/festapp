@@ -85,3 +85,35 @@ or outbound emails run. No external mutation or Start is performed by this tool.
 For expiry-only experiments, the original probe accepts
 `--window-seconds=60` (default 1860, maximum 1860). An expired original transaction
 can retain Total=1 while the payment's Total becomes 0; this is not a payment.
+
+## GoPay sandbox pilot
+
+GoPay is installed by `20261125130000_gopay_sandbox_connector.sql`. It starts
+disabled and supports CZK card checkout with one sandbox merchant in a test
+deployment. The organization must explicitly allow the payment method. Set one
+operator-managed connection on a disposable tenant using
+`configure_gopay_sandbox_connection_internal`. Bind the same connection under
+`payments.providerConnections.gopay` on the two test forms. The service RPC
+checks that both forms belong to the unit and organization. Enable the
+connection only after the test storefront routes and backend environment match.
+
+Use a first-level Pages custom domain such as
+`prodej-test.vstupenky.online` for the pilot. The DNS alias must serve the same
+application build and disposable backend for both forms. Set the exact origin in
+`GOPAY_SANDBOX_STOREFRONT_ORIGIN` and in the connection. Set
+`GOPAY_SANDBOX_GO_ID`, `GOPAY_SANDBOX_CLIENT_ID`,
+`GOPAY_SANDBOX_CLIENT_SECRET` and `GOPAY_SANDBOX_NOTIFICATION_URL` in the
+server environment before setting `GOPAY_SANDBOX_ENABLED=true`.
+The notification URL targets `payment-webhook?provider=gopay&hook=…`. Use a
+random 64-character hexadecimal hook value. Keep endpoint URLs containing that
+value and GoPay secrets in the protected server configuration.
+
+Both forms use the same GoPay merchant and storefront return path. Run a test
+payment on each. Check GoPay's return, asynchronous notification, and the order
+and ticket state. Check declined and expired payments separately. If a
+create response is lost, the original checkout stays unresolved until the
+merchant ID can be verified. Refund states hold admission pending verification
+of the refund history contract. The documented history examples repeat the
+payment ID and give calendar dates, so they cannot establish a unique refund
+movement or its precise time. Processing fees and the platform service charge
+are outside the customer payment facts.

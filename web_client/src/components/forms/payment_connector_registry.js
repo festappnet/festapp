@@ -1,3 +1,4 @@
+import {goPayPaymentConnector} from './connectors/gopay.js';
 import {bankPaymentConnector, cashPaymentConnector} from './connectors/builtin.js';
 import {barionPaymentConnector} from './connectors/barion.js';
 import {stripePaymentConnector} from './connectors/stripe.js';
@@ -16,5 +17,5 @@ export class PaymentConnectorRegistry {
     get(id) { return this.#connectors.get(id) ?? null; }
     values() { return [...this.#connectors.values()]; }
 }
-export const paymentConnectors = new PaymentConnectorRegistry([bankPaymentConnector, cashPaymentConnector, stripePaymentConnector, barionPaymentConnector]);
+export const paymentConnectors = new PaymentConnectorRegistry([bankPaymentConnector, cashPaymentConnector, stripePaymentConnector, barionPaymentConnector, goPayPaymentConnector]);
 export const isCardPaymentMethod = method => paymentConnectors.get(method)?.hostedCheckout != null;

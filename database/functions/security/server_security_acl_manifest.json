@@ -2987,6 +2987,16 @@
       "authenticated": false,
       "service_role": true
     },
+    "public.configure_gopay_sandbox_connection_internal(bigint,bigint,text,text,text,bigint[],boolean)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
+    "public.gopay_runtime_internal(text,jsonb)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": true
+    },
     "public.defer_stripe_recovery_internal(uuid,uuid,integer)": {
       "anon": false,
       "authenticated": false,

@@ -565,7 +565,7 @@ async function routeRequest(request, env) {
       const res = await serveAsset(env, paymentPrivateRoute || walletPrivateRoute ? new Request(assetUrl) : request, entry);
       const response = htmlResponse(res.body, res.headers, 200, entry === FLUTTER_ENTRY ? "flutter" : "webclient");
       response.headers.set("cache-control", "no-store");
-      response.headers.set("referrer-policy", "no-referrer");
+      response.headers.set("referrer-policy", /^(?:\/app)?\/payments\/gopay\/pay$/.test(path) ? "origin" : "no-referrer");
       response.headers.set("x-robots-tag", "noindex, nofollow");
       return response;
     }

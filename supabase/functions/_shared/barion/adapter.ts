@@ -1,14 +1,11 @@
 import {
   type CheckoutSnapshot,
-  decodeCommitReceipt,
-  decodePaymentClaim,
   type DispatchClaim,
   type HostedCheckoutConnector,
   type HostedPaymentDependencies,
   PaymentError,
-  type PaymentStore,
-  record,
 } from "../payments/contracts.ts";
+import { createRpcHostedPaymentStore } from "../payments/rpcHostedPaymentStore.ts";
 import { paymentHeaders, readPaymentBytes } from "../payments/http.ts";
 import { BarionSandboxProvider } from "./provider.ts";
 import { barionFacts, barionId } from "./facts.ts";
@@ -81,76 +78,6 @@ export function barionPaymentAdapter(
   deps: BarionDependencies,
 ): HostedPaymentDependencies {
   const rpc = deps.rpc;
-  const claim = async (operation: string, args: Record<string, unknown>) =>
-    decodePaymentClaim(await rpc(operation, args), "barion");
-  const view = (value: unknown) => {
-    const v = record(value);
-    if (v.method !== "barion" || typeof v.status !== "string") {
-      throw new PaymentError("barion_view_invalid");
-    }
-    return v;
-  };
-  const store: PaymentStore = {
-    claimCheckout: (token) => claim("claim_checkout", { token }),
-    commitCheckout: async (snapshot, lease, checkout) =>
-      decodeCommitReceipt(
-        await rpc("commit_checkout", {
-          attemptId: snapshot.attemptId,
-          lease,
-          checkout,
-        }),
-        "barion",
-      ),
-    failCheckout: async (snapshot, lease) => {
-      await rpc("fail", { attemptId: snapshot.attemptId, lease });
-    },
-    ingest: async (snapshot, lease, _event, facts) =>
-      decodeCommitReceipt(
-        await rpc("ingest", { attemptId: snapshot.attemptId, lease, facts }),
-        "barion",
-      ),
-    deferRecovery: async (c, result) => {
-      await rpc("defer", {
-        attemptId: c.snapshot.attemptId,
-        lease: c.lease,
-        seconds: result.retryAfterSeconds,
-      });
-    },
-    readReturn: async (token) =>
-      view(await rpc("read", { token, scope: "return_read" })),
-    readStatus: async (token) =>
-      view(await rpc("read", { token, scope: "order_pay" })),
-    readHandoff: async (token, consume) => {
-      const v = record(await rpc("handoff", { token, consume }));
-      return consume ? { source: v.source } : { payment: view(v.payment) };
-    },
-    attachHandoff: async (orderId, commandId, tokenHash) => {
-      await rpc("attach_handoff", { orderId, commandId, tokenHash });
-    },
-    purgeExpiredSources: async () => {
-      const n = await rpc("purge", {});
-      if (!Number.isSafeInteger(n) || Number(n) < 0 || Number(n) > 100) {
-        throw new PaymentError("barion_recovery_invalid");
-      }
-      return Number(n);
-    },
-    recoverableAttempts: async () => {
-      const rows = await rpc("recoverable", {});
-      if (
-        !Array.isArray(rows) || rows.length > 10 ||
-        rows.some((r) =>
-          typeof r?.attemptId !== "string" || typeof r?.accountId !== "string"
-        )
-      ) {
-        throw new PaymentError("barion_recovery_invalid");
-      }
-      return rows;
-    },
-    claimSync: (item) => claim("claim_sync", item),
-    failSync: async (attemptId, lease) => {
-      await rpc("fail", { attemptId, lease });
-    },
-  };
   const binding: HostedPaymentDependencies = {
     livemode: false,
     allowedOrigins: deps.allowedOrigins,
@@ -159,7 +86,7 @@ export function barionPaymentAdapter(
       returnPath: "/payments/barion/return",
     },
     connector: new BarionPaymentConnector(deps.provider),
-    store,
+    store: createRpcHostedPaymentStore("barion", rpc),
     verifyPlatform: deps.verifyPlatform,
     openSource: deps.openSource,
     order: {

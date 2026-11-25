@@ -1008,6 +1008,21 @@
           "email_banner_wrapper_internal"
         ]
       }
+    },
+    {
+      "migration": "20261125130000_gopay_sandbox_connector.sql",
+      "active": true,
+      "header": "-- Install the disabled-by-default GoPay sandbox connector.",
+      "sources": [
+        "eshop_gopay/schema.sql",
+        "eshop_gopay/provider.sql",
+        "eshop_gopay/runtime.sql",
+        "eshop_gopay/connections.sql",
+        "abuse/policy.sql"
+      ],
+      "selectors": {
+        "abuse/policy.sql": ["abuse_effective_rules_v1"]
+      }
     }
   ]
 }

@@ -53,6 +53,7 @@
           window.__festappPaymentLink = JSON.stringify({provider,kind:isReturn?'return':handoff?'handoff':'pay',token});
         }
         for (const key of ['return_handle','pay','handoff']) target.searchParams.delete(key);
+        if (provider === 'gopay' && isReturn) target.searchParams.delete('id');
         target.hash = '';
         window.history.replaceState(window.history.state, '', target.pathname + target.search);
         return;
