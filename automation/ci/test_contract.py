@@ -3,6 +3,7 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -317,13 +318,27 @@ class MirrorContractTest(unittest.TestCase):
         self.assertIn('--platform chrome', command[0])
         self.assertIn('--concurrency=1', command[0])
         inventory = json.loads((ROOT/'automation/client_test_inventory.json').read_text())
-        self.assertEqual({row['source'] for row in inventory['ci_moves']['image-client-browser'].values()}, {
-            'test/browser/account_webauthn_browser_cases.dart',
-            'test/browser/browser_preference_store_test.dart',
-            'test/components/html/html_image_preview_cases.dart',
-            'test/components/navigation/platform_route_parser_cases.dart',
-        })
-        self.assertEqual(sum(row[3] for row in inventory['ci_cases']['image-client-browser']), 12)
+        source = (ROOT / entrypoint).read_text()
+        imports = {alias: path for path, alias in re.findall(
+            r"^import '([^']+)' as (\w+);$", source, re.MULTILINE,
+        )}
+        groups = re.findall(r"^ +group\('([^']+)', (\w+)\.main\);$", source, re.MULTILINE)
+        registered = {
+            f'{entrypoint}::{group}': {
+                'entrypoint': entrypoint,
+                'added_group': group,
+                'source': (ROOT / Path(entrypoint).parent / imports[alias])
+                    .resolve().relative_to(ROOT).as_posix(),
+            }
+            for group, alias in groups
+        }
+        self.assertTrue(registered)
+        self.assertEqual(len(registered), len(groups))
+        self.assertEqual(inventory['ci_moves']['image-client-browser'], registered)
+        self.assertEqual(
+            {row[0] for row in inventory['ci_cases']['image-client-browser']},
+            {row['source'] for row in registered.values()},
+        )
         self.assertIn('automation/testing/navigation_ci.dart',
                       steps['navigation-contract']['script'])
         self.assertIn('automation/testing/navigation_default.dart',
