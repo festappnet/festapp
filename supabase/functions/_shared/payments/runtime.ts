@@ -8,6 +8,7 @@ import {
 import { stripeConnectHandler } from "../stripe/connect.ts";
 import { stripeWebhookHandler } from "../stripe/payments.ts";
 import { stripePaymentAdapter } from "./connectors/stripe.ts";
+import { goPayPaymentDependencies } from "../gopay/environment.ts";
 import { barionPaymentDependencies } from "../barion/environment.ts";
 import { builtinPaymentBinding } from "./connectors/builtin.ts";
 import { createUserClient, supabaseAdmin } from "../supabaseUtil.ts";
@@ -23,6 +24,7 @@ export const paymentRegistry = new PaymentRegistry([
     return data;
   })] as const),
   ["barion", () => hostedPaymentBinding(barionPaymentDependencies()), "barionPaymentSource"],
+  ["gopay", () => hostedPaymentBinding(goPayPaymentDependencies()), "goPayPaymentSource"],
   ["stripe", () => {
     const deps = stripePaymentDependencies();
     return hostedPaymentBinding({

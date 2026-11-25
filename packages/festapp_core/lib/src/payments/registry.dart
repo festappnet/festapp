@@ -1,6 +1,7 @@
 import 'connector.dart';
 import 'connectors/stripe.dart';
 import 'connectors/barion.dart';
+import 'connectors/gopay.dart';
 
 class PaymentConnectorRegistry {
   PaymentConnectorRegistry(Iterable<PaymentConnector> connectors) {
@@ -26,5 +27,5 @@ final paymentConnectors = PaymentConnectorRegistry([
   const PaymentConnector(id: 'bank', labelKey: 'bank', hintKey: 'bankHint', confirmation: PaymentConfirmation.bankEvent,
     currencies: ['CZK', 'EUR', 'USD']),
   const PaymentConnector(id: 'cash', labelKey: 'cash', hintKey: 'cashHint', confirmation: PaymentConfirmation.localCommit),
-  stripePaymentConnector, barionPaymentConnector,
+  stripePaymentConnector, barionPaymentConnector, goPayPaymentConnector,
 ]);

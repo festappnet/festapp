@@ -35,3 +35,22 @@ test('builtin identity shares registration without exposing checkout or inventin
     assert.deepEqual(formPaymentOptions({available:['bank'],bank:{available:false}},'web',registry).available,[]);
     assert.deepEqual(formPaymentOptions({available:['bank']},'web',new PaymentConnectorRegistry([])).available,[]);
 });
+
+test('an enabled pilot uses one GoPay storefront for both forms without moving private links', async () => {
+    const {goPayPaymentConnector, goPayStorefrontUrl} = await import('../../src/components/forms/connectors/gopay.js');
+    const storefront = 'https://prodej-kulturak.vstupenky.online';
+    const projection = {providers: {gopay: {
+        available: true, recipient: {livemode: false, storefrontOrigin: storefront},
+    }}};
+    for (const form of ['ples', 'koncert']) {
+        assert.equal(goPayStorefrontUrl(projection, new URL(`https://vstupenky.online/form/${form}`)),
+            `${storefront}/form/${form}`);
+    }
+    assert.equal(goPayStorefrontUrl(projection, new URL('https://vstupenky.online/form/ples?token=private')), null);
+    assert.equal(goPayStorefrontUrl(projection, new URL(`${storefront}/form/ples`)), null);
+    projection.providers.gopay.recipient.storefrontOrigin = 'https://outside.example';
+    assert.equal(goPayStorefrontUrl(projection, new URL('https://vstupenky.online/form/ples')), null);
+    assert.equal(goPayPaymentConnector.validateCheckoutUrl('https://gw.sandbox.gopay.com/gw/v3/test-id'),
+        'https://gw.sandbox.gopay.com/gw/v3/test-id');
+    assert.throws(() => goPayPaymentConnector.validateCheckoutUrl('https://gate.gopay.cz/gw/v3/live-id'));
+});

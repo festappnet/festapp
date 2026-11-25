@@ -8,8 +8,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public._swap_spots_update_ticket(bigint,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='84bb046808895a1ca248e3808c82aa54'),'current SQL source parity: public._swap_spots_update_ticket(bigint,bigint,bigint)');
 -- supabase/migrations/20261116140000_restore_fakturoid_czk_reference.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abort_fakturoid_ticket_order_v1(bigint,uuid)') AND md5(btrim(prosrc,E' \n\r\t'))='c559a6f056e618b1b0ba21570c47280b'),'current SQL source parity: public.abort_fakturoid_ticket_order_v1(bigint,uuid)');
--- supabase/migrations/20261120100000_transactional_order_email_admission.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abuse_effective_rules_v1(text,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='bf6592bab022218fe59ada330f91e203'),'current SQL source parity: public.abuse_effective_rules_v1(text,bigint,bigint)');
+-- supabase/migrations/20261125130000_gopay_sandbox_connector.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abuse_effective_rules_v1(text,bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='da91755a4f2d5ea8821310a45a610b73'),'current SQL source parity: public.abuse_effective_rules_v1(text,bigint,bigint)');
 -- supabase/migrations/20261115120000_discount_codes.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.abuse_policy_bundle_v1(text[],bigint,bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='298af2c60e17b660062b699e3bd54a27'),'current SQL source parity: public.abuse_policy_bundle_v1(text[],bigint,bigint)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
@@ -1574,6 +1574,10 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_waitlist_ticket_display_name_internal(bigint,jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1fda800a8936f517a65a5165b76df2c0'),'current SQL source parity: public.get_waitlist_ticket_display_name_internal(bigint,jsonb,jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.google_auth_rate_limit_v1(text,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='7ec2550368783cd6773cae4b2b559128'),'current SQL source parity: public.google_auth_rate_limit_v1(text,integer)');
+-- supabase/migrations/20261125130000_gopay_sandbox_connector.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.gopay_payment_provider_internal(text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='5bd1d3ba33a6157cd27717eb6b8463b8'),'current SQL source parity: public.gopay_payment_provider_internal(text,jsonb)');
+-- supabase/migrations/20261125130000_gopay_sandbox_connector.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.gopay_runtime_internal(text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='e51eaa2fb21d48a1eed3917bdc11886b'),'current SQL source parity: public.gopay_runtime_internal(text,jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.group_assignments_write_rule(boolean,boolean,boolean,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='0221c1b7823f38a4d5afa4abe5e0912f'),'current SQL source parity: public.group_assignments_write_rule(boolean,boolean,boolean,boolean)');
 -- supabase/baseline/20261107170000_schema.sql

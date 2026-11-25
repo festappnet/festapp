@@ -12,6 +12,7 @@ class PaymentConnector {
     this.hintKey = 'cardHint',
     this.checkoutPath,
     this.checkoutGuidParameter,
+    this.checkoutTokenPathPrefix,
     this.authorizationHost,
     this.authorizationPath,
     this.callbackEndpoint,
@@ -29,7 +30,7 @@ class PaymentConnector {
   String get checkoutHost => hostedCheckout?.checkoutHost ?? (throw StateError('payment_hosted_checkout_unavailable'));
   final String orderConnectionField, unavailableReasonField, labelKey, hintKey;
   final bool legacyAvailability;
-  final String? checkoutPath, checkoutGuidParameter;
+  final String? checkoutPath, checkoutGuidParameter, checkoutTokenPathPrefix;
   final String? authorizationHost, authorizationPath, callbackEndpoint;
   Uri authorizationUri(String value) {
     final uri = Uri.parse(value);
@@ -54,6 +55,12 @@ class PaymentConnector {
       throw StateError('payment_checkout_url_invalid');
     }
     if (checkoutPath != null && uri.path.toLowerCase() != checkoutPath) {
+      throw StateError('payment_checkout_url_invalid');
+    }
+    final prefix = checkoutTokenPathPrefix;
+    if (prefix != null &&
+        (uri.hasQuery || uri.hasFragment || !uri.path.startsWith(prefix) ||
+            !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(uri.path.substring(prefix.length)))) {
       throw StateError('payment_checkout_url_invalid');
     }
     if (checkoutGuidParameter != null &&

@@ -27,7 +27,7 @@ hash_generated() {
   done < "$PROJECT_ROOT/automation/tenant-overlays/generated.paths"
 }
 
-for tenant in festapp festapptickets festappticketsglobal absolventskyvelehrad aksmcz cavfotofest csmostrava2026 doobiscup farnostopava festivalslunovrat hvezdamorska jubileum2025; do
+for tenant in festapp festapptickets festappticketsglobal absolventskyvelehrad aksmcz cavfotofest csmostrava2026 doobiscup farnostopava festivalslunovrat hvezdamorska jubileum2025 gopay-pilot; do
   root="$TMP_ROOT/$tenant"
   copy_worktree "$root"
   config="$PROJECT_ROOT/automation/tests/fixtures/tenants/$tenant.conf"

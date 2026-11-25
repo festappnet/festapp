@@ -8,6 +8,7 @@ import { publicFormLocation } from '../../utils/public_form_location.js';
 import {FormMeasurementSession, hasBrowserSession} from './form_measurement_session.js';
 import { FormMeasurementRuntime } from './form_measurement_runtime.js';
 import {isCardPaymentMethod, paymentConnectors} from './payment_connector_registry.js';
+import {goPayStorefrontUrl} from './connectors/gopay.js';
 import { isEmbed } from '../../services/embed_context.js';
 import { EmbedBridge, revealEmbedStep } from '../../services/embed_bridge.js';
 import { SupabaseService } from '../../services/supabase_service.js';
@@ -260,6 +261,13 @@ export class FormPage extends Component {
                 return;
             }
 
+            if (!isEmbed() && !this.waitlistScope && !this.saleOpeningScope) {
+                const storefront = goPayStorefrontUrl(formModel.payments, window.location);
+                if (storefront) {
+                    window.location.replace(storefront);
+                    return;
+                }
+            }
             RouterService.canonicalizePublicLink('form', link, formModel.link);
             link = formModel.link || link;
             this.currentLink = link;
