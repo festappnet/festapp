@@ -15,6 +15,8 @@ import re
 import yaml
 
 RETIRED = {'storage', 'imgproxy'}
+ENVOY_CLUSTERS = 'volumes/api/envoy/cds.yaml'
+REST_HEALTH_PATH = '/organizations?select=id&limit=0'
 
 
 class TemplateDumper(yaml.SafeDumper):
@@ -33,6 +35,18 @@ def render_configuration(document):
     return yaml.dump(document, Dumper=TemplateDumper, sort_keys=False).encode()
 
 
+def prepare_rest_health(clusters):
+    rest = [item for item in clusters['resources'] if item.get('name') == 'rest']
+    if len(rest) != 1 or len(rest[0].get('health_checks', [])) != 1:
+        raise ValueError('expected_one_rest_health_check')
+    check = rest[0]['health_checks'][0].get('http_health_check', {})
+    if check.get('path') not in ('/', REST_HEALTH_PATH) or check.get('method', 'GET') != 'GET':
+        raise ValueError('unreviewed_rest_health_check')
+    # Exercise the REST listener, schema and database pool with a zero-row read.
+    # A request to / would query the catalogs and render the OpenAPI document.
+    check['path'] = REST_HEALTH_PATH
+
+
 def prepare(compose, clusters, listeners):
     compose, clusters, listeners = copy.deepcopy((compose, clusters, listeners))
     if not RETIRED <= compose['services'].keys():
@@ -47,6 +61,7 @@ def prepare(compose, clusters, listeners):
     if sum(item.get('name') == 'storage' for item in resources) != 1:
         raise ValueError('expected_source_cluster_missing')
     clusters['resources'] = [item for item in resources if item.get('name') != 'storage']
+    prepare_rest_health(clusters)
     removed = 0
 
     def remove_routes(value):
@@ -83,13 +98,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compose-dir', type=Path, required=True)
     parser.add_argument('--output-dir', type=Path, required=True)
+    parser.add_argument('--rest-health-only', action='store_true',
+                        help='Prepare only the REST health-check change for an installed runtime')
     args = parser.parse_args()
     os.umask(0o077)
-    names = ['docker-compose.yml', 'volumes/api/envoy/cds.yaml', 'volumes/api/envoy/lds.template.yaml']
+    names = [ENVOY_CLUSTERS] if args.rest_health_only else [
+        'docker-compose.yml', ENVOY_CLUSTERS, 'volumes/api/envoy/lds.template.yaml',
+    ]
     original = [(args.compose_dir / name).read_bytes() for name in names]
-    result = prepare(*(yaml.safe_load(body) for body in original))
+    documents = [yaml.safe_load(body) for body in original]
+    if args.rest_health_only:
+        prepare_rest_health(documents[0])
+        result = documents
+    else:
+        result = prepare(*documents)
     args.output_dir.mkdir(mode=0o700, exist_ok=False)
-    receipt = {'version': 1, 'production_mutations': False, 'retired_services': sorted(RETIRED), 'files': {}}
+    receipt = {'version': 1, 'production_mutations': False, 'retired_services': [] if args.rest_health_only else sorted(RETIRED), 'files': {}}
     for name, before, document in zip(names, original, result):
         target = args.output_dir / name
         target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)

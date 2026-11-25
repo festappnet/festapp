@@ -819,7 +819,8 @@
     },
     {
       "migration": "20261121101000_order_catalog_counts.sql",
-      "active": true,
+      "sha256": "0796c06da99056b84e2b17f2482ff18fa95362b93242947929f09d441171c406",
+      "checkSources": true,
       "header": "-- Reconcile legacy form UUIDs before switching catalog readers to orders.form.\n-- A UUID has to identify one form within the order's saved occasion.\nDO $$\nDECLARE\n legacy_missing bigint;\n conflicts bigint;\n repaired bigint;\nBEGIN\n SELECT audit.legacy_missing,audit.conflicts INTO legacy_missing,conflicts\n FROM (\n -- BEGIN FORM CATALOG PREFLIGHT\n WITH form_keys AS (\n  SELECT occasion,key,min(id) AS form_id,count(*) AS matches\n  FROM public.forms GROUP BY occasion,key\n ), links AS (\n  SELECT o.form,f.form_id AS matched_form,f.matches\n  FROM eshop.orders o\n  LEFT JOIN form_keys f ON f.occasion=o.occasion AND f.key=CASE\n   WHEN o.data->>'form' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'\n   THEN (o.data->>'form')::uuid END\n  WHERE o.data->>'form' IS NOT NULL\n )\n SELECT count(*) FILTER(WHERE form IS NULL AND matches=1) AS legacy_missing,\n  count(*) FILTER(WHERE matches IS DISTINCT FROM 1::bigint\n   OR (form IS NOT NULL AND form IS DISTINCT FROM matched_form)) AS conflicts\n FROM links\n -- END FORM CATALOG PREFLIGHT\n ) audit;\n\n IF conflicts<>0 THEN\n  RAISE EXCEPTION 'Form catalog migration requires reconciliation of % order/form conflicts',conflicts;\n END IF;\n\n WITH unique_form_keys AS (\n  SELECT occasion,key,min(id) AS form_id FROM public.forms GROUP BY occasion,key HAVING count(*)=1\n )\n UPDATE eshop.orders o SET form=f.form_id\n FROM unique_form_keys f\n WHERE o.form IS NULL AND o.occasion=f.occasion AND f.key=CASE\n  WHEN o.data->>'form' ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'\n  THEN (o.data->>'form')::uuid END;\n GET DIAGNOSTICS repaired=ROW_COUNT;\n IF repaired<>legacy_missing THEN\n  RAISE EXCEPTION 'Form associations changed during reconciliation (expected %, repaired %)',legacy_missing,repaired;\n END IF;\n RAISE NOTICE 'Form catalog associations repaired: %, unresolved conflicts: %',repaired,conflicts;\nEND $$;",
       "sources": [
         "eshop_waitlist/form_capacity.sql",
@@ -1022,6 +1023,23 @@
       ],
       "selectors": {
         "abuse/policy.sql": ["abuse_effective_rules_v1"]
+      }
+    },
+    {
+      "migration": "20261125160000_materialize_form_authoring_snapshot.sql",
+      "active": true,
+      "header": "-- Evaluate the checked form editor and administrative order projections once.",
+      "sources": [
+        "eshop_forms/admin_form_reads.sql",
+        "eshop_forms/admin_form_orders.sql"
+      ],
+      "selectors": {
+        "eshop_forms/admin_form_reads.sql": [
+          "get_form_authoring_snapshot_internal"
+        ],
+        "eshop_forms/admin_form_orders.sql": [
+          "form_order_facts_internal"
+        ]
       }
     }
   ]
