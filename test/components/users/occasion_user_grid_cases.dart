@@ -106,8 +106,76 @@ void main() {
       final user = UnitUserModel.fromPlutoJson(row.toJson());
       expect(user.name, canEditUnit ? 'Jana' : '');
       expect(user.surname, canEditUnit ? 'Nováková' : '');
+      if (canEditUnit) {
+        manager.setEditing(false);
+        await tester.pumpAndSettle();
+        final name = tester.widget<Text>(find.text('Jana'));
+        final surname = tester.widget<Text>(find.text('Nováková'));
+        expect(name.style?.color, surname.style?.color);
+      }
     });
   }
+
+  testWidgets('user grid uses the cell color for names, links and actions', (
+    tester,
+  ) async {
+    const color = Colors.teal;
+    const email = 'jana@example.invalid';
+    const name = 'Jana';
+    final rights = RightsContextFixture(
+      context: OccasionLinkModel(
+        capabilities: {AuthorizationCapabilities.usersWrite: true},
+      ),
+    );
+    addTearDown(rights.dispose);
+    final columns = UserColumns.generateColumns([
+      UserColumns.EMAIL,
+      UserColumns.NAME,
+      UserColumns.EDITOR_VIEW,
+      UserColumns.EMAIL_HISTORY,
+    ]);
+    expect(columns.last.enableFilterMenuItem, isFalse);
+    expect(columns.last.enableSorting, isFalse);
+    final row = TrinaRow(cells: {
+      UserColumns.EMAIL: TrinaCell(value: email),
+      UserColumns.NAME: TrinaCell(value: name),
+      UserColumns.EDITOR_VIEW: TrinaCell(value: 'false'),
+      UserColumns.EMAIL_HISTORY: TrinaCell(value: ''),
+      UserColumns.COMPANION_OWNER: TrinaCell(value: 'Eva'),
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: DependencyMaterialBridge.builder,
+        home: Scaffold(
+          body: TrinaGrid(
+            columns: columns,
+            rows: [row],
+            configuration: const TrinaGridConfiguration(
+              style: TrinaGridStyleConfig(
+                cellTextStyle: TextStyle(color: color),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final value in [email, name]) {
+      expect(tester.widget<Text>(find.text(value)).style?.color, color);
+    }
+    expect(tester.widget<Icon>(find.byIcon(Icons.link)).color, color);
+    expect(
+      tester
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.mail_outline))
+          .color,
+      color,
+    );
+    final outline = tester.widget<Checkbox>(find.byType(Checkbox)).side
+        as WidgetStateBorderSide;
+    expect(outline.resolve({})?.color, color);
+    expect(outline.resolve({WidgetState.selected}), isNull);
+    expect(outline.resolve({WidgetState.disabled}), isNull);
+  });
 
   for (final birthday in [null, '1970-01-01']) {
     testWidgets('new-row roundtrip preserves optional birth date $birthday', (

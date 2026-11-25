@@ -80,9 +80,15 @@ class UserColumns {
               field: EMAIL_HISTORY,
               type: TrinaColumnType.text(),
               readOnly: true,
-              width: 70,
+              width: 80,
+              titleTextAlign: TrinaColumnTextAlign.center,
               enableEditingMode: false,
+              enableSorting: false,
+              enableFilterMenuItem: false,
+              enableContextMenu: false,
+              enableDropToResize: false,
               renderer: (cell) => IconButton(
+                  color: cell.stateManager.style.cellTextStyle.color,
                   tooltip: EmailDeliveryStrings.history,
                   icon: const Icon(Icons.mail_outline),
                   onPressed: () => showDialog<void>(
@@ -147,15 +153,21 @@ class UserColumns {
                 Expanded(
                   child: Text(
                     rendererContext.row.cells[NAME]?.value?.toString() ?? '',
+                    style: rendererContext.stateManager.style.cellTextStyle,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (tooltip != null)
                   Tooltip(
                     message: tooltip,
-                    child: const Padding(
-                      padding: EdgeInsets.only(left: 4),
-                      child: Icon(Icons.link, size: 16),
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(start: 4),
+                      child: Icon(
+                        Icons.link,
+                        size: 16,
+                        color: rendererContext
+                            .stateManager.style.cellTextStyle.color,
+                      ),
                     ),
                   ),
               ]);
@@ -376,7 +388,9 @@ class UserColumns {
         IS_VOLUNTEER: [_statusColumn(UserStrings.volunteer, IS_VOLUNTEER)],
         MANAGER: [_statusColumn(UserStrings.administrator, MANAGER)],
         EDITOR: [_statusColumn(UserStrings.editor, EDITOR)],
-        EDITOR_VIEW: [_statusColumn(UserStrings.readOnly, EDITOR_VIEW)],
+        EDITOR_VIEW: [
+          _statusColumn(UserStrings.readOnly, EDITOR_VIEW, width: 180)
+        ],
         EDITOR_ORDER: [_statusColumn(UserStrings.editOrders, EDITOR_ORDER)],
         EDITOR_ORDER_VIEW: [
           _statusColumn(UserStrings.readOrders, EDITOR_ORDER_VIEW)
@@ -396,7 +410,7 @@ class UserColumns {
         ],
         UNIT_EDITOR_VIEW: [
           _statusColumn(UserStrings.readOnly, UNIT_EDITOR_VIEW,
-              canUpdateUser: RightsService.canUpdateUnitUsers)
+              canUpdateUser: RightsService.canUpdateUnitUsers, width: 180)
         ],
         APPROVER: [_statusColumn(UserStrings.approver, APPROVER)],
         APPROVED: [_statusColumn(UserStrings.approved, APPROVED)],
@@ -436,7 +450,9 @@ class UserColumns {
   }
 
   static TrinaColumn _statusColumn(String title, String field,
-      {bool Function()? canUpdateUser, bool readOnly = false}) {
+      {bool Function()? canUpdateUser,
+      bool readOnly = false,
+      double width = 100}) {
     return TrinaColumn(
       title: title,
       field: field,
@@ -444,7 +460,7 @@ class UserColumns {
       applyFormatterInEditing: true,
       enableEditingMode: false,
       readOnly: readOnly,
-      width: 100,
+      width: width,
       renderer: (rendererContext) => DataGridHelper.checkBoxRenderer(
           rendererContext,
           field,

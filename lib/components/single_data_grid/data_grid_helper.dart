@@ -225,9 +225,19 @@ class DataGridHelper {
   static Checkbox checkBoxRenderer(
       TrinaColumnRendererContext rendererContext, String idString,
       [bool Function()? isEnabled]) {
-    var value = rendererContext.cell.value == "true" ? true : false;
+    final value = rendererContext.cell.value == "true";
+    final outline = rendererContext.stateManager.style.cellTextStyle.color;
     return Checkbox(
       value: value,
+      side: outline == null
+          ? null
+          : WidgetStateBorderSide.resolveWith((states) {
+              if (states.contains(WidgetState.selected) ||
+                  states.contains(WidgetState.disabled)) {
+                return null;
+              }
+              return BorderSide(color: outline, width: 2);
+            }),
       onChanged: RightsService.isDemoReadOnly ||
               (isEnabled != null && isEnabled() == false)
           ? null
