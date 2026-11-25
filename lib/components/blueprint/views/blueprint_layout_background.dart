@@ -1,3 +1,4 @@
+import '../../images/image_upload_input.dart';
 import '../../images/image_upload_limits.dart';
 import '../../_shared/editor_file_drop_strings.dart';
 import '../../images/image_file_format.dart';
@@ -108,11 +109,13 @@ Future<ImportFile?> showBlueprintBackgroundPicker(
                             : blueprintBackgroundExtensions),
                     pickFile: () async {
                       try {
-                        return await (pickFile ??
+                        final file = await (pickFile ??
                             () => _pickBackgroundFile(
                               graphic: graphic,
                               extensions: extensions,
                             ))();
+                        if (file != null) await _readImageFile(file);
+                        return file;
                       } catch (failure) {
                         if (context.mounted) {
                           setState(() => error = failure.toString());
@@ -122,14 +125,10 @@ Future<ImportFile?> showBlueprintBackgroundPicker(
                     },
                     onFilePathChanged: (file) async {
                       if (selected || !dialogContext.mounted) return;
-                      if (await file.length() >
-                          ImageUploadLimits.maxInputBytes) {
-                        throw FormatException(EditorFileDropStrings.tooLarge);
-                      }
-                      final retained = await file.retain();
+                      await _readImageFile(file);
                       if (selected || !dialogContext.mounted) return;
                       selected = true;
-                      Navigator.of(dialogContext).pop(retained);
+                      Navigator.of(dialogContext).pop(file);
                     },
                   ),
                 ],
@@ -155,7 +154,7 @@ Future<void> uploadBlueprintBackground({
 }) async {
   if (!isMounted()) return;
   final asset = await _uploadBitmap(
-    selection: selection,
+    bytes: await _readImageFile(selection),
     controller: controller,
     assets: assets,
     isMounted: isMounted,
@@ -191,8 +190,16 @@ Future<void> uploadBlueprintBackground({
   if (!applied) throw StateError('background_rejected');
 }
 
+Future<Uint8List> _readImageFile(ImportFile file) async {
+  try {
+    return await ImageUploadInput.readFile(file);
+  } on ImageUploadLimitExceeded {
+    throw FormatException(EditorFileDropStrings.tooLarge);
+  }
+}
+
 Future<Map<String, dynamic>> _uploadBitmap({
-  required ImportFile selection,
+  required Uint8List bytes,
   required VenueLayoutController controller,
   required BlueprintLayoutAssetResolver assets,
   required bool Function() isMounted,
@@ -200,11 +207,6 @@ Future<Map<String, dynamic>> _uploadBitmap({
   int? unitId,
   Future<ImageUploadResult> Function(Uint8List bytes)? uploadBitmap,
 }) async {
-  if (await selection.length() > ImageUploadLimits.maxInputBytes) {
-    throw FormatException(EditorFileDropStrings.tooLarge);
-  }
-  final bytes = await selection.readAsBytes();
-  ImageFileFormat.detect(bytes, allowSvg: true);
   if (!isMounted()) throw StateError('graphic_import_cancelled');
   final uploaded =
       await (uploadBitmap?.call(bytes) ??
@@ -279,10 +281,7 @@ Future<void> uploadBlueprintGraphic({
   Future<ImageUploadResult> Function(Uint8List bytes)? uploadBitmap,
 }) async {
   if (!isMounted()) return;
-  if (await selection.length() > ImageUploadLimits.maxInputBytes) {
-    throw FormatException(EditorFileDropStrings.tooLarge);
-  }
-  final bytes = await selection.readAsBytes();
+  final bytes = await _readImageFile(selection);
   final format = blueprintGraphicFormat(bytes);
   if (format == ImageFileFormat.svg) {
     final source = utf8.decode(bytes, allowMalformed: false);
@@ -299,7 +298,7 @@ Future<void> uploadBlueprintGraphic({
       throw StateError(controller.error ?? 'graphic_import_rejected');
   } else {
     final asset = await _uploadBitmap(
-      selection: ImportFile.fromData(bytes, name: selection.name),
+      bytes: bytes,
       controller: controller,
       assets: assets,
       isMounted: isMounted,

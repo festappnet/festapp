@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,8 +6,8 @@ import 'package:fstapp/services/import_file.dart';
 
 import '../../_shared/editor_file_drop_region.dart';
 import '../../_shared/editor_file_drop_strings.dart';
+import '../../images/image_upload_input.dart';
 import '../../images/image_upload_limits.dart';
-import '../../images/image_file_format.dart';
 
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:auto_route/auto_route.dart';
@@ -424,11 +425,12 @@ class _TicketLayoutEditorState extends State<TicketLayoutEditor> {
     await ExceptionHandler.guard(
       context,
       futureFunction: () async {
-        if (await file.length() > ImageUploadLimits.maxInputBytes) {
+        final Uint8List bytes;
+        try {
+          bytes = await ImageUploadInput.readFile(file);
+        } on ImageUploadLimitExceeded {
           throw FormatException(EditorFileDropStrings.tooLarge);
         }
-        final bytes = await file.readAsBytes();
-        ImageFileFormat.detect(bytes);
         uploaded = await widget.service.uploadBackground(
           bytes,
           widget.occasionId,

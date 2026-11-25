@@ -6,6 +6,7 @@ import '../../images/db_images.dart';
 
 import 'dart:convert';
 
+import 'package:fstapp/components/images/image_upload_input.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -281,7 +282,7 @@ class _OccasionSetupEmailTemplatesState
             widget.onBusyChanged?.call(true);
             try {
               final url = await DbImages.uploadImage(
-                await file.readAsBytes(),
+                await ImageUploadInput.readFile(file),
                 null,
                 widget.unitId!,
                 profile: ImageUploadProfile.banner,

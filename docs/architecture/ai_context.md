@@ -51,6 +51,12 @@ The measured 4 GB capacity decision remains explicit.
 See `docs/operations/supabase-self-hosted/storage-authority.md` and its linked
 execution receipt for the current deployment boundary.
 
+Flutter image file inputs use `ImageUploadInput` before reading files or
+decoding previews. `ImageControlClient` enforces the same raster limits and
+derives filename and MIME type from bytes for every upload. Editors own
+feature-specific constraints, and the Worker owns server-side validation,
+authorization, processing profiles and storage.
+
 ## Critical: Post-Cutover Database Authority
 
 Author database schema, function and data-contract changes as canonical

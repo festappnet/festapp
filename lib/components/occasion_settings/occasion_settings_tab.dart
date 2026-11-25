@@ -5,6 +5,7 @@ import 'occasion_settings_io.dart';
 import 'occasion_timezone_field.dart';
 import '../blueprint/seating_strings.dart';
 
+import 'package:fstapp/components/images/image_upload_input.dart';
 import 'package:fstapp/components/forms/waitlist_strings.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
@@ -664,7 +665,7 @@ class _OccasionSettingsTabState extends State<OccasionSettingsTab> {
                             "(${OccasionSettingsStrings.imageRatioHint(OccasionCard.kCardWidth.toString(), OccasionCard.kCardHeight.toString())})",
                         imageUrl: imageUrl,
                         onFileSelected: (file) async {
-                          Uint8List imageData = await file.readAsBytes();
+                          Uint8List imageData = await ImageUploadInput.readFile(file);
                           try {
                             final publicUrl = await widget.io.uploadImage(
                               imageData,

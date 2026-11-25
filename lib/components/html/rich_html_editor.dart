@@ -1,4 +1,6 @@
 import 'html_atomic_block.dart';
+import 'package:fstapp/components/images/image_upload_input.dart';
+import 'package:fstapp/services/import_file.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'dart:typed_data';
 
@@ -558,7 +560,11 @@ class _RichHtmlEditorState extends State<RichHtmlEditor> {
         type: FileType.custom,
         allowedExtensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'heic']);
     if (selected == null || !mounted) return;
-    final bytes = await selected.readAsBytes();
+    final bytes = await ImageUploadInput.readFile(ImportFile(
+      name: selected.name,
+      size: selected.length,
+      readBytes: selected.readAsBytes,
+    ));
     if (!mounted) return;
     if (controller.revision != revision)
       throw StateError('The document changed during image selection');

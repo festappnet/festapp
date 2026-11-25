@@ -1,3 +1,4 @@
+import 'package:fstapp/components/images/image_upload_input.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_area.dart';
@@ -55,7 +56,7 @@ class OccasionSetupPresentation extends StatelessWidget {
             onBusyChanged?.call(true);
             try {
               final url = await DbImages.uploadImage(
-                await file.readAsBytes(),
+                await ImageUploadInput.readFile(file),
                 null,
                 unitId,
                 profile: ImageUploadProfile.banner,

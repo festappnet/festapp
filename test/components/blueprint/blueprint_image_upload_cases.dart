@@ -138,7 +138,7 @@ void main() {
           return http.Response(
               jsonEncode({'url': asset['url'], 'asset': asset}), 200);
         }));
-    final result = await client.uploadWithResult(
+    final result = await client.upload(
         bytes: svg,
         filename: 'background.svg',
         accessToken: 'fixture',
@@ -155,8 +155,10 @@ void main() {
         httpClient: MockClient((_) async => http.Response(
             '{"url":"https://img.festapp.net/background.png"}', 200)));
     await expectLater(
-        client.uploadWithResult(
-            bytes: Uint8List.fromList([137, 80, 78, 71, 13, 10, 26, 10]),
+        client.upload(
+            bytes: base64Decode(
+              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==',
+            ),
             filename: 'background.png',
             accessToken: 'fixture',
             occasionId: 1,
