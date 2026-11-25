@@ -105,18 +105,21 @@ class DbTickets {
         final snapshot = snapshots
             .whereType<Map>()
             .firstWhereOrNull((entry) => entry[TbEshop.tickets.id] == t.id);
+        final products = snapshot?[TbEshop.products.table] as List? ?? const [];
+        t.isStanding = products
+            .whereType<Map>()
+            .any((product) => product['is_standing'] == true);
+
         // Waiting and withdrawn tickets have no purchased-product snapshot.
         // Symbols can be NULL, so they cannot identify a ticket's price.
         t.totalPrice = snapshot == null
             ? null
-            : (snapshot[TbEshop.products.table] as List? ?? const [])
-                .fold<double>(
-                    0,
-                    (sum, product) =>
-                        sum +
-                        ((product[TbEshop.products.price] as num?)
-                                ?.toDouble() ??
-                            0));
+            : products.fold<double>(
+                0,
+                (sum, product) =>
+                    sum +
+                    ((product[TbEshop.products.price] as num?)?.toDouble() ??
+                        0));
       }
       toReturn.addAll(o.relatedTickets ?? []);
     }

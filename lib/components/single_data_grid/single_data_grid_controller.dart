@@ -448,6 +448,8 @@ class SingleDataGridController<T extends ITrinaRowModel> {
           return IconButtonTheme(
             data: IconButtonThemeData(
               style: IconButton.styleFrom(
+                foregroundColor:
+                    rendererContext.stateManager.style.cellTextStyle.color,
                 minimumSize: const Size.square(32),
                 maximumSize: const Size.square(32),
                 padding: EdgeInsets.zero,
