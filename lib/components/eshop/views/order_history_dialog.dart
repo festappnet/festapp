@@ -26,33 +26,10 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
   bool _isLoading = true;
   List<OrderHistoryModel> _processedHistory = [];
 
-  double? _optimalTagWidth;
-
   @override
   void initState() {
     super.initState();
     _fetchHistory();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_optimalTagWidth == null) {
-      // Get all possible state labels to find the longest one, which ensures
-      // all tags have a consistent and sufficient width.
-      final allStateLabels = OrderModel.orderStates
-          .map(
-            (key) => OrderModel.statesDataGridToUpper(
-              OrderModel.statesDataGridToUpper(key),
-            ),
-          )
-          .toList();
-
-      _optimalTagWidth = OrderStateDisplay.calculateOptimalWidth(
-        context: context,
-        stateLabels: allStateLabels,
-      );
-    }
   }
 
   @override
@@ -186,8 +163,7 @@ class _OrderHistoryContentState extends State<OrderHistoryContent> {
                 alignment: Alignment.centerLeft,
                 child: OrderStateDisplay(
                   formattedState: stateCellFormat,
-                  getBackground: OrderStateDisplay.historyBackground,
-                  stateTagWidth: _optimalTagWidth,
+                  getBackground: OrderModel.singleDataGridStateToColor,
                   enableWrapping: true,
                 ),
               ),

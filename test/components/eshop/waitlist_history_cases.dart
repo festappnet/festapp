@@ -4,6 +4,9 @@ import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:fstapp/components/eshop/views/order_state_display.dart';
+import 'package:fstapp/components/eshop/views/order_state_cell.dart';
+import 'package:fstapp/components/eshop/models/order_admin_detail.dart';
+import 'package:fstapp/components/forms/models/form_response_model.dart';
 import 'package:easy_localization/easy_localization.dart' as easy;
 // ignore: depend_on_referenced_packages
 import 'package:shared_preferences/shared_preferences.dart';
@@ -117,47 +120,127 @@ void main() {
         findsNWidgets(2));
   });
 
-  testWidgetsWithEnvironment(() => _environment,
-      'actual state renderer preserves draft state and projects offered only for waitlisted cell',
-      (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await easy.EasyLocalization.ensureInitialized();
-    final order = OrderModel(state: 'ordered');
-    for (final scenario in ['sent', 'offered', 'offeredDraft']) {
-      order.state = scenario == 'sent' ? 'ordered' : 'waitlisted';
-      order.waitlistSummary = WaitlistSummaryModel.fromJson({
-        'counts': {'offered': 1}
-      });
-      final cell = TrinaCell(
-          value: scenario == 'offered'
-              ? 'waitlisted;Náhradníci'
-              : 'sent;Odesláno');
-      final row = TrinaRow(cells: {
-        EshopColumnIds.ORDER_STATE: cell,
-        EshopColumnIds.ORDER_MODEL_REFERENCE: TrinaCell(value: order)
-      });
-      await _environment.pumpWidget(
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'order and form response grids share the detail status and render its color',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await easy.EasyLocalization.ensureInitialized();
+      final scenarios = [
+        ('waitlisted', {'offered': 1}, 'offered', 'Nabídnuto'),
+        ('waitlisted', {'withdrawn': 2}, 'withdrawn', 'Vyřazeno z náhradníků'),
+        (
+          'waitlisted',
+          {'withdrawn': 1, 'waiting': 1},
+          'waitlisted',
+          'Náhradníci',
+        ),
+        (
+          'waitlisted',
+          {'offer_declined': 1},
+          'offer_declined',
+          'Nabídka odmítnuta',
+        ),
+        (
+          'waitlisted',
+          {'offer_cancelled': 1},
+          'offer_cancelled',
+          'Nabídka zrušena',
+        ),
+        (
+          'waitlisted',
+          {'offer_declined': 1, 'waiting': 1},
+          'waitlisted',
+          'Náhradníci',
+        ),
+        (
+          'waitlisted',
+          {'offer_declined': 1, 'withdrawn': 1},
+          'withdrawn',
+          'Vyřazeno z náhradníků',
+        ),
+        ('waitlisted', {'offer_expired': 1}, 'waitlisted', 'Náhradníci'),
+        ('storno', {'withdrawn': 1}, 'storno', 'Stornováno'),
+        ('sent', {'offered': 1}, 'sent', 'Odesláno'),
+      ];
+      for (final (stored, counts, displayed, label) in scenarios) {
+        final orderJson = {'id': 1, 'order_symbol': 'A', 'state': stored};
+        final summary = {'counts': counts};
+        final order = OrderModel.fromJson({
+          ...orderJson,
+          'waitlistSummary': summary,
+        });
+        final detail = OrderAdminDetail({
+          'order': orderJson,
+          'waitlistSummary': summary,
+        }).model;
+        expect(detail.stateLabel, label);
+        expect(detail.displayState, displayed);
+        expect(detail.state, stored);
+        expect(order.state, stored);
+        if (const {
+          'withdrawn',
+          'storno',
+          'offer_declined',
+          'offer_cancelled',
+        }.contains(displayed)) {
+          expect(
+            OrderModel.singleDataGridStateToColor(displayed),
+            Colors.grey.shade700.withValues(alpha: 0.6),
+          );
+        }
+        await _environment.pumpWidget(
           tester,
           easy.EasyLocalization(
-              supportedLocales: const [Locale('cs')],
-              path: 'unused',
-              assetLoader: _TestTranslations(),
-              child:
-                  MaterialApp(builder: DependencyMaterialBridge.builder, home: Scaffold(body: Builder(builder: (context) {
-                final column = EshopColumns.generateColumns(
-                    context, [EshopColumnIds.ORDER_STATE]).single;
-                return column.renderer!(TrinaColumnRendererContext(
-                    column: column,
-                    rowIdx: 0,
-                    row: row,
-                    cell: cell,
-                    stateManager: _RendererState()));
-              })))));
-      await tester.pumpAndSettle();
-      expect(find.text(scenario == 'offered' ? 'NABÍDNUTO' : 'ODESLÁNO'),
-          findsOneWidget);
-    }
-  });
+            supportedLocales: const [Locale('cs')],
+            path: 'unused',
+            assetLoader: _TestTranslations(),
+            child: MaterialApp(
+              builder: DependencyMaterialBridge.builder,
+              home: Scaffold(
+                body: Builder(
+                  builder: (context) {
+                    final column = EshopColumns.generateColumns(context, [
+                      EshopColumnIds.ORDER_STATE,
+                    ]).single;
+                    final row = order.toTrinaRow(context);
+                    final cell = row.cells[EshopColumnIds.ORDER_STATE]!;
+                    final response = FormResponseModel(
+                      order: order,
+                      allFields: [],
+                    );
+                    expect(cell.value, '$displayed;$label');
+                    expect(
+                      response
+                          .toTrinaRow(context)
+                          .cells[EshopColumnIds.ORDER_STATE]!
+                          .value,
+                      cell.value,
+                    );
+                    return column.renderer!(
+                      TrinaColumnRendererContext(
+                        column: column,
+                        rowIdx: 0,
+                        row: row,
+                        cell: cell,
+                        stateManager: _RendererState(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(label.toUpperCase()), findsOneWidget);
+        expect(
+          tester.widget<OrderStateCell>(find.byType(OrderStateCell)).background,
+          OrderModel.singleDataGridStateToColor(displayed),
+        );
+      }
+    },
+  );
 
   testWidgetsWithEnvironment(() => _environment,
       'history status uses immutable action and affected count, never current order',
@@ -176,12 +259,12 @@ void main() {
           .cells[EshopColumnIds.HISTORY_STATE]!
           .value;
       expect(cell,
-          'waitlisted;Náhradníci → history:withdrawn;Vyřazeno z náhradníků (1)');
+          'waitlisted;Náhradníci → withdrawn;Vyřazeno z náhradníků (1)');
       return const SizedBox();
     })));
     history.data = {'action': 'offer_sent', 'count': 2};
     expect(history.waitlistHistoryState,
-        'waitlisted;Náhradníci → waitlisted;Nabídnuto (2)');
+        'waitlisted;Náhradníci → offered;Nabídnuto (2)');
     expect(history.state, 'waitlisted');
   });
 
@@ -190,6 +273,8 @@ void main() {
       (tester) async {
     for (final action in [
       'waitlist_withdraw',
+      'waitlist_decline',
+      'waitlist_cancel',
       'offer_sent',
       'waitlist_accept'
     ]) {
@@ -207,7 +292,7 @@ void main() {
                       child: SizedBox(
                           width: 280,
                           child: EshopColumns.buildOrderStateRenderer(formatted,
-                              OrderStateDisplay.historyBackground))))));
+                              OrderModel.singleDataGridStateToColor))))));
       expect(find.byIcon(Icons.arrow_forward), findsOneWidget);
       final tags = tester
           .widgetList<Container>(find.byType(Container))
@@ -219,13 +304,52 @@ void main() {
           ? OrderModel.singleDataGridStateToColor('waitlisted')
           : action == 'waitlist_accept'
               ? OrderModel.singleDataGridStateToColor('paid')
-              : Colors.grey.shade500.withValues(alpha: 0.6);
+              : Colors.grey.shade700.withValues(alpha: 0.6);
       expect((tags.last.decoration as BoxDecoration).color, expectedColor);
       final target =
-          OrderModel.statesDataGridToUpper(formatted.split(';').last);
+          formatted.split(';').last.toUpperCase();
       expect(find.text(target), findsOneWidget);
       expect(find.byType(Tooltip), findsNothing);
       expect(tester.takeException(), isNull);
     }
   });
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'narrow order history wraps and displays the full withdrawn label',
+    (tester) async {
+      final history = OrderHistoryModel(
+        state: 'waitlisted',
+        data: {
+          'action': 'waitlist_withdraw',
+          'ticketIds': [1],
+        },
+      );
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 140,
+                child: OrderStateDisplay(
+                  formattedState: history.waitlistHistoryState!,
+                  getBackground: OrderModel.singleDataGridStateToColor,
+                  enableWrapping: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.byIcon(Icons.arrow_downward), findsOneWidget);
+      final label = find.text('VYŘAZENO Z NÁHRADNÍKŮ (1)');
+      expect(tester.widget<Text>(label).maxLines, isNull);
+      expect(
+        tester.getSize(label).height,
+        greaterThan(tester.getSize(find.text('NÁHRADNÍCI')).height),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

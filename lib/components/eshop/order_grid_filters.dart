@@ -32,7 +32,9 @@ class OrderGridFilters {
     if (value == null) return orderIsNonCancelled(row);
     return value.isActive ||
         (value.isWaitlisted &&
-            (value.waitlistSummary?.counts['offer_expired'] ?? 0) > 0);
+            (value.waitlistSummary?.counts[OrderModel.offerExpiredState] ??
+                    0) >
+                0);
   }
 
   static bool allows(TrinaRow row, String action) =>

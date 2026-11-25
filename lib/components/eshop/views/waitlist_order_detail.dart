@@ -184,12 +184,12 @@ class _WaitlistOrderDetailState extends State<WaitlistOrderDetail> {
         : '${OrderItemStrings.itemSingular} ${index + 1}';
   }
 
-  String _ticketStatus(dynamic ticket) =>
-      WaitlistStrings.text(switch (ticket['lifecycle'] as String) {
-        'waiting' => 'waitingForPlace',
-        'offered' => 'awaitingOfferAcceptance',
-        final String lifecycle => lifecycle,
-      });
+  String _ticketStatus(dynamic ticket) => switch (ticket['lifecycle'] as String) {
+    'waiting' => WaitlistStrings.text('waitingForPlace'),
+    'offered' => WaitlistStrings.text('awaitingOfferAcceptance'),
+    'cancelled' => OrderModel.stateToLocale(OrderModel.stornoState),
+    final lifecycle => OrderModel.stateToLocale(lifecycle),
+  };
 
   String _slotLabel(dynamic slot) {
     final tickets = _detail?['tickets'] as List? ?? [];

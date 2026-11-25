@@ -104,6 +104,7 @@ void main() {
     String? customerNote,
     String ticketState = 'ordered',
     String orderState = 'ordered',
+    Map<String, int>? waitlistCounts,
     bool dark = false,
     Size size = const Size(1000, 1400),
     VoidCallback? onClose,
@@ -148,6 +149,8 @@ void main() {
                 ...contactData,
               },
             },
+            if (waitlistCounts != null)
+              'waitlistSummary': {'counts': waitlistCounts},
             'form': {'id': 88, 'title': 'Přihláška na ples'},
             'capabilities': {'write': writable},
             'payment':
@@ -609,12 +612,22 @@ void main() {
   }
 
   for (final dark in [false, true]) {
-    for (final state in ['ordered', 'sent']) {
+    for (final (state, displayState, text) in [
+      ('ordered', 'ordered', 'Ordered'),
+      ('sent', 'sent', 'Sent'),
+      ('waitlisted', 'withdrawn', 'Removed from waitlist'),
+    ]) {
       testWidgets('header state matches the table color: $state dark=$dark', (
         tester,
       ) async {
-        await open(tester, language: 'en', orderState: state, dark: dark);
-        final label = find.text(state == 'sent' ? 'Sent' : 'Ordered');
+        await open(
+          tester,
+          language: 'en',
+          orderState: state,
+          waitlistCounts: state == 'waitlisted' ? {'withdrawn': 1} : null,
+          dark: dark,
+        );
+        final label = find.text(text);
         final box = tester.widget<Container>(
           find.ancestor(of: label, matching: find.byType(Container)).first,
         );
@@ -626,10 +639,17 @@ void main() {
         expect(
           (box.decoration as BoxDecoration).color,
           Color.alphaBlend(
-            OrderModel.singleDataGridStateToColor(state),
+            OrderModel.singleDataGridStateToColor(displayState),
             background,
           ),
         );
+        final foreground = tester.widget<Text>(label).style!.color!;
+        final bg = (box.decoration as BoxDecoration).color!.computeLuminance();
+        final fg = foreground.computeLuminance();
+        final contrast = bg > fg
+            ? (bg + 0.05) / (fg + 0.05)
+            : (fg + 0.05) / (bg + 0.05);
+        expect(contrast, greaterThanOrEqualTo(4.5));
       });
     }
   }
