@@ -1,3 +1,4 @@
+import 'package:fstapp/components/images/image_upload_input.dart';
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'package:collection/collection.dart';
 import 'package:material_ui/material_ui.dart';
@@ -309,7 +310,7 @@ class _SpeakerEditorDialogState extends State<SpeakerEditorDialog> {
                 imageUrl: _image,
                 onFileSelected: (file) async {
                   try {
-                    final bytes = await file.readAsBytes();
+                    final bytes = await ImageUploadInput.readFile(file);
                     final url = await DbImages.uploadImage(
                         bytes, RightsService.currentOccasionId(), null,
                         profile: ImageUploadProfile.portrait);

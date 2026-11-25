@@ -1,10 +1,11 @@
 import 'ticket_wallet_card_preview.dart';
 
-import 'dart:ui' as ui;
 import 'dart:typed_data';
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../images/image_file_format.dart';
+import '../../images/image_upload_input.dart';
 import '../../images/image_upload_limits.dart';
 import '../google_wallet_appearance.dart';
 import '../ticket_delivery_strings.dart';
@@ -84,29 +85,24 @@ class _TicketWalletAppearanceEditorState
           allowedExtensions: const ['png', 'jpg', 'jpeg'],
           hint: help,
           onFileSelected: (file) async {
-            if (await file.length() > ImageUploadLimits.maxInputBytes) {
+            final Uint8List bytes;
+            final int width, height;
+            try {
+              bytes = await ImageUploadInput.readFile(file);
+              final image = ImageUploadInput.inspect(bytes);
+              final format = image.format;
+              if (format != ImageFileFormat.png &&
+                  format != ImageFileFormat.jpeg) {
+                throw const FormatException(
+                  'Wallet images must be PNG or JPEG',
+                );
+              }
+              (width, height) = image.dimensions!;
+            } on ImageUploadLimitExceeded {
               throw FormatException(t('walletImageTooLarge'));
             }
-            final bytes = await file.readAsBytes();
-            final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-            try {
-              final descriptor = await ui.ImageDescriptor.encoded(buffer);
-              try {
-                if (descriptor.width * descriptor.height >
-                    ImageUploadLimits.maxPixels) {
-                  throw FormatException(t('walletImageTooLarge'));
-                }
-                if (key == 'logo' &&
-                    (descriptor.width < 660 ||
-                        descriptor.height < 660 ||
-                        descriptor.width != descriptor.height)) {
-                  throw FormatException(t('walletLogoSize'));
-                }
-              } finally {
-                descriptor.dispose();
-              }
-            } finally {
-              buffer.dispose();
+            if (key == 'logo' && (width < 660 || width != height)) {
+              throw FormatException(t('walletLogoSize'));
             }
             final url = widget.uploadImage != null
                 ? await widget.uploadImage!(bytes)
