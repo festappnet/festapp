@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:fstapp/app_config.dart';
 import 'package:fstapp/components/images/image_control_client.dart';
-import 'image_file_format.dart';
 export 'image_upload_profile.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:http/http.dart' as http;
@@ -40,15 +39,13 @@ class DbImages {
     final session = _supabase.auth.currentSession;
     if (session == null) throw Exception('Not authenticated');
 
-    final ext = ImageFileFormat.detect(imageData,
-        allowSvg: profile == ImageUploadProfile.blueprintBackground).extension;
     return ImageControlClient(
       endpoint: endpoint ?? AppConfig.imageApiUrl,
       projectId: AppConfig.imageProjectId,
       httpClient: _httpClient,
-    ).uploadWithResult(
+    ).upload(
       bytes: imageData,
-      filename: '${DateTime.now().millisecondsSinceEpoch}.$ext',
+      filename: '${DateTime.now().millisecondsSinceEpoch}',
       accessToken: session.accessToken,
       occasionId: occasion,
       unitId: unit,

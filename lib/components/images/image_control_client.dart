@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
-import 'image_file_format.dart';
+import 'image_upload_input.dart';
 import 'image_upload_profile.dart';
 import 'image_upload_limits.dart';
 export 'image_upload_profile.dart';
@@ -26,19 +26,7 @@ class ImageControlClient {
     required this.httpClient,
   });
 
-  Future<String> upload({
-    required Uint8List bytes,
-    required String filename,
-    required String accessToken,
-    int? occasionId,
-    int? unitId,
-    ImageUploadProfile profile = ImageUploadProfile.standard,
-  }) async => (await uploadWithResult(bytes: bytes, filename: filename,
-      accessToken: accessToken, occasionId: occasionId, unitId: unitId,
-      profile: profile)).url;
-
-
-  Future<ImageUploadResult> uploadWithResult({
+  Future<ImageUploadResult> upload({
     required Uint8List bytes,
     required String filename,
     required String accessToken,
@@ -46,9 +34,10 @@ class ImageControlClient {
     int? unitId,
     ImageUploadProfile profile = ImageUploadProfile.standard,
   }) async {
-    if (bytes.length > ImageUploadLimits.maxInputBytes)
-      throw const FormatException('Image exceeds 20 MB');
-    final format = ImageFileFormat.detect(bytes, allowSvg: profile == ImageUploadProfile.blueprintBackground);
+    final image = ImageUploadInput.inspect(
+      bytes,
+      allowSvg: profile == ImageUploadProfile.blueprintBackground,
+    );
     final stem = filename.replaceFirst(RegExp(r'\.[^.]*$'), '');
     final request = http.MultipartRequest('POST', Uri.parse('$endpoint/upload'))
       ..headers['Authorization'] = 'Bearer $accessToken'
@@ -58,8 +47,8 @@ class ImageControlClient {
         http.MultipartFile.fromBytes(
           'file',
           bytes,
-          filename: '$stem.${format.extension}',
-          contentType: MediaType.parse(format.mime),
+          filename: '$stem.${image.format.extension}',
+          contentType: MediaType.parse(image.format.mime),
         ),
       );
     if (occasionId != null) request.fields['occasionId'] = '$occasionId';

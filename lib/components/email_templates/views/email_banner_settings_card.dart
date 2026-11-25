@@ -1,3 +1,4 @@
+import 'package:fstapp/components/images/image_upload_input.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'dart:typed_data';
@@ -222,7 +223,7 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                     onFileSelected: (file) async {
                                       if (!_canEdit) return null;
                                       Uint8List imageData =
-                                          await file.readAsBytes();
+                                          await ImageUploadInput.readFile(file);
                                       try {
                                         final publicUrl =
                                             await DbImages.uploadImage(
@@ -268,7 +269,7 @@ class _EmailBannerSettingsCardState extends State<EmailBannerSettingsCard> {
                                     onFileSelected: (file) async {
                                       if (!_canEdit) return null;
                                       Uint8List imageData =
-                                          await file.readAsBytes();
+                                          await ImageUploadInput.readFile(file);
                                       try {
                                         final publicUrl =
                                             await DbImages.uploadImage(

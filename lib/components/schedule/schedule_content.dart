@@ -1,3 +1,4 @@
+import 'package:fstapp/components/images/image_upload_input.dart';
 import 'package:fstapp/components/images/recovering_image.dart';
 import 'package:fstapp/components/schedule/event_type_colors.dart';
 import 'package:fstapp/services/time_helper.dart';
@@ -640,7 +641,7 @@ class ScheduleContentState extends State<ScheduleContent> {
                         child: ImageArea(
                           imageUrl: imageUrl,
                           onFileSelected: (file) async {
-                            final bytes = await file.readAsBytes();
+                            final bytes = await ImageUploadInput.readFile(file);
                             final publicUrl = await DbImages.uploadImage(
                               bytes,
                               RightsService.currentOccasionId(),

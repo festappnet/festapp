@@ -6,6 +6,8 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/html/html_image_preview.dart';
+import 'package:fstapp/components/html/html_media_service.dart';
+import 'package:image/image.dart' as image;
 
 import 'dart:convert';
 
@@ -14,6 +16,23 @@ import 'package:crypto/crypto.dart';
 import 'large_preview_jpeg_fixture.dart';
 
 void main() {
+  testWidgets('HTML image import preserves PNG and JPEG source bytes', (
+    tester,
+  ) async {
+    final pixels = image.Image(width: 2, height: 3);
+    final draft = HtmlMediaDraft();
+    addTearDown(draft.dispose);
+    await tester.runAsync(() async {
+      for (final bytes in [image.encodePng(pixels), image.encodeJpg(pixels)]) {
+        final source = await draft.addBytes(
+          bytes,
+          const HtmlMediaOwner.occasion(1),
+        );
+        expect(draft.previewBytes(source), bytes);
+      }
+    });
+  });
+
   testWidgets(
     'large local preview is decoded at bounded size without changing upload bytes',
     (tester) async {

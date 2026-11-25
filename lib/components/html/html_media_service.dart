@@ -5,11 +5,10 @@ import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image/image.dart' as image_headers;
 import 'package:fstapp/components/images/db_images.dart';
 import 'package:fstapp/components/images/image_control_client.dart';
+import 'package:fstapp/components/images/image_upload_input.dart';
 import 'package:fstapp/components/images/image_upload_limits.dart';
-import 'package:fstapp/components/images/image_file_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'html_document_codec.dart';
@@ -51,7 +50,6 @@ class HtmlMediaDraft {
 
   static const maxImageBytes = ImageUploadLimits.maxInputBytes;
   static const maxPendingBytes = 32 * 1024 * 1024;
-  static const maxPixels = ImageUploadLimits.maxPixels;
   static const _draftPrefix = 'https://html-draft.invalid/';
   final Future<Uint8List> Function(String, HtmlMediaOwner) _fetch;
   final Future<String> Function(Uint8List, HtmlMediaOwner) _upload;
@@ -97,7 +95,11 @@ class HtmlMediaDraft {
     if (_disposed) throw StateError('Media draft disposed');
     if (!owner.canImport)
       throw StateError('Image import is unavailable in this scope');
-    if (bytes.length > maxImageBytes) throw StateError('Image exceeds 20 MB');
+    try {
+      ImageUploadLimits.checkByteLength(bytes.length);
+    } on ImageUploadLimitExceeded catch (error) {
+      throw StateError(error.message);
+    }
     final inputKey = 'bytes:${owner.key}:${sha256.convert(bytes)}';
     final existing = _sources[inputKey];
     if (existing != null) return existing;
@@ -268,69 +270,68 @@ class _PendingImage {
 }
 
 Future<Uint8List> _validateAndNormalize(Uint8List bytes) async {
-  ImageFileFormat? format;
-  try {
-    format = ImageFileFormat.detect(bytes);
-  } on FormatException {
-    final header = String.fromCharCodes(bytes.take(32));
-    if (!header.contains('ftyp') ||
-        !RegExp('heic|heix|hevc|hevx|mif1').hasMatch(header)) rethrow;
+  final heic = _isHeic(bytes);
+  if (heic && kIsWeb) {
+    throw const FormatException('HEIC image import is unavailable on web');
   }
-  final headers = image_headers.findDecoderForData(bytes)?.startDecode(bytes);
-  if (headers != null &&
-      headers.width * headers.height > HtmlMediaDraft.maxPixels) {
-    throw StateError('Image exceeds 40 MP');
-  }
-  final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-  ui.ImageDescriptor? descriptor;
+
   ui.Codec? codec;
   ui.Image? image;
   try {
-    descriptor = await ui.ImageDescriptor.encoded(buffer);
-    // Encoded ImageDescriptor.width/height throw on Flutter web. Read the
-    // supported file's metadata before full decoding, retaining the pixel cap.
-    final int width;
-    final int height;
-    if (kIsWeb) {
-      final info = image_headers.findDecoderForData(bytes)?.startDecode(bytes);
-      if (info == null || info.width <= 0 || info.height <= 0) {
-        throw const FormatException('Image dimensions cannot be read on web');
-      }
-      width = info.width;
-      height = info.height;
+    if (!heic) {
+      final image = ImageUploadInput.inspect(bytes);
+      final (width, height) = image.dimensions!;
+      final longerEdge = width > height ? width : height;
+      final scale = HtmlImagePreview.maxDecodeEdge / longerEdge;
+      codec = await ui.instantiateImageCodec(
+        bytes,
+        targetWidth: scale < 1 ? (width * scale).round().clamp(1, width) : null,
+        targetHeight: scale < 1 ? (height * scale).round().clamp(1, height) : null,
+      );
     } else {
-      width = descriptor.width;
-      height = descriptor.height;
+      // Native HEIC imports retain the platform decoder and normalize to PNG.
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      ui.ImageDescriptor? descriptor;
+      try {
+        descriptor = await ui.ImageDescriptor.encoded(buffer);
+        ImageUploadLimits.checkDimensions(descriptor.width, descriptor.height);
+        codec = await descriptor.instantiateCodec();
+      } finally {
+        descriptor?.dispose();
+        buffer.dispose();
+      }
     }
-    if (width * height > HtmlMediaDraft.maxPixels) {
-      throw StateError('Image exceeds 40 MP');
-    }
-    // HEIC must be genuinely decoded and normalized. Unsupported platform
-    // decoders fail explicitly rather than storing HEIC bytes with a JPG name.
-    final longerEdge = width > height ? width : height;
-    final previewScale = HtmlImagePreview.maxDecodeEdge / longerEdge;
-    codec = await descriptor.instantiateCodec(
-      targetWidth: format != null && previewScale < 1
-          ? (width * previewScale).round().clamp(1, width)
-          : null,
-      targetHeight: format != null && previewScale < 1
-          ? (height * previewScale).round().clamp(1, height)
-          : null,
-    );
     image = (await codec.getNextFrame()).image;
-    if (format != null) return bytes;
+    if (!heic) return bytes;
     final normalized = await image.toByteData(format: ui.ImageByteFormat.png);
     if (normalized == null) throw StateError('Image normalization failed');
     final png = normalized.buffer.asUint8List();
-    if (png.length > HtmlMediaDraft.maxImageBytes)
-      throw StateError('Normalized image exceeds 20 MB');
+    ImageUploadLimits.checkByteLength(png.length);
     return png;
+  } on ImageUploadLimitExceeded catch (error) {
+    throw StateError(error.message);
   } finally {
     image?.dispose();
     codec?.dispose();
-    descriptor?.dispose();
-    buffer.dispose();
   }
+}
+
+bool _isHeic(Uint8List bytes) {
+  // ISO BMFF ftyp has a major brand at offset 8 and compatible brands
+  // after its minor version. Inspect only the declared ftyp box.
+  if (bytes.length < 16) return false;
+  final data = ByteData.sublistView(bytes);
+  if (data.getUint32(4) != 0x66747970) return false; // ftyp
+  final end = data.getUint32(0);
+  if (end < 16 || end > bytes.length) return false;
+  const brands = {'heic', 'heix', 'hevc', 'hevx', 'mif1'};
+  String brandAt(int offset) =>
+      String.fromCharCodes(bytes.sublist(offset, offset + 4));
+  if (brands.contains(brandAt(8))) return true;
+  for (var offset = 16; offset + 4 <= end; offset += 4) {
+    if (brands.contains(brandAt(offset))) return true;
+  }
+  return false;
 }
 
 Future<Uint8List> _fetchImage(String source, HtmlMediaOwner owner) async {

@@ -4,9 +4,46 @@ import 'package:test/test.dart';
 import 'package:fstapp/components/images/image_control_client.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:image/image.dart' as image;
+import 'package:fstapp/components/images/image_upload_input.dart';
+import 'package:fstapp/components/images/image_upload_limits.dart';
+import 'package:fstapp/services/import_file.dart';
 
 void main() {
+  final pixels = image.Image(width: 2, height: 3);
+  final jpeg = image.encodeJpg(pixels);
   group('image_control_client', () {
+    test('oversized raster is rejected before transport', () async {
+      final bytes = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAG1gAABtYCAYAAACZm7uPAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=',
+      );
+      final api = ImageControlClient(
+        endpoint: 'https://image-api.test',
+        projectId: 'test',
+        httpClient: MockClient((_) async => fail('Unexpected request')),
+      );
+      await expectLater(
+        api.upload(
+          bytes: bytes,
+          filename: 'large.png',
+          accessToken: 'test-jwt',
+          unitId: 3,
+        ),
+        throwsA(isA<ImageUploadLimitExceeded>()),
+      );
+    });
+
+    test('oversized file metadata prevents a byte read', () async {
+      final file = ImportFile(
+        name: 'large.jpg',
+        size: () async => ImageUploadLimits.maxInputBytes + 1,
+        readBytes: () async => fail('Unexpected byte read'),
+      );
+      await expectLater(
+        ImageUploadInput.readFile(file),
+        throwsA(isA<ImageUploadLimitExceeded>()),
+      );
+    });
     test(
         'upload uses the control origin and stable projectId without credentials',
         () async {
@@ -22,7 +59,7 @@ void main() {
           projectId: 'a',
           httpClient: client);
       final result = await api.upload(
-          bytes: Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0]),
+          bytes: jpeg,
           filename: 'x.jpg',
           accessToken: 'jwt',
           occasionId: 1);
@@ -33,7 +70,7 @@ void main() {
       expect(body, contains('\r\na\r\n'));
       expect(body, isNot(contains('anonKey')));
       expect(body, isNot(contains('supabaseUrl')));
-      expect(result, 'https://a.img.festapp.net/images/1/x.jpg');
+      expect(result.url, 'https://a.img.festapp.net/images/1/x.jpg');
     });
 
     test('single and cleanup deletes use the same bounded URL batch contract',
@@ -68,15 +105,11 @@ void main() {
       expect(await api.download('https://img.festapp.net/images/1/a.jpg'),
           Uint8List.fromList([1, 2, 3]));
     });
-    for (final format in <(List<int>, String, String)>[
-      ([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 'png', 'image/png'),
-      ([0xff, 0xd8, 0xff], 'jpg', 'image/jpeg'),
-      ([0x47, 0x49, 0x46, 0x38, 0x39, 0x61], 'gif', 'image/gif'),
-      (
-        [0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50],
-        'webp',
-        'image/webp'
-      )
+    for (final format in [
+      (image.encodePng(pixels), 'png', 'image/png'),
+      (jpeg, 'jpg', 'image/jpeg'),
+      (image.encodeGif(pixels), 'gif', 'image/gif'),
+      (image.encodeWebP(pixels), 'webp', 'image/webp'),
     ]) {
       test('${format.$2} byte signature controls filename and MIME', () async {
         final api = ImageControlClient(
@@ -92,7 +125,7 @@ void main() {
                   jsonEncode({'url': 'https://assets.test/image'}), 200);
             }));
         await api.upload(
-            bytes: Uint8List.fromList(format.$1),
+            bytes: format.$1,
             filename: 'wrong.jpg',
             accessToken: 'test-jwt',
             unitId: 3);
@@ -111,7 +144,7 @@ void main() {
             httpClient: MockClient((_) async => response));
         await expectLater(
             api.upload(
-                bytes: Uint8List.fromList([0xff, 0xd8, 0xff]),
+                bytes: jpeg,
                 filename: 'a.jpg',
                 accessToken: 'jwt',
                 occasionId: 1),
