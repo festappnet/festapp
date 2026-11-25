@@ -74,11 +74,11 @@ test('canonical truth table preserves server operation rights across 2048 role c
         assert.deepEqual(favorite_unit_ids,[],`fixture organization favorites default, roles ${bits}`);
         assert.equal(stripe_preview_enabled,null,`fixture Stripe feature default, roles ${bits}`);
         assert.equal(FORM_MEASUREMENT_ENABLED,false,`fixture measurement default, roles ${bits}`);
-        assert.deepEqual(payment_providers,{stripe:false,barion:false});
-        assert.deepEqual(providerFields,{stripe:{},barion:{}});
+        assert.deepEqual(payment_providers,{stripe:false,barion:false,gopay:false});
+        assert.deepEqual(providerFields,{stripe:{},barion:{},gopay:{}});
         assert.equal(payment_method_policy.organizationId,f.org);
         assert.equal(payment_method_policy.unitId,f.unit);
-        assert.deepEqual(Object.fromEntries(Object.entries(payment_method_policy.methods).map(([method,policy])=>[method,policy.policyEnabled])),{bank:false,cash:true,barion:false,stripe:false});
+        assert.deepEqual(Object.fromEntries(Object.entries(payment_method_policy.methods).map(([method,policy])=>[method,policy.policyEnabled])),{bank:false,cash:true,barion:false,gopay:false,stripe:false});
         assert.deepEqual({...currentEnvelope,unit:unitEnvelope,organization:organizationEnvelope,user_info:userInfoEnvelope},original,`unchanged context envelope, roles ${bits}`);
         for(const [key,expected] of Object.entries({
           'orders.read':r.read,'orders.write':r.write,'orders.delete':r.delete,
@@ -710,6 +710,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
 
       'payment_providers/schema.sql':['eshop.payment_providers'],
       'eshop_barion/schema.sql':['barion_connections','barion_attempts','barion_movements','barion_capabilities','barion_sources','barion_observations'].map(n=>'eshop.'+n),
+      'eshop_gopay/schema.sql':['gopay_connections','gopay_attempts','gopay_movements','gopay_capabilities','gopay_sources','gopay_observations'].map(n=>'eshop.'+n),
       'eshop_discounts/schema.sql':['eshop.discount_codes','eshop.order_discounts','eshop.discount_code_audit'],
       'customer_order_changes/policy_schema.sql':['eshop.customer_order_change_policies'],
       'presale_content/archive.sql':['public.form_presale_content_archive'],
@@ -781,7 +782,7 @@ test('full ACL comparison preserves tables and all unrelated function grants',op
     assert.deepEqual((await db.query("select column_name from information_schema.columns where table_schema='public' and table_name='forms' and column_name=any($1)",[['term_start_at','term_end_at']])).rows,[],
       'retired form term columns have no remaining grants');
     const paymentColumnTemplate=before.columnGrants.filter(g=>g.table_schema==='eshop'&&g.table_name==='payment_info'&&g.column_name==='id');
-    for(const column_name of ['payment_method','stripe_connection_id','barion_connection_id'])expectedColumns.push(...paymentColumnTemplate.map(g=>({...g,column_name})));
+    for(const column_name of ['payment_method','stripe_connection_id','barion_connection_id','gopay_connection_id'])expectedColumns.push(...paymentColumnTemplate.map(g=>({...g,column_name})));
     assert.deepEqual(sorted(after.columnGrants),sorted([...before.columnGrants,...expectedColumns]),
         'Every old column grant remains exact; additions match the reviewed Stripe ownership/inheritance');
     const old=new Map(before.functions.map(f=>[f.signature,f]));
