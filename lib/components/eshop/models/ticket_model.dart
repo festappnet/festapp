@@ -11,6 +11,7 @@ import '../eshop_columns.dart';
 import '../ticket_batch_strings.dart';
 import 'order_model.dart';
 import '../../blueprint/blueprint_object_model.dart';
+import '../../forms/order_overview_strings.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:intl/intl.dart';
 
@@ -27,6 +28,7 @@ class TicketModel extends ITrinaRowModel {
   String? note;
   String? noteHidden;
   double? totalPrice;
+  bool isStanding;
 
   // Relating spots, products, and orders directly to the ticket
   BlueprintObjectModel? relatedSpot;
@@ -49,6 +51,7 @@ class TicketModel extends ITrinaRowModel {
     this.allowedActions,
     this.note,
     this.noteHidden,
+    this.isStanding = false,
     this.relatedSpot,
     this.relatedProducts,
     this.relatedOrder,
@@ -127,7 +130,9 @@ class TicketModel extends ITrinaRowModel {
               ? relatedProducts!.map((p) => p.toBasicString()).join(" | ")
               : ""),
       EshopColumnIds.TICKET_SPOT: TrinaCell(
-          value: relatedSpot != null ? relatedSpot?.toSpotString() : ""),
+          value: isStanding
+              ? OrderOverviewStrings.text('standingPlace')
+              : relatedSpot?.toSpotString() ?? ''),
       EshopColumnIds.TICKET_TOTAL_PRICE: TrinaCell(
           value: totalPrice != null
               ? Utilities.formatPrice(context, totalPrice!,
@@ -153,6 +158,7 @@ class TicketModel extends ITrinaRowModel {
             : json[EshopColumnIds.TICKET_ID],
         ticketSymbol: json[EshopColumnIds.TICKET_SYMBOL] as String?,
         relatedOrder: json[EshopColumnIds.ORDER_MODEL_REFERENCE] as OrderModel?,
+        isStanding: original?.isStanding ?? false,
         relatedSpot: original?.relatedSpot,
         relatedProducts: original?.relatedProducts,
         noteHidden: json[EshopColumnIds.TICKET_NOTE_HIDDEN]);

@@ -604,7 +604,7 @@ class EshopColumns {
             title: OrdersStrings.gridSpot,
             field: EshopColumnIds.TICKET_SPOT,
             type: TrinaColumnType.text(),
-            width: 60,
+            width: 132,
           ),
         ],
         EshopColumnIds.ORDER_ID: [

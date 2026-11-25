@@ -1,3 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:fstapp/components/blueprint/blueprint_object_model.dart';
+import 'package:flutter/widgets.dart';
+import 'package:material_ui/material_ui.dart' show MaterialApp;
 import 'package:fstapp/components/eshop/eshop_column_ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trina_grid/trina_grid.dart';
@@ -8,7 +14,10 @@ import 'package:fstapp/components/eshop/db_tickets.dart';
 import 'package:fstapp/components/eshop/models/order_model.dart';
 import 'package:fstapp/components/eshop/models/ticket_model.dart';
 
+import '../../support/fixtures/widget_environment_fixture.dart';
+
 void main() {
+  WidgetEnvironmentFixture.register();
   TicketModel ticket(int id, String state, {String? symbol}) => TicketModel(
         id: id,
         state: state,
@@ -71,6 +80,70 @@ void main() {
     expect(canDownloadTicket(waiting.state), isFalse);
     expect(canToggleTicketUsage(withdrawn.state), isFalse);
     expect(canDownloadTicket(regular.state), isTrue);
+  });
+
+  testWidgets('ticket grid distinguishes standing, seated and unassigned places',
+      (tester) async {
+    final standing = ticket(10, 'paid');
+    final seated = ticket(11, 'paid')
+      ..relatedSpot = BlueprintObjectModel(title: 'Stůl 3I');
+    final unassigned = ticket(12, 'paid');
+    final rows = DbTickets.ticketsFromOrdersBundle(ReservationsBundle(
+      orders: [
+        OrderModel(
+          relatedTickets: [standing, seated, unassigned],
+          data: {
+            'tickets': [
+              {
+                'id': 10,
+                'products': [
+                  {'title': 'Balkon', 'is_standing': true},
+                ],
+              },
+              {
+                'id': 11,
+                'products': [
+                  {'is_standing': false},
+                ],
+              },
+              {
+                'id': 12,
+                'products': [
+                  {'title': 'Stání'},
+                ],
+              },
+            ],
+          },
+        ),
+      ],
+      forms: [],
+    ));
+
+    final catalog =
+        jsonDecode(File('assets/translations/cs.json').readAsStringSync());
+    await WidgetEnvironmentFixture(
+      locale: const Locale('cs'),
+      translations: catalog,
+    ).pumpWidget(
+      tester,
+      MaterialApp(
+        home: Builder(builder: (context) {
+          final placesByTicket = {
+            for (final row in rows)
+              row.id: row
+                  .toTrinaRow(context)
+                  .cells[EshopColumnIds.TICKET_SPOT]!
+                  .value,
+          };
+          expect(placesByTicket, {
+            10: 'Místo na stání',
+            11: 'Stůl 3I',
+            12: '',
+          });
+          return const SizedBox();
+        }),
+      ),
+    );
   });
 
   test('numeric ticket IDs isolate prices when symbols are null', () {
