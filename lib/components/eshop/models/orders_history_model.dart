@@ -207,16 +207,15 @@ class OrderHistoryModel extends ITrinaRowModel {
   /// Handles products with null prices.
   /// Historical events use their immutable payload, never the current order summary.
   String? get waitlistActionSummary {
-    final key = const {
-      'offer_sent': 'historyOfferSent',
-      'waitlist_accept': 'admitted',
-      'waitlist_decline': 'declined',
-      'waitlist_withdraw': 'withdrawn',
-      'waitlist_cancel': 'cancelled',
-      'waitlist_register': 'orderState',
-    }[data?['action']];
-    if (key == null) return null;
-    final parts = [WaitlistStrings.text(key)];
+    final label = switch (data?['action']) {
+      'offer_sent' => WaitlistStrings.text('historyOfferSent'),
+      'waitlist_register' => OrderModel.stateToLocale(OrderModel.waitlistedState),
+      _ => _waitlistEventState == null
+          ? null
+          : OrderModel.stateToLocale(_waitlistEventState),
+    };
+    if (label == null) return null;
+    final parts = [label];
     final count = data?['count'] ??
         (data?['ticketIds'] is List
             ? (data!['ticketIds'] as List).length
@@ -578,34 +577,34 @@ class OrderHistoryModel extends ITrinaRowModel {
     );
   }
 
+  String? get _waitlistEventState => const {
+        'offer_sent': OrderModel.offeredState,
+        'waitlist_withdraw': OrderModel.withdrawnState,
+        'waitlist_decline': OrderModel.offerDeclinedState,
+        'waitlist_cancel': OrderModel.offerCancelledState,
+        'waitlist_accept': OrderModel.admittedState,
+      }[data?['action']];
+
   String? get waitlistHistoryState {
-    final lifecycle = const {
-      'offer_sent': 'offered',
-      'waitlist_withdraw': 'withdrawn',
-      'waitlist_decline': 'declined',
-      'waitlist_cancel': 'offer_cancelled',
-      'waitlist_accept': 'admitted',
-    }[data?['action']];
+    final lifecycle = _waitlistEventState;
     if (lifecycle == null) return null;
     final affected = data?['ticketIds'] is List
         ? (data!['ticketIds'] as List).length
         : data?['count'];
-    final label = WaitlistStrings.text(lifecycle);
+    final label = OrderModel.stateToLocale(lifecycle);
     // The count describes the affected tickets, not the whole order lifecycle.
     final target =
         affected is num && affected > 0 ? '$label ($affected)' : label;
-    final targetKey = lifecycle == 'offered'
-        ? OrderModel.waitlistedState
-        : lifecycle == 'admitted' &&
-                const {
-                  OrderModel.orderedState,
-                  OrderModel.paidState,
-                  OrderModel.sentState,
-                  OrderModel.usedState,
-                }.contains(state)
-            ? state!
-            : 'history:$lifecycle';
-    return '${OrderModel.waitlistedState};${OrderModel.stateToLocale(OrderModel.waitlistedState)} → $targetKey;$target';
+    final targetKey = lifecycle == OrderModel.admittedState &&
+            const {
+              OrderModel.orderedState,
+              OrderModel.paidState,
+              OrderModel.sentState,
+              OrderModel.usedState,
+            }.contains(state)
+        ? state!
+        : lifecycle;
+    return '${OrderModel.formatState(OrderModel.waitlistedState)} → $targetKey;$target';
   }
 
   @override
@@ -631,14 +630,14 @@ class OrderHistoryModel extends ITrinaRowModel {
     }
 
     String stateCellFormat;
-    if (waitlistHistoryState != null) {
-      stateCellFormat = waitlistHistoryState!;
+    if (waitlistHistoryState case final String waitlistState) {
+      stateCellFormat = waitlistState;
     } else if (previousHistoryRecord != null &&
         state != previousHistoryRecord!.state) {
       final fromStateKey = previousHistoryRecord!.state ?? "";
       final toStateKey = state ?? "";
       stateCellFormat =
-          "$fromStateKey;${OrderModel.stateToLocale(fromStateKey)} → $toStateKey;${OrderModel.stateToLocale(toStateKey)}";
+          "${OrderModel.formatState(fromStateKey)} → ${OrderModel.formatState(toStateKey)}";
     } else {
       final stateKey = state ?? OrderModel.orderedState;
       stateCellFormat = OrderModel.formatState(stateKey);

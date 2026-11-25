@@ -679,7 +679,7 @@ class EshopColumns {
                 title: OrdersStrings.gridState,
                 field: EshopColumnIds.ORDER_STATE,
                 type: TrinaColumnType.select(
-                  OrderModel.statesToDataGridFormat(),
+                  OrderModel.statesToDataGridFormat(forOrders: true),
                 ),
                 renderer: (rendererContext) => _originalOrderStateRenderer(
                     context,
@@ -687,18 +687,8 @@ class EshopColumns {
                     OrderModel.singleDataGridStateToColor,
                     onChanged: data[EshopColumnIds.ORDER_STATE],
                     occasionId: data["occasionId"] as int?,
-                    onOpenDetail: data["openOrderDetail"] as void Function(int, String)?,
-                    label: rendererContext.cell.value
-                                    .toString()
-                                    .split(';')
-                                    .first ==
-                                OrderModel.waitlistedState &&
-                            OrderGridFilters.order(rendererContext.row)
-                                    ?.isWaitlisted ==
-                                true
-                        ? OrderGridFilters.order(rendererContext.row)
-                            ?.stateLabel
-                        : null),
+                    onOpenDetail:
+                        data["openOrderDetail"] as void Function(int, String)?),
                 textAlign: TrinaColumnTextAlign.center,
                 width: 140,
               ),
@@ -1306,7 +1296,7 @@ class EshopColumns {
             type: TrinaColumnType.text(),
             renderer: (rendererContext) => buildOrderStateRenderer(
                 rendererContext.cell.value,
-                OrderStateDisplay.historyBackground),
+                OrderModel.singleDataGridStateToColor),
             textAlign: TrinaColumnTextAlign.center,
             width: 280,
           ),
@@ -1354,13 +1344,11 @@ class EshopColumns {
       BuildContext context,
       TrinaColumnRendererContext rendererContext,
       Color Function(String) getBackground,
-      {String? label,
-      Future<void> Function()? onChanged,
+      {Future<void> Function()? onChanged,
       int? occasionId, void Function(int, String)? onOpenDetail}) {
     String value = rendererContext.cell.value;
     String firstPart = value.split(";")[0];
-    String textValue =
-        OrderModel.statesDataGridToUpper(label ?? value.split(";").last);
+    final textValue = value.split(";").last.toUpperCase();
 
     return OrderStateCell(
       label: textValue,

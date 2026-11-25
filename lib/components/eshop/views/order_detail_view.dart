@@ -843,7 +843,9 @@ class _OrderDetailViewState extends State<OrderDetailView>
                   ticket['state'] == 'used'
                       ? OrderDetailStrings.text('pouzita')
                       : ticket['state'] == 'storno'
-                      ? OrderDetailStrings.text('zrusena')
+                      ? d.model.isWaitlisted && ticket['ticket_symbol'] == null
+                            ? OrderModel.stateToLocale(OrderModel.withdrawnState)
+                            : OrderDetailStrings.text('zrusena')
                       : ticket['state'] == 'waitlisted'
                       ? OrderDetailStrings.text('ceka_na_misto')
                       : OrderDetailStrings.text(
@@ -1158,13 +1160,17 @@ class _OrderDetailViewState extends State<OrderDetailView>
                       builder: (context, headerConstraints) {
                         final color = Color.alphaBlend(
                           OrderModel.singleDataGridStateToColor(
-                            d.model.state ?? '',
+                            d.model.displayState ?? '',
                           ),
                           SingleDataGridHeader.defaultTrinaGridConfiguration(
                             context,
                             Localizations.localeOf(context).languageCode,
                           ).style.gridBackgroundColor,
                         );
+                        // Use whichever of black and white has higher contrast.
+                        final labelColor = color.computeLuminance() > 0.179
+                            ? Colors.black
+                            : Colors.white;
                         final navigation = Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1324,12 +1330,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelLarge
-                                          ?.copyWith(
-                                            color:
-                                                color.computeLuminance() > .35
-                                                ? Colors.black
-                                                : Colors.white,
-                                          ),
+                                          ?.copyWith(color: labelColor),
                                     ),
                                   ),
                                   if ((d.canWrite &&

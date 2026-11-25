@@ -21,7 +21,6 @@ import 'package:trina_grid/trina_grid.dart';
 
 import 'order_data_ticket_model.dart';
 import 'orders_history_model.dart';
-import 'package:fstapp/components/_shared/common_strings.dart';
 
 class OrderModel extends ITrinaRowModel {
   @override
@@ -36,16 +35,34 @@ class OrderModel extends ITrinaRowModel {
   bool? active;
   Set<String>? allowedActions;
   bool get isWaitlisted => state == waitlistedState;
-  String get stateLabel {
+  // Stored state drives commands. The waitlist summary describes the current
+  // outcome, including orders with only withdrawn or closed waitlist entries.
+  String? get displayState {
     final counts = waitlistSummary?.counts;
-    if (isWaitlisted &&
-        counts != null &&
-        counts.values.fold<int>(0, (sum, count) => sum + count) == 1 &&
-        counts['offered'] == 1) {
-      return WaitlistStrings.text('offered');
+    if (!isWaitlisted || counts == null) return state;
+    final outcomes = counts.entries.where((entry) => entry.value > 0).toList();
+    if (outcomes.isEmpty) return state;
+    const terminalOutcomes = {
+      withdrawnState: withdrawnState,
+      'cancelled': stornoState,
+      offerDeclinedState: offerDeclinedState,
+      offerCancelledState: offerCancelledState,
+    };
+    if (outcomes.length == 1) {
+      final outcome = outcomes.single;
+      if (outcome.key == offeredState && outcome.value == 1) {
+        return offeredState;
+      }
+      return terminalOutcomes[outcome.key] ?? state;
     }
-    return stateToLocale(state);
+    if (outcomes.every((outcome) => terminalOutcomes.containsKey(outcome.key))) {
+      return withdrawnState;
+    }
+    return state;
   }
+
+  String get stateLabel => stateToLocale(displayState);
+  String get gridState => formatState(displayState ?? orderedState);
 
   bool get isActive =>
       active ??
@@ -120,6 +137,12 @@ class OrderModel extends ITrinaRowModel {
   List<OrderDataTicketModel>? dataTickets;
 
   static const String waitlistedState = "waitlisted";
+  static const String offeredState = 'offered';
+  static const String withdrawnState = 'withdrawn';
+  static const String offerExpiredState = 'offer_expired';
+  static const String offerDeclinedState = 'offer_declined';
+  static const String offerCancelledState = 'offer_cancelled';
+  static const String admittedState = 'admitted';
   static const String expiredState = "expired";
   static const String orderedState = "ordered";
   static const String paidState = "paid";
@@ -141,6 +164,13 @@ class OrderModel extends ITrinaRowModel {
     switch (state) {
       case waitlistedState:
         return WaitlistStrings.text('orderState');
+      case offeredState:
+      case withdrawnState:
+      case offerExpiredState:
+      case offerDeclinedState:
+      case offerCancelledState:
+      case admittedState:
+        return WaitlistStrings.text(state);
       case orderedState:
       case expiredState:
         return OrdersStrings.stateOrdered;
@@ -151,20 +181,21 @@ class OrderModel extends ITrinaRowModel {
       case usedState:
         return OrdersStrings.stateUsed;
       case stornoState:
-        return CommonStrings.cancelled;
+        return OrdersStrings.gridCancelled;
       default:
         return state; // Return the key itself if not found
     }
   }
 
-  static String statesDataGridToUpper(String state) {
-    String firstPart = state.split(";")[0];
-    return stateToLocale(firstPart).toUpperCase();
-  }
-
-  static List<String> statesToDataGridFormat() {
-    return OrderModel.orderStates.map(formatState).toList();
-  }
+  static List<String> statesToDataGridFormat({bool forOrders = false}) => [
+        ...orderStates,
+        if (forOrders) ...[
+          offeredState,
+          withdrawnState,
+          offerDeclinedState,
+          offerCancelledState,
+        ],
+      ].map(formatState).toList();
 
   static String formatState(String state) {
     return "$state;${OrderModel.stateToLocale(state)}";
@@ -189,10 +220,12 @@ class OrderModel extends ITrinaRowModel {
     String firstPart = state.split(";")[0];
     switch (firstPart) {
       case waitlistedState:
+      case offeredState:
         color = Colors.amber[700]!;
         break;
       case expiredState:
       case orderedState:
+      case admittedState:
         color = Colors.green[100]!; // Blue for ordered
         break;
       case paidState:
@@ -205,8 +238,10 @@ class OrderModel extends ITrinaRowModel {
         color = Colors.blue[600]!; // A darker shade of grey for used
         break;
       case stornoState:
-        color =
-            Colors.grey[700]!; // A lighter shade of green for canceled (storno)
+      case withdrawnState:
+      case offerDeclinedState:
+      case offerCancelledState:
+        color = Colors.grey[700]!;
         break;
       default:
         color = Colors.black; // Black for unknown states
@@ -350,8 +385,7 @@ class OrderModel extends ITrinaRowModel {
                   currencyCode: currencyCode,
                   decimalDigits: decimalDigitsForAmount(price))
               : ""),
-      EshopColumnIds.ORDER_STATE:
-          TrinaCell(value: OrderModel.formatState(state ?? orderedState)),
+      EshopColumnIds.ORDER_STATE: TrinaCell(value: gridState),
       EshopColumnIds.PAYMENT_INFO_AMOUNT: TrinaCell(
           value: paymentInfoModel?.amount != null
               ? Utilities.formatPrice(context, paymentInfoModel!.amount!,

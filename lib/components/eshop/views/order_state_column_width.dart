@@ -13,7 +13,7 @@ double orderStateColumnWidth(
       .style
       .merge(TrinaGridStyleConfig.defaultLightCellTextStyle);
   for (final order in orders) {
-    final label = OrderModel.statesDataGridToUpper(order.stateLabel);
+    final label = order.stateLabel.toUpperCase();
     final painter = TextPainter(
       text: TextSpan(text: label, style: style),
       textDirection: Directionality.of(context),

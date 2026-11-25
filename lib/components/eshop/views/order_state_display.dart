@@ -2,8 +2,6 @@ import 'dart:ui' as ui;
 
 import 'package:material_ui/material_ui.dart';
 
-import '../models/order_model.dart';
-
 /// A reusable widget to display a single order state or a from-to state transition.
 class OrderStateDisplay extends StatelessWidget {
   /// The formatted string representing the state.
@@ -29,28 +27,16 @@ class OrderStateDisplay extends StatelessWidget {
     required this.formattedState,
     required this.getBackground,
     this.stateTagWidth,
-    this.enableWrapping = false, // NEW: Defaulted to false
+    this.enableWrapping = false,
   });
 
-  /// Presentation keys belong only to immutable history, never order states.
-  static Color historyBackground(String key) {
-    if (key == 'history:admitted') {
-      return OrderModel.singleDataGridStateToColor(OrderModel.orderedState);
-    }
-    if (key.startsWith('history:')) {
-      return Colors.grey.shade500.withValues(alpha: 0.6);
-    }
-    return OrderModel.singleDataGridStateToColor(key);
-  }
-
   /// A helper method to calculate the optimal width for the state tags.
-  static double calculateOptimalWidth({
+  static double _calculateOptimalWidth({
     required BuildContext context,
     required List<String> stateLabels,
-    TextStyle? style,
     EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
   }) {
-    final textStyle = style ?? DefaultTextStyle.of(context).style;
+    final textStyle = DefaultTextStyle.of(context).style;
     double maxWidth = 0;
 
     for (final label in stateLabels) {
@@ -58,9 +44,11 @@ class OrderStateDisplay extends StatelessWidget {
         text: TextSpan(text: label, style: textStyle),
         maxLines: 1,
         textDirection: ui.TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
       )..layout(minWidth: 0, maxWidth: double.infinity);
 
       final totalWidth = textPainter.size.width + padding.horizontal;
+      textPainter.dispose();
 
       if (totalWidth > maxWidth) {
         maxWidth = totalWidth;
@@ -75,7 +63,7 @@ class OrderStateDisplay extends StatelessWidget {
     if (parts.length != 2) return const SizedBox.shrink();
 
     final key = parts[0];
-    final text = OrderModel.statesDataGridToUpper(parts[1]);
+    final text = parts[1].toUpperCase();
 
     return SizedBox(
       width: fixedWidth,
@@ -86,8 +74,12 @@ class OrderStateDisplay extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Center(
-          child: Text(text, maxLines: 1,
-              textAlign: TextAlign.center, overflow: TextOverflow.ellipsis),
+          child: Text(
+            text,
+            maxLines: enableWrapping ? null : 1,
+            textAlign: TextAlign.center,
+            overflow: enableWrapping ? null : TextOverflow.ellipsis,
+          ),
         ),
       ),
     );
@@ -105,13 +97,20 @@ class OrderStateDisplay extends StatelessWidget {
       return LayoutBuilder(
         builder: (context, constraints) {
           const double arrowAndPaddingWidth = 40;
-          final double requiredWidth =
-              (stateTagWidth ?? 80.0) * 2 + arrowAndPaddingWidth;
+          final tagWidth =
+              stateTagWidth ??
+              (enableWrapping
+                  ? _calculateOptimalWidth(
+                      context: context,
+                      stateLabels: [
+                        fromState.split(';').last.toUpperCase(),
+                        toState.split(';').last.toUpperCase(),
+                      ],
+                    )
+                  : 80.0);
+          final requiredWidth = tagWidth * 2 + arrowAndPaddingWidth;
 
-          // MODIFIED: The condition now also checks the `enableWrapping` flag.
-          // The widget will only wrap if wrapping is enabled AND there isn't enough space.
           if (enableWrapping && constraints.maxWidth < requiredWidth) {
-            // --- NARROW VIEW (WRAPPED) ---
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -124,15 +123,12 @@ class OrderStateDisplay extends StatelessWidget {
               ],
             );
           } else {
-            // --- WIDE VIEW (OR NON-WRAPPING) ---
             return Row(
               children: [
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      _buildStateTag(fromState, fixedWidth: stateTagWidth),
-                    ],
+                    children: [_buildStateTag(fromState, fixedWidth: tagWidth)],
                   ),
                 ),
                 const Padding(
@@ -142,9 +138,7 @@ class OrderStateDisplay extends StatelessWidget {
                 Expanded(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      _buildStateTag(toState, fixedWidth: stateTagWidth),
-                    ],
+                    children: [_buildStateTag(toState, fixedWidth: tagWidth)],
                   ),
                 ),
               ],

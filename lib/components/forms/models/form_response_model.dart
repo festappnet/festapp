@@ -94,8 +94,7 @@ class FormResponseModel extends ITrinaRowModel {
           TrinaCell(value: order?.waitlistSummary?.label ?? ''),
       EshopColumnIds.ORDER_ID: TrinaCell(value: id),
       EshopColumnIds.ORDER_SYMBOL: TrinaCell(value: order!.orderSymbol ?? ""),
-      EshopColumnIds.ORDER_STATE:
-          TrinaCell(value: OrderModel.formatState(order!.state!)),
+      EshopColumnIds.ORDER_STATE: TrinaCell(value: order!.gridState),
       EshopColumnIds.TICKET_PRODUCTS: TrinaCell(
           value: order!.relatedProducts != null
               ? order!.relatedProducts!

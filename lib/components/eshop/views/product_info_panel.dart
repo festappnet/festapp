@@ -40,8 +40,7 @@ class ProductInfoPanel extends StatelessWidget {
             ticket.ticketSymbol ?? "N/A"),
         _buildInfoRow(
             context, OrdersStrings.infoEmail, order.data?["email"] ?? "N/A"),
-        _buildInfoRow(context, OrdersStrings.infoOrderStatus,
-            OrderModel.stateToLocale(order.state!)),
+        _buildInfoRow(context, OrdersStrings.infoOrderStatus, order.stateLabel),
         _buildInfoRow(context, OrdersStrings.infoPayment,
             "${amount(totalPaid)} / ${amount(orderPrice)}",
             valueColor: isFullyPaid ? Colors.green : Colors.orange.shade700),
