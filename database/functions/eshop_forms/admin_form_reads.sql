@@ -23,11 +23,13 @@ REVOKE ALL ON FUNCTION public.get_form_usage_internal(bigint) FROM PUBLIC,anon,a
 -- keys/links and bank-account details are not part of this authoring snapshot.
 CREATE OR REPLACE FUNCTION public.get_form_authoring_snapshot_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ -- The projection uses bundle repeatedly. Compute the expensive builder once.
+ WITH b AS MATERIALIZED (SELECT public.get_form_editor_bundle_internal(p_form,true) bundle)
  SELECT jsonb_build_object('form',(bundle->'data'->'form')-ARRAY['key','link','organizationIdentity','created_at'],
   'fields',bundle->'data'->'form_fields','productTypes',bundle->'data'->'product_types','products',bundle->'data'->'products',
   'productVersions',(SELECT coalesce(jsonb_object_agg(p->>'id',p->'aggregate_version'),'{}') FROM jsonb_array_elements(bundle->'data'->'products') p),
   'productTypeVersions',(SELECT coalesce(jsonb_object_agg(p->>'id',p->'aggregate_version'),'{}') FROM jsonb_array_elements(bundle->'data'->'product_types') p))
- FROM (SELECT public.get_form_editor_bundle_internal(p_form,true) bundle) b WHERE (bundle->>'code')::int=200;
+ FROM b WHERE (bundle->>'code')::int=200;
 $$;
 REVOKE ALL ON FUNCTION public.get_form_authoring_snapshot_internal(bigint) FROM PUBLIC,anon,authenticated,service_role;
 

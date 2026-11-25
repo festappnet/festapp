@@ -1072,8 +1072,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_meta_purchase_datalayer_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9d34471848e2bc0d77d67af1c633b055'),'current SQL source parity: public.form_meta_purchase_datalayer_internal(bigint)');
 -- supabase/migrations/20261121020000_self_service_meta_capi.sql
  PERFORM assert_true(to_regprocedure('public.form_meta_purchase_unit_internal(bigint)') IS NULL,'retired SQL identity remains absent: public.form_meta_purchase_unit_internal(bigint)');
--- supabase/migrations/20261115120000_discount_codes.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_order_facts_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='df505b9805ea5e7146b4d0de5ab58ebe'),'current SQL source parity: public.form_order_facts_internal(bigint)');
+-- supabase/migrations/20261125160000_materialize_form_authoring_snapshot.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_order_facts_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='da6c3e86eee7a6063d081a9f63bc33d9'),'current SQL source parity: public.form_order_facts_internal(bigint)');
 -- supabase/migrations/20261115120000_discount_codes.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.form_order_input_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='26b7010ae569d3799ae4e442b60144a8'),'current SQL source parity: public.form_order_input_internal(bigint,jsonb)');
 -- supabase/migrations/20261121100000_form_measurement_publisher.sql
@@ -1240,8 +1240,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_exclusive_groups_for_edit_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='2b0e14bdb160650e0eed6cd0da9deaa7'),'current SQL source parity: public.get_exclusive_groups_for_edit_v1(bigint)');
 -- supabase/migrations/20261116140000_restore_fakturoid_czk_reference.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_fakturoid_ticket_order_state_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='cf0a1e38ef392d21baf4f734413ee784'),'current SQL source parity: public.get_fakturoid_ticket_order_state_v1(bigint)');
--- supabase/migrations/20261121101000_order_catalog_counts.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_authoring_snapshot_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='7994d0e859101a814c08175e40f538a1'),'current SQL source parity: public.get_form_authoring_snapshot_internal(bigint)');
+-- supabase/migrations/20261125160000_materialize_form_authoring_snapshot.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_authoring_snapshot_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='74875e97c4ab190a3534990e8eb8bd5c'),'current SQL source parity: public.get_form_authoring_snapshot_internal(bigint)');
 -- supabase/migrations/20261112210000_payment_policy_release_integration.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_form_bank_accounts_internal(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='1c7aed363e518b7064b2a945dcae6bb9'),'current SQL source parity: public.get_form_bank_accounts_internal(bigint)');
 -- supabase/migrations/20261121101000_order_catalog_counts.sql

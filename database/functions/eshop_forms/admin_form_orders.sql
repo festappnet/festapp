@@ -30,9 +30,10 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
 $$;
 CREATE OR REPLACE FUNCTION public.form_order_facts_internal(p_form bigint)
 RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ WITH s AS MATERIALIZED (SELECT public.get_form_authoring_snapshot_internal(p_form) snap)
  SELECT jsonb_build_object('form',(SELECT to_jsonb(f)-ARRAY['key','link','created_at'] FROM public.forms f WHERE id=p_form),
   'fields',snap->'fields','products',snap->'products','productTypes',snap->'productTypes')
- FROM (SELECT public.get_form_authoring_snapshot_internal(p_form) snap) s;
+ FROM s;
 $$;
 CREATE OR REPLACE FUNCTION public.preview_form_order_internal(p_form bigint,p_input jsonb)
 RETURNS jsonb LANGUAGE plpgsql SET search_path=public,extensions AS $$

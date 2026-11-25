@@ -18,7 +18,12 @@ class AssetRuntime(unittest.TestCase):
                                 'studio': {'depends_on': {'db': {'condition': 'service_healthy'}}, 'mem_limit': '512m'},
                                 'storage': {'depends_on': ['db', 'imgproxy']}, 'imgproxy': {}},
                    'volumes': {'db-data': {}}, 'networks': {'default': {}}}
-        clusters = {'resources': [{'name': 'storage'}, {'name': 'auth', 'connect_timeout': '5s'}]}
+        clusters = {'resources': [
+            {'name': 'storage'},
+            {'name': 'auth', 'connect_timeout': '5s'},
+            {'name': 'rest', 'health_checks': [{'interval': '5s', 'timeout': '2s',
+                                                'http_health_check': {'path': '/'}}]},
+        ]}
         listeners = {'resources': [{'filter_chains': [{'filters': [{'typed_config': {'route_config': {'virtual_hosts': [
             {'routes': [{'match': {'prefix': '/storage/v1/'}, 'route': {'cluster': 'storage'}},
                         {'match': {'prefix': '/auth/v1/'}, 'route': {'cluster': 'auth'}}]}]}}}]}]}]}
@@ -33,8 +38,19 @@ class AssetRuntime(unittest.TestCase):
         for name in ['storage', 'imgproxy']:
             del expected[0]['services'][name]
         expected[1]['resources'].pop(0)
+        expected[1]['resources'][1]['health_checks'][0]['http_health_check']['path'] = '/organizations?select=id&limit=0'
         expected[2]['resources'][0]['filter_chains'][0]['filters'][0]['typed_config']['route_config']['virtual_hosts'][0]['routes'].pop(0)
         self.assertEqual(result, expected)
+
+    def test_rest_prepare_is_idempotent_and_rejects_an_unknown_probe(self):
+        _, clusters, _ = self.fixture()
+        module.prepare_rest_health(clusters)
+        expected = copy.deepcopy(clusters)
+        module.prepare_rest_health(clusters)
+        self.assertEqual(clusters, expected)
+        clusters['resources'][2]['health_checks'][0]['http_health_check']['path'] = '/other-probe'
+        with self.assertRaisesRegex(ValueError, 'unreviewed_rest_health_check'):
+            module.prepare_rest_health(clusters)
 
     def test_empty_entrypoint_substitutions_remain_strings_in_envoy_matchers(self):
         original = {'string_match': {'exact': '${SUPABASE_SECRET_KEY}'},
