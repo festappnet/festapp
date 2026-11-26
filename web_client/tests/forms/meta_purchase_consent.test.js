@@ -333,64 +333,75 @@ test('checkout only asks the host after a fresh notice and discards matching if 
     assert.deepEqual(await collect(),{});
 });
 
-test('checkout matching waits for the policy recheck started by closing the order preview',async t=>{
-    register('../css_loader.mjs',import.meta.url);
-    const {JSDOM}=await import('jsdom');
-    const win=new JSDOM('',{url:'https://tickets.example/form/pilot'}).window;
+for (const waiting of ['none','notice','host']) test(`confirmed checkout submits after matching or a shared deadline (${waiting})`,async t=>{
+    const {fixture,policy,settle}=await import('../support/measurement_fixture.js');
+    let policyRequests=0;
+    const f=fixture(t,{source:async()=>{policyRequests++;return policy;}});
+    await f.start();
+    const win=f.dom.window;
     const globals={window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent};
     const previous=Object.fromEntries(Object.keys(globals).map(key=>[key,globalThis[key]]));
     Object.assign(globalThis,globals);
-    t.after(()=>{Object.assign(globalThis,previous);win.close();});
-    const {FormPage}=await import('../../src/components/forms/form_page.js');
-    const {DbForms}=await import('../../src/components/forms/db_forms.js');
-    t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>notice);
-    const model={link:'pilot'};
-    const initial=choice();
-    const snapshot=purchaseConsentSnapshot(initial,notice,now);
-    const session={consent:initial,current:true,refreshes:0,hasCurrentPolicy(){return this.current;},
-        refresh(){this.refreshes++;return new Promise(resolve=>setTimeout(()=>{this.current=true;resolve();},5));}};
-    const page=Object.assign(Object.create(FormPage.prototype),{
-        currentSession:{formModel:model},measurementSession:session,
-        embedBridge:{collectMetaCheckoutMatching:async()=>({fbp:'fb.1.1795000000000.good'})},
-    });
+    t.after(()=>Object.assign(globalThis,previous));
+    win.scrollTo=()=>{};
+    win.document.body.innerHTML='<div id="form-page-container"><form></form></div>';
+    const [{FormPage},{FormNetwork},{DbForms},{RouterService}]=await Promise.all([
+        import('../../src/components/forms/form_page.js'),import('../../src/components/forms/form_network.js'),
+        import('../../src/components/forms/db_forms.js'),import('../../src/services/router_service.js'),
+    ]);
+    const allowed={...choice(),leaseId:'checkout-lease',expiresAt:Date.now()+30000};
+    f.choose(allowed);
+    const page=new FormPage('form-page-container');
+    page.measurementSession=f.session;
+    page.currentSession={formModel:f.model,payload:{form:'summer'},awaitPendingReservations:async()=>{},
+        captureReservationCapability:()=>null,completeReservation:()=>{}};
+    page.cleanup=()=>{};
+    const matching={fbp:'fb.1.1795000000000.good',fbc:'fb.1.1795000000000.click'};
+    let resolveNotice,resolveHost;
+    const noticeLookup=waiting==='none' ? notice : new Promise(resolve=>{resolveNotice=resolve;});
+    const hostLookup=waiting==='host' ? new Promise(resolve=>{resolveHost=resolve;}) : matching;
+    t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>noticeLookup);
+    page.embedBridge={collectMetaCheckoutMatching:async()=>hostLookup};
     const host=t.mock.method(page.embedBridge,'collectMetaCheckoutMatching');
-    // The preview's history pop resets the session's policy deadline before the lookup settles.
-    const previewClosed=new Promise(resolve=>setTimeout(()=>{session.current=false;resolve();},1));
-    assert.deepEqual(await page.collectMetaCheckoutMatching(model,snapshot,previewClosed),{fbp:'fb.1.1795000000000.good'});
-    assert.equal(session.refreshes,1);
-    assert.equal(host.mock.callCount(),1);
-    // A current policy needs no extra round trip.
-    assert.deepEqual(await page.collectMetaCheckoutMatching(model,snapshot),{fbp:'fb.1.1795000000000.good'});
-    assert.equal(session.refreshes,1);
-});
+    let finish;
+    const rendered=new Promise(resolve=>{finish=resolve;});
+    page.showFullScreenResult=finish;
+    const sent=t.mock.method(FormNetwork,'submitOrder',async()=>({success:true,data:{code:200}}));
 
-test('a stalled policy recheck degrades checkout matching instead of holding the order',async t=>{
-    register('../css_loader.mjs',import.meta.url);
-    const {JSDOM}=await import('jsdom');
-    const win=new JSDOM('',{url:'https://tickets.example/form/pilot'}).window;
-    const globals={window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent};
-    const previous=Object.fromEntries(Object.keys(globals).map(key=>[key,globalThis[key]]));
-    Object.assign(globalThis,globals);
-    t.after(()=>{Object.assign(globalThis,previous);win.close();});
-    const {FormPage}=await import('../../src/components/forms/form_page.js');
-    const {DbForms}=await import('../../src/components/forms/db_forms.js');
-    t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>notice);
-    t.mock.timers.enable({apis:['setTimeout']});
-    const model={link:'pilot'};
-    const snapshot=purchaseConsentSnapshot(choice(),notice,now);
-    const page=Object.assign(Object.create(FormPage.prototype),{
-        currentSession:{formModel:model},
-        measurementSession:{consent:choice(),hasCurrentPolicy:()=>false,refresh:()=>new Promise(()=>{})},
-        embedBridge:{collectMetaCheckoutMatching:async()=>({fbp:'fb.1.1795000000000.good'})},
-    });
-    const host=t.mock.method(page.embedBridge,'collectMetaCheckoutMatching');
-    let settled=false;
-    const result=page.collectMetaCheckoutMatching(model,snapshot).then(value=>{settled=true;return value;});
-    for (let i=0;i<5;i++) await new Promise(resolve=>setImmediate(resolve));
-    assert.equal(settled,false);
-    t.mock.timers.tick(1500);
-    assert.deepEqual(await result,{});
-    assert.equal(host.mock.callCount(),0,'stale policy never asks the host');
+    // Use the real history traversal for the success case. Delay the notice
+    // lookup until both events have fired so an old policy read cannot hide it.
+    if (waiting==='none') {
+        RouterService.pushOverlayState('order-preview');
+        const preview=win.document.createElement('div');
+        preview.id='order-preview-overlay';
+        win.document.body.append(preview);
+        const closed=new Promise(resolve=>win.addEventListener('hashchange',resolve,{once:true}));
+        DbForms.getMetaPurchaseConsent.mock.mockImplementation(async()=>{await closed;return notice;});
+    } else {
+        t.mock.timers.enable({apis:['setTimeout']});
+    }
+    page.submitOrder(win.document.querySelector('form'),f.model,null,null,page.currentPurchaseConsent(notice));
+    if (waiting!=='none') {
+        await settle();
+        if (waiting==='host') {
+            t.mock.timers.tick(1200);
+            resolveNotice(notice);
+            await settle();
+            assert.equal(host.mock.callCount(),1);
+        }
+        t.mock.timers.tick(waiting==='host' ? 299 : 1499);
+        assert.equal(sent.mock.callCount(),0);
+        t.mock.timers.tick(1);
+    }
+    assert.equal(await rendered,true);
+    assert.equal(sent.mock.callCount(),1);
+    assert.deepEqual(sent.mock.calls[0].arguments[0].metaPurchaseConsent.matching,waiting==='none' ? matching : undefined);
+    assert.equal(policyRequests,1);
+    resolveNotice?.(notice);
+    resolveHost?.(matching);
+    await settle();
+    assert.equal(host.mock.callCount(),waiting==='notice' ? 0 : 1);
+    assert.equal(sent.mock.callCount(),1);
 });
 
 for (const offset of [-3600000,3600000]) test('withdrawal during checkout survives client clock offset '+offset,async()=>{

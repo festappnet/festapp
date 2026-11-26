@@ -53,8 +53,7 @@ import { paymentMethodText } from './payment_method_strings.js';
 import { BlueprintLayoutAdapter } from '../blueprint/blueprint_layout_adapter.js';
 import { CardPaymentController } from './card_payment_controller.js';
 
-// Upper bound for the post-preview policy recheck before checkout matching.
-const META_MATCHING_POLICY_WAIT_MS = 1500;
+const META_CHECKOUT_MATCHING_TIMEOUT_MS = 1500;
 
 export class FormPage extends Component {
     // Keep internal session static for now if needed across hot-reloads, or instance?
@@ -160,7 +159,7 @@ export class FormPage extends Component {
             // Rebuild the catalog and cart observation from the fresh form.
             this.analytics?.dispose();
             this.analytics = null;
-            this.measurementRefreshPending = null;
+            this.measurementRefreshPending = this.measurementSession.restartContext();
         } else {
             this.disposeMeasurement();
         }
@@ -635,7 +634,7 @@ export class FormPage extends Component {
         if (this.measurementSession && (this.measurementSession.disposed || this.measurementSession.model.link !== formModel.link)) this.disposeMeasurement();
         if (!this.analytics && this.measurementSession) {
             const measurement = this.measurementSession;
-            const refresh = measurement.refresh();
+            const refresh = this.measurementRefreshPending ?? measurement.refresh();
             this.measurementRefreshPending = refresh;
             // The form can render while the retained grant is rechecked.
             void refresh.then(() => {
@@ -1011,28 +1010,36 @@ export class FormPage extends Component {
             ? purchaseConsentSnapshot(measurement.consent, notice) : null;
     }
 
-    async collectMetaCheckoutMatching(formModel,snapshot,previewClosed=Promise.resolve()) {
-        try {
-            const [notice]=await Promise.all([DbForms.getMetaPurchaseConsent(formModel.link),previewClosed]);
-            // Closing the order preview pops its history entry, which restarts
-            // policy verification. Ask the host only after that fresh policy exists;
-            // a slow or failed check degrades to no matching data, never a held order.
-            const measurement=this.measurementSession;
-            if (measurement && (this.measurementRefreshPending || !measurement.hasCurrentPolicy())) {
-                let timer;
-                await Promise.race([
-                    Promise.all([measurement.refresh(),this.measurementRefreshPending]),
-                    new Promise(resolve=>{timer=setTimeout(resolve,META_MATCHING_POLICY_WAIT_MS);}),
-                ]).finally(()=>clearTimeout(timer));
-            }
-            const current=()=>this.currentPurchaseConsent(notice);
-            if (this.currentSession?.formModel!==formModel || notice?.revision!==snapshot.revision ||
-                !samePurchaseDecision(current(),snapshot))return {};
+    collectMetaCheckoutMatching(formModel,snapshot,isCurrent=this.checkoutMatchingContext(formModel)) {
+        const expiresAt=performance.now()+META_CHECKOUT_MATCHING_TIMEOUT_MS;
+        let expired=false;
+        let timer;
+        const deadline=new Promise(resolve=>{
+            timer=setTimeout(()=>{
+                expired=true;
+                resolve({});
+            },META_CHECKOUT_MATCHING_TIMEOUT_MS);
+        });
+        const lookup=async()=>{
+            if (!isCurrent()) return {};
+            const notice=await DbForms.getMetaPurchaseConsent(formModel.link);
+            const eligible=()=>!expired && performance.now()<expiresAt && isCurrent() && notice?.revision===snapshot.revision &&
+                samePurchaseDecision(this.currentPurchaseConsent(notice),snapshot);
+            if (!eligible()) return {};
             const matching=snapshot.source==='klaro'
                 ? metaBrowserMatching(snapshot,window)
                 : await this.embedBridge?.collectMetaCheckoutMatching(snapshot);
-            return this.currentSession?.formModel===formModel && samePurchaseDecision(current(),snapshot) ? matching || {} : {};
-        } catch { return {}; }
+            return eligible() ? matching || {} : {};
+        };
+        return Promise.race([lookup().catch(()=>({})),deadline]).finally(()=>clearTimeout(timer));
+    }
+
+    checkoutMatchingContext(formModel) {
+        const session=this.currentSession;
+        const measurement=this.measurementSession;
+        const epoch=measurement?.contextEpoch;
+        return ()=>session?.formModel===formModel && this.currentSession===session &&
+            this.measurementSession===measurement && measurement?.contextEpoch===epoch && measurement?.hasCurrentPolicy();
     }
 
     submitOrder(form, formModel, unusedContent, retrySubmission = null, metaPurchaseConsent = null) {
@@ -1098,8 +1105,8 @@ export class FormPage extends Component {
             } : null);
         const submittedSession = this.currentSession;
         const measurementOutcome=this.analytics?.captureSubmission(payload);
-        const matchingRequest=!retrySubmission && metaPurchaseConsent
-            ? this.collectMetaCheckoutMatching(formModel,metaPurchaseConsent,previewHistoryClosed) : null;
+        const matchingContext=!retrySubmission && metaPurchaseConsent ? this.checkoutMatchingContext(formModel) : null;
+        const matchingRequest=matchingContext ? this.collectMetaCheckoutMatching(formModel,metaPurchaseConsent,matchingContext) : null;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
             if (retrySubmission) submittedCapability = retrySubmission.capability;
@@ -1108,7 +1115,10 @@ export class FormPage extends Component {
                 submittedCapability = submittedSession?.captureReservationCapability();
             }
             const matching = matchingRequest ? await matchingRequest : null;
-            if (payload.metaPurchaseConsent && matching && Object.keys(matching).length) {
+            if (matching && Object.keys(matching).length && matchingContext() &&
+                samePurchaseDecision(this.currentPurchaseConsent({
+                    revision:metaPurchaseConsent.revision,origin:metaPurchaseConsent.websiteOrigin,
+                }),metaPurchaseConsent)) {
                 payload.metaPurchaseConsent = {...payload.metaPurchaseConsent, matching};
             }
             return formModel.demoSimulation
@@ -1207,6 +1217,7 @@ export class FormPage extends Component {
     showFullScreenLoader() {
         const loader = document.createElement('div');
         loader.className = 'fullscreen-loader-overlay';
+        loader.setAttribute('role', 'status');
         loader.style.cssText = `
             position: fixed;
             top: 0;
@@ -1225,7 +1236,7 @@ export class FormPage extends Component {
 
         // Spinner
         loader.innerHTML = `
-            <div class="spinner"></div>
+            <div class="spinner" aria-hidden="true"></div>
             <div style="margin-top: 24px; font-weight: 600; font-size: 1.1rem; color: #ffffff;">
                 ${CommonStrings.processing || 'Processing...'}
             </div>
