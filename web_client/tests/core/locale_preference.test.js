@@ -190,6 +190,7 @@ test('generated pre-module shell selects Slovak and labels its recovery interfac
         t.after(() => dom.window.close());
         const {window} = dom;
         const {document} = window;
+        delete window.Object.hasOwn;
         Object.defineProperty(window.navigator, 'languages', {value: ['fr-FR', 'sk-SK', 'cs-CZ']});
         document.querySelector('meta[name="festapp-supported-languages"]').content = 'cs,sk';
         document.querySelector('meta[name="festapp-legacy-auto-language"]').content = 'cs';
