@@ -448,7 +448,9 @@ advertising choice, matching also includes a SHA-256 phone hash (digits includin
 the country code), validated `fbp`/`fbc`, and the checkout IP. A national phone
 number needs one configured prefix. An ambiguous number is omitted. When a pilot
 checkout is confirmed, the form checks the current notice and asks its bound host
-for matching once. The host checks the live lease and the same saved advertising
+for matching once, with a shared 1.5-second budget. On timeout the order proceeds
+without browser IDs. Moving between the public form and its overlays preserves
+the same policy context. The host checks the live lease and the same saved advertising
 decision before reading first-party `_fbp`/`_fbc`. A current `fbclid` can supply
 `fbc` when the matching cookie is missing or belongs to an older click. Renewals
 and withdrawals of the consent connection carry only consent. Matching stays out
