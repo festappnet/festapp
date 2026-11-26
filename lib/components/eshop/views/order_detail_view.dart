@@ -47,7 +47,6 @@ import 'inline_order_field.dart';
 import 'order_payment_summary.dart';
 import 'order_customer_payment_details.dart';
 
-import 'package:collection/collection.dart';
 
 import 'order_detail_answers.dart';
 
@@ -508,44 +507,13 @@ class _OrderDetailViewState extends State<OrderDetailView>
     ),
   );
 
-  bool _canEditAnswers() =>
-      !c.stale &&
-      c.validContext &&
-      d.canWrite &&
-      d.model.allows('edit') &&
-      (d.json['form']?['id'] ?? d.order['form_id']) is int;
-
-  Widget _answersView({bool Function(FormFieldDefinition)? includeField}) {
-    final orderId = c.orderId;
-    return OrderDetailAnswers(
-      detail: d,
-      includeField: includeField ?? _remainingAnswer,
-      controller: c,
-      canEdit: () =>
-          c.detail != null && c.orderId == orderId && _canEditAnswers(),
-      onSave: (fieldId, value, expectedFields) async {
-        if (c.detail == null || c.orderId != orderId || !_canEditAnswers()) {
-          throw StateError(OrderDetailStrings.text('responses_unavailable'));
-        }
-        final currentFields = d.json['answers'];
-        final original = {for (final row in detailRows(expectedFields)) ...row};
-        final current = {for (final row in detailRows(currentFields)) ...row};
-        // Other saved fields may safely advance the array; this field may not.
-        if (!const DeepCollectionEquality().equals(
-          original['$fieldId'],
-          current['$fieldId'],
-        )) {
-          throw StateError(OrderDetailStrings.text('responses_changed'));
-        }
-        await DbOrders.updateOrderDetailResponses(
-          orderId: orderId,
-          formId: (d.json['form']?['id'] ?? d.order['form_id']) as int,
-          expectedFields: currentFields,
-          responses: {'$fieldId': value},
-        );
-      },
-    );
-  }
+  Widget _answersView({bool Function(FormFieldDefinition)? includeField}) =>
+      OrderDetailAnswers(
+        detail: d,
+        includeField: includeField ?? _remainingAnswer,
+        controller: c,
+        canEdit: () => c.canEditResponses,
+      );
 
   Future<void> _saveAllDrafts() async {
     if (c.busy || c.stale || _savingDrafts) return;
@@ -694,7 +662,7 @@ class _OrderDetailViewState extends State<OrderDetailView>
                     !c.stale &&
                     d.canWrite &&
                     d.model.allows('note'),
-                onSave: (value, _) async {
+                onSave: (value) async {
                   if (!c.validContext ||
                       c.stale ||
                       !d.canWrite ||

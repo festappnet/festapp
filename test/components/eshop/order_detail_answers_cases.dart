@@ -106,4 +106,55 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('customer note uses the order answer editor', (tester) async {
+    final environment = WidgetEnvironmentFixture(
+      locale: const Locale('en'),
+      translations: jsonDecode(
+        File('assets/translations/en.json').readAsStringSync(),
+      ),
+    );
+    final detail = OrderAdminDetail({
+      'order': {
+        'id': 42,
+        'data': {'note': 'Legacy customer note', 'note_hidden': 'Hidden entry'},
+      },
+      'fields': [
+        {'id': 15, 'type': 'note', 'title': 'Customer note'},
+        {'id': 16, 'type': 'note', 'title': 'Hidden note', 'is_hidden': true},
+        {
+          'id': 17,
+          'type': 'note',
+          'title': 'Ticket note',
+          'is_ticket_field': true,
+        },
+      ],
+      'answers': [],
+    });
+
+    Future<void> show({required bool canEdit}) async {
+      await environment.pumpWidget(
+        tester,
+        MaterialApp(
+          home: Scaffold(
+            body: OrderDetailAnswers(detail: detail, canEdit: () => canEdit),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await show(canEdit: false);
+    expect(find.text('Legacy customer note'), findsOneWidget);
+    expect(find.byIcon(Icons.edit_outlined), findsNothing);
+
+    await show(canEdit: true);
+    expect(find.text('Ticket note'), findsNothing);
+    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+    await tester.tap(find.byTooltip('Edit: Customer note'));
+    await tester.pumpAndSettle();
+    final input = tester.widget<TextField>(find.byType(TextField));
+    expect(input.controller?.text, 'Legacy customer note');
+    expect(input.maxLines, isNull);
+  });
 }

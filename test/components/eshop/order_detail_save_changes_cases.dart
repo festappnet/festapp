@@ -138,6 +138,83 @@ void main() {
       expect(controller.dirty, isFalse);
     },
   );
+  test(
+    'note and other form answers save in one request and one readback',
+    () async {
+      final data = record();
+      data['form'] = {'id': 17};
+      data['answers'] = [
+        {'1': 'Original phone'},
+        {'2': 'Original note'},
+      ];
+      final calls = <String>[];
+      final accepted = <int>[];
+      var conflict = true;
+      final controller = OrderDetailController(
+        orderId: 42,
+        occasionId: 71,
+        read: (name, args) async {
+          calls.add(name);
+          if (name == 'get_order_admin_detail') {
+            return {'code': 200, 'data': jsonDecode(jsonEncode(data))};
+          }
+          expect(name, 'update_order_detail_responses');
+          expect(args, {
+            'p_order': 42,
+            'p_form': 17,
+            'p_expected_fields': data['answers'],
+            'p_responses': {'1': 'New phone', '2': 'New note'},
+          });
+          if (conflict) return {'code': 409};
+          data['answers'] = [
+            {'1': 'New phone'},
+            {'2': 'New note'},
+          ];
+          return {'code': 200};
+        },
+      );
+      addTearDown(controller.dispose);
+      expect(await controller.load(), isTrue);
+      controller.registerInlineDraft(
+        'phone',
+        isDirty: () => !accepted.contains(1),
+        discard: () {},
+        response: () => (
+          fieldId: 1,
+          expectedAnswer: 'Original phone',
+          value: 'New phone',
+          accept: () => accepted.add(1),
+        ),
+      );
+      controller.registerInlineDraft(
+        'note',
+        isDirty: () => !accepted.contains(2),
+        discard: () {},
+        response: () => (
+          fieldId: 2,
+          expectedAnswer: 'Original note',
+          value: 'New note',
+          accept: () => accepted.add(2),
+        ),
+      );
+      calls.clear();
+      await expectLater(controller.saveDrafts(), throwsStateError);
+      expect(calls, ['update_order_detail_responses']);
+      expect(accepted, isEmpty);
+      expect(controller.dirtyDraftCount, 2);
+
+      calls.clear();
+      conflict = false;
+      await controller.saveDrafts();
+      expect(calls, [
+        'update_order_detail_responses',
+        'get_order_admin_detail',
+      ]);
+      expect(accepted, [1, 2]);
+      expect(controller.dirty, isFalse);
+    },
+  );
+
   test('global contact save uses the existing repair owner without enqueueing email', () async {
     final data = record();
     final commands = _ContactCommands((email) {

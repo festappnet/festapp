@@ -449,30 +449,6 @@ class DbOrders {
     );
   }
 
-  static Future<void> updateOrderDetailResponses({
-    required int orderId,
-    required int formId,
-    required dynamic expectedFields,
-    required Map<String, dynamic> responses,
-  }) async {
-    final result = await _supabase.rpc(
-      'update_order_detail_responses',
-      params: {
-        'p_order': orderId,
-        'p_form': formId,
-        'p_expected_fields': expectedFields ?? [],
-        'p_responses': responses,
-      },
-    );
-    if (result is! Map || result['code'] != 200) {
-      throw StateError(
-        result is Map && result['code'] == 409
-            ? 'OrderDetail.responses_changed'.tr()
-            : 'OrderDetail.responses_unavailable'.tr(),
-      );
-    }
-  }
-
   static Future<void> updateOrderResponses(FormResponseModel responses) async {
     await _supabase.rpc(
       'update_order_responses',

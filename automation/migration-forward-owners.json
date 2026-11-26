@@ -1043,6 +1043,23 @@
       }
     },
     {
+      "migration": "20261126050000_edit_customer_order_note.sql",
+      "active": true,
+      "header": "-- Enable editing the customer note through scoped order form responses.",
+      "sources": [
+        "eshop_orders/update_order_responses.sql",
+        "eshop_orders/update_order_detail_responses.sql"
+      ],
+      "selectors": {
+        "eshop_orders/update_order_responses.sql": [
+          "update_order_responses_domain_internal"
+        ],
+        "eshop_orders/update_order_detail_responses.sql": [
+          "update_order_detail_responses_domain_internal"
+        ]
+      }
+    },
+    {
       "migration": "20261126110000_bank_account_management_priority.sql",
       "active": true,
       "header": "-- Return stored bank account priorities in management order.",

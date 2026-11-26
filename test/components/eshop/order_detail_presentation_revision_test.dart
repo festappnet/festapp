@@ -966,7 +966,9 @@ void main() {
         'order_symbol': 'ORD-42',
         'state': 'ordered',
         'form_id': 88,
+        'allowedActions': ['edit'],
       },
+      'capabilities': {'write': true},
       'answers': original,
       'fields': [
         {'id': 201, 'type': 'city', 'is_ticket_field': false},
@@ -983,11 +985,21 @@ void main() {
         isPromoted: false,
       ),
     );
+    final writes = <Map<String, dynamic>>[];
+    var reject = true;
     final controller =
         OrderDetailController(
             orderId: 42,
             occasionId: 71,
-            read: (_, __) async => {'code': 200, 'data': detail.json},
+            read: (name, args) async {
+              if (name == 'get_order_admin_detail') {
+                return {'code': 200, 'data': detail.json};
+              }
+              expect(name, 'update_order_detail_responses');
+              if (reject) return {'code': 409};
+              writes.add(args);
+              return {'code': 200};
+            },
           )
           ..detail = detail
           ..loading = false;
@@ -1002,8 +1014,6 @@ void main() {
         File('assets/translations/en.json').readAsStringSync(),
       ) as Map<String, dynamic>,
     );
-    final writes = <Map<String, dynamic>>[];
-    var reject = true;
     var allowed = true;
     await environment.pumpWidget(
       tester,
@@ -1014,10 +1024,6 @@ void main() {
             detail: detail,
             controller: controller,
             canEdit: () => allowed,
-            onSave: (id, value, expected) async {
-              if (reject) throw StateError('The answers have changed.');
-              writes.add({'id': id, 'value': value, 'expected': expected});
-            },
           ),
         ),
       ),
@@ -1030,10 +1036,16 @@ void main() {
     await tester.pump();
     expect(controller.dirty, isTrue);
     expect(find.text(CommonStrings.save), findsNothing);
-    await expectLater(controller.saveDrafts(), throwsA(isA<StateError>()));
+    await expectLater(
+      controller.saveDrafts(),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        'This value has changed. Cancel your edit and reload the order.',
+      )),
+    );
     await tester.pumpAndSettle();
     expect(writes, isEmpty);
-    expect(find.text('The answers have changed.'), findsOneWidget);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       'Brno',
@@ -1049,7 +1061,12 @@ void main() {
     await controller.saveDrafts();
     await tester.pumpAndSettle();
     expect(writes, [
-      {'id': 201, 'value': 'Brno', 'expected': original},
+      {
+        'p_order': 42,
+        'p_form': 88,
+        'p_expected_fields': original,
+        'p_responses': {'201': 'Brno'},
+      },
     ]);
     expect(controller.dirty, isFalse);
     expect(find.byType(TextField), findsNothing);

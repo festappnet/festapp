@@ -17,17 +17,11 @@ class OrderDetailAnswers extends StatelessWidget {
     required this.detail,
     this.controller,
     this.canEdit,
-    this.onSave,
+
     this.includeField,
   });
   final OrderDetailController? controller;
   final bool Function()? canEdit;
-  final Future<void> Function(
-    int fieldId,
-    String value,
-    dynamic expectedFields,
-  )?
-  onSave;
   final OrderAdminDetail detail;
   final bool Function(FormFieldDefinition)? includeField;
 
@@ -89,7 +83,8 @@ class OrderDetailAnswers extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final values = detail.json['answers'];
-    final data = {for (final row in detailRows(values)) ...row};
+    final answers = {for (final row in detailRows(values)) ...row};
+    final data = {...answers};
     // Older responses stored the canonical phone only in order data. An
     // explicit empty/null response is a cleared value and must stay cleared.
     for (final field in detail.fields) {
@@ -117,6 +112,15 @@ class OrderDetailAnswers extends StatelessWidget {
             );
             return order != 0 ? order : (a.id ?? 0).compareTo(b.id ?? 0);
           });
+    final visibleNotes = fields.where(
+      (field) =>
+          field.type == FormMetadata.fieldTypeNote && field.isHidden != true,
+    );
+    final legacyNote = detail.model.toCustomerNote();
+    if (visibleNotes.length == 1 && legacyNote.isNotEmpty) {
+      // Older orders can have a note without its form-field answer.
+      data.putIfAbsent('${visibleNotes.single.id}', () => legacyNote);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -128,18 +132,14 @@ class OrderDetailAnswers extends StatelessWidget {
             value: data['${field.id}']?.toString() ?? '',
             displayValue: field.type == FormMetadata.fieldTypeProductType
                 ? _products(field)
-                : field.type == FormMetadata.fieldTypeNote
-                ? _value(
-                    context,
-                    field,
-                    field.isHidden == true
-                        ? detail.model.toCustomerNoteHidden()
-                        : detail.model.toCustomerNote(),
-                  )
+                : field.type == FormMetadata.fieldTypeNote &&
+                      field.isHidden == true
+                ? _value(context, field, detail.model.toCustomerNoteHidden())
                 : !data.containsKey('${field.id}')
                 ? OrderDetailStrings.text('udaj_nebyl_uveden')
                 : _value(context, field, data['${field.id}']),
             controller: controller,
+            multiline: field.type == FormMetadata.fieldTypeNote,
             keyboardType: field.type == FormMetadata.fieldTypeEmail
                 ? TextInputType.emailAddress
                 : field.type == FormMetadata.fieldTypePhone
@@ -148,14 +148,15 @@ class OrderDetailAnswers extends StatelessWidget {
             textController: field.type == FormMetadata.fieldTypeEmail
                 ? controller?.email
                 : null,
-            expectedFields: values,
+            expectedAnswer: answers['${field.id}'],
             canEdit: canEdit,
-            onSave:
-                onSave != null &&
-                    field.id != null &&
+            responseFieldId:
+                field.id != null &&
                     field.type != FormMetadata.fieldTypeEmail &&
-                    !FormMetadata.nonEditableFields.contains(field.type)
-                ? (value, expected) => onSave!(field.id!, value, expected)
+                    (field.type == FormMetadata.fieldTypeNote
+                        ? field.isHidden != true
+                        : !FormMetadata.nonEditableFields.contains(field.type))
+                ? field.id
                 : null,
             choices: field.type == FormMetadata.fieldTypeSelectOne
                 ? field.options.map((option) => option.title).toList()

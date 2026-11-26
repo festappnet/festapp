@@ -14,7 +14,8 @@ class InlineOrderField extends StatefulWidget {
     this.controller,
     this.canEdit,
     this.onSave,
-    this.expectedFields,
+    this.responseFieldId,
+    this.expectedAnswer,
     this.choices,
     this.multiline = false,
     this.alwaysEditable = false,
@@ -25,8 +26,9 @@ class InlineOrderField extends StatefulWidget {
   final TextInputType? keyboardType;
   final OrderDetailController? controller;
   final bool Function()? canEdit;
-  final Future<void> Function(String value, dynamic expectedFields)? onSave;
-  final dynamic expectedFields;
+  final Future<void> Function(String value)? onSave;
+  final int? responseFieldId;
+  final Object? expectedAnswer;
   final List<String>? choices;
   final bool multiline;
   final bool alwaysEditable;
@@ -42,10 +44,12 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
   final _draftKey = Object();
   bool _editing = false, _saving = false;
   String _original = '', _error = '';
-  dynamic _expected;
+  Object? _expectedAnswer;
   bool get _dirty => _editing && _text.text != _original;
   bool get _allowed =>
-      (widget.onSave != null || widget.textController != null) &&
+      (widget.onSave != null ||
+          widget.responseFieldId != null ||
+          widget.textController != null) &&
       (widget.canEdit?.call() ?? false);
   bool get _busy => _saving || (widget.controller?.busy ?? false);
 
@@ -56,24 +60,34 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
       _editing = true;
       _original = widget.value;
       _text.text = widget.value;
-      _expected = widget.expectedFields;
+      _expectedAnswer = widget.expectedAnswer;
     }
     _text.addListener(_changed);
-    if (widget.textController == null)
+    _registerDraft();
+  }
+
+  void _registerDraft() {
+    if (widget.textController == null &&
+        (widget.responseFieldId != null || widget.onSave != null)) {
       widget.controller?.registerInlineDraft(
         _draftKey,
         isDirty: () => _dirty,
         discard: _discard,
-        save: _save,
+        save: widget.responseFieldId == null ? _save : null,
+        response: widget.responseFieldId != null ? _responseDraft : null,
       );
+    }
   }
 
   @override
   void didUpdateWidget(covariant InlineOrderField oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.responseFieldId == null && widget.responseFieldId != null) {
+      _registerDraft();
+    }
     if (widget.alwaysEditable && !_dirty) {
       _original = widget.value;
-      _expected = widget.expectedFields;
+      _expectedAnswer = widget.expectedAnswer;
       if (_text.text != widget.value) {
         _text.removeListener(_changed);
         _text.text = widget.value;
@@ -110,12 +124,33 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
 
   void _edit() {
     _original = widget.value;
-    _expected = widget.expectedFields;
+    _expectedAnswer = widget.expectedAnswer;
     if (widget.textController == null) _text.text = _original;
     setState(() {
       _editing = true;
       _error = '';
     });
+  }
+
+  OrderResponseDraft _responseDraft() {
+    final fieldId = widget.responseFieldId;
+    if (fieldId == null || !_allowed) {
+      throw StateError(OrderDetailStrings.text('responses_unavailable'));
+    }
+    final value = _text.text;
+    return (
+      fieldId: fieldId,
+      expectedAnswer: _expectedAnswer,
+      value: value,
+      accept: () {
+        if (!mounted) return;
+        setState(() {
+          _editing = false;
+          _original = value;
+        });
+        widget.controller?.inlineDraftChanged();
+      },
+    );
   }
 
   Future<void> _save() async {
@@ -127,7 +162,7 @@ class _InlineOrderFieldState extends State<InlineOrderField> {
       _error = '';
     });
     try {
-      await widget.onSave!(_text.text, _expected);
+      await widget.onSave!(_text.text);
       if (!mounted) return;
       setState(() {
         _editing = widget.alwaysEditable;

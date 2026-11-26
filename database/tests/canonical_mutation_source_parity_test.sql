@@ -2714,14 +2714,14 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_and_tickets_to_storno_ws_internal_v1(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9081b7e16e0124abdc3bae9d168c677c'),'current SQL source parity: public.update_order_and_tickets_to_storno_ws_internal_v1(bigint)');
 -- absent from the effective release
  PERFORM assert_true(to_regprocedure('public.update_order_data_to_sent(bigint)') IS NULL,'retired SQL identity remains absent: public.update_order_data_to_sent(bigint)');
--- supabase/migrations/20261115130000_customer_order_policy_foundation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_detail_responses_domain_internal(bigint,bigint,jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='8ac81d659ff1eee7fa19042904fff4b9'),'current SQL source parity: public.update_order_detail_responses_domain_internal(bigint,bigint,jsonb,jsonb)');
+-- supabase/migrations/20261126050000_edit_customer_order_note.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_detail_responses_domain_internal(bigint,bigint,jsonb,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='46c0e09069c0d223cad90a3f79c66328'),'current SQL source parity: public.update_order_detail_responses_domain_internal(bigint,bigint,jsonb,jsonb)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_note_hidden(bigint,text)') AND md5(btrim(prosrc,E' \n\r\t'))='c29366f7fcd88ab8f2c377a2cfa92205'),'current SQL source parity: public.update_order_note_hidden(bigint,text)');
 -- supabase/migrations/20261115130000_customer_order_policy_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_responses(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='1cd64d2aa3f2e8cb92660102217ea480'),'current SQL source parity: public.update_order_responses(bigint,jsonb)');
--- supabase/migrations/20261115130000_customer_order_policy_foundation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_responses_domain_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='0b220ec4df4ec4e267faae3809371914'),'current SQL source parity: public.update_order_responses_domain_internal(bigint,jsonb)');
+-- supabase/migrations/20261126050000_edit_customer_order_note.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_order_responses_domain_internal(bigint,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='f52052a85c6732c3efb79e3a47677b3d'),'current SQL source parity: public.update_order_responses_domain_internal(bigint,jsonb)');
 -- supabase/migrations/20261113143000_product_catalog_detail_save.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.update_product(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='919445bfaf0efad23c2e4563d6f7952b'),'current SQL source parity: public.update_product(jsonb)');
 -- supabase/migrations/20261113143000_product_catalog_detail_save.sql
