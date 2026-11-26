@@ -13,14 +13,10 @@ import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 bool isBankAccountOrderConflict(Object error) =>
-    error is _RecoveredBankAccountOrder ||
-    error is PostgrestException && _reorderRolledBack(error);
+    error is _BankAccountOrderChanged;
 
-bool _reorderRolledBack(PostgrestException error) =>
-    error.code == '40001' && error.message == 'BANK_ACCOUNT_ORDER_CHANGED';
-
-class _RecoveredBankAccountOrder implements Exception {
-  const _RecoveredBankAccountOrder();
+class _BankAccountOrderChanged implements Exception {
+  const _BankAccountOrderChanged();
 }
 
 class SupabaseBankAccounts {
@@ -103,26 +99,30 @@ class SupabaseBankAccounts {
       'p_payload': payload,
     };
     final transport = ClientCommandTransport.supabase(_supabase, durable: true);
-    final isRolledBack = action == 'reorder' ? _reorderRolledBack : null;
     final pending = action == 'reorder'
         ? await transport.pendingIntent(operation, parameters)
         : null;
-    // Resolve an outstanding reorder with its original UUID and precondition.
-    // If it is a different move, the next move needs a fresh displayed order.
+    // Recover the original outcome without dispatching an earlier move.
+    // A different move needs a fresh displayed order.
     final resumesReorder = pending != null &&
         jsonDecode(pending.requestJson)['p_action'] == 'reorder';
     final response = ClientCommandResponse.from(
       resumesReorder
-          ? await transport.resume(pending, isRolledBack: isRolledBack)
-          : await transport.invoke(operation, parameters, isRolledBack: isRolledBack),
+          ? await transport.resume(pending, recoveryFunction: 'recover_bank_reorder')
+          : await transport.invoke(operation, parameters),
     );
+    if (action == 'reorder' &&
+        response.status == 'conflict' &&
+        response.data['reason'] == 'BANK_ACCOUNT_ORDER_CHANGED') {
+      throw const _BankAccountOrderChanged();
+    }
     if (response.code != 200) throw StateError('Bank command rejected');
     if (resumesReorder &&
         !listEquals(
           response.data['accountOrder'] as List?,
           payload['accountOrder'] as List?,
         )) {
-      throw const _RecoveredBankAccountOrder();
+      throw const _BankAccountOrderChanged();
     }
     return response.data;
   }

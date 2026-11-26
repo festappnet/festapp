@@ -172,7 +172,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.byType(Card), findsOneWidget);
-      expect(find.byType(ReorderableDragStartListener), findsOneWidget);
+      expect(find.byType(ReorderableDragStartListener).hitTestable(), findsOneWidget);
       expect(find.text(account.title!), findsOneWidget);
       expect(find.byIcon(Icons.star), findsNWidgets(2));
       await tester.tap(find.byIcon(Icons.edit_outlined));

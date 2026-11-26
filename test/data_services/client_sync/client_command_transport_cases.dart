@@ -5,7 +5,6 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
@@ -103,83 +102,69 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
     registerLocalStorageFixture();
 
+    const operation = 'manage_bank_authoring';
+    const recovery = 'recover_bank_reorder';
+    const initial = {
+      'p_unit': 42,
+      'p_action': 'reorder',
+      'p_payload': {
+        'expectedOrder': [1, 2],
+        'accountOrder': [2, 1],
+      },
+    };
+
     test(
-      'a preexisting reorder resumes with its original identity on conflict',
+      'recovers a legacy pending reorder without resending its write',
       () async {
         const stale = PostgrestException(
           code: '40001',
           message: 'BANK_ACCOUNT_ORDER_CHANGED',
         );
-        const operation = 'manage_bank_authoring';
-        const initial = {
-          'p_unit': 23,
-          'p_payload': {
-            'expectedOrder': [1, 2],
-          },
-        };
+        final calls = <String>[];
         final ids = <String>[];
-        final transport = ClientCommandTransport((_, parameters) async {
-          ids.add(parameters['p_command_id'] as String);
-          throw stale;
+        final transport = ClientCommandTransport((name, parameters) async {
+          calls.add(name);
+          final id = parameters['p_command_id'] as String;
+          ids.add(id);
+          if (name == operation) throw stale;
+          return commandResponseFixture(id, status: 'rejected', code: 409);
         }, principalBinding: 'bank-reorder-old-client-test');
 
-        // Earlier clients left the claim behind after a stale precondition.
         await expectLater(
           transport.invoke(operation, initial),
           throwsA(same(stale)),
         );
         final pending = (await transport.pendingIntent(operation, initial))!;
-        await expectLater(
-          transport.resume(pending, isRolledBack: isBankAccountOrderConflict),
-          throwsA(same(stale)),
-        );
+        await transport.resume(pending, recoveryFunction: recovery);
+        expect(calls, [operation, recovery]);
         expect(ids, [pending.commandId, pending.commandId]);
         expect(await transport.pendingIntent(operation, initial), isNull);
       },
     );
 
     test(
-      'a stale order releases exactly its claim for a fresh order',
+      'a terminal conflict allows a fresh order with a new identity',
       () async {
-        const stale = PostgrestException(
-          code: '40001',
-          message: 'BANK_ACCOUNT_ORDER_CHANGED',
-        );
-        const operation = 'manage_bank_authoring';
-        const initial = {
-          'p_unit': 42,
-          'p_payload': {
-            'expectedOrder': [1, 2],
-          },
-        };
         const current = {
           'p_unit': 42,
+          'p_action': 'reorder',
           'p_payload': {
             'expectedOrder': [3, 2],
+            'accountOrder': [2, 3],
           },
         };
         final ids = <String>[];
         final transport = ClientCommandTransport((_, parameters) async {
           final id = parameters['p_command_id'] as String;
           ids.add(id);
-          if (ids.length == 1) throw stale;
-          return commandResponseFixture(id);
+          return ids.length == 1
+              ? commandResponseFixture(id, status: 'conflict', code: 409)
+              : commandResponseFixture(id);
         }, principalBinding: 'bank-reorder-test');
 
-        await expectLater(
-          transport.invoke(
-            operation,
-            initial,
-            isRolledBack: isBankAccountOrderConflict,
-          ),
-          throwsA(same(stale)),
-        );
+        await transport.invoke(operation, initial);
         expect(await transport.pendingIntent(operation, initial), isNull);
-        await transport.invoke(
-          operation,
-          current,
-          isRolledBack: isBankAccountOrderConflict,
-        );
+        await transport.invoke(operation, current);
         expect(ids.toSet(), hasLength(2));
       },
     );

@@ -37,12 +37,11 @@ vazby jako `INT NOT NULL DEFAULT 0`.
    potvrzeného uložení. Během zápisu zablokuj souběžnou manipulaci i tlačítka
    posunu. Pokud je aktivní pouze recovery a výpis je záměrně neúplný,
    zachovej jeho read-only semantiku. V UI ani RPC se kvůli shodě množin
-   nesmí rozšířit oprávnění. Klientský transport při potvrzeném
-   `40001 / BANK_ACCOUNT_ORDER_CHANGED` uvolní rezervaci pouze pro odpovídající
-   příkaz. Nový pokus po načtení dostane nové ID. Nejednoznačná chyba přenosu
-   zachová identitu původního příkazu pro replay. Nový pokus může ověřit
-   dřívější neuzavřenou změnu pod jejím původním ID. Po obnově jiné změny
-   uživatel nejprve dostane aktuální pořadí.
+   nesmí rozšířit oprávnění. Server pod zámkem zapíše konečný výsledek
+   konfliktu pro příslušný příkaz. Obnova po výpadku přečte existující
+   výsledek, případně uzavře neprovedený příkaz bez zápisu pořadí. Opožděné
+   doručení stejného příkazu pak vrátí stejný výsledek i po návratu k
+   původnímu pořadí. Další změna vychází z načteného seznamu a má nové ID.
 3. `form_payment_options.sql` vlastní nabídku formuláře.
    `ensure_order_payment_instructions_internal` vlastní výběr pro nový
    převod podle měny a explicitního účtu formuláře. Ve výchozím pořadí používají

@@ -5,7 +5,10 @@ CREATE OR REPLACE FUNCTION public.manage_bank_authoring(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE unit_id bigint:=p_unit; bank bigint:=(p_payload->>'accountId')::bigint; result jsonb; begun jsonb; hash text; lim int:=coalesce((p_payload->>'limit')::int,50); ident bigint;
  current_order bigint[]; expected_order bigint[]; requested_order bigint[];
+ recovering_reorder boolean:=p_action IS NOT DISTINCT FROM 'recover_reorder';
 BEGIN
+ -- Recovery uses the same permission, unit lock, receipt identity and hash.
+ IF recovering_reorder THEN p_action:='reorder'; END IF;
  IF unit_id IS NULL AND bank IS NOT NULL THEN
   SELECT r.unit INTO unit_id FROM public.client_mutation_receipts r WHERE r.command_id=p_command_id AND r.actor_id=auth.uid() AND r.command_name='unit.bank.'||p_action;
   IF unit_id IS NULL THEN
@@ -74,6 +77,11 @@ BEGIN
  hash:=encode(extensions.digest(jsonb_build_object('unit',unit_id,'action',p_action,'payload',p_payload)::text,'sha256'),'hex');
  begun:=public.begin_unit_client_mutation_v1(p_command_id,'unit.bank.'||p_action,unit_id,auth.uid(),hash);
  IF begun->>'disposition'='replay' THEN RETURN begun->'response'; END IF;
+ -- An uncertain command with no receipt must never execute during recovery.
+ IF recovering_reorder THEN
+  RETURN public.complete_client_mutation_outcome_v1(p_command_id,'rejected',409,
+   jsonb_build_object('reason','BANK_ACCOUNT_REORDER_NOT_APPLIED'));
+ END IF;
  IF p_action='save' THEN
   ident:=public.update_bank_account(bank,p_payload->>'accountNumber',p_payload->>'title',p_payload->>'type',
    CASE WHEN p_payload->'currencies' IS NULL OR p_payload->'currencies'='null'::jsonb THEN NULL ELSE ARRAY(SELECT jsonb_array_elements_text(p_payload->'currencies')) END,p_payload->>'displayNumber',unit_id,p_payload->>'creditorName');
@@ -91,7 +99,8 @@ BEGIN
    WHERE l.unit=unit_id AND a.type <> 'CASH'
    ORDER BY coalesce(l.priority,0),l.bank_account FOR UPDATE OF l) INTO current_order;
   IF expected_order IS DISTINCT FROM current_order THEN
-   RAISE serialization_failure USING MESSAGE='BANK_ACCOUNT_ORDER_CHANGED';
+   RETURN public.complete_client_mutation_outcome_v1(p_command_id,'conflict',409,
+    jsonb_build_object('reason','BANK_ACCOUNT_ORDER_CHANGED'));
   END IF;
   IF cardinality(requested_order) <> cardinality(current_order)
     OR NOT (requested_order @> current_order AND current_order @> requested_order) THEN

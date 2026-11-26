@@ -27,7 +27,8 @@
     "eshop_transactions/apply_transaction_pairing.sql",
     "eshop_transactions/get_transactions_for_order.sql",
     "eshop_transactions/get_transactions_for_order_all_available.sql",
-    "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql"
+    "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql",
+    "authoring/recover_bank_reorder.sql"
   ],
   "retainedSignatures": [
     "public.uses_ticket_terminology_internal(jsonb)",
