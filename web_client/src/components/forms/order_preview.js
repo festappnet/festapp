@@ -135,7 +135,7 @@ export class OrderPreview {
             if (e.key === 'Tab' && !isEmbed()) {
                 const controls = [...overlay.querySelectorAll('button, input, select, textarea, a[href], [tabindex]')]
                     .filter(el => !el.disabled && el.tabIndex >= 0 && !el.closest('[hidden]') && el.type !== 'hidden');
-                const first = controls[0], last = controls.at(-1);
+                const first = controls[0], last = controls[controls.length - 1];
                 if (first && (!overlay.contains(document.activeElement) ||
                     (e.shiftKey && document.activeElement === first) ||
                     (!e.shiftKey && document.activeElement === last))) {

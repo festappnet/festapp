@@ -24,6 +24,38 @@ AppConfig.isAppSupported = false;
 
 test('form loading never leaves an empty page while the request is pending', async (t) => {
     t.after(() => dom.window.close());
+    await t.test('older WebViews reach the form request without native randomUUID', async t => {
+        const original = Object.getOwnPropertyDescriptor(globalThis.crypto, 'randomUUID');
+        Object.defineProperty(globalThis.crypto, 'randomUUID', { configurable: true, value: undefined });
+        t.after(() => {
+            if (original) Object.defineProperty(globalThis.crypto, 'randomUUID', original);
+            else delete globalThis.crypto.randomUUID;
+        });
+        const load = t.mock.method(DbForms, 'getFormByLink', async () => null);
+        const page = new FormPage('form-page-container');
+        await page.init('legacy-webview');
+        assert.equal(load.mock.callCount(), 1);
+        assert.match(page.host.textContent, /nenalezen/);
+        page.clear();
+    });
+    await t.test('older WebViews fetch consent settings without AbortSignal.timeout', async t => {
+        const original = AbortSignal.timeout;
+        AbortSignal.timeout = undefined;
+        t.after(() => { AbortSignal.timeout = original; });
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        const signals = new Map();
+        t.mock.method(SupabaseService, 'publicCheckoutRpc', (name, args, signal) => {
+            signals.set(name, signal);
+            return new Promise(resolve => signal.addEventListener('abort', () => resolve({ data: name })));
+        });
+        const purchase = DbForms.getMetaPurchaseConsent('test');
+        const policy = DbForms.getMeasurementPolicy('test');
+        t.mock.timers.tick(1500);
+        assert.equal(await purchase, 'get_meta_purchase_consent');
+        assert.equal(signals.get('get_form_measurement_policy').aborted, false);
+        t.mock.timers.tick(6500);
+        assert.equal(await policy, 'get_form_measurement_policy');
+    });
     await t.test('initial routing waits for visible form content', async (t) => {
         let finish;
         let started;

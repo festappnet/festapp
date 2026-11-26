@@ -107,7 +107,7 @@ export class PurchaseConsentOrders {
     }
     capture(snapshot, notice) {
         if (!snapshot || !notice?.revision) return null;
-        const order={snapshot:structuredClone(snapshot)};
+        const order={snapshot:JSON.parse(JSON.stringify(snapshot))};
         this.orders.set(order,order);
         this.observe(this.choice);
         return order;
