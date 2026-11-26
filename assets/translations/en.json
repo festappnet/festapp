@@ -3466,6 +3466,8 @@
       "provided": "Provided",
       "promotion": "Promotion",
       "introImage": "Cover image",
+      "listingImageRequired": "Upload a cover image to list this event in the catalogue.",
+      "coverMissingRequired": "Required image missing",
       "promotionImageRequired": "A cover image is required to promote the event.",
       "pricingQuestion": "Will prices change during ticket sales?",
       "pricingRegistrationQuestion": "Will prices change during registration?",

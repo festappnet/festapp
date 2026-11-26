@@ -1,5 +1,6 @@
 """CI input invalidation and trusted executed-check reuse boundaries."""
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 import copy
 from pathlib import Path
@@ -783,6 +784,41 @@ class ReusePolicyTest(unittest.TestCase):
 
 
 class SelectorBudgetTest(unittest.TestCase):
+    def test_unverifiable_reuse_provisions_and_runs_all_lane_units(self):
+        lane = 'database-service-regressions'
+        units = CONTRACT['jobs'][lane]['steps']
+        result = {'run': False, 'execute': [], 'reuse': {unit: {} for unit in units}}
+        for error in (selection.BudgetExpired(), ValueError('Artifact expired')):
+            with self.subTest(error=type(error).__name__), \
+                 patch.object(selection,'definition',return_value='trusted'), \
+                 patch.object(selection,'verify_plan',side_effect=error):
+                plan = selection.prepare_plan(result,lane,SHA,'fixture/repo',CONTRACT)
+                self.assertTrue(plan['run'])
+                self.assertEqual(plan['execute'],units)
+                self.assertEqual(plan['reuse'],{})
+                self.assertTrue(selection.provisioning_flags(plan['execute'],CONTRACT)['sql'])
+
+    def test_runner_accepts_exact_prepared_plan_without_network(self):
+        lane = 'database-service-regressions'
+        units = CONTRACT['jobs'][lane]['steps']
+        result = {'run': False, 'execute': [], 'reuse': {unit: {} for unit in units}}
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(selection,'definition',return_value='trusted'), \
+             patch.object(selection,'verify_plan',side_effect=lambda plan,*_:plan), \
+             patch.object(selection,'api') as api:
+            plan = selection.prepare_plan(result,lane,SHA,'fixture/repo',CONTRACT)
+            payload = json.dumps(plan).encode()
+            digest = hashlib.sha256(payload).hexdigest()
+            path = Path(directory)/'selection.json'
+            path.write_bytes(payload)
+            self.assertEqual(selection.read_verified_plan(path,digest,lane,SHA,CONTRACT),plan)
+            with self.assertRaisesRegex(ValueError,'foreign unit selection'):
+                selection.read_verified_plan(path,digest,lane,BASE,CONTRACT)
+            path.write_bytes(payload+b'\n')
+            with self.assertRaisesRegex(ValueError,'changed after provisioning'):
+                selection.read_verified_plan(path,digest,lane,SHA,CONTRACT)
+            api.assert_not_called()
+
     def test_timeout_kills_network_process_and_its_child(self):
         import time
         with tempfile.TemporaryDirectory() as directory:

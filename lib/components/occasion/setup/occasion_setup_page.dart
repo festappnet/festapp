@@ -98,6 +98,14 @@ import 'package:fstapp/components/unit/verification/unit_legal_profile_section.d
 import 'package:fstapp/data_services/rights_service.dart';
 import 'package:fstapp/services/exception_handler.dart';
 
+class _ReviewIssue {
+  const _ReviewIssue(this.step, this.message, {this.question});
+
+  final int step;
+  final String message;
+  final String? question;
+}
+
 class OccasionSetupPage extends StatefulWidget {
   final OccasionSetupDraft draft;
   const OccasionSetupPage({super.key, required this.draft});
@@ -972,9 +980,11 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         final start = DateTime.tryParse(d['start'] as String);
         final end = DateTime.tryParse(d['end'] as String);
         return (d['title'] as String).trim().isNotEmpty &&
-            (!AppConfig.isAppSupported ||
-                d['isPromoted'] != true ||
-                (d['introImage'] as String? ?? '').trim().isNotEmpty) &&
+            occasionSetupCoverIssue(
+                  d,
+                  appSupported: AppConfig.isAppSupported,
+                ) ==
+                null &&
             isValidPublicSlug(d['link'] as String, allowEmpty: true) &&
             start != null &&
             end != null &&
@@ -1099,10 +1109,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       case 'name':
         return (d['title'] as String).trim().isNotEmpty;
       case 'promotion':
+        return occasionSetupCoverIssue(
+              d,
+              appSupported: AppConfig.isAppSupported,
+            ) ==
+            null;
       case 'presentation':
-        return !AppConfig.isAppSupported ||
-            d['isPromoted'] != true ||
-            (d['introImage'] as String? ?? '').trim().isNotEmpty;
+        return true;
       case 'dates':
         final start = DateTime.tryParse(d['start'] as String);
         final end = DateTime.tryParse(d['end'] as String);
@@ -1118,7 +1131,8 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     final index = _questionIndex(d);
     final question = _questions[index];
     if (index == _questions.length - 1) return;
-    if (!_questionReady(d, question)) {
+    // Publication can be left incomplete while the organizer reviews the draft.
+    if (question.key != 'promotion' && !_questionReady(d, question)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(OccasionSetupStrings.story('incomplete'))),
       );
@@ -1572,21 +1586,23 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     );
   }
 
-  List<MapEntry<int, String>> _reviewIssues(Map<String, dynamic> d) {
-    final issues = <MapEntry<int, String>>[];
+  List<_ReviewIssue> _reviewIssues(Map<String, dynamic> d) {
+    final issues = <_ReviewIssue>[];
     if ((d['title'] as String).trim().isEmpty) {
-      issues.add(MapEntry(1, OccasionSetupStrings.ui('enter_an_event_name')));
+      issues.add(
+        _ReviewIssue(1, OccasionSetupStrings.ui('enter_an_event_name')),
+      );
     }
     if (!isValidPublicSlug(d['link'] as String, allowEmpty: true)) {
       issues.add(
-        MapEntry(1, OccasionSetupStrings.ui('the_event_link_is_invalid')),
+        _ReviewIssue(1, OccasionSetupStrings.ui('the_event_link_is_invalid')),
       );
     }
     final start = DateTime.tryParse(d['start'] as String);
     final end = DateTime.tryParse(d['end'] as String);
     if (start == null || end == null || end.isBefore(start)) {
       issues.add(
-        MapEntry(
+        _ReviewIssue(
           1,
           OccasionSetupStrings.ui('the_event_start_and_end_are_invalid'),
         ),
@@ -1594,27 +1610,35 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     if (d['formEnabled'] == true) {
       if (!OccasionSetupStory.productPricesValid(d))
-        issues.add(MapEntry(3, OrdersStrings.priceValidationInvalid));
+        issues.add(_ReviewIssue(3, OrdersStrings.priceValidationInvalid));
       if (!OccasionSetupSales.valid(d, DateTime.now()))
-        issues.add(MapEntry(3, OccasionSetupSales.text(d, 'invalidTiming')));
+        issues.add(
+          _ReviewIssue(3, OccasionSetupSales.text(d, 'invalidTiming')),
+        );
       if (!communicationDraftValid(d))
         issues.add(
-          MapEntry(3, OccasionSetupStrings.story('communicationIncomplete')),
+          _ReviewIssue(
+            3,
+            OccasionSetupStrings.story('communicationIncomplete'),
+          ),
         );
       if (_formLinkAvailable == false)
         issues.add(
-          MapEntry(3, OccasionSetupStrings.story('formLinkUnavailable')),
+          _ReviewIssue(3, OccasionSetupStrings.story('formLinkUnavailable')),
         );
       for (final key in OccasionSetupStory.pricingIssueKeys(
         d,
         DateTime.now(),
       )) {
-        issues.add(MapEntry(3, OccasionSetupStrings.story(key)));
+        issues.add(_ReviewIssue(3, OccasionSetupStrings.story(key)));
       }
       final formData = d['formDraft'];
       if (formData is! Map) {
         issues.add(
-          MapEntry(3, OccasionSetupStrings.ui('create_or_copy_a_form_first')),
+          _ReviewIssue(
+            3,
+            OccasionSetupStrings.ui('create_or_copy_a_form_first'),
+          ),
         );
       } else {
         final form = draftFormBundle(Map<String, dynamic>.from(formData));
@@ -1624,7 +1648,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
               allowEmpty: true,
             )) {
           issues.add(
-            MapEntry(
+            _ReviewIssue(
               3,
               OccasionSetupStrings.ui('enter_a_form_name_and_a_valid_link'),
             ),
@@ -1634,7 +1658,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             .where((field) => field.definition.isTicketField != true)
             .isEmpty) {
           issues.add(
-            MapEntry(3, OccasionSetupStrings.ui('the_form_has_no_fields')),
+            _ReviewIssue(3, OccasionSetupStrings.ui('the_form_has_no_fields')),
           );
         }
         if (form.form.relatedFields.any(
@@ -1642,7 +1666,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
             ) &&
             form.products.isEmpty) {
           issues.add(
-            MapEntry(
+            _ReviewIssue(
               3,
               OccasionSetupStrings.ui('the_ticket_form_has_no_products'),
             ),
@@ -1653,7 +1677,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     if (SetupBlueprintConfiguration(d).active) {
       if (d['formEnabled'] != true || d['formDraft'] == null) {
         issues.add(
-          MapEntry(
+          _ReviewIssue(
             AppConfig.isAppSupported ? 4 : 6,
             OccasionSetupStrings.ui('a_seating_plan_requires_a_form'),
           ),
@@ -1661,7 +1685,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       }
       if (!_blueprintReady(d)) {
         issues.add(
-          MapEntry(
+          _ReviewIssue(
             AppConfig.isAppSupported ? 4 : 6,
             OccasionSetupStrings.ui('the_seating_plan_has_no_seats_yet'),
           ),
@@ -1669,16 +1693,18 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
       }
     }
     if (OccasionSetupReferences(d).hasIssues) {
-      issues.add(MapEntry(3, OccasionSetupStrings.copy('invalidReferences')));
+      issues.add(
+        _ReviewIssue(3, OccasionSetupStrings.copy('invalidReferences')),
+      );
     }
     if (d['formEnabled'] != false &&
         !SetupPaymentConfiguration.validPolicy(d)) {
-      issues.add(MapEntry(3, FormStrings.invalidVariableSymbolPolicy));
+      issues.add(_ReviewIssue(3, FormStrings.invalidVariableSymbolPolicy));
     }
     if (OccasionSetupStory.hasPaidProducts(d) &&
         !OccasionSetupStory.paymentSetupReady(d)) {
       issues.add(
-        MapEntry(
+        _ReviewIssue(
           AppConfig.isAppSupported ? 3 : 4,
           OccasionSetupStrings.story('bankAccountRequired'),
         ),
@@ -1686,7 +1712,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     }
     if (OccasionSetupStory.hasPaidProducts(d) && !_deadlineReady(d)) {
       issues.add(
-        MapEntry(
+        _ReviewIssue(
           AppConfig.isAppSupported ? 3 : 4,
           OccasionSetupStrings.ui(
             'enter_a_non_negative_number_of_days_or_leave_the_deadli',
@@ -1694,11 +1720,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         ),
       );
     }
-    if (AppConfig.isAppSupported &&
-        d['isPromoted'] == true &&
-        (d['introImage'] as String? ?? '').trim().isEmpty) {
+    final coverIssue = occasionSetupCoverIssue(
+      d,
+      appSupported: AppConfig.isAppSupported,
+    );
+    if (coverIssue != null) {
       issues.add(
-        MapEntry(1, OccasionSetupStrings.story('promotionImageRequired')),
+        _ReviewIssue(
+          1,
+          OccasionSetupStrings.story(coverIssue),
+          question: 'promotion',
+        ),
       );
     }
     for (final q in _questions.where(
@@ -1706,7 +1738,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     )) {
       if (!_questionReady(d, q))
         issues.add(
-          MapEntry(
+          _ReviewIssue(
             q.step,
             OccasionSetupStrings.ui('complete_step', {
               'step': _shortLabel(q.key),
@@ -1729,10 +1761,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
     int step,
     String title,
     List<Widget> children,
-    List<MapEntry<int, String>> issues, {
+    List<_ReviewIssue> issues, {
     String? questionKey,
   }) {
-    final hasIssue = issues.any((issue) => issue.key == step);
+    final hasIssue = issues.any((issue) => issue.step == step);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
@@ -1788,6 +1820,9 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
 
   Widget _reviewBody(Map<String, dynamic> d) {
     final issues = _reviewIssues(d);
+    final missingRequiredCover = issues.any(
+      (issue) => issue.question == 'promotion',
+    );
     final formData = d['formDraft'];
     final form = formData is Map
         ? draftFormBundle(Map<String, dynamic>.from(formData))
@@ -1804,31 +1839,40 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           Container(
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            child: Material(
               color: Theme.of(context).colorScheme.errorContainer,
               borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  OccasionSetupStrings.ui('what_still_needs_attention'),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onErrorContainer,
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      OccasionSetupStrings.ui('what_still_needs_attention'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                    ),
+                    for (final issue in issues)
+                      ListTile(
+                        dense: true,
+                        textColor: Theme.of(context).colorScheme.onErrorContainer,
+                        iconColor: Theme.of(context).colorScheme.onErrorContainer,
+                        leading: const Icon(Icons.error_outline),
+                        title: Text(issue.message),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          final question = issue.question;
+                          if (question != null) {
+                            _jump(question);
+                          } else {
+                            _change((x) => x['step'] = issue.step);
+                          }
+                        },
+                      ),
+                  ],
                 ),
-                for (final issue in issues)
-                  ListTile(
-                    dense: true,
-                    textColor: Theme.of(context).colorScheme.onErrorContainer,
-                    iconColor: Theme.of(context).colorScheme.onErrorContainer,
-                    leading: const Icon(Icons.error_outline),
-                    title: Text(issue.value),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _change((x) => x['step'] = issue.key),
-                  ),
-              ],
+              ),
             ),
           ),
         _reviewSection(d, 0, OccasionSetupStrings.ui('source_and_copying'), [
@@ -1860,10 +1904,13 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           OccasionSetupReviewRow(
             OccasionSetupStrings.story('introImage'),
             OccasionSetupStrings.story(
-              (d['introImage'] as String? ?? '').isEmpty
+              missingRequiredCover
+                  ? 'coverMissingRequired'
+                  : occasionSetupCoverUrl(d) == null
                   ? 'notProvided'
                   : 'provided',
             ),
+            hasError: missingRequiredCover,
           ),
           OccasionSetupReviewRow(
             OccasionSetupStrings.story(
@@ -2172,24 +2219,14 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         onChanged: (patch) =>
             _change((x) => x.addAll(patch), changesConfiguration: true),
       );
-    if (_questions[_questionIndex(d)].key == 'promotion' &&
-        AppConfig.isAppSupported) {
-      return OccasionSetupPromotion(
+    if (questionKey == 'promotion') {
+      return OccasionSetupPublication(
+        unitId: _stored.unit,
+        appSupported: AppConfig.isAppSupported,
         data: d,
+        onBusyChanged: (busy) => setState(() => _presentationUploading = busy),
         onChanged: (patch) =>
             _change((x) => x.addAll(patch), changesConfiguration: true),
-      );
-    }
-    if (_questions[_questionIndex(d)].key == 'promotion') {
-      return SwitchListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(OccasionSetupStrings.story('listingTitle')),
-        subtitle: Text(OccasionSetupStrings.story('listingHint')),
-        value: d['listPubliclyOnPublish'] != false,
-        onChanged: (value) => _change(
-          (x) => x['listPubliclyOnPublish'] = value,
-          changesConfiguration: true,
-        ),
       );
     }
     if (_questions[_questionIndex(d)].key == 'paymentTiming') {

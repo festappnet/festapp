@@ -1837,6 +1837,8 @@
       "provided": "Uzupełniono",
       "promotion": "Promocja",
       "introImage": "Zdjęcie główne",
+      "listingImageRequired": "Prześlij zdjęcie główne, aby opublikować wydarzenie w katalogu.",
+      "coverMissingRequired": "Brak wymaganego zdjęcia",
       "promotionImageRequired": "Promowanie wydarzenia wymaga zdjęcia głównego.",
       "pricingQuestion": "Czy ceny będą się zmieniać w trakcie sprzedaży?",
       "pricingRegistrationQuestion": "Czy ceny będą się zmieniać w trakcie zapisów?",

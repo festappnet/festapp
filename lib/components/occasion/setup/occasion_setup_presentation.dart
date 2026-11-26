@@ -5,6 +5,27 @@ import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/occasion_settings/occasion_settings_strings.dart';
 
 import 'occasion_setup_details_strings.dart';
+import 'occasion_setup_sales.dart';
+import 'occasion_setup_strings.dart';
+
+String? occasionSetupCoverUrl(Map<String, dynamic> data) {
+  final url = (data['introImage'] as String?)?.trim();
+  return url == null || url.isEmpty ? null : url;
+}
+
+String? occasionSetupCoverIssue(
+  Map<String, dynamic> data, {
+  required bool appSupported,
+}) {
+  if (occasionSetupCoverUrl(data) != null) return null;
+  if (appSupported && data['isPromoted'] == true) {
+    return 'promotionImageRequired';
+  }
+  if (!appSupported && OccasionSetupSales.publishesToCatalog(data)) {
+    return 'listingImageRequired';
+  }
+  return null;
+}
 
 class OccasionSetupPresentation extends StatelessWidget {
   final int unitId;
@@ -20,7 +41,6 @@ class OccasionSetupPresentation extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final image = data['introImage'] as String?;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -47,28 +67,11 @@ class OccasionSetupPresentation extends StatelessWidget {
               onChanged({'descriptionText': v, 'description': _html(v)}),
         ),
         const SizedBox(height: 24),
-        Text(OccasionSettingsStrings.introImage),
-        const SizedBox(height: 8),
-        ImageArea(
-          imageUrl: image,
-          hint: OccasionSetupDetailsStrings.text('imageHint'),
-          onFileSelected: (file) async {
-            onBusyChanged?.call(true);
-            try {
-              final url = await DbImages.uploadImage(
-                await ImageUploadInput.readFile(file),
-                null,
-                unitId,
-                profile: ImageUploadProfile.banner,
-              );
-              if (context.mounted) onChanged({'introImage': url});
-              return url;
-            } finally {
-              if (context.mounted) onBusyChanged?.call(false);
-            }
-          },
-          // Detaching a draft must never delete a shared unit asset.
-          onRemove: () => onChanged({'introImage': null, 'isPromoted': false}),
+        _OccasionSetupCover(
+          unitId: unitId,
+          url: occasionSetupCoverUrl(data),
+          onChanged: onChanged,
+          onBusyChanged: onBusyChanged,
         ),
       ],
     );
@@ -85,33 +88,103 @@ class OccasionSetupPresentation extends StatelessWidget {
       .join('<br>');
 }
 
-class OccasionSetupPromotion extends StatelessWidget {
+class OccasionSetupPublication extends StatelessWidget {
+  final int unitId;
+  final bool appSupported;
   final Map<String, dynamic> data;
   final ValueChanged<Map<String, dynamic>> onChanged;
-  const OccasionSetupPromotion({
+  final ValueChanged<bool>? onBusyChanged;
+  const OccasionSetupPublication({
     super.key,
+    required this.unitId,
+    required this.appSupported,
     required this.data,
     required this.onChanged,
+    this.onBusyChanged,
   });
   @override
   Widget build(BuildContext context) {
-    final hasImage = (data['introImage'] as String? ?? '').isNotEmpty;
+    final issue = occasionSetupCoverIssue(data, appSupported: appSupported);
+    final setting = appSupported ? 'isPromoted' : 'listPubliclyOnPublish';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          value: data['isPromoted'] == true,
-          onChanged: hasImage ? (v) => onChanged({'isPromoted': v}) : null,
-          title: Text(OccasionSetupDetailsStrings.text('promotion')),
-          subtitle: Text(
-            OccasionSetupDetailsStrings.text(
-              hasImage ? 'promotionHint' : 'promotionNeedsImage',
-            ),
+          value: appSupported ? data[setting] == true : data[setting] != false,
+          onChanged: (value) => onChanged({setting: value}),
+          title: Text(
+            appSupported
+                ? OccasionSetupDetailsStrings.text('promotion')
+                : OccasionSetupStrings.story('listingTitle'),
           ),
+          subtitle: Text(
+            appSupported
+                ? OccasionSetupDetailsStrings.text('promotionHint')
+                : OccasionSetupStrings.story('listingHint'),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _OccasionSetupCover(
+          unitId: unitId,
+          url: occasionSetupCoverUrl(data),
+          issue: issue,
+          onChanged: onChanged,
+          onBusyChanged: onBusyChanged,
         ),
       ],
     );
   }
+}
+
+class _OccasionSetupCover extends StatelessWidget {
+  const _OccasionSetupCover({
+    required this.unitId,
+    required this.url,
+    required this.onChanged,
+    this.onBusyChanged,
+    this.issue,
+  });
+
+  final int unitId;
+  final String? url;
+  final String? issue;
+  final ValueChanged<Map<String, dynamic>> onChanged;
+  final ValueChanged<bool>? onBusyChanged;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(OccasionSettingsStrings.introImage),
+      if (issue != null)
+        Text(
+          OccasionSetupStrings.story(issue!),
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      const SizedBox(height: 8),
+      ImageArea(
+        imageUrl: url,
+        hint: OccasionSetupDetailsStrings.text('imageHint'),
+        onFileSelected: (file) async {
+          onBusyChanged?.call(true);
+          try {
+            final uploadedUrl = await DbImages.uploadImage(
+              await ImageUploadInput.readFile(file),
+              null,
+              unitId,
+              profile: ImageUploadProfile.banner,
+            );
+            if (context.mounted) onChanged({'introImage': uploadedUrl});
+            return uploadedUrl;
+          } finally {
+            if (context.mounted) onBusyChanged?.call(false);
+          }
+        },
+        // Detach the draft reference and keep the shared unit asset.
+        onRemove: () => onChanged({'introImage': null}),
+      ),
+    ],
+  );
 }

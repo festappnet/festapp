@@ -1,8 +1,14 @@
 import 'package:material_ui/material_ui.dart';
 
 class OccasionSetupReviewRow extends StatelessWidget {
-  const OccasionSetupReviewRow(this.label, this.value, {super.key});
+  const OccasionSetupReviewRow(
+    this.label,
+    this.value, {
+    super.key,
+    this.hasError = false,
+  });
   final String label, value;
+  final bool hasError;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -13,17 +19,23 @@ class OccasionSetupReviewRow extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.bodySmall,
         );
+        final valueWidget = SelectableText(
+          value,
+          style: hasError
+              ? TextStyle(color: Theme.of(context).colorScheme.error)
+              : null,
+        );
         if (constraints.maxWidth < 540) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [labelWidget, SelectableText(value)],
+            children: [labelWidget, valueWidget],
           );
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(width: 205, child: labelWidget),
-            Expanded(child: SelectableText(value)),
+            Expanded(child: valueWidget),
           ],
         );
       },

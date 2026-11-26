@@ -19,10 +19,11 @@ BEGIN
     OR payload#>>'{formDraft,data,design,font_family}' IS DISTINCT FROM appearance->>'fontFamily'
     OR payload#>>'{formDraft,data,design,background_mode}' IS DISTINCT FROM (CASE WHEN (appearance->>'gradient')::boolean THEN 'gradient' ELSE 'solid' END)
     THEN RAISE invalid_parameter_value USING MESSAGE='Shared form style mismatch'; END IF;
+   -- Gallery templates own their canvas colors. The form and ticket still share a font,
+   -- and finalization validates the persisted layout after rebinding its references.
    IF has_tickets AND public.ticket_delivery_mode(payload->'ticketDraft')<>'inline_qr' AND (payload#>'{ticketDraft,layout,templates}' IS NULL OR EXISTS(
     SELECT 1 FROM jsonb_each(payload#>'{ticketDraft,layout,templates}') t
-    WHERE t.value->>'fontId' IS DISTINCT FROM shared_font OR t.value->>'canvasColor' IS DISTINCT FROM appearance->>'primary'
-     OR (CASE WHEN (appearance->>'gradient')::boolean THEN t.value->'canvasGradient' IS DISTINCT FROM jsonb_build_array(appearance->>'primary',appearance->>'secondary') ELSE t.value ? 'canvasGradient' END)))
+    WHERE t.value->>'fontId' IS DISTINCT FROM shared_font))
     THEN RAISE invalid_parameter_value USING MESSAGE='Shared ticket style mismatch'; END IF;
   END IF;
   -- A custom copied layout retains its detailed style until the user chooses

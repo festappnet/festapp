@@ -69,3 +69,35 @@ BEGIN
  EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
  PERFORM assert_false(has_function_privilege('authenticated','public.occasion_setup_font_id_internal(text)','EXECUTE'),'Font resolver remains private');
 END $$;
+
+DO $$
+DECLARE payload jsonb; template jsonb; layout jsonb; face text;
+BEGIN
+ face:=public.occasion_setup_font_id_internal('Roboto');
+ payload:='{
+  "title":"Ples",
+  "formDraft":{"fields":[{"type":"ticket"}],"data":{"design":{
+   "primary_color":"#4465A6","secondary_color":"#4465A6",
+   "font_family":"Roboto","background_mode":"solid"
+  }}},
+  "appearance":{"id":"custom","primary":"4465A6","secondary":"4465A6","fontFamily":"Roboto","gradient":false},
+  "ticketTemplateId":"silk_dark",
+  "ticketDraft":{"delivery_mode":"both"}
+ }';
+ FOR template IN SELECT value FROM jsonb_array_elements('[
+  {"canvasColor":"0E1523"},
+  {"canvasColor":"transparent","canvasGradient":["0E1523","465677"]}
+ ]') LOOP
+  layout:=jsonb_build_object('schemaVersion',3,'templates',
+   jsonb_build_object('wide',template||jsonb_build_object('fontId',face)));
+  payload:=jsonb_set(payload,'{ticketDraft,layout}',layout);
+  PERFORM assert_true(
+   public.normalize_occasion_setup_appearance_internal(payload)#>'{ticketDraft,layout}'=layout,
+   'Gallery canvas stays as previewed with either background style');
+ END LOOP;
+ BEGIN
+  PERFORM public.normalize_occasion_setup_appearance_internal(
+   jsonb_set(payload,'{ticketDraft,layout,templates,wide,fontId}','"wrong"'));
+  RAISE EXCEPTION 'Gallery template accepted a mismatched font';
+ EXCEPTION WHEN invalid_parameter_value THEN NULL; END;
+END $$;

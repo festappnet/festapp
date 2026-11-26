@@ -24,9 +24,27 @@ class OccasionSetupStory {
     }
     if (data['storyQuestion'] == 'start' || data['storyQuestion'] == 'end')
       data['storyQuestion'] = 'dates';
-    if (data['formDraft'] is Map)
-      (data['formDraft'] as Map)['title'] = data['title'] ?? '';
+    final form = data['formDraft'];
+    if (form is Map) {
+      form['title'] = data['title'] ?? '';
+      final fields = form['fields'];
+      if (fields is List &&
+          fields.whereType<Map>().any(_isNestedTicketContainer)) {
+        form['fields'] = [
+          for (final field in fields)
+            if (field is Map && _isNestedTicketContainer(field))
+              Map<String, dynamic>.from(field)..['is_ticket_field'] = false
+            else
+              field,
+        ];
+      }
+    }
   }
+
+  // The ticket container is a top-level field. Its products and other
+  // ticket-specific inputs are the nested fields.
+  static bool _isNestedTicketContainer(Map field) =>
+      field['type'] == 'ticket' && field['is_ticket_field'] == true;
 
   static bool formEnabled(Map<String, dynamic> data) =>
       data['formEnabled'] != false;
@@ -50,7 +68,7 @@ class OccasionSetupStory {
     if (tickets.isEmpty && enabled) {
       fields.add(<String, dynamic>{
         'type': 'ticket',
-        'is_ticket_field': true,
+        'is_ticket_field': false,
         'is_required': true,
         'is_hidden': false,
         'order': -2

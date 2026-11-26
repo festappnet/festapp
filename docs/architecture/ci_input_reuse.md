@@ -92,7 +92,7 @@ ZIP paths. Receipt claims alone never authorize reuse. Missing/deleted artifacts
 API errors, unknown origins and malformed evidence cause unresolved units to
 execute. A completed workflow with a failed sibling can still supply direct
 evidence from a successful job. Verification checks that job's current attempt
-and receipt in both selection and consumption. A failed or pending matching main
+and receipt during selection and again before provisioning the lane. A failed or pending matching main
 job blocks older evidence only for matching units. An unresolved PR can have an
 unknown merge checkout and blocks older evidence for all unresolved units. A completed skipped workflow
 whose lane job is confirmed skipped with no steps does not block older evidence.
@@ -114,7 +114,9 @@ When the 20-second lookup budget expires, selection retains only unit proofs
 whose complete provenance verification already finished. All unresolved units
 and their preparation dependencies execute. A timeout during a unit's own
 verification never admits that unit. Selection still walks newest runs first;
-the retained proofs are rechecked with fresh GitHub status at consumption.
+the retained proofs are rechecked with fresh GitHub status before the workflow
+chooses which tools to provision. If the recheck fails or times out, the lane
+provisions and executes all its units.
 Timeout before any proof is verified still runs the full lane. This avoids
 discarding valid coverage while searching older history for newly changed units.
 Run discovery pages newest workflow history while the lookup budget permits.
@@ -164,9 +166,11 @@ bindings are cached. Run/attempt status is fresh; main input mismatches are
 rejected before archive downloads. PR evidence always validates the synthetic
 merge checkout. Network subprocesses use the remaining budget and kill their
 owned process group on timeout. A timeout selects execution, never success.
-The consumer rechecks the selection partition and its provenance before running
-the DAG. Immutable archives may be retained within the hosted job under their
-GitHub SHA-256; the digest is verified again on every read.
+The selector records the verified plan's SHA-256 in the hosted job environment.
+The runner verifies the plan bytes against that digest and checks the checkout,
+lane, definition and dependency closure before running the DAG. Immutable
+archives may be retained within the hosted job under their GitHub SHA-256. Their
+digest is verified again on every read during provenance verification.
 
 Wix has quick contracts/build, PHP adapter smoke and an installed Joomla,
 Wix and generated HTML unit. The installed WordPress suite has its own required

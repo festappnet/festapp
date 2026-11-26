@@ -3,6 +3,7 @@ DO $$
 DECLARE actor uuid; org bigint; target bigint; source_id bigint; source_type bigint; source_product bigint;
  plan bigint; seat bigint; source_node_id uuid:=gen_random_uuid(); form_id bigint; d jsonb; source jsonb; payload jsonb; response jsonb; command uuid:=gen_random_uuid();
  draft_id uuid:=gen_random_uuid(); new_id bigint; new_type bigint; before_count bigint; layout jsonb;
+ product_field text; draft_product jsonb;
 BEGIN
  -- Own scopes avoid interference with concurrent local QA and its rate budget.
  PERFORM create_user_for_test('setup-finalizer','setup-finalizer-'||gen_random_uuid()||'@example.invalid');
@@ -99,12 +100,26 @@ BEGIN
  draft_id:=gen_random_uuid(); command:=gen_random_uuid();
  d:=public.create_occasion_setup_draft(draft_id,target);
  payload:=payload||jsonb_build_object('blueprintMode','none','link','no-plan-'||draft_id);
+ SELECT (n-1)::text INTO product_field
+ FROM jsonb_array_elements(payload#>'{formDraft,fields}') WITH ORDINALITY f(field,n)
+ WHERE field->>'type'='product_type';
+ draft_product:='{"id":-21,"title":"Balkon","price":27.50,"currency_code":"EUR","order":1}';
+ payload:=jsonb_insert(payload,ARRAY['formDraft','fields',product_field,'product_type_data','products','0'],draft_product,true);
  d:=public.save_occasion_setup_draft(draft_id,(d->>'revision')::bigint,payload,5);
+ d:=public.get_occasion_setup_draft(draft_id);
+ PERFORM assert_eq(d#>ARRAY['data','formDraft','fields',product_field,'product_type_data','products','1'],draft_product,'Draft reload preserves new product and its edits');
  response:=public.finalize_occasion_setup_draft(draft_id,(d->>'revision')::bigint,command);
  new_id:=(response->'data'->>'occasionId')::bigint;
  EXECUTE 'RESET ROLE';
  PERFORM assert_eq((SELECT count(*) FROM eshop.blueprints WHERE occasion=new_id),0::bigint,'None ignores stale layout');
- PERFORM assert_true(EXISTS(SELECT 1 FROM eshop.products WHERE occasion=new_id),'No-plan sale retains products');
+ PERFORM assert_eq((SELECT count(*) FROM eshop.products WHERE occasion=new_id),2::bigint,'No-plan sale retains both products');
+ PERFORM assert_true(EXISTS(
+  SELECT 1 FROM eshop.products p
+  JOIN public.form_fields f ON f.product_type=p.product_type
+  JOIN public.forms fm ON fm.id=f.form
+  WHERE fm.occasion=new_id AND p.occasion=new_id AND p.id>0
+   AND p.title='Balkon' AND p.price=27.50 AND p.currency_code='EUR'
+ ),'New product has a permanent ID and retains its price, currency and form group');
  PERFORM assert_false(EXISTS(SELECT 1 FROM public.form_fields f JOIN public.forms fm ON fm.id=f.form WHERE fm.occasion=new_id AND f.type='spot'),'No-plan form has no seat selector');
  -- Bindings to decoration are not sellable places. Definite rejection can be corrected.
  EXECUTE 'SET LOCAL ROLE authenticated';

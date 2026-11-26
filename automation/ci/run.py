@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 from telemetry import execution_identity, input_identity, phase, measured_process, run_directory, write_receipt, emit
-from selection import owners, unit_owners, fingerprint, verify_plan, lookup
+from selection import owners, unit_owners, fingerprint, read_verified_plan, lookup
 from scheduler import execute_dag
 from resources import flutter_slot
 from contextlib import nullcontext
@@ -130,9 +130,9 @@ def _execute(names, *, pinned=False, command_started=None):
         receipt['execution']=execution_identity(ROOT,names[0],CONTRACT)
         if os.environ.get('FESTAPP_CI_SELECTION_PATH'):
             if os.environ.get('GITHUB_ACTIONS')!='true': raise ValueError('Hosted selection requires GitHub Actions')
-            plan=json.loads(Path(os.environ['FESTAPP_CI_SELECTION_PATH']).read_text())
             sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-            with lookup(): verify_plan(plan,names[0],sha,os.environ['GITHUB_REPOSITORY'],CONTRACT)
+            plan=read_verified_plan(Path(os.environ['FESTAPP_CI_SELECTION_PATH']),
+                                    os.environ['FESTAPP_CI_SELECTION_SHA256'],names[0],sha,CONTRACT)
         if receipt['execution'] and plan and plan['reuse']:
             receipt['execution']['state']='executed' if plan['execute'] else 'reused'
     receipt['schemaVersion']=2
