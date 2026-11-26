@@ -15,6 +15,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/payments/payment_connection_api.dart';
+import 'package:fstapp/components/payments/payment_editor_registry.dart';
 import 'package:fstapp/components/stripe_payments/unit_card_payments_page.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -98,12 +99,15 @@ void main() {
   }) => MaterialApp(
     builder: DependencyMaterialBridge.builder,
     home: Scaffold(
-      body: UnitCardPaymentsView(
-        unitId: unit,
-        canManage: canManage,
-        connectSupported: connectSupported,
-        api: api,
-        openExternal: open,
+      body: SingleChildScrollView(
+        child: UnitCardPaymentsView(
+          unitId: unit,
+          canManage: canManage,
+          connectSupported: connectSupported,
+          provider: paymentEditors.single,
+          api: api,
+          openExternal: open,
+        ),
       ),
     ),
   );
@@ -322,9 +326,9 @@ void main() {
       );
       expect(
         tester
-            .widget<FilledButton>(
+            .widget<OutlinedButton>(
               find.widgetWithText(
-                FilledButton,
+                OutlinedButton,
                 catalog['CardPaymentConnection']['resume'],
               ),
             )
@@ -344,9 +348,9 @@ void main() {
       );
       expect(
         tester
-            .widget<OutlinedButton>(
+            .widget<FilledButton>(
               find.widgetWithText(
-                OutlinedButton,
+                FilledButton,
                 catalog['CardPaymentConnection']['dashboard'],
               ),
             )
@@ -355,6 +359,41 @@ void main() {
       );
     },
   );
+  testWidgets('failed refresh replaces the cached healthy status', (
+    tester,
+  ) async {
+    final api = FakeConnectionApi()
+      ..connection = {
+        'state': 'connected',
+        'modelVerified': true,
+        'chargesEnabled': true,
+        'cardPaymentsActive': true,
+        'checkedAt': '2026-11-26T08:00:00Z',
+      };
+    await environment().pumpWidget(tester, page(api));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(catalog['CardPaymentConnection']['receiving']),
+      findsOneWidget,
+    );
+
+    api.statusError = StateError('fixture unavailable');
+    await tester.tap(find.text(catalog['CardPaymentConnection']['reload']));
+    await tester.pumpAndSettle();
+    expect(
+      find.text(catalog['CardPaymentConnection']['receiving']),
+      findsNothing,
+    );
+    expect(
+      find.text(catalog['CardPaymentConnection']['unknown']),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(catalog['CardPaymentConnection']['lastChecked']),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('A03 editor cannot load status or initiate connection', (
     tester,
   ) async {

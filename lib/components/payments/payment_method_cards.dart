@@ -14,12 +14,10 @@ class PaymentMethodCards extends StatelessWidget {
     this.showOnline = true,
     this.showBank = true,
     this.showCash = true,
-    this.onlineTitle,
   });
 
   final bool onlineFirst;
   final bool showOnline, showBank, showCash;
-  final String? onlineTitle;
   final FormPaymentMethod? value;
   final bool canSelectOnline;
   final ValueChanged<FormPaymentMethod> onChanged;
@@ -45,7 +43,9 @@ class PaymentMethodCards extends StatelessWidget {
                     FormPaymentMethod.online,
                     FormPaymentMethod.both,
                   ]))
-          if ((showOnline || method == FormPaymentMethod.bank) && (showBank || method == FormPaymentMethod.online)) method,
+          if ((showOnline || method == FormPaymentMethod.bank) &&
+              (showBank || method == FormPaymentMethod.online))
+            method,
       ];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,22 +71,25 @@ class PaymentMethodCards extends StatelessWidget {
                 ),
               ),
           ],
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          if (showCash) RadioGroup<FormPaymentMethod>(
-            groupValue: value,
-            onChanged: (method) {
-              if (method != null) onChanged(method);
-            },
-            child: RadioListTile<FormPaymentMethod>(
-              key: const ValueKey('payment-method-cash'),
-              value: FormPaymentMethod.cash,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              title: Text(PaymentMethodStrings.text('cash')),
-              subtitle: Text(PaymentMethodStrings.text('cashDescription')),
-              controlAffinity: ListTileControlAffinity.leading,
+          if (showCash && methods.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+          ],
+          if (showCash)
+            RadioGroup<FormPaymentMethod>(
+              groupValue: value,
+              onChanged: (method) {
+                if (method != null) onChanged(method);
+              },
+              child: RadioListTile<FormPaymentMethod>(
+                key: const ValueKey('payment-method-cash'),
+                value: FormPaymentMethod.cash,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                title: Text(PaymentMethodStrings.text('cash')),
+                subtitle: Text(PaymentMethodStrings.text('cashDescription')),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
             ),
-          ),
         ],
       );
     },
@@ -100,18 +103,16 @@ class PaymentMethodCards extends StatelessWidget {
         method == FormPaymentMethod.cash ||
         method == FormPaymentMethod.bank ||
         canSelectOnline;
-    final title = method == FormPaymentMethod.online && onlineTitle != null
-        ? onlineTitle!
-        : PaymentMethodStrings.text(switch (method) {
-            FormPaymentMethod.cash => 'cash',
-            FormPaymentMethod.bank => 'onlyBank',
-            FormPaymentMethod.online => 'onlyStripe',
-            FormPaymentMethod.both => 'bothMethods',
-          });
+    final title = PaymentMethodStrings.text(switch (method) {
+      FormPaymentMethod.cash => 'cash',
+      FormPaymentMethod.bank => 'onlyBank',
+      FormPaymentMethod.online => 'onlineGateway',
+      FormPaymentMethod.both => 'bothMethods',
+    });
     final description = PaymentMethodStrings.text(switch (method) {
       FormPaymentMethod.cash => 'cashDescription',
       FormPaymentMethod.bank => 'bankDescription',
-      FormPaymentMethod.online => 'stripeDescription',
+      FormPaymentMethod.online => 'onlineDescription',
       FormPaymentMethod.both => 'bothDescription',
     });
     final radius = BorderRadius.circular(12);

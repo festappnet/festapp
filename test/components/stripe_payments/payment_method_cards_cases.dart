@@ -192,7 +192,7 @@ void main() {
 
     // InkWell keeps the cards in the platform focus traversal and action system.
     final context = tester.element(
-      find.text(catalog['PaymentMethods']['onlyStripe']),
+      find.text(catalog['PaymentMethods']['onlineGateway']),
     );
     Focus.of(context).requestFocus();
     await tester.pump();
@@ -202,7 +202,7 @@ void main() {
     expect(find.byIcon(Icons.radio_button_checked), findsOneWidget);
   });
 
-  testWidgets('unavailable Stripe cannot be selected; bank stays operable', (
+  testWidgets('unavailable gateway cannot be selected; bank stays operable', (
     tester,
   ) async {
     FormPaymentMethod? chosen;
@@ -233,8 +233,9 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       final semantics = tester.ensureSemantics();
+      final bankTitle = catalog['PaymentMethods']['onlyBank'] as String;
       expect(
-        find.bySemanticsLabel(RegExp(catalog['PaymentMethods']['onlyBank'])),
+        find.bySemanticsLabel(RegExp('^${RegExp.escape(bankTitle)}\\. ')),
         findsOneWidget,
       );
       semantics.dispose();

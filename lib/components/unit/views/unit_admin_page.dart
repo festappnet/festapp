@@ -1,4 +1,4 @@
-import 'package:fstapp/components/stripe_payments/stripe_feature.dart';
+import 'package:fstapp/components/payments/payment_editor_registry.dart';
 import '../unit_occasion_dashboard.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
 import 'package:fstapp/components/navigation/administration_loading_shell.dart';
@@ -461,7 +461,7 @@ class UnitAdministrationTabsPage extends StatelessWidget {
             route: const UnitBankAccountsNavigationRoute(),
             label: BankAccountStrings.bankAccountsTitle,
             icon: Icons.account_balance),
-      if (StripeFeature.visible && StripeFeature.canManage)
+      if (managedPaymentEditors.isNotEmpty)
         RoutedTabDefinition(slug: NavigationPaths.cardPayments,
             route: const UnitCardPaymentsRoute(),
             label: StripeConnectionStrings.title, icon: Icons.credit_card),
