@@ -302,6 +302,8 @@
     "emailSender": "Nadawca",
     "emailCounterAccount": "Rachunek nadawcy",
     "emailVs": "Symbol zmienny",
+    "emailVsMatches": "zgodny z płatnością",
+    "emailVsDiffers": "różni się od płatności",
     "emailAmountDiffers": "Kwota różni się od pozostałej należności",
     "emailAmountMatches": "Kwota odpowiada pozostałej należności",
     "emailOrder": "Zamówienie",

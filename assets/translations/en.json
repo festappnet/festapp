@@ -2395,6 +2395,8 @@
     "emailSender": "Sender",
     "emailCounterAccount": "Counter-account",
     "emailVs": "Variable symbol",
+    "emailVsMatches": "matches the payment",
+    "emailVsDiffers": "differs from the payment",
     "emailAmountDiffers": "Amount differs from remaining due",
     "emailAmountMatches": "Amount matches remaining due",
     "emailOrder": "Order",

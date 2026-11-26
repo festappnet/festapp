@@ -60,6 +60,8 @@ class BankAccountStrings {
   static String get emailAmountMatches => 'BankAccount.emailAmountMatches'.tr();
   static String get emailAmountDiffers => 'BankAccount.emailAmountDiffers'.tr();
   static String get emailVs => 'BankAccount.emailVs'.tr();
+  static String get emailVsMatches => 'BankAccount.emailVsMatches'.tr();
+  static String get emailVsDiffers => 'BankAccount.emailVsDiffers'.tr();
   static String get emailCounterAccount =>
       'BankAccount.emailCounterAccount'.tr();
   static String get emailSender => 'BankAccount.emailSender'.tr();

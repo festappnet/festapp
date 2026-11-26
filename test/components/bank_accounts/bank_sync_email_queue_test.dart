@@ -46,6 +46,8 @@ final _observation = <String, dynamic>{
       'state': 'ordered',
       'customer_name': 'Jane Smith',
       'customer_email': 'jane@example.invalid',
+      'variable_symbol': '1007',
+      'vs_matches': true,
       'remaining_due': 100,
       'amount_matches': true,
     },
@@ -125,6 +127,10 @@ final _submit = find.descendant(
 );
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
+  // Dialog content scrolls; candidate details can push later controls below
+  // the test viewport, as on a small screen.
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
@@ -327,6 +333,12 @@ void main() {
       find.textContaining(BankAccountStrings.emailAmountMatches),
       findsOneWidget,
     );
+    expect(
+      find.textContaining(
+        '${BankAccountStrings.emailVs}: 1007 · ${BankAccountStrings.emailVsMatches}',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('email confirmation requires candidate and banking attestation', (
@@ -380,6 +392,8 @@ void main() {
               'state': 'ordered',
               'customer_name': 'Alice Brown',
               'customer_email': 'alice@example.invalid',
+              'variable_symbol': '73',
+              'vs_matches': false,
               'remaining_due': 100,
               'amount_matches': true,
             },
@@ -394,6 +408,12 @@ void main() {
     expect(find.textContaining('TICKETS73'), findsOneWidget);
     expect(find.textContaining('alice@example.invalid'), findsOneWidget);
     expect(find.textContaining('ORDER42'), findsNothing);
+    expect(
+      find.textContaining(
+        '${BankAccountStrings.emailVs}: 73 · ${BankAccountStrings.emailVsDiffers}',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('email dismissal requires a reason and refreshes the queue', (

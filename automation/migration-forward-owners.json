@@ -1106,6 +1106,20 @@
         "eshop_bank_sync/bank_sync_api_review.sql": ["bank_sync_pairing_candidates_internal"],
         "eshop_transactions/get_transactions_for_order_all_available.sql": ["get_transactions_for_order_all_available"]
       }
+    },
+    {
+      "migration": "20261126220000_bank_email_candidate_variable_symbol.sql",
+      "active": true,
+      "header": "-- Show each payable order's variable symbol when confirming an email-detected bank payment.",
+      "sources": [
+        "eshop_bank_sync/bank_sync_email_confirmation.sql"
+      ],
+      "selectors": {
+        "eshop_bank_sync/bank_sync_email_confirmation.sql": [
+          "bank_sync_email_payable_targets_for_ids_internal",
+          "bank_sync_email_candidates_internal"
+        ]
+      }
     }
   ]
 }

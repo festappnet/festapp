@@ -44,6 +44,8 @@ BEGIN
  PERFORM assert_eq(jsonb_array_length(rows),1,'email queue contains the observation');
  PERFORM assert_eq(jsonb_array_length(rows->0->'candidates'),2,'exact account/currency/VS candidates');
  PERFORM assert_true((rows#>>'{0,candidates,0,amount_matches}')::boolean,'SQL remaining due comparison');
+ PERFORM assert_eq(rows#>>'{0,candidates,0,variable_symbol}','1007'::text,'candidate shows its variable symbol for manual comparison');
+ PERFORM assert_eq(rows#>'{0,candidates,0,vs_matches}','true'::jsonb,'suggested candidate compares the raw payment VS');
  PERFORM pg_temp.confirm_error(bank,delivery,pi,'BANK_SYNC_ATTESTATION_REQUIRED',false);
  PERFORM pg_temp.confirm_error(bank,delivery,pi,'BANK_SYNC_DELIVERY_CONFLICT',true,repeat('b',64));
  UPDATE eshop.bank_sync_connections SET mode='api' WHERE id=conn;
@@ -308,6 +310,13 @@ BEGIN
  SELECT order_symbol INTO v_symbol FROM eshop.orders WHERE id=(x->>'order')::bigint;
  rows:=public.find_bank_sync_email_targets_v1(bank,event->'data',v_symbol);
  PERFORM assert_eq(jsonb_array_length(rows),1,'lookup by public order number');
+ PERFORM assert_eq(rows->0->>'variable_symbol','1007'::text,'manual lookup supplies the order VS');
+ PERFORM assert_eq(public.find_bank_sync_email_targets_v1(bank,event->'data'||'{"raw_vs":"00001007"}',v_symbol)#>'{0,vs_matches}',
+  'true'::jsonb,'payment VS matches after canonical normalization');
+ PERFORM assert_eq(public.find_bank_sync_email_targets_v1(bank,event->'data'||'{"raw_vs":"1008"}',v_symbol)#>'{0,vs_matches}',
+  'false'::jsonb,'lookup shows a differing payment VS');
+ PERFORM assert_eq(public.find_bank_sync_email_targets_v1(bank,event->'data'||'{"raw_vs":"0x3ef"}',v_symbol)#>'{0,vs_matches}',
+  'null'::jsonb,'an invalid payment VS never yields a comparison');
  rows:=public.find_bank_sync_email_targets_v1(bank,event->'data',lower(v_symbol));
  PERFORM assert_eq(jsonb_array_length(rows),1,'lookup by lowercase order symbol');
  UPDATE eshop.payment_info SET creditor_reference=public.generate_creditor_reference(1007) WHERE id=pi;
@@ -318,6 +327,7 @@ BEGIN
  UPDATE eshop.bank_sync_inbox SET payload=event WHERE connection_id=conn;
  rows:=(public.get_bank_sync_email_queue_page_v1(bank)->'items');
  PERFORM assert_eq(jsonb_array_length(rows->0->'candidates'),1,'message VS suggestions');
+ PERFORM assert_eq(rows#>'{0,candidates,0,vs_matches}','null'::jsonb,'a suggestion inferred from the message has no raw VS comparison');
  event:=jsonb_set(event,'{data,message}',to_jsonb('Reference '||public.generate_creditor_reference(1007)));
  UPDATE eshop.bank_sync_inbox SET payload=event WHERE connection_id=conn;
  rows:=(public.get_bank_sync_email_queue_page_v1(bank)->'items');
