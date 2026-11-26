@@ -199,7 +199,10 @@ RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
     AND upper(trim(pi.currency_code))=upper(trim(p_facts->>'currency'))
  )
  SELECT coalesce(jsonb_agg(target.candidate||jsonb_build_object('amount_matches',
-  (target.candidate->>'remaining_due')::numeric=(p_facts->>'amount_cents')::numeric/100) ORDER BY target.order_id),'[]')
+  (target.candidate->>'remaining_due')::numeric=(p_facts->>'amount_cents')::numeric/100,
+  'vs_matches',target.candidate->>'variable_symbol'=(
+   SELECT value FROM public.bank_transaction_signals_internal(p_facts->>'raw_vs',NULL,NULL) WHERE kind='vs'
+  )) ORDER BY target.order_id),'[]')
  FROM public.bank_sync_email_payable_targets_for_ids_internal(p_account,p_facts->>'currency',
    (SELECT coalesce(array_agg(id::bigint),'{}'::bigint[]) FROM matched)) target;
 $$;

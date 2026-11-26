@@ -1115,7 +1115,10 @@
         "eshop_bank_sync/bank_sync_email_confirmation.sql"
       ],
       "selectors": {
-        "eshop_bank_sync/bank_sync_email_confirmation.sql": ["bank_sync_email_payable_targets_for_ids_internal"]
+        "eshop_bank_sync/bank_sync_email_confirmation.sql": [
+          "bank_sync_email_payable_targets_for_ids_internal",
+          "bank_sync_email_candidates_internal"
+        ]
       }
     }
   ]

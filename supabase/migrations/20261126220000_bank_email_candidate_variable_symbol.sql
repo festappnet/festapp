@@ -24,3 +24,31 @@ LANGUAGE sql STABLE SET search_path=public,extensions AS $$
   'remaining_due',greatest(e.amount-t.available,0),'currency',upper(trim(e.currency_code)))
  FROM eligible e JOIN totals t ON t.payment_id=e.id WHERE e.amount>t.available;
 $$;
+CREATE OR REPLACE FUNCTION public.bank_sync_email_candidates_internal(p_account bigint,p_facts jsonb,p_query text DEFAULT NULL)
+RETURNS jsonb LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+ WITH signals AS MATERIALIZED (
+  SELECT * FROM public.bank_transaction_signals_internal(p_facts->>'raw_vs',p_facts->>'payer_reference',
+    p_facts->>'message',p_facts->>'user_identification',p_facts->>'comment') WHERE p_query IS NULL
+  UNION SELECT * FROM public.bank_sync_email_lookup_signals_internal(p_query) WHERE p_query IS NOT NULL
+ ), matched AS MATERIALIZED (
+  SELECT pi.id FROM signals s JOIN eshop.payment_info pi ON pi.variable_symbol=CASE WHEN s.kind='vs' THEN s.value::bigint END
+   WHERE s.kind='vs' AND pi.bank_account=p_account AND pi.payment_method='bank'
+    AND upper(trim(pi.currency_code))=upper(trim(p_facts->>'currency'))
+  UNION SELECT pi.id FROM signals s JOIN eshop.payment_info pi ON pi.creditor_reference=s.value
+   WHERE s.kind='rf' AND pi.bank_account=p_account AND pi.payment_method='bank'
+    AND upper(trim(pi.currency_code))=upper(trim(p_facts->>'currency'))
+  UNION SELECT pi.id FROM eshop.orders o JOIN eshop.payment_info pi ON pi.id=o.payment_info
+   WHERE p_query IS NOT NULL
+    AND (o.order_symbol=trim(p_query) OR o.order_symbol=upper(trim(p_query))
+      OR (trim(p_query) ~ '^[0-9]{1,18}$' AND o.order_sequence=trim(p_query)::bigint))
+    AND pi.bank_account=p_account AND pi.payment_method='bank'
+    AND upper(trim(pi.currency_code))=upper(trim(p_facts->>'currency'))
+ )
+ SELECT coalesce(jsonb_agg(target.candidate||jsonb_build_object('amount_matches',
+  (target.candidate->>'remaining_due')::numeric=(p_facts->>'amount_cents')::numeric/100,
+  'vs_matches',target.candidate->>'variable_symbol'=(
+   SELECT value FROM public.bank_transaction_signals_internal(p_facts->>'raw_vs',NULL,NULL) WHERE kind='vs'
+  )) ORDER BY target.order_id),'[]')
+ FROM public.bank_sync_email_payable_targets_for_ids_internal(p_account,p_facts->>'currency',
+   (SELECT coalesce(array_agg(id::bigint),'{}'::bigint[]) FROM matched)) target;
+$$;
