@@ -76,3 +76,67 @@ BEGIN
   RAISE EXCEPTION 'revoked replay accepted';
  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
+
+DO $$
+DECLARE x jsonb:=pg_temp.refund_fixture(); result jsonb;
+ oid bigint:=(x->>'order')::bigint; pid bigint:=(x->>'payment')::bigint;
+ bank bigint:=(x->>'bank')::bigint; symbol bigint:=(x->>'variableSymbol')::bigint;
+ ambiguous_payment bigint; movement bigint; manual_movement bigint; historical_movement bigint;
+BEGIN
+ DELETE FROM eshop.payment_reference_accounts WHERE bank_account_id=bank;
+ DELETE FROM eshop.payment_reference_reservations WHERE payment_info_id=pid;
+ DELETE FROM eshop.payment_reference_scopes WHERE organization_id=(x->>'organization')::bigint;
+ result:=pg_temp.refund_bank_event(x,11,120000);
+ PERFORM assert_eq(result->>'outcome','paired','verified receipt pairs by reference');
+
+ INSERT INTO eshop.payment_info(bank_account,variable_symbol,currency_code,payment_method)
+ VALUES(bank,symbol,'CZK','bank') RETURNING id INTO ambiguous_payment;
+ result:=pg_temp.refund_bank_event(x,14,-120000);
+ PERFORM assert_false((result#>>'{refund,matched}')::boolean,'ambiguous reference stays unpaired');
+ DELETE FROM eshop.payment_info WHERE id=ambiguous_payment;
+
+ result:=pg_temp.refund_bank_event(x,15,-120000,NULL,jsonb_build_object(
+  'raw_vs',NULL,'message','VS: '||symbol,'counter_account','5678'));
+ PERFORM assert_true((result#>>'{refund,matched}')::boolean,'outgoing movement uses the same reference in the message');
+ SELECT id INTO STRICT movement FROM eshop.transactions WHERE bank_account_id=bank AND transaction_id=900015;
+ PERFORM assert_false(EXISTS(SELECT 1 FROM eshop.refund_requests WHERE order_id=oid),'no refund request created');
+ PERFORM assert_eq((SELECT returned FROM eshop.payment_info WHERE id=pid),1200::numeric,'order returned amount updated');
+ PERFORM assert_eq(public.get_transactions_for_order(oid)#>>'{paymentOperations,refunded}','1200.00','refunded in order payment detail');
+ PERFORM public.reserve_public_link_internal('occasion',(x->>'occasion')::bigint,x->>'link',true);
+ PERFORM assert_eq((public.get_report_ws(x->>'link')#>>'{report,money_by_currency,0,returned}')::numeric,1200::numeric,'refunded in event report');
+ PERFORM assert_true(
+  public.get_bank_transaction_history(bank,(x->>'unit')::bigint) @> jsonb_build_array(jsonb_build_object('id',movement,'payment_info',pid)),
+  'account history carries the payment link');
+ PERFORM assert_eq(pg_temp.refund_bank_event(x,15,-120000,NULL,jsonb_build_object(
+  'raw_vs',NULL,'message','VS: '||symbol,'counter_account','5678')),result,'delivery replay is stable');
+
+ result:=pg_temp.refund_bank_event(x,16,-10000,'9999999998');
+ PERFORM assert_false((result#>>'{refund,matched}')::boolean,'unrecognized reference is never attached automatically');
+ SELECT id INTO STRICT manual_movement FROM eshop.transactions WHERE bank_account_id=bank AND transaction_id=900016;
+ UPDATE eshop.orders SET state='storno' WHERE id=oid;
+ SET LOCAL ROLE authenticated;
+ PERFORM assert_true(public.get_transactions_for_order_all_available(pid)
+   @> jsonb_build_array(jsonb_build_object('id',manual_movement)),'manual picker offers unlinked outgoing payments');
+ PERFORM public.add_transaction_to_payment_info_ws(manual_movement,pid);
+ RESET ROLE;
+ PERFORM assert_eq((SELECT returned FROM eshop.payment_info WHERE id=pid),1300::numeric,'manual refund increases returned total');
+ PERFORM assert_eq((SELECT state FROM eshop.orders WHERE id=oid),'storno','manual bank refund preserves cancellation');
+ SET LOCAL ROLE authenticated;
+ PERFORM public.remove_transaction_from_payment_info_ws(manual_movement,pid);
+ RESET ROLE;
+ PERFORM assert_eq((SELECT returned FROM eshop.payment_info WHERE id=pid),1200::numeric,'manual unlink corrects returned total');
+
+ -- An already imported movement is processed through the same automatic matcher.
+ UPDATE eshop.payment_info SET variable_symbol=NULL WHERE id=pid;
+ result:=pg_temp.refund_bank_event(x,17,-20000);
+ PERFORM assert_false((result#>>'{refund,matched}')::boolean,'movement remains unpaired without a target');
+ UPDATE eshop.payment_info SET variable_symbol=symbol WHERE id=pid;
+ SELECT id INTO STRICT historical_movement FROM eshop.transactions WHERE bank_account_id=bank AND transaction_id=900017;
+ PERFORM assert_true((public.observe_bank_refund_internal(historical_movement)->>'matched')::boolean,
+  'automatic retry links the historical movement');
+ SET LOCAL ROLE authenticated;
+ PERFORM public.remove_transaction_from_payment_info_ws(historical_movement,pid);
+ RESET ROLE;
+ PERFORM assert_false((public.observe_bank_refund_internal(historical_movement)->>'matched')::boolean,
+  'automatic retry respects a manual unlink');
+END $$;

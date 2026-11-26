@@ -32,6 +32,28 @@ CREATE OR REPLACE FUNCTION public.bank_transaction_signals_internal(
 $$;
 REVOKE ALL ON FUNCTION public.bank_transaction_signals_internal(text,text,text,text,text) FROM PUBLIC,anon,authenticated,service_role;
 
+-- Incoming and outgoing bank movements resolve the same account-scoped references.
+CREATE OR REPLACE FUNCTION public.bank_transaction_reference_candidates_internal(p_transaction eshop.transactions)
+RETURNS TABLE(signal_count bigint,payment_ids bigint[])
+LANGUAGE sql STABLE SET search_path=public,extensions AS $$
+  WITH signals AS (
+    SELECT * FROM public.bank_transaction_signals_internal(p_transaction.vs,p_transaction.payer_reference,
+      p_transaction.message_for_recipient,p_transaction.user_identification,p_transaction.comment)
+  ), candidates AS (
+    SELECT DISTINCT pi.id
+    FROM signals s
+    JOIN eshop.payment_info pi
+      ON (s.kind = 'rf' AND pi.creditor_reference = s.value)
+      OR (s.kind = 'vs' AND pi.variable_symbol = CASE WHEN s.kind='vs' THEN s.value::bigint END)
+    WHERE (pi.bank_account = p_transaction.bank_account_id
+      OR public.bank_sync_accounts_match(p_transaction.id,pi.bank_account))
+      AND upper(trim(pi.currency_code::text)) = upper(trim(p_transaction.currency::text))
+  )
+  SELECT (SELECT count(*) FROM signals), array_agg(c.id ORDER BY c.id)
+  FROM candidates c;
+$$;
+REVOKE ALL ON FUNCTION public.bank_transaction_reference_candidates_internal(eshop.transactions) FROM PUBLIC,anon,authenticated,service_role;
+
 CREATE OR REPLACE FUNCTION public.match_bank_transaction(p_transaction_id bigint)
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -70,22 +92,8 @@ BEGIN
     RETURN jsonb_build_object('verdict', 'ineligible', 'reason', 'unverified_identity');
   END IF;
 
-  WITH signals AS (
-    SELECT * FROM public.bank_transaction_signals_internal(v_transaction.vs,v_transaction.payer_reference,
-      v_transaction.message_for_recipient,v_transaction.user_identification,v_transaction.comment)
-  ), candidates AS (
-    SELECT DISTINCT pi.id
-    FROM signals s
-    JOIN eshop.payment_info pi
-      ON (s.kind = 'rf' AND pi.creditor_reference = s.value)
-      OR (s.kind = 'vs' AND pi.variable_symbol = CASE WHEN s.kind='vs' THEN s.value::bigint END)
-    WHERE (pi.bank_account = v_transaction.bank_account_id
-      OR public.bank_sync_accounts_match(p_transaction_id,pi.bank_account))
-      AND upper(trim(pi.currency_code::text)) = upper(trim(v_transaction.currency::text))
-  )
-  SELECT (SELECT count(*) FROM signals), array_agg(c.id ORDER BY c.id)
-  INTO v_signal_count, v_candidate_ids
-  FROM candidates c;
+  SELECT c.signal_count,c.payment_ids INTO v_signal_count,v_candidate_ids
+  FROM public.bank_transaction_reference_candidates_internal(v_transaction) c;
 
   IF v_signal_count = 0 OR v_candidate_ids IS NULL THEN
     RETURN jsonb_build_object('verdict', 'unmatched', 'reason', 'no_unique_reference');
