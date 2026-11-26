@@ -9,11 +9,11 @@ import { formatDatetime, formatIBAN } from "./utilities.ts";
 export function confirmationSubstitutions(
   order: any,
   requestedLanguage = "cs",
+  tone = resolveCommunicationTone(order.form?.data?.communication_tone),
 ) {
   const lang = resolveEmailLanguage(requestedLanguage);
   const occasion = order.occasion;
   const paymentInfo = order.payment_info;
-  const tone = resolveCommunicationTone(order.form?.data?.communication_tone);
   const paymentPresentation = confirmationPaymentSubstitutions(
     paymentInfo,
     occasion.features ?? [],

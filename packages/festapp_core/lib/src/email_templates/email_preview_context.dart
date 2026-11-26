@@ -88,9 +88,12 @@ class EmailPreviewContext {
         : first.price + (singleApplication ? 0 : second.price);
     // Explicitly fictional deposit/history examples, never payment computation.
     final deposit = (total * .375 * 100).roundToDouble() / 100;
+    final historyPriceStep =
+        second.currency == 'CZK' && second.price >= 100 ? 50 : 1;
     final previousSecond = zero
         ? 0.0
-        : (second.price * (5 / 7) * 100).roundToDouble() / 100;
+        : (second.price * (5 / 7) / historyPriceStep).roundToDouble() *
+              historyPriceStep;
     String money(double value) => formatDisplayCurrency(
       value,
       simple: true,

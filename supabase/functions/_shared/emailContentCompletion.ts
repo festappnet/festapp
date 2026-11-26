@@ -1,5 +1,6 @@
 import { ORDER_OVERVIEW_LINK_SLOT } from "./orderOverview.ts";
 import { escapeEmailHtml } from "./emailActionLink.ts";
+import type { Tone } from "./communicationTone.ts";
 export interface EmailRequiredLink {
   url: string;
   html: string;
@@ -73,22 +74,33 @@ export function completeEmailContent(
   return html.replaceAll(ORDER_OVERVIEW_LINK_SLOT, "");
 }
 
-export function paymentQrEmailHtml(cs: boolean, source?: string): string {
+export function paymentQrEmailHtml(
+  cs: boolean,
+  tone: Tone,
+  source?: string,
+): string {
+  const informal = tone === "informal";
   if (source === undefined) {
     const notice = cs
-      ? "Platební QR kód najdete v příloze."
+      ? informal ? "Platební QR kód najdeš v příloze." : "Platební QR kód najdete v příloze."
       : "The payment QR code is in the attachment.";
     return `<p style="margin:16px 0">${notice}</p>`;
   }
   const alt = cs
     ? "QR kód pro platbu bankovním převodem"
     : "Bank transfer QR code";
-  const title = cs ? "Zaplaťte pomocí QR kódu" : "Pay with the QR code";
+  const title = cs
+    ? informal ? "Zaplať pomocí QR kódu" : "Zaplaťte pomocí QR kódu"
+    : "Pay with the QR code";
   const scanInstructions = cs
-    ? "Naskenujte ho v aplikaci mobilního bankovnictví."
+    ? informal
+      ? "Naskenuj ho v aplikaci mobilního bankovnictví."
+      : "Naskenujte ho v aplikaci mobilního bankovnictví."
     : "Scan it in your mobile banking app.";
   const hint = cs
-    ? "QR kód si můžete stáhnout z přílohy."
+    ? informal
+      ? "QR kód si můžeš stáhnout z přílohy."
+      : "QR kód si můžete stáhnout z přílohy."
     : "You can download the QR code from the attachment.";
   return `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="${escapeEmailHtml(source)}" alt="${alt}" width="280" style="display:block;width:280px;max-width:100%;height:auto;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`;
 }

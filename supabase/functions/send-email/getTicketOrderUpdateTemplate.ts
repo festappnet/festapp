@@ -102,5 +102,5 @@ export async function getTicketOrderUpdateTemplate(
     orderHistoryId: latest_history_id,
   };
 
-  return { subs, sender, receiver, context, paymentQrPng, reply_to };
+  return { subs, sender, receiver, context, paymentQrPng, tone, reply_to };
 }

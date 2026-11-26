@@ -1,5 +1,6 @@
 import { bankCollectionAllowed, unavailableCollectionText } from "../_shared/orderEmailPresentation.ts";
 import { requireHostedPayment } from "../_shared/payments/contracts.ts";
+import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { resolveEmailLanguage } from "../_shared/emailCommunication.ts";
 import { withOrderIdentity } from "../_shared/orderOverview.ts";
 import { generateFullOrder } from "../_shared/orderOverview.ts";
@@ -189,8 +190,9 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     attachments,
   );
 
+  const tone = resolveCommunicationTone(order.form?.data?.communication_tone);
   return {
-    subs: confirmationSubstitutions(order, lang),
+    subs: confirmationSubstitutions(order, lang, tone),
     sender: occasion.title,
     receiver: order.data.email,
     context: {
@@ -200,6 +202,7 @@ export async function getTicketOrderConfirmationTemplate(task: any) {
     },
     attachments,
     paymentQrPng,
+    tone,
     formData: currentDetails.data.form_data,
     reply_to: order.reply_to,
   };

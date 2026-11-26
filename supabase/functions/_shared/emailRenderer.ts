@@ -334,6 +334,7 @@ export async function renderQueuedEmail(
       ? {
         png: rendered.paymentQrPng,
         lang: row.data?.lang,
+        tone: rendered.tone,
         inline: showPaymentQrInEmail(formData),
       }
       : undefined,
