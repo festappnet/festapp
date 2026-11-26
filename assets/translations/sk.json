@@ -2101,6 +2101,8 @@
       "provided": "Vyplnené",
       "promotion": "Propagácia",
       "introImage": "Úvodný obrázok",
+      "listingImageRequired": "Na zverejnenie podujatia v katalógu nahrajte úvodný obrázok.",
+      "coverMissingRequired": "Chýba povinný obrázok",
       "promotionImageRequired": "Na propagáciu udalosti je potrebný úvodný obrázok.",
       "pricingQuestion": "Budú sa ceny počas predaja meniť?",
       "pricingRegistrationQuestion": "Budú sa ceny počas prihlasovania meniť?",

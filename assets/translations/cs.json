@@ -3468,6 +3468,8 @@
       "provided": "Vyplněno",
       "promotion": "Propagace",
       "introImage": "Úvodní obrázek",
+      "listingImageRequired": "Pro zveřejnění akce v katalogu nahrajte úvodní obrázek.",
+      "coverMissingRequired": "Chybí povinný obrázek",
       "promotionImageRequired": "Pro propagaci události je nutný úvodní obrázek.",
       "pricingQuestion": "Budou se ceny v průběhu prodeje měnit?",
       "pricingRegistrationQuestion": "Budou se ceny v průběhu přihlašování měnit?",

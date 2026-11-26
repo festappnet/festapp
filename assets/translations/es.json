@@ -3452,6 +3452,8 @@
       "provided": "Añadida",
       "promotion": "Promoción",
       "introImage": "Imagen de portada",
+      "listingImageRequired": "Sube una imagen de portada para publicar el evento en el catálogo.",
+      "coverMissingRequired": "Falta la imagen obligatoria",
       "promotionImageRequired": "Se necesita una imagen de portada para destacar el evento.",
       "pricingQuestion": "¿Cambiarán los precios durante la venta de entradas?",
       "pricingRegistrationQuestion": "¿Cambiarán los precios durante el periodo de inscripción?",

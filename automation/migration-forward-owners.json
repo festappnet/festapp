@@ -1080,6 +1080,14 @@
           "manage_bank_authoring"
         ]
       }
+    },
+    {
+      "migration": "20261126123000_occasion_setup_ticket_gallery_colors.sql",
+      "active": true,
+      "header": "-- Preserve gallery canvas colors when completing an event setup draft.",
+      "sources": [
+        "occasion_setup/appearance.sql"
+      ]
     }
   ]
 }

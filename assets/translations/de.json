@@ -1835,6 +1835,8 @@
       "provided": "Vorhanden",
       "promotion": "Bewerbung",
       "introImage": "Titelbild",
+      "listingImageRequired": "Laden Sie ein Titelbild hoch, um die Veranstaltung im Katalog zu veröffentlichen.",
+      "coverMissingRequired": "Erforderliches Bild fehlt",
       "promotionImageRequired": "Für die Bewerbung der Veranstaltung ist ein Titelbild erforderlich.",
       "pricingQuestion": "Ändern sich die Preise während des Verkaufs?",
       "pricingRegistrationQuestion": "Ändern sich die Preise während der Anmeldung?",

@@ -4,6 +4,7 @@ import 'package:fstapp/components/bank_accounts/views/bank_account_sync_status.d
 import 'package:festapp_core/forms.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/forms/views/form_variable_symbol_settings.dart';
+import 'package:fstapp/components/images/image_area.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_presentation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,30 +43,71 @@ void main() {
     });
   });
 
-  testWidgets('promotion requires an image and only changes promotion', (
-    tester,
-  ) async {
-    final data = <String, dynamic>{'isPromoted': false};
-    Map<String, dynamic>? patch;
-    Future<void> render() => tester.pumpWidget(
-          MaterialApp(builder: DependencyMaterialBridge.builder,
+  testWidgets(
+    'publication offers cover upload and preserves the choice on removal',
+    (tester) async {
+      for (final appSupported in [false, true]) {
+        final setting = appSupported ? 'isPromoted' : 'listPubliclyOnPublish';
+        final data = <String, dynamic>{setting: false, 'saleMode': 'scheduled'};
+        final errorKey = appSupported
+            ? 'promotionImageRequired'
+            : 'listingImageRequired';
+        final error = find.text('OccasionSetup.story.$errorKey');
+        Future<void> render() => tester.pumpWidget(
+          MaterialApp(
+            builder: DependencyMaterialBridge.builder,
             home: Scaffold(
-              body: OccasionSetupPromotion(
-                data: data,
-                onChanged: (value) => patch = value,
+              body: StatefulBuilder(
+                builder: (context, setState) => OccasionSetupPublication(
+                  unitId: 1,
+                  appSupported: appSupported,
+                  data: data,
+                  onChanged: (patch) => setState(() => data.addAll(patch)),
+                ),
               ),
             ),
           ),
         );
-    await render();
-    expect(
-      tester.widget<SwitchListTile>(find.byType(SwitchListTile)).onChanged,
-      isNull,
-    );
-    data['introImage'] = 'https://example.org/image.jpg';
-    await render();
-    await tester.tap(find.byType(SwitchListTile));
-    expect(patch, {'isPromoted': true});
+
+        await render();
+        expect(find.byType(ImageArea), findsOneWidget);
+        expect(error, findsNothing);
+        await tester.tap(find.byType(SwitchListTile));
+        await tester.pump();
+        expect(data[setting], isTrue);
+        expect(error, findsOneWidget);
+
+        data['introImage'] = 'https://example.org/cover.jpg';
+        await render();
+        expect(error, findsNothing);
+        tester.widget<ImageArea>(find.byType(ImageArea)).onRemove();
+        await tester.pump();
+        expect(data[setting], isTrue);
+        expect(data['introImage'], isNull);
+        expect(error, findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      }
+    },
+  );
+
+  test('public catalogue requires a cover only for an event it will list', () {
+    for (final saleMode in ['preparation', 'immediate', 'scheduled']) {
+      for (final listPublicly in [false, true]) {
+        final data = <String, dynamic>{
+          'introImage': '  ',
+          'saleMode': saleMode,
+          'listPubliclyOnPublish': listPublicly,
+        };
+        expect(
+          occasionSetupCoverIssue(data, appSupported: false),
+          listPublicly && saleMode != 'preparation'
+              ? 'listingImageRequired'
+              : null,
+        );
+        data['formEnabled'] = false;
+        expect(occasionSetupCoverIssue(data, appSupported: false), isNull);
+      }
+    }
   });
 
   testWidgets(
