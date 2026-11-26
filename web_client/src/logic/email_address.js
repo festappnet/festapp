@@ -11,7 +11,7 @@ export function isValidEmail(value) {
         !local.startsWith('.') && !local.endsWith('.') && !local.includes('..') &&
         domain.length >= 2 && domain.every(label =>
             /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/.test(label)) &&
-        !/^[0-9]+$/.test(domain.at(-1));
+        !/^[0-9]+$/.test(domain[domain.length - 1]);
 }
 
 // Strip the current tenant's internal Auth namespace for display only.
