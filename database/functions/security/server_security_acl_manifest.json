@@ -3837,6 +3837,11 @@
       "authenticated": false,
       "service_role": false
     },
+    "public.bank_transaction_reference_candidates_internal(eshop.transactions)": {
+      "anon": false,
+      "authenticated": false,
+      "service_role": false
+    },
     "public.bank_transaction_signals_internal(text,text,text,text,text)": {
       "anon": false,
       "authenticated": false,

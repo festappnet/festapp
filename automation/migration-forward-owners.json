@@ -1088,6 +1088,24 @@
       "sources": [
         "occasion_setup/appearance.sql"
       ]
+    },
+    {
+      "migration": "20261126160000_auto_pair_bank_refunds.sql",
+      "active": true,
+      "header": "-- Pair verified bank refunds through the shared bank reference and manual pairing paths.",
+      "sources": [
+        "eshop_transactions/match_bank_transaction.sql",
+        "eshop_transactions/apply_transaction_pairing.sql",
+        "eshop_bank_sync/bank_sync_api_review.sql",
+        "eshop_transactions/get_transactions_for_order.sql",
+        "eshop_transactions/get_transactions_for_order_all_available.sql",
+        "eshop_bank_sync/ingest_bank_sync_transaction.sql",
+        "payment_providers/bank_settlement.sql"
+      ],
+      "selectors": {
+        "eshop_bank_sync/bank_sync_api_review.sql": ["bank_sync_pairing_candidates_internal"],
+        "eshop_transactions/get_transactions_for_order_all_available.sql": ["get_transactions_for_order_all_available"]
+      }
     }
   ]
 }

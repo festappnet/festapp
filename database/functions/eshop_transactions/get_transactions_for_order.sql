@@ -46,7 +46,7 @@ BEGIN
         'pairingAccountId', CASE WHEN pi.payment_method='bank'
           AND public.can_manage_bank_account(pi.bank_account) AND public.can_write_orders(o.occasion)
           AND (
-            (bank_allowed AND o.state IN ('created','ordered','paid','sent'))
+            (bank_allowed AND o.state IN ('created','ordered','paid','sent','storno'))
             OR (o.state IN ('created','ordered','paid','sent','expired')
              AND public.bank_sync_recovery_account_internal(pi.bank_account,oc.unit)
              AND EXISTS(SELECT FROM public.bank_sync_pairing_candidates_internal(pi.bank_account,true) c
@@ -57,6 +57,8 @@ BEGIN
         'removableTransactionIds', (SELECT coalesce(jsonb_agg(t.id),'[]')
           FROM eshop.transactions t JOIN eshop.bank_accounts b ON b.id=t.bank_account_id
           WHERE t.payment_info=o.payment_info AND (o.state IN ('created','ordered','paid','sent')
+            OR (o.state='storno' AND t.amount<0 AND t.ingest_source IN ('banksync_api','fio_api')
+              AND t.transaction_type IS DISTINCT FROM 'manual')
             OR (o.state='expired' AND public.bank_sync_recovery_receipt_internal(t)))
           AND NOT public.payment_method_is_online_internal(pi.payment_method)
           AND NOT EXISTS(SELECT 1 FROM eshop.refund_settlements s WHERE s.transaction_id=t.id)
