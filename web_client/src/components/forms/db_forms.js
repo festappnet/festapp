@@ -1,6 +1,16 @@
 import { SupabaseService } from '../../services/supabase_service.js';
 import { FormModel } from './form_models.js';
 
+async function readConsent(name, link, timeoutMs) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        return await SupabaseService.publicCheckoutRpc(name, { p_form_link: link }, controller.signal);
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
 export class DbForms {
     
     static get metaSecret() { return 'secret'; }
@@ -44,12 +54,12 @@ export class DbForms {
     }
 
     static async getMetaPurchaseConsent(link) {
-        const { data } = await SupabaseService.publicCheckoutRpc('get_meta_purchase_consent', {p_form_link:link}, AbortSignal.timeout(1500));
+        const { data } = await readConsent('get_meta_purchase_consent', link, 1500);
         return data;
     }
 
     static async getMeasurementPolicy(link) {
-        const {data, error} = await SupabaseService.publicCheckoutRpc('get_form_measurement_policy', {p_form_link:link}, AbortSignal.timeout(8000));
+        const {data, error} = await readConsent('get_form_measurement_policy', link, 8000);
         if (error) throw new Error('Measurement policy unavailable');
         return data;
     }

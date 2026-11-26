@@ -1,5 +1,6 @@
 import { orderItemSeatingText } from "../../services/seating_labels.js";
 import { LocalizationService } from "../../services/localization_service.js";
+import { randomUuid } from "../../utils/random_uuid.js";
 const text = (key) => LocalizationService.tr(`CustomerSelfService.${key}`);
 const node = (host, tag, value = "", attrs = {}) => {
   const el = document.createElement(tag);
@@ -72,7 +73,7 @@ export function renderCustomerOrderChanges(
   if (token) {
     session = host._customerChangeSession = {
       token,
-      commandId: crypto.randomUUID(),
+      commandId: randomUuid(),
     };
   }
   if (!actions.length && !requests.length && !session) return;
@@ -410,7 +411,7 @@ export function renderCustomerOrderChanges(
               } catch (error) {
                 if (error.status === 409) {
                   confirm.remove();
-                  session.commandId = crypto.randomUUID();
+                  session.commandId = randomUuid();
                   button(work, "refreshPreview", preview);
                 }
                 throw error;

@@ -1,4 +1,5 @@
 import { browserStorage } from '../../services/browser_storage.js';
+import { randomUuid } from '../../utils/random_uuid.js';
 export function canonicalCommandPayload(value) {
     if (Array.isArray(value)) return value.map(canonicalCommandPayload);
     if (value && typeof value === 'object') return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalCommandPayload(value[key])]));
@@ -65,7 +66,7 @@ export async function claimTicketOrderIdentity(endpoint, payload, principal, sto
             return pending && pending.consentIndependent !== true && (pending.principal ?? null) === actor;
         });
         if (unknownLegacy) throw new Error('PAYMENT_RECOVERY_REQUIRED');
-        saved = { commandId: crypto.randomUUID(), clientId: crypto.randomUUID(), principal: actor, consentIndependent: true };
+        saved = { commandId: randomUuid(), clientId: randomUuid(), principal: actor, consentIndependent: true };
         if (guestCheckout) saved.guestCheckout = true;
         if (checkoutOrigin !== undefined) saved.checkoutOrigin = checkoutOrigin;
         storage.setItem(key, JSON.stringify(saved));

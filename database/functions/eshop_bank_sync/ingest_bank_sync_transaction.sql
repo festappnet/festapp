@@ -137,7 +137,7 @@ BEGIN
       IF NOT FOUND THEN RAISE EXCEPTION 'BANK_SYNC_IDENTITY_CONFLICT'; END IF;
     END IF;
   END IF;
-  IF v_tx.id IS NOT NULL AND v_tx.amount<0 AND v_outcome IN ('stored_outgoing','already_ingested') THEN
+  IF v_tx.id IS NOT NULL AND v_tx.amount<0 AND NOT v_skip_matching AND v_outcome IN ('stored_outgoing','already_ingested') THEN
     v_refund:=public.payment_provider_call_internal('bank','observe_refund',jsonb_build_object('transactionId',v_tx.id));
   END IF;
   v_receipt:=jsonb_build_object('ok',true,'receipt_version',1,'delivery_id',v_delivery,'outcome',v_outcome,'refund',v_refund);

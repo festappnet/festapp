@@ -22,9 +22,16 @@ const requestProfileStart = performance.now();
 async function closeContext() {
     if (context) {const old=context;context=null;page=null;target=null;await old.close();}
 }
-async function openBrowser(url, ready) {
+async function openBrowser(url, ready, {legacyWebView = false} = {}) {
     await closeContext();
     context=await owner.context();
+    if (legacyWebView) await context.addInitScript(() => {
+        delete Array.prototype.at;
+        delete Object.hasOwn;
+        delete AbortSignal.timeout;
+        Object.defineProperty(crypto, 'randomUUID', {value:undefined});
+        delete globalThis.structuredClone;
+    });
     page=await context.newPage();target=page;
     await owner.setTopLevelColorScheme(page,colorScheme);
     page.setDefaultTimeout(8000);
@@ -399,13 +406,14 @@ try {
         ['embed-long', 'legacy', 1, 390],
     ]) {
         const before = versionRequests;
+        const legacyWebView = helper === 'current';
         await openBrowser(`${origin}/__real_embed_host?scenario=${scenario}&helper=${helper}&fixed=${fixed}`, async () => {
             // Viewport setup and the first read-only frame check are still
             // pre-interaction startup. A detached CDP setup session here can
             // use the launcher's bounded fresh-session recovery.
             await page.setViewportSize({width, height:844});
             await page.waitForFunction( fixed ? 'document.querySelector("iframe").clientHeight === 300' : helper === 'none' ? 'document.querySelector("iframe").clientHeight === 800' : 'document.querySelector("iframe").clientHeight > 240');
-        });
+        }, {legacyWebView});
         // The launch-only domain filter must still reject disallowed loopback
         // hosts after crossing origins; no request leaves the browser.
         if (verifiedHostSessions++ < 2) {
@@ -435,7 +443,7 @@ try {
         assert.ok(versionRequests > before, 'updater must execute a production version request before readiness');
         if (fixed || helper === 'none') assert.equal((await page.evaluate( 'document.querySelector("iframe").clientHeight')), fixed ? 300 : 800);
         else if (scenario === 'embed-long') await page.waitForFunction( 'document.querySelector("iframe").clientHeight > 1200');
-        console.log(`PASS: real ${scenario}, ${helper} helper at ${width}px, cross-origin ${fixed ? 'fixed' : 'resizing'} frame, validation, calendar and update draft`);
+        console.log(`PASS: real ${scenario}, ${helper} helper at ${width}px, cross-origin ${fixed ? 'fixed' : 'resizing'} frame, validation, calendar and update draft${legacyWebView ? ' without newer WebView APIs' : ''}`);
         await closeContext();
     }
     // Exercise the actual HTML failure UI while the helper's startup height is

@@ -1,13 +1,14 @@
 import {canonicalCommandPayload,terminalOrderResponse} from '../eshop/ticket_order_identity.js';
 import { LocalizationService } from '../../services/localization_service.js';
 import { SupabaseService } from '../../services/supabase_service.js';
+import { randomUuid } from '../../utils/random_uuid.js';
 
 export {parseWaitlistLocation} from './customer_order_location.js';
 
 export class WaitlistCommands {
     constructor(client) {
         this._client = client;
-        this.clientId = crypto.randomUUID();
+        this.clientId = randomUuid();
         this.pending = new Map();
     }
     get client() { return this._client || SupabaseService.getClient(); }
@@ -38,7 +39,7 @@ export class WaitlistCommands {
     }
     async overviewAccess(scope) {
         const { data, error } = await this.clientFor(scope).functions.invoke('customer-order-access', {
-            body: { ...scope, commandId: crypto.randomUUID() },
+            body: { ...scope, commandId: randomUuid() },
         });
         if (error || data?.code !== 200 || typeof data.url !== 'string') throw new Error('INVALID_CAPABILITY');
         return data.url;
@@ -55,7 +56,7 @@ export class WaitlistCommands {
     async _invoke(endpoint, body, {reusePendingOnly = false} = {}, scope) {
         const key = JSON.stringify(canonicalCommandPayload([endpoint, body]));
         if (reusePendingOnly && !this.pending.has(key)) throw Object.assign(new Error('PAYMENT_RECOVERY_REQUIRED'), {data:{code:409,errorCode:'ORDER_RECOVERY_REQUIRED'}});
-        const commandId = this.pending.get(key) || crypto.randomUUID();
+        const commandId = this.pending.get(key) || randomUuid();
         this.pending.set(key, commandId);
         const { data, error } = await this.clientFor(scope).functions.invoke(endpoint, {
             body: { ...body, commandId, clientId: this.clientId },

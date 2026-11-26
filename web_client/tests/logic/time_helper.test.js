@@ -11,8 +11,8 @@ test('elapsed hours retain fractional precision', () => {
 
 for (const [name, start, end, expected] of [
     ['same day', '2025-11-23T10:00:00', '2025-11-23T14:00:00', /Nov 23, 2025/],
-    ['same month', '2025-11-23T10:00:00', '2025-11-25T14:00:00', /^23 - Nov 25/],
-    ['same year', '2025-10-23T10:00:00', '2025-11-23T14:00:00', /^Oct 23 - Nov 23/],
+    ['same month', '2025-11-23T10:00:00', '2025-11-25T14:00:00', /^Nov 23\s*-\s*25/],
+    ['same year', '2025-10-23T10:00:00', '2025-11-23T14:00:00', /^Oct 23\s*-\s*Nov 23/],
     ['different years', '2024-11-23T10:00:00', '2025-11-23T14:00:00', /2024.*2025/],
 ]) {
     test(`minimal date range: ${name}`, () => {

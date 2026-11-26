@@ -373,6 +373,7 @@ class OrderModel extends ITrinaRowModel {
 
   @override
   TrinaRow toTrinaRow(BuildContext context) {
+    final paid = paymentInfoModel?.paid ?? 0.0;
     return TrinaRow(cells: {
       EshopColumnIds.ORDER_WAITLIST:
           TrinaCell(value: waitlistSummary?.label ?? ''),
@@ -394,9 +395,9 @@ class OrderModel extends ITrinaRowModel {
               : ""),
       EshopColumnIds.PAYMENT_INFO_PAID: TrinaCell(
           value: paymentInfoModel != null
-              ? Utilities.formatPrice(context, paymentInfoModel!.net,
+              ? Utilities.formatPrice(context, paid,
                   currencyCode: paymentInfoModel!.currencyCode,
-                  decimalDigits: decimalDigitsForAmount(paymentInfoModel!.net))
+                  decimalDigits: decimalDigitsForAmount(paid))
               : ""),
       EshopColumnIds.PAYMENT_INFO_ID: TrinaCell(value: paymentInfo ?? 0),
       EshopColumnIds.PAYMENT_INFO_RETURNED: TrinaCell(

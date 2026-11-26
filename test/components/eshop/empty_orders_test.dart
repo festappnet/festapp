@@ -1,3 +1,4 @@
+import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/components/eshop/payment_operation_strings.dart';
 import 'package:venue_seat_picker/venue_seat_picker.dart';
 import 'package:fstapp/components/eshop/order_symbol_cell.dart';
@@ -189,6 +190,7 @@ void main() {
   var detailNavigation = false;
   var overduePayment = false;
   var waitlistPayment = false;
+  var refundedPayment = false;
   var bankDetails = false;
   var planPreview = false;
   var planRevision = 3;
@@ -362,8 +364,9 @@ void main() {
                 'id': 7,
                 'variable_symbol': 270104,
                 'amount': 1350,
-                'paid': 0,
-                'returned': 0,
+                'paid': refundedPayment ? 1200 : 0,
+                'returned': refundedPayment ? 1200 : 0,
+                'net': 0,
                 'currency_code': 'CZK',
               },
               'transactions': [],
@@ -828,9 +831,11 @@ void main() {
       fail = false;
       includeOrder = true;
       detailNavigation = true;
+      refundedPayment = true;
       addTearDown(() {
         includeOrder = false;
         detailNavigation = false;
+        refundedPayment = false;
       });
       await showOrders(tester, path: '/empty?orderId=4&orderTab=payments');
       for (var i = 0; i < 20; i++) {
@@ -847,13 +852,27 @@ void main() {
         greaterThanOrEqualTo(12),
       );
       expect(find.textContaining('Reference platby'), findsNothing);
-      for (final label in [
-        'Částka',
-        PaymentOperationStrings.text('received'),
-        'Vráceno',
-      ]) {
-        expect(find.text(label), findsOneWidget);
+      final paymentContent = find.byType(OrderPaymentsContent);
+      for (final label in ['Částka', 'Zaplaceno', 'Vráceno']) {
+        expect(
+          find.descendant(of: paymentContent, matching: find.text(label)),
+          findsOneWidget,
+        );
       }
+      expect(
+        find.descendant(
+          of: paymentContent,
+          matching: find.text(
+            Utilities.formatPrice(
+              tester.element(paymentContent),
+              1200,
+              currencyCode: 'CZK',
+              decimalDigits: 2,
+            ),
+          ),
+        ),
+        findsNWidgets(2),
+      );
       expect(tester.takeException(), isNull);
     },
   );

@@ -76,7 +76,7 @@ void main() {
     })));
   });
 
-  testWidgets('grid formats each amount independently of other amounts and method',
+  testWidgets('grid shows received and returned amounts separately for each payment method',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
       builder: DependencyMaterialBridge.builder,
@@ -88,7 +88,8 @@ void main() {
             paymentInfoModel: PaymentInfoModel(
               amount: 500,
               paid: 544.28,
-              returned: 0,
+              returned: 544.28,
+              explicitNet: 0,
               currencyCode: 'CZK',
               paymentMethod: method,
             ),
@@ -101,7 +102,7 @@ void main() {
             expect(cells[column]!.value, '500\u00a0Kč', reason: method);
           }
           expect(cells[EshopColumnIds.PAYMENT_INFO_PAID]!.value, '544,28\u00a0Kč');
-          expect(cells[EshopColumnIds.PAYMENT_INFO_RETURNED]!.value, '0\u00a0Kč');
+          expect(cells[EshopColumnIds.PAYMENT_INFO_RETURNED]!.value, '544,28\u00a0Kč');
           final ticket = TicketModel(id: 12)
             ..relatedOrder = order
             ..totalPrice = 250;

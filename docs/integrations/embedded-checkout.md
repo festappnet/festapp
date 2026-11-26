@@ -443,11 +443,15 @@ Povoleny jsou HTTPS originy; HTTP loopback pouze při lokálním vývoji.
 
 ### Odkaz z kampaně na formulář na stejné stránce
 
-Messenger a další prohlížeče uvnitř aplikací mohou při otevření odkazu zavřít
-stránku pořadatele nebo nepředat spojení s původním oknem. Samostatný formulář
-pak zobrazí vlastní lištu. Pro kampaně vložte formulář na stránku pořadatele
-běžným generovaným kódem, přidejte iframe jedinečné `id` a stejné ID použijte
-na odkazu z kampaně:
+V interním prohlížeči Messengeru a Facebooku na Androidu se při běžném
+kliknutí na odkaz označený pro přenos souhlasu použije viditelný vložený
+formulář se shodnou adresou. Pokud na stránce není, otevře se formulář
+v dialogu na stránce pořadatele. Vyžaduje to nakonfigurovaný zdroj souhlasu.
+Volbu nadále řídí lišta na webu pořadatele. Možnost **Otevřít samostatně**
+v dialogu umožňuje použít formulář s místní lištou i v případě omezení iframe.
+
+Pro stejnou cestu ke konkrétnímu vloženému formuláři v každém prohlížeči
+přidejte iframe jedinečné `id` a stejné ID použijte na odkazu z kampaně:
 
 ```html
 <a data-festapp-consent-link data-festapp-consent-link-embed="objednavka"
@@ -460,10 +464,10 @@ na odkazu z kampaně:
 Běžné kliknutí v každém prohlížeči přesune návštěvníka k již vloženému
 formuláři. Souhlas se dál řídí živým propojením s CMP na stránce pořadatele.
 Cílový iframe musí být viditelný a jeho adresa musí odpovídat odkazu s
-přidaným `embed=1`. Pokud iframe chybí, je skrytý nebo jeho adresa nesouhlasí,
-odkaz funguje jako běžný odkaz do samostatného formuláře. Samostatný záložní
-odkaz ze vygenerovaného bloku ponechte bez nového atributu, aby zůstal dostupný
-i při omezení iframe ze strany webu nebo prohlížeče.
+přidaným `embed=1`. Pokud výslovně vybraný iframe chybí, je skrytý nebo jeho
+adresa nesouhlasí, použije se výchozí chování odkazu pro daný prohlížeč.
+Samostatný záložní odkaz pro případ omezení iframe ponechte bez obou
+atributů pro přenos souhlasu.
 
 ### Platnost převzatého souhlasu
 

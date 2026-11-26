@@ -9,9 +9,11 @@ DECLARE
     v_bank_sales boolean;
     v_unit bigint;
     v_recovery_only boolean;
+    v_state text;
+    v_currency text;
 BEGIN
-    SELECT pi.bank_account,public.payment_method_policy_enabled_internal(oc.unit,'bank'),oc.unit,o.state='expired'
-    INTO bank_acc,v_bank_sales,v_unit,v_recovery_only
+    SELECT pi.bank_account,public.payment_method_policy_enabled_internal(oc.unit,'bank'),oc.unit,o.state,pi.currency_code
+    INTO bank_acc,v_bank_sales,v_unit,v_state,v_currency
     FROM eshop.payment_info pi JOIN eshop.orders o ON o.payment_info=pi.id
     JOIN public.occasions oc ON oc.id=o.occasion
     WHERE pi.id=payment_info_id AND pi.payment_method='bank' AND public.can_read_orders(oc.id);
@@ -19,7 +21,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.demo_occasions demo_bank WHERE demo_bank.bank_account=bank_acc AND public.can_read_orders(demo_bank.occasion)) THEN
         PERFORM public.check_is_admin_for_bank_account(bank_acc);
     END IF;
-    v_recovery_only:=v_recovery_only OR NOT v_bank_sales;
+    v_recovery_only:=v_state='expired' OR NOT v_bank_sales;
     IF v_recovery_only AND NOT public.bank_sync_recovery_account_internal(bank_acc,v_unit)
     THEN RAISE insufficient_privilege; END IF;
 
@@ -29,6 +31,8 @@ BEGIN
           THEN jsonb_build_object('bankSyncReview',public.bank_sync_api_review_view_internal(c.review))
           ELSE '{}'::jsonb END ORDER BY (c.movement).date DESC,(c.movement).id)
         FROM public.bank_sync_pairing_candidates_internal(bank_acc,v_recovery_only) c
+        WHERE (v_state IS DISTINCT FROM 'storno' OR (c.movement).amount<0)
+          AND ((c.movement).amount>0 OR upper(trim((c.movement).currency))=upper(trim(v_currency)))
     );
 END;
 $$;

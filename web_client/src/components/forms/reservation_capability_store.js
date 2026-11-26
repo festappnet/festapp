@@ -1,4 +1,5 @@
 import { createBrowserStorage } from '../../services/browser_storage.js';
+import { randomUuid } from '../../utils/random_uuid.js';
 
 const sessionStorage = createBrowserStorage(() => globalThis.sessionStorage);
 
@@ -26,7 +27,7 @@ export class ReservationCapabilityStore {
     save(secret, expiresAt = null) {
         // An obsolete form instance cannot overwrite a newer capability.
         if (this.storage.getItem(this.key) !== this.raw) return null;
-        const capability = {secret, expiresAt, generation: crypto.randomUUID()};
+        const capability = {secret, expiresAt, generation: randomUuid()};
         this.raw = JSON.stringify(capability);
         this.storage.setItem(this.key, this.raw);
         return capability;

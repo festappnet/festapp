@@ -41,7 +41,9 @@ LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  )
  AND (t.bank_account_id=p_account OR public.bank_sync_accounts_match(t.id,p_account))
  AND (NOT p_recovery_only OR t.ingest_source='banksync_email_confirmed' OR r.delivery_id IS NOT NULL)
- AND t.payment_info IS NULL AND t.amount>0
+ AND t.payment_info IS NULL
+ AND (t.amount>0 OR (t.amount<0 AND t.ingest_source IN ('banksync_api','fio_api')
+      AND t.transaction_type IS DISTINCT FROM 'manual'))
  AND NOT EXISTS(SELECT FROM eshop.refund_settlements s WHERE s.transaction_id=t.id);
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_pairing_candidates_internal(bigint,boolean) FROM PUBLIC,anon,authenticated,service_role;

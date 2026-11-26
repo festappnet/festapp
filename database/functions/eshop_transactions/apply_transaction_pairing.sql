@@ -15,10 +15,13 @@ DECLARE
   v_target eshop.payment_info%ROWTYPE;
   v_old_payment_info_id bigint;
   v_order_id bigint;
+  v_order eshop.orders;
   v_order_ids bigint[];
   v_order_bindings jsonb;
   v_locked_order_bindings jsonb;
   v_api_review eshop.bank_sync_inbox;
+  v_bank_refund boolean;
+  v_payment_reason text;
 BEGIN
   PERFORM public.check_bank_account_writable((SELECT bank_account_id FROM eshop.transactions WHERE id=p_transaction_id));
   PERFORM public.check_bank_account_writable((SELECT bank_account FROM eshop.payment_info WHERE id=p_payment_info_id));
@@ -35,6 +38,9 @@ BEGIN
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_TRANSACTION_NOT_FOUND'; END IF;
   v_old_payment_info_id := v_transaction.payment_info;
+  v_bank_refund := v_transaction.amount<0 AND v_transaction.ingest_source IN ('banksync_api','fio_api')
+    AND v_transaction.transaction_type IS DISTINCT FROM 'manual';
+  v_payment_reason := CASE WHEN v_bank_refund THEN 'refund_fact' ELSE 'payment_fact' END;
 
   IF p_payment_info_id IS NOT NULL AND v_transaction.ingest_source='banksync_api' THEN
     v_api_review:=public.bank_sync_api_review_row_internal(p_transaction_id);
@@ -68,15 +74,16 @@ BEGIN
     RAISE EXCEPTION 'REFUND_SETTLEMENT_REQUIRES_EXPLICIT_CORRECTION';
   END IF;
   IF p_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND v_transaction.amount<0
+     AND NOT (v_bank_refund AND p_method IN ('automatic_reference','manual_attach'))
      AND NOT EXISTS(SELECT 1 FROM eshop.bank_accounts b WHERE b.id=v_transaction.bank_account_id
        AND upper(b.type)='CASH' AND v_transaction.transaction_type='manual'
        AND v_transaction.ingest_source='manual') THEN
     RAISE EXCEPTION 'OUTGOING_REQUIRES_REFUND_CLASSIFICATION';
   END IF;
-  IF v_old_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id THEN
+  IF v_old_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND NOT v_bank_refund THEN
     PERFORM public.assert_payment_refund_reservations_internal(v_old_payment_info_id,greatest(v_transaction.amount,0));
   END IF;
-  IF p_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND v_transaction.amount<0 THEN
+  IF p_payment_info_id IS NOT NULL AND v_old_payment_info_id IS DISTINCT FROM p_payment_info_id AND v_transaction.amount<0 AND NOT v_bank_refund THEN
     PERFORM public.assert_payment_refund_reservations_internal(p_payment_info_id,-v_transaction.amount);
   END IF;
 
@@ -89,9 +96,13 @@ BEGIN
       PERFORM public.check_is_editor_order_on_occasion(o.occasion)
       FROM eshop.orders o WHERE o.payment_info IN (v_old_payment_info_id,p_payment_info_id);
     END IF;
-    FOR v_order_id IN SELECT id FROM eshop.orders
+    FOR v_order IN SELECT * FROM eshop.orders
       WHERE payment_info IN (v_old_payment_info_id,p_payment_info_id) ORDER BY id LOOP
-      PERFORM public.check_order_is_mutable(v_order_id);
+      IF v_bank_refund AND v_order.state='storno' THEN
+        PERFORM public.check_occasion_writable(v_order.occasion);
+      ELSE
+        PERFORM public.check_order_is_mutable(v_order.id);
+      END IF;
     END LOOP;
   END IF;
 
@@ -103,6 +114,9 @@ BEGIN
   IF p_payment_info_id IS NOT NULL THEN
     SELECT * INTO v_target FROM eshop.payment_info WHERE id = p_payment_info_id FOR UPDATE;
     IF NOT FOUND THEN RAISE EXCEPTION 'PAIRING_PAYMENT_INFO_NOT_FOUND'; END IF;
+    IF v_bank_refund AND v_target.payment_method IS DISTINCT FROM 'bank' THEN
+      RAISE EXCEPTION 'OUTGOING_REQUIRES_BANK_PAYMENT';
+    END IF;
     IF public.payment_method_is_online_internal(v_target.payment_method) THEN RAISE EXCEPTION 'STRIPE_BANK_PAIRING_UNSUPPORTED'; END IF;
     IF v_target.payment_method='cash' AND NOT EXISTS(SELECT 1 FROM eshop.bank_accounts b
       WHERE b.id=v_transaction.bank_account_id AND b.type='CASH' AND v_transaction.transaction_type='manual') THEN
@@ -128,14 +142,18 @@ BEGIN
   IF v_old_payment_info_id IS NOT NULL THEN
     PERFORM public.refresh_payment_info_totals_internal(v_old_payment_info_id);
     SELECT o.id INTO v_order_id FROM eshop.orders o WHERE o.payment_info = v_old_payment_info_id;
-    IF v_order_id IS NOT NULL THEN PERFORM public.recalculate_order_payment_status(v_order_id); END IF;
+    IF v_order_id IS NOT NULL THEN
+      PERFORM public.reconcile_order_payment_internal_v1(v_order_id,v_payment_reason);
+      IF v_bank_refund THEN PERFORM public.record_payment_fact_sync_internal(v_order_id); END IF;
+    END IF;
   END IF;
 
   IF p_payment_info_id IS NOT NULL THEN
     PERFORM public.refresh_payment_info_totals_internal(p_payment_info_id);
     SELECT o.id INTO v_order_id FROM eshop.orders o WHERE o.payment_info = p_payment_info_id;
     IF v_order_id IS NOT NULL THEN
-      PERFORM public.recalculate_order_payment_status(v_order_id);
+      PERFORM public.reconcile_order_payment_internal_v1(v_order_id,v_payment_reason);
+      IF v_bank_refund THEN PERFORM public.record_payment_fact_sync_internal(v_order_id); END IF;
       IF v_transaction.amount>0 AND v_transaction.transaction_type IS DISTINCT FROM 'manual'
         AND v_transaction.ingest_source IS DISTINCT FROM 'manual' THEN
         PERFORM public.publish_form_measurement_event_internal('order_fully_paid',v_order_id);

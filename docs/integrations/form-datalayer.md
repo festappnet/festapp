@@ -474,10 +474,12 @@ Deploy the forward database migration, the sending `process-meta-purchases`
 Edge Function and the administration/web clients in the same canonical release.
 On the canonical host install
 `automation/hetzner-supabase/runtime/install-meta-purchase-schedules.sh` through
-the backend operator workflow. It starts the independent PostgreSQL retention
-job and provisions a new delivery job inactive; reinstalling preserves an
-existing delivery job's state. Verify a successful retention sweep before
-activating `festapp_meta_purchase_delivery` or enabling a connector. Capture
+the backend operator workflow. The installer starts the independent PostgreSQL
+retention job, waits for a successful recent sweep, then activates
+`festapp_meta_purchase_delivery` and verifies both schedules are active. A new
+delivery job stays inactive if the sweep cannot be verified. Re-running the
+installer also activates an existing inactive delivery job after the same
+retention check. Enable the connector after installation succeeds. Capture
 closes when the last successful sweep is older than ten minutes. Retention runs
 in PostgreSQL even if the delivery worker or Meta is unavailable.
 
