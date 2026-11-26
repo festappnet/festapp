@@ -1,4 +1,3 @@
-import 'package:fstapp/components/payments/payment_method_cards.dart';
 import 'package:fstapp/components/forms/payment_method_strings.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/data_services/authorization_capabilities.dart';
@@ -464,7 +463,12 @@ void main() {
           data: {
             if (override != null) FormDefinition.metaIsReminderEnabled: override,
           },
-        );
+        )..paymentMethodPolicy = {
+          'unitId': 1,
+          'methods': {
+            'cash': {'policyEnabled': true},
+          },
+        };
         var saves = 0;
         await _environment.pumpWidget(
           tester,
@@ -610,9 +614,9 @@ void main() {
         );
         expect(form.definition.deadlineDurationSeconds, isNull);
         if (override == null) {
-          tester
-              .widget<PaymentMethodCards>(find.byType(PaymentMethodCards))
-              .onChanged(FormPaymentMethod.cash);
+          final cash = find.byKey(const ValueKey('payment-method-cash'));
+          await tester.ensureVisible(cash);
+          await tester.tap(cash);
           await tester.pumpAndSettle();
           await tester.enterText(
             find.widgetWithText(
