@@ -516,8 +516,7 @@ def reusable(lane, sha, repository, contract, policy):
     return result
 
 
-def verify_plan(plan, lane, sha, repository, contract):
-    """Recheck selected provenance at consumption, never trust a plan's claims."""
+def verify_plan_binding(plan, lane, sha, contract):
     units=set(contract['jobs'][lane]['steps'])
     execute=plan['execute'];reuse=plan['reuse']
     if (plan['schemaVersion']!=2 or plan['sha']!=sha or plan['lane']!=lane or
@@ -527,6 +526,12 @@ def verify_plan(plan, lane, sha, repository, contract):
     for unit in execute:
         if any(dep in units and dep not in execute for dep in contract['steps'][unit].get('requires',contract['steps'][unit].get('after',[]))):
             raise ValueError('Missing execution dependency')
+
+
+def verify_plan(plan, lane, sha, repository, contract):
+    """Recheck current GitHub provenance before preparing the selected tools."""
+    verify_plan_binding(plan, lane, sha, contract)
+    reuse=plan['reuse']
     if not reuse: return plan
     repository_id=api(repository,'')['id']
     cutoff, now = evidence_window(contract)
@@ -544,6 +549,32 @@ def verify_plan(plan, lane, sha, repository, contract):
         source=verify_execution(receipt,run,job,lane,fingerprint(sha,lane,contract,unit),repository_id,contract,contract,definition(sha),unit)
         if source!=proof['source'] or proof['inputSha256']!=fingerprint(sha,lane,contract,unit):
             raise ValueError('Unit fingerprint/source changed')
+    return plan
+
+
+def prepare_plan(result, lane, sha, repository, contract):
+    units=contract['jobs'][lane]['steps']
+    binding=dict(schemaVersion=2,sha=sha,lane=lane,definition=definition(sha))
+    plan={'execute':units,'reuse':{},**result,**binding}
+    if not plan['reuse']:
+        return plan
+    try:
+        with lookup():
+            return verify_plan(plan,lane,sha,repository,contract)
+    except BudgetExpired:
+        reason='Reuse verification timed out; running all lane tests'
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError, AttributeError,
+            IndexError, RuntimeError, zipfile.BadZipFile):
+        reason='Reuse proof could not be reverified; running all lane tests'
+    return {**binding,'run':True,'reason':reason,'execute':units,'reuse':{}}
+
+
+def read_verified_plan(path, digest, lane, sha, contract):
+    payload=path.read_bytes()
+    if hashlib.sha256(payload).hexdigest()!=digest:
+        raise ValueError('CI selection changed after provisioning was chosen')
+    plan=json.loads(payload)
+    verify_plan_binding(plan,lane,sha,contract)
     return plan
 
 
@@ -609,17 +640,17 @@ def main():
     from telemetry import emit
     sha=git('rev-parse','HEAD').decode().strip()
     units=contract['jobs'][args.lane]['steps']
-    result.setdefault('execute',units)
-    result.setdefault('reuse',{})
-    result.update(schemaVersion=2,sha=sha,lane=args.lane,definition=definition(sha))
+    result=prepare_plan(result,args.lane,sha,os.environ.get('GITHUB_REPOSITORY'),contract)
     cache=Path.home()/'.cache/festapp-ci'
     cache.mkdir(parents=True,exist_ok=True)
     plan=cache/('selection-'+args.lane+'.json')
-    plan.write_text(json.dumps(result)+'\n')
+    payload=(json.dumps(result)+'\n').encode()
+    plan.write_bytes(payload)
     emit('ci.selection', started, destination=str(cache/('selection-'+args.lane+'.jsonl')), lane=args.lane, **{k:v for k,v in result.items() if k not in ('lane','reuse')})
     if os.environ.get('GITHUB_ENV'):
         with open(os.environ['GITHUB_ENV'],'a') as env:
             env.write('FESTAPP_CI_SELECTION_PATH='+str(plan)+'\n')
+            env.write('FESTAPP_CI_SELECTION_SHA256='+hashlib.sha256(payload).hexdigest()+'\n')
     print(json.dumps(result, sort_keys=True))
     if os.environ.get('GITHUB_OUTPUT'):
         with open(os.environ['GITHUB_OUTPUT'], 'a') as output:

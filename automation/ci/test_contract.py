@@ -528,11 +528,13 @@ sys.exit(int(os.environ['BROWSER_EXIT' if name=='pnpm' else 'IMAGE_EXIT']))
             with patch.object(runner,'CONTRACT',contract),patch.object(runner,'CACHE',root), \
                  patch.object(runner,'input_identity',return_value={'inputSha256':'same'}), \
                  patch.object(runner,'host_state',return_value={}),patch.object(runner,'execution_identity',return_value=None), \
-                 patch.object(runner,'verify_plan'),patch.object(runner.subprocess,'check_output',return_value='a'*40), \
-                 patch.dict(os.environ,{'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'fixture/repo','FESTAPP_CI_SELECTION_PATH':str(plan)}), \
+                 patch.object(runner,'read_verified_plan',return_value=json.loads(plan.read_text())) as read_plan, \
+                 patch.object(runner.subprocess,'check_output',return_value='a'*40), \
+                 patch.dict(os.environ,{'GITHUB_ACTIONS':'true','FESTAPP_CI_SELECTION_PATH':str(plan),'FESTAPP_CI_SELECTION_SHA256':'fixture-digest'}), \
                  patch.object(runner,'measured_process') as execute:
                 receipt=runner.lane('fixture')
                 self.assertTrue(receipt['complete']);self.assertEqual(receipt['units']['unit']['state'],'reused')
+                read_plan.assert_called_once_with(plan,'fixture-digest','fixture','a'*40,contract)
                 execute.assert_not_called()
 
     def test_shell_failure_stops_following_commands(self):

@@ -1,4 +1,4 @@
-name: Wix checkout compatibility
+name: Website checkout integrations
 on:
   push:
     branches: [main]

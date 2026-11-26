@@ -1,4 +1,4 @@
-name: Seat checkout regressions
+name: Database and ticketing regressions
 on:
   push:
     branches: [main]

@@ -1,4 +1,4 @@
-name: Image upload regressions
+name: Web, server and client contracts
 on:
   push:
     branches: [main]
