@@ -81,6 +81,7 @@ FormEditBundle _bundle(
             'cash': {'policyEnabled': true},
             'stripe': {'policyEnabled': stripeEnabled},
             'orchard': {'policyEnabled': true},
+            'meadow': {'policyEnabled': true},
           },
         },
   productTypes: [],
@@ -297,8 +298,7 @@ void main() {
         visible: () => true,
         canManage: () => false,
         supportedCurrencies: const {'CZK'},
-        titleKey: 'stripe',
-        setupKey: 'setupStripe',
+        name: 'Other',
         settingsPath: (unit) => '/unit/$unit/edit/other',
       );
       Map<String, dynamic>? saved;
@@ -338,9 +338,70 @@ void main() {
       await _choose(tester, FormPaymentMethod.bank);
       await _actions(tester).onSave();
       await tester.pumpAndSettle();
-      expect(saved!['providerConnections'], {'stripe': 'kept-other-binding'});
+      expect(saved!['providerConnections'], isEmpty);
       expect(saved!.containsKey('stripeConnectionId'), isFalse);
       await _environment.pumpWidget(tester, const SizedBox.shrink());
+    },
+  );
+
+  testWidgetsWithEnvironment(
+    () => _environment,
+    'gateway selector uses form policy and switching providers keeps the draft clean',
+    (tester) async {
+      PaymentEditorConnector gateway(String id, String name) =>
+          PaymentEditorConnector(
+            connector: PaymentConnector(id: id),
+            visible: () => false,
+            canManage: () => false,
+            supportedCurrencies: const {'CZK'},
+            name: name,
+            settingsPath: (unit) => '/unit/$unit/edit/card-payments',
+          );
+      Map? savedPayments;
+      await _environment.pumpWidget(
+        tester,
+        MaterialApp(
+          builder: DependencyMaterialBridge.builder,
+          home: FormSettingsContent(
+            paymentProviders: [
+              paymentEditors.single,
+              gateway('orchard', 'Orchard'),
+              gateway('meadow', 'Meadow'),
+            ],
+            bankConnectionChanges: ValueNotifier((accountId: 0, revision: 0)),
+            formLink: 'gateway-policy-test',
+            loadBundle: (link) async => _bundle(link, 5, {
+              'bankEnabled': true,
+              'providerConnections': {
+                'orchard': _connection,
+                'meadow': _connection,
+              },
+            }, stripeEnabled: false),
+            loadPaymentRecipient: (_, __) async => _recipient(),
+            saveForm: (draft) async => savedPayments =
+                draft.toEditedJson()['settings']['payments'] as Map,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _openMethods(tester);
+      final finder = find.byType(DropdownButton<String>);
+      final selector = tester.widget<DropdownButton<String>>(finder);
+      expect(selector.items!.map((item) => item.value), ['orchard', 'meadow']);
+      expect(selector.value, 'orchard');
+      expect(find.text(PaymentMethodStrings.text('bothMethods')), findsWidgets);
+      expect(find.text(PaymentMethodStrings.text('bothMethods')), findsWidgets);
+
+      selector.onChanged!('meadow');
+      await tester.pumpAndSettle();
+      expect(tester.widget<DropdownButton<String>>(finder).value, 'meadow');
+      expect(_actions(tester).hasChanges, isFalse);
+      expect(_selection(tester), FormPaymentMethod.both);
+      await _choose(tester, FormPaymentMethod.bank);
+      await _actions(tester).onSave();
+      await tester.pumpAndSettle();
+      expect(savedPayments?['bankEnabled'], isTrue);
+      expect(savedPayments?['providerConnections'], isEmpty);
     },
   );
 
@@ -537,7 +598,7 @@ void main() {
       // Deliberately leave the old recipient request unresolved.
       await tester.pump();
       await tester.pump();
-      expect(find.text(PaymentMethodStrings.text('stripe')), findsOneWidget);
+      expect(find.text(PaymentMethodStrings.gateway('Stripe')), findsOneWidget);
       await _environment.pumpWidget(
         tester,
         MaterialApp(

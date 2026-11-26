@@ -1988,10 +1988,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 OccasionSetupStory.hasPaidProducts(d)) ...[
               OccasionSetupReviewRow(
                 _setupOnlineOnly(d)
-                    ? PaymentMethodStrings.text('onlyStripe')
+                    ? PaymentMethodStrings.text('onlineGateway')
                     : 'BankAccount.bankAccount'.tr(),
                 _setupOnlineOnly(d)
-                    ? OccasionSetupStrings.story('stripeDraftHint')
+                    ? OccasionSetupStrings.story('gatewayDraftHint')
                     : OccasionSetupStory.paymentSetupReady(d)
                     ? (d['bankAccountLabel'] as String? ?? '')
                     : OccasionSetupStrings.story('bankAccountNotConfirmed'),
@@ -2057,10 +2057,10 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
           _reviewSection(d, 4, OccasionSetupStrings.ui('payment_settings'), [
             OccasionSetupReviewRow(
               _setupOnlineOnly(d)
-                  ? PaymentMethodStrings.text('onlyStripe')
+                  ? PaymentMethodStrings.text('onlineGateway')
                   : 'BankAccount.bankAccount'.tr(),
               _setupOnlineOnly(d)
-                  ? OccasionSetupStrings.story('stripeDraftHint')
+                  ? OccasionSetupStrings.story('gatewayDraftHint')
                   : OccasionSetupStory.paymentSetupReady(d)
                   ? (d['bankAccountLabel'] as String? ?? '')
                   : OccasionSetupStrings.story('bankAccountNotConfirmed'),
@@ -2758,20 +2758,17 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                     : FormPaymentMethod.both)
               : (_setupOnlineOnly(d) ? null : FormPaymentMethod.bank),
           canSelectOnline: _setupProvider(d) != null,
-          onlineTitle: _setupProvider(d) == null
-              ? null
-              : PaymentMethodStrings.text(_setupProvider(d)!.titleKey),
           onlineFirst: true,
           onChanged: _setSetupPaymentMethod,
         ),
         DropdownButtonFormField<String>(
           initialValue: _setupProvider(d)?.connector.id,
-          hint: Text(PaymentMethodStrings.text('onlyStripe')),
+          hint: Text(PaymentMethodStrings.text('onlineGateway')),
           items: [
             for (final p in paymentEditors.where((p) => p.visible()))
               DropdownMenuItem(
                 value: p.connector.id,
-                child: Text(PaymentMethodStrings.text(p.titleKey)),
+                child: Text(p.name),
               ),
           ],
           onChanged: (id) {
@@ -2788,7 +2785,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
         const SizedBox(height: 16),
       ],
       if (_setupHasOnline(d)) ...[
-        Text(OccasionSetupStrings.story('stripeDraftHint')),
+        Text(OccasionSetupStrings.story('gatewayDraftHint')),
         if (_setupProvider(d)?.canManage() == true)
           TextButton(
             onPressed: () async {
@@ -2798,7 +2795,7 @@ class _OccasionSetupPageState extends State<OccasionSetupPage> {
                 _setupProvider(d)!.settingsPath(_stored.unit),
               );
             },
-            child: Text(PaymentMethodStrings.text(_setupProvider(d)!.setupKey)),
+            child: Text(PaymentMethodStrings.text('setupGateway')),
           ),
         const SizedBox(height: 16),
       ],

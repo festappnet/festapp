@@ -37,6 +37,7 @@ import 'package:fstapp/components/features/feature_constants.dart';
 import 'package:fstapp/components/features/feature_service.dart';
 import 'package:fstapp/components/features/form_feature.dart';
 import 'package:festapp_core/forms.dart';
+import 'package:festapp_core/payments.dart';
 import 'package:fstapp/components/forms/models/form_editor_draft.dart';
 import 'package:fstapp/database_tables/tb.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -87,20 +88,25 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   final _snapshot = EditorSnapshot();
   List<PaymentEditorConnector> get _providers =>
       widget.paymentProviders ?? paymentEditors;
-  PaymentEditorConnector get _provider =>
-      _providers.firstWhere((p) => p.connector.id == _providerId);
+  PaymentEditorConnector? get _provider =>
+      _providers.where((p) => p.connector.id == _providerId).firstOrNull;
+  Iterable<PaymentEditorConnector> get _availableProviders =>
+      _providers.where(_providerAllowed);
   String? _providerId;
-  Map<String, dynamic> _savedPayments = {};
+  final _paymentConnections = <String, String>{};
   int? get _paymentUnitId =>
       (_form?.paymentMethodPolicy?['unitId'] as num?)?.toInt();
-  bool get _onlinePaymentsVisible =>
+  bool _providerAllowed(PaymentEditorConnector provider) =>
       _paymentUnitId != null &&
       _form?.definition.occasionId != null &&
       (widget.showCardPayments ??
           (!RightsService.isDemoReadOnly &&
-              (_form?.paymentMethodPolicy?['methods']
-                      as Map?)?[_providerId]?['policyEnabled'] ==
-                  true));
+              _methodAllowed(provider.connector.id)));
+  bool get _onlinePaymentsVisible {
+    final provider = _provider;
+    return provider != null && _providerAllowed(provider);
+  }
+
   String _deadlineMode = 'inherit';
   bool _cashEnabled = false;
   bool _paymentSelectionChanged = false;
@@ -112,9 +118,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _cashEnabled,
     _cashInstructionsController.text,
     _deadlineMode,
-    _paymentConnectionId,
-    _savedPayments,
-    _providerId,
+    _paymentConnections,
     _titleController.text,
     _measurementEnabled,
     _purchaseTiming,
@@ -196,7 +200,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _paymentRecipientFailed = false,
       _paymentRecipientLoaded = false,
       _paymentRecipientLoading = false;
-  String? _paymentConnectionId;
+  String? get _paymentConnectionId => _paymentConnections[_providerId];
   Map<String, dynamic>? _paymentRecipient;
   int _paymentReadGeneration = 0;
 
@@ -431,28 +435,30 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     _paymentSelectionChanged = false;
     if (form != null) {
       _form = form;
-      final payments = _form!.definition.data?['payments'];
-      _bankEnabled = payments is Map && payments['bankEnabled'] == true;
-      _cashEnabled = payments is Map && payments['cashEnabled'] == true;
-      _cashInstructionsController.text = payments is Map
-          ? payments['cashInstructions'] as String? ?? ''
-          : '';
+      final payments = FormPaymentConfiguration.fromJson(
+        _form!.definition.data?['payments'] as Map?,
+      );
+      _bankEnabled = payments.bankEnabled;
+      _cashEnabled = payments.cashEnabled;
+      _cashInstructionsController.text = payments.cashInstructions;
       _deadlineMode =
           _form!.definition.data?['payment_deadline']?['mode'] as String? ??
           (_form!.definition.deadlineDurationSeconds == null
               ? 'inherit'
               : 'custom');
-      _savedPayments = Map<String, dynamic>.from(
-        payments is Map ? payments : {},
-      );
-      _providerId = _providers
-          .firstWhere(
-            (p) => p.connectionId(_savedPayments) != null,
-            orElse: () => _providers.first,
-          )
-          .connector
-          .id;
-      _paymentConnectionId = _provider.connectionId(_savedPayments);
+      _paymentConnections
+        ..clear()
+        ..addAll(payments.connections);
+      _providerId =
+          (_availableProviders
+                      .where(
+                        (p) => _paymentConnections.containsKey(p.connector.id),
+                      )
+                      .firstOrNull ??
+                  _configuredProviders.firstOrNull ??
+                  _availableProviders.firstOrNull)
+              ?.connector
+              .id;
       _paymentReadGeneration++;
       _paymentRecipient = null;
       _paymentRecipientFailed = false;
@@ -646,14 +652,18 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
     if (metadata.containsKey('payments') ||
         !_bankEnabled ||
-        _paymentConnectionId != null) {
-      _capturePaymentConfiguration();
+        _paymentConnections.isNotEmpty) {
+      final payments = Map<String, dynamic>.from(
+        metadata['payments'] as Map? ?? {},
+      )..remove('stripeConnectionId');
       metadata['payments'] = {
-        ..._savedPayments,
-        'bankEnabled': _bankEnabled,
-        'cashEnabled': _cashEnabled,
-        'cashInstructions': _cashInstructionsController.text,
-        if (_cashEnabled) 'providerConnections': <String, String>{},
+        ...payments,
+        ...FormPaymentConfiguration(
+          bankEnabled: _bankEnabled,
+          cashEnabled: _cashEnabled,
+          cashInstructions: _cashInstructionsController.text,
+          connections: _cashEnabled ? const {} : _paymentConnections,
+        ).toJson(),
       };
     }
 
@@ -677,7 +687,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       data: metadata,
       deadlineDurationSeconds: !_cashEnabled && _deadlineMode == 'custom'
           ? _customDeadlineSeconds ??
-                (!_bankEnabled && _cardConfigured
+                (!_bankEnabled && _hasGateway
                     ? originalDefinition.deadlineDurationSeconds
                     : null)
           : null,
@@ -972,28 +982,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     }
   }
 
-  void _capturePaymentConfiguration() {
-    final connections = Map<String, dynamic>.from(
-      _savedPayments['providerConnections'] as Map? ?? {},
-    );
-    connections.remove(_provider.connector.id);
-    final legacy = _provider.legacyConnectionField;
-    if (legacy != null) _savedPayments.remove(legacy);
-    if (_paymentConnectionId != null) {
-      connections[_provider.connector.id] = _paymentConnectionId;
-    }
-    if (connections.isEmpty) {
-      _savedPayments.remove('providerConnections');
-    } else {
-      _savedPayments['providerConnections'] = connections;
-    }
-  }
-
   void _selectPaymentProvider(String id) {
-    _capturePaymentConfiguration();
     setState(() {
       _providerId = id;
-      _paymentConnectionId = _provider.connectionId(_savedPayments);
       _paymentRecipient = null;
       _paymentRecipientLoaded = false;
       _paymentRecipientFailed = false;
@@ -1006,7 +997,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Future<void> _loadPaymentRecipient() async {
     final unit = _paymentUnitId;
     final occasion = _form?.definition.occasionId;
+    final provider = _provider;
     if (!_canEdit ||
+        provider == null ||
         unit == null ||
         occasion == null ||
         (!_onlinePaymentsVisible && !_cardConfigured) ||
@@ -1017,7 +1010,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
     try {
       final value =
           await (widget.loadPaymentRecipient?.call(unit, occasion) ??
-              SupabasePaymentConnectionApi(connector: _provider.connector)
+              SupabasePaymentConnectionApi(connector: provider.connector)
                   .formRecipient(unit, occasion));
       if (mounted && generation == _paymentReadGeneration)
         setState(() {
@@ -1048,9 +1041,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         .where((product) => product.isHidden != true)
         .toList();
     final currencies = products.map((product) => product.currencyCode).toSet();
-    if (currencies.length != 1 ||
-        !_provider.supportedCurrencies.contains(currencies.single))
+    if (currencies.length > 1) return 'mixed_currencies';
+    if (currencies.isNotEmpty &&
+        _provider?.supportedCurrencies.contains(currencies.single) != true) {
       return 'currency_unsupported';
+    }
     if (products.any(
       (product) =>
           product.data?['deposit'] is Map &&
@@ -1080,11 +1075,50 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
       _candidateConnectionId != null &&
       _draftCardCompatibility == null;
 
+  bool get _hasGateway => !_cashEnabled && _paymentConnections.isNotEmpty;
+
+  Iterable<PaymentEditorConnector> get _configuredProviders =>
+      _providers.where((p) => _paymentConnections.containsKey(p.connector.id));
+
   FormPaymentMethod? get _paymentMethod => _cashEnabled
       ? FormPaymentMethod.cash
-      : _cardConfigured
+      : _hasGateway
       ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.online)
       : (_bankEnabled ? FormPaymentMethod.bank : null);
+
+  void _changePaymentMethod(FormPaymentMethod method) {
+    if (method == _paymentMethod) return;
+    final leavingCash = _cashEnabled && method != FormPaymentMethod.cash;
+    setState(() {
+      _paymentSelectionChanged = true;
+      _cashEnabled = method == FormPaymentMethod.cash;
+      _bankEnabled =
+          method == FormPaymentMethod.bank || method == FormPaymentMethod.both;
+      if (method == FormPaymentMethod.bank || _cashEnabled) {
+        _paymentConnections.clear();
+        if (_cashEnabled) _deadlineMode = 'none';
+      } else if (!_hasGateway && _canSelectRecipient) {
+        _paymentConnections[_providerId!] = _candidateConnectionId!;
+      }
+    });
+    if (!_hasGateway && !_onlinePaymentsVisible) {
+      final available = _availableProviders.firstOrNull;
+      if (available != null) _selectPaymentProvider(available.connector.id);
+    }
+    if (leavingCash) _loadRecipientIfNeeded();
+  }
+
+  void _bindSelectedGateway() {
+    final providerId = _providerId;
+    final connectionId = _candidateConnectionId;
+    if (!_canSelectRecipient || providerId == null || connectionId == null) {
+      return;
+    }
+    setState(() {
+      _paymentConnections[providerId] = connectionId;
+      _paymentSelectionChanged = true;
+    });
+  }
 
   Widget _buildRecipientStatus(
     BuildContext context, {
@@ -1103,7 +1137,9 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         FormStrings.cardUnverified
       else if (_paymentRecipientLoaded && configured && !matches)
         PaymentMethodStrings.text('configuredRecipientUnavailable')
-      else if (_paymentRecipientLoaded && recipient == null)
+      else if (_paymentRecipientLoaded &&
+          recipient == null &&
+          _onlinePaymentsVisible)
         PaymentMethodStrings.reason('not_configured'),
       if (recipient != null && (!configured || matches)) ...[
         if (recipient['modelVerified'] != true)
@@ -1113,7 +1149,7 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         else if (recipient['chargesEnabled'] != true ||
             recipient['cardPaymentsActive'] != true ||
             recipient['state'] != 'connected')
-          PaymentMethodStrings.reason(_provider.restrictedReason),
+          PaymentMethodStrings.reason('provider_restricted'),
       ],
       if (compatibility != null) PaymentMethodStrings.reason(compatibility),
     ];
@@ -1151,67 +1187,35 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
 
   List<Widget> _paymentMethodSettings(BuildContext context) {
     final unit = _paymentUnitId;
+    final provider = _provider;
+    final available = _availableProviders.toList();
+    final gateways = _providers
+        .where((p) => available.contains(p) || _configuredProviders.contains(p))
+        .toList();
     final canConnect =
         unit != null &&
         unit == RightsService.currentUnit()?.id &&
-        _provider.canManage();
-    final cardEnabled = _onlinePaymentsVisible && _cardConfigured;
+        provider?.canManage() == true;
+    final showBank = _methodAllowed('bank');
+    final showCash = _methodAllowed('cash');
+    final showOnline = available.isNotEmpty;
+    final canSelectOnline =
+        _canSelectRecipient ||
+        available.any((p) => _paymentConnections.containsKey(p.connector.id));
     return [
-      if (_onlinePaymentsVisible && _providers.length > 1)
-        DropdownButton<String>(
-          value: _providerId,
-          items: [
-            for (final p in _providers)
-              DropdownMenuItem(
-                value: p.connector.id,
-                child: Text(PaymentMethodStrings.text(p.titleKey)),
-              ),
-          ],
-          onChanged: (id) {
-            if (id != null) _selectPaymentProvider(id);
-          },
-        ),
-      PaymentMethodCards(
-        showBank:
-            (_form?.paymentMethodPolicy?['methods']
-                as Map?)?['bank']?['policyEnabled'] ==
-            true,
-        showCash:
-            (_form?.paymentMethodPolicy?['methods']
-                as Map?)?['cash']?['policyEnabled'] ==
-            true,
-        showOnline: _onlinePaymentsVisible,
-        value: _cashEnabled
-            ? FormPaymentMethod.cash
-            : cardEnabled
-            ? (_bankEnabled ? FormPaymentMethod.both : FormPaymentMethod.online)
-            : (_bankEnabled ? FormPaymentMethod.bank : null),
-        canSelectOnline: _cardConfigured || _canSelectRecipient,
-        onlineTitle: PaymentMethodStrings.text(_provider.titleKey),
-        onChanged: (method) {
-          final leavingCash = _cashEnabled && method != FormPaymentMethod.cash;
-          setState(() {
-            _paymentSelectionChanged = true;
-            _cashEnabled = method == FormPaymentMethod.cash;
-            _bankEnabled =
-                method == FormPaymentMethod.bank ||
-                method == FormPaymentMethod.both;
-            if (_cashEnabled) {
-              _deadlineMode = 'none';
-              _savedPayments['providerConnections'] = <String, String>{};
-            }
-            // Keep an explicitly configured recipient, including stale ones,
-            // until the editor chooses its replacement below.
-            _paymentConnectionId =
-                method == FormPaymentMethod.bank ||
-                    method == FormPaymentMethod.cash
-                ? null
-                : (_paymentConnectionId ?? _candidateConnectionId);
-          });
-          if (leavingCash) _loadRecipientIfNeeded();
-        },
-      ),
-
+      if (showBank || showCash || showOnline)
+        PaymentMethodCards(
+          showBank: showBank,
+          showCash: showCash,
+          showOnline: showOnline,
+          value: !showOnline && _hasGateway
+              ? (_bankEnabled ? FormPaymentMethod.bank : null)
+              : _paymentMethod,
+          canSelectOnline: canSelectOnline,
+          onChanged: _changePaymentMethod,
+        )
+      else
+        Text(PaymentMethodStrings.text('noMethodsAvailable')),
       if (_cashEnabled) ...[
         const SizedBox(height: 16),
         TextFormField(
@@ -1232,33 +1236,70 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
           ),
         ),
       ],
-      if (!_cashEnabled && !_bankEnabled && !_cardConfigured) ...[
+      if (!_cashEnabled && !_bankEnabled && !_hasGateway) ...[
         const SizedBox(height: 16),
         ..._deadlineSettings(),
       ],
-      if ((_onlinePaymentsVisible || _cardConfigured) && !_cashEnabled) ...[
+      if (gateways.isNotEmpty && !_cashEnabled) ...[
         const SizedBox(height: 16),
+        if (gateways.length > 1)
+          DropdownButton<String>(
+            isExpanded: true,
+            value: gateways.any((entry) => entry.connector.id == _providerId)
+                ? _providerId
+                : null,
+            hint: Text(PaymentMethodStrings.text('chooseGateway')),
+            items: [
+              for (final entry in gateways)
+                DropdownMenuItem(
+                  value: entry.connector.id,
+                  child: Text(PaymentMethodStrings.gateway(entry.name)),
+                ),
+            ],
+            onChanged: (id) {
+              if (id != null && id != _providerId) _selectPaymentProvider(id);
+            },
+          )
+        else
+          Text(
+            PaymentMethodStrings.gateway(gateways.single.name),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
         if (!_cardConfigured || formBankTransferCurrencies(_form!).isEmpty)
           _buildRecipientStatus(context, configured: _cardConfigured),
         if (_cardConfigured &&
             _candidateConnectionId != null &&
-            _candidateConnectionId != _paymentConnectionId) ...[
-          Text(PaymentMethodStrings.reason('recipient_changed')),
+            _candidateConnectionId != _paymentConnectionId)
           TextButton(
-            onPressed: _canSelectRecipient
-                ? () => setState(() {
-                    _paymentConnectionId = _candidateConnectionId;
-                    _paymentSelectionChanged = true;
-                  })
-                : null,
+            onPressed: _canSelectRecipient ? _bindSelectedGateway : null,
             child: Text(PaymentMethodStrings.text('selectRecipient')),
           ),
-        ],
-        if (canConnect)
+        if (_hasGateway && !_cardConfigured && _canSelectRecipient)
+          TextButton(
+            onPressed: _bindSelectedGateway,
+            child: Text(PaymentMethodStrings.text('addGatewayToForm')),
+          ),
+        if (_cardConfigured && _paymentConnections.length > 1)
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _paymentConnections.remove(_providerId);
+                _paymentSelectionChanged = true;
+              });
+              if (!_onlinePaymentsVisible) {
+                final next =
+                    _configuredProviders.firstOrNull ??
+                    _availableProviders.firstOrNull;
+                if (next != null) _selectPaymentProvider(next.connector.id);
+              }
+            },
+            child: Text(PaymentMethodStrings.text('removeGatewayFromForm')),
+          ),
+        if (canConnect && provider != null)
           TextButton(
             onPressed: () =>
-                pushRootPath(context.router.root, _provider.settingsPath(unit)),
-            child: Text(PaymentMethodStrings.text(_provider.setupKey)),
+                pushRootPath(context.router.root, provider.settingsPath(unit)),
+            child: Text(PaymentMethodStrings.text('setupGateway')),
           ),
       ],
     ];
@@ -1297,12 +1338,11 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
   Widget _buildPaymentSummary(BuildContext context) {
     final currencies = formBankTransferCurrencies(_form!);
     final hasPaidProducts = currencies.isNotEmpty;
-    final providerTitle = PaymentMethodStrings.text(_provider.titleKey);
+    final configuredProviders = _configuredProviders;
     final method = switch (_paymentMethod) {
       FormPaymentMethod.bank => PaymentMethodStrings.text('bank'),
-      FormPaymentMethod.online => providerTitle,
-      FormPaymentMethod.both =>
-        '${PaymentMethodStrings.text('bank')} + $providerTitle',
+      FormPaymentMethod.online => PaymentMethodStrings.text('onlineGateway'),
+      FormPaymentMethod.both => PaymentMethodStrings.text('bothMethods'),
       FormPaymentMethod.cash => PaymentMethodStrings.text('cash'),
       null =>
         hasPaidProducts ? PaymentMethodStrings.text('noMethodSelected') : null,
@@ -1336,7 +1376,13 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
         ],
         if (_cashEnabled && hasPaidProducts && !_methodAllowed('cash'))
           Text(FormStrings.methodDisabled(PaymentMethodStrings.text('cash'))),
-        if (_cardConfigured && hasPaidProducts) ...[
+        if (_hasGateway && hasPaidProducts) ...[
+          for (final provider in configuredProviders)
+            Text(
+              _providerAllowed(provider) || provider == _provider
+                  ? PaymentMethodStrings.gateway(provider.name)
+                  : FormStrings.methodDisabled(provider.name),
+            ),
           Text(FormStrings.cardPaymentAtCheckout),
           if (_form!.definition.payments != null)
             Text(
@@ -1345,9 +1391,16 @@ class _FormSettingsContentState extends State<FormSettingsContent> {
                     .reservationSeconds,
               ),
             ),
-          _buildRecipientStatus(context, configured: true),
+          if (_cardConfigured) ...[
+            if (configuredProviders.length > 1 && _provider != null)
+              Text(
+                _provider!.name,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            _buildRecipientStatus(context, configured: true),
+          ],
         ],
-        if (_canEdit && !_bankEnabled && _cardConfigured)
+        if (_canEdit && !_bankEnabled && _hasGateway)
           TextButton.icon(
             onPressed: _reviewingPaymentTemplates
                 ? null
