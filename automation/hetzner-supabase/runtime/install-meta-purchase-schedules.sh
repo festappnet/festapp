@@ -11,10 +11,11 @@ cd "$COMPOSE_DIR"
 exec 9>".festapp-runtime-upgrade.lock"
 flock -n 9 || fail "another runtime operation is active"
 [[ "$(sed -n 's/^FESTAPP_RUNTIME_DATABASE=//p' .env)" == "$TARGET_DATABASE" ]] || fail "runtime database mismatch"
-[[ "$(docker compose exec -T db psql -X -U postgres -d "$TARGET_DATABASE" -Atqc "SELECT to_regprocedure('public.purge_meta_purchase_data_internal()') IS NOT NULL AND to_regprocedure('public.wake_meta_purchase_worker()') IS NOT NULL")" == t ]] ||
+db_psql() { docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres "$@"; }
+[[ "$(db_psql -d "$TARGET_DATABASE" -Atqc "SELECT to_regprocedure('public.purge_meta_purchase_data_internal()') IS NOT NULL AND to_regprocedure('public.wake_meta_purchase_worker()') IS NOT NULL AND to_regprocedure('public.meta_purchase_retention_ready_internal()') IS NOT NULL")" == t ]] ||
   fail "Meta Purchase migration is missing"
 
-docker compose exec -T db psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -v target_database="$TARGET_DATABASE" <<'SQL'
+db_psql -d postgres -v target_database="$TARGET_DATABASE" <<'SQL'
 BEGIN;
 SELECT set_config('festapp.meta_purchase_schedule_database',:'target_database',true);
 DO $$ BEGIN
@@ -29,7 +30,7 @@ DO $$ BEGIN
 END $$;
 SELECT cron.schedule_in_database('festapp_meta_purchase_retention','* * * * *',
  'SELECT public.purge_meta_purchase_data_internal()',:'target_database');
--- Provision delivery dormant. Reinstalling the schedules preserves an existing delivery state.
+-- A new delivery job must wait for the first successful retention sweep.
 SELECT cron.schedule_in_database('festapp_meta_purchase_delivery','* * * * *',
  'SELECT public.wake_meta_purchase_worker()',:'target_database',active:=false)
 WHERE NOT EXISTS(SELECT 1 FROM cron.job WHERE jobname='festapp_meta_purchase_delivery' AND username=current_user);
@@ -41,6 +42,34 @@ DO $$ BEGIN
   AND database=current_setting('festapp.meta_purchase_schedule_database') AND schedule='* * * * *'
   AND command='SELECT public.wake_meta_purchase_worker()') THEN
   RAISE EXCEPTION 'Meta Purchase schedule readback failed';
+ END IF;
+END $$;
+COMMIT;
+SQL
+
+printf '%s\n' "Checking for a successful Meta Purchase retention sweep"
+deadline=$((SECONDS + 75))
+while :; do
+  retention_ready=$(db_psql -d "$TARGET_DATABASE" -Atqc 'SELECT public.meta_purchase_retention_ready_internal()')
+  [[ "$retention_ready" == t ]] && break
+  (( SECONDS < deadline )) || fail "Meta Purchase retention did not become ready within 75 seconds"
+  sleep 2
+done
+
+db_psql -d postgres -v target_database="$TARGET_DATABASE" <<'SQL'
+BEGIN;
+SELECT set_config('festapp.meta_purchase_schedule_database',:'target_database',true);
+SELECT cron.alter_job(jobid, active:=true)
+FROM cron.job
+WHERE jobname='festapp_meta_purchase_delivery' AND database=:'target_database'
+  AND username=current_user AND schedule='* * * * *'
+  AND command='SELECT public.wake_meta_purchase_worker()' AND NOT active;
+DO $$ BEGIN
+ IF (SELECT count(*) FROM cron.job WHERE active AND username=current_user
+  AND database=current_setting('festapp.meta_purchase_schedule_database') AND schedule='* * * * *'
+  AND ((jobname='festapp_meta_purchase_retention' AND command='SELECT public.purge_meta_purchase_data_internal()')
+    OR (jobname='festapp_meta_purchase_delivery' AND command='SELECT public.wake_meta_purchase_worker()'))) <> 2 THEN
+  RAISE EXCEPTION 'Meta Purchase schedules are not both active';
  END IF;
 END $$;
 COMMIT;
