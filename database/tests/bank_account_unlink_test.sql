@@ -9,6 +9,11 @@ DECLARE
     v_error_payload jsonb;
     v_reorder_request jsonb;
     v_command_id uuid := gen_random_uuid();
+    v_stale_id uuid := gen_random_uuid();
+    v_unconfirmed_id uuid := gen_random_uuid();
+    v_receipt jsonb;
+    v_applied_receipt jsonb;
+    v_stale_receipt jsonb;
     v_initial_order bigint[];
     v_occasion_id bigint;
     v_form_id bigint;
@@ -100,8 +105,9 @@ BEGIN
     v_reorder_request := jsonb_build_object(
         'expectedOrder', v_initial_order,
         'accountOrder', ARRAY[v_acc_eur_backup, v_acc_czk, v_acc_eur]);
-    PERFORM assert_true(public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id)
-       #>> '{data,accountOrder,0}' = v_acc_eur_backup::text, 'reorder receipt records actual account order');
+    v_applied_receipt := public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id);
+    PERFORM assert_true(v_applied_receipt #>> '{data,accountOrder,0}' = v_acc_eur_backup::text,
+       'reorder receipt records actual account order');
     PERFORM assert_true(ARRAY(SELECT bank_account FROM eshop.unit_bank_accounts
        WHERE unit=v_unit_id ORDER BY priority, bank_account) = ARRAY[v_acc_eur_backup, v_acc_czk, v_acc_eur],
        'reordering updates all priorities together');
@@ -120,12 +126,13 @@ BEGIN
     PERFORM assert_true(public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id)
        #>> '{mutation,receiptId}' = v_command_id::text, 'same intent is replayable after its own reorder');
 
-    BEGIN
-        PERFORM public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, gen_random_uuid());
-        RAISE EXCEPTION 'Stale order unexpectedly succeeded.';
-    EXCEPTION WHEN serialization_failure THEN
-        PERFORM assert_true(SQLERRM='BANK_ACCOUNT_ORDER_CHANGED','stale order has a conflict result');
-    END;
+    v_stale_receipt := public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_stale_id);
+    PERFORM assert_true(v_stale_receipt->>'status' = 'conflict' AND
+       v_stale_receipt#>>'{data,reason}' = 'BANK_ACCOUNT_ORDER_CHANGED',
+       'stale order records a terminal conflict');
+    PERFORM assert_true(
+       public.recover_bank_reorder(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id)
+       = v_applied_receipt, 'recovery reads the committed outcome');
     BEGIN
         PERFORM public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder',
            jsonb_build_object('expectedOrder', ARRAY[v_acc_eur_backup,v_acc_czk,v_acc_eur],
@@ -150,10 +157,31 @@ BEGIN
         WHERE item->'supported_currencies' @> '["EUR"]'::jsonb
         ORDER BY position LIMIT 1),
        'the original EUR default returns after the reverse reorder');
+    v_receipt := public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_stale_id);
+    PERFORM assert_true(v_receipt = v_stale_receipt,
+       'the same stale UUID stays rejected after its expected order returns');
+    v_receipt := public.recover_bank_reorder(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_unconfirmed_id);
+    PERFORM assert_true(v_receipt->>'status' = 'rejected' AND
+       v_receipt#>>'{data,reason}' = 'BANK_ACCOUNT_REORDER_NOT_APPLIED',
+       'recovering an unconfirmed reorder seals it even if its precondition currently holds');
+    PERFORM assert_true(
+       public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_unconfirmed_id) = v_receipt,
+       'a delayed write cannot apply a sealed recovery');
+    PERFORM assert_true(ARRAY(SELECT bank_account FROM eshop.unit_bank_accounts
+       WHERE unit=v_unit_id ORDER BY priority,bank_account) = v_initial_order,
+       'neither recovery nor a delayed write changes the order');
+    PERFORM assert_true(NOT has_function_privilege('anon',
+       'public.recover_bank_reorder(bigint,bigint,text,jsonb,uuid)', 'EXECUTE'),
+       'anonymous callers cannot recover bank commands');
     PERFORM set_config('request.jwt.claim.sub', gen_random_uuid()::text, true);
     BEGIN
         PERFORM public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id);
         RAISE EXCEPTION 'Unauthorized replay unexpectedly succeeded.';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
+    BEGIN
+        PERFORM public.recover_bank_reorder(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id);
+        RAISE EXCEPTION 'Unauthorized recovery unexpectedly succeeded.';
     EXCEPTION WHEN insufficient_privilege THEN NULL;
     END;
     PERFORM set_config('request.jwt.claim.sub', v_test_user::text, true);

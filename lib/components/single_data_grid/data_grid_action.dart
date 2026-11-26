@@ -8,8 +8,13 @@ class DataGridAction {
       [Future<void> Function()? originalAction])? action;
   bool Function()? isEnabled;
   final bool requiresSelection;
+  final bool afterRowCount;
   DataGridAction(
-      {this.action, this.name, this.isEnabled, this.requiresSelection = false});
+      {this.action,
+      this.name,
+      this.isEnabled,
+      this.requiresSelection = false,
+      this.afterRowCount = false});
 }
 
 class DataGridActionsController {

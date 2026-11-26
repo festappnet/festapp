@@ -93,7 +93,6 @@ class ClientCommandTransport {
     Map<String, dynamic> parameters, {
     String? commandId,
     bool reserveResource = true,
-    bool Function(PostgrestException)? isRolledBack,
   }) async {
     final frozen = (jsonDecode(jsonEncode(parameters)) as Map)
         .cast<String, dynamic>();
@@ -160,17 +159,6 @@ class ClientCommandTransport {
         }
         return result;
       } on PostgrestException catch (error) {
-        // Only a domain-confirmed rollback may release this exact claim
-        // without a receipt. Ambiguous transport failures keep the intent.
-        if (binding != null && isRolledBack?.call(error) == true) {
-          await ClientCommandIdentity.completeIntent(
-            functionName,
-            payload,
-            commandId: resolvedCommandId,
-            principalBinding: binding,
-          );
-          rethrow;
-        }
         if (error.code == '42501') {
           await RightsService.refreshAfterAuthorizationDenial(error: error);
         }
@@ -211,7 +199,6 @@ class ClientCommandTransport {
   Future<Object?> resume(
     ClientCommandIntent intent, {
     String? recoveryFunction,
-    bool Function(PostgrestException)? isRolledBack,
   }) async {
     if (principalBinding != intent.principalBinding) {
       throw StateError('Command principal changed');
@@ -224,12 +211,10 @@ class ClientCommandTransport {
         stored.requestJson != intent.requestJson) {
       throw StateError('Pending intent changed');
     }
-    final result = await invoke(
-      recoveryFunction ?? intent.operation,
-      parameters,
-      commandId: intent.commandId,
-      isRolledBack: isRolledBack,
-    );
+    final result = await invoke(recoveryFunction ?? intent.operation, {
+      ...parameters,
+      'p_command_id': intent.commandId,
+    });
     await _completeIfConfirmed(
       intent.operation,
       parameters,

@@ -944,7 +944,7 @@
     },
     {
       "migration": "20261122121500_atomic_bank_account_order.sql",
-      "active": true,
+      "sha256": "3cd3b8954ee97db29c599ecf8b640fdbb11b74aae7d9ffdeb1a37a60d9a59e54",
       "header": "-- Apply unit bank account priorities in one receipted command.",
       "sources": [
         "units/begin_unit_client_mutation_v1.sql",
@@ -1066,6 +1066,20 @@
       "sources": [
         "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql"
       ]
+    },
+    {
+      "migration": "20261126120000_bank_reorder_terminal_outcome.sql",
+      "active": true,
+      "header": "-- Seal stale bank reorders and recover their receipts without executing old writes.",
+      "sources": [
+        "authoring/finance.sql",
+        "authoring/recover_bank_reorder.sql"
+      ],
+      "selectors": {
+        "authoring/finance.sql": [
+          "manage_bank_authoring"
+        ]
+      }
     }
   ]
 }
