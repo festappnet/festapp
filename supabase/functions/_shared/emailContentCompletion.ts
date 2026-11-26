@@ -1,6 +1,5 @@
 import { ORDER_OVERVIEW_LINK_SLOT } from "./orderOverview.ts";
 import { escapeEmailHtml } from "./emailActionLink.ts";
-import type { Tone } from "./communicationTone.ts";
 export interface EmailRequiredLink {
   url: string;
   html: string;
@@ -76,10 +75,9 @@ export function completeEmailContent(
 
 export function paymentQrEmailHtml(
   cs: boolean,
-  tone: Tone,
   source?: string,
+  informal = false,
 ): string {
-  const informal = tone === "informal";
   if (source === undefined) {
     const notice = cs
       ? informal ? "Platební QR kód najdeš v příloze." : "Platební QR kód najdete v příloze."
