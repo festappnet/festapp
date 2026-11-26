@@ -26,10 +26,10 @@ Deno.test('preview bounds input and rejects secrets, real IDs and unapproved ima
   }
 });
 Deno.test('resolve returns style choices and uses known occasion details in every scenario',async()=>{
-  const s=setup();s.deps.occasion=async()=>({id:7,title:'Festival v naší obci',start_time:'2026-11-07T18:00:00Z',end_time:'2026-11-07T23:00:00Z',data:{place_name:'Sokolovna'},features:[]});
+  const s=setup();s.deps.occasion=async()=>({id:7,title:'Festival v naší obci',start_time:'2027-03-05T23:30:00Z',end_time:'2027-03-06T22:30:00Z',data:{place_name:'Sokolovna',timezone:'Europe/Prague'},features:[]});
   const result=await (await handlePreview(req(),s.deps)).json();
   assertEquals(Object.keys(result.presets),['portrait','silk_light','silk_dark','concert_stub','ball_silk','festival_poster','club_panorama','theatre_program','gallery_square','gala_invitation','boarding_pass','cinema_strip','sports_arena','festival_badge','workshop_card']);
-  for(const scenario of Object.values(result.scenarios) as any[]) {assertEquals(scenario.occasionTitle,'Festival v naší obci');assert(scenario.occasionDatePlace.includes('Sokolovna'));assert(scenario.occasionDatePlace.includes('11. 2026'));assertEquals(scenario.qr,'festapp-preview:X3827K6M8R');}
+  for(const scenario of Object.values(result.scenarios) as any[]) {assertEquals(scenario.occasionTitle,'Festival v naší obci');assertEquals(scenario.occasionDatePlace,'6. 3. 2027, Sokolovna');assertEquals(scenario.qr,'festapp-preview:X3827K6M8R');}
 });
 Deno.test('image-backed presets inherit existing text color without weakening QR colors',async()=>{
   const s=setup();s.deps.occasion=async()=>({id:7,title:'Ples',features:[{code:'ticket',darkColor:'FFFFFF'}]});
