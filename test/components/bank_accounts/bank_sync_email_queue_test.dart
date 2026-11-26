@@ -403,10 +403,12 @@ void main() {
     await _pump(
       tester,
       _queue(
+        compact: true,
         loadPage: (_) async => _page(reason == null ? [_observation] : []),
         dismiss: (_, value) async => reason = value,
       ),
     );
+    await _tap(tester, find.text(BankAccountStrings.emailPendingQueueExpand));
     await _tap(tester, find.text(BankAccountStrings.emailDismiss));
     expect(_canSubmit(tester), isFalse);
     await tester.enterText(
@@ -417,6 +419,10 @@ void main() {
     await _tap(tester, _submit);
     expect(reason, 'No matching receipt in internet banking');
     expect(find.text(BankAccountStrings.emailQueueEmpty), findsOneWidget);
+    final refresh = tester.widget<IconButton>(
+      find.byTooltip(CommonStrings.refresh),
+    );
+    expect(refresh.focusNode!.hasFocus, isTrue);
   });
 
   testWidgets('email queue load more uses the returned cursor', (tester) async {

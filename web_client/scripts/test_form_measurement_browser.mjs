@@ -75,16 +75,17 @@ document.head.appendChild(script);
    const documentId = await frame.evaluate(() => (document.fixtureId = crypto.randomUUID()));
    const setConsent = (analytics, marketing) => frameElement.evaluate(
     (element, choice) => FestappEmbed.setMeasurementConsent(element, choice), {analytics, marketing});
-   const waitForMarketing = async expected => {
+   const waitForConsent = async (analytics, marketing) => {
     for (let attempt = 0; attempt < 50; attempt++) {
-     if ((await state()).consent?.marketing === expected) return;
+     const {consent} = await state();
+     if (consent?.analytics === analytics && consent?.marketing === marketing) return;
      await new Promise(resolve => setTimeout(resolve, 20));
     }
-    assert.fail(`Expected iframe marketing consent to be ${expected}`);
+    assert.fail(`Expected iframe consent analytics=${analytics}, marketing=${marketing}`);
    };
    await state(); // The cross-origin document has installed its bridge.
    await setConsent(true, true);
-   await waitForMarketing(true);
+   await waitForConsent(true, true);
    const link = organizer.locator('a');
    await organizer.evaluate(() => {
     window.popupAttempts = 0;
@@ -100,11 +101,11 @@ document.head.appendChild(script);
    assert.equal(await organizer.evaluate(() => document.activeElement?.id), 'checkout');
    assert.equal(await organizer.evaluate(() => popupAttempts), 0);
    assert.equal(await frame.evaluate(() => document.fixtureId), documentId);
-   await waitForMarketing(true);
+   await waitForConsent(true, true);
    await setConsent(true, false);
-   await waitForMarketing(false);
+   await waitForConsent(true, false);
    await setConsent(false, false);
-   assert.equal((await state()).consent.marketing, false);
+   await waitForConsent(false, false);
 
    // A modified click stays native. Missing, hidden and different-URL
    // targets still reach the usual standalone link handling.
@@ -126,7 +127,12 @@ document.head.appendChild(script);
     if (change === 'no-opt-in') anchor.removeAttribute('data-festapp-consent-link-embed');
     const before = window.popupAttempts;
     // Cancel after the production listener so the test never opens a real tab.
-    document.addEventListener('click', event => event.preventDefault(), {once:true});
+    let intercepted;
+    document.addEventListener('click', event => {
+     intercepted = event.defaultPrevented;
+     event.preventDefault();
+    }, {once:true});
+    anchor.focus({preventScroll: true});
     anchor.dispatchEvent(new MouseEvent('click', {bubbles:true,cancelable:true,ctrlKey:change === 'modified'}));
     anchor.href = previousHref;
     frame.id = previousId;
@@ -136,11 +142,13 @@ document.head.appendChild(script);
     frame.removeAttribute('sandbox');
     if (change === 'srcdoc') frame.removeAttribute('srcdoc');
     if (change === 'duplicate-mode' || change === 'invalid-url') frame.src = previousSrc;
-    return window.popupAttempts - before;
+    return {attempts: window.popupAttempts - before, intercepted, anchorFocused: document.activeElement === anchor};
    }, change);
-   assert.equal(await fallback('modified'), 0);
+   assert.deepEqual(await fallback('modified'), {
+    attempts: 0, intercepted: false, anchorFocused: true,
+   });
    for (const change of ['missing', 'hidden', 'inert', 'zero-size', 'sandbox', 'srcdoc', 'duplicate-mode', 'invalid-url', 'different-url', 'different-fragment', 'no-opt-in']) {
-    assert.equal(await fallback(change), 1, change);
+    assert.equal((await fallback(change)).attempts, 1, change);
    }
   } finally { await linkContext.close(); }
  }, {suite:'form_measurement_browser',scenario:'consent-link-embed'});

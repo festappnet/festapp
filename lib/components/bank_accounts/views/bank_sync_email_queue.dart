@@ -49,6 +49,7 @@ class BankSyncEmailQueue extends StatefulWidget {
 class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
   List<Map<String, dynamic>>? _rows;
   bool _loading = true;
+  bool _showEmptyAfterAction = false;
   String? _feedback;
   final _refreshFocus = FocusNode();
 
@@ -108,13 +109,16 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
   }
 
   Future<void> _refreshAfterAction(Map<String, dynamic> row) async {
+    _showEmptyAfterAction = true;
     await _load();
     if (!mounted ||
         _rows?.any((item) => item['delivery_id'] == row['delivery_id']) !=
             false)
       return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _refreshFocus.requestFocus();
+      if (mounted && _refreshFocus.context != null) {
+        _refreshFocus.requestFocus();
+      }
     });
   }
 
@@ -199,6 +203,7 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
   @override
   Widget build(BuildContext context) {
     if (widget.compact &&
+        !_showEmptyAfterAction &&
         (_rows?.isEmpty == true || (_rows == null && _loading))) {
       return const SizedBox.shrink();
     }

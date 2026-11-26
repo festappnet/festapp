@@ -10,6 +10,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
@@ -469,7 +470,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       _accountLoadRevision++;
     });
 
-    String? feedback;
+    Object? commandError;
     try {
       await DbBankAccounts.current.reorderUnitBankAccounts(
         widget.unitId,
@@ -478,19 +479,24 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
       );
     } catch (error) {
       AppLogger.error('Bank account reorder failed: $error');
-      feedback = isBankAccountOrderConflict(error)
-          ? BankAccountStrings.orderChanged
-          : BankAccountStrings.orderSaveFailed;
+      commandError = error;
     }
 
     if (!mounted) return;
     await _loadData();
     if (!mounted) return;
+    final current = _unitAccounts.map((account) => account.id).toList();
     setState(() {
       _isReordering = false;
-      _orderFeedback = _accountsLoadFailed
-          ? BankAccountStrings.orderUnverified
-          : feedback;
+      if (_accountsLoadFailed) {
+        _orderFeedback = BankAccountStrings.orderUnverified;
+      } else if (commandError != null && isBankAccountOrderConflict(commandError)) {
+        _orderFeedback = BankAccountStrings.orderChanged;
+      } else if (!listEquals(current, reordered)) {
+        _orderFeedback = commandError == null
+            ? BankAccountStrings.orderChanged
+            : BankAccountStrings.orderSaveFailed;
+      }
     });
   }
 
