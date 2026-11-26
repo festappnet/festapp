@@ -13,8 +13,11 @@ test('A06 unavailable methods never silently select bank and unverified iframe e
 });
 test('A06/A24 one method is a summary; two methods have a labelled choice and independent full-payment hint',t=>{
   const host=setup(t);const values=[];
-  renderPaymentMethodPicker(host,formPaymentOptions({...options(),available:['stripe']}),value=>values.push(value));assert.equal(host.querySelector('input'),null);assert.match(host.textContent,/31 minut/);assert.match(host.textContent,/celé objednávky/);
-  host.replaceChildren();renderPaymentMethodPicker(host,formPaymentOptions(options()),value=>values.push(value));assert.equal(host.querySelectorAll('input[type=radio]').length,2);const bank=host.querySelector('[value=bank]');bank.checked=true;bank.dispatchEvent(new window.Event('change'));assert.equal(values.at(-1),'bank');assert(!host.textContent.includes('31 minut'));
+  renderPaymentMethodPicker(host,formPaymentOptions({...options(),available:['stripe']}),value=>values.push(value));
+  assert.equal(host.querySelector('fieldset, input'),null);assert.match(host.textContent,/31 minut/);assert.match(host.textContent,/celé objednávky/);
+  host.replaceChildren();renderPaymentMethodPicker(host,formPaymentOptions(options()),value=>values.push(value));
+  assert.equal(host.querySelector('fieldset > legend').textContent,'Způsob platby');
+  assert.equal(host.querySelectorAll('input[type=radio]').length,2);const bank=host.querySelector('[value=bank]');bank.checked=true;bank.dispatchEvent(new window.Event('change'));assert.equal(values.at(-1),'bank');assert(!host.textContent.includes('31 minut'));
 });
 test('A07 recipient shown in the preview is a detached snapshot and names are text',t=>{
   const host=setup(t),raw=options();raw.recipient.name='<script>private</script>';const normalized=formPaymentOptions(raw);raw.recipient.connectionId='changed';renderPaymentMethodPicker(host,normalized,()=>{});assert.equal(normalized.recipient.connectionId,id);assert.equal(host.querySelector('script'),null);assert.match(host.textContent,/<script>/);
@@ -31,7 +34,7 @@ test('cash is a builtin summary with safe instructions and no online reservation
   const options=formPaymentOptions({available:['cash'],cash:{available:true,instructions:'U vstupu <script>unsafe</script>'},bank:{available:false},providers:{},deadlinePolicy:{mode:'none'}});
   renderPaymentMethodPicker(host,options,value=>selected.push(value));
   assert.deepEqual(selected,['cash']);assert.equal(host.hidden,false);
-  assert.equal(host.querySelector('fieldset p')?.textContent, 'Hotovost');
-  assert.match(host.textContent,/U vstupu <script>/);
+  assert.equal(host.querySelector('fieldset, input'),null);
+  assert.equal(host.textContent,'U vstupu <script>unsafe</script>');
   assert.equal(host.querySelector('script'),null);assert.doesNotMatch(host.textContent,/31 minut/);
 });
