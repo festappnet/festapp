@@ -1067,7 +1067,7 @@ export class FormPage extends Component {
             }
             this._pendingPaymentMethod=null;this._pendingPaymentQuote=null;
         }
-        const retryPayload = structuredClone(payload);
+        const retryPayload = JSON.parse(JSON.stringify(payload));
         const pinnedScope = retrySubmission?.waitlistScope ?? this.waitlistScope;
         const pinnedTicketIds = retrySubmission?.ticketIds ?? formModel.selectedTicketIds;
         const acceptanceOrder = retrySubmission?.acceptanceOrder ?? (formModel.offerBundle ? {

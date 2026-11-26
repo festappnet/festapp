@@ -26,6 +26,28 @@ try {
  <script src="${childOrigin}/embed.js"></script>`);
  return;
 }
+if (req.url?.startsWith('/consent-link-messenger')) {
+ res.setHeader('Content-Type','text/html; charset=utf-8');
+ res.end(`<!doctype html><html lang="en"><body>
+ <a id="buy" data-festapp-consent-link target="_blank" href="${childOrigin}/form/test">Buy tickets</a>
+ ${req.url.endsWith('?embedded') ? `<iframe title="Tickets" data-festapp-embed src="${childOrigin}/form/test?embed=1"></iframe>` : ''}
+ <script src="${childOrigin}/embed.js"></script>
+ <script>
+ window.popupAttempts = 0;
+ window.open = () => { window.popupAttempts++; throw Error('A popup would suspend the organizer'); };
+ window.choice = {processingRevision:'rev-a',analytics:true,marketing:true};
+ let notify;
+ FestappEmbed.connectMeasurementSource({
+  read: scope => scope.unit === 2 ? window.choice : null,
+  subscribe: listener => { notify = listener; return () => {}; },
+ });
+ window.choose = (analytics, marketing) => {
+  Object.assign(window.choice, {analytics, marketing});
+  notify();
+ };
+ </script></body></html>`);
+ return;
+}
 if(req.url==='/consent-link'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end(`<!doctype html><a data-festapp-consent-link target="_blank" href="${childOrigin}/form/consent-link">Buy tickets</a><script>window.dataLayer=[];function gtag(){dataLayer.push(arguments)}gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'})</script><script src="${childOrigin}/embed.js"></script><script>window.linkSourceListeners=new Set();window.linkSourceChoice={processingRevision:"link-browser",analytics:true,marketing:true};window.stopLinkSource=FestappEmbed.connectMeasurementSource({read:scope=>scope.organization===1\u0026\u0026scope.unit===2?window.linkSourceChoice:null,subscribe:fn=>{linkSourceListeners.add(fn);return()=>linkSourceListeners.delete(fn)}});window.updateLinkSource=choice=>{window.linkSourceChoice=choice;for(const fn of linkSourceListeners)fn()};</script>`);return}if(req.url.startsWith('/consent-link-cmp')) {
 const state=new URL(req.url,'http://fixture').searchParams.get('state')||'saved';
 res.setHeader('Content-Type','text/html; charset=utf-8');
@@ -163,6 +185,61 @@ document.head.appendChild(script);
    }
   } finally { await linkContext.close(); }
  }, {suite:'form_measurement_browser',scenario:'consent-link-embed'});
+ if (modes.includes(true)) await timed('browser.consent-link-messenger', async () => {
+  const messenger = await owner.context();
+  try {
+   await messenger.addInitScript(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+     value: 'Mozilla/5.0 (Linux; Android 11; wv) Chrome/91.0.4472.114 Mobile [FB_IAB/FB4A;FBAV/588.1.0.66.98;]',
+    });
+   });
+   const organizer = await messenger.newPage();
+   for (const existing of [true, false]) {
+    const location = `${origin}/consent-link-messenger${existing ? '?embedded' : ''}`;
+    await organizer.goto(location);
+    if (existing) await organizer.frameLocator('iframe').locator('body').evaluate(() => { document.originalCheckout = true; });
+    await organizer.locator('#buy').click();
+    assert.equal(await organizer.evaluate(() => popupAttempts), 0);
+    assert.equal(organizer.url(), location);
+    const dialog = organizer.getByRole('dialog', {name:'Buy tickets'});
+    if (existing) {
+     assert.equal(await dialog.count(), 0);
+     assert.equal(await organizer.locator('iframe').evaluate(frame => document.activeElement === frame), true);
+     assert.equal(await organizer.frameLocator('iframe').locator('body').evaluate(() => document.originalCheckout), true);
+    } else {
+     await dialog.waitFor({state:'visible'});
+     assert.equal(await dialog.getByRole('link', {name:'Open separately'}).getAttribute('href'), `${childOrigin}/form/test`);
+    }
+    await organizer.frameLocator('iframe').locator('body').waitFor({state:'attached'});
+    for (const [analytics, marketing] of [[true, true], [true, false], [false, false]]) {
+     await organizer.evaluate(([analytics, marketing]) => choose(analytics, marketing), [analytics, marketing]);
+     await organizer.waitForFunction(([analytics, marketing]) => new Promise(resolve => {
+      const frame = document.querySelector('iframe');
+      const id = 'messenger-consent';
+      const complete = result => {
+       clearTimeout(timeout);
+       window.removeEventListener('message', receive);
+       resolve(result);
+      };
+      const receive = event => {
+       if (event.source !== frame.contentWindow || event.data?.id !== id) return;
+       const choice = event.data?.result?.consent;
+       complete(choice?.analytics === analytics && choice?.marketing === marketing);
+      };
+      const timeout = setTimeout(() => complete(false), 250);
+      window.addEventListener('message', receive);
+      frame.contentWindow.postMessage({fixture:true,id,action:'state'}, new URL(frame.src).origin);
+     }), [analytics, marketing]);
+    }
+    if (!existing) {
+     await dialog.getByRole('button', {name:'Close'}).click();
+     await organizer.locator('dialog[data-festapp-consent-checkout]').waitFor({state:'detached'});
+     assert.equal(await organizer.locator('#buy').evaluate(link => document.activeElement === link), true);
+     assert.equal(await organizer.locator('iframe').count(), 0);
+    }
+   }
+  } finally { await messenger.close(); }
+ }, {suite:'form_measurement_browser',scenario:'consent-link-messenger'});
  if (modes.includes(true)) await timed('browser.consent-link', async () => {
   const linkContext=await owner.context();
   try {

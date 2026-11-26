@@ -294,12 +294,69 @@
     }
   }
 
+  // src/embed/host_consent_dialog.js
+  var labels = {
+    cs: { title: "Objedn\xE1vka", close: "Zav\u0159\xEDt", separate: "Otev\u0159\xEDt samostatn\u011B" },
+    sk: { title: "Objedn\xE1vka", close: "Zavrie\u0165", separate: "Otvori\u0165 samostatne" },
+    en: { title: "Checkout", close: "Close", separate: "Open separately" }
+  };
+  function openConsentCheckoutDialog(win, link, url) {
+    const { document: document2 } = win;
+    const dialog = document2.createElement("dialog");
+    if (typeof dialog.showModal !== "function" || document2.querySelector("dialog[data-festapp-consent-checkout][open]")) return false;
+    const language = document2.documentElement.lang.toLowerCase().split("-")[0];
+    const copy = ["cs", "sk"].includes(language) ? labels[language] : labels.en;
+    const title = link.textContent.trim() || copy.title;
+    dialog.setAttribute("data-festapp-consent-checkout", "");
+    dialog.setAttribute("aria-label", title);
+    Object.assign(dialog.style, {
+      border: "0",
+      borderRadius: "8px",
+      boxSizing: "border-box",
+      padding: "8px",
+      width: "min(96vw, 900px)",
+      height: "90vh",
+      maxHeight: "90vh"
+    });
+    const controls = document2.createElement("form");
+    controls.method = "dialog";
+    controls.style.margin = "0 0 8px";
+    const close = document2.createElement("button");
+    close.textContent = copy.close;
+    close.autofocus = true;
+    const separate = document2.createElement("a");
+    separate.href = url.href;
+    separate.target = "_blank";
+    separate.rel = "noopener";
+    separate.textContent = copy.separate;
+    separate.style.marginInlineStart = "12px";
+    controls.append(close, separate);
+    const frame = document2.createElement("iframe");
+    const embedded = new URL(url);
+    embedded.searchParams.set("embed", "1");
+    frame.src = embedded.href;
+    frame.title = title;
+    frame.setAttribute("data-festapp-embed", "");
+    frame.dataset.festappHeight = "fixed";
+    Object.assign(frame.style, { width: "100%", height: "calc(100% - 2.5rem)", border: "0" });
+    dialog.append(controls, frame);
+    dialog.addEventListener("close", () => {
+      dialog.remove();
+      if (link.isConnected) link.focus({ preventScroll: true });
+    }, { once: true });
+    document2.body.append(dialog);
+    try {
+      dialog.showModal();
+      return true;
+    } catch {
+      dialog.remove();
+      return false;
+    }
+  }
+
   // src/embed/host_consent_link.js
   var consentLinkNamespace = "festapp-consent-link";
-  function focusLinkedEmbed(win, link, url) {
-    const id = link.getAttribute("data-festapp-consent-link-embed");
-    if (!id || url.searchParams.has("embed")) return false;
-    const frame = win.document.getElementById(id);
+  function focusLinkedFrame(win, frame, url) {
     if (!frame?.matches("iframe[data-festapp-embed][src]:not([srcdoc], [sandbox])") || frame.closest("[inert], [hidden]") || win.getComputedStyle(frame).visibility !== "visible" || frame.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) return false;
     const { width, height } = frame.getBoundingClientRect();
     if (!width || !height) return false;
@@ -319,6 +376,14 @@
     frame.scrollIntoView({ block: "start", behavior: "instant" });
     return true;
   }
+  function focusLinkedEmbed(win, link, url) {
+    const id = link.getAttribute("data-festapp-consent-link-embed");
+    return Boolean(id && focusLinkedFrame(win, win.document.getElementById(id), url));
+  }
+  function suspendsOpener(win) {
+    const agent = win.navigator.userAgent;
+    return /\bAndroid\b/i.test(agent) && /[\[;](?:FB_IAB\/(?:FB4A|MESSENGER)|FBAN\/Orca-Android)(?=[;\]])/i.test(agent);
+  }
   function installHostConsentLink(win, productOrigin, source) {
     const opened = /* @__PURE__ */ new Map();
     const click = (event) => {
@@ -329,7 +394,11 @@
         link.hasAttribute("referrerpolicy") || [...win.document.querySelectorAll("meta[name]")].some((meta) => meta.name.toLowerCase() === "referrer")) return;
         const url = new URL(link.href, win.document.baseURI);
         if (!isConsentLinkOrigin(url.origin, isLocalConsentLink(win)) || !isConsentLinkOrigin(win.location.origin, isLocalConsentLink(win)) || url.origin !== productOrigin || !/^\/form\/[^/]+\/?$/.test(url.pathname)) return;
-        if (focusLinkedEmbed(win, link, url)) {
+        if (!url.searchParams.has("embed") && focusLinkedEmbed(win, link, url)) {
+          event.preventDefault();
+          return;
+        }
+        if (!url.searchParams.has("embed") && source?.configured && suspendsOpener(win) && ([...win.document.querySelectorAll("iframe[data-festapp-embed]")].some((frame) => focusLinkedFrame(win, frame, url)) || openConsentCheckoutDialog(win, link, url))) {
           event.preventDefault();
           return;
         }

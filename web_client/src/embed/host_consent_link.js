@@ -1,13 +1,11 @@
 import {randomUuid} from '../utils/random_uuid.js';
 import {isConsentLinkOrigin, isLocalConsentLink} from '../components/forms/form_consent_link.js';
 import {consentScope, sameConsentScope} from '../components/forms/measurement_consent_source.js';
+import {openConsentCheckoutDialog} from './host_consent_dialog.js';
 
 export const consentLinkNamespace = 'festapp-consent-link';
 
-function focusLinkedEmbed(win, link, url) {
-    const id = link.getAttribute('data-festapp-consent-link-embed');
-    if (!id || url.searchParams.has('embed')) return false;
-    const frame = win.document.getElementById(id);
+function focusLinkedFrame(win, frame, url) {
     if (!frame?.matches('iframe[data-festapp-embed][src]:not([srcdoc], [sandbox])') ||
         frame.closest('[inert], [hidden]') ||
         win.getComputedStyle(frame).visibility !== 'visible' ||
@@ -33,6 +31,18 @@ function focusLinkedEmbed(win, link, url) {
     return true;
 }
 
+function focusLinkedEmbed(win, link, url) {
+    const id = link.getAttribute('data-festapp-consent-link-embed');
+    return Boolean(id && focusLinkedFrame(win, win.document.getElementById(id), url));
+}
+
+function suspendsOpener(win) {
+    const agent = win.navigator.userAgent;
+    // Messenger on Android can identify itself as FB4A. Its new visible page
+    // has an opener object, but the previous page immediately receives pagehide.
+    return /\bAndroid\b/i.test(agent) && /[\[;](?:FB_IAB\/(?:FB4A|MESSENGER)|FBAN\/Orca-Android)(?=[;\]])/i.test(agent);
+}
+
 // Only explicitly opted-in, ordinary new-tab clicks retain an opener. Keeping
 // the actual WindowProxy also excludes iframe and unsolicited popup requests.
 // Standalone links require an actual scoped CMP record; GCM defaults and updates
@@ -55,7 +65,13 @@ export function installHostConsentLink(win, productOrigin, source) {
                 [...win.document.querySelectorAll('meta[name]')].some(meta => meta.name.toLowerCase() === 'referrer')) return;
             const url = new URL(link.href, win.document.baseURI);
             if (!isConsentLinkOrigin(url.origin, isLocalConsentLink(win)) || !isConsentLinkOrigin(win.location.origin, isLocalConsentLink(win)) || url.origin !== productOrigin || !/^\/form\/[^/]+\/?$/.test(url.pathname)) return;
-            if (focusLinkedEmbed(win, link, url)) {
+            if (!url.searchParams.has('embed') && focusLinkedEmbed(win, link, url)) {
+                event.preventDefault();
+                return;
+            }
+            if (!url.searchParams.has('embed') && source?.configured && suspendsOpener(win) &&
+                ([...win.document.querySelectorAll('iframe[data-festapp-embed]')].some(frame => focusLinkedFrame(win, frame, url)) ||
+                    openConsentCheckoutDialog(win, link, url))) {
                 event.preventDefault();
                 return;
             }
