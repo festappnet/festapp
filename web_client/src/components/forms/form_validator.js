@@ -131,7 +131,7 @@ export class FormValidator {
             ticketItem.fields.forEach(fObj => {
                 const id = String(subFieldDef.id);
                 if (fObj._subFieldId != null && String(fObj._subFieldId) !== id) return;
-                const hasId = Object.hasOwn(fObj, id);
+                const hasId = Object.prototype.hasOwnProperty.call(fObj, id);
                 if (!hasId && fObj._subFieldId == null && Object.keys(fObj).some(key => /^\d+$/.test(key))) return;
                 // Stable ID and legacy type are aliases of one answer, never two selections.
                 const val = hasId ? fObj[id] : fObj[subFieldDef.type];

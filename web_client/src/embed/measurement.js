@@ -1,3 +1,4 @@
+import {randomUuid} from '../utils/random_uuid.js';
 import {publicPurchaseDecision, validMetaBrowserMatching} from '../components/forms/meta_purchase_consent.js';
 import {consentScope, managedConsentOrigin, sameConsentBinding} from '../components/forms/measurement_consent_source.js';
 import {validId} from './protocol.js';
@@ -65,7 +66,7 @@ export class EmbedMeasurement {
             snapshot.websiteOrigin!==this.origin ||
             !measurementManifest(this.measurementManifest,this.measurementManifest?.form_link))return Promise.resolve({});
         this.checkoutMatching?.finish({});
-        const id=this.win.crypto.randomUUID(),leaseId=this.leaseId;
+        const id=randomUuid(this.win.crypto),leaseId=this.leaseId;
         return new Promise(resolve=>{
             const finish=matching=>{
                 this.win.clearTimeout(timer);

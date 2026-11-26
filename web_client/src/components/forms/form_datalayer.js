@@ -1,3 +1,4 @@
+import {randomUuid} from '../../utils/random_uuid.js';
 import {analyticsPayload, currencies} from './form_measurement_contract.js';
 import {FormHelper} from './form_helper.js';
 import {isValidEmail} from '../../logic/email_address.js';
@@ -45,7 +46,7 @@ export class FormDataLayer {
             const answer = type => {
                 const field = (this.model.visibleFields || this.model.relatedFields)?.find(item => item.type === type);
                 const id = String(field?.id);
-                return payload?.fields?.find(entry => Object.hasOwn(entry, id))?.[id];
+                return payload?.fields?.find(entry => Object.prototype.hasOwnProperty.call(entry, id))?.[id];
             };
             const email = String(answer('email') ?? '').trim().toLowerCase();
             const prefixes = this.model.data?.phone_prefixes;
@@ -70,7 +71,7 @@ export class FormDataLayer {
 
     captureSaleOpening(email) {
         const send=this.sink.capture();
-        const event_id=this.win.crypto.randomUUID();
+        const event_id=randomUuid(this.win.crypto);
         const currency=FormHelper.getAvailableCurrencies(this.model)[0];
         const normalized=String(email ?? '').trim().toLowerCase();
         let completed=false;
@@ -117,7 +118,7 @@ export class FormDataLayer {
             }
         };
         for (const field of payload.fields || []) {
-            for (const id of this.fields.keys()) if (Object.hasOwn(field, id)) add(field[id]);
+            for (const id of this.fields.keys()) if (Object.prototype.hasOwnProperty.call(field, id)) add(field[id]);
         }
         for (const [index, ticket] of (payload.ticket || []).entries()) {
             const cached = session?.spotModels?.get(String(ticket.spot));
@@ -131,7 +132,7 @@ export class FormDataLayer {
                 }
             }
             // Only a catalog product is accepted. Spot IDs, notes and all answers are ignored.
-            for (const field of ticket.fields || []) if (Object.hasOwn(field, 'product_type')) add(field.product_type);
+            for (const field of ticket.fields || []) if (Object.prototype.hasOwnProperty.call(field, 'product_type')) add(field.product_type);
         }
         if (session?.discountCode?.valid) {
             // Project the SQL line snapshot. Never derive a discount from catalog prices.

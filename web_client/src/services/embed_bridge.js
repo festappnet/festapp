@@ -1,3 +1,4 @@
+import {randomUuid} from '../utils/random_uuid.js';
 import {isEmbed, applyEmbedContext} from './embed_context.js';
 import {EmbedTheme} from './embed_theme.js';
 import {EmbedChannel} from '../embed/channel.js';
@@ -145,7 +146,7 @@ export function preserveCheckoutScroll(win = window) {
     const position={left:win.scrollX,top:win.scrollY};
     const restoration=win.history.scrollRestoration;
     win.history.scrollRestoration='manual';
-    const snapshot=`s_${win.crypto.randomUUID()}`;
+    const snapshot=`s_${randomUuid(win.crypto)}`;
     const notify=type=>{
         if(isEmbed(win.location)) win.dispatchEvent(new win.CustomEvent('festapp-embed-scroll-state',{detail:{type,snapshot}}));
     };

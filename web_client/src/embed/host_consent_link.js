@@ -1,3 +1,4 @@
+import {randomUuid} from '../utils/random_uuid.js';
 import {isConsentLinkOrigin, isLocalConsentLink} from '../components/forms/form_consent_link.js';
 import {consentScope, sameConsentScope} from '../components/forms/measurement_consent_source.js';
 
@@ -58,7 +59,7 @@ export function installHostConsentLink(win, productOrigin, source) {
                 event.preventDefault();
                 return;
             }
-            const child = win.open(url.href, `festapp-consent-link-${win.crypto.randomUUID()}`);
+            const child = win.open(url.href, `festapp-consent-link-${randomUuid(win.crypto)}`);
             if (!child) return; // Popup blocked: keep native navigation.
             for (const [old, record] of opened) if (old.closed || Date.now() >= record.until) { win.clearTimeout(record.timer); opened.delete(old); }
             opened.set(child, {until:Date.now()+60000, timer:win.setTimeout(() => opened.delete(child), 60000)});

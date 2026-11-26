@@ -1,3 +1,4 @@
+import {randomUuid} from '../utils/random_uuid.js';
 import {validId} from './protocol.js';
 import {hasCurrentPurchaseConsent, metaBrowserMatching, publicPurchaseDecision} from '../components/forms/meta_purchase_consent.js';
 import {consentScope, readConsentSource, managedConsentOrigin, sameConsentBinding} from '../components/forms/measurement_consent_source.js';
@@ -53,7 +54,7 @@ export function createHostMeasurement({frames, currentRecord, disposeRecord, sca
             return;
         }
         record.heartbeat ??= setInterval(() => syncConsent(frame, record), 20000);
-        record.lease ??= {id:crypto.randomUUID()};
+        record.lease ??= {id:randomUuid()};
         record.lease.until = Date.now() + 60000;
         sendConsent(frame, record);
     };

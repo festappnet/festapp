@@ -1,3 +1,4 @@
+import {randomUuid} from '../../utils/random_uuid.js';
 import {measurementProtocol} from './form_measurement_contract.js';
 import {analyticsPayload, attributionContext, measurementId, measurementNamespace, measurementOrigin, sameMeasurementManifest} from './form_measurement_contract.js';
 
@@ -25,7 +26,7 @@ export class FormMeasurementRuntime {
         const input={...Object.fromEntries(new URLSearchParams(this.win.location.search)),...this.campaign(),
             form_embedded:this.embedded, page_location:new URL('/form/'+grant.manifest.form_link,this.win.location.origin).href,page_referrer:this.win.document.referrer};
         this.context=attributionContext(input);if(!this.context)return;
-        this.grant=grant;this.consent=grant.consent;this.origin=origin;this.instance=this.win.crypto.randomUUID();this.until=grant.expiresAt;
+        this.grant=grant;this.consent=grant.consent;this.origin=origin;this.instance=randomUuid(this.win.crypto);this.until=grant.expiresAt;
         const frame=this.frame=this.win.document.createElement('iframe');
         frame.hidden=true;frame.title='Measurement';frame.referrerPolicy='no-referrer';
         frame.setAttribute('sandbox','allow-scripts allow-same-origin');
