@@ -166,6 +166,17 @@ Deno.test('English date range keeps month before both days', () => {
   if (!/^Nov 22.*25, 2026$/.test(data.occasionDatePlace ?? '')) throw new Error(JSON.stringify(data));
 });
 
+Deno.test('ticket date follows the event calendar day across UTC and local midnight', () => {
+  const ticket = {ticket_symbol:'DATE123',price:300,currency_code:'CZK'};
+  const occasion = {locale:'cs',data:{timezone:'Europe/Prague'}};
+  assertEquals(normalizeTicketData(ticket, {
+    ...occasion,start_time:'2027-03-05T23:30:00Z',end_time:'2027-03-06T22:30:00Z',
+  }).occasionDatePlace, '6. 3. 2027');
+  assertEquals(normalizeTicketData(ticket, {
+    ...occasion,start_time:'2027-03-06T22:30:00Z',end_time:'2027-03-06T23:30:00Z',
+  }).occasionDatePlace, '6. - 7. 3. 2027');
+});
+
 Deno.test('table appearance renders the selected seat, preserves defaults and handles missing data',()=>{
  const template=preset('wide');
  const ticket={ticket_symbol:'X3827K6M8R',order_product_ticket:[{id:2,spot_group_title:'Other',spot_title:'9'},{id:1,spot_group_title:'Terasa',spot_title:'3'}]};
