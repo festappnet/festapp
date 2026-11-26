@@ -1,8 +1,12 @@
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
+import 'package:fstapp/components/bank_accounts/views/unit_bank_account_card.dart';
+
+import '../../support/fixtures/rights_context_fixture.dart';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
+import 'package:festapp_core/time.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
@@ -21,6 +25,7 @@ class _Translations extends AssetLoader {
 }
 
 bool _includeAccount = false;
+List<Map<String, Object>>? _bankAccounts;
 bool _failBank = false;
 bool _failOrganization = false;
 int _bankRequests = 0;
@@ -44,6 +49,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
+    OccasionTimeContext.initializeTimeZones();
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     await Supabase.initialize(
@@ -65,7 +71,7 @@ void main() {
                 headers: {'content-type': 'application/json'},
               );
             }
-            response = _includeAccount
+            response = _bankAccounts ?? (_includeAccount
                 ? [
                     {
                       'id': 12,
@@ -75,7 +81,9 @@ void main() {
                       'is_admin': false
                     }
                   ]
-                : [];
+                : []);
+          case '/rest/v1/rpc/get_linkable_bank_accounts':
+            response = [];
           case '/rest/v1/rpc/get_current_organization_data':
             _organizationRequests++;
             if (_failOrganization) {
@@ -99,6 +107,7 @@ void main() {
 
   setUp(() {
     _includeAccount = false;
+    _bankAccounts = null;
     _failBank = false;
     _failOrganization = false;
     _bankRequests = 0;
@@ -140,9 +149,54 @@ void main() {
     expect(find.text(CommonStrings.retry), findsNothing);
   });
 
+  testWidgets('management order and per-currency defaults survive reopening',
+      (tester) async {
+    final rights = RightsContextFixture.bankAccounts(unitId: 1, canManageUnit: true);
+    addTearDown(rights.dispose);
+    _bankAccounts = [
+      {
+        'id': 35,
+        'priority': 0,
+        'title': 'Účet pro vstupenky',
+        'type': 'FIO',
+        'supported_currencies': ['CZK', 'EUR'],
+      },
+      {
+        'id': 12,
+        'priority': 1,
+        'title': 'Účet pro zahraniční platby',
+        'type': 'FIO',
+        'supported_currencies': ['EUR', 'PLN'],
+      },
+    ];
+    await tester.pumpWidget(_screen());
+    await tester.pumpAndSettle();
+    void expectOrder(List<int> order, List<Set<String>> currencies) {
+      final cards = tester.widgetList<UnitBankAccountCard>(
+        find.byType(UnitBankAccountCard),
+      );
+      expect(cards.map((card) => card.account.id), order);
+      expect(cards.map((card) => card.primaryCurrencies), currencies);
+    }
+    expectOrder([35, 12], [{'CZK', 'EUR'}, {'PLN'}]);
+
+    _bankAccounts = [
+      {..._bankAccounts![1], 'priority': 0},
+      {..._bankAccounts![0], 'priority': 1},
+    ];
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(_screen());
+    await tester.pumpAndSettle();
+    expect(_bankRequests, 2);
+    expectOrder([12, 35], [{'EUR', 'PLN'}, {'CZK'}]);
+  });
+
   for (final width in [1200.0, 400.0]) {
     testWidgets('empty bank list can add an account under admin FAB ($width)',
         (tester) async {
+      final rights = RightsContextFixture.bankAccounts(unitId: 1, canManageUnit: true);
+      addTearDown(rights.dispose);
       await tester.binding.setSurfaceSize(Size(width, 800));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       var previewOpened = false;

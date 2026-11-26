@@ -1,8 +1,11 @@
 import '../../support/fixtures/client_command_response_fixture.dart';
+import '../../support/fixtures/local_storage_fixture.dart';
 
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart';
 import 'package:fstapp/data_services/client_sync/client_command_transport.dart';
 
 void main() {
@@ -16,10 +19,18 @@ void main() {
     }, principalProvider: () => principal);
 
     await expectLater(
-      transport.invoke('save_event_client_sync_v1', {},
-          commandId: 'b10a0000-0000-4000-8000-000000000001'),
-      throwsA(isA<StateError>().having(
-          (error) => error.message, 'message', 'COMMAND_PRINCIPAL_CHANGED')),
+      transport.invoke(
+        'save_event_client_sync_v1',
+        {},
+        commandId: 'b10a0000-0000-4000-8000-000000000001',
+      ),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          'COMMAND_PRINCIPAL_CHANGED',
+        ),
+      ),
     );
     expect(calls, 1);
   });
@@ -86,6 +97,92 @@ void main() {
     expect(ids.toSet(), hasLength(1));
     await transport.invokeIntent('fixture', 'save_fixture', request);
     expect(ids.last, isNot(ids.first));
+  });
+
+  group('durable bank reorder', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    registerLocalStorageFixture();
+
+    test(
+      'a preexisting reorder resumes with its original identity on conflict',
+      () async {
+        const stale = PostgrestException(
+          code: '40001',
+          message: 'BANK_ACCOUNT_ORDER_CHANGED',
+        );
+        const operation = 'manage_bank_authoring';
+        const initial = {
+          'p_unit': 23,
+          'p_payload': {
+            'expectedOrder': [1, 2],
+          },
+        };
+        final ids = <String>[];
+        final transport = ClientCommandTransport((_, parameters) async {
+          ids.add(parameters['p_command_id'] as String);
+          throw stale;
+        }, principalBinding: 'bank-reorder-old-client-test');
+
+        // Earlier clients left the claim behind after a stale precondition.
+        await expectLater(
+          transport.invoke(operation, initial),
+          throwsA(same(stale)),
+        );
+        final pending = (await transport.pendingIntent(operation, initial))!;
+        await expectLater(
+          transport.resume(pending, isRolledBack: isBankAccountOrderConflict),
+          throwsA(same(stale)),
+        );
+        expect(ids, [pending.commandId, pending.commandId]);
+        expect(await transport.pendingIntent(operation, initial), isNull);
+      },
+    );
+
+    test(
+      'a stale order releases exactly its claim for a fresh order',
+      () async {
+        const stale = PostgrestException(
+          code: '40001',
+          message: 'BANK_ACCOUNT_ORDER_CHANGED',
+        );
+        const operation = 'manage_bank_authoring';
+        const initial = {
+          'p_unit': 42,
+          'p_payload': {
+            'expectedOrder': [1, 2],
+          },
+        };
+        const current = {
+          'p_unit': 42,
+          'p_payload': {
+            'expectedOrder': [3, 2],
+          },
+        };
+        final ids = <String>[];
+        final transport = ClientCommandTransport((_, parameters) async {
+          final id = parameters['p_command_id'] as String;
+          ids.add(id);
+          if (ids.length == 1) throw stale;
+          return commandResponseFixture(id);
+        }, principalBinding: 'bank-reorder-test');
+
+        await expectLater(
+          transport.invoke(
+            operation,
+            initial,
+            isRolledBack: isBankAccountOrderConflict,
+          ),
+          throwsA(same(stale)),
+        );
+        expect(await transport.pendingIntent(operation, initial), isNull);
+        await transport.invoke(
+          operation,
+          current,
+          isRolledBack: isBankAccountOrderConflict,
+        );
+        expect(ids.toSet(), hasLength(2));
+      },
+    );
   });
 
   test('non-transport failures are not retried', () async {

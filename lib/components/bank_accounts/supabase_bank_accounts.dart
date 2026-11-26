@@ -12,6 +12,17 @@ import 'package:crypto/crypto.dart';
 import 'package:fstapp/services/app_logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+bool isBankAccountOrderConflict(Object error) =>
+    error is _RecoveredBankAccountOrder ||
+    error is PostgrestException && _reorderRolledBack(error);
+
+bool _reorderRolledBack(PostgrestException error) =>
+    error.code == '40001' && error.message == 'BANK_ACCOUNT_ORDER_CHANGED';
+
+class _RecoveredBankAccountOrder implements Exception {
+  const _RecoveredBankAccountOrder();
+}
+
 class SupabaseBankAccounts {
   SupabaseBankAccounts(this._supabase);
   final SupabaseClient _supabase;
@@ -84,22 +95,35 @@ class SupabaseBankAccounts {
     int? unitId,
   }) async {
     final unit = unitId ?? _accountUnitContexts[payload['accountId']];
+    const operation = 'manage_bank_authoring';
+    final parameters = {
+      'p_unit': unit,
+      'p_organization': null,
+      'p_action': action,
+      'p_payload': payload,
+    };
+    final transport = ClientCommandTransport.supabase(_supabase, durable: true);
+    final isRolledBack = action == 'reorder' ? _reorderRolledBack : null;
+    final pending = action == 'reorder'
+        ? await transport.pendingIntent(operation, parameters)
+        : null;
+    // Resolve an outstanding reorder with its original UUID and precondition.
+    // If it is a different move, the next move needs a fresh displayed order.
+    final resumesReorder = pending != null &&
+        jsonDecode(pending.requestJson)['p_action'] == 'reorder';
     final response = ClientCommandResponse.from(
-      await ClientCommandTransport.supabase(
-        _supabase,
-        durable: true,
-      ).invokeIntent(
-        '${_supabase.auth.currentUser?.id}:$unit:bank:$action:${payload['accountId']}',
-        'manage_bank_authoring',
-        {
-          'p_unit': unit,
-          'p_organization': null,
-          'p_action': action,
-          'p_payload': payload,
-        },
-      ),
+      resumesReorder
+          ? await transport.resume(pending, isRolledBack: isRolledBack)
+          : await transport.invoke(operation, parameters, isRolledBack: isRolledBack),
     );
     if (response.code != 200) throw StateError('Bank command rejected');
+    if (resumesReorder &&
+        !listEquals(
+          response.data['accountOrder'] as List?,
+          payload['accountOrder'] as List?,
+        )) {
+      throw const _RecoveredBankAccountOrder();
+    }
     return response.data;
   }
 
@@ -217,11 +241,7 @@ class SupabaseBankAccounts {
       params: {'p_unit_id': unitId},
     );
     final accounts =
-        (response as List).map((e) => BankAccountModel.fromJson(e)).toList()
-          ..sort((first, second) {
-            final priority = first.priority.compareTo(second.priority);
-            return priority == 0 ? first.id.compareTo(second.id) : priority;
-          });
+        (response as List).map((e) => BankAccountModel.fromJson(e)).toList();
     for (final account in accounts) {
       _accountUnitContexts[account.id] = unitId;
     }

@@ -91,9 +91,12 @@ BEGIN
     VALUES ('Backup EUR', ARRAY['EUR'], v_backup_secret, 'FIO')
     RETURNING id INTO v_acc_eur_backup;
     INSERT INTO eshop.unit_bank_accounts (unit, bank_account, priority)
-    VALUES (v_unit_id, v_acc_eur_backup, 3);
+    VALUES (v_unit_id, v_acc_eur_backup, 2);
 
-    v_initial_order := ARRAY[v_acc_czk, v_acc_eur, v_acc_eur_backup];
+    SELECT array_agg(id ORDER BY ordinality) INTO v_initial_order
+    FROM public.get_bank_accounts_for_unit_management(v_unit_id) WITH ORDINALITY;
+    PERFORM assert_true(v_initial_order = ARRAY[v_acc_czk, v_acc_eur, v_acc_eur_backup],
+       'management read breaks priority ties by account ID');
     v_reorder_request := jsonb_build_object(
         'expectedOrder', v_initial_order,
         'accountOrder', ARRAY[v_acc_eur_backup, v_acc_czk, v_acc_eur]);
@@ -102,6 +105,18 @@ BEGIN
     PERFORM assert_true(ARRAY(SELECT bank_account FROM eshop.unit_bank_accounts
        WHERE unit=v_unit_id ORDER BY priority, bank_account) = ARRAY[v_acc_eur_backup, v_acc_czk, v_acc_eur],
        'reordering updates all priorities together');
+    PERFORM assert_true(
+       (SELECT array_agg(id ORDER BY ordinality) = ARRAY[v_acc_eur_backup, v_acc_czk, v_acc_eur]
+          AND array_agg(priority ORDER BY ordinality) = ARRAY[0,1,2]
+        FROM public.get_bank_accounts_for_unit_management(v_unit_id) WITH ORDINALITY),
+       'management read returns persisted order and priorities');
+    PERFORM assert_true(
+       public.get_form_bank_accounts_internal(v_unit_id) #>> '{0,id}' = v_acc_eur_backup::text,
+       'the first EUR account also leads the form payment options');
+    PERFORM assert_true(
+       (SELECT id = v_acc_czk FROM public.get_bank_accounts_for_unit_management(v_unit_id)
+        WHERE supported_currencies @> ARRAY['CZK'] LIMIT 1),
+       'CZK keeps its default when the EUR default changes');
     PERFORM assert_true(public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id)
        #>> '{mutation,receiptId}' = v_command_id::text, 'same intent is replayable after its own reorder');
 
@@ -121,6 +136,20 @@ BEGIN
     PERFORM assert_true(ARRAY(SELECT bank_account FROM eshop.unit_bank_accounts
        WHERE unit=v_unit_id ORDER BY priority,bank_account) = ARRAY[v_acc_eur_backup,v_acc_czk,v_acc_eur],
        'failed reorder leaves the previous order intact');
+    PERFORM public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder',
+       jsonb_build_object('expectedOrder', ARRAY[v_acc_eur_backup,v_acc_czk,v_acc_eur],
+                          'accountOrder', v_initial_order), gen_random_uuid());
+    PERFORM assert_true(
+       (SELECT array_agg(id ORDER BY ordinality) = v_initial_order
+        FROM public.get_bank_accounts_for_unit_management(v_unit_id) WITH ORDINALITY),
+       'a new reorder using the current readback succeeds');
+    PERFORM assert_true(
+       (SELECT item->>'id' = v_acc_eur::text
+        FROM jsonb_array_elements(public.get_form_bank_accounts_internal(v_unit_id))
+           WITH ORDINALITY AS accounts(item, position)
+        WHERE item->'supported_currencies' @> '["EUR"]'::jsonb
+        ORDER BY position LIMIT 1),
+       'the original EUR default returns after the reverse reorder');
     PERFORM set_config('request.jwt.claim.sub', gen_random_uuid()::text, true);
     BEGIN
         PERFORM public.manage_bank_authoring(v_unit_id, v_org_id, 'reorder', v_reorder_request, v_command_id);

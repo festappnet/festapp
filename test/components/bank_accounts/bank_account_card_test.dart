@@ -78,8 +78,7 @@ void main() {
                                 width: orderStateColumnWidth(context, [order]),
                                 height: 56,
                                 child: OrderStateCell(
-                                    label: OrderModel.statesDataGridToUpper(
-                                        order.stateLabel),
+                                    label: order.stateLabel.toUpperCase(),
                                     background: Colors.orange.shade100,
                                     order: order,
                                     expired: true),
@@ -92,7 +91,7 @@ void main() {
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
       final label =
-          find.text(OrderModel.statesDataGridToUpper(order.stateLabel));
+          find.text(order.stateLabel.toUpperCase());
       final paragraph = tester.renderObject<RenderParagraph>(label);
       expect(paragraph.didExceedMaxLines, isFalse);
       expect(tester.takeException(), isNull);

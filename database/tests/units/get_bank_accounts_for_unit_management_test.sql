@@ -17,6 +17,13 @@ DECLARE
     v_count int;
     v_fio_rec record;
 BEGIN
+    PERFORM assert_true(NOT has_function_privilege('anon',
+        'public.get_bank_accounts_for_unit_management(bigint)', 'EXECUTE')
+      AND has_function_privilege('authenticated',
+        'public.get_bank_accounts_for_unit_management(bigint)', 'EXECUTE')
+      AND has_function_privilege('service_role',
+        'public.get_bank_accounts_for_unit_management(bigint)', 'EXECUTE'),
+      'management RPC retains its execute grants');
     RAISE NOTICE 'Starting get_bank_accounts_for_unit_management Test...';
 
     -- 1. Setup Data

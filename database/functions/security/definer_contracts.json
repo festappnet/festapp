@@ -2723,6 +2723,10 @@
       "signature": "public.create_blueprint_seat_order(bigint,bigint,bigint,bigint,bigint[],jsonb,bigint[],bigint[],jsonb,text,uuid,boolean,uuid)",
       "source": "database/functions/blueprint/seat_orders.sql"
     },
+    "aab0abfd66e2ff2ddc1d3f7f49bbdd190b37778b5961d56660d0981392e5ebd3": {
+      "signature": "public.get_bank_accounts_for_unit_management(bigint)",
+      "source": "database/functions/eshop_bank_accounts/get_bank_accounts_for_unit_management.sql"
+    },
     "37883abdbc12591db06ea0a2ab73e1514e6c1586b3b01220779accbb7a587ada": {
       "signature": "public.can_manage_form_measurement(bigint)",
       "source": "database/functions/user_permissions/form_measurement.sql"
