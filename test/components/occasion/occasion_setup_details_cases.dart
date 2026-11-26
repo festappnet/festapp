@@ -90,26 +90,6 @@ void main() {
     },
   );
 
-  test('public catalogue requires a cover only for an event it will list', () {
-    for (final saleMode in ['preparation', 'immediate', 'scheduled']) {
-      for (final listPublicly in [false, true]) {
-        final data = <String, dynamic>{
-          'introImage': '  ',
-          'saleMode': saleMode,
-          'listPubliclyOnPublish': listPublicly,
-        };
-        expect(
-          occasionSetupCoverIssue(data, appSupported: false),
-          listPublicly && saleMode != 'preparation'
-              ? 'listingImageRequired'
-              : null,
-        );
-        data['formEnabled'] = false;
-        expect(occasionSetupCoverIssue(data, appSupported: false), isNull);
-      }
-    }
-  });
-
   testWidgets(
     'suggestion uses server availability and manual edits are retained',
     (tester) async {

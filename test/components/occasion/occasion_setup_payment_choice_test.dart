@@ -7,6 +7,7 @@ import 'package:festapp_core/time.dart';
 import 'package:fstapp/components/forms/form_strings.dart';
 import 'package:fstapp/components/forms/widgets_editor/ticket_product_editor_row.dart';
 import 'package:fstapp/components/images/image_area.dart';
+import 'package:fstapp/components/occasion/setup/occasion_setup_presentation.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_review_row.dart';
 import 'package:fstapp/components/occasion/setup/occasion_setup_story_shell.dart';
 import 'package:fstapp/components/occasion/occasion_link_model.dart';
@@ -133,6 +134,26 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
   }
+
+  test('public catalogue requires a cover only for an event it will list', () {
+    for (final saleMode in ['preparation', 'immediate', 'scheduled']) {
+      for (final listPublicly in [false, true]) {
+        final data = <String, dynamic>{
+          'introImage': '  ',
+          'saleMode': saleMode,
+          'listPubliclyOnPublish': listPublicly,
+        };
+        expect(
+          occasionSetupCoverIssue(data, appSupported: false),
+          listPublicly && saleMode != 'preparation'
+              ? 'listingImageRequired'
+              : null,
+        );
+        data['formEnabled'] = false;
+        expect(occasionSetupCoverIssue(data, appSupported: false), isNull);
+      }
+    }
+  });
 
   testWidgets('review blocks completion and opens the cover upload step', (
     tester,
