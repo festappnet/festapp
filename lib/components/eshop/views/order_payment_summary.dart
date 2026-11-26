@@ -112,14 +112,16 @@ class OrderPaymentSummary extends StatelessWidget {
           Row(
             children: [
               Text(
-                OrdersStrings.infoPayment,
+                quietNoPayment
+                    ? OrdersStrings.infoPayment
+                    : OrdersStrings.gridPaid,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Tooltip(
                   message:
-                      '${OrderDetailStrings.text('prijato')} / ${OrderDetailStrings.text('celkem')}',
+                      '${OrdersStrings.gridPaid} / ${OrdersStrings.gridPrice}',
                   child: SelectableText(
                     quietNoPayment
                         ? OrderOverviewStrings.text(status)

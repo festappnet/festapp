@@ -302,7 +302,7 @@ class _OrderPaymentsContentState extends State<OrderPaymentsContent> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                PaymentOperationStrings.text('received'),
+                                OrdersStrings.gridPaid,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
