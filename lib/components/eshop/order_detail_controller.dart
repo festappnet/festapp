@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fstapp/data_services/rights_service.dart';
@@ -7,6 +8,13 @@ import 'order_blueprint_cache.dart';
 import 'order_commands.dart';
 import 'order_contact_controller.dart';
 import 'order_detail_strings.dart';
+
+typedef OrderResponseDraft = ({
+  int fieldId,
+  Object? expectedAnswer,
+  String value,
+  VoidCallback accept,
+});
 
 /// One identity, generation and contact draft across every detail tab.
 class OrderDetailController extends ChangeNotifier {
@@ -19,7 +27,7 @@ class OrderDetailController extends ChangeNotifier {
   }) : _blueprints = blueprints ?? OrderBlueprintCache(),
        _commands = commands,
        _hasInjectedRead = read != null,
-       _read =
+       _rpc =
            read ??
            ((name, args) => Supabase.instance.client.rpc(name, params: args)) {
     contact.addListener(_draftChanged);
@@ -30,12 +38,16 @@ class OrderDetailController extends ChangeNotifier {
   final OrderCommands? _commands;
   final bool _hasInjectedRead;
   final OrderBlueprintCache _blueprints;
-  final Future<dynamic> Function(String, Map<String, dynamic>) _read;
+  final Future<dynamic> Function(String, Map<String, dynamic>) _rpc;
   late final contact = OrderContactController(
     orderId: orderId,
     occasionId: occasionId,
-    commands: _commands ?? (_hasInjectedRead ? null : SupabaseOrderCommands(Supabase.instance.client)),
-    read: _read,
+    commands:
+        _commands ??
+        (_hasInjectedRead
+            ? null
+            : SupabaseOrderCommands(Supabase.instance.client)),
+    read: _rpc,
     validContext: () => validContext,
     loadSnapshot: () async {
       if (!await load()) throw StateError('Refresh failed');
@@ -57,16 +69,24 @@ class OrderDetailController extends ChangeNotifier {
         ({
           bool Function() isDirty,
           VoidCallback discard,
-          Future<void> Function() save,
+          Future<void> Function()? save,
+          OrderResponseDraft Function()? response,
         })
       >{};
   void registerInlineDraft(
     Object key, {
     required bool Function() isDirty,
     required VoidCallback discard,
-    required Future<void> Function() save,
+    Future<void> Function()? save,
+    OrderResponseDraft Function()? response,
   }) {
-    _inlineDrafts[key] = (isDirty: isDirty, discard: discard, save: save);
+    assert((save == null) != (response == null));
+    _inlineDrafts[key] = (
+      isDirty: isDirty,
+      discard: discard,
+      save: save,
+      response: response,
+    );
   }
 
   void unregisterInlineDraft(Object key) => _inlineDrafts.remove(key);
@@ -76,6 +96,57 @@ class OrderDetailController extends ChangeNotifier {
       _inlineDrafts.values.where((draft) => draft.isDirty()).length;
   bool get _emailDirty => contact.dirty;
   int get dirtyDraftCount => dirtyInlineDraftCount + (_emailDirty ? 1 : 0);
+
+  int? get _responseFormId {
+    final id = detail?.json['form']?['id'] ?? detail?.order['form_id'];
+    return id is int ? id : null;
+  }
+
+  bool get canEditResponses =>
+      validContext &&
+      !stale &&
+      detail?.canWrite == true &&
+      detail!.model.allows('edit') &&
+      _responseFormId != null;
+
+  Future<void> _saveResponses(List<OrderResponseDraft> drafts) async {
+    if (!canEditResponses) {
+      throw StateError(OrderDetailStrings.text('responses_unavailable'));
+    }
+    final answers = detailRows(detail!.json['answers']);
+    final current = {for (final row in answers) ...row};
+    for (final draft in drafts) {
+      if (!const DeepCollectionEquality().equals(
+        draft.expectedAnswer,
+        current['${draft.fieldId}'],
+      )) {
+        throw StateError(OrderDetailStrings.text('responses_changed'));
+      }
+    }
+    final result = await _rpc('update_order_detail_responses', {
+      'p_order': orderId,
+      'p_form': _responseFormId,
+      'p_expected_fields': answers,
+      'p_responses': {
+        for (final draft in drafts) '${draft.fieldId}': draft.value,
+      },
+    });
+    if (result is! Map || result['code'] != 200) {
+      throw StateError(
+        OrderDetailStrings.text(
+          result is Map && result['code'] == 409
+              ? 'responses_changed'
+              : 'responses_unavailable',
+        ),
+      );
+    }
+    for (final draft in drafts) {
+      draft.accept();
+    }
+    if (!await load()) {
+      throw StateError(OrderDetailStrings.text('udaje_nejsou_aktualni'));
+    }
+  }
 
   /// One user action, using the existing owners. A confirmed draft is cleaned
   /// before readback; later failure leaves only the remaining work pending.
@@ -99,15 +170,22 @@ class OrderDetailController extends ChangeNotifier {
         if (contact.stale || stale || !validContext)
           throw StateError(OrderDetailStrings.text('udaje_nejsou_aktualni'));
       }
+      final responses = [
+        for (final entry in pending)
+          if (_inlineDrafts.containsKey(entry.key) && entry.value.isDirty())
+            if (entry.value.response case final response?) response(),
+      ];
+      if (responses.isNotEmpty) await _saveResponses(responses);
       for (final entry in pending) {
+        final save = entry.value.save;
+        if (save == null) continue;
         if (!validContext || stale)
           throw StateError(OrderDetailStrings.text('responses_unavailable'));
         if (!_inlineDrafts.containsKey(entry.key) || !entry.value.isDirty())
           continue;
-        await entry.value.save();
+        await save();
         if (entry.value.isDirty())
           throw StateError(OrderDetailStrings.text('responses_unavailable'));
-        // Advance the shared full-array fence before another field is saved.
         if (!await load())
           throw StateError(OrderDetailStrings.text('udaje_nejsou_aktualni'));
       }
@@ -160,7 +238,7 @@ class OrderDetailController extends ChangeNotifier {
     notifyListeners();
     try {
       final result = detailMap(
-        await _read('get_order_admin_detail', {
+        await _rpc('get_order_admin_detail', {
           'p_order': orderId,
           'p_occasion': occasionId,
         }),
@@ -195,7 +273,7 @@ class OrderDetailController extends ChangeNotifier {
       final generation = _generation;
       final known = _blueprints.lookup(occasionId, id);
       final result = detailMap(
-        await _read('get_order_blueprint_view', {
+        await _rpc('get_order_blueprint_view', {
           'p_order': orderId,
           'p_occasion': occasionId,
           'p_blueprint': id,

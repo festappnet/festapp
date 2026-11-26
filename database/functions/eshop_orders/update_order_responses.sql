@@ -21,6 +21,7 @@ DECLARE
     v_field_id_text TEXT;
     v_field_type TEXT;
     v_new_value JSONB;
+    v_is_customer_note BOOLEAN;
 
     v_updated_order_state TEXT;
     v_updated_order_price NUMERIC(10, 2);
@@ -97,6 +98,13 @@ BEGIN
             RAISE EXCEPTION 'Field ID % not found on form %', v_field_id_text, v_order_form_id;
         END IF;
 
+        -- Checkout also projects the visible order note to data.note.
+        v_is_customer_note := v_field_type = 'note' AND EXISTS (
+            SELECT 1 FROM public.form_fields ff
+            WHERE ff.form = v_order_form_id AND ff.id::text = v_field_id_text
+              AND ff.is_ticket_field IS NOT TRUE AND ff.is_hidden IS NOT TRUE
+        );
+
         -- Handle null values: remove the key from the top level and from the merged map
         IF v_new_value IS NULL OR v_new_value = 'null'::jsonb THEN
 
@@ -112,6 +120,8 @@ BEGIN
                 v_new_data := v_new_data - 'email';
             ELSIF v_field_type = 'phone' THEN
                 v_new_data := v_new_data - 'phone';
+            ELSIF v_is_customer_note THEN
+                v_new_data := v_new_data - 'note';
             END IF;
 
         -- Handle non-null values: update the top-level keys
@@ -129,6 +139,8 @@ BEGIN
                 v_new_data := v_new_data || jsonb_build_object('email', v_new_value);
             ELSIF v_field_type = 'phone' THEN
                 v_new_data := v_new_data || jsonb_build_object('phone', v_new_value);
+            ELSIF v_is_customer_note AND jsonb_typeof(v_new_value) = 'string' THEN
+                v_new_data := v_new_data || jsonb_build_object('note', v_new_value);
             END IF;
 
         END IF;

@@ -1,5 +1,5 @@
 -- Scoped order-form answers retain their existing domain owner.
--- Ticket products and notes use their own existing owners.
+-- Ticket products and internal notes use their own existing owners.
 DROP FUNCTION IF EXISTS public.update_order_detail_responses(bigint,bigint,bigint,jsonb,jsonb);
 CREATE OR REPLACE FUNCTION public.update_order_detail_responses_domain_internal(
  p_order bigint,p_form bigint,p_expected_fields jsonb,p_responses jsonb
@@ -25,7 +25,8 @@ BEGIN
  FOR entry IN SELECT * FROM jsonb_each(p_responses) LOOP
    SELECT * INTO ff FROM public.form_fields WHERE form=p_form AND id::text=entry.key
      AND coalesce(is_ticket_field,false)=false;
-   IF ff.id IS NULL OR ff.type IS NULL OR ff.type IN('sex','birth_year','birth_date','id_document','select_many','note','spot','product_type','ticket','email')
+   IF ff.id IS NULL OR ff.type IS NULL OR ff.type IN('sex','birth_year','birth_date','id_document','select_many','spot','product_type','ticket','email')
+     OR (ff.type='note' AND ff.is_hidden IS TRUE)
      OR (entry.value<>'null'::jsonb AND jsonb_typeof(entry.value)<>'string') THEN
      RAISE invalid_parameter_value USING MESSAGE='response field not editable'; END IF;
    IF ff.type='select_one' AND entry.value NOT IN('null'::jsonb,'""'::jsonb)
