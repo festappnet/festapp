@@ -35,7 +35,13 @@ export class FormMeasurementSession {
         this.pagehide=()=>{this.suspended=true; this.invalidate();};
         this.pageshow=()=>{this.suspended=false; this.invalidate(); this.refresh();};
         this.observedIdentity=this.identity();
-        this.contextChanged=()=>{this.observedIdentity=this.identity(); this.contextEpoch++; this.pendingConversions.clear(); this.until=0; this.invalidate(); this.refresh();};
+        this.observedPublicContext=this.publicContext();
+        this.contextChanged=()=>this.restartContext();
+        this.navigationChanged=()=>{
+            const context=this.publicContext();
+            if (context && context===this.observedPublicContext && this.identity()===this.observedIdentity) return;
+            this.contextChanged();
+        };
         this.win.document.addEventListener('visibilitychange',this.visibility);
         this.win.addEventListener('pagehide',this.pagehide); this.win.addEventListener('pageshow',this.pageshow);
         // Consent sources own their storage updates. Other tabs can change unrelated
@@ -45,7 +51,7 @@ export class FormMeasurementSession {
             else this.refresh();
         };
         this.win.addEventListener('storage',this.storageChanged);
-        for (const event of ['popstate','hashchange']) this.win.addEventListener(event,this.contextChanged);
+        for (const event of ['popstate','hashchange']) this.win.addEventListener(event,this.navigationChanged);
         this.unsubscribeIdentity=this.identitySource?.subscribe?.(()=>this.contextChanged());
         this.unsubscribeTransport=this.transport.subscribe?.(()=>this.reconcile());
         this.timer=this.win.setInterval(()=>this.refresh(),20000);
@@ -57,6 +63,24 @@ export class FormMeasurementSession {
         this.transport.stop();
     }
     identity() { return this.identitySource?.read?.() ?? (hasBrowserSession(this.win)?'authenticated':'anonymous'); }
+    invalidateContext() {
+        this.observedIdentity=this.identity();
+        this.observedPublicContext=this.publicContext();
+        this.contextEpoch++;
+        this.pendingConversions.clear();
+        this.until=0;
+        this.invalidate();
+    }
+    restartContext() {
+        this.invalidateContext();
+        return this.refresh();
+    }
+    publicContext() {
+        const {location}=this.win;
+        // Only the already allowed public form overlays share a context with
+        // the form beneath them. Query, private routes and identity keep their gates.
+        return publicFormLocation(location,{link:this.model.link}) ? location.href.split('#')[0] : null;
+    }
     // Set only after a successful buyer-capability RPC. Never exported to runtime.
     orderContextAllowed() {
         const scope=this.authorizedOrderScope, loc=this.win.location;
@@ -78,10 +102,12 @@ export class FormMeasurementSession {
     }
     refresh() {
         if (this.disposed) return Promise.resolve();
+        const context=this.publicContext();
+        if (this.started && context!==this.observedPublicContext) this.invalidateContext();
         if (this.inflight) return this.inflight;
         const generation=this.generation, identity=this.identity();
         const request=Promise.resolve().then(()=>this.policySource()).then(policy=>{
-            if (this.disposed || generation!==this.generation || identity!==this.identity()) return;
+            if (this.disposed || generation!==this.generation || identity!==this.identity() || context!==this.publicContext()) return;
             const manifest=measurementManifest(policy,this.model.link);
             const consentManifest=consentTransportManifest(policy,this.model.link);
             const runtimeChanged=manifest!==(this.manifest ?? null) && !sameMeasurementManifest(manifest,this.manifest);
@@ -127,7 +153,7 @@ export class FormMeasurementSession {
     }
     consentDeadline() { return Math.min(this.until, this.consent.expiresAt ?? Infinity); }
     hasCurrentPolicy() {
-        return this.contextAllowed() && this.identity()===this.verifiedIdentity &&
+        return this.contextAllowed() && this.publicContext()===this.observedPublicContext && this.identity()===this.verifiedIdentity &&
             this.policy?.visitor_role!=='staff' && this.clock()<this.until;
     }
     permitted() {
@@ -214,6 +240,6 @@ export class FormMeasurementSession {
         this.win.document.removeEventListener('visibilitychange',this.visibility);
         this.win.removeEventListener('pagehide',this.pagehide);this.win.removeEventListener('pageshow',this.pageshow);
         this.win.removeEventListener('storage',this.storageChanged);
-        for(const event of ['popstate','hashchange'])this.win.removeEventListener(event,this.contextChanged);
+        for(const event of ['popstate','hashchange'])this.win.removeEventListener(event,this.navigationChanged);
     }
 }

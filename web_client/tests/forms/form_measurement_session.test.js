@@ -98,6 +98,28 @@ test('a live form measurement grant cannot send or reactivate on another form UR
  assert.equal(f.transport.grant,null);
  assert.equal(f.starts.length,1);
 });
+test('only presentation history within the same public form retains its policy',async t=>{
+ const f=fixture(t);await f.start();
+ const {window}=f.dom;
+ const grant=f.transport.grant;
+ const contextEpoch=f.session.contextEpoch;
+ const navigation=path=>{
+  window.history.pushState({},'',path);
+  window.dispatchEvent(new window.PopStateEvent('popstate'));
+  window.dispatchEvent(new window.HashChangeEvent('hashchange'));
+ };
+ navigation('/form/summer#order-preview');
+ navigation('/form/summer');
+ assert.equal(f.session.contextEpoch,contextEpoch);
+ assert.equal(f.transport.grant,grant);
+ window.history.replaceState({},'', '/form/summer?utm_source=changed');
+ assert.equal(f.session.hasCurrentPolicy(),false);
+ await f.session.refresh();
+ assert.notEqual(f.session.contextEpoch,contextEpoch);
+ navigation('/form/summer?token=private');
+ assert.equal(f.session.hasCurrentPolicy(),false);
+ assert.equal(f.transport.grant,null);
+});
 test('transport errors cannot reach checkout callbacks or consume conversion identity',async t=>{
  const f=fixture(t);await f.start();f.sent.length=0;f.delivery(false);
  const outcome=f.layer.captureSubmission();assert.doesNotThrow(()=>outcome(true,{ticketOrder:{analytics:registrationLead}}));
