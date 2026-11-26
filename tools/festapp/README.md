@@ -405,7 +405,19 @@ the command above. Never discard the refresh scope check or silently widen an
 existing grant.
 
 Complete the fresh browser login and occasion consent for this client. The
-native client uses the same scoped read handlers and separate OAuth grant.
+example starts with read-only access to context, access discovery and ticket
+artwork. Request extra scopes explicitly when the registered client supports them.
+For example, the regional Codex registration supports reading orders:
+
+```sh
+codex mcp login festapp --scopes offline_access,festapp:ticket-layouts:read,festapp:orders:read
+```
+
+Check the scopes shown on the consent screen before approving. Select individual
+occasions to share only those occasions. Select the whole organizer only when
+you intend to share current and future occasions and authorize any requested
+organizer-level operation for which you have permission. Even when every
+occasion is checked individually, the grant stays limited to those occasions.
 
 ### Claude Code remote connection
 
@@ -423,6 +435,17 @@ Open `/mcp`, select the server and authenticate. Sign in to vstupenky.online
 in your browser, choose the occasions to share, and approve the connection.
 Return to Claude Code and check the connection and available tools in `/mcp`.
 If port 51789 is busy, choose a free port with `--callback-port`.
+
+The initial connection starts with the base read-only scope. Claude Code's
+`--scope local` controls where the server is configured. If your client supports
+the server's incremental OAuth authorization for a particular tool, open that
+tool and review the exact additional scopes requested before approving.
+Otherwise use an approved client that can request the needed scopes explicitly.
+Choose individual occasions for access to those occasions. Whole-organizer
+consent can also cover future occasions and requested organizer-level operations,
+subject to your existing role. For example, editing orders requires both
+`festapp:orders:read` and `festapp:orders:write`, if the issuer permits them for
+that client.
 
 Self-hosted operators must [register the Claude Code client](../../docs/architecture/operations/remote-mcp-auth.md#claude-code-client-registration)
 before using this command with their issuer.
