@@ -206,8 +206,8 @@ export async function renderEmail(
     prepared.html = composeHtml({
       html: paymentQrEmailHtml(
         cs,
-        resolveCommunicationTone(input.paymentQr.tone),
         contentId ? `cid:${contentId}` : undefined,
+        resolveCommunicationTone(input.paymentQr.tone) === "informal",
       ),
       paymentDetails: ["paymentDetails", "balanceReasoning"].map((key) =>
         String(paymentValues[key] ?? "")

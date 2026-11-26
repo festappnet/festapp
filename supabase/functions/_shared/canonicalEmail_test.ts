@@ -12,6 +12,7 @@ import { normalizeSesEvents } from "../email-provider-events/events.ts";
 import { openEmail, sealEmail } from "./emailPayload.ts";
 import { drainEmails } from "./emailDispatcher.ts";
 import { renderEmail } from "./emailDelivery.ts";
+import { paymentQrEmailHtml } from "./emailContentCompletion.ts";
 import type { Tone } from "./communicationTone.ts";
 const config: SesConfig = {
   region: "eu-central-1",
@@ -536,6 +537,10 @@ Deno.test("payment QR remains downloadable and only appears inline when enabled"
   assert(parts[1].ContentId && full.html.includes(`src="cid:${parts[1].ContentId}"`));
   assert(full.html.includes('alt="Bank transfer QR code"'));
   assertMatch(full.html, /Pay with the QR code.*Scan it in your mobile banking app\..*<img/);
+  const inlineWithoutTone = paymentQrEmailHtml(true, "cid:payment-fixture");
+  assertMatch(inlineWithoutTone, /Zaplaťte pomocí QR kódu.*src="cid:payment-fixture"/);
+  assert(inlineWithoutTone.includes("border-radius:8px"));
+
   const czech = await render(true, "cs");
   assertEquals(czech.attachments.map(part => part.filename), [
     "qr-platba-5W8H2U8I9W.png",
