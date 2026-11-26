@@ -1,0 +1,3 @@
+# Proveď opravu předání Meta identifikátorů při potvrzení objednávky
+
+Přečti autoritativní [plán](meta-checkout-matching-plan-2026-11-26.md), pravidla repozitáře a architektonický kontext. Použij standardní ověření. Na aktuálním `main` odděl změnu povoleného kontextu formuláře od přechodu mezi jeho pohledy. Použij jeden limit pro získání volitelných Meta identifikátorů a ověř skutečný vstup do odeslání objednávky. Zachovej ochranu proti odvolání, změně identity, navigaci do soukromých adres a opakování požadavku. Pokud zdroj vyvrátí předpoklad plánu, aktualizuj plán i regresní test. Respektuj kontrolu hlavní větve a oprávnění pro nasazení.

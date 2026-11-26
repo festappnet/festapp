@@ -333,6 +333,77 @@ test('checkout only asks the host after a fresh notice and discards matching if 
     assert.deepEqual(await collect(),{});
 });
 
+for (const waiting of ['none','notice','host']) test(`confirmed checkout submits after matching or a shared deadline (${waiting})`,async t=>{
+    const {fixture,policy,settle}=await import('../support/measurement_fixture.js');
+    let policyRequests=0;
+    const f=fixture(t,{source:async()=>{policyRequests++;return policy;}});
+    await f.start();
+    const win=f.dom.window;
+    const globals={window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent};
+    const previous=Object.fromEntries(Object.keys(globals).map(key=>[key,globalThis[key]]));
+    Object.assign(globalThis,globals);
+    t.after(()=>Object.assign(globalThis,previous));
+    win.scrollTo=()=>{};
+    win.document.body.innerHTML='<div id="form-page-container"><form></form></div>';
+    const [{FormPage},{FormNetwork},{DbForms},{RouterService}]=await Promise.all([
+        import('../../src/components/forms/form_page.js'),import('../../src/components/forms/form_network.js'),
+        import('../../src/components/forms/db_forms.js'),import('../../src/services/router_service.js'),
+    ]);
+    const allowed={...choice(),leaseId:'checkout-lease',expiresAt:Date.now()+30000};
+    f.choose(allowed);
+    const page=new FormPage('form-page-container');
+    page.measurementSession=f.session;
+    page.currentSession={formModel:f.model,payload:{form:'summer'},awaitPendingReservations:async()=>{},
+        captureReservationCapability:()=>null,completeReservation:()=>{}};
+    page.cleanup=()=>{};
+    const matching={fbp:'fb.1.1795000000000.good',fbc:'fb.1.1795000000000.click'};
+    let resolveNotice,resolveHost;
+    const noticeLookup=waiting==='none' ? notice : new Promise(resolve=>{resolveNotice=resolve;});
+    const hostLookup=waiting==='host' ? new Promise(resolve=>{resolveHost=resolve;}) : matching;
+    t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>noticeLookup);
+    page.embedBridge={collectMetaCheckoutMatching:async()=>hostLookup};
+    const host=t.mock.method(page.embedBridge,'collectMetaCheckoutMatching');
+    let finish;
+    const rendered=new Promise(resolve=>{finish=resolve;});
+    page.showFullScreenResult=finish;
+    const sent=t.mock.method(FormNetwork,'submitOrder',async()=>({success:true,data:{code:200}}));
+
+    // Use the real history traversal for the success case. Delay the notice
+    // lookup until both events have fired so an old policy read cannot hide it.
+    if (waiting==='none') {
+        RouterService.pushOverlayState('order-preview');
+        const preview=win.document.createElement('div');
+        preview.id='order-preview-overlay';
+        win.document.body.append(preview);
+        const closed=new Promise(resolve=>win.addEventListener('hashchange',resolve,{once:true}));
+        DbForms.getMetaPurchaseConsent.mock.mockImplementation(async()=>{await closed;return notice;});
+    } else {
+        t.mock.timers.enable({apis:['setTimeout']});
+    }
+    page.submitOrder(win.document.querySelector('form'),f.model,null,null,page.currentPurchaseConsent(notice));
+    if (waiting!=='none') {
+        await settle();
+        if (waiting==='host') {
+            t.mock.timers.tick(1200);
+            resolveNotice(notice);
+            await settle();
+            assert.equal(host.mock.callCount(),1);
+        }
+        t.mock.timers.tick(waiting==='host' ? 299 : 1499);
+        assert.equal(sent.mock.callCount(),0);
+        t.mock.timers.tick(1);
+    }
+    assert.equal(await rendered,true);
+    assert.equal(sent.mock.callCount(),1);
+    assert.deepEqual(sent.mock.calls[0].arguments[0].metaPurchaseConsent.matching,waiting==='none' ? matching : undefined);
+    assert.equal(policyRequests,1);
+    resolveNotice?.(notice);
+    resolveHost?.(matching);
+    await settle();
+    assert.equal(host.mock.callCount(),waiting==='notice' ? 0 : 1);
+    assert.equal(sent.mock.callCount(),1);
+});
+
 for (const offset of [-3600000,3600000]) test('withdrawal during checkout survives client clock offset '+offset,async()=>{
  const calls=[],orders=new PurchaseConsentOrders({clock:()=>now+offset+1000,revoke:async(scope,denial)=>{calls.push({scope,denial});return true;}});
  const grant=choice();grant.expiresAt=now+offset+60000;grant.purchaseConsent.capturedAt=new Date(now+offset).toISOString();
