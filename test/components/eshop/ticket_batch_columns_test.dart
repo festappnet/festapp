@@ -16,6 +16,7 @@ import 'package:fstapp/components/occasion/occasion_link_model.dart';
 import 'package:fstapp/components/occasion/occasion_model.dart';
 import 'package:fstapp/components/single_data_grid/single_table_data_grid.dart';
 import 'package:fstapp/data_services/rights_service.dart';
+import 'package:fstapp/data_services/authorization_capabilities.dart';
 import '../../support/fixtures/widget_environment_fixture.dart';
 
 class _Router extends RootStackRouter {
@@ -93,6 +94,10 @@ void main() {
       final previous = RightsService.occasionLinkModelNotifier.value;
       final router = _Router();
       RightsService.occasionLinkModelNotifier.value = OccasionLinkModel(
+          capabilities: const {
+            AuthorizationCapabilities.navigationOccasionSettings: true,
+            AuthorizationCapabilities.ordersWrite: true,
+          },
           occasion: OccasionModel(
               id: 1,
               link: 'fixture',
@@ -127,6 +132,19 @@ void main() {
           fields,
           containsAll(
               [EshopColumnIds.ORDER_SYMBOL, EshopColumnIds.TICKET_STATE]));
+      if (entry.value['is_enabled'] == true) {
+        final rowCount = find.text('Zobrazeno řádků: 0');
+        final scan = find.text('Skenovat vstupenky');
+        final settings = find.text('Nastavení vstupenek');
+        final export = find.text('Stáhnout tabulku');
+        expect(rowCount, findsOneWidget);
+        expect(scan, findsOneWidget);
+        expect(settings, findsOneWidget);
+        expect(export, findsOneWidget);
+        expect(tester.getTopLeft(rowCount).dx, lessThan(tester.getTopLeft(scan).dx));
+        expect(tester.getTopLeft(scan).dx, lessThan(tester.getTopLeft(settings).dx));
+        expect(tester.getTopLeft(settings).dx, lessThan(tester.getTopLeft(export).dx));
+      }
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }

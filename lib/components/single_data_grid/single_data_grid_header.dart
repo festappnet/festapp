@@ -90,7 +90,8 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
 
   Widget _buildHeader(BuildContext context) {
     // Build left-side actions (Add, Discard, Save and any extra header children)
-    List<Widget> leftActions = [];
+    final leftActions = <Widget>[];
+    final rightActions = <Widget>[];
     var actionsController = controller.actionsExtended;
     final canChange = actionsController?.areAllActionsEnabled?.call() ?? true;
     final canSaveOrDiscard =
@@ -125,7 +126,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
         controller.headerChildren != null &&
         controller.headerChildren!.isNotEmpty) {
       for (var a in controller.headerChildren!) {
-        leftActions.add(
+        (a.afterRowCount ? rightActions : leftActions).add(
           AnimatedBuilder(
             animation: widget.stateManager,
             builder: (context, _) => ElevatedButton(
@@ -153,8 +154,7 @@ class _SingleDataGridHeaderState<T extends ITrinaRowModel>
       );
     }
 
-    // Build right-side actions: the export button if enabled.
-    List<Widget> rightActions = [];
+    // Keep the export after any actions following the row count.
     if (controller.exportOptions?.visible == true) {
       rightActions.add(
         ElevatedButton.icon(

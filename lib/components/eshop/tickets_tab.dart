@@ -126,6 +126,7 @@ class _TicketsTabState extends State<TicketsTab> {
         if (FeatureService.isFeatureEnabled(FeatureConstants.ticket))
           DataGridAction(
             name: OrderItemStrings.scanActionText,
+            afterRowCount: true,
             requiresSelection: false,
             action: (SingleDataGridController singleDataGrid, [_]) =>
                 _scanTickets(singleDataGrid),
@@ -137,6 +138,7 @@ class _TicketsTabState extends State<TicketsTab> {
             ))
           DataGridAction(
             name: TicketLayoutStrings.settings,
+            afterRowCount: true,
             requiresSelection: false,
             isEnabled: () => RightsService.hasCapability(
               AuthorizationCapabilities.navigationOccasionSettings,
