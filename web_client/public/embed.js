@@ -283,6 +283,29 @@
 
   // src/embed/host_consent_link.js
   var consentLinkNamespace = "festapp-consent-link";
+  function focusLinkedEmbed(win, link, url) {
+    const id = link.getAttribute("data-festapp-consent-link-embed");
+    if (!id || url.searchParams.has("embed")) return false;
+    const frame = win.document.getElementById(id);
+    if (!frame?.matches("iframe[data-festapp-embed][src]:not([srcdoc], [sandbox])") || frame.closest("[inert], [hidden]") || win.getComputedStyle(frame).visibility !== "visible" || frame.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) return false;
+    const { width, height } = frame.getBoundingClientRect();
+    if (!width || !height) return false;
+    let embedded;
+    try {
+      embedded = new URL(frame.src);
+    } catch {
+      return false;
+    }
+    const modes = embedded.searchParams.getAll("embed");
+    if (modes.length !== 1 || modes[0] !== "1") return false;
+    embedded.searchParams.delete("embed");
+    const target = new URL(url);
+    target.search = target.searchParams.toString();
+    if (embedded.href !== target.href) return false;
+    frame.focus({ preventScroll: true });
+    frame.scrollIntoView({ block: "start", behavior: "instant" });
+    return true;
+  }
   function installHostConsentLink(win, productOrigin, source) {
     const opened = /* @__PURE__ */ new Map();
     const click = (event) => {
@@ -293,6 +316,10 @@
         link.hasAttribute("referrerpolicy") || [...win.document.querySelectorAll("meta[name]")].some((meta) => meta.name.toLowerCase() === "referrer")) return;
         const url = new URL(link.href, win.document.baseURI);
         if (!isConsentLinkOrigin(url.origin, isLocalConsentLink(win)) || !isConsentLinkOrigin(win.location.origin, isLocalConsentLink(win)) || url.origin !== productOrigin || !/^\/form\/[^/]+\/?$/.test(url.pathname)) return;
+        if (focusLinkedEmbed(win, link, url)) {
+          event.preventDefault();
+          return;
+        }
         const child = win.open(url.href, `festapp-consent-link-${win.crypto.randomUUID()}`);
         if (!child) return;
         for (const [old, record] of opened) if (old.closed || Date.now() >= record.until) {

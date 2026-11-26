@@ -2,6 +2,36 @@ import {isConsentLinkOrigin, isLocalConsentLink} from '../components/forms/form_
 import {consentScope, sameConsentScope} from '../components/forms/measurement_consent_source.js';
 
 export const consentLinkNamespace = 'festapp-consent-link';
+
+function focusLinkedEmbed(win, link, url) {
+    const id = link.getAttribute('data-festapp-consent-link-embed');
+    if (!id || url.searchParams.has('embed')) return false;
+    const frame = win.document.getElementById(id);
+    if (!frame?.matches('iframe[data-festapp-embed][src]:not([srcdoc], [sandbox])') ||
+        frame.closest('[inert], [hidden]') ||
+        win.getComputedStyle(frame).visibility !== 'visible' ||
+        frame.checkVisibility?.({checkOpacity: true, checkVisibilityCSS: true}) === false) return false;
+    const {width, height} = frame.getBoundingClientRect();
+    if (!width || !height) return false;
+
+    let embedded;
+    try {
+        embedded = new URL(frame.src);
+    } catch {
+        return false;
+    }
+    const modes = embedded.searchParams.getAll('embed');
+    if (modes.length !== 1 || modes[0] !== '1') return false;
+    embedded.searchParams.delete('embed');
+    const target = new URL(url);
+    target.search = target.searchParams.toString();
+    if (embedded.href !== target.href) return false;
+
+    frame.focus({preventScroll: true});
+    frame.scrollIntoView({block: 'start', behavior: 'instant'});
+    return true;
+}
+
 // Only explicitly opted-in, ordinary new-tab clicks retain an opener. Keeping
 // the actual WindowProxy also excludes iframe and unsolicited popup requests.
 // Standalone links require an actual scoped CMP record; GCM defaults and updates
@@ -24,6 +54,10 @@ export function installHostConsentLink(win, productOrigin, source) {
                 [...win.document.querySelectorAll('meta[name]')].some(meta => meta.name.toLowerCase() === 'referrer')) return;
             const url = new URL(link.href, win.document.baseURI);
             if (!isConsentLinkOrigin(url.origin, isLocalConsentLink(win)) || !isConsentLinkOrigin(win.location.origin, isLocalConsentLink(win)) || url.origin !== productOrigin || !/^\/form\/[^/]+\/?$/.test(url.pathname)) return;
+            if (focusLinkedEmbed(win, link, url)) {
+                event.preventDefault();
+                return;
+            }
             const child = win.open(url.href, `festapp-consent-link-${win.crypto.randomUUID()}`);
             if (!child) return; // Popup blocked: keep native navigation.
             for (const [old, record] of opened) if (old.closed || Date.now() >= record.until) { win.clearTimeout(record.timer); opened.delete(old); }
