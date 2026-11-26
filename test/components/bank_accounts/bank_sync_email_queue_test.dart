@@ -126,6 +126,10 @@ final _submit = find.descendant(
 );
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
+  // Dialog content scrolls; candidate details can push later controls below
+  // the test viewport, as on a small screen.
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }
