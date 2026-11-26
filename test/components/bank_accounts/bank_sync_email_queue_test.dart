@@ -420,7 +420,10 @@ void main() {
     expect(reason, 'No matching receipt in internet banking');
     expect(find.text(BankAccountStrings.emailQueueEmpty), findsOneWidget);
     final refresh = tester.widget<IconButton>(
-      find.byTooltip(CommonStrings.refresh),
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is IconButton && widget.tooltip == CommonStrings.refresh,
+      ),
     );
     expect(refresh.focusNode!.hasFocus, isTrue);
   });
