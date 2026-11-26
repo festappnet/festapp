@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
+import 'package:fstapp/components/bank_accounts/views/bank_account_settings_screen.dart';
+import 'package:fstapp/components/_shared/common_strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 import 'package:fstapp/components/bank_accounts/bank_account_strings.dart';
@@ -16,8 +19,10 @@ class _Translations extends AssetLoader {
   const _Translations();
   @override
   Future<Map<String, dynamic>> load(String path, Locale locale) async =>
-      jsonDecode(File('assets/translations/en.json').readAsStringSync())
-          as Map<String, dynamic>;
+      jsonDecode(
+        File('assets/translations/${locale.languageCode}.json')
+            .readAsStringSync(),
+      ) as Map<String, dynamic>;
 }
 
 final _observation = <String, dynamic>{
@@ -47,17 +52,29 @@ final _observation = <String, dynamic>{
   ],
 };
 
-Future<void> _pump(WidgetTester tester, Widget child) async {
+Future<void> _pump(
+  WidgetTester tester,
+  Widget child, {
+  Locale locale = const Locale('en'),
+  double textScale = 1,
+}) async {
   await EasyLocalization.ensureInitialized();
   await tester.pumpWidget(
     EasyLocalization(
-      supportedLocales: const [Locale('en')],
+      supportedLocales: [locale],
       path: 'unused',
-      startLocale: const Locale('en'),
+      startLocale: locale,
       assetLoader: const _Translations(),
       child: Builder(
         builder: (context) => MaterialApp(
-          builder: DependencyMaterialBridge.builder,
+          builder: (context, child) => DependencyMaterialBridge.builder(
+            context,
+            MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(textScale)),
+              child: child!,
+            ),
+          ),
           locale: context.locale,
           supportedLocales: context.supportedLocales,
           localizationsDelegates: [
@@ -102,7 +119,10 @@ const _confirmed = {'action': 'confirmed', 'transaction_paired': true};
 final _candidate = find.byType(RadioListTile<int>);
 final _attestation = find.byKey(const ValueKey('email-attestation-checkbox'));
 final _separate = find.byKey(const ValueKey('email-not-duplicate-checkbox'));
-final _submit = find.byType(FilledButton);
+final _submit = find.descendant(
+  of: find.byType(AlertDialog),
+  matching: find.byType(FilledButton),
+);
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.tap(finder);
@@ -141,6 +161,119 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     timezone_data.OccasionTimeContext.initializeTimeZones();
   });
+
+  testWidgets(
+    'queue dialogs stay above the routed bank account and return focus',
+    (tester) async {
+      var closes = 0;
+      var attempts = 0;
+      String? reason;
+      await _pump(
+        tester,
+        RoutedBankAccountDialog(
+          title: 'Účet pro vstupenky',
+          onClose: () => closes++,
+          child: SingleChildScrollView(
+            child: _queue(
+              observation: _observation,
+              confirm: (_, _, {bool notDuplicate = false}) async {
+                attempts++;
+                if (attempts == 1) throw StateError('Fixture command failure');
+                return _confirmed;
+              },
+              dismiss: (_, value) async => reason = value,
+            ),
+          ),
+        ),
+        locale: const Locale('cs'),
+      );
+
+      final root = tester.state<NavigatorState>(find.byType(Navigator).first);
+      final confirm = find.text(BankAccountStrings.emailConfirm);
+      final confirmButton = find.ancestor(
+        of: confirm,
+        matching: find.byType(FilledButton),
+      );
+      final buttonContext = tester.element(confirmButton);
+      final account = Navigator.of(buttonContext);
+      expect(account, isNot(same(root)));
+      Focus.of(tester.element(confirm)).requestFocus();
+      await tester.pump();
+      final originalFocus = FocusManager.instance.primaryFocus;
+      await _tap(tester, confirm);
+      final dialog = find.byType(AlertDialog);
+      expect(Navigator.of(tester.element(dialog)), same(account));
+      expect(FocusManager.instance.primaryFocus, isNot(same(originalFocus)));
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(dialog, findsNothing);
+      expect(closes, 0);
+      expect(FocusManager.instance.primaryFocus, same(originalFocus));
+
+      await _tap(tester, confirm);
+      await _tap(tester, _candidate);
+      await _tap(tester, _attestation);
+      await _tap(tester, _submit);
+      expect(attempts, 1);
+      expect(dialog, findsOneWidget);
+      expect(_canSubmit(tester), isTrue);
+      await _tap(tester, _submit);
+      expect(attempts, 2);
+      expect(dialog, findsNothing);
+      expect(closes, 0);
+
+      final dismiss = find.text(BankAccountStrings.emailDismiss);
+      await _tap(tester, dismiss);
+      expect(Navigator.of(tester.element(dialog)), same(account));
+      await _tap(
+        tester,
+        find.descendant(of: dialog, matching: find.text(CommonStrings.cancel)),
+      );
+      expect(reason, isNull);
+      expect(dialog, findsNothing);
+      await _tap(tester, dismiss);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(dialog, findsNothing);
+      expect(closes, 0);
+      await _tap(tester, dismiss);
+      await tester.enterText(
+        find.byType(TextField),
+        'Platba není v bankovnictví',
+      );
+      await tester.pump();
+      await _tap(tester, _submit);
+      expect(reason, 'Platba není v bankovnictví');
+      expect(closes, 0);
+    },
+  );
+
+  for (final (width, scale) in [(320.0, 1.6), (600.0, 1.0)]) {
+    testWidgets(
+      'queue cards and actions fit a ${width}px Czech panel at ${scale}x',
+      (tester) async {
+        await tester.binding.setSurfaceSize(Size(width, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await _pump(
+          tester,
+          SingleChildScrollView(child: _queue(dismiss: (_, _) async {})),
+          locale: const Locale('cs'),
+          textScale: scale,
+        );
+        final card = tester.getRect(find.byType(Card));
+        final confirm = tester.getRect(
+          find.text(BankAccountStrings.emailConfirm),
+        );
+        final dismiss = tester.getRect(
+          find.text(BankAccountStrings.emailDismiss),
+        );
+        expect(card.width, greaterThan(width - 12));
+        expect(card.contains(confirm.center), isTrue);
+        expect(card.contains(dismiss.center), isTrue);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 
   testWidgets('email connection shows confirmation notice to readonly users', (
     tester,
@@ -270,10 +403,12 @@ void main() {
     await _pump(
       tester,
       _queue(
+        compact: true,
         loadPage: (_) async => _page(reason == null ? [_observation] : []),
         dismiss: (_, value) async => reason = value,
       ),
     );
+    await _tap(tester, find.text(BankAccountStrings.emailPendingQueueExpand));
     await _tap(tester, find.text(BankAccountStrings.emailDismiss));
     expect(_canSubmit(tester), isFalse);
     await tester.enterText(
@@ -284,6 +419,13 @@ void main() {
     await _tap(tester, _submit);
     expect(reason, 'No matching receipt in internet banking');
     expect(find.text(BankAccountStrings.emailQueueEmpty), findsOneWidget);
+    final refresh = tester.widget<IconButton>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is IconButton && widget.tooltip == CommonStrings.refresh,
+      ),
+    );
+    expect(refresh.focusNode!.hasFocus, isTrue);
   });
 
   testWidgets('email queue load more uses the returned cursor', (tester) async {

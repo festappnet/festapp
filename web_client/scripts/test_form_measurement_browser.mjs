@@ -16,7 +16,17 @@ try {
  await timed('browser.server-start', () => child.listen(), {suite: 'form_measurement_browser'}); const childOrigin=`http://127.0.0.1:${child.httpServer.address().port}`;
  childB=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'fixture-child-b',configureServer(s){s.middlewares.use((req,res,next)=>{if(!req.url.startsWith('/form/test'))return next();res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><html lang="en"><body><script type="module" src="/tests/fixtures/form_measurement/child.js"></script></body></html>')})}}]});
  await timed('browser.server-start', () => childB.listen(), {suite: 'form_measurement_browser'});const childBOrigin=`http://127.0.0.1:${childB.httpServer.address().port}`;
- host=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'fixture-host',configureServer(s){s.middlewares.use((req,res,next)=>{if(req.url==='/consent-link'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end(`<!doctype html><a data-festapp-consent-link target="_blank" href="${childOrigin}/form/consent-link">Buy tickets</a><script>window.dataLayer=[];function gtag(){dataLayer.push(arguments)}gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'})</script><script src="${childOrigin}/embed.js"></script><script>window.linkSourceListeners=new Set();window.linkSourceChoice={processingRevision:"link-browser",analytics:true,marketing:true};window.stopLinkSource=FestappEmbed.connectMeasurementSource({read:scope=>scope.organization===1\u0026\u0026scope.unit===2?window.linkSourceChoice:null,subscribe:fn=>{linkSourceListeners.add(fn);return()=>linkSourceListeners.delete(fn)}});window.updateLinkSource=choice=>{window.linkSourceChoice=choice;for(const fn of linkSourceListeners)fn()};</script>`);return}if(req.url.startsWith('/consent-link-cmp')) {
+ host=await createServer({root,configFile:false,logLevel:'error',server:{host:'127.0.0.1',port:0},plugins:[{name:'fixture-host',configureServer(s){s.middlewares.use((req,res,next)=>{if (req.url === '/consent-link-embed') {
+ res.setHeader('Content-Type','text/html; charset=utf-8');
+ res.end(`<!doctype html>
+ <a data-festapp-consent-link data-festapp-consent-link-embed="checkout" target="_blank"
+    href="${childOrigin}/form/test">Buy tickets</a>
+ <div style="height:150vh" aria-hidden="true"></div>
+ <iframe id="checkout" title="Tickets" data-festapp-embed src="${childOrigin}/form/test?embed=1"></iframe>
+ <script src="${childOrigin}/embed.js"></script>`);
+ return;
+}
+if(req.url==='/consent-link'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end(`<!doctype html><a data-festapp-consent-link target="_blank" href="${childOrigin}/form/consent-link">Buy tickets</a><script>window.dataLayer=[];function gtag(){dataLayer.push(arguments)}gtag('consent','update',{analytics_storage:'granted',ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'})</script><script src="${childOrigin}/embed.js"></script><script>window.linkSourceListeners=new Set();window.linkSourceChoice={processingRevision:"link-browser",analytics:true,marketing:true};window.stopLinkSource=FestappEmbed.connectMeasurementSource({read:scope=>scope.organization===1\u0026\u0026scope.unit===2?window.linkSourceChoice:null,subscribe:fn=>{linkSourceListeners.add(fn);return()=>linkSourceListeners.delete(fn)}});window.updateLinkSource=choice=>{window.linkSourceChoice=choice;for(const fn of linkSourceListeners)fn()};</script>`);return}if(req.url.startsWith('/consent-link-cmp')) {
 const state=new URL(req.url,'http://fixture').searchParams.get('state')||'saved';
 res.setHeader('Content-Type','text/html; charset=utf-8');
 res.end(`<!doctype html><a data-festapp-consent-link target="_blank" href="${childOrigin}/form/consent-link">Buy tickets</a>
@@ -36,6 +46,112 @@ document.head.appendChild(script);
 }if(req.url==='/cmp/klaro.js'){res.setHeader('Content-Type','application/javascript; charset=utf-8');readFile(path.join(root,'node_modules/klaro/dist/klaro.js')).then(value=>res.end(value));return}if(req.url==='/away'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end('<!doctype html><title>Away</title>');return}if(!['/','/?private=1'].includes(req.url) && !(cmp && req.url.startsWith('/?cmp=1')))return next();const privateEntry=req.url.includes('private=1');res.setHeader('Content-Type','text/html; charset=utf-8');res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body><iframe data-festapp-embed data-festapp-datalayer src="${childOrigin}/form/test?embed=1${privateEntry?'&token=private#secret':''}"></iframe><script>window.addEventListener('pageshow',e=>sessionStorage.setItem('fixture-pageshow',JSON.stringify({persisted:e.persisted,navigation:performance.getEntriesByType('navigation')[0]?.type})));window.heartbeats=new Set();const fixtureSetInterval=window.setInterval,fixtureClearInterval=window.clearInterval;window.setInterval=(fn,ms,...args)=>{const id=fixtureSetInterval(fn,ms,...args);if(ms===20000)heartbeats.add(id);return id};window.clearInterval=id=>{heartbeats.delete(id);return fixtureClearInterval(id)};window.fixtureReadyCount=0;window.dataLayer=[];window.replies=new Map();window.addEventListener('message',e=>{if(e.data?.fixtureReady)fixtureReadyCount++;if(e.data?.fixtureReply){const f=window.replies.get(e.data.id);if(f){window.replies.delete(e.data.id);f(e.data)}}});window.call=(action,arg)=>new Promise((resolve,reject)=>{const id=crypto.randomUUID();window.replies.set(id,r=>r.error?reject(Error(r.error)):resolve(r.result));document.querySelector('iframe').contentWindow.postMessage({fixture:true,id,action,arg},'*');setTimeout(()=>reject(Error('fixture timeout '+action)),5000)});</script><script src="/embed.js"></script>${cmp?'<script>window.fixtureErrors=[];window.addEventListener("error",e=>fixtureErrors.push({message:e.message,source:e.filename,line:e.lineno,target:e.target?.src}),true)</script><script src="/cmp/klaro.js" onload="window.klaroLoaded=true" onerror="window.klaroLoaded=false"></script><script src="/tests/fixtures/form_measurement/klaro_host.js"></script>':''}</body></html>`)})}}]});
  await timed('browser.server-start', () => host.listen(), {suite: 'form_measurement_browser'}); const origin=`http://127.0.0.1:${host.httpServer.address().port}`;
  owner.allow(origin); owner.allow(childOrigin); owner.allow(childBOrigin);
+ if (modes.includes(true)) await timed('browser.consent-link-embed', async () => {
+  const linkContext = await owner.context();
+  try {
+   const organizer = await linkContext.newPage();
+   await organizer.goto(`${origin}/consent-link-embed`);
+   await organizer.waitForFunction(() => !!window.FestappEmbed);
+   const frame = organizer.frames().find(child => child.url() === `${childOrigin}/form/test?embed=1`);
+   assert.ok(frame);
+   await frame.waitForLoadState();
+   const state = () => organizer.evaluate(() => new Promise((resolve, reject) => {
+    const peer = document.querySelector('iframe').contentWindow;
+    const id = crypto.randomUUID();
+    const receive = event => {
+     if (event.source !== peer || event.data?.id !== id) return;
+     window.removeEventListener('message', receive);
+     clearTimeout(timeout);
+     resolve(event.data.result);
+    };
+    const timeout = setTimeout(() => {
+     window.removeEventListener('message', receive);
+     reject(Error('Embed fixture did not respond'));
+    }, 5000);
+    window.addEventListener('message', receive);
+    peer.postMessage({fixture:true,id,action:'state'}, new URL(document.querySelector('iframe').src).origin);
+   }));
+   const frameElement = organizer.locator('#checkout');
+   const documentId = await frame.evaluate(() => (document.fixtureId = crypto.randomUUID()));
+   const setConsent = (analytics, marketing) => frameElement.evaluate(
+    (element, choice) => FestappEmbed.setMeasurementConsent(element, choice), {analytics, marketing});
+   const waitForConsent = async (analytics, marketing) => {
+    for (let attempt = 0; attempt < 50; attempt++) {
+     const {consent} = await state();
+     if (consent?.analytics === analytics && consent?.marketing === marketing) return;
+     await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    assert.fail(`Expected iframe consent analytics=${analytics}, marketing=${marketing}`);
+   };
+   await state(); // The cross-origin document has installed its bridge.
+   await setConsent(true, true);
+   await waitForConsent(true, true);
+   const link = organizer.locator('a');
+   await organizer.evaluate(() => {
+    window.popupAttempts = 0;
+    window.open = () => { window.popupAttempts++; return null; };
+   });
+   await link.focus();
+   await link.press('Enter');
+   await organizer.waitForFunction(() => document.activeElement?.id === 'checkout');
+   assert.equal(await organizer.evaluate(() => popupAttempts), 0);
+   assert.equal(await organizer.evaluate(() => window.scrollY > 0), true);
+   assert.equal(await frame.evaluate(() => document.fixtureId), documentId);
+   await link.click();
+   assert.equal(await organizer.evaluate(() => document.activeElement?.id), 'checkout');
+   assert.equal(await organizer.evaluate(() => popupAttempts), 0);
+   assert.equal(await frame.evaluate(() => document.fixtureId), documentId);
+   await waitForConsent(true, true);
+   await setConsent(true, false);
+   await waitForConsent(true, false);
+   await setConsent(false, false);
+   await waitForConsent(false, false);
+
+   // A modified click stays native. Missing, hidden and different-URL
+   // targets still reach the usual standalone link handling.
+   const fallback = change => link.evaluate((anchor, change) => {
+    const frame = document.querySelector('iframe');
+    const previousHref = anchor.href;
+    const previousId = frame.id;
+    const previousSrc = frame.src;
+    if (change === 'missing') frame.id = 'other';
+    if (change === 'hidden') frame.hidden = true;
+    if (change === 'inert') frame.inert = true;
+    if (change === 'zero-size') frame.style.transform = 'scale(0)';
+    if (change === 'sandbox') frame.setAttribute('sandbox', '');
+    if (change === 'srcdoc') frame.setAttribute('srcdoc', '');
+    if (change === 'duplicate-mode') frame.src += '&embed=1';
+    if (change === 'different-url') anchor.href += '?lang=en';
+    if (change === 'different-fragment') anchor.href += '#other';
+    if (change === 'invalid-url') frame.src = 'http://[';
+    if (change === 'no-opt-in') anchor.removeAttribute('data-festapp-consent-link-embed');
+    const before = window.popupAttempts;
+    // Cancel after the production listener so the test never opens a real tab.
+    let intercepted;
+    document.addEventListener('click', event => {
+     intercepted = event.defaultPrevented;
+     event.preventDefault();
+    }, {once:true});
+    anchor.focus({preventScroll: true});
+    anchor.dispatchEvent(new MouseEvent('click', {bubbles:true,cancelable:true,ctrlKey:change === 'modified'}));
+    anchor.href = previousHref;
+    frame.id = previousId;
+    frame.hidden = false;
+    frame.inert = false;
+    frame.style.transform = '';
+    frame.removeAttribute('sandbox');
+    if (change === 'srcdoc') frame.removeAttribute('srcdoc');
+    if (change === 'duplicate-mode' || change === 'invalid-url') frame.src = previousSrc;
+    return {attempts: window.popupAttempts - before, intercepted, anchorFocused: document.activeElement === anchor};
+   }, change);
+   assert.deepEqual(await fallback('modified'), {
+    attempts: 0, intercepted: false, anchorFocused: true,
+   });
+   for (const change of ['missing', 'hidden', 'inert', 'zero-size', 'sandbox', 'srcdoc', 'duplicate-mode', 'invalid-url', 'different-url', 'different-fragment', 'no-opt-in']) {
+    assert.equal((await fallback(change)).attempts, 1, change);
+   }
+  } finally { await linkContext.close(); }
+ }, {suite:'form_measurement_browser',scenario:'consent-link-embed'});
  if (modes.includes(true)) await timed('browser.consent-link', async () => {
   const linkContext=await owner.context();
   try {

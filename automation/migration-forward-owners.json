@@ -971,7 +971,7 @@
     },
     {
       "migration": "20261122180000_bank_email_confirmation.sql",
-      "active": true,
+      "sha256": "c8089269fa0d6f01e2c5ed2f1da9bede85475ba83a7ee0a45e5d46fa64f36913",
       "header": "-- Admin-confirmed email observations; no automatic email pairing.",
       "sources": [
         "eshop_bank_sync/bank_sync_review_schema.sql",
@@ -1058,6 +1058,14 @@
           "update_order_detail_responses_domain_internal"
         ]
       }
+    },
+    {
+      "migration": "20261126110000_bank_account_management_priority.sql",
+      "active": true,
+      "header": "-- Return stored bank account priorities in management order.",
+      "sources": [
+        "eshop_bank_accounts/get_bank_accounts_for_unit_management.sql"
+      ]
     }
   ]
 }

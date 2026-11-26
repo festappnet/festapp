@@ -3,13 +3,14 @@ import 'package:fstapp/services/app_logger.dart';
 import 'package:fstapp/data_services/rights_service.dart';
 import 'unit_bank_account_card.dart';
 import 'package:fstapp/components/bank_accounts/supabase_bank_accounts.dart'
-    show LinkDependencyException;
+    show LinkDependencyException, isBankAccountOrderConflict;
 import 'package:fstapp/widgets/app_dialog.dart';
 import 'bank_accounts_load_scope.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/app_router.gr.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:festapp_core/eshop.dart';
 import 'package:fstapp/components/bank_accounts/db_bank_accounts.dart';
@@ -37,6 +38,8 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   bool _isLoading = true;
   bool _hasLoaded = false;
   bool _isReordering = false;
+  String? _orderFeedback;
+  int _accountLoadRevision = 0;
   int? _organizationId;
   bool _accountsLoadFailed = false;
   bool _organizationLoadFailed = false;
@@ -59,13 +62,16 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   }
 
   Future<void> _refreshConnections() async {
-    if (_refreshingConnections || !mounted) return;
+    if (_refreshingConnections || _isLoading || _isReordering || !mounted) return;
+    final revision = _accountLoadRevision;
     _refreshingConnections = true;
     try {
       final accounts =
           await (BankAccountsLoadScope.maybeOf(context)?.load(true) ??
               DbBankAccounts.current.getBankAccountsForUnit(widget.unitId));
-      if (mounted) setState(() => _unitAccounts = accounts);
+      if (mounted && revision == _accountLoadRevision) {
+        setState(() => _unitAccounts = accounts);
+      }
     } catch (error) {
       AppLogger.error('Could not refresh bank account cards: $error');
     } finally {
@@ -97,7 +103,9 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
   }
 
   Future<void> _loadData() async {
+    _accountLoadRevision++;
     setState(() {
+      _orderFeedback = null;
       _isLoading = true;
       _accountsLoadFailed = false;
     });
@@ -448,34 +456,54 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
     if (oldIndex < newIndex) newIndex -= 1;
-    if (_isReordering || oldIndex == newIndex) return;
-    final previous = _unitAccounts;
+    if (_isReordering || _isLoading || _accountsLoadFailed ||
+        !RightsService.canConfigureUnitBankAccounts() ||
+        oldIndex == newIndex) {
+      return;
+    }
+    final previous = _unitAccounts.map((account) => account.id).toList();
     final reordered = [...previous];
     reordered.insert(newIndex, reordered.removeAt(oldIndex));
     setState(() {
       _isReordering = true;
-      _unitAccounts = reordered;
+      _orderFeedback = null;
+      _accountLoadRevision++;
     });
 
+    Object? commandError;
     try {
       await DbBankAccounts.current.reorderUnitBankAccounts(
         widget.unitId,
-        previous.map((account) => account.id).toList(),
-        reordered.map((account) => account.id).toList(),
+        previous,
+        reordered,
       );
-      await _loadData();
     } catch (error) {
-      if (!mounted) return;
-      _showError('Error saving order: $error');
-      await _loadData();
-    } finally {
-      if (mounted) setState(() => _isReordering = false);
+      AppLogger.error('Bank account reorder failed: $error');
+      commandError = error;
     }
+
+    if (!mounted) return;
+    await _loadData();
+    if (!mounted) return;
+    final current = _unitAccounts.map((account) => account.id).toList();
+    setState(() {
+      _isReordering = false;
+      if (_accountsLoadFailed) {
+        _orderFeedback = BankAccountStrings.orderUnverified;
+      } else if (commandError != null && isBankAccountOrderConflict(commandError)) {
+        _orderFeedback = BankAccountStrings.orderChanged;
+      } else if (!listEquals(current, reordered)) {
+        _orderFeedback = commandError == null
+            ? BankAccountStrings.orderChanged
+            : BankAccountStrings.orderSaveFailed;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final canConfigure = RightsService.canConfigureUnitBankAccounts();
+    final canConfigure = RightsService.canConfigureUnitBankAccounts() &&
+        !_accountsLoadFailed;
     return Scaffold(
       appBar: AppBar(
         title: Text(BankAccountStrings.bankAccountsTitle),
@@ -487,6 +515,14 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                 constraints: const BoxConstraints(maxWidth: 800),
                 child: Column(
                   children: [
+                    if (_orderFeedback case final feedback?)
+                      Semantics(
+                        liveRegion: true,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(feedback),
+                        ),
+                      ),
                     if (_accountsLoadFailed) _loadError(_loadData),
                     if (_organizationLoadFailed) _loadError(_loadOrganization),
                     Padding(
@@ -519,7 +555,7 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                     Expanded(
                       child: ReorderableListView.builder(
                         buildDefaultDragHandles: false,
-                        itemCount: _unitAccounts.length,
+                        itemCount: _accountsLoadFailed ? 0 : _unitAccounts.length,
                         onReorder: canConfigure ? _onReorder : (_, _) {},
                         itemBuilder: (context, index) {
                           final account = _unitAccounts[index];
@@ -530,20 +566,20 @@ class _UnitBankAccountsScreenState extends State<UnitBankAccountsScreen> {
                           return UnitBankAccountCard(
                             key: ValueKey(account.id),
                             account: account,
-                            onHistory: canConfigure && account.isAdmin == true ? () => showDialog<void>(context: context, builder: (_) => SearchTransactionsDialog(paymentInfoId: null, bankAccount: account.id, unitId: widget.unitId, readOnly: true)) : null,
+                            onHistory: !_isReordering && canConfigure && account.isAdmin == true ? () => showDialog<void>(context: context, builder: (_) => SearchTransactionsDialog(paymentInfoId: null, bankAccount: account.id, unitId: widget.unitId, readOnly: true)) : null,
                             primaryCurrencies: account.supportedCurrencies
                                 .where((currency) => !higherPriorityCurrencies
                                     .contains(currency))
                                 .toSet(),
                             index: index,
-                            reordering: _isReordering,
-                            onMoveUp: index > 0
+                            reordering: _isReordering || !canConfigure,
+                            onMoveUp: canConfigure && index > 0
                                 ? () => _onReorder(index, index - 1)
                                 : null,
-                            onMoveDown: index + 1 < _unitAccounts.length
+                            onMoveDown: canConfigure && index + 1 < _unitAccounts.length
                                 ? () => _onReorder(index, index + 2)
                                 : null,
-                            onOpen: () => _addOrEditAccount(account),
+                            onOpen: _isReordering ? null : () => _addOrEditAccount(account),
                             onUnlink: _isReordering || !canConfigure
                                 ? null
                                 : () => _unlinkAccount(account),

@@ -71,6 +71,9 @@ class BankAccountStrings {
       'BankAccount.formAccountDefaultPlain'.tr();
   static String get formAccountUnavailableHelp =>
       'BankAccount.formAccountUnavailableHelp'.tr();
+  static String get orderChanged => 'BankAccount.orderChanged'.tr();
+  static String get orderSaveFailed => 'BankAccount.orderSaveFailed'.tr();
+  static String get orderUnverified => 'BankAccount.orderUnverified'.tr();
   static String get formAccountOrderHelp =>
       'BankAccount.formAccountOrderHelp'.tr();
   static String get errorTitle => 'BankAccount.errorTitle'.tr();

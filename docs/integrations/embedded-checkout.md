@@ -441,6 +441,32 @@ odeberte z odkazu atribut data-festapp-consent-link. Bez
 referreru, propojení oken nebo při omezení COOP se zobrazí běžná místní lišta.
 Povoleny jsou HTTPS originy; HTTP loopback pouze při lokálním vývoji.
 
+### Odkaz z kampaně na formulář na stejné stránce
+
+Messenger a další prohlížeče uvnitř aplikací mohou při otevření odkazu zavřít
+stránku pořadatele nebo nepředat spojení s původním oknem. Samostatný formulář
+pak zobrazí vlastní lištu. Pro kampaně vložte formulář na stránku pořadatele
+běžným generovaným kódem, přidejte iframe jedinečné `id` a stejné ID použijte
+na odkazu z kampaně:
+
+```html
+<a data-festapp-consent-link data-festapp-consent-link-embed="objednavka"
+   target="_blank" href="https://vstupenky.online/form/vas-formular">Koupit vstupenky</a>
+<!-- Ukázka vloženého iframe. Na stránce použijte svůj vygenerovaný kód. -->
+<iframe id="objednavka" data-festapp-embed title="Vstupenky na koncert"
+        src="https://vstupenky.online/form/vas-formular?embed=1" height="800"></iframe>
+```
+
+Běžné kliknutí v každém prohlížeči přesune návštěvníka k již vloženému
+formuláři. Souhlas se dál řídí živým propojením s CMP na stránce pořadatele.
+Cílový iframe musí být viditelný a jeho adresa musí odpovídat odkazu s
+přidaným `embed=1`. Pokud iframe chybí, je skrytý nebo jeho adresa nesouhlasí,
+odkaz funguje jako běžný odkaz do samostatného formuláře. Samostatný záložní
+odkaz ze vygenerovaného bloku ponechte bez nového atributu, aby zůstal dostupný
+i při omezení iframe ze strany webu nebo prohlížeče.
+
+### Platnost převzatého souhlasu
+
 Převzetí čeká nejvýše 1500 ms. Pak platí pouze pro aktuální návštěvu, nejvýše
 24 hodin, a průběžně se obnovuje krátkou vazbou na živý zdroj. Odvolání na webu
 se přenese; zánik záznamu, odpojení zdroje, opuštění webu nebo vypršení vazby

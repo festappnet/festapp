@@ -35,6 +35,10 @@ print('DROP TRIGGER IF EXISTS payment_template_policy_fence ON public.email_temp
 for signature in sorted(changed - prior.keys()):
     print('DROP FUNCTION IF EXISTS ' + signature + ' RESTRICT;')
 for signature in sorted(changed & prior.keys()):
+    # The current management RPC adds an OUT column. Recreate the old
+    # descriptor explicitly before replaying the historical policy forwards.
+    if signature == 'public.get_bank_accounts_for_unit_management(bigint)':
+        print('DROP FUNCTION IF EXISTS ' + signature + ' RESTRICT;')
     print(re.sub(r'\bCREATE\s+FUNCTION\b', 'CREATE OR REPLACE FUNCTION', prior[signature], count=1, flags=re.I))
 # These are solely new policy configuration/audit records, never a money ledger.
 print('''DROP TABLE eshop.payment_template_epochs,eshop.payment_template_reviews,eshop.payment_method_policy_commands,

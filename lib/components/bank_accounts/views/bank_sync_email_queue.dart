@@ -7,6 +7,8 @@ import 'package:fstapp/services/exception_handler.dart';
 import 'package:fstapp/services/utilities_all.dart';
 import 'package:easy_localization/easy_localization.dart';
 
+import 'bank_account_dialog_scope.dart';
+
 typedef ConfirmBankEmail = Future<Map<String, dynamic>> Function(
   Map<String, dynamic> observation,
   int paymentInfoId, {
@@ -47,7 +49,9 @@ class BankSyncEmailQueue extends StatefulWidget {
 class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
   List<Map<String, dynamic>>? _rows;
   bool _loading = true;
+  bool _showEmptyAfterAction = false;
   String? _feedback;
+  final _refreshFocus = FocusNode();
 
   Map<String, dynamic>? _cursor;
 
@@ -72,7 +76,8 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
 
   Future<void> _confirm(Map<String, dynamic> row) async {
     final result = await showDialog<Map<String, dynamic>>(
-      context: context,
+      context: BankAccountDialogScope.contextOf(context),
+      useRootNavigator: false,
       barrierDismissible: false,
       builder: (_) => _BankEmailConfirmationDialog(
         observation: row,
@@ -88,18 +93,39 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
           ? BankAccountStrings.emailOutcomeConfirmed
           : BankAccountStrings.emailConflict;
     });
-    await _load();
+    await _refreshAfterAction(row);
   }
 
   Future<void> _dismiss(Map<String, dynamic> row) async {
     final dismissed = await showDialog<bool>(
-      context: context,
+      context: BankAccountDialogScope.contextOf(context),
+      useRootNavigator: false,
       barrierDismissible: false,
       builder: (_) => _BankEmailDismissDialog(
         dismiss: (reason) => widget.dismiss!(row, reason),
       ),
     );
-    if (mounted && dismissed == true) await _load();
+    if (mounted && dismissed == true) await _refreshAfterAction(row);
+  }
+
+  Future<void> _refreshAfterAction(Map<String, dynamic> row) async {
+    _showEmptyAfterAction = true;
+    await _load();
+    if (!mounted ||
+        _rows?.any((item) => item['delivery_id'] == row['delivery_id']) !=
+            false)
+      return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _refreshFocus.context != null) {
+        _refreshFocus.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshFocus.dispose();
+    super.dispose();
   }
 
   @override
@@ -110,34 +136,74 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
     });
   }
 
-  Widget _observationCard(Map<String, dynamic> row) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          BankEmailFacts(facts: Map<String, dynamic>.from(row['facts'] as Map)),
-          BankEmailPossibleDuplicates(
-            duplicates: _mapList(row['possible_duplicates']),
+  Widget _observationCard(Map<String, dynamic> row) {
+    final facts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BankEmailFacts(facts: Map<String, dynamic>.from(row['facts'] as Map)),
+        BankEmailPossibleDuplicates(
+          duplicates: _mapList(row['possible_duplicates']),
+        ),
+      ],
+    );
+    final actions = Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        FilledButton.tonal(
+          onPressed: () => _confirm(row),
+          child: Text(BankAccountStrings.emailConfirm),
+        ),
+        if (widget.dismiss != null)
+          TextButton(
+            onPressed: () => _dismiss(row),
+            child: Text(BankAccountStrings.emailDismiss),
           ),
-          if (!widget.readOnly)
-            TextButton(
-              onPressed: () => _confirm(row),
-              child: Text(BankAccountStrings.emailConfirm),
-            ),
-          if (!widget.readOnly && widget.dismiss != null)
-            TextButton(
-              onPressed: () => _dismiss(row),
-              child: Text(BankAccountStrings.emailDismiss),
-            ),
-        ],
+      ],
+    );
+
+    return SizedBox(
+      key: ValueKey(row['delivery_id']),
+      width: double.infinity,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (widget.readOnly) return facts;
+              final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+              if (constraints.maxWidth >= 480 * scale) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: facts),
+                    const SizedBox(width: 16),
+                    Flexible(
+                      flex: 2,
+                      child: Align(
+                        alignment: AlignmentDirectional.topEnd,
+                        child: actions,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [facts, const SizedBox(height: 8), actions],
+              );
+            },
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     if (widget.compact &&
+        !_showEmptyAfterAction &&
         (_rows?.isEmpty == true || (_rows == null && _loading))) {
       return const SizedBox.shrink();
     }
@@ -151,6 +217,7 @@ class _BankSyncEmailQueueState extends State<BankSyncEmailQueue> {
           children: [
             Expanded(child: Text(BankAccountStrings.emailQueue)),
             IconButton(
+              focusNode: _refreshFocus,
               onPressed: _loading ? null : _load,
               tooltip: CommonStrings.refresh,
               icon: const Icon(Icons.refresh),

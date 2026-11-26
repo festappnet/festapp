@@ -1144,8 +1144,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_authoring_export_page(bigint,bigint,bigint,text,jsonb,text,integer)') AND md5(btrim(prosrc,E' \n\r\t'))='9e5db1f4fe5ab9046f255f19345b7c54'),'current SQL source parity: public.get_authoring_export_page(bigint,bigint,bigint,text,jsonb,text,integer)');
 -- supabase/baseline/20261107170000_schema.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_authoring_history(bigint,bigint,bigint,text,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='6792bcd5f433e993f6e77d31b21d1fc9'),'current SQL source parity: public.get_authoring_history(bigint,bigint,bigint,text,jsonb)');
--- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_accounts_for_unit_management(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='9a362d275840aa2c8c2c2579128b472b'),'current SQL source parity: public.get_bank_accounts_for_unit_management(bigint)');
+-- supabase/migrations/20261126110000_bank_account_management_priority.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_accounts_for_unit_management(bigint)') AND md5(btrim(prosrc,E' \n\r\t'))='c5b731b01c947d693eaef96316a4a0d9'),'current SQL source parity: public.get_bank_accounts_for_unit_management(bigint)');
 -- supabase/migrations/20261115130000_customer_order_policy_foundation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.get_bank_refund_instructions(jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='e2539fd03ec6cb48bc8e60ac0c26e54b'),'current SQL source parity: public.get_bank_refund_instructions(jsonb)');
 -- supabase/migrations/20261112234500_admin_notification_delivery.sql
