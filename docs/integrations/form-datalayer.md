@@ -458,7 +458,11 @@ of dataLayer, checkout receipts and the checkout command's identity.
 
 Standalone forms derive `fbc` from a consented `fbclid` in the form URL. The form
 origin is shared by multiple organizers, so their browser cookies are never read
-there. The new-tab consent link transfers only consent.
+there. A form opened from the website through the new-tab consent link asks
+that live opener for matching once at checkout, with the same checks as an embed
+host: the link's nonce and binding, the current consent revision and a granted
+advertising decision. Without an answer within 400 ms the order carries no
+browser IDs. Renewals of the link still carry only consent.
 
 The checkout Edge function forwards only `X-Festapp-Client-IP`, which canonical
 Caddy configuration replaces from trusted proxy resolution and the gateway/router
