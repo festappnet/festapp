@@ -2396,6 +2396,8 @@
     "emailSender": "Odesílatel",
     "emailCounterAccount": "Protiúčet",
     "emailVs": "Variabilní symbol",
+    "emailVsMatches": "shoduje se s platbou",
+    "emailVsDiffers": "liší se od platby",
     "emailAmountDiffers": "Částka se liší od doplatku",
     "emailAmountMatches": "Částka odpovídá doplatku",
     "emailOrder": "Objednávka",

@@ -2383,6 +2383,8 @@
     "emailSender": "Remitente",
     "emailCounterAccount": "Cuenta de origen",
     "emailVs": "Referencia de pago",
+    "emailVsMatches": "coincide con el pago",
+    "emailVsDiffers": "difiere del pago",
     "emailAmountDiffers": "El importe difiere del saldo pendiente",
     "emailAmountMatches": "El importe coincide con el saldo pendiente",
     "emailOrder": "Pedido",

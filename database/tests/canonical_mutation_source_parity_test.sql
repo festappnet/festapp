@@ -168,8 +168,8 @@ DO $$ BEGIN
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_duplicate_candidates_internal(bigint,jsonb,boolean)') AND md5(btrim(prosrc,E' \n\r\t'))='23d704903275c3c0da4956db50ace450'),'current SQL source parity: public.bank_sync_email_duplicate_candidates_internal(bigint,jsonb,boolean)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_lookup_signals_internal(text)') AND md5(btrim(prosrc,E' \n\r\t'))='0a473756dca8cc567234b2485efa977a'),'current SQL source parity: public.bank_sync_email_lookup_signals_internal(text)');
--- supabase/migrations/20261122180000_bank_email_confirmation.sql
- PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='612ef6864a91538c4e7e8e6ec0ac156d'),'current SQL source parity: public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[])');
+-- supabase/migrations/20261126220000_bank_email_candidate_variable_symbol.sql
+ PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[])') AND md5(btrim(prosrc,E' \n\r\t'))='e70ce57a9f6245e6fbe9e37f3d2bc3ff'),'current SQL source parity: public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[])');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql
  PERFORM assert_true(EXISTS(SELECT 1 FROM pg_proc WHERE oid=to_regprocedure('public.bank_sync_email_possible_duplicate_internal(eshop.transactions,jsonb)') AND md5(btrim(prosrc,E' \n\r\t'))='3cdcfd37ba1d661f18d013f00b5d7d77'),'current SQL source parity: public.bank_sync_email_possible_duplicate_internal(eshop.transactions,jsonb)');
 -- supabase/migrations/20261122180000_bank_email_confirmation.sql

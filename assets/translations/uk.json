@@ -1426,6 +1426,8 @@
     "emailSender": "Відправник",
     "emailCounterAccount": "Рахунок відправника",
     "emailVs": "Змінний символ",
+    "emailVsMatches": "збігається з платежем",
+    "emailVsDiffers": "відрізняється від платежу",
     "emailAmountDiffers": "Сума відрізняється від залишку до сплати",
     "emailAmountMatches": "Сума відповідає залишку до сплати",
     "emailOrder": "Замовлення",

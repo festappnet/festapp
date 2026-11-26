@@ -468,12 +468,21 @@ class _ConfirmationState extends State<_BankEmailConfirmationDialog> {
     final match = entry['amount_matches'] == true
         ? BankAccountStrings.emailAmountMatches
         : BankAccountStrings.emailAmountDiffers;
+    // Show the order's variable symbol so the admin can compare it with the payment.
+    final symbol = entry['variable_symbol']?.toString() ?? '';
+    final paidSymbol = int.tryParse(_facts['raw_vs']?.toString().trim() ?? '');
+    final symbolMatch = paidSymbol == null
+        ? ''
+        : ' · ${paidSymbol == int.tryParse(symbol) ? BankAccountStrings.emailVsMatches : BankAccountStrings.emailVsDiffers}';
+    final symbolLine = symbol.isEmpty
+        ? ''
+        : '\n${BankAccountStrings.emailVs}: $symbol$symbolMatch';
     return RadioListTile<int>(
       value: (entry['payment_info_id'] as num).toInt(),
       enabled: !_busy,
       title: Text('${BankAccountStrings.emailOrder} $order · $state'),
       subtitle: Text(
-        '${entry['customer_name'] ?? ''} ${entry['customer_email'] ?? ''}\n$balance · $match',
+        '${entry['customer_name'] ?? ''} ${entry['customer_email'] ?? ''}$symbolLine\n$balance · $match',
       ),
     );
   }

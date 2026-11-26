@@ -44,6 +44,7 @@ BEGIN
  PERFORM assert_eq(jsonb_array_length(rows),1,'email queue contains the observation');
  PERFORM assert_eq(jsonb_array_length(rows->0->'candidates'),2,'exact account/currency/VS candidates');
  PERFORM assert_true((rows#>>'{0,candidates,0,amount_matches}')::boolean,'SQL remaining due comparison');
+ PERFORM assert_eq(rows#>>'{0,candidates,0,variable_symbol}','1007'::text,'candidate shows its variable symbol for manual comparison');
  PERFORM pg_temp.confirm_error(bank,delivery,pi,'BANK_SYNC_ATTESTATION_REQUIRED',false);
  PERFORM pg_temp.confirm_error(bank,delivery,pi,'BANK_SYNC_DELIVERY_CONFLICT',true,repeat('b',64));
  UPDATE eshop.bank_sync_connections SET mode='api' WHERE id=conn;

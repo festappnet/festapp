@@ -300,6 +300,8 @@
     "emailSender": "Absender",
     "emailCounterAccount": "Gegenkonto",
     "emailVs": "Zahlungsreferenz",
+    "emailVsMatches": "stimmt mit der Zahlung überein",
+    "emailVsDiffers": "weicht von der Zahlung ab",
     "emailAmountDiffers": "Betrag weicht vom Restbetrag ab",
     "emailAmountMatches": "Betrag entspricht dem Restbetrag",
     "emailOrder": "Bestellung",

@@ -444,6 +444,8 @@
     "emailSender": "Odosielateľ",
     "emailCounterAccount": "Protiúčet",
     "emailVs": "Variabilný symbol",
+    "emailVsMatches": "zhoduje sa s platbou",
+    "emailVsDiffers": "líši sa od platby",
     "emailAmountDiffers": "Suma sa líši od doplatku",
     "emailAmountMatches": "Suma zodpovedá doplatku",
     "emailOrder": "Objednávka",

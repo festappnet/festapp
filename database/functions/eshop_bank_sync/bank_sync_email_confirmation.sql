@@ -148,7 +148,7 @@ CREATE OR REPLACE FUNCTION public.bank_sync_email_payable_targets_for_ids_intern
 RETURNS TABLE(payment_info_id bigint,order_id bigint,occasion_id bigint,candidate jsonb)
 LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  WITH eligible AS MATERIALIZED (
-  SELECT pi.id,pi.amount,pi.currency_code,o.id AS order_id,o.occasion,o.order_symbol,o.order_sequence,o.state,o.data
+  SELECT pi.id,pi.amount,pi.currency_code,pi.variable_symbol,o.id AS order_id,o.occasion,o.order_symbol,o.order_sequence,o.state,o.data
   FROM eshop.payment_info pi JOIN eshop.orders o ON o.payment_info=pi.id JOIN public.occasions oc ON oc.id=o.occasion
   WHERE pi.id=ANY(p_ids) AND pi.bank_account=p_account AND pi.payment_method='bank'
    AND upper(trim(pi.currency_code))=upper(trim(p_currency)) AND pi.amount>0
@@ -163,7 +163,8 @@ LANGUAGE sql STABLE SET search_path=public,extensions AS $$
  SELECT e.id::bigint,e.order_id::bigint,e.occasion::bigint,jsonb_build_object(
   'payment_info_id',e.id,'order_id',e.order_id,'order_symbol',e.order_symbol,'order_number',e.order_sequence,
   'state',e.state,'customer_name',concat_ws(' ',coalesce(e.data->>'name',e.data->>'first_name'),coalesce(e.data->>'surname',e.data->>'last_name')),
-  'customer_email',e.data->>'email','remaining_due',greatest(e.amount-t.available,0),'currency',upper(trim(e.currency_code)))
+  'customer_email',e.data->>'email','variable_symbol',e.variable_symbol::text,
+  'remaining_due',greatest(e.amount-t.available,0),'currency',upper(trim(e.currency_code)))
  FROM eligible e JOIN totals t ON t.payment_id=e.id WHERE e.amount>t.available;
 $$;
 REVOKE ALL ON FUNCTION public.bank_sync_email_payable_targets_for_ids_internal(bigint,text,bigint[]) FROM PUBLIC,anon,authenticated,service_role;
