@@ -47,7 +47,7 @@ export function readConsentSource(source, scope) {
         const purpose = key => {
             const direct = value[key], saved = value.purchaseConsent[key];
             if (direct === false || saved === false) return false;
-            const grants = [value, value.purchaseConsent].filter(record => Object.hasOwn(record,key));
+            const grants = [value, value.purchaseConsent].filter(record => Object.prototype.hasOwnProperty.call(record,key));
             return grants.length && grants.every(record => record[key] === true) ? true : undefined;
         };
         const projected = Object.fromEntries(['ad_storage','ad_user_data','ad_personalization'].map(key => [key,purpose(key)]));

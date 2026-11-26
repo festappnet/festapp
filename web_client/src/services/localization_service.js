@@ -24,11 +24,11 @@ async function loadCatalog(locale) {
 }
 
 function lookup(catalog, key) {
-    let value = Object.hasOwn(catalog, key) ? catalog[key] : undefined;
+    let value = Object.prototype.hasOwnProperty.call(catalog, key) ? catalog[key] : undefined;
     if (!value) {
         value = catalog;
         for (const part of key.split('.')) {
-            if (!value || !Object.hasOwn(value, part)) return undefined;
+            if (!value || !Object.prototype.hasOwnProperty.call(value, part)) return undefined;
             value = value[part];
         }
     }

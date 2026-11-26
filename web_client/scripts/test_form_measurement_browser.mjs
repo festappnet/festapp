@@ -49,6 +49,11 @@ document.head.appendChild(script);
  if (modes.includes(true)) await timed('browser.consent-link-embed', async () => {
   const linkContext = await owner.context();
   try {
+   // Android in-app WebViews can have Web Crypto without randomUUID or Object.hasOwn.
+   await linkContext.addInitScript(() => {
+    Object.defineProperty(crypto, 'randomUUID', {value:undefined});
+    Object.defineProperty(Object, 'hasOwn', {value:undefined});
+   });
    const organizer = await linkContext.newPage();
    await organizer.goto(`${origin}/consent-link-embed`);
    await organizer.waitForFunction(() => !!window.FestappEmbed);
@@ -57,7 +62,7 @@ document.head.appendChild(script);
    await frame.waitForLoadState();
    const state = () => organizer.evaluate(() => new Promise((resolve, reject) => {
     const peer = document.querySelector('iframe').contentWindow;
-    const id = crypto.randomUUID();
+    const id = 'consent-state';
     const receive = event => {
      if (event.source !== peer || event.data?.id !== id) return;
      window.removeEventListener('message', receive);
@@ -72,9 +77,15 @@ document.head.appendChild(script);
     peer.postMessage({fixture:true,id,action:'state'}, new URL(document.querySelector('iframe').src).origin);
    }));
    const frameElement = organizer.locator('#checkout');
-   const documentId = await frame.evaluate(() => (document.fixtureId = crypto.randomUUID()));
+   await frame.evaluate(() => { document.fixtureLoaded = true; });
    const setConsent = (analytics, marketing) => frameElement.evaluate(
-    (element, choice) => FestappEmbed.setMeasurementConsent(element, choice), {analytics, marketing});
+    (element, choice) => !!FestappEmbed.connectMeasurementConsent(element, {
+     read: () => ({
+      ...choice, processingRevision:'rev-a',
+      purchaseConsent:{ad_storage:choice.marketing, ad_user_data:choice.marketing, ad_personalization:choice.marketing},
+     }),
+     subscribe:() => () => {},
+    }), {analytics, marketing});
    const waitForConsent = async (analytics, marketing) => {
     for (let attempt = 0; attempt < 50; attempt++) {
      const {consent} = await state();
@@ -84,7 +95,7 @@ document.head.appendChild(script);
     assert.fail(`Expected iframe consent analytics=${analytics}, marketing=${marketing}`);
    };
    await state(); // The cross-origin document has installed its bridge.
-   await setConsent(true, true);
+   assert.equal(await setConsent(true, true), true, 'The host registers the iframe without native randomUUID');
    await waitForConsent(true, true);
    const link = organizer.locator('a');
    await organizer.evaluate(() => {
@@ -96,11 +107,11 @@ document.head.appendChild(script);
    await organizer.waitForFunction(() => document.activeElement?.id === 'checkout');
    assert.equal(await organizer.evaluate(() => popupAttempts), 0);
    assert.equal(await organizer.evaluate(() => window.scrollY > 0), true);
-   assert.equal(await frame.evaluate(() => document.fixtureId), documentId);
+   assert.equal(await frame.evaluate(() => document.fixtureLoaded), true);
    await link.click();
    assert.equal(await organizer.evaluate(() => document.activeElement?.id), 'checkout');
    assert.equal(await organizer.evaluate(() => popupAttempts), 0);
-   assert.equal(await frame.evaluate(() => document.fixtureId), documentId);
+   assert.equal(await frame.evaluate(() => document.fixtureLoaded), true);
    await waitForConsent(true, true);
    await setConsent(true, false);
    await waitForConsent(true, false);

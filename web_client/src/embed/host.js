@@ -1,3 +1,4 @@
+import {randomUuid} from '../utils/random_uuid.js';
 import {createConsentSourceRegistry} from '../components/forms/measurement_consent_source.js';
 import {installHostConsentLink} from './host_consent_link.js';
 import {createManagedConsentSource} from './host_consent_export.js';
@@ -87,7 +88,7 @@ if (!window.__festappEmbedV1) {
             let url;
             try { url = new URL(frame.getAttribute('src'), document.baseURI); } catch { return; }
             if (!/^https?:$/.test(url.protocol) || url.origin === 'null') return;
-            const record = { origin: url.origin, instance: `f_${crypto.randomUUID()}` };
+            const record = { origin: url.origin, instance: `f_${randomUuid()}` };
             record.load = () => {measurement.stopHeartbeat(record);measurement.revoke(frame,record);record.manifest=null;send(frame,record,'init');};
             // Keep the HTML height as the no-script fallback; only automatic embeds shrink.
             if (frame.dataset.festappHeight !== 'fixed') frame.style.height = `${limits.minHeight}px`;

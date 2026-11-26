@@ -1,3 +1,4 @@
+import {randomUuid} from '../../utils/random_uuid.js';
 import {consentScope, sameConsentScope} from './measurement_consent_source.js';
 const namespace = 'festapp-consent-link';
 const peers = new WeakMap();
@@ -74,7 +75,7 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, includePur
         origin = new URL(win.document.referrer).origin;
         if (!isConsentLinkOrigin(origin, isLocalConsentLink(win)) ||
             !(scope.binding && scope.websiteOrigin === origin) && !policy.approved_hosts?.includes(origin)) { stop(); return stop; }
-        nonce = win.crypto.randomUUID(); until = Date.now() + 1500; visitUntil = Date.now()+24*60*60*1000;
+        nonce = randomUuid(win.crypto); until = Date.now() + 1500; visitUntil = Date.now()+24*60*60*1000;
         win.addEventListener('message', receive);
         win.addEventListener('pagehide', disconnect);
         win.addEventListener('pageshow', check);

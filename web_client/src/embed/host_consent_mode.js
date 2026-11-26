@@ -41,7 +41,7 @@ function createReader(win) {
                 if (kind !== 'consent' || !['default', 'update'].includes(action) || !object(values)) continue;
                 // Defaults configure tags; only an explicit update represents a choice.
                 if (action !== 'update') continue;
-                for (const key of keys) if (Object.hasOwn(values, key)) updates[key] = values[key] === 'granted';
+                for (const key of keys) if (Object.prototype.hasOwnProperty.call(values, key)) updates[key] = values[key] === 'granted';
             }
             const state = updates;
             return {...project(state), ...(typeof win.__tcfapi !== 'undefined' ? {marketing:false} : {})};
