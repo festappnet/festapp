@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:fstapp/components/eshop/views/order_payment_summary.dart';
 import 'package:fstapp/theme_config.dart';
+import 'package:fstapp/services/utilities_all.dart';
 import 'package:fstapp/widgets/dependency_material_bridge.dart';
 
 import '../../support/fixtures/widget_environment_fixture.dart';
@@ -142,7 +143,7 @@ void main() {
       'dueNow': 0,
       'overpaid': 0,
     });
-    expect(find.text('Platba'), findsOneWidget);
+    expect(find.text('Zaplaceno'), findsOneWidget);
     expect(find.byType(SelectableText), findsOneWidget);
     expect(
       tester.widget<SelectableText>(find.byType(SelectableText)).data,
@@ -165,13 +166,21 @@ void main() {
       await open(tester, {
         'status': 'fully_paid',
         'received': 2800,
-        'returned': 500,
+        'returned': 2800,
+        'net': 0,
         'totalOutstanding': 0,
         'dueNow': 0,
         'overpaid': 0,
       });
       expect(find.text('Vráceno'), findsOneWidget);
       final amount = tester.widget<SelectableText>(find.byType(SelectableText));
+      final context = tester.element(find.byType(OrderPaymentSummary));
+      final gross = Utilities.formatPrice(
+        context, 2800, currencyCode: 'CZK', decimalDigits: 0,
+      );
+      expect(find.text('Zaplaceno'), findsOneWidget);
+      expect(amount.data, '$gross / $gross');
+      expect(find.text(gross), findsOneWidget);
       expect(
         amount.style?.color,
         isNot(
