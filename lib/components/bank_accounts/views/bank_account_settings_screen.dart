@@ -891,6 +891,7 @@ class RoutedBankAccountDialog extends StatefulWidget {
 
 class _RoutedBankAccountDialogState extends State<RoutedBankAccountDialog> {
   final _overlay = OverlayPortalController();
+  final _dialogNavigator = GlobalKey<NavigatorState>();
   bool _visible = false;
   @override
   void didChangeDependencies() {
@@ -914,18 +915,24 @@ class _RoutedBankAccountDialogState extends State<RoutedBankAccountDialog> {
       );
   Widget _buildDialog(BuildContext context) => Offstage(
         offstage: !_visible,
-        child: Navigator(
-          pages: [
-            MaterialPage<void>(
-              child: Builder(
-                builder: (dialogContext) => BankAccountDialogScope(
-                  dialogContext: dialogContext,
-                  child: _buildDialogShell(dialogContext),
+        child: NavigatorPopHandler<Object?>(
+          enabled: _visible,
+          onPopWithResult: (result) =>
+              _dialogNavigator.currentState?.maybePop(result),
+          child: Navigator(
+            key: _dialogNavigator,
+            pages: [
+              MaterialPage<void>(
+                child: Builder(
+                  builder: (dialogContext) => BankAccountDialogScope(
+                    dialogContext: dialogContext,
+                    child: _buildDialogShell(dialogContext),
+                  ),
                 ),
               ),
-            ),
-          ],
-          onDidRemovePage: (_) {},
+            ],
+            onDidRemovePage: (_) {},
+          ),
         ),
       );
 
