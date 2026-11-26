@@ -123,7 +123,7 @@ export async function getTicketOrderReminderTemplate(
       paymentInfoId: payment_info.id,
     };
 
-    return { subs, sender, receiver, context, paymentQrPng, reply_to };
+    return { subs, sender, receiver, context, paymentQrPng, tone, reply_to };
   } else {
     // --- REGULAR PAYMENT REMINDER ---
     const orderPrice = Number(order.price) || 0;
@@ -213,6 +213,6 @@ export async function getTicketOrderReminderTemplate(
       paymentInfoId: payment_info.id,
     };
 
-    return { subs, sender, receiver, context, paymentQrPng, reply_to };
+    return { subs, sender, receiver, context, paymentQrPng, tone, reply_to };
   }
 }

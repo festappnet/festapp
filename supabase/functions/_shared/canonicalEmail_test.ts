@@ -12,6 +12,7 @@ import { normalizeSesEvents } from "../email-provider-events/events.ts";
 import { openEmail, sealEmail } from "./emailPayload.ts";
 import { drainEmails } from "./emailDispatcher.ts";
 import { renderEmail } from "./emailDelivery.ts";
+import type { Tone } from "./communicationTone.ts";
 const config: SesConfig = {
   region: "eu-central-1",
   accessKey: "fixture",
@@ -508,7 +509,12 @@ Deno.test("legacy PDF and CID PNG snapshots roundtrip with backward compatible S
 Deno.test("payment QR remains downloadable and only appears inline when enabled", async () => {
   const template = { id: 1, subject: "Order", html: "<p>Order instructions</p>" };
   const wrapper = { html: "<main>{{content}}</main>" };
-  const render = (inline?: boolean, lang = "en", orderSymbol = "5W8H2U8I9W") => renderEmail({
+  const render = (
+    inline?: boolean,
+    lang = "en",
+    orderSymbol = "5W8H2U8I9W",
+    tone?: Tone,
+  ) => renderEmail({
     to: prepared.to,
     from: prepared.from,
     context: { organization: 1 },
@@ -516,7 +522,7 @@ Deno.test("payment QR remains downloadable and only appears inline when enabled"
     substitutions: { orderSymbol },
     paymentQr: inline === undefined
       ? undefined
-      : { png: new Uint8Array(2048), lang, inline },
+      : { png: new Uint8Array(2048), lang, inline, tone },
   }, async () => ({ template, wrapper }));
 
   const full = await render(true);
@@ -536,6 +542,12 @@ Deno.test("payment QR remains downloadable and only appears inline when enabled"
     "qr-platba-5W8H2U8I9W.png",
   ]);
   assertMatch(czech.html, /Zaplaťte pomocí QR kódu.*Naskenujte ho v aplikaci mobilního bankovnictví\..*<img/);
+
+  const informal = await render(true, "cs", undefined, "informal");
+  assertMatch(informal.html, /Zaplať pomocí QR kódu.*Naskenuj ho v aplikaci mobilního bankovnictví\..*<img/);
+  assert(informal.html.includes("QR kód si můžeš stáhnout z přílohy."));
+  const informalDownload = await render(false, "cs", undefined, "informal");
+  assert(informalDownload.html.includes("Platební QR kód najdeš v příloze."));
 
   const downloadOnly = await render(false);
   assertEquals(downloadOnly.attachments, [full.attachments[0]]);

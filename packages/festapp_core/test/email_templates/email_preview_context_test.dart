@@ -53,6 +53,25 @@ void main() {
     ).withContext(const EmailPreviewContext(inlinePaymentQr: true));
     expect(paid.composeHtml(body), isNot(contains(emailPreviewPaymentQrSource)));
   });
+  test('informal order update shows informal QR copy and round example prices', () {
+    final update = records.firstWhere(
+      (r) => r.templateCode == 'TICKET_ORDER_UPDATE' &&
+          r.scenario == 'unpaid' && r.locale == 'cs' && r.tone == 'informal',
+    ).withContext(const EmailPreviewContext(
+      products: [
+        EmailPreviewProduct(title: 'Hlavní sál', typeTitle: 'Vstupné', price: 450),
+        EmailPreviewProduct(title: 'Vedlejší sál', typeTitle: 'Vstupné', price: 450),
+      ],
+    ));
+    final html = update.composeHtml('{{changeOverview}}{{balanceReasoning}}');
+    expect(html, contains('Zaplať pomocí QR kódu'));
+    expect(html, contains('Naskenuj ho v aplikaci mobilního bankovnictví.'));
+    expect(html, contains('QR kód si můžeš stáhnout z přílohy.'));
+    final prices = update.values['changeOverview']!;
+    for (final amount in [300, 450, 750, 900]) {
+      expect(prices, matches('$amount\\s+Kč'));
+    }
+  });
   test('single application waitlist examples offer exactly one place', () {
     for (final record in records.where(
       (r) => r.templateCode.startsWith('waitlist'),

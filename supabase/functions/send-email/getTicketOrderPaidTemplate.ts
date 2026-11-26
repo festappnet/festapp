@@ -111,5 +111,5 @@ export async function getTicketOrderPaidTemplate(
     paymentInfoId: payment_info.id,
   };
 
-  return { subs, sender, receiver, context, paymentQrPng, reply_to };
+  return { subs, sender, receiver, context, paymentQrPng, tone, reply_to };
 }

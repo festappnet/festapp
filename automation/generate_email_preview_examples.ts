@@ -178,7 +178,7 @@ for (const locale of ["cs", "en"] as const) {
           scenario,
           paymentMethod: 'bank', collectionAllowed,
           ...(collectionAllowed
-            ? { inlinePaymentQrHtml: paymentQrEmailHtml(locale === "cs", "cid:festapp-preview-payment") }
+            ? { inlinePaymentQrHtml: paymentQrEmailHtml(locale === "cs", tone, "cid:festapp-preview-payment") }
             : {}),
           locale,
           tone,

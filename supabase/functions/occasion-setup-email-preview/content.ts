@@ -6,6 +6,7 @@ import {
   prepareTicketDelivery,
 } from "../_shared/ticketDelivery.ts";
 import { confirmationSubstitutions } from "../_shared/confirmationContent.ts";
+import { resolveCommunicationTone } from "../_shared/communicationTone.ts";
 import { renderEmail } from "../_shared/emailDelivery.ts";
 import { previewPaymentQr } from "../_shared/qrCodePayment.ts";
 import { walletEmailTicket, walletEmailSection, walletTicketLabel, walletCollectionLabel, walletEmailIndividual } from '../_shared/ticketWalletEmail.ts';
@@ -84,7 +85,8 @@ export function previewOrder(
 }
 
 export async function renderDraftPreview(context: any) {
-  const order = previewOrder(context.title, context.tone, context);
+  const tone = resolveCommunicationTone(context.tone);
+  const order = previewOrder(context.title, tone, context);
   const isTickets = context.messageType === "order_tickets";
   let delivery: Awaited<ReturnType<typeof prepareTicketDelivery>> | undefined;
   if (isTickets) {
@@ -161,7 +163,7 @@ export async function renderDraftPreview(context: any) {
     },
     occasion: order.occasion,
     payment_info: { ...order.payment_info, paid: order.payment_info.amount },
-    form_data: { communication_tone: context.tone },
+    form_data: { communication_tone: tone },
   }, context.lang ?? 'cs');
   const prepared = await renderEmail({
     to: "preview@example.invalid",
@@ -172,7 +174,7 @@ export async function renderDraftPreview(context: any) {
     attachments: delivery?.attachments,
     paymentQr: isTickets
       ? undefined
-      : await previewPaymentQr(order.payment_info, context.lang, order.occasion.title),
+      : await previewPaymentQr(order.payment_info, context.lang, order.occasion.title, tone),
     ticketBlock: isTickets ? delivery?.html ?? "" : undefined,
     subjectSubstitutions: isTickets ? ticketSubs : undefined,
     substitutions: isTickets

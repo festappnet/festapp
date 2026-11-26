@@ -1,4 +1,5 @@
 import QRCode from "npm:qrcode";
+import type { Tone } from "./communicationTone.ts";
 import type { DeliverEmailInput } from "./emailDelivery.ts";
 import { resolveEmailLanguage } from "./emailCommunication.ts";
 import { formatDisplayNumber } from "./numberFormatting.ts";
@@ -128,6 +129,7 @@ export async function previewPaymentQr(
   payment: Record<string, unknown>,
   lang: unknown,
   occasionTitle: string,
+  tone?: Tone,
 ): Promise<DeliverEmailInput["paymentQr"]> {
   if (
     !bankCollectionAllowed(payment) || !(Number(payment.amount) > 0) ||
@@ -148,5 +150,6 @@ export async function previewPaymentQr(
     }),
     lang,
     inline: showPaymentQrInEmail(payment),
+    tone,
   };
 }
