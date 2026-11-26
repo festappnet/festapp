@@ -44,14 +44,15 @@ Future<Rect> _render(
 }
 
 void main() {
-  testWidgets('synthetic payment QR is visible and fits a narrow preview',
+  testWidgets('synthetic payment QR keeps rounded corners in a narrow preview',
       (tester) async {
     final png = base64Decode(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7QAAAABJRU5ErkJggg==',
     );
     await _render(
       tester,
-      '<img src="$emailPreviewPaymentQrSource" alt="QR platba">$_message',
+      '<img src="$emailPreviewPaymentQrSource" alt="QR platba" '
+      'style="border-radius:8px">$_message',
       180,
       imageBytesResolver: (source) =>
           source == emailPreviewPaymentQrSource ? png : null,
@@ -59,6 +60,8 @@ void main() {
     final rendered = find.byType(Image);
     expect(rendered, findsOneWidget);
     expect(tester.widget<Image>(rendered).image, MemoryImage(png));
+    final clip = find.ancestor(of: rendered, matching: find.byType(ClipRRect));
+    expect(tester.widget<ClipRRect>(clip).borderRadius, BorderRadius.circular(8));
     expect(tester.getRect(find.byType(FittedBox)).width, lessThanOrEqualTo(180));
     expect(find.byIcon(Icons.image_outlined), findsNothing);
   });

@@ -149,23 +149,34 @@ class EmailPreviewHtml extends StatelessWidget {
                       child: Center(
                           child:
                               Icon(Icons.image_outlined, color: Colors.grey))));
+              // Custom image widgets render the inline radius themselves.
+              final radiusMatch = RegExp(
+                r'(?:^|;)\s*border-radius\s*:\s*([0-9]+(?:\.[0-9]+)?)px\s*(?:;|$)',
+              ).firstMatch(element.attributes['style'] ?? '');
+              final radius = double.tryParse(radiusMatch?.group(1) ?? '') ?? 0;
+              final hasRoundedCorners = radius.isFinite && radius > 0;
+              final borderRadius =
+                  BorderRadius.circular(hasRoundedCorners ? radius : 0);
               final bytes = imageBytesResolver?.call(source);
               if (bytes != null) {
                 final image = Image.memory(bytes,
                     width: source == emailPreviewPaymentQrSource ? 280 : null,
                     fit: BoxFit.contain,
                     semanticLabel: element.attributes['alt']);
+                final artwork = hasRoundedCorners
+                    ? ClipRRect(borderRadius: borderRadius, child: image)
+                    : image;
                 return source == emailPreviewPaymentQrSource
                     ? FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
-                        child: image,
+                        child: artwork,
                       )
-                    : image;
+                    : artwork;
               }
               final sample = paymentQrSample;
               if (source == emailPreviewPaymentQrSource && sample != null) {
-                return _SamplePaymentQr(sample);
+                return _SamplePaymentQr(sample, borderRadius: borderRadius);
               }
               if (source.isNotEmpty &&
                   allowedRemoteImageSources.contains(source)) {
@@ -189,9 +200,10 @@ class EmailPreviewHtml extends StatelessWidget {
 
 /// Keep the sample visible when the preview renderer cannot supply its artwork.
 class _SamplePaymentQr extends StatelessWidget {
-  const _SamplePaymentQr(this.sample);
+  const _SamplePaymentQr(this.sample, {required this.borderRadius});
 
   final Map<String, Object> sample;
+  final BorderRadius borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +231,10 @@ class _SamplePaymentQr extends StatelessWidget {
       child: Container(
         width: 280,
         padding: const EdgeInsets.fromLTRB(12, 6, 12, 16),
-        color: Colors.white,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: borderRadius,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -102,5 +102,5 @@ export function paymentQrEmailHtml(
       ? "QR kód si můžeš stáhnout z přílohy."
       : "QR kód si můžete stáhnout z přílohy."
     : "You can download the QR code from the attachment.";
-  return `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="${escapeEmailHtml(source)}" alt="${alt}" width="280" style="display:block;width:280px;max-width:100%;height:auto;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`;
+  return `<div style="margin:16px 0"><p style="margin:0 0 4px;font-size:18px;font-weight:bold">${title}</p><p style="margin:0 0 8px">${scanInstructions}</p><img src="${escapeEmailHtml(source)}" alt="${alt}" width="280" style="display:block;width:280px;max-width:100%;height:auto;border-radius:8px;background:#ffffff"><p style="margin:8px 0 0">${hint}</p></div>`;
 }
