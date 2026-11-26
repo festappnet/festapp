@@ -333,6 +333,66 @@ test('checkout only asks the host after a fresh notice and discards matching if 
     assert.deepEqual(await collect(),{});
 });
 
+test('checkout matching waits for the policy recheck started by closing the order preview',async t=>{
+    register('../css_loader.mjs',import.meta.url);
+    const {JSDOM}=await import('jsdom');
+    const win=new JSDOM('',{url:'https://tickets.example/form/pilot'}).window;
+    const globals={window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent};
+    const previous=Object.fromEntries(Object.keys(globals).map(key=>[key,globalThis[key]]));
+    Object.assign(globalThis,globals);
+    t.after(()=>{Object.assign(globalThis,previous);win.close();});
+    const {FormPage}=await import('../../src/components/forms/form_page.js');
+    const {DbForms}=await import('../../src/components/forms/db_forms.js');
+    t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>notice);
+    const model={link:'pilot'};
+    const initial=choice();
+    const snapshot=purchaseConsentSnapshot(initial,notice,now);
+    const session={consent:initial,current:true,refreshes:0,hasCurrentPolicy(){return this.current;},
+        refresh(){this.refreshes++;return new Promise(resolve=>setTimeout(()=>{this.current=true;resolve();},5));}};
+    const page=Object.assign(Object.create(FormPage.prototype),{
+        currentSession:{formModel:model},measurementSession:session,
+        embedBridge:{collectMetaCheckoutMatching:async()=>({fbp:'fb.1.1795000000000.good'})},
+    });
+    const host=t.mock.method(page.embedBridge,'collectMetaCheckoutMatching');
+    // The preview's history pop resets the session's policy deadline before the lookup settles.
+    const previewClosed=new Promise(resolve=>setTimeout(()=>{session.current=false;resolve();},1));
+    assert.deepEqual(await page.collectMetaCheckoutMatching(model,snapshot,previewClosed),{fbp:'fb.1.1795000000000.good'});
+    assert.equal(session.refreshes,1);
+    assert.equal(host.mock.callCount(),1);
+    // A current policy needs no extra round trip.
+    assert.deepEqual(await page.collectMetaCheckoutMatching(model,snapshot),{fbp:'fb.1.1795000000000.good'});
+    assert.equal(session.refreshes,1);
+});
+
+test('a stalled policy recheck degrades checkout matching instead of holding the order',async t=>{
+    register('../css_loader.mjs',import.meta.url);
+    const {JSDOM}=await import('jsdom');
+    const win=new JSDOM('',{url:'https://tickets.example/form/pilot'}).window;
+    const globals={window:win,document:win.document,HTMLElement:win.HTMLElement,CustomEvent:win.CustomEvent};
+    const previous=Object.fromEntries(Object.keys(globals).map(key=>[key,globalThis[key]]));
+    Object.assign(globalThis,globals);
+    t.after(()=>{Object.assign(globalThis,previous);win.close();});
+    const {FormPage}=await import('../../src/components/forms/form_page.js');
+    const {DbForms}=await import('../../src/components/forms/db_forms.js');
+    t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>notice);
+    t.mock.timers.enable({apis:['setTimeout']});
+    const model={link:'pilot'};
+    const snapshot=purchaseConsentSnapshot(choice(),notice,now);
+    const page=Object.assign(Object.create(FormPage.prototype),{
+        currentSession:{formModel:model},
+        measurementSession:{consent:choice(),hasCurrentPolicy:()=>false,refresh:()=>new Promise(()=>{})},
+        embedBridge:{collectMetaCheckoutMatching:async()=>({fbp:'fb.1.1795000000000.good'})},
+    });
+    const host=t.mock.method(page.embedBridge,'collectMetaCheckoutMatching');
+    let settled=false;
+    const result=page.collectMetaCheckoutMatching(model,snapshot).then(value=>{settled=true;return value;});
+    for (let i=0;i<5;i++) await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(settled,false);
+    t.mock.timers.tick(1500);
+    assert.deepEqual(await result,{});
+    assert.equal(host.mock.callCount(),0,'stale policy never asks the host');
+});
+
 for (const offset of [-3600000,3600000]) test('withdrawal during checkout survives client clock offset '+offset,async()=>{
  const calls=[],orders=new PurchaseConsentOrders({clock:()=>now+offset+1000,revoke:async(scope,denial)=>{calls.push({scope,denial});return true;}});
  const grant=choice();grant.expiresAt=now+offset+60000;grant.purchaseConsent.capturedAt=new Date(now+offset).toISOString();

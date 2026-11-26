@@ -53,6 +53,9 @@ import { paymentMethodText } from './payment_method_strings.js';
 import { BlueprintLayoutAdapter } from '../blueprint/blueprint_layout_adapter.js';
 import { CardPaymentController } from './card_payment_controller.js';
 
+// Upper bound for the post-preview policy recheck before checkout matching.
+const META_MATCHING_POLICY_WAIT_MS = 1500;
+
 export class FormPage extends Component {
     // Keep internal session static for now if needed across hot-reloads, or instance?
     // Instance is cleaner, but need to be careful with Router callbacks.
@@ -1008,9 +1011,20 @@ export class FormPage extends Component {
             ? purchaseConsentSnapshot(measurement.consent, notice) : null;
     }
 
-    async collectMetaCheckoutMatching(formModel,snapshot) {
+    async collectMetaCheckoutMatching(formModel,snapshot,previewClosed=Promise.resolve()) {
         try {
-            const notice=await DbForms.getMetaPurchaseConsent(formModel.link);
+            const [notice]=await Promise.all([DbForms.getMetaPurchaseConsent(formModel.link),previewClosed]);
+            // Closing the order preview pops its history entry, which restarts
+            // policy verification. Ask the host only after that fresh policy exists;
+            // a slow or failed check degrades to no matching data, never a held order.
+            const measurement=this.measurementSession;
+            if (measurement && (this.measurementRefreshPending || !measurement.hasCurrentPolicy())) {
+                let timer;
+                await Promise.race([
+                    Promise.all([measurement.refresh(),this.measurementRefreshPending]),
+                    new Promise(resolve=>{timer=setTimeout(resolve,META_MATCHING_POLICY_WAIT_MS);}),
+                ]).finally(()=>clearTimeout(timer));
+            }
             const current=()=>this.currentPurchaseConsent(notice);
             if (this.currentSession?.formModel!==formModel || notice?.revision!==snapshot.revision ||
                 !samePurchaseDecision(current(),snapshot))return {};
@@ -1085,7 +1099,7 @@ export class FormPage extends Component {
         const submittedSession = this.currentSession;
         const measurementOutcome=this.analytics?.captureSubmission(payload);
         const matchingRequest=!retrySubmission && metaPurchaseConsent
-            ? this.collectMetaCheckoutMatching(formModel,metaPurchaseConsent) : null;
+            ? this.collectMetaCheckoutMatching(formModel,metaPurchaseConsent,previewHistoryClosed) : null;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {
             if (retrySubmission) submittedCapability = retrySubmission.capability;
