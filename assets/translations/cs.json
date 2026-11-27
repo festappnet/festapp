@@ -6010,7 +6010,7 @@
     "dataset": "ID datasetu",
     "website": "Web",
     "testCode": "Testovací kód",
-    "testHelp": "Test events v Events Manageru. Dokud je kód vyplněný, nákupy jdou jen do testu.",
+    "testHelp": "Kód z Test Events v Meta Events Manageru. Meta může i tyto události použít pro cílení a měření reklam. Pro izolovaný test použijte samostatný dataset.",
     "enabled": "Odesílat zaplacené nákupy do Mety",
     "token": "Přístupový token",
     "saved": "Token je uložen. Nový vložte jen při výměně.",

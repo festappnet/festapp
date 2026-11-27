@@ -38,12 +38,19 @@ BEGIN
     (SELECT jsonb_build_object('code',error_code,'status',status,'at',outcome_at) FROM (
       SELECT error_code,status,coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))) AS outcome_at
       FROM analytics.meta_purchase_deliveries d WHERE d.unit=p_unit AND d.error_code IS NOT NULL
-       -- A Test Events notice is resolved once the organizer saves a new code (new revision).
-       AND NOT (d.error_code='test_events_inactive' AND d.connector_revision IS DISTINCT FROM
-        (SELECT c.revision FROM analytics.meta_purchase_connectors c WHERE c.unit=p_unit))
+       AND d.error_code<>'test_events_inactive'
      ) outcomes ORDER BY outcome_at DESC LIMIT 1),
     (SELECT jsonb_build_object('code','credentials','status','pending','at',paused_at)
       FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND paused_at IS NOT NULL)),
+  'test_events_notice',(SELECT jsonb_build_object('at',receipt.done_at)
+    FROM analytics.meta_purchase_connectors c
+    CROSS JOIN LATERAL (
+      SELECT d.error_code,d.done_at FROM analytics.meta_purchase_deliveries d
+      WHERE d.unit=c.unit AND d.connector_revision=c.revision AND d.status='sent'
+       AND d.done_at>=statement_timestamp()-interval '30 days'
+      ORDER BY d.done_at DESC,d.order_id DESC LIMIT 1
+    ) receipt
+    WHERE c.unit=p_unit AND c.test_event_code IS NOT NULL AND receipt.error_code='test_events_inactive'),
   'forms',(SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'title',f.title,'enabled',m.form IS NOT NULL,
      'measurement_ready',EXISTS(SELECT FROM public.form_measurement_decision_internal(f.id) d WHERE d.conversion_eligible)) ORDER BY f.id),'[]'::jsonb)
     FROM public.forms f JOIN public.occasions o ON o.id=f.occasion

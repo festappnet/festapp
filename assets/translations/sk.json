@@ -4018,7 +4018,7 @@
     "dataset": "ID datasetu",
     "website": "Web",
     "testCode": "Testovací kód",
-    "testHelp": "Test events v Events Manageri. Kým je kód vyplnený, nákupy idú iba do testu.",
+    "testHelp": "Kód z Test Events v Meta Events Manageri. Meta môže tieto udalosti použiť na cielenie a meranie reklám. Na izolovaný test použite samostatný dataset.",
     "enabled": "Odosielať zaplatené nákupy do Mety",
     "token": "Prístupový token",
     "saved": "Token je uložený. Nový vložte iba pri výmene.",

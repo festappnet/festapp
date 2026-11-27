@@ -368,7 +368,9 @@ The field shows only the token's last ten characters and save date, stored when
 it was saved; Meta tokens share their prefix and often their final characters.
 Tokens saved before this hint existed show no suffix until replaced.
 Under the dataset's Test events tab, copy the server test event code. While the
-code is present, purchases go only to Test events. Remove it after testing.
+code is present, Meta can display accepted events in the matching Test Events
+session. Meta can still use these events for ad targeting and measurement. Use a
+separate dataset for isolated tests and remove the code after testing.
 See [Meta's setup instructions](https://developers.facebook.com/docs/marketing-api/conversions-api/get-started/).
 
 The section shows active/off/paused, a 30-day queue summary and a redacted last
@@ -388,9 +390,10 @@ or restores matching data. Unprepared or expired leases are cleared.
 When Meta accepts an event but reports that its `test_event_code` has no active
 Test Events session for the dataset and action source, the worker finishes it as
 `sent_test_inactive`: the delivery is `sent` with `error_code`
-`test_events_inactive`, which the settings show as the last result until a new
-test code is saved (a new connector revision). Production events without a test
-code never get this notice.
+`test_events_inactive`. The settings show it beside the test code if it belongs
+to the latest accepted receipt for the current connector revision in the past
+30 days. A newer accepted receipt without this notice clears it. Delivery errors
+are shown independently. Events without a test code never get this notice.
 
 ### Meta CAPI consent
 

@@ -187,11 +187,20 @@ BEGIN
   'inactive test session is a scrubbed sent receipt with its notice');
  INSERT INTO public.organization_users(organization,"user",is_admin) VALUES((x->>'organization')::bigint,(x->>'actor')::uuid,true);
  PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
- PERFORM assert_eq(public.get_unit_meta_purchase(un)#>>'{last_error,code}','test_events_inactive','settings explain the missing Test Events receipt');
- PERFORM assert_eq(public.get_unit_meta_purchase(un)#>>'{last_error,status}','sent','the notice belongs to a sent receipt');
+ UPDATE analytics.meta_purchase_connectors SET test_event_code='TEST123' WHERE unit=un;
+ PERFORM assert_true(public.get_unit_meta_purchase(un)#>>'{test_events_notice,at}' IS NOT NULL,'settings explain the missing Test Events receipt');
+ PERFORM assert_true(public.get_unit_meta_purchase(un)#>>'{last_error,code}' IS DISTINCT FROM 'test_events_inactive','accepted receipt is separate from failures');
+ INSERT INTO analytics.meta_purchase_deliveries(order_id,unit,connector_revision,consent_revision,status,error_code,done_at)
+ SELECT other_order,un,connector_revision,consent_revision,'failed','rejected',done_at+interval '1 second'
+ FROM analytics.meta_purchase_deliveries WHERE order_id=oid;
+ PERFORM assert_eq(public.get_unit_meta_purchase(un)#>>'{last_error,code}','rejected','delivery failures remain visible');
+ PERFORM assert_true(public.get_unit_meta_purchase(un)#>>'{test_events_notice,at}' IS NOT NULL,'a later failure does not replace the accepted notice');
+ UPDATE analytics.meta_purchase_deliveries SET status='sent',error_code=NULL WHERE order_id=other_order;
+ PERFORM assert_true(public.get_unit_meta_purchase(un)#>>'{test_events_notice,at}' IS NULL,'a newer successful receipt with the same code clears the notice');
+ DELETE FROM analytics.meta_purchase_deliveries WHERE order_id=other_order;
  UPDATE analytics.meta_purchase_connectors SET revision=gen_random_uuid() WHERE unit=un;
- PERFORM assert_true(public.get_unit_meta_purchase(un)#>>'{last_error,code}' IS DISTINCT FROM 'test_events_inactive','saving a new test code resolves the notice');
- UPDATE analytics.meta_purchase_connectors SET revision=(SELECT connector_revision FROM analytics.meta_purchase_deliveries WHERE order_id=oid) WHERE unit=un;
+ PERFORM assert_true(public.get_unit_meta_purchase(un)#>>'{test_events_notice,at}' IS NULL,'a new connector revision clears the notice');
+ UPDATE analytics.meta_purchase_connectors SET test_event_code=NULL,revision=(SELECT connector_revision FROM analytics.meta_purchase_deliveries WHERE order_id=oid) WHERE unit=un;
  DELETE FROM public.organization_users WHERE organization=(x->>'organization')::bigint AND "user"=(x->>'actor')::uuid;
  PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE analytics.meta_purchase_deliveries SET error_code=NULL WHERE order_id=oid;

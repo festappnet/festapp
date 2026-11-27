@@ -5994,7 +5994,7 @@
     "dataset": "ID del conjunto de datos",
     "website": "Sitio web",
     "testCode": "Código de evento de prueba",
-    "testHelp": "Test events en Events Manager. Mientras haya un código, las compras solo se envían a la prueba.",
+    "testHelp": "Código de Test Events en Meta Events Manager. Meta puede usar estos eventos para la segmentación y medición de anuncios. Usa un conjunto de datos separado para pruebas aisladas.",
     "enabled": "Enviar compras pagadas a Meta",
     "token": "Token de acceso",
     "saved": "El token está guardado. Introduzca uno nuevo solo para sustituirlo.",

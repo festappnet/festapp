@@ -405,10 +405,8 @@ void main() {
                 'websites': [],
                 'forms': [],
                 'queue': {'sent': 1},
-                'last_error': {
-                  'code': 'test_events_inactive',
-                  'status': 'sent',
-                },
+                'test_events_notice': <String, dynamic>{},
+                'last_error': {'code': 'retry', 'status': 'pending'},
               },
             ),
           ),
@@ -419,6 +417,7 @@ void main() {
     await tester.tap(find.text(MetaCapiStrings.title));
     await tester.pumpAndSettle();
     expect(find.text(MetaCapiStrings.testEventsInactive), findsOneWidget);
+    expect(find.text(MetaCapiStrings.retry), findsOneWidget);
     expect(find.text(MetaCapiStrings.deliveryFailed), findsNothing);
   });
 

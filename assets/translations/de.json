@@ -3751,7 +3751,7 @@
     "dataset": "Dataset-ID",
     "website": "Website",
     "testCode": "Testereigniscode",
-    "testHelp": "Test events im Events Manager. Solange der Code eingetragen ist, werden Käufe nur zum Test gesendet.",
+    "testHelp": "Code aus „Test Events“ im Meta Events Manager. Meta kann diese Ereignisse für Anzeigen-Targeting und -Messung verwenden. Verwenden Sie für isolierte Tests einen separaten Datensatz.",
     "enabled": "Bezahlte Käufe an Meta senden",
     "token": "Zugriffstoken",
     "saved": "Das Token ist gespeichert. Geben Sie nur beim Ersetzen ein neues ein.",

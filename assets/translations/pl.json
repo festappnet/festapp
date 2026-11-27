@@ -3753,7 +3753,7 @@
     "dataset": "Identyfikator zestawu danych",
     "website": "Witryna",
     "testCode": "Kod zdarzenia testowego",
-    "testHelp": "Test events w Events Managerze. Gdy kod jest wpisany, zakupy trafiają tylko do testu.",
+    "testHelp": "Kod z Test Events w Menedżerze zdarzeń Meta. Meta może użyć tych zdarzeń do targetowania i pomiaru reklam. Do odizolowanych testów użyj osobnego zestawu danych.",
     "enabled": "Wysyłaj opłacone zakupy do Meta",
     "token": "Token dostępu",
     "saved": "Token jest zapisany. Wpisz nowy tylko wtedy, gdy chcesz go wymienić.",

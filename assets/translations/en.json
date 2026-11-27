@@ -6008,7 +6008,7 @@
     "dataset": "Dataset ID",
     "website": "Website",
     "testCode": "Test event code",
-    "testHelp": "Test events in Events Manager. While filled in, purchases go only to the test.",
+    "testHelp": "Code from Test Events in Meta Events Manager. Meta may use these events for ad targeting and measurement. Use a separate dataset for isolated tests.",
     "enabled": "Send paid purchases to Meta",
     "token": "Access token",
     "saved": "The token is saved. Enter a new one only to replace it.",

@@ -258,6 +258,8 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
     final forms = data['forms'] as List? ?? const [];
     final error = data['last_error'] as Map?;
     final errorAt = DateTime.tryParse(error?['at']?.toString() ?? '');
+    final testNotice = data['test_events_notice'] as Map?;
+    final testNoticeAt = DateTime.tryParse(testNotice?['at']?.toString() ?? '');
     final errorText = switch (error?['code']) {
       'connector_changed' ||
       'consent_invalid' ||
@@ -268,7 +270,6 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         error!['code'] as String,
       ),
       'sent_in_flight' => MetaCapiStrings.sentInFlight,
-      'test_events_inactive' => MetaCapiStrings.testEventsInactive,
       'credentials' =>
         error?['status'] == 'failed'
             ? MetaCapiStrings.deliveryFailed
@@ -403,6 +404,19 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
                   ? null
                   : MetaCapiStrings.invalid,
             ),
+            if (testNotice != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    withStatusDate(
+                      MetaCapiStrings.testEventsInactive,
+                      testNoticeAt,
+                    ),
+                  ),
+                ),
+              ),
             TextFormField(
               key: const PageStorageKey('meta-capi-token'),
               controller: _token,
