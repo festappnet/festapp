@@ -132,6 +132,23 @@ Deno.test("Meta test receipt without an active Test Events session is still sent
   );
   assertEquals(
     await sendMetaPurchase(
+      { ...purchase, testEventCode: "" },
+      async () => Response.json(inactive),
+    ),
+    "sent",
+    "an empty test code is a production event",
+  );
+  assertEquals(
+    await sendMetaPurchase(
+      purchase,
+      async () =>
+        Response.json({ events_received: 1, messages: inactive.messages[0] }),
+    ),
+    "sent",
+    "malformed messages never block a receipt",
+  );
+  assertEquals(
+    await sendMetaPurchase(
       purchase,
       async () => Response.json({ events_received: 1, messages: ["other"] }),
     ),

@@ -182,7 +182,18 @@ BEGIN
   fbp='fb.1.1795000000000.1234',lease=claimed,prepared=true,done_at=NULL WHERE order_id=oid;
  PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent_test_inactive'),'inactive test session receipt is finalized');
  PERFORM assert_true((SELECT status='sent' AND error_code='test_events_inactive' AND done_at IS NOT NULL AND consent_snapshot IS NULL
-  AND phone_hash IS NULL AND fbp IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'inactive test session is a sent receipt with its notice');
+  AND email_hash IS NULL AND phone_hash IS NULL AND fbp IS NULL AND fbc IS NULL AND client_ip IS NULL AND client_agent IS NULL
+  AND source_url IS NULL AND lease IS NULL AND lease_until IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
+  'inactive test session is a scrubbed sent receipt with its notice');
+ INSERT INTO public.organization_users(organization,"user",is_admin) VALUES((x->>'organization')::bigint,(x->>'actor')::uuid,true);
+ PERFORM set_config('request.jwt.claim.sub',x->>'actor',true);
+ PERFORM assert_eq(public.get_unit_meta_purchase(un)#>>'{last_error,code}','test_events_inactive','settings explain the missing Test Events receipt');
+ PERFORM assert_eq(public.get_unit_meta_purchase(un)#>>'{last_error,status}','sent','the notice belongs to a sent receipt');
+ UPDATE analytics.meta_purchase_connectors SET revision=gen_random_uuid() WHERE unit=un;
+ PERFORM assert_true(public.get_unit_meta_purchase(un)#>>'{last_error,code}' IS DISTINCT FROM 'test_events_inactive','saving a new test code resolves the notice');
+ UPDATE analytics.meta_purchase_connectors SET revision=(SELECT connector_revision FROM analytics.meta_purchase_deliveries WHERE order_id=oid) WHERE unit=un;
+ DELETE FROM public.organization_users WHERE organization=(x->>'organization')::bigint AND "user"=(x->>'actor')::uuid;
+ PERFORM set_config('request.jwt.claim.sub','',true);
  UPDATE analytics.meta_purchase_deliveries SET error_code=NULL WHERE order_id=oid;
  PERFORM public.issue_order_overview_internal(oid,pg_temp.delivery('fixture',repeat('c',64),oid),gen_random_uuid());
  UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp(),consent_decided_at='2020-01-01T00:00:00Z' WHERE order_id=oid;

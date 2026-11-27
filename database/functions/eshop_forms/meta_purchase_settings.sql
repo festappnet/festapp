@@ -37,7 +37,10 @@ BEGIN
   'last_error',coalesce(
     (SELECT jsonb_build_object('code',error_code,'status',status,'at',outcome_at) FROM (
       SELECT error_code,status,coalesce(done_at,next_attempt_at-interval '2 minutes'*power(2,greatest(attempts-1,0))) AS outcome_at
-      FROM analytics.meta_purchase_deliveries WHERE unit=p_unit AND error_code IS NOT NULL
+      FROM analytics.meta_purchase_deliveries d WHERE d.unit=p_unit AND d.error_code IS NOT NULL
+       -- A Test Events notice is resolved once the organizer saves a new code (new revision).
+       AND NOT (d.error_code='test_events_inactive' AND d.connector_revision IS DISTINCT FROM
+        (SELECT c.revision FROM analytics.meta_purchase_connectors c WHERE c.unit=p_unit))
      ) outcomes ORDER BY outcome_at DESC LIMIT 1),
     (SELECT jsonb_build_object('code','credentials','status','pending','at',paused_at)
       FROM analytics.meta_purchase_connectors WHERE unit=p_unit AND paused_at IS NOT NULL)),

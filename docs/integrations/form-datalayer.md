@@ -385,6 +385,13 @@ A prepared delivery with a live lease retains only its receipt fence: finishing
 without the connector still records `sent_in_flight` for success and never retries
 or restores matching data. Unprepared or expired leases are cleared.
 
+When Meta accepts an event but reports that its `test_event_code` has no active
+Test Events session for the dataset and action source, the worker finishes it as
+`sent_test_inactive`: the delivery is `sent` with `error_code`
+`test_events_inactive`, which the settings show as the last result until a new
+test code is saved (a new connector revision). Production events without a test
+code never get this notice.
+
 ### Meta CAPI consent
 
 Pilot forms use the existing saved CMP choice; there is no separate Purchase
@@ -1112,10 +1119,6 @@ the receipt. The existing eligibility check still requires full net bank receipt
 a paid or sent order, and live measurement policy. Purchase cohort, consent, age
 and connector checks still apply.
 
-The Meta worker rechecks eligibility in `prepare_meta_purchase_delivery`. When Meta accepts an event but reports that its `test_event_code` has no active
-Test Events session for the dataset and action source, the worker finishes it as
-`sent_test_inactive`: the delivery is `sent` with `error_code`
-`test_events_inactive`, which the settings show as the last result. Production
-events without a test code never get this notice.
+The Meta worker rechecks eligibility in `prepare_meta_purchase_delivery`.
 Unpairing can make the order ineligible up to that check. A send already in
 flight can finish, and successful sends retain their existing event identity.
