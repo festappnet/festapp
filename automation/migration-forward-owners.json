@@ -1120,6 +1120,17 @@
           "bank_sync_email_candidates_internal"
         ]
       }
+    },
+    {
+      "migration": "20261127020000_meta_purchase_test_session_notice.sql",
+      "active": true,
+      "header": "-- Record Meta receipts whose test event code has no active Test Events session.",
+      "sources": [
+        "eshop_forms/meta_purchase_worker.sql"
+      ],
+      "selectors": {
+        "eshop_forms/meta_purchase_worker.sql": ["finish_meta_purchase_delivery"]
+      }
     }
   ]
 }

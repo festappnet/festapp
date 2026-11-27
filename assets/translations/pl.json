@@ -3747,6 +3747,7 @@
     "noForms": "Nie masz jeszcze formularzy.",
     "deliveryFailed": "Nie udało się wysłać zakupu. Nie będzie kolejnych prób.",
     "sentInFlight": "Zakup wysłano przed zakończeniem odłączania lub wycofania zgody.",
+    "testEventsInactive": "Wysłano, ale nie pojawi się w Test Events: kod testowy nie pasuje do otwartej sesji Test Events. Otwórz Test Events i zapisz aktualny kod.",
     "tokenRequired": "Wpisz token dostępu, aby włączyć wysyłanie.",
     "title": "Meta Conversions API",
     "dataset": "Identyfikator zestawu danych",

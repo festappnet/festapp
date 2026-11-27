@@ -3745,6 +3745,7 @@
     "noForms": "Sie haben noch keine Formulare.",
     "deliveryFailed": "Der Kauf konnte nicht gesendet werden. Es erfolgen keine weiteren Versuche.",
     "sentInFlight": "Der Kauf wurde vor Abschluss der Trennung oder des Einwilligungswiderrufs gesendet.",
+    "testEventsInactive": "Gesendet, erscheint aber nicht in Test Events: Der Testcode passt zu keiner geöffneten Test-Events-Sitzung. Öffnen Sie Test Events und speichern Sie den aktuellen Code.",
     "tokenRequired": "Geben Sie ein Zugriffstoken ein, um den Versand zu aktivieren.",
     "title": "Meta Conversions API",
     "dataset": "Dataset-ID",

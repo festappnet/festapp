@@ -4012,6 +4012,7 @@
     "noForms": "Zatiaľ nemáte žiadne formuláre.",
     "deliveryFailed": "Nákup sa nepodarilo odoslať. Ďalšie pokusy už neprebehnú.",
     "sentInFlight": "Nákup bol odoslaný pred dokončením odpojenia alebo odvolania súhlasu.",
+    "testEventsInactive": "Odoslané, ale v Test Events sa nezobrazí: testovací kód nezodpovedá otvorenej relácii Test Events. Otvorte Test Events a uložte aktuálny kód.",
     "tokenRequired": "Zadajte prístupový token, aby ste mohli zapnúť odosielanie.",
     "title": "Meta Conversions API",
     "dataset": "ID datasetu",

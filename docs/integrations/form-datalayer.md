@@ -1112,6 +1112,10 @@ the receipt. The existing eligibility check still requires full net bank receipt
 a paid or sent order, and live measurement policy. Purchase cohort, consent, age
 and connector checks still apply.
 
-The Meta worker rechecks eligibility in `prepare_meta_purchase_delivery`.
+The Meta worker rechecks eligibility in `prepare_meta_purchase_delivery`. When Meta accepts an event but reports that its `test_event_code` has no active
+Test Events session for the dataset and action source, the worker finishes it as
+`sent_test_inactive`: the delivery is `sent` with `error_code`
+`test_events_inactive`, which the settings show as the last result. Production
+events without a test code never get this notice.
 Unpairing can make the order ineligible up to that check. A send already in
 flight can finish, and successful sends retain their existing event identity.

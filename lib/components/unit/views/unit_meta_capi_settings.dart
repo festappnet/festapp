@@ -268,6 +268,7 @@ class _UnitMetaCapiSettingsState extends State<UnitMetaCapiSettings> {
         error!['code'] as String,
       ),
       'sent_in_flight' => MetaCapiStrings.sentInFlight,
+      'test_events_inactive' => MetaCapiStrings.testEventsInactive,
       'credentials' =>
         error?['status'] == 'failed'
             ? MetaCapiStrings.deliveryFailed

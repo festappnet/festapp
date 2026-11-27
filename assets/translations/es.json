@@ -5988,6 +5988,7 @@
     "noForms": "Todavía no tiene formularios.",
     "deliveryFailed": "No se pudo enviar la compra. No se realizarán más intentos.",
     "sentInFlight": "La compra se envió antes de completarse la desconexión o la retirada del consentimiento.",
+    "testEventsInactive": "Enviado, pero no aparecerá en Test Events: el código de prueba no coincide con una sesión abierta de Test Events. Abra Test Events y guarde el código actual.",
     "tokenRequired": "Introduzca un token de acceso para activar el envío.",
     "title": "Meta Conversions API",
     "dataset": "ID del conjunto de datos",

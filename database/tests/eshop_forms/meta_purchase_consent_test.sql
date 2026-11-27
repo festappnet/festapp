@@ -177,6 +177,13 @@ BEGIN
  UPDATE analytics.meta_purchase_deliveries SET phone_hash=repeat('b',64),fbp='fb.1.1795000000000.1234',fbc='fb.1.1795000000000.Click_123',client_ip='192.0.2.1',status='pending',consent_snapshot=snapshot,lease=claimed,prepared=true WHERE order_id=oid;
  PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent'),'receipt is finalized');
  PERFORM assert_true((SELECT status='sent' AND consent_snapshot IS NULL AND phone_hash IS NULL AND fbp IS NULL AND fbc IS NULL AND client_ip IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'sent receipts contain no snapshot');
+ -- Meta accepted a test event without an active Test Events session: sent, with an explanatory code.
+ UPDATE analytics.meta_purchase_deliveries SET status='pending',consent_snapshot=snapshot,phone_hash=repeat('b',64),
+  fbp='fb.1.1795000000000.1234',lease=claimed,prepared=true,done_at=NULL WHERE order_id=oid;
+ PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,'sent_test_inactive'),'inactive test session receipt is finalized');
+ PERFORM assert_true((SELECT status='sent' AND error_code='test_events_inactive' AND done_at IS NOT NULL AND consent_snapshot IS NULL
+  AND phone_hash IS NULL AND fbp IS NULL FROM analytics.meta_purchase_deliveries WHERE order_id=oid),'inactive test session is a sent receipt with its notice');
+ UPDATE analytics.meta_purchase_deliveries SET error_code=NULL WHERE order_id=oid;
  PERFORM public.issue_order_overview_internal(oid,pg_temp.delivery('fixture',repeat('c',64),oid),gen_random_uuid());
  UPDATE analytics.meta_purchase_deliveries SET consent_at=clock_timestamp(),consent_decided_at='2020-01-01T00:00:00Z' WHERE order_id=oid;
  PERFORM assert_false(public.revoke_meta_purchase_consent(repeat('c',64),oid,snapshot||'{"ad_storage":false,"decidedAt":"2000-01-01T00:00:00.000Z"}'),
@@ -453,7 +460,7 @@ DO $$
 DECLARE x jsonb; un bigint; fid bigint; snapshot jsonb; receipt jsonb; oid bigint;
  payment_id bigint; transaction_id bigint; claimed uuid; deadline timestamptz; result text;
 BEGIN
- FOREACH result IN ARRAY ARRAY['sent','retry','credentials','rejected','before_prepare','expired_lease'] LOOP
+ FOREACH result IN ARRAY ARRAY['sent','sent_test_inactive','retry','credentials','rejected','before_prepare','expired_lease'] LOOP
   x:=pg_temp.fixture(NULL); un:=(x->>'unit')::bigint; fid:=(x->>'form')::bigint;
   PERFORM set_config('request.jwt.claim.sub','',true);
   UPDATE public.organizations SET data=data||'{"DEFAULT_URL":"https://tickets.example"}' WHERE id=(x->>'organization')::bigint;
@@ -502,7 +509,7 @@ BEGIN
    PERFORM assert_true(public.revoke_meta_purchase_consent(encode(sha256(convert_to('withdrawal-'||result,'UTF8')),'hex'),oid),'repeated withdrawal is harmless');
    PERFORM assert_true(public.finish_meta_purchase_delivery(oid,claimed,result),'sender records the in-flight result');
    PERFORM assert_eq((SELECT error_code FROM analytics.meta_purchase_deliveries WHERE order_id=oid),
-    CASE WHEN result='sent' THEN 'sent_in_flight' ELSE result END,'receipt preserves the actual outcome');
+    CASE WHEN result IN ('sent','sent_test_inactive') THEN 'sent_in_flight' ELSE result END,'receipt preserves the actual outcome');
    PERFORM assert_false(public.finish_meta_purchase_delivery(oid,claimed,result),'receipt fence is consumed once');
    IF result='credentials' THEN
     PERFORM assert_true((SELECT paused_at IS NOT NULL FROM analytics.meta_purchase_connectors WHERE unit=un),'credentials still pause connector');

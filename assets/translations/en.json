@@ -6002,6 +6002,7 @@
     "noForms": "You do not have any forms yet.",
     "deliveryFailed": "The purchase could not be sent. No further attempts will be made.",
     "sentInFlight": "The purchase was sent before disconnect or consent withdrawal completed.",
+    "testEventsInactive": "Sent, but it will not appear in Test Events: the test code does not match an open Test Events session. Open Test Events and save the current code.",
     "tokenRequired": "Enter an access token to enable sending.",
     "title": "Meta Conversions API",
     "dataset": "Dataset ID",
