@@ -1108,7 +1108,9 @@ export class FormPage extends Component {
             } : null);
         const submittedSession = this.currentSession;
         const measurementOutcome=this.analytics?.captureSubmission(payload);
-        const matchingContext=!retrySubmission && metaPurchaseConsent ? this.checkoutMatchingContext(formModel) : null;
+        const sendsTicketOrder = !formModel.demoSimulation && formModel.registrationMode !== 'waitlist' && !formModel.offerBundle;
+        const matchingContext=sendsTicketOrder && !retrySubmission && metaPurchaseConsent
+            ? this.checkoutMatchingContext(formModel) : null;
         const matchingRequest=matchingContext ? this.collectMetaCheckoutMatching(formModel,metaPurchaseConsent,matchingContext) : null;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {

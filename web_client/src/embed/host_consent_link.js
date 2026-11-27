@@ -101,7 +101,8 @@ export function installHostConsentLink(win, productOrigin, source) {
                 // Same checks as an embed host: live session, current saved advertising
                 // decision for this binding and revision, read only at checkout.
                 const {scope} = existing.envelope;
-                if (!existing.includePurchaseConsent || !scope.binding || Date.now() >= existing.until ||
+                if (!existing.includePurchaseConsent || !scope.binding || Date.now() >= existing.expiresAt ||
+                    !sameConsentScope(scope, data.scope) ||
                     source?.generation !== existing.generation || typeof data.requestId !== 'string' ||
                     !/^[a-f0-9-]{36}$/.test(data.requestId) || !/^[0-9a-f]{32}$/.test(data.revision || '') ||
                     !sameConsentBinding(scope.binding, data.binding)) return;
@@ -121,15 +122,18 @@ export function installHostConsentLink(win, productOrigin, source) {
             if (!sameConsentScope(scope, data.scope)) return;
             const includePurchaseConsent = data.includePurchaseConsent === true;
             const child = event.source;
-            const session = {sequence:0, until:Date.now()+24*60*60*1000, generation:source?.generation, includePurchaseConsent,
+            const session = {sequence:0, until:Date.now()+24*60*60*1000, expiresAt:0, generation:source?.generation, includePurchaseConsent,
                 envelope:{namespace:consentLinkNamespace, protocol:1, nonce:data.nonce, scope}};
             sessions.set(child, session);
             const send = () => {
                 if (sessions.get(child) !== session) return;
                 const choice = source?.generation === session.generation ? source?.read({...scope,includePurchaseConsent}) : null;
                 if (child.closed || Date.now() >= session.until || !choice || (!includePurchaseConsent && choice.ordinaryValid === false)) { end(child); return; }
-                try { child.postMessage({...session.envelope, type:'response', sequence:++session.sequence,
-                    choice, expiresAt:Math.min(session.until, Date.now()+60000)}, productOrigin); }
+                try {
+                    const expiresAt = Math.min(session.until, Date.now()+60000);
+                    child.postMessage({...session.envelope, type:'response', sequence:++session.sequence, choice, expiresAt}, productOrigin);
+                    session.expiresAt = expiresAt;
+                }
                 catch { end(child); }
             };
             session.unsubscribe = source?.subscribe(send);

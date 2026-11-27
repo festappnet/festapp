@@ -487,7 +487,7 @@
         }
         if (existing && data.type === "matching-request" && data.nonce === existing.envelope.nonce) {
           const { scope: scope2 } = existing.envelope;
-          if (!existing.includePurchaseConsent || !scope2.binding || Date.now() >= existing.until || source?.generation !== existing.generation || typeof data.requestId !== "string" || !/^[a-f0-9-]{36}$/.test(data.requestId) || !/^[0-9a-f]{32}$/.test(data.revision || "") || !sameConsentBinding(scope2.binding, data.binding)) return;
+          if (!existing.includePurchaseConsent || !scope2.binding || Date.now() >= existing.expiresAt || !sameConsentScope(scope2, data.scope) || source?.generation !== existing.generation || typeof data.requestId !== "string" || !/^[a-f0-9-]{36}$/.test(data.requestId) || !/^[0-9a-f]{32}$/.test(data.revision || "") || !sameConsentBinding(scope2.binding, data.binding)) return;
           const choice = source?.read({ ...scope2, includePurchaseConsent: true });
           const decision = choice?.purchaseConsent ? { ...choice.purchaseConsent, binding: scope2.binding, websiteOrigin: win.location.origin } : null;
           if (!hasCurrentPurchaseConsent({ purchaseConsent: decision }) || decision.consentRevision !== data.consentRevision) return;
@@ -512,6 +512,7 @@
         const session = {
           sequence: 0,
           until: Date.now() + 24 * 60 * 60 * 1e3,
+          expiresAt: 0,
           generation: source?.generation,
           includePurchaseConsent,
           envelope: { namespace: consentLinkNamespace, protocol: 1, nonce: data.nonce, scope }
@@ -525,13 +526,9 @@
             return;
           }
           try {
-            child.postMessage({
-              ...session.envelope,
-              type: "response",
-              sequence: ++session.sequence,
-              choice,
-              expiresAt: Math.min(session.until, Date.now() + 6e4)
-            }, productOrigin);
+            const expiresAt = Math.min(session.until, Date.now() + 6e4);
+            child.postMessage({ ...session.envelope, type: "response", sequence: ++session.sequence, choice, expiresAt }, productOrigin);
+            session.expiresAt = expiresAt;
           } catch {
             end(child);
           }

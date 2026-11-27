@@ -160,27 +160,38 @@ test('linked checkout asks the live website for Meta browser IDs only under curr
   assert.equal(replies.at(-1).requestId,ask.requestId);
   assert.deepEqual(replies.at(-1).matching,{fbp:'fb.1.1795000000000.123456789',fbc:'fb.1.1795000000000.AbC'});
   const count=replies.length;
-  send({...ask,consentRevision:'c'.repeat(32)});send({...ask,binding:{id:capiBinding.id,version:2}});send({...ask,nonce:win.crypto.randomUUID()});
+  send({...ask,consentRevision:'c'.repeat(32)});send({...ask,binding:{id:capiBinding.id,version:2}});send({...ask,nonce:win.crypto.randomUUID()});send({...ask,scope:{...linkScope,unit:3}});
   grant=false;send(ask);
-  assert.equal(replies.length,count,'stale revision, binding, nonce or withdrawn consent gets no identifiers');
+  assert.equal(replies.length,count,'stale revision, binding, nonce, scope or withdrawn consent gets no identifiers');
+  grant=true;
+  const now=Date.now;
+  const expiresAt=replies[0].expiresAt;
+  try { Date.now=()=>expiresAt;send(ask); } finally { Date.now=now; }
+  assert.equal(replies.length,count,'the host never reads cookies after the advertised lease expires');
  }finally{stop();win.close();}
 });
 test('linked checkout matching is requested once per checkout, validated and bounded',async()=>{
  const f=childFixture({policy:capiPolicy,includePurchaseConsent:true});
  try{
-  const snapshot={websiteOrigin:'https://host.example',revision:'b'.repeat(32),consentRevision:'a'.repeat(32),binding:{id:capiBinding.id,version:1}};
+  const snapshot={source:'cookiebot',websiteOrigin:'https://host.example',revision:'b'.repeat(32),consentRevision:'a'.repeat(32),binding:{id:capiBinding.id,version:1},ad_storage:true,ad_user_data:true,ad_personalization:true};
   assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'no live link before the website grants');
   f.reply({scope:f.sent[0].scope});
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'ordinary consent cannot request Meta IDs');
+  f.reply({scope:f.sent[0].scope,sequence:2,choice:{analytics:true,marketing:true,purchaseConsent:snapshot}});
   const pending=collectLinkedMetaMatching(f.win,snapshot);
   const ask=f.sent.at(-1);
   assert.equal(ask.type,'matching-request');assert.equal(ask.nonce,f.sent[0].nonce);assert.equal(ask.revision,snapshot.revision);
-  f.reply({type:'matching',sequence:2,requestId:'00000000-0000-4000-8000-000000000000',matching:{fbp:'fb.1.1795000000000.other'},scope:f.sent[0].scope});
-  f.reply({type:'matching',sequence:3,requestId:ask.requestId,matching:{fbp:'fb.1.1795000000000.good',fbc:'bad',email:'x'},scope:f.sent[0].scope});
+  f.reply({type:'matching',sequence:3,requestId:'00000000-0000-4000-8000-000000000000',matching:{fbp:'fb.1.1795000000000.other'},scope:f.sent[0].scope});
+  f.reply({type:'matching',sequence:4,requestId:ask.requestId,matching:{fbp:'fb.1.1795000000000.good',fbc:'bad',email:'x'},scope:f.sent[0].scope});
   assert.deepEqual(await pending,{fbp:'fb.1.1795000000000.good'});
   const sent=f.sent.length;
   assert.deepEqual(await collectLinkedMetaMatching(f.win,{...snapshot,websiteOrigin:'https://evil.example'}),{});
   assert.equal(f.sent.length,sent,'a foreign origin never asks the website');
   assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'an unanswered request times out');
+  const withdrawn=collectLinkedMetaMatching(f.win,snapshot);
+  f.reply({sequence:5,choice:{analytics:true,marketing:false,purchaseConsent:{...snapshot,ad_storage:false}}});
+  assert.deepEqual(await withdrawn,{},'withdrawal clears an outstanding request');
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'a withdrawn choice cannot start a request');
   f.stop();
   assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'an ended link has no collector');
  }finally{f.close()}
