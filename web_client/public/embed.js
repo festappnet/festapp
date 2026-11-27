@@ -283,6 +283,57 @@
     };
   }
 
+  // src/components/forms/meta_purchase_consent.js
+  var matchingTimestamp = Date.now();
+  var purposes = ["ad_storage", "ad_user_data", "ad_personalization"];
+  function validMetaBrowserId(value) {
+    return typeof value === "string" && value.length <= 1024 && !/[\u0000-\u001f\u007f]/.test(value) && /^fb\.[0-9]{1,3}\.[0-9]{13}\.[A-Za-z0-9_-]{1,500}$/.test(value);
+  }
+  function metaBrowserMatching(snapshot, win) {
+    if (!hasCurrentPurchaseConsent({ purchaseConsent: snapshot, expiresAt: snapshot?.transportExpiresAt }) || snapshot.websiteOrigin !== win.location.origin) return {};
+    const cookies = /* @__PURE__ */ new Map();
+    if (snapshot.source !== "klaro") try {
+      for (const part of win.document.cookie.split(";")) {
+        const [key, ...value] = part.trim().split("=");
+        if (!["_fbp", "_fbc"].includes(key)) continue;
+        try {
+          cookies.set(key, decodeURIComponent(value.join("=")));
+        } catch {
+        }
+      }
+    } catch {
+    }
+    const fbp = cookies.get("_fbp");
+    let fbc = cookies.get("_fbc");
+    const click = new URL(win.location.href).searchParams.get("fbclid");
+    if (/^[A-Za-z0-9_-]{1,500}$/.test(click || "") && (!validMetaBrowserId(fbc) || fbc.split(".")[3] !== click))
+      fbc = `fb.1.${Math.floor(win.performance?.timeOrigin || matchingTimestamp)}.${click}`;
+    return { ...validMetaBrowserId(fbp) ? { fbp } : {}, ...validMetaBrowserId(fbc) ? { fbc } : {} };
+  }
+  function hasCurrentDecision(choice, now) {
+    const snapshot = choice?.purchaseConsent;
+    return !!snapshot && ["klaro", "cookiebot", "cookieconsent", "wix", "complianz"].includes(snapshot.source) && /^[a-f0-9]{32}$/.test(snapshot.consentRevision || "") && (snapshot.source === "klaro" || validConsentBinding(snapshot.binding)) && (choice.expiresAt === void 0 || Number.isFinite(choice.expiresAt) && choice.expiresAt > now);
+  }
+  function hasCurrentPurchaseConsent(choice, now = Date.now()) {
+    return hasCurrentDecision(choice, now) && purposes.every((key) => choice.purchaseConsent[key] === true);
+  }
+  function publicPurchaseDecision(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return null;
+    const { source, capturedAt, consentRevision, websiteOrigin, binding, ad_storage, ad_user_data, ad_personalization } = snapshot;
+    const decidedAt = snapshot.decidedAt ?? snapshot.timestamp;
+    return {
+      source,
+      capturedAt,
+      ...decidedAt ? { decidedAt } : {},
+      consentRevision,
+      websiteOrigin,
+      ad_storage,
+      ad_user_data,
+      ad_personalization,
+      ...binding ? { binding: { id: binding.id, version: binding.version } } : {}
+    };
+  }
+
   // src/components/forms/form_consent_link.js
   var isLocalConsentLink = (win) => win.location.protocol === "http:" && ["localhost", "127.0.0.1"].includes(win.location.hostname);
   function isConsentLinkOrigin(origin, local = false) {
@@ -434,6 +485,21 @@
           end(event.source);
           return;
         }
+        if (existing && data.type === "matching-request" && data.nonce === existing.envelope.nonce) {
+          const { scope: scope2 } = existing.envelope;
+          if (!existing.includePurchaseConsent || !scope2.binding || Date.now() >= existing.expiresAt || !sameConsentScope(scope2, data.scope) || source?.generation !== existing.generation || typeof data.requestId !== "string" || !/^[a-f0-9-]{36}$/.test(data.requestId) || !/^[0-9a-f]{32}$/.test(data.revision || "") || !sameConsentBinding(scope2.binding, data.binding)) return;
+          const choice = source?.read({ ...scope2, includePurchaseConsent: true });
+          const decision = choice?.purchaseConsent ? { ...choice.purchaseConsent, binding: scope2.binding, websiteOrigin: win.location.origin } : null;
+          if (!hasCurrentPurchaseConsent({ purchaseConsent: decision }) || decision.consentRevision !== data.consentRevision) return;
+          event.source.postMessage({
+            ...existing.envelope,
+            type: "matching",
+            sequence: ++existing.sequence,
+            requestId: data.requestId,
+            matching: metaBrowserMatching(decision, win)
+          }, productOrigin);
+          return;
+        }
         if (!opened.has(event.source) || data.type !== "request" || typeof data.nonce !== "string" || !/^[a-f0-9-]{36}$/.test(data.nonce)) return;
         const record = opened.get(event.source);
         win.clearTimeout(record.timer);
@@ -446,7 +512,9 @@
         const session = {
           sequence: 0,
           until: Date.now() + 24 * 60 * 60 * 1e3,
+          expiresAt: 0,
           generation: source?.generation,
+          includePurchaseConsent,
           envelope: { namespace: consentLinkNamespace, protocol: 1, nonce: data.nonce, scope }
         };
         sessions.set(child, session);
@@ -458,13 +526,9 @@
             return;
           }
           try {
-            child.postMessage({
-              ...session.envelope,
-              type: "response",
-              sequence: ++session.sequence,
-              choice,
-              expiresAt: Math.min(session.until, Date.now() + 6e4)
-            }, productOrigin);
+            const expiresAt = Math.min(session.until, Date.now() + 6e4);
+            child.postMessage({ ...session.envelope, type: "response", sequence: ++session.sequence, choice, expiresAt }, productOrigin);
+            session.expiresAt = expiresAt;
           } catch {
             end(child);
           }
@@ -980,57 +1044,6 @@
       this.closed = true;
     }
   };
-
-  // src/components/forms/meta_purchase_consent.js
-  var matchingTimestamp = Date.now();
-  var purposes = ["ad_storage", "ad_user_data", "ad_personalization"];
-  function validMetaBrowserId(value) {
-    return typeof value === "string" && value.length <= 1024 && !/[\u0000-\u001f\u007f]/.test(value) && /^fb\.[0-9]{1,3}\.[0-9]{13}\.[A-Za-z0-9_-]{1,500}$/.test(value);
-  }
-  function metaBrowserMatching(snapshot, win) {
-    if (!hasCurrentPurchaseConsent({ purchaseConsent: snapshot, expiresAt: snapshot?.transportExpiresAt }) || snapshot.websiteOrigin !== win.location.origin) return {};
-    const cookies = /* @__PURE__ */ new Map();
-    if (snapshot.source !== "klaro") try {
-      for (const part of win.document.cookie.split(";")) {
-        const [key, ...value] = part.trim().split("=");
-        if (!["_fbp", "_fbc"].includes(key)) continue;
-        try {
-          cookies.set(key, decodeURIComponent(value.join("=")));
-        } catch {
-        }
-      }
-    } catch {
-    }
-    const fbp = cookies.get("_fbp");
-    let fbc = cookies.get("_fbc");
-    const click = new URL(win.location.href).searchParams.get("fbclid");
-    if (/^[A-Za-z0-9_-]{1,500}$/.test(click || "") && (!validMetaBrowserId(fbc) || fbc.split(".")[3] !== click))
-      fbc = `fb.1.${Math.floor(win.performance?.timeOrigin || matchingTimestamp)}.${click}`;
-    return { ...validMetaBrowserId(fbp) ? { fbp } : {}, ...validMetaBrowserId(fbc) ? { fbc } : {} };
-  }
-  function hasCurrentDecision(choice, now) {
-    const snapshot = choice?.purchaseConsent;
-    return !!snapshot && ["klaro", "cookiebot", "cookieconsent", "wix", "complianz"].includes(snapshot.source) && /^[a-f0-9]{32}$/.test(snapshot.consentRevision || "") && (snapshot.source === "klaro" || validConsentBinding(snapshot.binding)) && (choice.expiresAt === void 0 || Number.isFinite(choice.expiresAt) && choice.expiresAt > now);
-  }
-  function hasCurrentPurchaseConsent(choice, now = Date.now()) {
-    return hasCurrentDecision(choice, now) && purposes.every((key) => choice.purchaseConsent[key] === true);
-  }
-  function publicPurchaseDecision(snapshot) {
-    if (!snapshot || typeof snapshot !== "object") return null;
-    const { source, capturedAt, consentRevision, websiteOrigin, binding, ad_storage, ad_user_data, ad_personalization } = snapshot;
-    const decidedAt = snapshot.decidedAt ?? snapshot.timestamp;
-    return {
-      source,
-      capturedAt,
-      ...decidedAt ? { decidedAt } : {},
-      consentRevision,
-      websiteOrigin,
-      ad_storage,
-      ad_user_data,
-      ad_personalization,
-      ...binding ? { binding: { id: binding.id, version: binding.version } } : {}
-    };
-  }
 
   // src/embed/host_consent_mode.js
   var keys = ["analytics_storage", "ad_storage", "ad_user_data", "ad_personalization"];

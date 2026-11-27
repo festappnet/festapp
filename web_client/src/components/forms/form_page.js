@@ -1,4 +1,5 @@
 import {metaBrowserMatching, purchaseConsentSnapshot, PurchaseConsentOrders, samePurchaseDecision} from './meta_purchase_consent.js';
+import {collectLinkedMetaMatching} from './form_consent_link.js';
 import { DiscountCode } from './discount_code.js';
 import {createEmbedConsentSource} from './form_measurement_embed_consent.js';
 import { consumeSaleOpeningLocation, renderSaleOpening } from './sale_opening_notifications.js';
@@ -1028,7 +1029,9 @@ export class FormPage extends Component {
             if (!eligible()) return {};
             const matching=snapshot.source==='klaro'
                 ? metaBrowserMatching(snapshot,window)
-                : await this.embedBridge?.collectMetaCheckoutMatching(snapshot);
+                : this.embedBridge
+                    ? await this.embedBridge.collectMetaCheckoutMatching(snapshot)
+                    : await collectLinkedMetaMatching(window,snapshot);
             return eligible() ? matching || {} : {};
         };
         return Promise.race([lookup().catch(()=>({})),deadline]).finally(()=>clearTimeout(timer));
@@ -1105,7 +1108,9 @@ export class FormPage extends Component {
             } : null);
         const submittedSession = this.currentSession;
         const measurementOutcome=this.analytics?.captureSubmission(payload);
-        const matchingContext=!retrySubmission && metaPurchaseConsent ? this.checkoutMatchingContext(formModel) : null;
+        const sendsTicketOrder = !formModel.demoSimulation && formModel.registrationMode !== 'waitlist' && !formModel.offerBundle;
+        const matchingContext=sendsTicketOrder && !retrySubmission && metaPurchaseConsent
+            ? this.checkoutMatchingContext(formModel) : null;
         const matchingRequest=matchingContext ? this.collectMetaCheckoutMatching(formModel,metaPurchaseConsent,matchingContext) : null;
         let submittedCapability;
         const request = Promise.resolve().then(async () => {

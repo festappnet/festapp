@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {requestLinkedConsent} from '../../src/components/forms/form_consent_link.js';
+import {collectLinkedMetaMatching,requestLinkedConsent} from '../../src/components/forms/form_consent_link.js';
 import {consentScope,createConsentSourceRegistry} from '../../src/components/forms/measurement_consent_source.js';
 import {installHostConsentLink} from '../../src/embed/host_consent_link.js';
 const policy={organization:1,unit:2,processing_revision:'rev',measurement_consent_bridge:true,approved_hosts:['https://host.example']};
@@ -11,7 +11,7 @@ function childFixture(options={}) {
  win.name=options.legacy?'':'festapp-consent-link-00000000-0000-0000-0000-000000000000';
  const sent=[],accepted=[];let revoked=0,settled=0,saved=false;
  const peer={closed:false,postMessage:data=>sent.push(data)};win.opener=peer;
- const stop=requestLinkedConsent({win,policy:options.policy??policy,hasChoice:()=>saved,accept:(...v)=>accepted.push(v),revoke:()=>revoked++,settled:()=>settled++});
+ const stop=requestLinkedConsent({win,policy:options.policy??policy,includePurchaseConsent:options.includePurchaseConsent===true,hasChoice:()=>saved,accept:(...v)=>accepted.push(v),revoke:()=>revoked++,settled:()=>settled++});
  const reply=(extra={},source=peer,origin='https://host.example')=>win.dispatchEvent(new win.MessageEvent('message',{source,origin,data:{...sent[0],type:'response',sequence:1,expiresAt:Date.now()+60000,choice:{analytics:true,marketing:false},...extra}}));
  return {win,sent,accepted,stop,reply,closePeer:()=>peer.closed=true,save:()=>saved=true,get revoked(){return revoked},get settled(){return settled},close(){stop();win.close()}};
 }
@@ -133,4 +133,66 @@ test('managed linked consent needs its live binding, independently of runtime ho
   const denied=childFixture({policy:{...managed,website_consent_bindings:[record]}});
   try{assert.equal(denied.sent.length,0,'only effective exact-origin binding admits link')}finally{denied.close()}
  }
+});
+
+const capiBinding={id:'11111111-1111-1111-1111-111111111111',version:1,websiteOrigin:'https://host.example',effective:true};
+const capiPolicy={...policy,approved_hosts:[],consent_revision:'a'.repeat(32),website_consent_bindings:[capiBinding]};
+test('linked checkout asks the live website for Meta browser IDs only under current advertising consent',()=>{
+ const linkScope=consentScope(capiPolicy,'https://host.example');
+ const dom=new JSDOM('<a data-festapp-consent-link target="_blank" href="https://tickets.example/form/test">Buy</a>',{url:'https://host.example'}),win=dom.window;
+ win.document.cookie='_fbp=fb.1.1795000000000.123456789';win.document.cookie='_fbc=fb.1.1795000000000.AbC';
+ const replies=[],child={closed:false,postMessage:data=>replies.push(data)};win.open=()=>child;
+ let grant=true;
+ const registry=createConsentSourceRegistry();
+ registry.connect({read:()=>({consentRevision:'a'.repeat(32),binding:{id:capiBinding.id,version:1},analytics:true,marketing:true,
+  purchaseConsent:{source:'cookiebot',ad_storage:grant,ad_user_data:grant,ad_personalization:grant}}),subscribe:()=>()=>{}});
+ const stop=installHostConsentLink(win,'https://tickets.example',registry);
+ try{
+  win.document.querySelector('a').dispatchEvent(new win.MouseEvent('click',{bubbles:true,cancelable:true}));
+  const nonce=win.crypto.randomUUID();
+  const send=data=>win.dispatchEvent(new win.MessageEvent('message',{source:child,origin:'https://tickets.example',
+   data:{namespace:'festapp-consent-link',protocol:1,nonce,scope:linkScope,...data}}));
+  send({type:'request',includePurchaseConsent:true});
+  assert.equal(replies.at(-1).type,'response');
+  const ask={type:'matching-request',requestId:win.crypto.randomUUID(),revision:'b'.repeat(32),consentRevision:'a'.repeat(32),binding:{id:capiBinding.id,version:1}};
+  send(ask);
+  assert.equal(replies.at(-1).type,'matching');
+  assert.equal(replies.at(-1).requestId,ask.requestId);
+  assert.deepEqual(replies.at(-1).matching,{fbp:'fb.1.1795000000000.123456789',fbc:'fb.1.1795000000000.AbC'});
+  const count=replies.length;
+  send({...ask,consentRevision:'c'.repeat(32)});send({...ask,binding:{id:capiBinding.id,version:2}});send({...ask,nonce:win.crypto.randomUUID()});send({...ask,scope:{...linkScope,unit:3}});
+  grant=false;send(ask);
+  assert.equal(replies.length,count,'stale revision, binding, nonce, scope or withdrawn consent gets no identifiers');
+  grant=true;
+  const now=Date.now;
+  const expiresAt=replies[0].expiresAt;
+  try { Date.now=()=>expiresAt;send(ask); } finally { Date.now=now; }
+  assert.equal(replies.length,count,'the host never reads cookies after the advertised lease expires');
+ }finally{stop();win.close();}
+});
+test('linked checkout matching is requested once per checkout, validated and bounded',async()=>{
+ const f=childFixture({policy:capiPolicy,includePurchaseConsent:true});
+ try{
+  const snapshot={source:'cookiebot',websiteOrigin:'https://host.example',revision:'b'.repeat(32),consentRevision:'a'.repeat(32),binding:{id:capiBinding.id,version:1},ad_storage:true,ad_user_data:true,ad_personalization:true};
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'no live link before the website grants');
+  f.reply({scope:f.sent[0].scope});
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'ordinary consent cannot request Meta IDs');
+  f.reply({scope:f.sent[0].scope,sequence:2,choice:{analytics:true,marketing:true,purchaseConsent:snapshot}});
+  const pending=collectLinkedMetaMatching(f.win,snapshot);
+  const ask=f.sent.at(-1);
+  assert.equal(ask.type,'matching-request');assert.equal(ask.nonce,f.sent[0].nonce);assert.equal(ask.revision,snapshot.revision);
+  f.reply({type:'matching',sequence:3,requestId:'00000000-0000-4000-8000-000000000000',matching:{fbp:'fb.1.1795000000000.other'},scope:f.sent[0].scope});
+  f.reply({type:'matching',sequence:4,requestId:ask.requestId,matching:{fbp:'fb.1.1795000000000.good',fbc:'bad',email:'x'},scope:f.sent[0].scope});
+  assert.deepEqual(await pending,{fbp:'fb.1.1795000000000.good'});
+  const sent=f.sent.length;
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,{...snapshot,websiteOrigin:'https://evil.example'}),{});
+  assert.equal(f.sent.length,sent,'a foreign origin never asks the website');
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'an unanswered request times out');
+  const withdrawn=collectLinkedMetaMatching(f.win,snapshot);
+  f.reply({sequence:5,choice:{analytics:true,marketing:false,purchaseConsent:{...snapshot,ad_storage:false}}});
+  assert.deepEqual(await withdrawn,{},'withdrawal clears an outstanding request');
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'a withdrawn choice cannot start a request');
+  f.stop();
+  assert.deepEqual(await collectLinkedMetaMatching(f.win,snapshot),{},'an ended link has no collector');
+ }finally{f.close()}
 });

@@ -379,7 +379,7 @@ test('Back to form after success retains the linked lease and second-order purch
   await ready(form);
   const {page,runtime,back}=await returningPage(t,form);
   const {purchaseConsentSnapshot}=form.win.testModules;
-  const notice={revision:'checkout-revision',origin:HOST};
+  const notice={revision:'b'.repeat(32),origin:HOST};
   const first=purchaseConsentSnapshot(form.session.consent,notice);assert.ok(first);
   const orders=page.purchaseConsentOrders;
   const attempt=orders.capture(first,notice);assert.equal(orders.canDispatch(attempt),true);
@@ -393,20 +393,26 @@ test('Back to form after success retains the linked lease and second-order purch
   assert.equal(page.purchaseConsentOrders,orders);
   const second=purchaseConsentSnapshot(page.measurementSession.consent,notice);assert.ok(second);
   assert.deepEqual(second.binding,first.binding);assert.equal(second.source,first.source);
-  const {FormNetwork}=form.win.testModules;
+  const {DbForms,FormNetwork}=form.win.testModules;
+  t.mock.method(DbForms,'getMetaPurchaseConsent',async()=>notice);
+  const fbp='fb.1.1795000000000.linked';
+  site.win.document.cookie='_fbp='+fbp+';path=/';
   let sentPayload,finished;
   const shown=new Promise(resolve=>finished=resolve);
   t.mock.method(FormNetwork,'submitOrder',async(payload,options)=>{
    assert.equal(options.canSendMetaPurchaseConsent(),true);sentPayload=payload;
    return {success:true,data:{orderOverviewUrl:PRODUCT+'/order?order_id=2&token='+'b'.repeat(64)}};
   });
-  page.currentSession={payload:{form:'test',ticket:[]},awaitPendingReservations:async()=>{},
+  const formModel=form.win.returnModel(form.policy);
+  page.currentSession={formModel,payload:{form:'test',ticket:[]},awaitPendingReservations:async()=>{},
    captureReservationCapability:()=>null,completeReservation:()=>{}};
-  page.closePreview=()=>{};page.collectMetaCheckoutMatching=async()=>null;
+  page.closePreview=()=>{};
   page.showFullScreenResult=()=>finished();
-  page.submitOrder(form.win.document.createElement('form'),{},null,null,second);
+  page.submitOrder(form.win.document.createElement('form'),formModel,null,null,second);
   await shown;
-  assert.deepEqual(sentPayload.metaPurchaseConsent,second);
+  assert.deepEqual(JSON.parse(JSON.stringify(sentPayload.metaPurchaseConsent)),
+   JSON.parse(JSON.stringify({...second,matching:{fbp}})));
+  assert.equal(site.requests.filter(message=>message.type==='matching-request').length,1);
   assert.equal(orders.orders.size,2);
   assert.deepEqual([...orders.orders.values()].map(order=>order.scope.orderId),[1,2]);
   const sequence=site.sent.at(-1).sequence;
@@ -416,7 +422,7 @@ test('Back to form after success retains the linked lease and second-order purch
   t.mock.method(form.win.testModules.SupabaseService,'getClient',()=>({auth:{},rpc:async(name,args)=>{
    assert.equal(name,'revoke_meta_purchase_consent');revoked.push(args.p_order_id);return {error:null};
   }}));
-  const response=site.sent.at(-1);
+  const response=site.sent.findLast(message=>message.type==='response');
   form.deliver({...response,sequence:sequence+1,choice:{analytics:false,marketing:false,purchaseConsent:{
    ...response.choice.purchaseConsent,ad_storage:false,ad_user_data:false,ad_personalization:false}}});
   await settle(80);assert.deepEqual(revoked.sort(),[1,2]);

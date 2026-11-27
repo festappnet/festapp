@@ -1,8 +1,12 @@
 import {randomUuid} from '../../utils/random_uuid.js';
 import {consentScope, sameConsentScope} from './measurement_consent_source.js';
+import {hasCurrentPurchaseConsent, samePurchaseDecision, validMetaBrowserMatching} from './meta_purchase_consent.js';
 const namespace = 'festapp-consent-link';
 const peers = new WeakMap();
 export const hasConsentLinkPeer = win => !!peers.get(win);
+const matchingCollectors = new WeakMap();
+// Checkout asks the live opener for Meta browser IDs once, like an embed host.
+export const collectLinkedMetaMatching = (win, snapshot) => matchingCollectors.get(win)?.(snapshot) ?? Promise.resolve({});
 export const isConsentLinkWindow = win => /^festapp-consent-link-[a-f0-9-]{36}$/.test(win.name || '');
 // Capture only helper windows, before policy loading or any optional CMP work.
 export function prepareConsentLink(win) {
@@ -22,7 +26,8 @@ export function isConsentLinkOrigin(origin, local = false) {
 // A linked visit owns a renewable source lease, never a persisted local choice.
 export function requestLinkedConsent({win, policy, hasChoice, accept, includePurchaseConsent = false, revoke = () => {}, settled = () => {}}) {
     let timer, watch, active = true, requested = false, connected = false, sequence = 0;
-    let origin, peer, nonce, until, scope, visitUntil;
+    let origin, peer, nonce, until, scope, visitUntil, latestChoice;
+    const matching = new Map();
     const stop = () => {
         if (!active) return;
         active = false;
@@ -33,6 +38,8 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, includePur
         if (timer !== undefined) win.clearTimeout(timer);
         if (watch !== undefined) win.clearInterval(watch);
         peers.delete(win);
+        if (matchingCollectors.get(win) === collect) matchingCollectors.delete(win);
+        for (const {finish} of matching.values()) finish({});
         if (requested) {
             try { peer.postMessage({namespace, protocol:1, type:'detach', nonce}, origin); } catch { /* Closed source. */ }
             settled();
@@ -53,6 +60,15 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, includePur
                 !Number.isSafeInteger(data.sequence) || data.sequence <= sequence) return;
             if (hasChoice()) { stop(); return; }
             if (data.type === 'end') { disconnect(); return; }
+            if (data.type === 'matching') {
+                const pending = connected && matching.get(data.requestId);
+                if (pending) {
+                    sequence = data.sequence;
+                    pending.finish(Date.now() < pending.expiresAt && canCollect(pending.snapshot)
+                        ? validMetaBrowserMatching(data.matching) : {});
+                }
+                return;
+            }
             if (data.type !== 'response' || typeof data.choice?.analytics !== 'boolean' || typeof data.choice?.marketing !== 'boolean' ||
                 !Number.isFinite(data.expiresAt) || data.expiresAt <= Date.now() || data.expiresAt > Date.now()+60000) return;
             sequence = data.sequence; connected = true;
@@ -62,9 +78,30 @@ export function requestLinkedConsent({win, policy, hasChoice, accept, includePur
             win.clearTimeout(timer); timer = win.setTimeout(disconnect, until-Date.now());
             peers.delete(win);
             const {purchaseConsent,...ordinary}=data.choice;
-            accept({...ordinary, ...(scope.binding && purchaseConsent ? {purchaseConsent:{...purchaseConsent, binding:scope.binding, websiteOrigin:origin}} : {})}, {origin, leaseId:nonce, expiresAt:until});
+            latestChoice = {...ordinary, ...(scope.binding && purchaseConsent ? {purchaseConsent:{...purchaseConsent, binding:scope.binding, websiteOrigin:origin}} : {})};
+            if (includePurchaseConsent && hasCurrentPurchaseConsent(latestChoice)) matchingCollectors.set(win, collect);
+            else if (matchingCollectors.get(win) === collect) matchingCollectors.delete(win);
+            for (const {snapshot,finish} of matching.values()) if (!canCollect(snapshot)) finish({});
+            accept(latestChoice, {origin, leaseId:nonce, expiresAt:until});
         } catch { disconnect(); }
     };
+    function canCollect(snapshot) {
+        return active && connected && !hasChoice() && Date.now() < until &&
+            hasCurrentPurchaseConsent(latestChoice) && samePurchaseDecision(latestChoice.purchaseConsent, snapshot);
+    }
+    function collect(snapshot) {
+        if (!canCollect(snapshot)) return Promise.resolve({});
+        const requestId = randomUuid(win.crypto);
+        return new Promise(resolve => {
+            const finish = value => { win.clearTimeout(timeout); matching.delete(requestId); resolve(value); };
+            const timeout = win.setTimeout(() => finish({}), 400);
+            matching.set(requestId, {snapshot, finish, expiresAt:Date.now()+400});
+            try {
+                peer.postMessage({namespace, protocol:1, type:'matching-request', nonce, scope, requestId,
+                    revision:snapshot.revision, consentRevision:snapshot.consentRevision, binding:snapshot.binding}, origin);
+            } catch { finish({}); }
+        });
+    }
     Object.defineProperty(stop, 'pending', {get:() => requested && active && !connected});
     try {
         prepareConsentLink(win);
