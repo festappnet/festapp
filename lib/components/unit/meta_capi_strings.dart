@@ -7,6 +7,7 @@ class MetaCapiStrings {
   static String get deliveryFailed => 'MetaCapi.deliveryFailed'.tr();
 
   static String get sentInFlight => 'MetaCapi.sentInFlight'.tr();
+  static String get testEventsInactive => 'MetaCapi.testEventsInactive'.tr();
   static String get tokenRequired => 'MetaCapi.tokenRequired'.tr();
   static String get title => 'MetaCapi.title'.tr();
   static String get dataset => 'MetaCapi.dataset'.tr();

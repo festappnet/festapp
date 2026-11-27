@@ -85,9 +85,12 @@ END $$;
 CREATE OR REPLACE FUNCTION public.finish_meta_purchase_delivery(p_order_id bigint,p_lease uuid,p_result text)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$
 DECLARE delivery analytics.meta_purchase_deliveries; final_status text; connector_unit bigint;
+ accepted boolean:=p_result IN ('sent','sent_test_inactive');
 BEGIN
  PERFORM public.require_service_role();
- IF p_result IS NULL OR p_result NOT IN ('sent','retry','credentials','rejected') THEN
+ -- sent_test_inactive: Meta accepted the event, but its test_event_code has no
+ -- active Test Events session, so it will not appear there.
+ IF p_result IS NULL OR p_result NOT IN ('sent','sent_test_inactive','retry','credentials','rejected') THEN
   RAISE invalid_parameter_value USING MESSAGE='invalid delivery result'; END IF;
  -- A disconnected connector may be absent; its terminal receipt still exists.
  -- Lock any surviving connector before the delivery, like prepare and delete.
@@ -105,14 +108,15 @@ BEGIN
  -- Withdrawal scrubs the payload but must still record the authorized in-flight result.
  IF delivery.status='revoked' THEN
   UPDATE analytics.meta_purchase_deliveries
-  SET error_code=CASE WHEN p_result='sent' THEN 'sent_in_flight' ELSE p_result END,
+  SET error_code=CASE WHEN accepted THEN 'sent_in_flight' ELSE p_result END,
    lease=NULL,lease_until=NULL
   WHERE order_id=p_order_id;
   RETURN true;
  END IF;
- final_status:=CASE WHEN p_result='sent' THEN 'sent'
+ final_status:=CASE WHEN accepted THEN 'sent'
   WHEN p_result='rejected' OR delivery.attempts>=6 THEN 'failed' ELSE 'pending' END;
- UPDATE analytics.meta_purchase_deliveries SET status=final_status,error_code=nullif(p_result,'sent'),
+ UPDATE analytics.meta_purchase_deliveries SET status=final_status,
+  error_code=CASE WHEN p_result='sent_test_inactive' THEN 'test_events_inactive' ELSE nullif(p_result,'sent') END,
   next_attempt_at=clock_timestamp()+interval '2 minutes'*power(2,greatest(delivery.attempts-1,0)),
   lease=NULL,lease_until=NULL,done_at=CASE WHEN final_status<>'pending' THEN clock_timestamp() END,
   consent_snapshot=CASE WHEN final_status='pending' THEN consent_snapshot END,

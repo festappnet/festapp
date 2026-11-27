@@ -58,7 +58,9 @@ Future<void> openPolicy(WidgetTester tester) async {
 
 void main() {
   WidgetEnvironmentFixture.register();
-  testWidgets('Meta CAPI is hidden without organizer permission', (tester) async {
+  testWidgets('Meta CAPI is hidden without organizer permission', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -389,6 +391,34 @@ void main() {
       expect(find.text(MetaCapiStrings.outcomeReason(code)), findsOneWidget);
       expect(find.text(MetaCapiStrings.retry), findsNothing);
     }
+    // A sent test event outside an open Test Events session explains why it is missing there.
+    await fixture.pumpWidget(
+      tester,
+      MaterialApp(
+        key: const ValueKey('test_events_inactive'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: UnitMetaCapiSettings(
+              unitId: 1,
+              load: (_) async => {
+                'allowed': true,
+                'websites': [],
+                'forms': [],
+                'queue': {'sent': 1},
+                'test_events_notice': <String, dynamic>{},
+                'last_error': {'code': 'retry', 'status': 'pending'},
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(MetaCapiStrings.title));
+    await tester.pumpAndSettle();
+    expect(find.text(MetaCapiStrings.testEventsInactive), findsOneWidget);
+    expect(find.text(MetaCapiStrings.retry), findsOneWidget);
+    expect(find.text(MetaCapiStrings.deliveryFailed), findsNothing);
   });
 
   testWidgets('Meta CAPI identifies the saved token by its masked suffix', (

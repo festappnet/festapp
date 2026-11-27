@@ -110,3 +110,56 @@ Deno.test("Meta matching payload includes only optional prepared identifiers", a
     );
   }
 });
+
+Deno.test("Meta test receipt without an active Test Events session is still sent", async () => {
+  const inactive = {
+    events_received: 1,
+    messages: [
+      'test_event_code "TEST4242" does not match an active Test Events session for this dataset and the action source of these events. These events were received, but will not appear in Test Events.',
+    ],
+  };
+  assertEquals(
+    await sendMetaPurchase(purchase, async () => Response.json(inactive)),
+    "sent_test_inactive",
+  );
+  assertEquals(
+    await sendMetaPurchase(
+      { ...purchase, testEventCode: null },
+      async () => Response.json(inactive),
+    ),
+    "sent",
+    "production events never report a test session",
+  );
+  assertEquals(
+    await sendMetaPurchase(
+      { ...purchase, testEventCode: "" },
+      async () => Response.json(inactive),
+    ),
+    "sent",
+    "an empty test code is a production event",
+  );
+  assertEquals(
+    await sendMetaPurchase(
+      purchase,
+      async () =>
+        Response.json({ events_received: 1, messages: inactive.messages[0] }),
+    ),
+    "sent",
+    "malformed messages never block a receipt",
+  );
+  assertEquals(
+    await sendMetaPurchase(
+      purchase,
+      async () => Response.json({ events_received: 1, messages: ["other"] }),
+    ),
+    "sent",
+  );
+  assertEquals(
+    await sendMetaPurchase(
+      purchase,
+      async () =>
+        Response.json({ events_received: 0, messages: inactive.messages }),
+    ),
+    "retry",
+  );
+});

@@ -15,7 +15,16 @@ export interface MetaPurchase {
   sourceUrl: string;
 }
 
-export type MetaPurchaseResult = "sent" | "retry" | "credentials" | "rejected";
+export type MetaPurchaseResult =
+  | "sent"
+  | "sent_test_inactive"
+  | "retry"
+  | "credentials"
+  | "rejected";
+
+// Meta accepts events whose test_event_code has no active Test Events session
+// but reports that they will not appear there.
+const inactiveTestSession = /does not match an active Test Events session/i;
 
 export async function sendMetaPurchase(
   purchase: MetaPurchase,
@@ -59,7 +68,18 @@ export async function sendMetaPurchase(
       },
     );
     const receipt = await response.json().catch(() => null);
-    if (response.ok) return receipt?.events_received === 1 ? "sent" : "retry";
+    if (response.ok) {
+      if (receipt?.events_received !== 1) return "retry";
+      const messages: unknown[] = Array.isArray(receipt?.messages)
+        ? receipt.messages
+        : [];
+      return purchase.testEventCode &&
+          messages.some((message) =>
+            typeof message === "string" && inactiveTestSession.test(message)
+          )
+        ? "sent_test_inactive"
+        : "sent";
+    }
     const code = receipt?.error?.code;
     // Graph throttling (#4, #17, #32, #613, 80000-80014) can arrive as 400 or
     // 403. It must not pause the connector or discard the purchase.
